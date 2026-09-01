@@ -3336,13 +3336,17 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                          allocate_code_blob);
 
   if (ces.has_scalarized_args()) {
-    // Save a C heap allocated version of the scalarized signature and store it in the adapter
-    GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc());
-    handler->set_sig_cc(heap_sig);
-    heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc_ro());
-    handler->set_sig_cc_ro(heap_sig);
+    assert((handler->get_sig_cc() == nullptr) == (handler->get_sig_cc_ro() == nullptr), "Inconsistency");
+    // Check if scalarized signatures have to be initialized
+    if (handler->get_sig_cc() == nullptr) {
+      // Save a C heap allocated version of the scalarized signature and store it in the adapter
+      GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc());
+      handler->set_sig_cc(heap_sig);
+      heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc_ro());
+      handler->set_sig_cc_ro(heap_sig);
+    }
   }
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.

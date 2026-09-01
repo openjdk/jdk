@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */
 
 import java.lang.foreign.Arena;
@@ -35,8 +35,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.foreign.MemorySegment;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
@@ -48,6 +46,11 @@ import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.PathElement.*;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestVarArgs extends CallGeneratorHelper {
 
     static final MethodHandle MH_CHECK;
@@ -65,7 +68,8 @@ public class TestVarArgs extends CallGeneratorHelper {
 
     static final MemorySegment VARARGS_ADDR = findNativeOrThrow("varargs");
 
-    @Test(dataProvider = "variadicFunctions")
+    @ParameterizedTest
+    @MethodSource("variadicFunctions")
     public void testVarArgs(int count, String fName, Ret ret, // ignore this stuff
                             List<ParamType> paramTypes, List<StructFieldType> fields) throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
@@ -121,7 +125,6 @@ public class TestVarArgs extends CallGeneratorHelper {
         return fields;
     }
 
-    @DataProvider(name = "variadicFunctions")
     public static Object[][] variadicFunctions() {
         List<Object[]> downcalls = new ArrayList<>();
 

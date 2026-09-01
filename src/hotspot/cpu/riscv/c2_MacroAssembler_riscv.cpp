@@ -408,6 +408,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 // StringLatin1.indexOfChar
 void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
                                                   Register ch, Register result,
+                                                  Register start_index,
                                                   bool isL)
 {
   Register ch1 = t0;
@@ -500,7 +501,7 @@ void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
   addi(index, index, 7);
 
   bind(MATCH);
-  mv(result, index);
+  add(result, start_index, index);
   bind(NOMATCH);
   BLOCK_COMMENT("} string_indexof_char_short");
 }
@@ -513,39 +514,39 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
                                             Register tmp3, Register tmp4,
                                             bool isL)
 {
-  Label CH1_LOOP, HIT, NOMATCH, DONE, DO_LONG;
+  Label CH1_LOOP, HIT, NOMATCH, DONE, SHORT;
   Register ch1 = t0;
   Register orig_cnt = t1;
   Register mask1 = tmp3;
   Register mask2 = tmp2;
   Register match_mask = tmp1;
-  Register trailing_char = tmp4;
-  Register unaligned_elems = tmp4;
+  Register loop_step = tmp4;
+  Register trailing_chars = tmp4;
+  Register unaligned_chars = tmp4;
+  Register start_index = tmp4;
 
   BLOCK_COMMENT("string_indexof_char {");
   beqz(cnt1, NOMATCH);
 
   subi(t0, cnt1, isL ? 32 : 16);
-  bgtz(t0, DO_LONG);
-  string_indexof_char_short(str1, cnt1, ch, result, isL);
-  j(DONE);
+  mv(start_index, zr);
+  blez(t0, SHORT);
 
-  bind(DO_LONG);
   mv(orig_cnt, cnt1);
   if (AvoidUnalignedAccesses) {
     Label ALIGNED;
-    andi(unaligned_elems, str1, 0x7);
-    beqz(unaligned_elems, ALIGNED);
-    sub(unaligned_elems, unaligned_elems, 8);
-    neg(unaligned_elems, unaligned_elems);
+    andi(unaligned_chars, str1, 0x7);
+    beqz(unaligned_chars, ALIGNED);
+    sub(unaligned_chars, unaligned_chars, 8);
+    neg(unaligned_chars, unaligned_chars);
     if (!isL) {
-      srli(unaligned_elems, unaligned_elems, 1);
+      srli(unaligned_chars, unaligned_chars, 1);
     }
     // do unaligned part per element
-    string_indexof_char_short(str1, unaligned_elems, ch, result, isL);
+    string_indexof_char_short(str1, unaligned_chars, ch, result, zr, isL);
     bgez(result, DONE);
     mv(orig_cnt, cnt1);
-    sub(cnt1, cnt1, unaligned_elems);
+    sub(cnt1, cnt1, unaligned_chars);
     bind(ALIGNED);
   }
 
@@ -570,29 +571,48 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   uint64_t mask7fff = UCONST64(0x7fff7fff7fff7fff);
   mv(mask2, isL ? mask7f7f : mask7fff);
 
+  mv(loop_step, 8);
+
   bind(CH1_LOOP);
   ld(ch1, Address(str1));
   addi(str1, str1, 8);
   subi(cnt1, cnt1, 8);
   compute_match_mask(ch1, ch, match_mask, mask1, mask2);
   bnez(match_mask, HIT);
-  bgtz(cnt1, CH1_LOOP);
-  j(NOMATCH);
+  bge(cnt1, loop_step, CH1_LOOP);
+
+  beqz(cnt1, NOMATCH);
+  if (!isL) {
+    srli(cnt1, cnt1, 1);
+  }
+  // Tail (1..7 chars) after the SWAR loop has advanced str1. cnt1 holds the
+  // remaining char count; the number of chars already scanned by the loop is
+  // (orig_cnt - cnt1). string_indexof_char_short returns an index relative to
+  // the current str1, so we pass that prefix as start_index to recover the
+  // real index.
+  // Note: ch was broadcast across all 8 bytes for the SWAR loop above, but the
+  // short helper compares a single element, so restore ch to a single char.
+  isL ? zext(ch, ch, 8) : zext(ch, ch, 16);
+  sub(start_index, orig_cnt, cnt1);
+
+  bind(SHORT);
+  string_indexof_char_short(str1, cnt1, ch, result, start_index, isL);
+  j(DONE);
 
   bind(HIT);
   // count bits of trailing zero chars
-  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
-  srli(trailing_char, trailing_char, 3);
+  ctzc_bits(trailing_chars, match_mask, isL, ch1, result);
+  srli(trailing_chars, trailing_chars, 3);
   addi(cnt1, cnt1, 8);
-  ble(cnt1, trailing_char, NOMATCH);
+
   // match case
   if (!isL) {
     srli(cnt1, cnt1, 1);
-    srli(trailing_char, trailing_char, 1);
+    srli(trailing_chars, trailing_chars, 1);
   }
 
   sub(result, orig_cnt, cnt1);
-  add(result, result, trailing_char);
+  add(result, result, trailing_chars);
   j(DONE);
 
   bind(NOMATCH);

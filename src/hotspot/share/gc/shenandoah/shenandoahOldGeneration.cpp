@@ -800,7 +800,7 @@ void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
   _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
 }
 
-void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
+void ShenandoahOldGeneration::mark_card_as_dirty(void* location) const {
   _card_scan->mark_card_as_dirty((HeapWord*)location);
 }
 

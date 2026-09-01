@@ -244,11 +244,9 @@ jlong* JvmtiTagMapTable::lookup(const JvmtiHeapwalkObject& obj) const {
     return nullptr;
   }
 
-  if (!obj.is_value()) {
-    if (obj.obj()->fast_no_hash_check()) {
-      // Objects in the table all have a hashcode, unless inlined types.
-      return nullptr;
-    }
+  if (!obj.is_value() && !obj.obj()->has_identity_hash()) {
+    // Objects in the table all have a hashcode, unless inlined types.
+    return nullptr;
   }
   JvmtiTagMapKey entry(&obj);
   jlong* found = _table.get(entry);
@@ -265,7 +263,7 @@ void JvmtiTagMapTable::add(const JvmtiHeapwalkObject& obj, jlong tag) {
   assert(!obj.is_flat(), "Cannot add flat object to JvmtiTagMapTable");
   JvmtiTagMapKey new_entry(&obj);
   bool is_added;
-  if (!obj.is_value() && obj.obj()->fast_no_hash_check()) {
+  if (!obj.is_value() && !obj.obj()->has_identity_hash()) {
     // Can't be in the table so add it fast.
     is_added = _table.put_when_absent(new_entry, tag);
   } else {
