@@ -827,8 +827,8 @@ static ciMultiBranchData* get_switch_profile(ciMethodData* method_data, int bci)
     return nullptr;
   }
   // C1 can constant-fold a switch and skip its profile update. An all-zero
-  // profile therefore means no profiling information is available, not that
-  // every switch branch is cold. Ignore it.
+  // profile therefore doesn't always mean every switch branch is cold but
+  // also that no profiling information is available.
   ciMultiBranchData* profile = (ciMultiBranchData*)data;
   if (profile->default_count() != 0) {
     return profile;
