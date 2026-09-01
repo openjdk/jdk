@@ -38,7 +38,6 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  * KeyGenerator for the TLS extended master secret.
  * See RFC 7627 for further details.
  *
- * @author Andreas Chmielewski
  * @since x.x
  */
 public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
@@ -52,8 +51,6 @@ public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
     // token instance
     private final Token token;
 
-    // algorithm name
-    private final String algorithm;
     CK_VERSION ckVersion;
     // mechanism id
     private long mechanism;
