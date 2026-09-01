@@ -2850,6 +2850,16 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
+// Long Immediate: low 16-bit mask
+operand immL_16bits()
+%{
+  predicate(n->get_long() == 0xFFFFL);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{

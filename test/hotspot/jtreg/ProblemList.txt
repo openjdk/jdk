@@ -137,6 +137,8 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
 
+serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 8390812 windows-x64
+
 #############################################################################
 
 # :hotspot_misc
