@@ -146,6 +146,17 @@ public class MultiReleaseJars {
         writeFile(metainf, meta);
         JarBuilder.build("version3", baseDir, metainf.getAbsolutePath(),
             "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
+
+        // version4.jar is exactly the same as version3.jar, except that the manifest file contains
+        // "Multi-Release: truex" instead of "true".
+        String[] meta3 = {
+            "Multi-Release: truex",
+            "Main-Class: version.Main"
+        };
+        metainf = new File(tempDir, "mf3.txt");
+        writeFile(metainf, meta3);
+        JarBuilder.build("version4", baseDir, metainf.getAbsolutePath(),
+            "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
     }
 
     static void checkExecOutput(OutputAnalyzer output, String expectedOutput) throws Exception {
@@ -170,6 +181,7 @@ public class MultiReleaseJars {
         String appJar             = TestCommon.getTestJar("version.jar");
         String appJar2            = TestCommon.getTestJar("version2.jar");
         String appJar3            = TestCommon.getTestJar("version3.jar");
+        String appJar4            = TestCommon.getTestJar("version4.jar");
         String enableMultiRelease = "-Djdk.util.jar.enableMultiRelease=true";
         String jarVersion         = null;
         String expectedOutput     = null;
@@ -282,6 +294,22 @@ public class MultiReleaseJars {
             .addVmArgs("-Xlog:aot",
                        "-Djdk.util.jar.enableMultiRelease=false")
             .classpath(appJar3)
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer out) -> {
+                out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
+            })
+            .setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldHaveExitValue(1);
+                out.shouldContain("java.lang.ClassNotFoundException: version.Version");
+            })
+            .runAOTWorkflow();
+
+        // 10. AOT Test with "Multi-Release: truex" instead of "true"
+        SimpleCDSAppTester.of("Multi-Release-AOT-Misspelled")
+            .setCheckExitValue(false)
+            .addVmArgs("-Xlog:aot",
+                       enableMultiRelease)
+            .classpath(appJar4)
             .appCommandLine(mainClass)
             .setTrainingChecker((OutputAnalyzer out) -> {
                 out.shouldNotMatch("class version/Version cannot be archived because it was not defined");

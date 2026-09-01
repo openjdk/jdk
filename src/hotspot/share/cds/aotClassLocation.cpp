@@ -281,9 +281,13 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   }
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
-  if (StringUtils::strstr_nocase(cs->manifest(), "Multi-Release: true") != nullptr) {
+  const char* multi_release = cs->get_attr("Multi-Release: ");
+  if (multi_release != nullptr && strncasecmp(multi_release, "true", 5) == 0) {
     cs->_is_multi_release_jar = true;
   }
+  // if (StringUtils::strstr_nocase(cs->manifest(), "Multi-Release: true") != nullptr) {
+  //   cs->_is_multi_release_jar = true;
+  // }
 
   if (strstr(cs->manifest(), "Extension-List:") != nullptr) {
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", path));
@@ -323,7 +327,7 @@ char* AOTClassLocation::read_manifest(JavaThread* current, const char* path, siz
 }
 
 // The result is resource allocated.
-char* AOTClassLocation::get_cpattr() const {
+char* AOTClassLocation::get_attr(const char* tag) const {
   if (_manifest_length == 0) {
     return nullptr;
   }
@@ -339,7 +343,6 @@ char* AOTClassLocation::get_cpattr() const {
   // Remove all new-line continuation (remove all "\n " substrings)
   StringUtils::replace_no_expand(buf, "\n ", "");
 
-  const char* tag = "Class-Path: ";
   size_t tag_len = strlen(tag);
   char* found = nullptr;
   char* line_start = buf;
@@ -353,7 +356,13 @@ char* AOTClassLocation::get_cpattr() const {
       // JAR spec require the manifest file to be terminated by a new line.
       break;
     }
-    if (strncmp(tag, line_start, tag_len) == 0) {
+
+    if (line_start == line_end) {
+      break;
+    }
+
+    // Attribute names are case insensitive
+    if (strncasecmp(tag, line_start, tag_len) == 0) {
       if (found != nullptr) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
@@ -370,6 +379,11 @@ char* AOTClassLocation::get_cpattr() const {
   }
 
   return found;
+}
+
+// The result is resource allocated.
+char* AOTClassLocation::get_cpattr() const {
+  return get_attr("Class-Path: ");
 }
 
 AOTClassLocation* AOTClassLocation::write_to_archive() const {
