@@ -71,4 +71,9 @@ inline size_t BufferedOverflowTaskQueue<E, MT, N>::full_size() {
   return taskqueue_t::size() + taskqueue_t::overflow_stack()->size() + (_buf_empty ? 0 : 1);
 }
 
+template <class E, MemTag MT, unsigned int N>
+inline size_t BufferedOverflowTaskQueue<E, MT, N>::capacity() const {
+  return N;
+}
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_INLINE_HPP

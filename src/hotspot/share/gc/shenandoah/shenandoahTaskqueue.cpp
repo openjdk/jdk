@@ -116,6 +116,20 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
     }
   }
 
+  // If there is leftover work in overflow stack, move it into local queue.
+  // This exposes tasks to work-stealing. Avoid filling out the local queue
+  // completely: we want to leave some space for local pushes.
+  for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
+    ShenandoahObjToScanQueue* q = queue(i);
+    size_t to_balance = MIN2<size_t>(q->overflow_stack()->size(), (q->capacity() - q->size()) / 3 * 4);
+    for (size_t c = 0; c < to_balance; c++) {
+      bool succ_pop = q->pop_overflow(t);
+      assert(succ_pop, "Must succeed");
+      bool succ_push = q->push(t);
+      assert(succ_push, "Must succeed");
+    }
+  }
+
 #ifdef ASSERT
   // Final checks.
   assert(ts.is_empty(), "Must be empty");

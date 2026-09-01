@@ -64,6 +64,8 @@ public:
 
   inline size_t full_size();
 
+  inline size_t capacity() const;
+
 private:
   bool _buf_empty;
   E _elem;
