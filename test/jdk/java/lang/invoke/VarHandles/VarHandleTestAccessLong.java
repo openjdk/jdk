@@ -317,7 +317,7 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         // Lazy
         {
             long x = (long) vh.getAcquire(recv);
-            assertEquals(0x0123456789ABCDEFL, x, "getRelease long value");
+            assertEquals(0x0123456789ABCDEFL, x, "getAcquire long value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
         // Lazy
         {
             long x = (long) vh.getAcquire();
-            assertEquals(0x0123456789ABCDEFL, x, "getRelease long value");
+            assertEquals(0x0123456789ABCDEFL, x, "getAcquire long value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             vh.set(recv, 0x0123456789ABCDEFL);
 
             long o = (long) vh.getAndAddRelease(recv, 0xCAFEBABECAFEBABEL);
-            assertEquals(0x0123456789ABCDEFL, o, "getAndAddReleaselong");
+            assertEquals(0x0123456789ABCDEFL, o, "getAndAddRelease long");
             long x = (long) vh.get(recv);
             assertEquals((long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), x, "getAndAddRelease long value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
             vh.set(0x0123456789ABCDEFL);
 
             long o = (long) vh.getAndAddRelease(0xCAFEBABECAFEBABEL);
-            assertEquals(0x0123456789ABCDEFL, o, "getAndAddReleaselong");
+            assertEquals(0x0123456789ABCDEFL, o, "getAndAddRelease long");
             long x = (long) vh.get();
             assertEquals((long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), x, "getAndAddRelease long value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessLong extends VarHandleBaseTest {
                 vh.set(array, i, 0x0123456789ABCDEFL);
 
                 long o = (long) vh.getAndAddRelease(array, i, 0xCAFEBABECAFEBABEL);
-                assertEquals(0x0123456789ABCDEFL, o, "getAndAddReleaselong");
+                assertEquals(0x0123456789ABCDEFL, o, "getAndAddRelease long");
                 long x = (long) vh.get(array, i);
                 assertEquals((long)(0x0123456789ABCDEFL + 0xCAFEBABECAFEBABEL), x, "getAndAddRelease long value");
             }

@@ -317,7 +317,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Lazy
         {
             int x = (int) vh.getAcquire(recv);
-            assertEquals(0x01234567, x, "getRelease int value");
+            assertEquals(0x01234567, x, "getAcquire int value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
         // Lazy
         {
             int x = (int) vh.getAcquire();
-            assertEquals(0x01234567, x, "getRelease int value");
+            assertEquals(0x01234567, x, "getAcquire int value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             vh.set(recv, 0x01234567);
 
             int o = (int) vh.getAndAddRelease(recv, 0x89ABCDEF);
-            assertEquals(0x01234567, o, "getAndAddReleaseint");
+            assertEquals(0x01234567, o, "getAndAddRelease int");
             int x = (int) vh.get(recv);
             assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
             vh.set(0x01234567);
 
             int o = (int) vh.getAndAddRelease(0x89ABCDEF);
-            assertEquals(0x01234567, o, "getAndAddReleaseint");
+            assertEquals(0x01234567, o, "getAndAddRelease int");
             int x = (int) vh.get();
             assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessInt extends VarHandleBaseTest {
                 vh.set(array, i, 0x01234567);
 
                 int o = (int) vh.getAndAddRelease(array, i, 0x89ABCDEF);
-                assertEquals(0x01234567, o, "getAndAddReleaseint");
+                assertEquals(0x01234567, o, "getAndAddRelease int");
                 int x = (int) vh.get(array, i);
                 assertEquals((int)(0x01234567 + 0x89ABCDEF), x, "getAndAddRelease int value");
             }

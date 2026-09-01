@@ -317,7 +317,7 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         // Lazy
         {
             boolean x = (boolean) vh.getAcquire(recv);
-            assertEquals(true, x, "getRelease boolean value");
+            assertEquals(true, x, "getAcquire boolean value");
         }
 
         // Opaque
@@ -377,7 +377,7 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
         // Lazy
         {
             boolean x = (boolean) vh.getAcquire();
-            assertEquals(true, x, "getRelease boolean value");
+            assertEquals(true, x, "getAcquire boolean value");
         }
 
         // Opaque

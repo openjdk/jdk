@@ -317,7 +317,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         // Lazy
         {
             float x = (float) vh.getAcquire(recv);
-            assertEquals(1.0f, x, "getRelease float value");
+            assertEquals(1.0f, x, "getAcquire float value");
         }
 
         // Opaque
@@ -401,7 +401,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
         // Lazy
         {
             float x = (float) vh.getAcquire();
-            assertEquals(1.0f, x, "getRelease float value");
+            assertEquals(1.0f, x, "getAcquire float value");
         }
 
         // Opaque
@@ -680,7 +680,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             vh.set(recv, 1.0f);
 
             float o = (float) vh.getAndAddRelease(recv, 2.0f);
-            assertEquals(1.0f, o, "getAndAddReleasefloat");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) vh.get(recv);
             assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
@@ -940,7 +940,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
             vh.set(1.0f);
 
             float o = (float) vh.getAndAddRelease(2.0f);
-            assertEquals(1.0f, o, "getAndAddReleasefloat");
+            assertEquals(1.0f, o, "getAndAddRelease float");
             float x = (float) vh.get();
             assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
         }
@@ -1203,7 +1203,7 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
                 vh.set(array, i, 1.0f);
 
                 float o = (float) vh.getAndAddRelease(array, i, 2.0f);
-                assertEquals(1.0f, o, "getAndAddReleasefloat");
+                assertEquals(1.0f, o, "getAndAddRelease float");
                 float x = (float) vh.get(array, i);
                 assertEquals((float)(1.0f + 2.0f), x, "getAndAddRelease float value");
             }

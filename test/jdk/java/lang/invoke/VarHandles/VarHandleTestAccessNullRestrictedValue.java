@@ -340,7 +340,7 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         // Lazy
         {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAcquire(recv);
-            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "getRelease NullRestrictedValue value");
+            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "getAcquire NullRestrictedValue value");
         }
 
         // Opaque
@@ -435,7 +435,7 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         // Lazy
         {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAcquire();
-            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "getRelease NullRestrictedValue value");
+            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "getAcquire NullRestrictedValue value");
         }
 
         // Opaque
@@ -1363,57 +1363,57 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.compareAndSet(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetVolatile
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchange
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // GetAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(array, 0, value);
         });
     }
@@ -1442,57 +1442,57 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(recv, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(recv, value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(recv, value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(recv, value);
         });
     }
@@ -1521,57 +1521,57 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(value);
         });
     }
@@ -1601,57 +1601,57 @@ public class VarHandleTestAccessNullRestrictedValue extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(array, 0, NullRestrictedValue.of((byte)20,(short)1854), value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(array, 0, value);
         });
     }

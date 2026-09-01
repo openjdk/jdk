@@ -317,7 +317,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Lazy
         {
             byte x = (byte) vh.getAcquire(recv);
-            assertEquals((byte)0x01, x, "getRelease byte value");
+            assertEquals((byte)0x01, x, "getAcquire byte value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Lazy
         {
             byte x = (byte) vh.getAcquire();
-            assertEquals((byte)0x01, x, "getRelease byte value");
+            assertEquals((byte)0x01, x, "getAcquire byte value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             vh.set(recv, (byte)0x01);
 
             byte o = (byte) vh.getAndAddRelease(recv, (byte)0x23);
-            assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+            assertEquals((byte)0x01, o, "getAndAddRelease byte");
             byte x = (byte) vh.get(recv);
             assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             vh.set((byte)0x01);
 
             byte o = (byte) vh.getAndAddRelease((byte)0x23);
-            assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+            assertEquals((byte)0x01, o, "getAndAddRelease byte");
             byte x = (byte) vh.get();
             assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 vh.set(array, i, (byte)0x01);
 
                 byte o = (byte) vh.getAndAddRelease(array, i, (byte)0x23);
-                assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+                assertEquals((byte)0x01, o, "getAndAddRelease byte");
                 byte x = (byte) vh.get(array, i);
                 assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
             }

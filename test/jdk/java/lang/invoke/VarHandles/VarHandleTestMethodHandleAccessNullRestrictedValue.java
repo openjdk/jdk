@@ -309,10 +309,30 @@ public class VarHandleTestMethodHandleAccessNullRestrictedValue extends VarHandl
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, NullRestrictedValue.of((byte)20,(short)1854));
+
             NullRestrictedValue o = (NullRestrictedValue) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, NullRestrictedValue.of((byte)-42,(short)1854));
             assertEquals(NullRestrictedValue.of((byte)20,(short)1854), o, "getAndSet NullRestrictedValue");
             NullRestrictedValue x = (NullRestrictedValue) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "getAndSet NullRestrictedValue value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, NullRestrictedValue.of((byte)20,(short)1854));
+
+            NullRestrictedValue o = (NullRestrictedValue) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, NullRestrictedValue.of((byte)-42,(short)1854));
+            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), o, "getAndSetAcquire NullRestrictedValue");
+            NullRestrictedValue x = (NullRestrictedValue) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "getAndSetAcquire NullRestrictedValue value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, NullRestrictedValue.of((byte)20,(short)1854));
+
+            NullRestrictedValue o = (NullRestrictedValue) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, NullRestrictedValue.of((byte)-42,(short)1854));
+            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), o, "getAndSetRelease NullRestrictedValue");
+            NullRestrictedValue x = (NullRestrictedValue) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "getAndSetRelease NullRestrictedValue value");
         }
 
 
@@ -497,7 +517,7 @@ public class VarHandleTestMethodHandleAccessNullRestrictedValue extends VarHandl
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(NullRestrictedValue.of((byte)-42,(short)1854), NullRestrictedValue.of((byte)20,(short)-31083));
             assertEquals(success, false, "failing weakCompareAndSet NullRestrictedValue");
             NullRestrictedValue x = (NullRestrictedValue) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "failing weakCompareAndSetRe NullRestrictedValue value");
+            assertEquals(NullRestrictedValue.of((byte)20,(short)1854), x, "failing weakCompareAndSet NullRestrictedValue value");
         }
 
         // Compare set and get
@@ -510,7 +530,6 @@ public class VarHandleTestMethodHandleAccessNullRestrictedValue extends VarHandl
             assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "getAndSet NullRestrictedValue value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(NullRestrictedValue.of((byte)20,(short)1854));
 
@@ -520,7 +539,6 @@ public class VarHandleTestMethodHandleAccessNullRestrictedValue extends VarHandl
             assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "getAndSetAcquire NullRestrictedValue value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(NullRestrictedValue.of((byte)20,(short)1854));
 
@@ -692,10 +710,10 @@ public class VarHandleTestMethodHandleAccessNullRestrictedValue extends VarHandl
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)-31083));
-                assertEquals(success, false, "failing weakCompareAndSetAcquire NullRestrictedValue");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)-31083));
+                assertEquals(success, false, "failing weakCompareAndSetRelease NullRestrictedValue");
                 NullRestrictedValue x = (NullRestrictedValue) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "failing weakCompareAndSetAcquire NullRestrictedValue value");
+                assertEquals(NullRestrictedValue.of((byte)-42,(short)1854), x, "failing weakCompareAndSetRelease NullRestrictedValue value");
             }
 
             {

@@ -325,7 +325,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         // Lazy
         {
             String x = (String) vh.getAcquire(recv);
-            assertEquals("foo", x, "getRelease String value");
+            assertEquals("foo", x, "getAcquire String value");
         }
 
         // Opaque
@@ -420,7 +420,7 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         // Lazy
         {
             String x = (String) vh.getAcquire();
-            assertEquals("foo", x, "getRelease String value");
+            assertEquals("foo", x, "getAcquire String value");
         }
 
         // Opaque
@@ -1348,57 +1348,57 @@ public class VarHandleTestAccessString extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.compareAndSet(array, 0, "foo", value);
         });
 
         // WeakCompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetVolatile
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, "foo", value);
         });
 
         // WeakCompareAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, "foo", value);
         });
 
         // CompareAndExchange
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchange(array, 0, "foo", value);
         });
 
         // CompareAndExchangeAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchangeAcquire(array, 0, "foo", value);
         });
 
         // CompareAndExchangeRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.compareAndExchangeRelease(array, 0, "foo", value);
         });
 
         // GetAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             String x = (String) vh.getAndSetRelease(array, 0, value);
         });
     }

@@ -317,7 +317,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         // Lazy
         {
             double x = (double) vh.getAcquire(recv);
-            assertEquals(1.0d, x, "getRelease double value");
+            assertEquals(1.0d, x, "getAcquire double value");
         }
 
         // Opaque
@@ -401,7 +401,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
         // Lazy
         {
             double x = (double) vh.getAcquire();
-            assertEquals(1.0d, x, "getRelease double value");
+            assertEquals(1.0d, x, "getAcquire double value");
         }
 
         // Opaque
@@ -680,7 +680,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.set(recv, 1.0d);
 
             double o = (double) vh.getAndAddRelease(recv, 2.0d);
-            assertEquals(1.0d, o, "getAndAddReleasedouble");
+            assertEquals(1.0d, o, "getAndAddRelease double");
             double x = (double) vh.get(recv);
             assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
         }
@@ -940,7 +940,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
             vh.set(1.0d);
 
             double o = (double) vh.getAndAddRelease(2.0d);
-            assertEquals(1.0d, o, "getAndAddReleasedouble");
+            assertEquals(1.0d, o, "getAndAddRelease double");
             double x = (double) vh.get();
             assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
         }
@@ -1203,7 +1203,7 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
                 vh.set(array, i, 1.0d);
 
                 double o = (double) vh.getAndAddRelease(array, i, 2.0d);
-                assertEquals(1.0d, o, "getAndAddReleasedouble");
+                assertEquals(1.0d, o, "getAndAddRelease double");
                 double x = (double) vh.get(array, i);
                 assertEquals((double)(1.0d + 2.0d), x, "getAndAddRelease double value");
             }

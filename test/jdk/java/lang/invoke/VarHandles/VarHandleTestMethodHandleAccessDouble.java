@@ -294,10 +294,30 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
             double o = (double) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 2.0d);
             assertEquals(1.0d, o, "getAndSet double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(2.0d, x, "getAndSet double value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, 2.0d);
+            assertEquals(1.0d, o, "getAndSetAcquire double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(2.0d, x, "getAndSetAcquire double value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 1.0d);
+
+            double o = (double) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, 2.0d);
+            assertEquals(1.0d, o, "getAndSetRelease double");
+            double x = (double) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(2.0d, x, "getAndSetRelease double value");
         }
 
         // get and add, add and get
@@ -504,7 +524,7 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(2.0d, 3.0d);
             assertEquals(success, false, "failing weakCompareAndSet double");
             double x = (double) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(1.0d, x, "failing weakCompareAndSetRe double value");
+            assertEquals(1.0d, x, "failing weakCompareAndSet double value");
         }
 
         // Compare set and get
@@ -517,7 +537,6 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             assertEquals(2.0d, x, "getAndSet double value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0d);
 
@@ -527,7 +546,6 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             assertEquals(2.0d, x, "getAndSetAcquire double value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(1.0d);
 
@@ -721,10 +739,10 @@ public class VarHandleTestMethodHandleAccessDouble extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 1.0d, 3.0d);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire double");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 1.0d, 3.0d);
+                assertEquals(success, false, "failing weakCompareAndSetRelease double");
                 double x = (double) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(2.0d, x, "failing weakCompareAndSetAcquire double value");
+                assertEquals(2.0d, x, "failing weakCompareAndSetRelease double value");
             }
 
             {

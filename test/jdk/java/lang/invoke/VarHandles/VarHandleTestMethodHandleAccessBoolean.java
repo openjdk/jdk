@@ -294,10 +294,30 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
             boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, false);
             assertEquals(true, o, "getAndSet boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(false, x, "getAndSet boolean value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
+            boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, false);
+            assertEquals(true, o, "getAndSetAcquire boolean");
+            boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(false, x, "getAndSetAcquire boolean value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
+            boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, false);
+            assertEquals(true, o, "getAndSetRelease boolean");
+            boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(false, x, "getAndSetRelease boolean value");
         }
 
 
@@ -560,7 +580,7 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(false, false);
             assertEquals(success, false, "failing weakCompareAndSet boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(true, x, "failing weakCompareAndSetRe boolean value");
+            assertEquals(true, x, "failing weakCompareAndSet boolean value");
         }
 
         // Compare set and get
@@ -573,7 +593,6 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             assertEquals(false, x, "getAndSet boolean value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(true);
 
@@ -583,7 +602,6 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             assertEquals(false, x, "getAndSetAcquire boolean value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(true);
 
@@ -833,10 +851,10 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, true, false);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire boolean");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, true, false);
+                assertEquals(success, false, "failing weakCompareAndSetRelease boolean");
                 boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(false, x, "failing weakCompareAndSetAcquire boolean value");
+                assertEquals(false, x, "failing weakCompareAndSetRelease boolean value");
             }
 
             {

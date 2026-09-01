@@ -317,7 +317,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Lazy
         {
             short x = (short) vh.getAcquire(recv);
-            assertEquals((short)0x0123, x, "getRelease short value");
+            assertEquals((short)0x0123, x, "getAcquire short value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
         // Lazy
         {
             short x = (short) vh.getAcquire();
-            assertEquals((short)0x0123, x, "getRelease short value");
+            assertEquals((short)0x0123, x, "getAcquire short value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             vh.set(recv, (short)0x0123);
 
             short o = (short) vh.getAndAddRelease(recv, (short)0x4567);
-            assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+            assertEquals((short)0x0123, o, "getAndAddRelease short");
             short x = (short) vh.get(recv);
             assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
             vh.set((short)0x0123);
 
             short o = (short) vh.getAndAddRelease((short)0x4567);
-            assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+            assertEquals((short)0x0123, o, "getAndAddRelease short");
             short x = (short) vh.get();
             assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessShort extends VarHandleBaseTest {
                 vh.set(array, i, (short)0x0123);
 
                 short o = (short) vh.getAndAddRelease(array, i, (short)0x4567);
-                assertEquals((short)0x0123, o, "getAndAddReleaseshort");
+                assertEquals((short)0x0123, o, "getAndAddRelease short");
                 short x = (short) vh.get(array, i);
                 assertEquals((short)((short)0x0123 + (short)0x4567), x, "getAndAddRelease short value");
             }

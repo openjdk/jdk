@@ -317,7 +317,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Lazy
         {
             char x = (char) vh.getAcquire(recv);
-            assertEquals('\u0123', x, "getRelease char value");
+            assertEquals('\u0123', x, "getAcquire char value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Lazy
         {
             char x = (char) vh.getAcquire();
-            assertEquals('\u0123', x, "getRelease char value");
+            assertEquals('\u0123', x, "getAcquire char value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndAddRelease(recv, '\u4567');
-            assertEquals('\u0123', o, "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddRelease char");
             char x = (char) vh.get(recv);
             assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndAddRelease('\u4567');
-            assertEquals('\u0123', o, "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddRelease char");
             char x = (char) vh.get();
             assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndAddRelease(array, i, '\u4567');
-                assertEquals('\u0123', o, "getAndAddReleasechar");
+                assertEquals('\u0123', o, "getAndAddRelease char");
                 char x = (char) vh.get(array, i);
                 assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
             }
