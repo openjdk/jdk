@@ -100,7 +100,7 @@ protected:
   void stop_service() override;
 
   void notify_alloc_stall(GCCause::Cause cause) override;
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
 
 private:
 
@@ -131,7 +131,7 @@ private:
   // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
   void notify_control_thread(GCCause::Cause cause);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
-  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  bool notify_control_thread(MonitorLocker &ml, GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.

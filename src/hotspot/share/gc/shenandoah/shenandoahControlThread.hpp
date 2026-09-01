@@ -52,7 +52,7 @@ protected:
   void stop_service() override;
 
   // Sets the requested cause, flag and notifies the control thread
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
   void notify_alloc_stall(GCCause::Cause cause) override;
 
 private:

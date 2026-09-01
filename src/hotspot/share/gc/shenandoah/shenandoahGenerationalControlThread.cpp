@@ -121,11 +121,14 @@ void ShenandoahGenerationalControlThread::notify_alloc_stall(GCCause::Cause caus
   // Tell the young generation heuristics about the stall.
   generation->heuristics()->record_allocation_stall();
 
-  // If an old mark increment is running, set cancellation flag for workers to observe.
-  maybe_cancel_old_cycle(cause);
-
-  // Finally, notify the control thread to wake up and run
-  notify_control_thread(cause, generation);
+  MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+  if (notify_control_thread(ml, cause, generation)) {
+    // We have set the request and notified the control thread.
+    if (gc_mode() == servicing_old) {
+      // If an old mark increment is running, set cancellation flag for workers to observe.
+      _heap->cancel_gc(cause);
+    }
+  }
 }
 
 void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest& request) {
@@ -192,8 +195,6 @@ void ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRe
 }
 
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_concurrent_gc(ShenandoahGCRequest &request) const {
-  assert(!(request.generation->is_old() && _heap->old_generation()->is_doing_mixed_evacuations()),
-             "Old heuristic should not request cycles while it waits for mixed evacuations");
 
   if (ShenandoahCollectorPolicy::is_explicit_gc(request.cause)) {
     prepare_for_explicit_gc(request);
@@ -204,6 +205,18 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
     _heap->set_unload_classes(request.generation->heuristics()->should_unload_classes());
   } else {
     _heap->set_unload_classes(false);
+  }
+
+  if (request.generation->is_old()) {
+    switch (_heap->old_generation()->state()) {
+      case ShenandoahOldGeneration::FILLING:
+      case ShenandoahOldGeneration::MARKING:
+        return servicing_old;
+      case ShenandoahOldGeneration::IDLE:
+        return bootstrapping_old;
+      default:
+        fatal("Should not be getting request for old collection in state: %s", _heap->old_generation()->state_name());
+    }
   }
 
   // preemption was requested or this is a regular cycle
@@ -289,11 +302,12 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
     _heap->print_before_gc();
     switch (gc_mode()) {
       case concurrent_normal: {
-        if (request.generation->is_old()) {
-          service_concurrent_old_cycle(request);
-        } else {
-          service_concurrent_normal_cycle(request);
-        }
+        service_concurrent_normal_cycle(request);
+        break;
+      }
+      case bootstrapping_old:
+      case servicing_old: {
+        service_concurrent_old_cycle(request);
         break;
       }
       case stw_full: {
@@ -380,14 +394,11 @@ void ShenandoahGenerationalControlThread::run_gc_cycle(const ShenandoahGCRequest
 //
 void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(const ShenandoahGCRequest& request) {
   log_info(gc, ergo)("Start GC cycle (%s)", request.generation->name());
-  if (request.generation->is_old()) {
-    service_concurrent_old_cycle(request);
-  } else {
-    service_concurrent_cycle(request.generation, request.cause, false);
-  }
+  service_concurrent_cycle(request.generation, request.cause, false);
 }
 
 void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const ShenandoahGCRequest& request) {
+  log_info(gc, ergo)("Start GC cycle (%s)", request.generation->name());
   ShenandoahOldGeneration* old_generation = _heap->old_generation();
   ShenandoahYoungGeneration* young_generation = _heap->young_generation();
   ShenandoahOldGeneration::State original_state = old_generation->state();
@@ -398,7 +409,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
 
   switch (original_state) {
     case ShenandoahOldGeneration::IDLE:
-      set_gc_mode(bootstrapping_old);
       old_generation->transition_to(ShenandoahOldGeneration::MARKING);
       // Configure the young generation's concurrent mark to put objects in
       // old regions into the concurrent mark queues associated with the old
@@ -417,7 +427,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       // and skip old marking.
       break;
     case ShenandoahOldGeneration::MARKING: {
-      set_gc_mode(servicing_old);
       ShenandoahGCSession session(request.cause, old_generation);
       resume_concurrent_old_cycle(old_generation, request.cause);
       if (old_generation->state() != ShenandoahOldGeneration::MARKING) {
@@ -431,7 +440,6 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
     }
     case ShenandoahOldGeneration::FILLING: {
       ShenandoahGCSession session(request.cause, old_generation);
-      set_gc_mode(servicing_old);
       _allow_old_preemption.set();
       const bool filling_complete = old_generation->entry_coalesce_and_fill();
       _allow_old_preemption.unset();
@@ -583,8 +591,9 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     // Cancel the old GC and wait for the control thread to start servicing the new request.
     log_info(gc, phases)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
-      _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
-      notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);
+      if (notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation)) {
+        _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
+      }
       ml.wait();
     }
     return true;
@@ -611,21 +620,24 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
   return false;
 }
 
-void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
+bool ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) {
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-  notify_control_thread(ml, cause, generation);
+  return notify_control_thread(ml, cause, generation);
 }
 
-void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation) {
+bool ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker &ml, GCCause::Cause cause,
+                                                                ShenandoahGeneration* generation) {
   assert(_control_lock.is_locked(), "Request lock must be held here");
   if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
-  } else {
-    log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
-    _requested_gc_cause = cause;
-    _requested_generation = generation;
-    ml.notify();
+    return false;
   }
+
+  log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
+  _requested_gc_cause = cause;
+  _requested_generation = generation;
+  ml.notify_all();
+  return true;
 }
 
 void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause) {
