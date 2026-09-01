@@ -66,11 +66,11 @@ import javax.net.ssl.SSLSocket;
 
 public class MLDSACertSelection extends SSLSocketTemplate {
 
-    private final String testCase = System.getProperty("test.case");
+    private static final String TEST_CASE = System.getProperty("test.case");
 
     @Override
     protected SSLContext createServerSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "success65", "fail44", "fallback65" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
@@ -87,13 +87,13 @@ public class MLDSACertSelection extends SSLSocketTemplate {
                             new Cert[] { Cert.EE_MLDSA_87 },
                             getServerContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
     @Override
     protected SSLContext createClientSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "success65", "success87", "fail44", "fallback65" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
@@ -105,7 +105,7 @@ public class MLDSACertSelection extends SSLSocketTemplate {
                             null,
                             getClientContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
@@ -120,8 +120,7 @@ public class MLDSACertSelection extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        String testCase = System.getProperty("test.case");
-        boolean expectFail = "fail44".equals(testCase);
+        boolean expectFail = "fail44".equals(TEST_CASE);
 
         try {
             new MLDSACertSelection().run();

@@ -47,11 +47,11 @@ import javax.net.ssl.SSLSocket;
 
 public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
 
-    private final String testCase = System.getProperty("test.case");
+    private static final String TEST_CASE = System.getProperty("test.case");
 
     @Override
     protected SSLContext createServerSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "successRsaCertSig", "failRsaCertSig" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
@@ -63,13 +63,13 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
                             new Cert[] { Cert.EE_MLDSA_44_BY_CA_MLDSA_65 },
                             getServerContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
     @Override
     protected SSLContext createClientSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "successRsaCertSig", "failRsaCertSig" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
@@ -81,7 +81,7 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
                             null,
                             getClientContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
@@ -96,10 +96,9 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        String testCase = System.getProperty("test.case");
-        boolean mldsaCertSig = testCase.endsWith("MldsaCertSig");
-        boolean expectFail = "failRsaCertSig".equals(testCase) ||
-                "failMldsaCertSig".equals(testCase);
+        boolean mldsaCertSig = TEST_CASE.endsWith("MldsaCertSig");
+        boolean expectFail = "failRsaCertSig".equals(TEST_CASE) ||
+                "failMldsaCertSig".equals(TEST_CASE);
 
         String signatureSchemes = mldsaCertSig
                 ? "mldsa44,mldsa65"
@@ -107,12 +106,12 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
         System.setProperty("jdk.tls.client.SignatureSchemes", signatureSchemes);
         System.setProperty("jdk.tls.server.SignatureSchemes", signatureSchemes);
 
-        if ("failRsaCertSig".equals(testCase)) {
+        if ("failRsaCertSig".equals(TEST_CASE)) {
             Security.setProperty("jdk.tls.disabledAlgorithms",
                     Security.getProperty("jdk.tls.disabledAlgorithms")
                     + ", rsa_pkcs1_sha384 usage certificateSignature");
         } else {
-            if ("failMldsaCertSig".equals(testCase)) {
+            if ("failMldsaCertSig".equals(TEST_CASE)) {
                 Security.setProperty("jdk.tls.disabledAlgorithms",
                         Security.getProperty("jdk.tls.disabledAlgorithms")
                         + ", mldsa65 usage certificateSignature");

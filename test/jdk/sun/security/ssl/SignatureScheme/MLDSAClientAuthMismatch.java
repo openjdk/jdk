@@ -60,11 +60,11 @@ import javax.net.ssl.SSLSocket;
 
 public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
 
-    private final String testCase = System.getProperty("test.case");
+    private static final String TEST_CASE = System.getProperty("test.case");
 
     @Override
     protected SSLContext createServerSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "success65", "failClientAuthMismatch" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
@@ -81,13 +81,13 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
                             new Cert[] { Cert.EE_MLDSA_44_BY_CA_MLDSA_65 },
                             getServerContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
     @Override
     protected SSLContext createClientSSLContext() throws Exception {
-        return switch (testCase) {
+        return switch (TEST_CASE) {
             case "success65" -> createSSLContext(
                     new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
                     new Cert[] { Cert.EE_MLDSA_65 },
@@ -105,7 +105,7 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
                     new Cert[] { Cert.EE_MLDSA_44_BY_CA_MLDSA_65 },
                     getClientContextParameters());
             default -> throw new RuntimeException(
-                    "Unknown test case: " + testCase);
+                    "Unknown test case: " + TEST_CASE);
         };
     }
 
@@ -122,8 +122,7 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        String testCase = System.getProperty("test.case");
-        boolean expectFail = "failClientAuthMismatch".equals(testCase);
+        boolean expectFail = "failClientAuthMismatch".equals(TEST_CASE);
 
         try {
             new MLDSAClientAuthMismatch().run();
