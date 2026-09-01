@@ -834,7 +834,6 @@ public class TestArrays {
         return dst[0];
     }
 
-
     @Run(test = "test29")
     public void test29_verifier() {
         MyValue2[] src = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 10, MyValue2.DEFAULT);
@@ -844,7 +843,6 @@ public class TestArrays {
         MyValue2 v = test29(src);
         Asserts.assertEQ(src[0], v);
     }
-
 
     // Check that scalar replacemnt is not applied when cloning an atomic array (JDK-8390513)
     // Test29a performs a clone() of an atomic array just before a safepoint.
