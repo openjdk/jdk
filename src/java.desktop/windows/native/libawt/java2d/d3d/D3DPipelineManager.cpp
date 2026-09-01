@@ -389,10 +389,10 @@ BOOL D3DPPLM_OsVersionMatches(USHORT osInfo) {
 
         J2dRlsTrace(J2D_TRACE_INFO, "[I] OS Version = ");
         if (bVersOk) {
-            if (osvi.dwMajorVersion == 10 && osvi.dwMinorVersion == 0) {
+            if (osvi.dwMajorVersion >= 10) {
                 if (osvi.wProductType == VER_NT_WORKSTATION) {
-                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS10_11 or newer\n");
-                    currentOS = OS_WINDOWS10_11;
+                    J2dRlsTrace(J2D_TRACE_INFO, "OS_WINDOWS10 or newer\n");
+                    currentOS = OS_WINDOWS10_OR_LATER;
                 } else {
                     J2dRlsTrace(J2D_TRACE_INFO, "OS_WINSERV_2016 or newer\n");
                     currentOS = OS_WINSERV_2016_PLUS;
