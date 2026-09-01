@@ -158,8 +158,6 @@ void DeviceList::Free() {
 OSStatus DeviceList::NotificationCallback(AudioObjectID inObjectID,
     UInt32 inNumberAddresses, const AudioObjectPropertyAddress inAddresses[], void *inClientData)
 {
-    DeviceList *pThis = (DeviceList *)inClientData;
-
     for (UInt32 i=0; i<inNumberAddresses; i++) {
         switch (inAddresses[i].mSelector) {
         case kAudioHardwarePropertyDevices:
