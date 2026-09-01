@@ -25,7 +25,6 @@
 
 package jdk.incubator.json;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -99,18 +98,14 @@ public non-sealed interface JsonObject extends JsonValue {
     static JsonObject of(Map<String, ? extends JsonValue> map) {
         Objects.requireNonNull(map);
 
-        if (map.isEmpty()) {
-            return new JsonObjectImpl(Collections.emptyMap());
-        } else {
-            var m = new LinkedHashMap<String, JsonValue>();
-            for (var e : map.entrySet()) {
-                var key = Objects.requireNonNull(e.getKey());
-                var value = Objects.requireNonNull(e.getValue());
-                if (m.putIfAbsent(key, value) != null) {
-                    throw new IllegalArgumentException("Duplicate member name: " + key);
-                }
+        LinkedHashMap<String, JsonValue> m = LinkedHashMap.newLinkedHashMap(map.size());
+        for (var e : map.entrySet()) {
+            var key = Objects.requireNonNull(e.getKey());
+            var value = Objects.requireNonNull(e.getValue());
+            if (m.putIfAbsent(key, value) != null) {
+                throw new IllegalArgumentException("Duplicate member name: " + key);
             }
-            return new JsonObjectImpl(m);
         }
+        return new JsonObjectImpl(m);
     }
 }

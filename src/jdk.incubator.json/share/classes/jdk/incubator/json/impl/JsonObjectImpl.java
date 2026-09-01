@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SequencedMap;
 
 import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonValue;
@@ -42,11 +43,11 @@ public final class JsonObjectImpl implements JsonObject, JsonValueSupport {
     private final int offset;
     private final char[] doc;
 
-    public JsonObjectImpl(Map<String, JsonValue> map) {
+    public JsonObjectImpl(SequencedMap<String, JsonValue> map) {
         this(map, -1, null);
     }
 
-    public JsonObjectImpl(Map<String, JsonValue> map, int o, char[] d) {
+    public JsonObjectImpl(SequencedMap<String, JsonValue> map, int o, char[] d) {
         theMembers = map;
         offset = o;
         doc = d;

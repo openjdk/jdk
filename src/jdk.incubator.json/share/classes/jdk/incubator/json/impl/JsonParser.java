@@ -31,7 +31,7 @@ import java.util.Deque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
+import java.util.SequencedMap;
 
 import jdk.incubator.json.JsonParseException;
 import jdk.incubator.json.JsonString;
@@ -64,7 +64,7 @@ public final class JsonParser {
     private sealed interface Container permits ObjectContainer, ArrayContainer {}
     private static final class ObjectContainer implements Container {
         final int startOffset;
-        final Map<String, JsonValue> members = new LinkedHashMap<>();
+        final SequencedMap<String, JsonValue> members = new LinkedHashMap<>();
         String name;
         ObjectState state = ObjectState.NAME_OR_END;
 
@@ -255,7 +255,7 @@ public final class JsonParser {
         } else {
             switch (containers.peek()) {
                 case ObjectContainer oc -> {
-                    oc.members.put(oc.name, jv);
+                    oc.members.putLast(oc.name, jv);
                     oc.name = null;
                     oc.state = ObjectState.COMMA_OR_END;
                 }

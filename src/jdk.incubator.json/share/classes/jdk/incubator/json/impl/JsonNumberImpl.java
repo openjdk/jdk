@@ -25,7 +25,10 @@
 
 package jdk.incubator.json.impl;
 
-import java.util.Optional;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
+
 import jdk.incubator.json.JsonNumber;
 
 /**
@@ -41,9 +44,9 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
     private final boolean fromFactory;
 
     private final LazyConstant<String> numString = LazyConstant.of(this::initNumString);
-    private final LazyConstant<Optional<Integer>> numInteger = LazyConstant.of(this::initNumInteger);
-    private final LazyConstant<Optional<Long>> numLong = LazyConstant.of(this::initNumLong);
-    private final LazyConstant<Optional<Double>> numDouble = LazyConstant.of(this::initNumDouble);
+    private final LazyConstant<OptionalInt> numInteger = LazyConstant.of(this::initNumInteger);
+    private final LazyConstant<OptionalLong> numLong = LazyConstant.of(this::initNumLong);
+    private final LazyConstant<OptionalDouble> numDouble = LazyConstant.of(this::initNumDouble);
 
     public JsonNumberImpl(char[] doc, boolean factory, int start, int end, int dec, int exp) {
         this.doc = doc;
@@ -92,19 +95,22 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
         return new String(doc, startOffset, endOffset - startOffset);
     }
 
-    private Optional<Integer> initNumInteger() {
+    private OptionalInt initNumInteger() {
         try {
-            return numLong.get().map(Math::toIntExact);
+            var value = numLong.get();
+            return value.isPresent()
+                ? OptionalInt.of(Math.toIntExact(value.getAsLong()))
+                : OptionalInt.empty();
         } catch (ArithmeticException _) {
-            return Optional.empty();
+            return OptionalInt.empty();
         }
     }
 
-    private Optional<Long> initNumLong() {
+    private OptionalLong initNumLong() {
         try {
             if (decimalOffset == -1 && exponentOffset == -1) {
                 // Fast-path immediate parseable Long format
-                return Optional.of(Long.parseLong(numString.get()));
+                return OptionalLong.of(Long.parseLong(numString.get()));
             } else {
                 // Decimal or exponent exists, derive value from
                 // following format -> sig * 10^power
@@ -134,7 +140,7 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                 // offset by fraction length or trailing zeros within a Java char[] input.
                 // This must be checked before calculating exp.
                 if (sigEnd == startOffset || (doc[startOffset] == '-' && sigEnd == startOffset + 1)) {
-                    return Optional.of(0L);
+                    return OptionalLong.of(0L);
                 }
                 int exp = exponentOffset == -1 ? 0 : Integer.parseInt(new String(doc,
                         exponentOffset + 1, endOffset - exponentOffset - 1));
@@ -145,24 +151,24 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                                 new String(doc, decimalOffset + 1, sigEnd - decimalOffset - 1));
                 if (power >= 0) {
                     long scale = Math.powExact(10L, power);
-                    return Optional.of(Math.multiplyExact(sig, scale));
+                    return OptionalLong.of(Math.multiplyExact(sig, scale));
                 } else {
                     long scale = Math.powExact(10L, Math.negateExact(power));
                     return sig % scale == 0
-                            ? Optional.of(Math.divideExact(sig, scale))
-                            : Optional.empty(); // fractional leftover, so not representable as long
+                            ? OptionalLong.of(Math.divideExact(sig, scale))
+                            : OptionalLong.empty(); // fractional leftover, so not representable as long
                 }
             }
         } catch (NumberFormatException | ArithmeticException _) {}
-        return Optional.empty();
+        return OptionalLong.empty();
     }
 
-    private Optional<Double> initNumDouble() {
+    private OptionalDouble initNumDouble() {
         var db = Double.parseDouble(numString.get());
         if (Double.isFinite(db)) {
-            return Optional.of(db);
+            return OptionalDouble.of(db);
         }
-        return Optional.empty();
+        return OptionalDouble.empty();
     }
 
     // Helper which converts this JNI to one that sees itself as created from a factory
