@@ -624,9 +624,9 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type *AddINode::add_ring(const Type *t0, const Type *t1) const {
-  const TypeInt *range0 = t0->is_int();
-  const TypeInt *range1 = t1->is_int();
+const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeInt* range0 = t0->is_int();
+  const TypeInt* range1 = t1->is_int();
 
   jlong lo_sum = (jlong)range0->_lo + (jlong)range1->_lo;
   jlong hi_sum = (jlong)range0->_hi + (jlong)range1->_hi;
@@ -647,7 +647,8 @@ const Type *AddINode::add_ring(const Type *t0, const Type *t1) const {
     hi_sum = max_jint;
   }
 
-  return TypeInt::make((jint)lo_sum, (jint)hi_sum,
+  return TypeInt::make(checked_cast<jint>(lo_sum),
+                       checked_cast<jint>(hi_sum),
                        MAX2(range0->_widen, range1->_widen));
 }
 
