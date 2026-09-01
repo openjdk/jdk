@@ -57,16 +57,16 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
   // Figure out the population target.
   size_t total = 0;
   for (uint i = 0; i < GenericTaskQueueSet::size(); i++) {
-    ShenandoahObjToScanQueue *q = queue(i);
+    ShenandoahObjToScanQueue* q = queue(i);
     assert(q != nullptr, "Sanity");
     total += q->full_size();
   }
-  size_t target_size = total / target_queues;
-
-  if (target_size == 0) {
+  if (total == 0) {
     // Nothing to do.
     return;
   }
+
+  size_t target_size = total / target_queues;
 
   // Redistribute the work between queues.
   // Do two passes to make sure all queues had a chance to push and pop.
@@ -122,7 +122,7 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
   // the local queue completely: leave some space for local pushes.
   for (uint i = 0; i < target_queues; i++) {
     ShenandoahObjToScanQueue* q = queue(i);
-    size_t q_limit = q->capacity() / 3 * 4;
+    size_t q_limit = q->capacity() / 4 * 3;
     size_t q_free  = (q_limit > q->size()) ? (q_limit - q->size()) : 0;
     size_t to_balance = MIN2<size_t>(q->overflow_stack()->size(), q_free);
     for (size_t c = 0; c < to_balance; c++) {

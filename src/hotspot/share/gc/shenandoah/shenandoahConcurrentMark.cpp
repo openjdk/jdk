@@ -174,7 +174,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
   uint nworkers = workers->active_workers();
 
   {
-    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_rebalance_queues, true);
+    ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_rebalance_queues);
     task_queues()->rebalance(nworkers);
   }
 
@@ -264,7 +264,7 @@ void ShenandoahConcurrentMark::finish_mark_work() {
     uint nworkers = heap->workers()->active_workers();
 
     {
-      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_rebalance_queues, true);
+      ShenandoahTimingsTracker t(ShenandoahPhaseTimings::final_mark_rebalance_queues);
       task_queues()->rebalance(nworkers);
     }
 
