@@ -316,10 +316,13 @@ class oopDesc {
   inline static bool is_instanceof_or_null(oop obj, Klass* klass);
 
   // identity hash; returns the identity hash key (computes it if necessary)
-  inline intptr_t identity_hash();
-  intptr_t slow_identity_hash();
-  inline bool fast_no_hash_check();
+  inline intptr_t identity_hash(Thread* current = nullptr);
+  inline bool has_identity_hash();
 
+private:
+  intptr_t slow_identity_hash(markWord current_mark, Thread* current);
+
+public:
   // Checks if the mark word needs to be preserved
   inline bool mark_must_be_preserved() const;
   inline bool mark_must_be_preserved(markWord m) const;

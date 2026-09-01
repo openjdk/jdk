@@ -123,10 +123,10 @@ static void assert_unlocked_state(markWord mark) {
 
 static void assert_copy_set_hash(markWord mark) {
   const intptr_t hash = 4711;
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   markWord copy = mark.copy_set_hash(hash);
   EXPECT_EQ(hash, copy.hash());
-  EXPECT_FALSE(copy.has_no_hash());
+  EXPECT_TRUE(copy.has_hash());
 }
 
 static void assert_type(markWord mark) {
@@ -141,7 +141,7 @@ TEST_VM(markWord, prototype) {
 
   assert_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -162,7 +162,7 @@ TEST_VM(markWord, inline_type_prototype) {
 
   assert_inline_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 }
 
@@ -181,7 +181,7 @@ TEST_VM(markWord, null_free_flat_array_prototype) {
   assert_flat_array_type(mark);
   EXPECT_TRUE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -199,7 +199,7 @@ TEST_VM(markWord, nullable_flat_array_prototype) {
   assert_flat_array_type(mark);
   EXPECT_FALSE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -222,7 +222,7 @@ TEST_VM(markWord, null_free_array_prototype) {
 
   assert_null_free_array_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);

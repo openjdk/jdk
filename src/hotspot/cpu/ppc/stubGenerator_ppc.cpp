@@ -3013,6 +3013,306 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  // ==========================================================================
+  // AES helper functions for PPC64
+  //
+  // These emit the AES round instructions.
+  // Each call to these helpers emits a sequence of vcipher/vncipher
+  // instructions.
+  //
+  // ==========================================================================
+  // Emits the AES encrypt round instructions.
+  //
+  // vRet:    in/out — the AES state (plaintext in, ciphertext out)
+  // key:     register holding pointer to expanded key array
+  // keylen:  register holding key length (44/52/60)
+  //
+  void aes_encrypt_rounds(VectorRegister vRet,
+                          Register key, Register keylen, Register tmp,
+                          VectorRegister vKey1, VectorRegister vKey2,
+                          VectorRegister vKey3, VectorRegister vKey4) {
+    Label L_doLast;
+
+    // round 0: AddRoundKey
+    __ load_word_vector_unaligned(vKey1, 0, key, tmp);
+    __ vxor            (vRet, vRet, vKey1);
+
+    // rounds 2-5
+    __ load_word_vector_unaligned(vKey1, 16, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 32, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 48, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 64, key, tmp);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
+
+    // rounds 6-9
+    __ load_word_vector_unaligned(vKey1, 80, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 96, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 128, key, tmp);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
+
+    // rounds 10-11
+    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 160, key, tmp);
+
+    __ cmpwi           (CR0, keylen, 44);   // AES-128 -> final rounds
+    __ beq             (CR0, L_doLast);
+
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+
+    // rounds 12-13
+    __ load_word_vector_unaligned(vKey1, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 192, key, tmp);
+
+    __ cmpwi           (CR0, keylen, 52);   // AES-192 -> final rounds
+    __ beq             (CR0, L_doLast);
+#ifdef ASSERT
+      __ cmpwi         (CR0, keylen, 60);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_encrypt_rounds - invalid key length");
+#endif
+
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+
+    // rounds 14-15
+    __ load_word_vector_unaligned(vKey1, 208, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 224, key, tmp);
+
+    __ bind(L_doLast);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipherlast     (vRet, vRet, vKey2);
+  }
+
+
+  // ==========================================================================
+  // Emits the AES decrypt round instructions.
+  //
+  // vRet:    in/out — the AES state (ciphertext in, plaintext out)
+  // key:     register holding pointer to expanded key array
+  // keylen:  register holding key length (44/52/60)
+  //
+  void aes_decrypt_rounds(VectorRegister vRet,
+                          Register key, Register keylen, Register tmp,
+                          VectorRegister vKey1, VectorRegister vKey2,
+                          VectorRegister vKey3, VectorRegister vKey4,
+                          VectorRegister vKey5) {
+    Label L_doLast, L_do44, L_do52;
+
+    __ cmpwi           (CR0, keylen, 44);
+    __ beq             (CR0, L_do44);
+
+    __ cmpwi           (CR0, keylen, 52);
+    __ beq             (CR0, L_do52);
+
+#ifdef ASSERT
+      __ cmpwi         (CR0, keylen, 60);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_decrypt_rounds - invalid key length");
+#endif
+    // ---- AES-256: round keys 15-11 ----
+    __ load_word_vector_unaligned(vKey1, 224, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 208, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 192, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey5, 160, key, tmp);
+
+    __ vxor            (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipher        (vRet, vRet, vKey5);
+    __ b               (L_doLast);
+
+    __ align(32);
+    // ---- AES-192: round keys 13-11 ----
+    __ bind            (L_do52);
+    __ load_word_vector_unaligned(vKey1, 192, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 160, key, tmp);
+
+    __ vxor            (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ b               (L_doLast);
+
+    __ align(32);
+    // ---- AES-128: round key 11 ----
+    __ bind            (L_do44);
+    __ load_word_vector_unaligned(vKey1, 160, key, tmp);
+    __ vxor            (vRet, vRet, vKey1);
+
+    // ---- Common rounds 10-1 ----
+    __ bind            (L_doLast);
+    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 128, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 96,  key, tmp);
+    __ load_word_vector_unaligned(vKey5, 80,  key, tmp);
+
+    __ vncipher        (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipher        (vRet, vRet, vKey5);
+    __ load_word_vector_unaligned(vKey1, 64, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 48, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 32, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 16, key, tmp);
+    __ load_word_vector_unaligned(vKey5, 0,  key, tmp);
+    __ vncipher        (vRet, vRet, vKey1);
+    __ vncipher        (vRet, vRet, vKey2);
+    __ vncipher        (vRet, vRet, vKey3);
+    __ vncipher        (vRet, vRet, vKey4);
+    __ vncipherlast    (vRet, vRet, vKey5);
+  }
+
+  // ==========================================================================
+  // CBC Encrypt stub — using helper functions
+  //   from:      R3_ARG1          - source byte array address (plaintext)
+  //   to:        R4_ARG2          - destination byte array address (ciphertext)
+  //   key:       R5_ARG3          - round key array
+  //   rvec:      R6_ARG4          - r vector byte array address (initialization vector)
+  //   input_len: R7_ARG5          - length of input in bytes
+  //
+  // Returns:
+  //   R3_RET - number of bytes processed
+  //
+  address generate_cipherBlockChaining_encryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ function_entry();
+
+    Label L_enc_loop;
+
+    Register from       = R3_ARG1;
+    Register to         = R4_ARG2;
+    Register key        = R5_ARG3;
+    Register rvec       = R6_ARG4;
+    Register input_len  = R7_ARG5;
+
+    Register keylen     = R8;
+    Register tmp        = R9;
+    Register len        = R10;
+
+    VectorRegister vRet  = VR0;
+    VectorRegister vKey1 = VR1;
+    VectorRegister vKey2 = VR2;
+    VectorRegister vKey3 = VR3;
+    VectorRegister vKey4 = VR4;
+    VectorRegister vIn   = VR5;
+    VectorRegister vp    = VR6;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp  = VR7;
+
+    __ mr              (len, input_len);
+
+    // vp must be computed once, before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
+
+    __ load_byte_vector_unaligned(vRet, 0, rvec, tmp, vp);
+
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
+                                arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    __ align(32);
+    __ bind(L_enc_loop);
+    __ load_byte_vector_unaligned(vIn, 0, from, tmp, vp);
+    __ addi            (from, from, 16);
+    __ vxor            (vRet, vRet, vIn);                      // CBC XOR
+    aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
+    __ addi            (to, to, 16);
+    __ addic_          (len, len, -16);
+    __ bne             (CR0, L_enc_loop);
+
+    // save the last ciphertext block in rvec; it is the IV for the next call
+    __ store_byte_vector_unaligned(vRet, 0, rvec, tmp, vp, vTmp);
+    __ mr              (R3_RET, input_len);
+    __ blr();
+
+    return start;
+  }
+
+  // ==========================================================================
+  //  CBC Decrypt stub
+  //  Arguments:
+  //    R3_ARG1 - from:      source byte array address (ciphertext)
+  //    R4_ARG2 - to:        destination byte array address (plaintext)
+  //    R5_ARG3 - key:       round key array
+  //    R6_ARG4 - rvec:      r vector byte array address (in/out), holds the
+  //                         initialization vector on entry and is updated with
+  //                         the last ciphertext block on exit
+  //    R7_ARG5 - input_len: length of input in bytes, a multiple of 16
+  //
+  //  Returns:
+  //    R3_RET  - number of bytes processed
+  // ==========================================================================
+
+  address generate_cipherBlockChaining_decryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ function_entry();
+
+    Label L_dec_loop;
+
+    Register from       = R3_ARG1;
+    Register to         = R4_ARG2;
+    Register key        = R5_ARG3;
+    Register rvec       = R6_ARG4;
+    Register input_len  = R7_ARG5;
+
+    Register keylen     = R8;
+    Register tmp        = R9;
+    Register len        = R10;
+
+    VectorRegister vRet     = VR0;
+    VectorRegister vKey1    = VR1;
+    VectorRegister vKey2    = VR2;
+    VectorRegister vKey3    = VR3;
+    VectorRegister vKey4    = VR4;
+    VectorRegister vKey5    = VR5;
+    VectorRegister vIV      = VR6;
+    VectorRegister vSavedCT = VR7;
+    VectorRegister vp       = VR8;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp     = VR9;
+    __ mr              (len, input_len);
+    // vp must be computed before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
+
+    __ load_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);
+
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
+                                arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    __ align(32);
+    __ bind(L_dec_loop);
+    __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
+    __ addi            (from, from, 16);
+    __ vor             (vSavedCT, vRet, vRet);      // AES will destroy vRet
+    aes_decrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4, vKey5);
+    __ vxor            (vRet, vRet, vIV);           // CBC XOR (after decrypt)
+    __ vor             (vIV, vSavedCT, vSavedCT);   // IV = previous ciphertext
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
+    __ addi            (to, to, 16);
+    __ addic_          (len, len, -16);
+    __ bne             (CR0, L_dec_loop);
+
+    __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp, vTmp);
+    __ mr              (R3_RET, input_len);
+    __ blr();
+
+    return start;
+  }
+
   address generate_sha256_implCompress(StubId stub_id) {
     assert(UseSHA, "need SHA instructions");
     bool multi_block;
@@ -4889,6 +5189,8 @@ void generate_lookup_secondary_supers_table_stub() {
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
     }
 
     if (UseSHA256Intrinsics) {

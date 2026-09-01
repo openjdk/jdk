@@ -25,8 +25,9 @@
 /*
  * @test
  * @summary Test AOT cache support for array classes in custom class loaders.
- * @bug 8353298 8356838
+ * @bug 8353298 8356838 8390471
  * @requires vm.cds.supports.aot.class.linking
+ * @enablePreview
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build ReturnIntegerAsString
  * @build AOTCacheSupportForCustomLoaders
@@ -60,12 +61,23 @@ public class AOTCacheSupportForCustomLoaders {
         String modulePath = modulePackager.getOutputDir().toString();
         modulePackager.createModularJar("com.test");
 
-        SimpleCDSAppTester.of("AOTCacheSupportForCustomLoaders")
+        test(modulePath, false);
+        test(modulePath, true); // Test case for JDK-8390471
+    }
+
+    static void test(String modulePath, boolean preview) throws Exception {
+        SimpleCDSAppTester tester =  SimpleCDSAppTester.of("AOTCacheSupportForCustomLoaders")
             .classpath("app.jar")
             .addVmArgs("-Xlog:aot+class=debug", "-Xlog:aot", "-Xlog:cds",
                        "--module-path=" + modulePath,
-                       "--add-modules=com.test")
-            .appCommandLine("AppWithCustomLoaders", modulePath)
+                       "--add-modules=com.test");
+            if (preview) {
+            // Test case for JDK-8390471
+            tester.addVmArgs("--enable-preview",
+                             "-XX:+IgnoreUnrecognizedVMOptions",
+                             "-XX:+TestAOTAdapterLinkFailure"); // TestAOTAdapterLinkFailure is a developer flag
+            }
+            tester.appCommandLine("AppWithCustomLoaders", modulePath)
             .setTrainingChecker((OutputAnalyzer out) -> {
                     out.shouldContain("Skipping AppWithCustomLoaders$MyLoadeeC: Not loaded from \"file:\" code source")
                        .shouldContain("Skipping AppWithCustomLoaders$MyLoadeeD: super AppWithCustomLoaders$MyLoadeeC is excluded")

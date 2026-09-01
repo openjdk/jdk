@@ -55,36 +55,19 @@ void G1HeapRegionRemSet::uninstall_cset_group() {
   _cset_group = nullptr;
 }
 
-G1HeapRegionRemSet::G1HeapRegionRemSet(G1HeapRegion* hr) :
+G1HeapRegionRemSet::G1HeapRegionRemSet() :
   _code_roots(),
   _cset_group(nullptr),
-  _hr(hr),
   _state(Untracked) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {
   assert(!has_cset_group(), "Still assigned to a CSet group");
 }
 
-void G1HeapRegionRemSet::clear_fcc() {
-  G1FromCardCache::clear(_hr->hrm_index());
-}
-
-void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
-  if (!only_cardset) {
-    _code_roots.clear();
-  }
-  clear_fcc();
-
-  if (has_cset_group()) {
-    card_set()->clear();
-    assert(card_set()->occupied() == 0, "Should be clear.");
-  }
-
-  if (!keep_tracked) {
-    set_state_untracked();
-  } else {
-    assert(is_tracked(), "must be");
-  }
+void G1HeapRegionRemSet::clear() {
+  assert(card_set_is_empty(), "Card set must be empty");
+  _code_roots.clear();
+  set_state_untracked();
 }
 
 void G1HeapRegionRemSet::reset_code_root_table_scanner() {
