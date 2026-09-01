@@ -74,7 +74,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          `jdk.virtualThreadScheduler.{parallelism,maxPoolSize}` set to 1, no
  *          carrier remains to compensate for the blocked selector, and the
  *          initial client request cannot make progress. We could increase the
- *          VT scheduler capacity, but this contradicts with the reason with fix
+ *          VT scheduler capacity, but this contradicts with the reason we fix
  *          it to 1 in the first place: to starve the HTTP Client selector
  *          threads.
  *
@@ -100,6 +100,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class IdleConnectionTimeoutReuseTest {
 
+    /**
+     * @implNote
+     * This test has several timing-sensitive assumptions. If these assumptions
+     * hold, the test will verify the subject behavior. If not, the test will
+     * and should pass anyway. Therefore, it is not a problem if the assumptions
+     * don't hold. Local testing has shown that these assumptions do hold almost
+     * always.
+     */
     @ParameterizedTest
     @EnumSource(InfraFactory.class)
     void testDelayedIdleTimeout(InfraFactory infraFactory) throws Throwable {
@@ -117,7 +125,7 @@ class IdleConnectionTimeoutReuseTest {
             // assumption.
             Thread.sleep(Utils.adjustTimeout(200));
 
-            // In `@test`,
+            // In the JTreg `@test` configuration above,
             //
             // 1. Virtual thread pool is configured to have at most 1 carrier thread.
             // 2. HTTP client's selector is configured to use virtual threads.
