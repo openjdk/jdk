@@ -113,8 +113,9 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      *         if, after any required inference, multiplying the element counts does not
      *         yield the same element count as the flattened projection of this
      *         sequence layout
-     * @throws ArithmeticException if the flattened element count cannot be represented
-     *                             as a {@code long}
+     * @throws UnsupportedOperationException if the element count of a flattened
+     *                                       representation of this sequence layout cannot
+     *                                       be represented as a {@code long}
      */
     SequenceLayout reshape(long... elementCounts);
 
@@ -145,8 +146,9 @@ public sealed interface SequenceLayout extends MemoryLayout permits SequenceLayo
      * @return a sequence layout with the same size as this layout
      *         (but, possibly, with different element count), whose
      *         element layout is not a sequence layout
-     * @throws ArithmeticException if the flattened element count cannot be represented
-     *                             as a {@code long}
+     * @throws UnsupportedOperationException if the element count of a flattened
+     *                                       representation of this sequence layout cannot
+     *                                       be represented as a {@code long}
      */
     SequenceLayout flatten();
 

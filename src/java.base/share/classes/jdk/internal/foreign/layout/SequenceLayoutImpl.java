@@ -116,7 +116,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         if (elementCounts.length == 0) {
             throw new IllegalArgumentException();
         }
-        SequenceLayout flat = flatten(); // May throw ArithmeticException
+        SequenceLayout flat = flatten(); // May throw UnsupportedOperationException
         long expectedCount = flat.elementCount();
 
         long actualCount = 1;
@@ -185,7 +185,11 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         long count = elementCount();
         elemLayout = elementLayout();
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
-            count = Math.multiplyExact(count, elemSeq.elementCount());
+            try {
+                count = Math.multiplyExact(count, elemSeq.elementCount());
+            } catch (ArithmeticException e) {
+                throw new UnsupportedOperationException("Flattening of elements gave a count that is out of range.", e);
+            }
             elemLayout = elemSeq.elementLayout();
         }
         return MemoryLayout.sequenceLayout(count, elemLayout);

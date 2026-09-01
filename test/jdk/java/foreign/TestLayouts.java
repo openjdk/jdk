@@ -239,7 +239,7 @@ public class TestLayouts {
         long n = 1L << 32; // n * n overflows and wraps to zero which might be a corner case
         SequenceLayout innerLayout = MemoryLayout.sequenceLayout(n, empty);
         SequenceLayout layout = MemoryLayout.sequenceLayout(n, innerLayout);
-        assertThrows(ArithmeticException.class, layout::flatten);
+        assertThrows(UnsupportedOperationException.class, layout::flatten);
     }
 
     @Test
