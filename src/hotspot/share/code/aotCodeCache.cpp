@@ -2005,6 +2005,7 @@ void AOTCodeAddressTable::init_extrs() {
 #endif
 
   ADD_EXTERNAL_ADDRESS(StubRoutines::crc_table_addr());
+  ADD_EXTERNAL_ADDRESS(StubRoutines::crc32c_table_addr());
 #ifndef PRODUCT
   ADD_EXTERNAL_ADDRESS(&SharedRuntime::_partial_subtype_ctr);
 #endif

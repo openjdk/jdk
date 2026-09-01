@@ -7829,12 +7829,18 @@ static const int64_t right_3_bits = right_n_bits(3);
 
   address generate_updateBytesCRC32C(){
     assert(UseCRC32CIntrinsics, "what are we doing here?");
+    StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
 
     __ align(CodeEntryAlignment);
-    StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
     StubCodeMark mark(this, stub_id);
 
-    address start = __ pc();
+    start = __ pc();
 
     const Register crc    = c_rarg0;  // crc
     const Register buf    = c_rarg1;  // source java byte array address
@@ -7851,6 +7857,9 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     __ leave(); // required for proper stackwalking of RuntimeStub frame
     __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }

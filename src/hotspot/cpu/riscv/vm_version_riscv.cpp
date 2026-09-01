@@ -210,7 +210,7 @@ void VM_Version::common_initialize() {
     }
   } else {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      warning("CRC32 intrinsic are not available on this CPU.");
+      warning("CRC32 intrinsic is not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
@@ -221,7 +221,7 @@ void VM_Version::common_initialize() {
     }
   } else {
     if (UseCRC32CIntrinsics) {
-      warning("CRC32C intrinsic are not available on this CPU.");
+      warning("CRC32C intrinsic is not available on this CPU.");
       FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
     }
   }
@@ -511,6 +511,8 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
       return false;
     }
     break;
+  // CRC32C intrinsics require Zbc. Gate C2 inlining on UseCRC32CIntrinsics.
+  // C1 and the interpreter call the stub routine via the normal path.
   case vmIntrinsics::_updateBytesCRC32C:
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) {
