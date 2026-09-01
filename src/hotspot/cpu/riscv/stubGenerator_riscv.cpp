@@ -8146,6 +8146,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     ADD(_decodeBlock_fromBase64URL);
     ADD(_sha256_round_consts);
     ADD(_sha512_round_consts);
+    ADD(StubRoutines::crc32c_table_addr());
 #undef ADD
   }
 #endif // INCLUDE_CDS
