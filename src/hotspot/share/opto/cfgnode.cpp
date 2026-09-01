@@ -2138,6 +2138,13 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
 // A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
 // remove it normally because a Phi can be a transitive output of itself.
 bool PhiNode::is_dead_phi() {
+  // Early return before we create the worklist
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    if (!fast_out(i)->is_Phi()) {
+      return false;
+    }
+  }
+
   ResourceMark rm;
   Unique_Node_List worklist;
   worklist.push(this);
