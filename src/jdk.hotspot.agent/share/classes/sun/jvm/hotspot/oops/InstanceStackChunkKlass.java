@@ -53,14 +53,28 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   }
 
   public long getObjectSize(Oop object) {
-    // Mirrors InstanceStackChunkKlass::oop_size in the VM.
+    // Mirrors InstanceStackChunkKlass::oop_size in the VM, in bytes.
     long stackSizeInWords = ((IntField) findField("size", "I")).getValue(object);
+    return instanceSize(stackSizeInWords);
+  }
+
+  private long instanceSize(long stackSizeInWords) {
+    long sizeInWords = getSizeHelper() + stackSizeInWords + gcDataSize(stackSizeInWords);
+    return Oop.alignObjectSize(sizeInWords * VM.getVM().getAddressSize());
+  }
+
+  private static long gcDataSize(long stackSizeInWords) {
+    return bitmapSize(stackSizeInWords);
+  }
+
+  private static long bitmapSize(long stackSizeInWords) {
+    long bitsPerWord = VM.getVM().getBytesPerWord() * 8L;
+    long bits = bitmapSizeInBits(stackSizeInWords);
+    return ((bits + bitsPerWord - 1) & ~(bitsPerWord - 1)) / bitsPerWord;
+  }
+
+  private static long bitmapSizeInBits(long stackSizeInWords) {
     VM vm = VM.getVM();
-    long bitsPerWord = vm.getBytesPerWord() * 8L;
-    long bitmapBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
-    bitmapBits = (bitmapBits + bitsPerWord - 1) & ~(bitsPerWord - 1);
-    long gcDataInWords = bitmapBits / bitsPerWord;
-    long sizeInWords = getSizeHelper() + stackSizeInWords + gcDataInWords;
-    return Oop.alignObjectSize(sizeInWords * vm.getAddressSize());
+    return stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
   }
 }
