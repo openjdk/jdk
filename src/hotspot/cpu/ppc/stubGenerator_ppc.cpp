@@ -2775,7 +2775,6 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
     Register key            = R5_ARG3;  // round key array
@@ -2820,7 +2819,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
 
     address start = __ function_entry();
-
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
