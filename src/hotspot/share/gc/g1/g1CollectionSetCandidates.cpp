@@ -139,6 +139,7 @@ int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CS
     return 1;
   }
 
+  // Make ordering deterministic by breaking ties with group ids.
   if (group_1->group_id() < group_2->group_id()) {
     return -1;
   } else if (group_1->group_id() > group_2->group_id()) {
