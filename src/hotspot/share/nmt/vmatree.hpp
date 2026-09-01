@@ -244,22 +244,20 @@ public:
     struct KVEntry {
       MemTag mt;
       SingleDiff single_diff;
-      static MemTag key(const KVEntry& entry) { return entry.mt; }
-      static int hash(MemTag mt) { return (int)mt; }
-      static bool equals(MemTag mt1, MemTag mt2) { return mt1 == mt2; }
+      static int hash(const KVEntry& kv) { return (int)kv.mt; }
+      static bool equals(const KVEntry& a, const KVEntry& b) { return a.mt == b.mt; }
       KVEntry(const KVEntry&) = default;
       KVEntry() = default;
       KVEntry(MemTag mt, SingleDiff sd) : mt(mt), single_diff(sd) {}
     };
 
     using Table = OpenAddressedHashTable<KVEntry,
-                                         decltype(&KVEntry::key),
                                          decltype(&KVEntry::hash),
                                          decltype(&KVEntry::equals),
                                          mtNMT, AllocFailStrategy::EXIT_OOM, 100>;
     Table _table;
   public:
-    SummaryDiff() : _table(&KVEntry::key, &KVEntry::hash, &KVEntry::equals) {
+    SummaryDiff() : _table(&KVEntry::hash, &KVEntry::equals) {
     }
 
     SingleDiff& tag(MemTag tag);

@@ -37,9 +37,9 @@
 // This is an open-addressed hashtable which stores trivial key-value pairs.
 // It is backed by a CHeap allocated array which it reallocates, causing underlying pointers to be invalidated.
 // Membership is stored in an occupancy bitmap, so the memory overhead of this hashtable is fairly low.
-// The KVElement is a container for your key and value. Key, Hash, and Equals are function object types.
-// Key is an accessor to the key of a KVElement, Hash returns an int as the hash of the key, and
-// Equals is a comparison function returning a boolean.
+// The KVElement is a container for your key and value. HashFun, and EqualsFun are function object types.
+// HashFun returns an int as the hash of the KVElement, and
+// Equals returns a boolean and is a comparison function of the KVElement.
 // Instances are supplied via the constructor.
 // Lookups, and not only insertions, may resize the array, causing all previously acquired pointers to become invalidated.
 // For example, this is unsafe code:
@@ -51,7 +51,7 @@
 // do_thing(a_lookup, b_lookup);
 // Here, a_lookup may have been invalidated at the point of b_lookup.
 template <typename KVElement,
-          typename Key, typename Hash, typename Equals,
+          typename HashFun, typename EqualsFun,
           MemTag MT = mtNMT,
           AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM,
           int LoadFactorPercentage = 75> // Load factor until resizing
@@ -67,9 +67,8 @@ private:
   static constexpr int small_size = 4;
   using OccupancyBitMap = CHeapBitMap;
 
-  Key _key;
-  Hash _hash;
-  Equals _equals;
+  HashFun _hash;
+  EqualsFun _equals;
   alignas(KVElement) char _small[small_size * sizeof(KVElement)];
   KVElement* small() { return reinterpret_cast<KVElement*>(_small); };
   KVElement* _members;
@@ -114,8 +113,7 @@ private:
                          bool* found) const {
     assert(is_power_of_2(length), "must be");
     assert(*occupied < length, "must still have room for insertion");
-    decltype(auto) key_value = _key(kv);
-    int index = _hash(key_value) & (length - 1);
+    int index = _hash(kv) & (length - 1);
     for (int probes = 0; probes < length; probes++) {
       KVElement& element = members[index];
       if (!occupied_map.at(index)) {
@@ -125,8 +123,7 @@ private:
         (*occupied)++;
         return element;
       }
-      decltype(auto) element_key = _key(element);
-      if (_equals(element_key, key_value)) {
+      if (_equals(element, kv)) {
         *found = true;
         return element;
       }
@@ -204,8 +201,8 @@ private:
   }
 
  public:
-  OpenAddressedHashTable(Key key, Hash hash, Equals equals) :
-    _key(key), _hash(hash), _equals(equals),
+  OpenAddressedHashTable(HashFun hash, EqualsFun equals) :
+    _hash(hash), _equals(equals),
     _small(), _members(small()), _length(small_size), _occupied(0),
     _occupied_map(small_size, MT) {
     clear_members(small(), small_size);

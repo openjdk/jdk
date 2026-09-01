@@ -161,16 +161,14 @@ void MemBaseline::baseline(bool summaryOnly) {
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
-  auto stack = [](const VirtualMemoryAllocationSite& vmas) -> const NativeCallStack& { return *vmas.call_stack(); };
-  auto hash = [](const NativeCallStack& ncs) { return ncs.calculate_hash(); };
-  auto equals = [](const NativeCallStack& a, const NativeCallStack& b) { return a.equals(b); };
+  auto hash = [](const VirtualMemoryAllocationSite& vmas) { return vmas.call_stack()->calculate_hash(); };
+  auto equals = [](const VirtualMemoryAllocationSite& a, const VirtualMemoryAllocationSite& b) { return a.equals(b); };
   using VirtualMemorySiteTable = OpenAddressedHashTable<VirtualMemoryAllocationSite,
-                                                        decltype(stack),
                                                         decltype(hash),
                                                         decltype(equals),
                                                         mtNMT, AllocFailStrategy::RETURN_NULL,
                                                         75>;
-  VirtualMemorySiteTable vht(stack, hash, equals);
+  VirtualMemorySiteTable vht(hash, equals);
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
   _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
@@ -268,7 +266,7 @@ void MemBaseline::malloc_sites_to_allocation_site_and_tag_order() {
 void MemBaseline::virtual_memory_sites_to_size_order() {
   if (_virtual_memory_sites_order != by_size) {
     ::qsort(_virtual_memory_sites, _virtual_memory_sites_length, sizeof(VirtualMemoryAllocationSite),
-          [](const void* a, const void* b) -> int {
+          [](const void* a, const void* b) {
             return compare_virtual_memory_size(*static_cast<const VirtualMemoryAllocationSite*>(a),
                                                *static_cast<const VirtualMemoryAllocationSite*>(b));
           });
@@ -279,7 +277,7 @@ void MemBaseline::virtual_memory_sites_to_size_order() {
 void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
   if (_virtual_memory_sites_order != by_site) {
     ::qsort(_virtual_memory_sites, _virtual_memory_sites_length, sizeof(VirtualMemoryAllocationSite),
-            [](const void* a, const void* b) -> int {
+            [](const void* a, const void* b) {
               return compare_virtual_memory_site(*static_cast<const VirtualMemoryAllocationSite*>(a),
                                                  *static_cast<const VirtualMemoryAllocationSite*>(b));
             });

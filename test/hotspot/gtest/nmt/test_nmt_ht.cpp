@@ -29,24 +29,20 @@
 struct KVElement {
   int k;
   int v;
-  static int hash(int x) {
-    return x & 0xFF;
+  static int hash(const KVElement& a) {
+    return a.k & 0xFF;
   }
-  static bool equals(int v1, int v2) {
-    return v1 == v2;
+  static bool equals(const KVElement& a, const KVElement& b) {
+    return a.k == b.k;
   }
 };
 
 TEST(NMTOAHTTest, Basic) {
-  auto key = [](const KVElement& kv) { return kv.k; };
-  auto hash = [](int x) { return KVElement::hash(x); };
-  auto equals = [](int v1, int v2) { return KVElement::equals(v1, v2); };
   using BasicHT = OpenAddressedHashTable<KVElement,
-                                         decltype(key),
-                                         decltype(hash),
-                                         decltype(equals)>;
+                                         decltype(&KVElement::hash),
+                                         decltype(&KVElement::equals)>;
 
-  BasicHT ht(key, hash, equals);
+  BasicHT ht(&KVElement::hash, &KVElement::equals);
   KVElement kv{1, 1};
   bool found = false;
   ht.put_if_absent(kv, &found);
@@ -80,19 +76,15 @@ struct PointerKeyElement {
 };
 
 TEST(NMTOAHTTest, PointerKeyAccessor) {
-  auto key = [](const PointerKeyElement& kv) -> const PointerKey& {
-    return *kv.key();
-  };
-  auto hash = [](const PointerKey& key) { return key.hash(); };
-  auto equals = [](const PointerKey& v1, const PointerKey& v2) {
-    return v1.equals(v2);
+  auto hash = [](const PointerKeyElement& kv) { return kv.key()->hash(); };
+  auto equals = [](const PointerKeyElement& a, const PointerKeyElement& b) {
+    return a.key()->equals(*b.key());
   };
   using PointerKeyHT = OpenAddressedHashTable<PointerKeyElement,
-                                             decltype(key),
                                              decltype(hash),
                                              decltype(equals)>;
 
-  PointerKeyHT ht(key, hash, equals);
+  PointerKeyHT ht(hash, equals);
   PointerKeyElement kv{{1}, 1};
   bool found = false;
   ht.put_if_absent(kv, &found);
