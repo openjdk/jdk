@@ -184,7 +184,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
@@ -403,7 +403,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       // acknowledge the cancellation request, the subsequent young cycle will observe
       // the request and essentially cancel itself.
       if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
+        // Need to report at "gc" level to report GC ID proper.
+        log_info(gc)("Preparation for old generation cycle was cancelled");
         return;
       }
 
