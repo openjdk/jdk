@@ -52,6 +52,7 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     super(addr);
   }
 
+  @Override
   public long getObjectSize(Oop object) {
     // Mirrors InstanceStackChunkKlass::oop_size in the VM, in bytes.
     long stackSizeInWords = ((IntField) findField("size", "I")).getValue(object);
@@ -69,12 +70,14 @@ public class InstanceStackChunkKlass extends InstanceKlass {
 
   private static long bitmapSize(long stackSizeInWords) {
     long bitsPerWord = VM.getVM().getBytesPerWord() * 8L;
-    long bits = bitmapSizeInBits(stackSizeInWords);
-    return ((bits + bitsPerWord - 1) & ~(bitsPerWord - 1)) / bitsPerWord;
+    return bitmapSizeInBits(stackSizeInWords) / bitsPerWord;
   }
 
   private static long bitmapSizeInBits(long stackSizeInWords) {
     VM vm = VM.getVM();
-    return stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
+    // Need one bit per potential narrowOop* or oop* address.
+    long bitsPerWord = vm.getBytesPerWord() * 8L;
+    long sizeInBits = stackSizeInWords * (vm.getBytesPerWord() / vm.getHeapOopSize());
+    return vm.alignUp(sizeInBits, bitsPerWord);
   }
 }
