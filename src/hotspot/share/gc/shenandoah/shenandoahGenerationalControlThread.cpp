@@ -184,7 +184,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("%s", GCCause::to_string(request.cause));
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
