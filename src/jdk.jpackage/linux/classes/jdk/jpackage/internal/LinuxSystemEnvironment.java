@@ -40,6 +40,7 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
     boolean soLookupAvailable();
     PackageType nativePackageType();
     LinuxPackageArch packageArch();
+    DesktopEntryFileValidator desktopEntryFileValidator();
 
     static Result<LinuxSystemEnvironment> create() {
         return detectNativePackageType().map(LinuxSystemEnvironment::create).orElseGet(() -> {
@@ -64,7 +65,11 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
 
     static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType) {
         return LinuxPackageArch.create(nativePackageType).map(arch -> {
-            return new Stub(LibProvidersLookup.supported(), nativePackageType, arch);
+            return new Stub(
+                    LibProvidersLookup.supported(),
+                    nativePackageType,
+                    arch,
+                    DesktopEntryFileValidator.createDefault());
         });
     }
 
@@ -87,7 +92,11 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
         }
     }
 
-    record Stub(boolean soLookupAvailable, PackageType nativePackageType, LinuxPackageArch packageArch) implements LinuxSystemEnvironment {
+    record Stub(
+            boolean soLookupAvailable,
+            PackageType nativePackageType,
+            LinuxPackageArch packageArch,
+            DesktopEntryFileValidator desktopEntryFileValidator) implements LinuxSystemEnvironment {
     }
 
     static final class Internal {

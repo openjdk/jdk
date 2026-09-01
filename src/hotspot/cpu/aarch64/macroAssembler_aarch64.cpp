@@ -5494,12 +5494,6 @@ MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base,
     }
   }
 
-  const uint64_t shifted_base =
-    (uint64_t)base >> shift;
-  if ((shifted_base & 0xffff0000ffffffff) == 0) {
-    return KlassDecodeMovk;
-  }
-
   return KlassDecodeFallback;
 }
 
@@ -5543,14 +5537,6 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   case KlassDecodeXor:
     eor(dst, src, (uint64_t)base);
     lsr(dst, dst, shift);
-    break;
-
-  case KlassDecodeMovk:
-    if (shift != 0) {
-      ubfx(dst, src, shift, 32);
-    } else {
-      movw(dst, src);
-    }
     break;
 
   case KlassDecodeFallback: {
@@ -5608,16 +5594,6 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
     lsl(dst, src, shift);
     eor(dst, dst, (uint64_t)base);
     break;
-
-  case KlassDecodeMovk: { // 1-3 instructions
-    const uint64_t shifted_base =
-      (uint64_t)base >> shift;
-
-    if (dst != src) movw(dst, src);
-    movk(dst, shifted_base >> 32, 32);
-    lsl(dst, dst, shift);
-    break;
-  }
 
   case KlassDecodeFallback: { // 3-4 instructions
     mov(tmp, base);
