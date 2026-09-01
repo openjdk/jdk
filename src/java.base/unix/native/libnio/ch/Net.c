@@ -276,8 +276,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
      */
     if (domain == AF_INET6 && ipv4_available()) {
         int arg = 0;
-        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
-                       sizeof(int)) < 0) {
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg, sizeof(int)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IPV6_V6ONLY");
@@ -288,8 +287,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
 
     if (reuse) {
         int arg = 1;
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg,
-                       sizeof(arg)) < 0) {
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char*)&arg, sizeof(arg)) < 0) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set SO_REUSEADDR");
@@ -299,10 +297,13 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     }
 
 #if defined(__linux__)
-    if (type == SOCK_DGRAM) {
+    /*
+     * IPv4 or IPv6 datagram socket: disable IP_MULTICAST_ALL (Linux 2.6.31)
+     * Not supported by the Linux binary compatibility layer on BSD
+     */
+    if (type == SOCK_DGRAM && ipv4_available()) {
         int arg = 0;
-        int level = (domain == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
-        if ((setsockopt(fd, level, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+        if ((setsockopt(fd, IPPROTO_IP, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
@@ -312,25 +313,14 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
         }
     }
 
-    if (domain == AF_INET6 && type == SOCK_DGRAM) {
-        /* By default, Linux uses the route default */
-        int arg = 1;
-        if (setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_HOPS, &arg,
-                       sizeof(arg)) < 0) {
-            JNU_ThrowByNameWithLastError(env,
-                                         JNU_JAVANETPKG "SocketException",
-                                         "Unable to set IPV6_MULTICAST_HOPS");
-            close(fd);
-            return -1;
-        }
-
-        /* Disable IPV6_MULTICAST_ALL if option supported */
-        arg = 0;
+    /* IPv6 datagram socket: disable IPV6_MULTICAST_ALL (Linux 4.20) if supported */
+    if (type == SOCK_DGRAM && domain == AF_INET6) {
+        int arg = 0;
         if ((setsockopt(fd, IPPROTO_IPV6, IPV6_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
             (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
-                                     JNU_JAVANETPKG "SocketException",
-                                     "Unable to set IPV6_MULTICAST_ALL");
+                                         JNU_JAVANETPKG "SocketException",
+                                         "Unable to set IPV6_MULTICAST_ALL");
             close(fd);
             return -1;
         }
@@ -430,7 +420,6 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
         }
         /* ECONNABORTED => restart accept */
     }
-
     if (newfd < 0) {
         if (errno == EAGAIN || errno == EWOULDBLOCK)
             return IOS_UNAVAILABLE;
@@ -439,14 +428,18 @@ Java_sun_nio_ch_Net_accept(JNIEnv *env, jclass clazz, jobject fdo, jobject newfd
         JNU_ThrowIOExceptionWithLastError(env, "Accept failed");
         return IOS_THROWN;
     }
-
     setfdval(env, newfdo, newfd);
 
     remote_ia = NET_SockaddrToInetAddress(env, &sa, (int *)&remote_port);
-    CHECK_NULL_RETURN(remote_ia, IOS_THROWN);
-
+    if (remote_ia == NULL) {
+        close(newfd);
+        return IOS_THROWN;
+    }
     isa = (*env)->NewObject(env, isa_class, isa_ctorID, remote_ia, remote_port);
-    CHECK_NULL_RETURN(isa, IOS_THROWN);
+    if (isa == NULL) {
+        close(newfd);
+        return IOS_THROWN;
+    }
     (*env)->SetObjectArrayElement(env, isaa, 0, isa);
 
     return 1;
