@@ -173,15 +173,17 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
     public SequenceLayout flatten() {
         MemoryLayout elemLayout = elementLayout();
         boolean hasZeroCount = elementCount() == 0;
+        // Do an intitial pass and check if any of the element counts are zero
+        // to prevent throwing on overflow in that case.
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
             long elemCount = elemSeq.elementCount();
             hasZeroCount |= elemCount == 0;
             elemLayout = elemSeq.elementLayout();
         }
-
         if (hasZeroCount) {
             return MemoryLayout.sequenceLayout(0, elemLayout);
         }
+
         long count = elementCount();
         elemLayout = elementLayout();
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
