@@ -7897,9 +7897,15 @@ static const int64_t right_3_bits = right_n_bits(3);
   //               -1: equals
   address generate_vectorizedMismatch() {
     StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, stub_id);
-    address start = __ pc();
+    start = __ pc();
 
     __ enter();
 
@@ -7916,6 +7922,9 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ mv(x10, result);
     __ leave();
     __ ret();
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
 
     return start;
   }
