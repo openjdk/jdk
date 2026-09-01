@@ -2517,6 +2517,10 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     M testTemplate(Class<M> maskType, Test op) {
         $Type$Species vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
 #if[FP]
             $Bitstype$Vector bits = this.viewAsIntegralLanes();
 #end[FP]
@@ -2569,6 +2573,10 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         $Type$Species vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
 #if[FP]
             $Bitstype$Vector bits = this.viewAsIntegralLanes();
             VectorMask<$Boxbitstype$> m = mask.cast($Bitstype$Vector.species(shape()));
@@ -6155,4 +6163,3 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     public static final VectorSpecies<$Boxtype$> SPECIES_PREFERRED
         = ($Type$Species) VectorSpecies.ofPreferred($elemtype$.class);
 }
-

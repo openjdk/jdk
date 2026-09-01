@@ -1841,6 +1841,10 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
     M testTemplate(Class<M> maskType, Test op) {
         FloatSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             IntVector bits = this.viewAsIntegralLanes();
             VectorMask<Integer> m;
             if (op == IS_DEFAULT) {
@@ -1889,6 +1893,10 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
         FloatSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             IntVector bits = this.viewAsIntegralLanes();
             VectorMask<Integer> m = mask.cast(IntVector.species(shape()));
             if (op == IS_DEFAULT) {

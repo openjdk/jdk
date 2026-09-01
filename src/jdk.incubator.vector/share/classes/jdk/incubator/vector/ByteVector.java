@@ -2013,6 +2013,10 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     M testTemplate(Class<M> maskType, Test op) {
         ByteSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             VectorMask<Byte> m;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (byte) 0);
@@ -2044,6 +2048,10 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         ByteSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             VectorMask<Byte> m = mask;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (byte) 0, m);

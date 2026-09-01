@@ -1829,6 +1829,10 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
     M testTemplate(Class<M> maskType, Test op) {
         DoubleSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             LongVector bits = this.viewAsIntegralLanes();
             VectorMask<Long> m;
             if (op == IS_DEFAULT) {
@@ -1877,6 +1881,10 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
         DoubleSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
+            if (!op.compatibleWith(vsp.elementType())) {
+                throw new UnsupportedOperationException(
+                        op + ": incompatible with " + vsp.elementType().getSimpleName());
+            }
             LongVector bits = this.viewAsIntegralLanes();
             VectorMask<Long> m = mask.cast(LongVector.species(shape()));
             if (op == IS_DEFAULT) {
