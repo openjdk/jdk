@@ -719,7 +719,7 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
     const TypeAryPtr* nm_adr_type = elem_adr_type->with_field_offset(nm_offset_in_element);
     Node* nm_value = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, nm_adr_type, alloc);
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (nm_value != nullptr && !force_scalarization_failure) {
       vt->set_null_marker(_igvn, nm_value);
     } else {
@@ -747,7 +747,7 @@ Node* PhaseMacroExpand::inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr
       const TypeAryPtr* field_adr_type = elem_adr_type->with_field_offset(field_offset_in_element);
       field_value = value_from_mem(sfpt, sfpt->control(), bt, ft, field_adr_type, alloc);
       bool force_scalarization_failure = StressEliminateAllocations &&
-                                         (C->random() % StressEliminateAllocationsMean == 0);
+                                         (C->stress().random() % StressEliminateAllocationsMean == 0);
       if (field_value == nullptr || force_scalarization_failure) {
         report_failure(field_offset_in_element, field_value != nullptr);
         return nullptr;
@@ -1091,7 +1091,7 @@ bool PhaseMacroExpand::add_array_elems_to_safepoint(AllocateNode* alloc, const T
       elem_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, elem_type, elem_adr_type, alloc);
     }
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (elem_val == nullptr || force_scalarization_failure) {
 #ifndef PRODUCT
       if (PrintEliminateAllocations) {
@@ -1156,7 +1156,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
         int nm_offset = offset_minus_header + field->null_marker_offset();
         Node* null_marker = value_from_mem(sfpt, sfpt->control(), T_BOOLEAN, TypeInt::BOOL, base_type->with_offset(nm_offset), alloc);
         bool force_scalarization_failure = StressEliminateAllocations &&
-                                           (C->random() % StressEliminateAllocationsMean == 0);
+                                           (C->stress().random() % StressEliminateAllocationsMean == 0);
         if (null_marker == nullptr || force_scalarization_failure) {
           report_failure(nm_offset, null_marker != nullptr);
           return false;
@@ -1189,7 +1189,7 @@ bool PhaseMacroExpand::add_inst_fields_to_safepoint(ciInstanceKlass* iklass, All
     const TypeInstPtr* field_addr_type = base_type->add_offset(offset)->isa_instptr();
     Node* field_val = value_from_mem(sfpt, sfpt->control(), basic_elem_type, field_type, field_addr_type, alloc);
     bool force_scalarization_failure = StressEliminateAllocations &&
-                                       (C->random() % StressEliminateAllocationsMean == 0);
+                                       (C->stress().random() % StressEliminateAllocationsMean == 0);
     if (field_val == nullptr || force_scalarization_failure) {
       report_failure(offset, field_val != nullptr);
       return false;
@@ -1316,7 +1316,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List&
   bool allow_oop = (res_type != nullptr) && !res_type->is_flat();
   for (uint i = 0; i < value_worklist.size(); ++i) {
     InlineTypeNode* vt = value_worklist.at(i)->as_InlineType();
-    vt->make_scalar_in_safepoints(&_igvn, allow_oop);
+    if (!vt->make_scalar_in_safepoints(&_igvn, allow_oop)) {
+      C->record_failure("out of nodes during scalarization");
+      return false;
+    }
   }
   return true;
 }
@@ -3196,6 +3199,17 @@ void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
   }
 }
 
+// Clean up the graph so we're less likely to hit the maximum node limit
+static bool cleanup_graph(PhaseIterGVN& igvn) {
+  igvn.set_delay_transform(false);
+  igvn.optimize();
+  if (igvn.C->failing()) {
+    return false;
+  }
+  igvn.set_delay_transform(true);
+  return true;
+}
+
 //---------------------------eliminate_macro_nodes----------------------
 // Eliminate scalar replaced allocations and associated locks.
 void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
@@ -3294,6 +3308,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
                "unknown node type in macro list");
       }
+      if (C->failing()) {
+        return;
+      }
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
       if (success) {
@@ -3306,12 +3323,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
     // other macro nodes can remove all these safepoints, allowing the allocation to be removed.
     // Hence after igvn we retry removing macro nodes if some progress that has been made in this
     // iteration.
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing()) {
-      return;
+    if (!cleanup_graph(_igvn)) {
+      return; // failing
     }
-    _igvn.set_delay_transform(true);
 
     if (!progress) {
       break;
@@ -3401,21 +3415,18 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 }
 
 //------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
+//  Returns false if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
 
-  // Clean up the graph so we're less likely to hit the maximum node
-  // limit
-  _igvn.set_delay_transform(false);
-  _igvn.optimize();
-  if (C->failing())  return true;
-  _igvn.set_delay_transform(true);
+  // Clean up after eliminate_opaque_looplimit_macro_nodes()
+  if (!cleanup_graph(_igvn)) {
+    return false; // failing
+  }
 
-
-  // Because we run IGVN after each expansion, some macro nodes may go
+  // Because we run IGVN after set of expansions, some macro nodes may go
   // dead and be removed from the list as we iterate over it. Move
   // Allocate nodes (processed in a second pass) at the beginning of
   // the list and then iterate from the last element of the list until
@@ -3423,26 +3434,34 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   // the list due to nodes going dead.
   C->sort_macro_nodes();
 
-  // expand arraycopy "macro" nodes first
   // For ReduceBulkZeroing, we must first process all arraycopy nodes
-  // before the allocate nodes are expanded.
+  // before the allocate nodes are expanded. Sorting macro nodes list
+  // enforces it.
+
+  // Worst case is a macro node gets expanded into about 200 nodes.
+  // Allow 50% more for optimization.
+  static const uint macro_expansion_estimate = 300;
+  const uint macro_expansion_margin = macro_expansion_estimate * MacroExpansionCleanupCount;
+  const uint macro_expansion_limit  = C->max_node_limit() > macro_expansion_margin ?
+                                      C->max_node_limit() - macro_expansion_margin : 0;
+  uint pending_expansions_to_cleanup = 0;
+
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
-    Node * n = C->macro_node(macro_count-1);
+    Node* n = C->macro_node(macro_count-1);
     assert(n->is_macro(), "only macro nodes expected here");
     if (_igvn.type(n) == Type::TOP || (n->in(0) != nullptr && n->in(0)->is_top())) {
       // node is unreachable, so don't try to expand it
       C->remove_macro_node(n);
       continue;
     }
+    // Reached Allocate nodes - jump to second pass to process them.
     if (n->is_Allocate()) {
       break;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
+      return false;
     }
 
     DEBUG_ONLY(int old_macro_count = C->macro_count();)
@@ -3482,22 +3501,35 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return false;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
+  }
+
+  // Cleanup graph before expanding Allocate nodes.
+  if (pending_expansions_to_cleanup > 0) {
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
 
   // All nodes except Allocate nodes are expanded now. There could be
   // new optimization opportunities (such as folding newly created
   // load from a just allocated object). Run IGVN.
 
-  // expand "macro" nodes
   // nodes are removed from the macro list as they are processed
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
@@ -3509,10 +3541,8 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       continue;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
+      return false;
     }
     switch (n->class_id()) {
     case Node::Class_Allocate:
@@ -3525,19 +3555,29 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(false, "unknown node type in macro list");
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return false;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
-
+  if (pending_expansions_to_cleanup > 0) {
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+  }
   _igvn.set_delay_transform(false);
-  return false;
+  return true;
 }
 
 #ifndef PRODUCT

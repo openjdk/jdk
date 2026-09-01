@@ -36,14 +36,13 @@ import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.test.whitebox.WhiteBox;
 
-import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.CALL_UNSAFE;
 import static compiler.valhalla.inlinetypes.InlineTypes.rI;
 import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 
+import static compiler.lib.ir_framework.IRNode.CALL_UNSAFE;
 import static compiler.lib.ir_framework.IRNode.LOAD;
 import static compiler.lib.ir_framework.IRNode.LOAD_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypes.*;
+import static compiler.lib.ir_framework.IRNode.STATIC_CALL_OF_METHOD;
 
 /*
  * @test
@@ -149,14 +148,15 @@ public class TestIntrinsics {
 
     public TestIntrinsics() {
         test24_vt = MyValue1.createWithFieldsInline(rI, rL);
+        test31_vt = MyValue1.createDefaultInline();
         super();
     }
 
     public static void main(String[] args) {
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UseArrayFlattening");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UnlockExperimentalVMOptions", "-XX:PerMethodSpecTrapLimit=0", "-XX:PerMethodTrapLimit=0");
+        scenarios[3].addFlags("-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
+        scenarios[4].addFlags("-XX:+UnlockExperimentalVMOptions", "-XX:PerMethodSpecTrapLimit=0", "-XX:PerMethodTrapLimit=0", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])
@@ -658,6 +658,7 @@ public class TestIntrinsics {
         Asserts.assertEQ(v.v1, res);
     }
 
+    @NullRestricted
     MyValue1 test31_vt;
     private static final long TEST31_VT_OFFSET;
     private static final boolean TEST31_VT_FLATTENED;
@@ -835,6 +836,54 @@ public class TestIntrinsics {
         test31_vt = MyValue1.createDefaultInline();
         test38(vt);
         Asserts.assertEQ(vt, test31_vt);
+    }
+
+    // Test put intrinsic with null
+    @Test
+    @IR(failOn = {CALL_UNSAFE})
+    public void test39(MyValue1 val) {
+        if (TEST31_VT_FLATTENED) {
+            U.putFlatValue(this, TEST31_VT_OFFSET, TEST31_VT_LAYOUT, MyValue1.class, val);
+        } else {
+            U.putReference(this, TEST31_VT_OFFSET, null);
+        }
+    }
+
+    @Run(test = "test39")
+    public void test39_verifier() {
+        test31_vt = MyValue1.createDefaultInline();
+        try {
+            test39(null);
+            if (TEST31_VT_FLATTENED) {
+                throw new RuntimeException("No NullPointerException thrown");
+            }
+        } catch (NullPointerException npe) {
+            // Expected
+        }
+    }
+
+    // Same as test39 but with a constant null
+    @Test
+    @IR(failOn = {CALL_UNSAFE})
+    public void test39Constant() {
+        if (TEST31_VT_FLATTENED) {
+            U.putFlatValue(this, TEST31_VT_OFFSET, TEST31_VT_LAYOUT, MyValue1.class, null);
+        } else {
+            U.putReference(this, TEST31_VT_OFFSET, null);
+        }
+    }
+
+    @Run(test = "test39Constant")
+    public void test39Constant_verifier() {
+        test31_vt = MyValue1.createDefaultInline();
+        try {
+            test39Constant();
+            if (TEST31_VT_FLATTENED) {
+                throw new RuntimeException("No NullPointerException thrown");
+            }
+        } catch (NullPointerException npe) {
+            // Expected
+        }
     }
 
     // Test value class array creation via reflection
@@ -1246,7 +1295,8 @@ public class TestIntrinsics {
 
         @ForceInline
         static SmallValue createWithFieldsInline(int x, long y) {
-            return new SmallValue((byte)x, (byte)y);
+            // Make sure it's different from the default value, some tests rely on this
+            return new SmallValue((byte)x, (byte) (y | 1));
         }
     }
 
@@ -2035,9 +2085,8 @@ public class TestIntrinsics {
 
     // Test correctness of the ValueClass::isAtomicArray intrinsic
     @Test
-    // TODO 8350865 Implemented intrinsic
-    // @IR(failOn = {STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
-    //               STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
+    @IR(failOn = {STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
+                  STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
     public boolean test87(Object[] array) {
         return ValueClass.isAtomicArray(array);
     }
@@ -2053,9 +2102,8 @@ public class TestIntrinsics {
 
     // Verify that ValueClass::isAtomicArray checks with statically known classes are folded
     @Test
-    // TODO 8350865 Implemented intrinsic
-    // @IR(failOn = {LOAD_KLASS, STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
-    //               STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
+    @IR(failOn = {LOAD_KLASS, STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray",
+                  STATIC_CALL_OF_METHOD, "jdk.internal.value.ValueClass::isAtomicArray0"})
     public boolean test88() {
         boolean check1 = ValueClass.isAtomicArray(TEST_ARRAY1);
         if (!TEST_ARRAY1_IS_ATOMIC) {

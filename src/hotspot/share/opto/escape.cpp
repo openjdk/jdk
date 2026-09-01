@@ -169,10 +169,11 @@ bool ConnectionGraph::compute_escape() {
   java_objects_worklist.append(phantom_obj);
   for( uint next = 0; next < ideal_nodes.size(); ++next ) {
     Node* n = ideal_nodes.at(next);
-    if ((n->Opcode() == Op_LoadX || n->Opcode() == Op_StoreX) &&
+    if (n->is_Mem() &&
         !n->in(MemNode::Address)->is_AddP() &&
         _igvn->type(n->in(MemNode::Address))->isa_oopptr()) {
-      // Load/Store at mark work address is at offset 0 so has no AddP which confuses EA
+      // EA expects on-heap memory addresses to be represented by an AddP. An AddP with a zero
+      // offset can be optimized to its oop base, so recreate it.
       Node* addp = AddPNode::make_with_base(n->in(MemNode::Address), n->in(MemNode::Address), _igvn->MakeConX(0));
       _igvn->register_new_node_with_optimizer(addp);
       _igvn->replace_input_of(n, MemNode::Address, addp);
@@ -399,7 +400,7 @@ bool ConnectionGraph::compute_escape() {
   if (VerifyReduceAllocationMerges) {
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
       Node* n = reducible_merges.at(i);
-      if (!can_reduce_phi(n->as_Phi())) {
+      if (n->outcnt() > 0 && !can_reduce_phi(n->as_Phi())) {
         TraceReduceAllocationMerges = true;
         n->dump(2);
         n->dump(-2);
@@ -666,7 +667,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // If there was an error attempting to reduce allocation merges for this
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
-  if (!_compile->do_reduce_allocation_merges() || ophi->region()->Opcode() != Op_Region) {
+  if (!_compile->do_reduce_allocation_merges() || ophi->region() == nullptr || ophi->region()->Opcode() != Op_Region) {
     return false;
   }
 
@@ -1374,7 +1375,10 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
       const bool allow_oop = !merge_t->is_flat();
       for (uint j = 0; j < value_worklist.size(); ++j) {
         InlineTypeNode* vt = value_worklist.at(j)->as_InlineType();
-        vt->make_scalar_in_safepoints(_igvn, allow_oop);
+        if (!vt->make_scalar_in_safepoints(_igvn, allow_oop)) {
+          sfpt->restore_non_debug_edges(non_debug_edges_worklist);
+          return false;
+        }
       }
     }
 
@@ -2152,19 +2156,28 @@ bool ConnectionGraph::add_final_edges_unsafe_access(Node* n, uint opcode) {
 // }
 // void m(Object o, MyValue v, int i)
 // produces the pairs:
-// (Object, Object), (Myvalue, int), (MyValue, float), (int, int)
+// (Object, Object), (MyValue, int), (MyValue, float), (int, int)
 class DomainIterator : public StackObj {
 private:
-  const TypeTuple* _domain;
-  const TypeTuple* _domain_cc;
-  const GrowableArray<SigEntry>* _sig_cc;
+  const TypeTuple* _domain;               // Domain of the JVM signature
+  const TypeTuple* _domain_cc;            // Domain of the scalarized calling convention
+  const GrowableArray<SigEntry>* _sig_cc; // Entries of the scalarized calling convention
 
-  uint _i_domain;
-  uint _i_domain_cc;
-  int _i_sig_cc;
-  uint _depth;
-  uint _first_field_pos;
-  const bool _is_static;
+  uint _i_domain;        // JVM signature domain index (long/double take two slots)
+  uint _i_domain_cc;     // Scalarized calling convention domain index
+  int _i_arg;            // JVM signature argument index (long/double take one argument)
+  int _i_sig_cc;         // Scalarized calling convention SigEntry index
+  uint _depth;           // Scalarized value nesting depth
+  uint _first_field_pos; // Scalarized calling convention domain index of the first non-hidden value field
+  const bool _is_static; // Whether the target method is static
+
+  void advance_domain() {
+    const BasicType bt = _domain->field_at(_i_domain)->basic_type();
+    _i_domain++;
+    if (bt != T_LONG && bt != T_DOUBLE) {
+      _i_arg++;
+    }
+  }
 
   void next_helper() {
     if (_sig_cc == nullptr) {
@@ -2183,7 +2196,7 @@ private:
       } else if (bt == T_VOID && (prev_bt != T_LONG && prev_bt != T_DOUBLE)) {
         _depth--;
         if (_depth == 0) {
-          _i_domain++;
+          advance_domain();
         }
       } else if (bt == T_OBJECT && prev_bt == T_METADATA && (_is_static || _i_domain > 0) && _sig_cc->at(_i_sig_cc)._offset == 0) {
         assert(_sig_cc->at(_i_sig_cc)._vt_oop, "buffer expected right after T_METADATA");
@@ -2212,6 +2225,7 @@ public:
     _sig_cc(call->method()->get_sig_cc()),
     _i_domain(TypeFunc::Parms),
     _i_domain_cc(TypeFunc::Parms),
+    _i_arg(0),
     _i_sig_cc(0),
     _depth(0),
     _first_field_pos(0),
@@ -2229,7 +2243,7 @@ public:
     assert(_depth != 0 || _domain->field_at(_i_domain) == _domain_cc->field_at(_i_domain_cc), "should produce same non scalarized elements");
     _i_sig_cc++;
     if (_depth == 0) {
-      _i_domain++;
+      advance_domain();
     }
     _i_domain_cc++;
     next_helper();
@@ -2241,6 +2255,10 @@ public:
 
   uint i_domain_cc() const {
     return _i_domain_cc;
+  }
+
+  int i_arg() const {
+    return _i_arg;
   }
 
   const Type* current_domain() const {
@@ -2267,18 +2285,25 @@ bool ConnectionGraph::returns_an_argument(CallNode* call) {
 
   const TypeTuple* d = call->tf()->domain_sig();
   bool ret_arg = false;
+  int arg_num = 0;
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-    if (d->field_at(i)->isa_ptr() != nullptr &&
+    const Type* t = d->field_at(i);
+    if (t->isa_ptr() != nullptr &&
         call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
-      if (meth->is_scalarized_arg(i - TypeFunc::Parms) && !compatible_return(call->as_CallJava(), i)) {
+      const bool scalarized_arg = meth->is_scalarized_arg(arg_num);
+      if (scalarized_arg && !compatible_return(call->as_CallJava(), i)) {
         return false;
       }
-      if (call->tf()->returns_inline_type_as_fields() != meth->is_scalarized_arg(i - TypeFunc::Parms)) {
+      if (call->tf()->returns_inline_type_as_fields() != scalarized_arg) {
         return false;
       }
       ret_arg = true;
     }
+    if (t != Type::HALF) {
+      arg_num++;
+    }
   }
+  assert(arg_num == meth->signature()->count() + (meth->is_static() ? 0 : 1), "inconsistent argument count");
   return ret_arg;
 }
 
@@ -2611,18 +2636,19 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
         PointsToNode* call_ptn = ptnode_adr(call->_idx);
         bool ret_arg = returns_an_argument(call);
         for (DomainIterator di(call->as_CallJava()); di.has_next(); di.next()) {
-          int k = di.i_domain() - TypeFunc::Parms;
+          const int jvms_slot = di.i_domain() - TypeFunc::Parms;
+          const bool scalarized_arg = meth->is_scalarized_arg(di.i_arg());
           const Type* at = di.current_domain_cc();
           Node* arg = call->in(di.i_domain_cc());
           PointsToNode* arg_ptn = ptnode_adr(arg->_idx);
-          assert(!call_analyzer->is_arg_returned(k) || !meth->is_scalarized_arg(k) ||
+          assert(!call_analyzer->is_arg_returned(jvms_slot) || !scalarized_arg ||
                  !compatible_return(call->as_CallJava(), di.i_domain()) ||
                  call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1) == nullptr ||
                  _igvn->type(call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1)) == at,
                  "scalarized return and scalarized argument should match");
-          if (at->isa_ptr() != nullptr && call_analyzer->is_arg_returned(k) && ret_arg) {
+          if (at->isa_ptr() != nullptr && call_analyzer->is_arg_returned(jvms_slot) && ret_arg) {
             // The call returns arguments.
-            if (meth->is_scalarized_arg(k)) {
+            if (scalarized_arg) {
               ProjNode* res_proj = call->proj_out_or_null(di.i_domain_cc() - di.first_field_pos() + TypeFunc::Parms + 1);
               if (res_proj != nullptr) {
                 assert(_igvn->type(res_proj)->isa_ptr(), "scalarized return and scalarized argument should match");
@@ -2643,12 +2669,12 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
           }
           if (at->isa_oopptr() != nullptr &&
               arg_ptn->escape_state() < PointsToNode::GlobalEscape) {
-            if (!call_analyzer->is_arg_stack(k)) {
+            if (!call_analyzer->is_arg_stack(jvms_slot)) {
               // The argument global escapes
               set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
             } else {
               set_escape_state(arg_ptn, PointsToNode::ArgEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
-              if (!call_analyzer->is_arg_local(k)) {
+              if (!call_analyzer->is_arg_local(jvms_slot)) {
                 // The argument itself doesn't escape, but any fields might
                 set_fields_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
               }
@@ -4492,10 +4518,8 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
       if (n != mmem->memory_at(general_idx) || alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Replace previous general reference to mem node.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Replace previous general reference to mem node and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       mmem->set_memory_at(general_idx, m);
       --imax;
       --i;
@@ -4512,15 +4536,26 @@ void ConnectionGraph::move_inst_mem(Node* n, Unique_Node_List& orig_phis) {
           alias_idx == general_idx) {
         continue; // Nothing to do
       }
-      // Move to general memory slice.
-      uint orig_uniq = C->unique();
-      Node* m = find_inst_mem(n, general_idx, orig_phis);
-      assert(orig_uniq == C->unique(), "no new nodes");
+      // Move to general memory slice and assert no new node is created.
+      Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
       igvn->hash_delete(use);
       imax -= use->replace_edge(n, m, igvn);
       igvn->hash_insert(use);
       record_for_optimizer(use);
       --i;
+    } else if (use->is_memory_access_intrinsic()) {
+      if (alias_idx == general_idx) {
+        continue;
+      }
+      if (use->in(MemNode::Memory) == n) {
+        // Move to general memory slice and assert no new node is created.
+        Node* m = find_inst_mem_assert_no_new_node(n, general_idx, orig_phis);
+        igvn->hash_delete(use);
+        imax -= use->replace_edge(n, m, igvn);
+        igvn->hash_insert(use);
+        record_for_optimizer(use);
+        --i;
+      }
 #ifdef ASSERT
     } else if (use->is_Mem()) {
       // Memory nodes should have new memory input.
@@ -4761,6 +4796,13 @@ Node* ConnectionGraph::find_inst_mem(Node* orig_mem, int alias_idx, Unique_Node_
     }
   }
   // the result is either MemNode, PhiNode, InitializeNode.
+  return result;
+}
+
+Node* ConnectionGraph::find_inst_mem_assert_no_new_node(Node* orig_mem, int alias_idx, Unique_Node_List& orig_phis) {
+  uint orig_uniq = _compile->unique();
+  Node* result = find_inst_mem(orig_mem, alias_idx, orig_phis);
+  assert(orig_uniq == _compile->unique(), "no new nodes");
   return result;
 }
 
@@ -5168,12 +5210,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
         } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X ||
-              op == Op_FastLock || op == Op_AryEq ||
-              op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
-              op == Op_StrEquals || op == Op_VectorizedHashCode ||
-              op == Op_StrIndexOf || op == Op_StrIndexOfChar ||
+              op == Op_CastP2X || op == Op_FastLock ||
+              use->is_memory_access_intrinsic() ||
               op == Op_SubTypeCheck || op == Op_InlineType || op == Op_FlatArrayCheck ||
               op == Op_ReinterpretS2HF ||
               op == Op_ReachabilityFence ||
@@ -5364,9 +5402,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
-              op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
-              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar || op == Op_FlatArrayCheck)) {
+                     use->is_memory_access_intrinsic() || op == Op_FlatArrayCheck)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         StreamCloser.addToQueue(closeAction);
     }
 
+    @Override
     public int read() throws IOException {
         checkClosed();
         bitOffset = 0;
@@ -118,6 +119,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         return val;
     }
 
+    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         checkClosed();
 
@@ -142,6 +144,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         return nbytes;
     }
 
+    @Override
     public void write(int b) throws IOException {
         flushBits(); // this will call checkClosed() for us
         cache.write(b);
@@ -149,6 +152,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         maxStreamPos = Math.max(maxStreamPos, streamPos);
     }
 
+    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         flushBits(); // this will call checkClosed() for us
         cache.write(b, off, len);
@@ -156,6 +160,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
         maxStreamPos = Math.max(maxStreamPos, streamPos);
     }
 
+    @Override
     public long length() {
         try {
             checkClosed();
@@ -176,6 +181,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * than the flushed position.
      * @throws IOException if any other I/O error occurs.
      */
+    @Override
     public void seek(long pos) throws IOException {
         checkClosed();
 
@@ -199,6 +205,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * @see #isCachedMemory
      * @see #isCachedFile
      */
+    @Override
     public boolean isCached() {
         return true;
     }
@@ -212,6 +219,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * @see #isCached
      * @see #isCachedMemory
      */
+    @Override
     public boolean isCachedFile() {
         return true;
     }
@@ -226,6 +234,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * @see #isCached
      * @see #isCachedFile
      */
+    @Override
     public boolean isCachedMemory() {
         return false;
     }
@@ -238,6 +247,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      *
      * @throws IOException if an error occurs.
      */
+    @Override
     public void close() throws IOException {
         maxStreamPos = cache.length();
 
@@ -257,6 +267,7 @@ public class FileCacheImageOutputStream extends ImageOutputStreamImpl {
      * @param pos {@inheritDoc ImageOutputStream}
      * @throws IOException {@inheritDoc ImageOutputStream}
      */
+    @Override
     public void flushBefore(long pos) throws IOException {
         long oFlushedPos = flushedPos;
         super.flushBefore(pos); // this will call checkClosed() for us

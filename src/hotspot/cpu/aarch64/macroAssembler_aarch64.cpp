@@ -1972,7 +1972,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mov(r1, r_sub_klass);           // r1 <- r4
     mov(r2, /*expected*/rscratch1); // r2 <- r8
     mov(r3, result);                // r3 <- r5
-    mov(r4, (address)("mismatch")); // r4 <- const
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    lea(r4, ExternalAddress((address)str)); // r4 <- const
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure), rscratch2);
     should_not_reach_here();
   }
@@ -2025,7 +2027,15 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
@@ -2035,7 +2045,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
   mov(r0, reg);
-  movptr(rscratch1, (uintptr_t)(address)b);
+  lea(rscratch1, ExternalAddress((address)b));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2061,7 +2071,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // this will duplicate string to preserve it
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -2078,7 +2096,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   } else {
     ldr(r0, addr);
   }
-  movptr(rscratch1, (uintptr_t)(address)b);
+  lea(rscratch1, ExternalAddress((address)b));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2275,6 +2293,10 @@ void MacroAssembler::call_VM_leaf_base(address entry_point,
     bind(*retaddr);
 
   ldp(rscratch1, rmethod, Address(post(sp, 2 * wordSize)));
+
+  // Reinitialize the ptrue predicate register, in case the external runtime
+  // call clobbers ptrue reg, as we may return to SVE compiled code.
+  reinitialize_ptrue();
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, int number_of_arguments) {
@@ -2392,16 +2414,6 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label) {
   // load mark word
   ldr(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // check displaced
-    tst(temp_reg, markWord::unlocked_value);
-    br(Assembler::NE, test_mark_word);
-    // slow path use klass prototype
-    load_prototype_header(temp_reg, oop);
-
-    bind(test_mark_word);
-  }
   andr(temp_reg, temp_reg, test_bit);
   if (jmp_set) {
     cbnz(temp_reg, jmp_label);
@@ -7881,10 +7893,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   // instruction emitted as it is part of C1's null check semantics.
   ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    str(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  str(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj, rscratch1);
@@ -7911,8 +7921,10 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
   // Try to lock. Transition lock bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
   orr(mark, mark, markWord::unlocked_value);
-  // Mask inline_type bit such that we go to the slow path if object is an inline type
-  andr(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andr(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  }
 
   eor(t, mark, markWord::unlocked_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);

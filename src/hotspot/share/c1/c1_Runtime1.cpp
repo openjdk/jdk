@@ -29,6 +29,7 @@
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/aotCodeCache.hpp"
@@ -235,8 +236,8 @@ CodeBlob* Runtime1::generate_blob(BufferBlob* buffer_blob, StubId id, const char
 
   // align so printing shows nop's instead of random code at the end (SimpleStubs are aligned)
   sasm->align(BytesPerWord);
-  // make sure all code is in code buffer
-  sasm->flush();
+
+  // Code will be copied. No ICache sync required.
 
   frame_size = sasm->frame_size();
   must_gc_arguments = sasm->must_gc_arguments();
@@ -383,10 +384,10 @@ const char* Runtime1::name_for_address(address entry) {
   return pd_name_for_address(entry);
 }
 
-static void allocate_instance(JavaThread* current, Klass* klass, TRAPS) {
+JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
 #ifndef PRODUCT
   if (PrintC1Statistics) {
-    Runtime1::_new_instance_slowcase_cnt++;
+    _new_instance_slowcase_cnt++;
   }
 #endif
   assert(klass->is_klass(), "not a class");
@@ -398,10 +399,6 @@ static void allocate_instance(JavaThread* current, Klass* klass, TRAPS) {
   // allocate instance and return via TLS
   oop obj = h->allocate_instance(CHECK);
   current->set_vm_result_oop(obj);
-JRT_END
-
-JRT_ENTRY(void, Runtime1::new_instance(JavaThread* current, Klass* klass))
-  allocate_instance(current, klass, CHECK);
 JRT_END
 
 JRT_ENTRY(void, Runtime1::new_type_array(JavaThread* current, Klass* klass, jint length))
@@ -1188,7 +1185,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
         { Bytecode_anewarray anew(caller_method(), caller_method->bcp_from(bci));
           Klass* ek = caller_method->constants()->klass_at(anew.index(), CHECK);
           k = ek->array_klass(CHECK);
-          if (!k->is_typeArray_klass() && !k->is_refArray_klass() && !k->is_flatArray_klass()) {
+          if (k->is_unrefined_objArray_klass()) {
             k = ObjArrayKlass::cast(k)->klass_with_properties(ArrayProperties::Default(), THREAD);
           }
           if (k->is_flatArray_klass()) {
@@ -1239,19 +1236,17 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* current, StubId stub_id ))
     // At compile time we assumed the field wasn't volatile but after
     // loading it turns out it was volatile so we have to throw the
     // compiled code out and let it be regenerated.
-    if (TracePatching) {
-      if (deoptimize_for_volatile) {
-        tty->print_cr("Deoptimizing for patching volatile field reference");
-      }
-      if (deoptimize_for_null_free) {
-        tty->print_cr("Deoptimizing for patching null-free field reference");
-      }
-      if (deoptimize_for_flat) {
-        tty->print_cr("Deoptimizing for patching flat field or array reference");
-      }
-      if (deoptimize_for_strict_static) {
-        tty->print_cr("Deoptimizing for patching strict static field reference");
-      }
+    if (deoptimize_for_volatile) {
+      log_debug(deoptimization)("Deoptimizing for patching volatile field reference");
+    }
+    if (deoptimize_for_null_free) {
+      log_debug(deoptimization)("Deoptimizing for patching null-free field reference");
+    }
+    if (deoptimize_for_flat) {
+      log_debug(deoptimization)("Deoptimizing for patching flat field or array reference");
+    }
+    if (deoptimize_for_strict_static) {
+      log_debug(deoptimization)("Deoptimizing for patching strict static field reference");
     }
 
     // It's possible the nmethod was invalidated in the last
@@ -1489,9 +1484,7 @@ void Runtime1::patch_code(JavaThread* current, StubId stub_id) {
   // (see another implementation above).
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
 
-  if (TracePatching) {
-    tty->print_cr("Deoptimizing because patch is needed");
-  }
+  log_debug(deoptimization)("Deoptimizing because patch is needed");
 
   RegisterMap reg_map(current,
                       RegisterMap::UpdateMap::skip,

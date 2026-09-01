@@ -35,6 +35,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -1074,11 +1075,24 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
       TempNewSymbol class_name = Signature::strip_envelope(sig);
       if (class_name == ik->name()) continue;
       log_info(class, preload)("Preloading of class %s during linking of class %s "
-                               "because of the class is listed in the LoadableDescriptors attribute",
+                               "because the class is listed in the LoadableDescriptors attribute",
                                sig->as_C_string(), ik->name()->as_C_string());
       oop loader = ik->class_loader();
-      Klass* klass = SystemDictionary::resolve_or_null(class_name,
-                                                        Handle(THREAD, loader), THREAD);
+      Klass* klass = nullptr;
+
+      if (CDSConfig::is_using_aot_linked_classes() && ik->in_aot_cache() && !ik->defined_by_other_loaders()) {
+        // + We come to here during AOTLinkedClassBulkLoader::link_classes() and it's too early to
+        //   execute any Java code.
+        // + All loadable descriptors that can be resolved would have been resolved during the AOT assembly
+        //   phase, and would have been loaded earlier by AOTLinkedClassBulkLoader, so they can be found in
+        //   the system dictionary.
+        // + If no class of the given name have been loaded yet, it's most likely because the class
+        //   is missing from JAR files. Just ignore it.
+        klass = SystemDictionary::find_instance_or_array_klass(THREAD, class_name, Handle(THREAD, loader));
+      } else {
+        klass = SystemDictionary::resolve_or_null(class_name,
+                                                  Handle(THREAD, loader), THREAD);
+      }
       if (HAS_PENDING_EXCEPTION) {
         CLEAR_PENDING_EXCEPTION;
       }
@@ -1583,7 +1597,7 @@ void InstanceKlass::initialize_impl(TRAPS) {
       call_class_initializer(THREAD);
     }
 
-    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION) {
+    if (has_strict_static_fields() && !HAS_PENDING_EXCEPTION && !ReplayCompiles) {
       // Step 9 also verifies that strict static fields have been initialized.
       // Status bits were set in ClassFileParser::post_process_parsed_stream.
       // After <clinit>, bits must all be clear, or else we must throw an error.
@@ -1935,7 +1949,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
 instanceOop InstanceKlass::allocate_instance(TRAPS) {
   assert(!is_abstract() && !is_interface(), "Should not create this object");
   size_t size = size_helper();  // Query before forming handle.
-  return (instanceOop)Universe::heap()->obj_allocate(this, size, CHECK_NULL);
+  return (instanceOop)Universe::heap()->obj_allocate(this, size, THREAD);
 }
 
 instanceOop InstanceKlass::allocate_instance(oop java_class, TRAPS) {
@@ -2134,12 +2148,25 @@ bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor*
   if (fs.lookup(name, sig)) {
     assert(fs.name() == name, "name must match");
     assert(fs.signature() == sig, "signature must match");
-    fd->reinitialize(const_cast<InstanceKlass*>(this), fs.to_FieldInfo());
+    fd->reinitialize(this, fs.to_FieldInfo());
     return true;
   }
   return false;
 }
 
+bool InstanceKlass::find_local_field(Symbol* name, Symbol* sig, fieldDescriptor* fd, bool also_internal) const {
+  if (!also_internal) {
+    return find_local_field( name, sig, fd);
+  }
+
+  for (AllFieldStream fs(this); !fs.done(); fs.next()) {
+    if (fs.name() == name && fs.signature() == sig) {
+      fd->reinitialize(this, fs.to_FieldInfo());
+      return true;
+    }
+  }
+  return false;
+}
 
 Klass* InstanceKlass::find_interface_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
   const int n = local_interfaces()->length();
@@ -3317,14 +3344,21 @@ void InstanceKlass::unload_class(InstanceKlass* ik) {
     log_info(class, unload)("unloading class %s " PTR_FORMAT, ik->external_name(), p2i(ik));
   }
 
-  Events::log_class_unloading(Thread::current(), ik);
+  Thread* const current = Thread::current();
+  Events::log_class_unloading(current, ik);
 
 #if INCLUDE_JFR
   assert(ik != nullptr, "invariant");
-  EventClassUnload event;
-  event.set_unloadedClass(ik);
-  event.set_definingClassLoader(ik->class_loader_data());
-  event.commit();
+  // For concurrent unloading, we need the ik, the cld, and the event
+  // to end up in the correct JFR epoch, hence the acquisition of the
+  // epoch shift lock before the event.commit().
+  if (EventClassUnload::is_enabled()) {
+    EventClassUnload event;
+    event.set_unloadedClass(ik);
+    event.set_definingClassLoader(ik->class_loader_data());
+    ConditionalMutexLocker ml(JfrEpochShift_lock, UseShenandoahGC || UseZGC, Mutex::_no_safepoint_check_flag);
+    event.commit();
+  }
 #endif
 }
 
@@ -3391,6 +3425,17 @@ bool InstanceKlass::on_stack() const {
 Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
 u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
 void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+Symbol* InstanceKlass::source_file_name(int version) const {
+  // Return the source file name for this version of the classfile, if redefined with RedefineClasses
+  const InstanceKlass* holder = get_klass_version(version);
+  if (holder == nullptr) {
+    // Redefined previous class has been cleaned up.
+    return nullptr;
+  } else {
+    return holder->source_file_name();
+  }
+}
 
 // minor and major version numbers of class file
 u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }
