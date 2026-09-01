@@ -226,6 +226,23 @@ public class TestLayouts {
     }
 
     @Test
+    public void testSequenceLayoutFlattenOverflowBeforeZero() {
+        SequenceLayout zero = MemoryLayout.sequenceLayout(0, JAVA_BYTE);
+        SequenceLayout innerLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE, zero);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(2, innerLayout);
+        assertEquals(layout.flatten(), zero);
+    }
+
+    @Test
+    public void testSequenceLayoutFlattenOverflow() {
+        MemoryLayout empty = MemoryLayout.structLayout(); // byteSize() == 0
+        long n = 1L << 32; // n * n overflows and wraps to zero which might be a corner case
+        SequenceLayout innerLayout = MemoryLayout.sequenceLayout(n, empty);
+        SequenceLayout layout = MemoryLayout.sequenceLayout(n, innerLayout);
+        assertThrows(ArithmeticException.class, layout::flatten);
+    }
+
+    @Test
     public void testSequenceLayoutWithZeroLength() {
         SequenceLayout layout = MemoryLayout.sequenceLayout(0, JAVA_INT);
         assertEquals(layout.toString().toLowerCase(Locale.ROOT), "[0:i4]");
