@@ -39,7 +39,8 @@ import jdk.incubator.json.JsonValue;
  */
 public final class JsonObjectImpl implements JsonObject, JsonValueSupport {
 
-    private final Map<String, JsonValue> theMembers;
+    // Preserves member order
+    private final SequencedMap<String, JsonValue> theMembers;
     private final int offset;
     private final char[] doc;
 
