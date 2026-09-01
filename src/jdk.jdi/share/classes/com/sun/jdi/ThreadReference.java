@@ -439,7 +439,7 @@ public interface ThreadReference extends ObjectReference {
      * When the thread is a {@link Thread##virtual-threads virtual thread}, this
      * method may be used to force a return when the virtual thread is suspended
      * at an event. The target VM may support forcing a return when the virtual
-     * therad is suspended in other cases.
+     * thread is suspended in other cases.
      * <p>
      * This method may not be used to force a return when the called method is:
      * <ul>

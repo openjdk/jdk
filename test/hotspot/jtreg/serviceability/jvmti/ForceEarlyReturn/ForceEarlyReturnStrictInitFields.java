@@ -64,7 +64,7 @@ class ForceEarlyReturnStrictInitFields {
 
         /**
          * Starts a thread to execute the given action. The action is expected to spin
-         * at the given class/method. Once spinning, the thread is suspsended and
+         * at the given class/method. Once spinning, the thread is suspended and
          * ForceEarlyReturnVoid is invoked to attempt to force it to return early.
          * @return the return from ForceEarlyReturnVoid
          */
@@ -291,7 +291,7 @@ class ForceEarlyReturnStrictInitFields {
     /**
      * Test ForceEarlyReturnVoid when the target thread's top frame is the
      * constructor of a class with a strictly-initialized instance field
-     * before it chains to the another constructor to set the field.
+     * before it chains to another constructor to set the field.
      */
     @Nested
     class ConstructorBeforeAndAfterThis extends ForceEarlyReturnTest {
@@ -510,7 +510,7 @@ class ForceEarlyReturnStrictInitFields {
     /**
      * Test ForceEarlyReturnVoid when the target thread's top frame is a method of a
      * class with a strictly-initialized instance field. This test ensures that force
-     * early is allowed when the top-frame is a method  of a classes with
+     * early is allowed when the top frame is a method of a class with
      * strictly-initialized fields.
      */
     @Nested

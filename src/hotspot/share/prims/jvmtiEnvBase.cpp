@@ -2173,7 +2173,7 @@ JvmtiEnvBase::check_top_frame(Thread* current_thread, JavaThread* java_thread,
   }
 
   // Prevent ForceEarlyReturnVoid from returning early from the class initializer of a class with
-  // strictly-initialized static fields, or a constructor of a class with with strictly-initialized
+  // strictly-initialized static fields, or a constructor of a class with strictly-initialized
   // instance fields in the class hierarchy.
   if (tos == vtos) {
     Method* method = jvf->method();
