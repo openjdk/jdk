@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ void ShenandoahHeuristics::record_cycle_end() {
 
 bool ShenandoahHeuristics::should_start_gc() {
   if (_start_gc_is_pending) {
-    log_trigger("GC start is already pending");
+    log_info(gc, ergo)("GC start is already pending");
     return true;
   }
   // Perform GC to cleanup metaspace
@@ -203,8 +203,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
-                   last_time_ms, _guaranteed_gc_interval);
+      log_trigger("Guaranteed Interval. %.0f ms since last GC, above %zu ms guaranteed interval",
+                  last_time_ms, _guaranteed_gc_interval);
       accept_trigger();
       return true;
     }
