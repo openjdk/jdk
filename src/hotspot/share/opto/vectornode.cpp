@@ -2435,7 +2435,8 @@ Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
   // If the types of the input and output nodes in a VectorMaskCast chain are
   // exactly the same, the intermediate VectorMaskCast nodes can be eliminated.
   Node* n = VectorNode::uncast_mask(this);
-  if (vect_type()->eq(n->bottom_type())) {
+  // The chain can end at `Top` node if it's a dead path.
+  if (!n->is_top() && vect_type()->eq(n->bottom_type())) {
       return n;
   }
   return this;
