@@ -388,6 +388,11 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     if (candidates()->retained_groups().num_regions() > 0) {
       select_candidates_from_retained(time_remaining_ms);
     }
+    // Optional groups are selected separately from marking and retained candidate
+    // lists; sort the combined list to maintain the GC efficiency ordering.
+    _optional_groups.sort_by_efficiency();
+    _optional_groups.verify();
+
     candidates()->verify();
   } else {
     log_debug(gc, ergo, cset)("No candidates to reclaim.");
