@@ -83,7 +83,7 @@ public sealed class ArenaImpl implements Arena {
                 // Cleanup actions can access the backing region through globally scoped
                 // cleanup segments, so clear and release the pool only after they have run.
                 if (pool != 0) {
-                    ConfinedSegmentPool.release(session.owner, pool, poolSp);
+                    ConfinedSegmentPool.release(pool, poolSp);
                 }
             }
         }
@@ -107,9 +107,9 @@ public sealed class ArenaImpl implements Arena {
                 session.checkValidState();
                 long pool = this.pool;
                 if (pool == 0) {
-                    pool = ConfinedSegmentPool.acquire(session.owner);
+                    pool = ConfinedSegmentPool.acquire();
                     if (pool == 0) {
-                        pool = ConfinedSegmentPool.allocateLocal(session.owner);
+                        pool = ConfinedSegmentPool.allocateLocal();
                     }
                     if (pool != 0) {
                         this.pool = pool;

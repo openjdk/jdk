@@ -67,19 +67,19 @@ final class TestConfinedSegmentPoolDefensiveRelease {
     @Test
     void releaseWithNoPreviousAcquire() throws Throwable {
         TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () ->
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), 0, 1)));
+                assertThrows(IllegalStateException.class, () -> release(0, 1)));
     }
 
     @Test
     void releaseWithNoPreviousAcquireVt() throws Throwable {
         testOnVirtualThreadWithUntouchedCarrierThread(() -> {
-            assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), 0, 1));
+            assertThrows(IllegalStateException.class, () -> release(0, 1));
         });
     }
 
     @Test
     void releaseAfterRelease() throws Throwable {
-        testOnUntouchedThread(pool -> assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, 1)));
+        testOnUntouchedThread(pool -> assertThrows(IllegalStateException.class, () -> release(pool, 1)));
     }
 
     @Test
@@ -96,7 +96,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
             assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());
 
             assertThrows(IllegalStateException.class,
-                    () -> release(Thread.currentThread(), pool, 1));
+                    () -> release(pool, 1));
         });
     }
 
@@ -107,8 +107,8 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         testOnUntouchedThread(pool -> {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(1);
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, ConfinedSegmentPool.pooledMemorySize() + 1));
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, -1));
+                assertThrows(IllegalStateException.class, () -> release(pool, ConfinedSegmentPool.pooledMemorySize() + 1));
+                assertThrows(IllegalStateException.class, () -> release(pool, -1));
                 assertEquals(0 /* acquired and detached */,
                         TestConfinedSegmentPoolUtils.currentPool());
             }
@@ -128,8 +128,8 @@ final class TestConfinedSegmentPoolDefensiveRelease {
 
             try (Arena arena = Arena.ofConfined()) {
                 assertEquals(pool, arena.allocate(1).address());
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, ConfinedSegmentPool.pooledMemorySize() + 1));
-                assertThrows(IllegalStateException.class, () -> release(Thread.currentThread(), pool, -1));
+                assertThrows(IllegalStateException.class, () -> release(pool, ConfinedSegmentPool.pooledMemorySize() + 1));
+                assertThrows(IllegalStateException.class, () -> release(pool, -1));
                 assertEquals(0 /* acquired but not remembered */,
                         TestConfinedSegmentPoolUtils.currentPool());
             }
@@ -179,9 +179,9 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         TestConfinedSegmentPoolUtils.rethrowIfFailed(failure.get());
     }
 
-    static void release(Thread thread, long pool, long size) throws Throwable {
+    static void release(long pool, long size) throws Throwable {
         try {
-            RELEASE.invoke(null, thread, pool, size);
+            RELEASE.invoke(null, pool, size);
         } catch (InvocationTargetException ex) {
             throw ex.getCause();
         }
@@ -189,7 +189,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
 
     static Method releaseMethod() {
         try {
-            Method method = ConfinedSegmentPool.class.getDeclaredMethod("release", Thread.class, long.class, long.class);
+            Method method = ConfinedSegmentPool.class.getDeclaredMethod("release", long.class, long.class);
             method.setAccessible(true);
             return method;
         } catch (ReflectiveOperationException ex) {

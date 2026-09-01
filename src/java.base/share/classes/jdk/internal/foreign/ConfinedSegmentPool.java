@@ -121,17 +121,17 @@ public final class ConfinedSegmentPool {
 
     /**
      * Acquires and removes a pool from the appropriate cache for an arena owned
-     * by {@code thread}. A platform-thread arena uses its owner's cache, while
+     * by the current thread. A platform-thread arena uses its owner's cache, while
      * a virtual-thread arena uses the current carrier's cache.
      *
      * @return a non-zero native address, or zero if no pool is available
      */
     @ForceInline
-    static long acquire(Thread thread) {
-        assert thread == Thread.currentThread();
+    static long acquire() {
         if (POOLING_DISABLED) {
             return 0;
         }
+        final Thread thread = Thread.currentThread();
         if (ContinuationSupport.isSupported() && thread.isVirtual()) {
             Continuation.pin();
             try {
@@ -148,8 +148,7 @@ public final class ConfinedSegmentPool {
      * Allocates a pool owned directly by the arena and not yet present in any
      * thread cache. On arena close, the pool is cached or freed.
      */
-    static long allocateLocal(Thread thread) {
-        assert thread == Thread.currentThread();
+    static long allocateLocal() {
         return POOLING_DISABLED ? 0 : allocateDetachedPool();
     }
 
@@ -159,8 +158,8 @@ public final class ConfinedSegmentPool {
      * return pools to the current carrier.
      */
     @ForceInline
-    static void release(Thread thread, long pool, long usedSize) {
-        assert thread == Thread.currentThread();
+    static void release(long pool, long usedSize) {
+        final Thread thread = Thread.currentThread();
         if (ContinuationSupport.isSupported() && thread.isVirtual()) {
             Continuation.pin();
             try {
