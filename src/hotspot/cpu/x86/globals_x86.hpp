@@ -108,7 +108,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, true);
           "Highest supported AVX instructions set on x86/x64")              \
           range(0, 3)                                                       \
                                                                             \
-  product(bool, UseAPX, false, EXPERIMENTAL,                                \
+  product(bool, UseAPX, false,                                              \
           "Use Intel Advanced Performance Extensions")                      \
                                                                             \
   product(bool, UseKNLSetting, false, DIAGNOSTIC,                           \

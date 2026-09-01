@@ -2889,6 +2889,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
         // Yes, found a use/kill pinch-point
         pinch->set_req(0,nullptr);  //
         pinch->replace_by(kill); // Move anti-dep edges up
+        _pinch_free_list.push(pinch);
         pinch = kill;
         _reg_node.map(def_reg,pinch);
         return;
