@@ -735,7 +735,6 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
 
   uint min_num_old_cset_regions = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
   uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
-  bool enforce_time_budget = _policy->use_adaptive_num_young_regions();
 
   G1CSetCandidateGroupList* from_marking_groups = &candidates()->from_marking_groups();
 
@@ -745,12 +744,12 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time budget %1.2fms, optional threshold %1.2fms, "
                             "old CSet copy budget %zuB",
-                            min_old_cset_length, max_old_cset_length, from_marking_groups->num_regions(), from_marking_groups->length(),
+                            min_num_old_cset_regions, max_num_old_cset_regions, from_marking_groups->num_regions(), from_marking_groups->length(),
                             candidate_selection.time_budget_ms(), optional_threshold_ms,
                             candidate_selection.copy_budget_bytes());
 
   for (G1CSetCandidateGroup* group : *from_marking_groups) {
-    if (candidate_selection.num_selected_regions() >= max_old_cset_length) {
+    if (candidate_selection.num_selected_regions() >= max_num_old_cset_regions) {
       // Added maximum number of old regions to the CSet.
       print_finish_message("Maximum number of regions reached", true);
       break;
@@ -765,9 +764,9 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
     }
 
     // Add regions to old set until we reach the minimum amount
-    if (candidate_selection.num_initial_regions() < min_old_cset_length) {
+    if (candidate_selection.num_initial_regions() < min_num_old_cset_regions) {
       candidate_selection.add_for_minimum(group, prediction);
-    } else if (!enforce_time_budget) {
+    } else if (!_policy->use_adaptive_num_young_regions()) {
       // In the non-auto-tuning case, we'll finish adding regions
       // to the CSet if we reach the minimum.
       print_finish_message("Region amount reached min", true);
@@ -776,7 +775,6 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
       break;
     }
   }
-
   candidate_selection.finalize();
 }
 
@@ -1005,7 +1003,7 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
                             copy_budget_bytes);
   // Remove selected groups from candidate list.
   if (selected.length() > 0) {
-    _optional_groups.remove(&selected);
+    _optional_groups.remove_selected(selected.length(), selected.num_regions());
     candidates()->remove(&selected);
   }
 

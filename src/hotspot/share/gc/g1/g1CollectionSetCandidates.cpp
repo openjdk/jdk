@@ -170,6 +170,9 @@ void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
     return;
   }
 
+  // Must be sorted by gc efficiency
+  other->verify();
+
   // Create a list from scratch, copying over the elements from the candidate
   // list not in the other list. Finally deallocate and overwrite the old list.
   int new_length = _groups.length() - other->length();
