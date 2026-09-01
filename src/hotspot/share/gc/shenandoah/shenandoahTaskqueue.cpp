@@ -99,7 +99,8 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
 
       for (size_t c = 0; c < to_push; c++) {
         assert(!ts.is_empty(), "Must not be empty");
-        q->push(ts.pop());
+        bool succ = q->push(ts.pop());
+        assert(succ, "Must succeed");
       }
     }
   }
