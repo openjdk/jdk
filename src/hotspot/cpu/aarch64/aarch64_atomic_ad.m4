@@ -31,9 +31,10 @@
 // can't check the type of memory ordering here, so we always emit a
 // STLXR.
 
-// Only the acquiring variants of CompareAndSwapX, GetAndSetX and GetAndAddX
-// are defined here: needs_acquiring_load_exclusive() always returns true for
-// these opcodes (see is_CAS()), so the non-acquiring variants are unreachable.
+// CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
+// consistent operations. C2 therefore emits a trailing MemBarAcquire for
+// these nodes, so their AArch64 implementation always needs acquire semantics.
+// Non-acquiring match rules would consequently be unreachable.
 
 // This section is generated from aarch64_atomic_ad.m4
 
