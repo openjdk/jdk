@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,7 +100,7 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
     ++event_klass_unloaded_count;
   }
   add_to_unloaded_klass_set(JfrTraceId::load_raw(k));
-  return USED_THIS_EPOCH(k);
+  return USED_THIS_EPOCH(k) || USED_PREVIOUS_EPOCH(k);
 }
 
 static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {

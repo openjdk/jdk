@@ -31,6 +31,8 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
+class ObjectMonitor;
+
 class BasicLock {
   friend class VMStructs;
  private:

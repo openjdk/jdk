@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8323552
- * @run testng/timeout=480 TestMismatch
+ * @run junit/timeout=480 TestMismatch
  */
 
 import java.lang.foreign.Arena;
@@ -39,12 +39,16 @@ import java.lang.foreign.ValueLayout;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertThrows;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestMismatch {
 
     // stores an increasing sequence of values into the memory of the given segment
@@ -55,56 +59,76 @@ public class TestMismatch {
         return segment;
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeSrcFromOffset(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, -1, 0, s2, 0, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, -1, 0, s2, 0, 0);
+        });
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeDstFromOffset(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, 0, 0, s2, -1, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, 0, 0, s2, -1, 0);
+        });
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeSrcToOffset(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, 0, -1, s2, 0, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, 0, -1, s2, 0, 0);
+        });
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeDstToOffset(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, 0, 0, s2, 0, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, 0, 0, s2, 0, -1);
+        });
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeSrcLength(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, 3, 2, s2, 0, 0);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, 3, 2, s2, 0, 0);
+        });
     }
 
-    @Test(dataProvider = "slices", expectedExceptions = IndexOutOfBoundsException.class)
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testNegativeDstLength(MemorySegment s1, MemorySegment s2) {
-        MemorySegment.mismatch(s1, 0, 0, s2, 3, 2);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MemorySegment.mismatch(s1, 0, 0, s2, 3, 2);
+        });
     }
 
-    @Test(dataProvider = "slices")
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testSameValues(MemorySegment ss1, MemorySegment ss2) {
         out.format("testSameValues s1:%s, s2:%s\n", ss1, ss2);
         MemorySegment s1 = initializeSegment(ss1);
         MemorySegment s2 = initializeSegment(ss2);
 
         if (s1.byteSize() == s2.byteSize()) {
-            assertEquals(s1.mismatch(s2), -1);  // identical
-            assertEquals(s2.mismatch(s1), -1);
+            assertEquals(-1, s1.mismatch(s2));  // identical
+            assertEquals(-1, s2.mismatch(s1));
         } else if (s1.byteSize() > s2.byteSize()) {
-            assertEquals(s1.mismatch(s2), s2.byteSize());  // proper prefix
-            assertEquals(s2.mismatch(s1), s2.byteSize());
+            assertEquals(s2.byteSize(), s1.mismatch(s2));  // proper prefix
+            assertEquals(s2.byteSize(), s2.mismatch(s1));
         } else {
             assert s1.byteSize() < s2.byteSize();
-            assertEquals(s1.mismatch(s2), s1.byteSize());  // proper prefix
-            assertEquals(s2.mismatch(s1), s1.byteSize());
+            assertEquals(s1.byteSize(), s1.mismatch(s2));  // proper prefix
+            assertEquals(s1.byteSize(), s2.mismatch(s1));
         }
     }
 
-    @Test(dataProvider = "slicesStatic")
+    @ParameterizedTest
+    @MethodSource("slicesStatic")
     public void testSameValuesStatic(SliceOffsetAndSize ss1, SliceOffsetAndSize ss2) {
         out.format("testSameValuesStatic s1:%s, s2:%s\n", ss1, ss2);
         MemorySegment s1 = initializeSegment(ss1.toSlice());
@@ -114,13 +138,13 @@ public class TestMismatch {
             long bytes = i - ss2.offset;
             long expected = (bytes == ss1.size) ?
                     -1 : Long.min(ss1.size, bytes);
-            assertEquals(MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, i), expected);
+            assertEquals(expected, MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, i));
         }
         for (long i = ss1.offset ; i < ss1.size ; i++) {
             long bytes = i - ss1.offset;
             long expected = (bytes == ss2.size) ?
                     -1 : Long.min(ss2.size, bytes);
-            assertEquals(MemorySegment.mismatch(ss2.segment, ss2.offset, ss2.endOffset(), ss1.segment, ss1.offset, i), expected);
+            assertEquals(expected, MemorySegment.mismatch(ss2.segment, ss2.offset, ss2.endOffset(), ss1.segment, ss1.offset, i));
         }
     }
 
@@ -160,21 +184,21 @@ public class TestMismatch {
                         }
 
                         // They are not equal and differs in position beginDiff
-                        assertEquals(src.mismatch(dst), beginDiff);
-                        assertEquals(dst.mismatch(src), beginDiff);
+                        assertEquals(beginDiff, src.mismatch(dst));
+                        assertEquals(beginDiff, dst.mismatch(src));
                     } else {
                         // In this branch, there is no injection
 
                         if (src.byteSize() == dst.byteSize()) {
                             // The content matches and they are of equal size
-                            assertEquals(src.mismatch(dst), -1);
-                            assertEquals(dst.mismatch(src), -1);
+                            assertEquals(-1, src.mismatch(dst));
+                            assertEquals(-1, dst.mismatch(src));
                         } else {
                             // The content matches but they are of different length
                             // Remember, the size of src is always smaller or equal
                             // to the size of dst.
-                            assertEquals(src.mismatch(dst), src.byteSize());
-                            assertEquals(dst.mismatch(src), src.byteSize());
+                            assertEquals(src.byteSize(), src.mismatch(dst));
+                            assertEquals(src.byteSize(), dst.mismatch(src));
                         }
                     }
                 }
@@ -186,7 +210,8 @@ public class TestMismatch {
         return (byte) rnd.nextInt(Byte.MIN_VALUE, Byte.MAX_VALUE + 1);
     }
 
-    @Test(dataProvider = "slices")
+    @ParameterizedTest
+    @MethodSource("slices")
     public void testDifferentValues(MemorySegment s1, MemorySegment s2) {
         out.format("testDifferentValues s1:%s, s2:%s\n", s1, s2);
         s1 = initializeSegment(s1);
@@ -197,21 +222,22 @@ public class TestMismatch {
             s2.set(ValueLayout.JAVA_BYTE, i, (byte) 0xFF);
 
             if (s1.byteSize() == s2.byteSize()) {
-                assertEquals(s1.mismatch(s2), expectedMismatchOffset);
-                assertEquals(s2.mismatch(s1), expectedMismatchOffset);
+                assertEquals(expectedMismatchOffset, s1.mismatch(s2));
+                assertEquals(expectedMismatchOffset, s2.mismatch(s1));
             } else if (s1.byteSize() > s2.byteSize()) {
-                assertEquals(s1.mismatch(s2), expectedMismatchOffset);
-                assertEquals(s2.mismatch(s1), expectedMismatchOffset);
+                assertEquals(expectedMismatchOffset, s1.mismatch(s2));
+                assertEquals(expectedMismatchOffset, s2.mismatch(s1));
             } else {
                 assert s1.byteSize() < s2.byteSize();
                 var off = Math.min(s1.byteSize(), expectedMismatchOffset);
-                assertEquals(s1.mismatch(s2), off);  // proper prefix
-                assertEquals(s2.mismatch(s1), off);
+                assertEquals(off, s1.mismatch(s2));  // proper prefix
+                assertEquals(off, s2.mismatch(s1));
             }
         }
     }
 
-    @Test(dataProvider = "slicesStatic")
+    @ParameterizedTest
+    @MethodSource("slicesStatic")
     public void testDifferentValuesStatic(SliceOffsetAndSize ss1, SliceOffsetAndSize ss2) {
         out.format("testDifferentValues s1:%s, s2:%s\n", ss1, ss2);
 
@@ -223,10 +249,10 @@ public class TestMismatch {
             ss2.toSlice().set(ValueLayout.JAVA_BYTE, i, (byte) 0xFF);
 
             for (long j = expectedMismatchOffset + 1 ; j < ss2.size ; j++) {
-                assertEquals(MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, j + ss2.offset), expectedMismatchOffset);
+                assertEquals(expectedMismatchOffset, MemorySegment.mismatch(ss1.segment, ss1.offset, ss1.endOffset(), ss2.segment, ss2.offset, j + ss2.offset));
             }
             for (long j = expectedMismatchOffset + 1 ; j < ss1.size ; j++) {
-                assertEquals(MemorySegment.mismatch(ss2.segment, ss2.offset, ss2.endOffset(), ss1.segment, ss1.offset, j + ss1.offset), expectedMismatchOffset);
+                assertEquals(expectedMismatchOffset, MemorySegment.mismatch(ss2.segment, ss2.offset, ss2.endOffset(), ss1.segment, ss1.offset, j + ss1.offset));
             }
         }
     }
@@ -234,12 +260,12 @@ public class TestMismatch {
     @Test
     public void testEmpty() {
         var s1 = MemorySegment.ofArray(new byte[0]);
-        assertEquals(s1.mismatch(s1), -1);
+        assertEquals(-1, s1.mismatch(s1));
         try (Arena arena = Arena.ofConfined()) {
             var nativeSegment = arena.allocate(4, 4);;
             var s2 = nativeSegment.asSlice(0, 0);
-            assertEquals(s1.mismatch(s2), -1);
-            assertEquals(s2.mismatch(s1), -1);
+            assertEquals(-1, s1.mismatch(s2));
+            assertEquals(-1, s2.mismatch(s1));
         }
     }
 
@@ -250,9 +276,9 @@ public class TestMismatch {
             try (Arena arena = Arena.ofConfined()) {
                 var s1 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
                 var s2 = arena.allocate((long) Integer.MAX_VALUE + 10L, 8);;
-                assertEquals(s1.mismatch(s1), -1);
-                assertEquals(s1.mismatch(s2), -1);
-                assertEquals(s2.mismatch(s1), -1);
+                assertEquals(-1, s1.mismatch(s1));
+                assertEquals(-1, s1.mismatch(s2));
+                assertEquals(-1, s2.mismatch(s1));
 
                 testLargeAcrossMaxBoundary(s1, s2);
 
@@ -266,13 +292,13 @@ public class TestMismatch {
             var s3 = s1.asSlice(0, i);
             var s4 = s2.asSlice(0, i);
             // instance
-            assertEquals(s3.mismatch(s3), -1);
-            assertEquals(s3.mismatch(s4), -1);
-            assertEquals(s4.mismatch(s3), -1);
+            assertEquals(-1, s3.mismatch(s3));
+            assertEquals(-1, s3.mismatch(s4));
+            assertEquals(-1, s4.mismatch(s3));
             // static
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s2, 0, s1.byteSize(), s1, 0, i), -1);
-            assertEquals(MemorySegment.mismatch(s1, 0, s1.byteSize(), s2, 0, i), -1);
+            assertEquals(-1, MemorySegment.mismatch(s1, 0, s1.byteSize(), s1, 0, i));
+            assertEquals(-1, MemorySegment.mismatch(s2, 0, s1.byteSize(), s1, 0, i));
+            assertEquals(-1, MemorySegment.mismatch(s1, 0, s1.byteSize(), s2, 0, i));
         }
     }
 
@@ -280,8 +306,8 @@ public class TestMismatch {
         for (long i = s2.byteSize() -1 ; i >= Integer.MAX_VALUE - 10L; i--) {
             s2.set(ValueLayout.JAVA_BYTE, i, (byte) 0xFF);
             long expectedMismatchOffset = i;
-            assertEquals(s1.mismatch(s2), expectedMismatchOffset);
-            assertEquals(s2.mismatch(s1), expectedMismatchOffset);
+            assertEquals(expectedMismatchOffset, s1.mismatch(s2));
+            assertEquals(expectedMismatchOffset, s2.mismatch(s1));
         }
     }
 
@@ -351,22 +377,22 @@ public class TestMismatch {
         long match = MemorySegment.mismatch(
                 segment, 0L, 4L,
                 segment, 4L, 8L);
-        assertEquals(match, -1);
+        assertEquals(-1, match);
 
         long noMatch = MemorySegment.mismatch(
                 segment, 0L, 4L,
                 segment, 1L, 5L);
-        assertEquals(noMatch, 0);
+        assertEquals(0, noMatch);
 
         long noMatchEnd = MemorySegment.mismatch(
                 segment, 0L, 2L,
                 segment, 8L, 10L);
-        assertEquals(noMatchEnd, 1);
+        assertEquals(1, noMatchEnd);
 
         long same = MemorySegment.mismatch(
                 segment, 0L, 8L,
                 segment, 0L, 8L);
-        assertEquals(same, -1);
+        assertEquals(-1, same);
     }
 
     enum SegmentKind {
@@ -393,7 +419,6 @@ public class TestMismatch {
         }
     };
 
-    @DataProvider(name = "slicesStatic")
     static Object[][] slicesStatic() {
         int[] sizes = { 16, 8, 1 };
         List<SliceOffsetAndSize> aSliceOffsetAndSizes = new ArrayList<>();
@@ -419,7 +444,6 @@ public class TestMismatch {
         return sliceArray;
     }
 
-    @DataProvider(name = "slices")
     static Object[][] slices() {
         Object[][] slicesStatic = slicesStatic();
         return Stream.of(slicesStatic)

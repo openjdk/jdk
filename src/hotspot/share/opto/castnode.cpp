@@ -204,6 +204,11 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 
 bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) const {
   const Type* t = phase->type(other);
+  if ((t->isa_rawptr() && (type()->isa_oopptr() || type()->isa_klassptr())) ||
+      ((t->isa_oopptr() || t->isa_klassptr()) && type()->isa_rawptr())) {
+    assert(is_CheckCastPP(), "unrelated types from %s", Name());
+    return false;
+  }
   if (!t->higher_equal_speculative(type())) {
     return false;
   }
@@ -224,6 +229,10 @@ Node* ConstraintCastNode::pin_node_under_control_impl() const {
 
 Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
   InlineTypeNode* vt = in(1)->as_InlineType();
+  if (type()->isa_rawptr() != nullptr) {
+    return nullptr;
+  }
+
   const Type* join = vt->type()->filter(type());
   if (join == Type::TOP) {
     // Do not push a dead Cast since its type can be unrelated
