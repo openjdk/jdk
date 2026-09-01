@@ -2235,17 +2235,18 @@ encode %{
     __ mv(dst_reg, con);
   %}
 
-  enc_class riscv_enc_mov_p(iRegP dst, immP src) %{
+  enc_class riscv_enc_mov_p(iRegP dst, immP src, iRegP tmp) %{
     Register dst_reg = as_Register($dst$$reg);
+    Register tmp_reg = as_Register($tmp$$reg);
     address con = (address)$src$$constant;
     if (con == nullptr || con == (address)1) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con);
+        __ movoop(dst_reg, (jobject)con, tmp_reg);
       } else if (rtype == relocInfo::metadata_type) {
-        __ mov_metadata(dst_reg, (Metadata*)con);
+        __ mov_metadata(dst_reg, (Metadata*)con, tmp_reg);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         __ mv(dst_reg, $src$$constant);
@@ -4765,14 +4766,16 @@ instruct loadConL(iRegLNoSp dst, immL src)
 %}
 
 // Load Pointer Constant
-instruct loadConP(iRegPNoSp dst, immP con)
+instruct loadConP(iRegPNoSp dst, immP con, iRegPNoSp tmp)
 %{
   match(Set dst con);
+
+  effect(TEMP_DEF dst, TEMP tmp);
 
   ins_cost(ALU_COST);
   format %{ "mv  $dst, $con\t# ptr, #@loadConP" %}
 
-  ins_encode(riscv_enc_mov_p(dst, con));
+  ins_encode(riscv_enc_mov_p(dst, con, tmp));
 
   ins_pipe(ialu_imm);
 %}
