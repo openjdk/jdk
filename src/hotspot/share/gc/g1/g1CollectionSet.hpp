@@ -182,6 +182,18 @@ class G1CollectionSet {
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
 
+  struct SelectionBudget {
+    double _time_budget_ms;
+    size_t _copy_budget_bytes;
+
+    void deduct_from_budget(const G1EvacuationPrediction& prediction);
+    void deduct_only_time(const G1EvacuationPrediction& prediction);
+  };
+
+  class CandidateSelection;
+  class MarkingCandidateSelection;
+  class RetainedCandidateSelection;
+
   void verify_young_cset_indices() const NOT_DEBUG_RETURN;
 
   void add_young_region_common(G1HeapRegion* hr);
@@ -198,23 +210,26 @@ class G1CollectionSet {
 
   void add_region_to_collection_set(G1HeapRegion* r);
 
-  double select_candidates_from_marking(double time_remaining_ms);
+  void select_candidates_from_marking(SelectionBudget& budget);
 
-  void select_candidates_from_retained(double time_remaining_ms);
-
-  // Select groups for evacuation from the optional candidates given the remaining time
+  // Select groups for evacuation from the optional candidates given the time budget
   // and return the number of actually selected regions.
-  uint select_optional_groups(double time_remaining_ms);
-  double select_candidates_from_optional_groups(double time_remaining_ms, uint& num_regions_selected);
+  uint select_optional_groups(double time_budget_ms);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
   // as Eden and calculate a prediction on how long the evacuation of all young regions
-  // will take. Returns the time remaining from the given target pause time.
-  double finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
+  // will take. Returns the pause-time and old CSet copy budget after selecting young
+  // regions.
+  SelectionBudget finalize_young_part(double target_pause_time_ms, G1SurvivorRegions* survivors);
 
   // Select the regions comprising the initial and optional collection set from marking
   // and retained collection set candidates.
-  void finalize_old_part(double time_remaining_ms);
+  void finalize_old_part(SelectionBudget& budget);
+
+  size_t old_cset_copy_budget_bytes(size_t predicted_young_bytes_to_copy,
+                                    size_t young_used_bytes) const;
+
+  size_t young_used_bytes() const;
 
   // Iterate the part of the collection set given by the offset and length applying the given
   // G1HeapRegionClosure. The worker_id will determine where in the part to start the iteration
@@ -225,12 +240,8 @@ class G1CollectionSet {
                          uint length,
                          uint worker_id) const;
 
-  // Adds the given group to the optional groups list (_optional_groups)
-  // and updates all related bookkeeping.
-  void add_optional_group(G1CSetCandidateGroup* group,
-                          uint& num_optional_regions,
-                          double& predicted_optional_time_ms,
-                          double predicted_time_ms);
+  // Add and prepare the given group for optional evacuation.
+  void add_optional_group(G1CSetCandidateGroup* group);
 
 public:
   G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy);
@@ -302,7 +313,7 @@ public:
   void finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor);
   // Finalize the next collection set from the set of available optional old gen regions.
   // Returns whether there still were some optional regions.
-  bool finalize_optional_for_evacuation(double remaining_pause_time);
+  bool finalize_optional_for_evacuation(double time_budget_ms);
   // Abandon (clean up) optional collection set regions that were not evacuated in this
   // pause.
   void abandon_optional_collection_set(G1ParScanThreadStateSet* pss);

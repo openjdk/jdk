@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1EvacuationPrediction.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
@@ -117,7 +118,7 @@ public:
 
   G1CollectionSetCandidateInfo* at(uint i) { return &_candidates.at(i); }
 
-  double predict_group_total_time_ms() const;
+  G1EvacuationPrediction predict_group_evacuation() const;
 
   G1MonotonicArenaMemoryStats card_set_memory_stats() const {
     return _card_set_mm.memory_stats();

@@ -66,6 +66,8 @@ private:
   void set_survivor_full();
   void set_old_full();
 
+  static bool can_reuse_retained_old_region(const G1HeapRegion* region);
+
   void reuse_retained_old_region(G1EvacInfo* evacuation_info,
                                  OldGCAllocRegion* old,
                                  G1HeapRegion** retained);

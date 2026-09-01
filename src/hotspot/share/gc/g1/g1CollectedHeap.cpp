@@ -418,6 +418,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // A successful humongous object allocation changes the used space
     // information of the old generation so we need to recalculate the
     // sizes and update the jstat counters here.
+    policy()->update_free_regions_for_young_sizing();
     monitoring_support()->update_sizes();
   }
 
