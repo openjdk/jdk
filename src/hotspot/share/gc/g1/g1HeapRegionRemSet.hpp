@@ -162,7 +162,7 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return sizeof(G1HeapRegionRemSet) + code_roots_mem_size();
+    return sizeof(G1HeapRegionRemSet) - sizeof(G1CodeRootSet) + code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
