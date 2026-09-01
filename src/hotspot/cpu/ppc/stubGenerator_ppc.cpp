@@ -69,18 +69,6 @@
 #define STUB_ENTRY(name) ((FunctionDescriptor*)StubRoutines::name)->entry()
 #endif
 
-ATTRIBUTE_ALIGNED(16)
-static const uint8_t ADLER32_WEIGHTS[] = {
-  16,15,14,13,12,11,10,9,
-  8,7,6,5,4,3,2,1
-};
-
-ATTRIBUTE_ALIGNED(16)
-static const uint8_t ADLER32_ONES[] = {
-  1,1,1,1,1,1,1,1,
-  1,1,1,1,1,1,1,1
-};
-
 class StubGenerator: public StubCodeGenerator {
  private:
 
@@ -3955,17 +3943,18 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vacc2    = VR4;
     VectorRegister vp       = VR5;
 
-    __ load_const32(base, BASE);
-    __ load_const32(nmax, NMAX);
+    __ load_const_optimized(base, BASE);
+    __ load_const_optimized(nmax, NMAX);
 
     // load tables
     __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
 
-    __ load_const(tmp0, (address)ADLER32_ONES);
-    __ load_byte_vector_unaligned(vones, 0, tmp0, tmp, vp);
+    __ vspltisb(vones, 1);
 
-    __ load_const(tmp0, (address)ADLER32_WEIGHTS);
-    __ load_byte_vector_unaligned(vweights, 0, tmp0, tmp, vp);
+    __ lvsl(vweights, 0);
+    __ vspltisb(vacc1, 15);
+    __ vxor(vweights, vweights, vacc1);
+    __ vaddubm(vweights, vweights, vones);
 
     // split Adler
     __ clrldi(s1, adler, 48);      // low 16 bits
