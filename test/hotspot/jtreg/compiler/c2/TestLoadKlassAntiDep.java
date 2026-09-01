@@ -38,7 +38,7 @@ package compiler.c2;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 
-public class Test6857159 {
+public class TestLoadKlassAntiDep {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     public static void main(String[] args) {
