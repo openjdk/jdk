@@ -262,7 +262,7 @@ private:
   static TypePtr::PTR meet_ary_klass_ptr(const AryKlassType* t1, const AryKlassType* t2) {
     // Sometimes, the klass is computed and cached, sometimes it is not. In general, the only time
     // we need to compare klass() is when t1->elem() and t2->elem() are both TypeInt::INT. In other
-    // cases, it is fine if klass_match == true, other parameters must reveal if t1 and t2 is not
+    // cases, it is fine if klass_match == true, other parameters must reveal if t1 and t2 are not
     // of the same type.
     bool klass_match = t1->klass() == nullptr || t2->klass() == nullptr || t1->klass() == t2->klass();
     if (t1->ptr() == TypePtr::Constant && t2->ptr() == TypePtr::Constant &&
