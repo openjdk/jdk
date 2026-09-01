@@ -26,6 +26,8 @@
 #define SHARE_OOPS_LAYOUTKIND_HPP
 
 #include "memory/allStatic.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
@@ -139,13 +141,14 @@ struct LayoutDescriptions {
   int _payload_offset;
   int _null_marker_offset;
   // Size of each LayoutKind. For atomic layouts, the size also acts as alignment.
-  int _sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, so we remove 1
+  int _sizes[static_cast<size_t>(LayoutKind::COUNT)]; // REFERENCE has no size, so we remove 1
   LayoutDescriptions()
   : _payload_alignment(NoValue),
     _non_atomic_alignment(NoValue),
     _payload_offset(NoValue),
     _null_marker_offset(NoValue),
     _sizes() {
+    set_size_in_bytes_of(LayoutKind::REFERENCE, UseCompressedOops ? sizeof(narrowOop) : oopSize);
     set_size_in_bytes_of(LayoutKind::BUFFERED, NoValue);
     set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, NoValue);
     set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, NoValue);
@@ -154,14 +157,12 @@ struct LayoutDescriptions {
   }
 
   void set_size_in_bytes_of(LayoutKind lk, int value) {
-    _sizes[static_cast<size_t>(lk) - 1] = value;
+    _sizes[static_cast<size_t>(lk)] = value;
   }
 
   // Returns default value if missing
   int size_in_bytes_of(LayoutKind lk, int default_value = -1) const {
-    assert(lk != LayoutKind::REFERENCE, "must be");
-    // - 1 to ignore REFERENCE
-    auto sz = _sizes[static_cast<size_t>(lk) - 1];
+    auto sz = _sizes[static_cast<size_t>(lk)];
     return sz == NoValue ? default_value : sz;
   }
 
