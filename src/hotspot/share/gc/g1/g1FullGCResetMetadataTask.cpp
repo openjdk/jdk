@@ -31,8 +31,14 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
   _collector(collector) { }
 
 void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
-  assert(hr->is_humongous() || !hr->rem_set()->has_cset_group(),
-         "Non-humongous regions must not have cset group");
+  if (hr->rem_set()->has_cset_group()) {
+    assert(hr->is_starts_humongous(), "Only humongous regions can retain a cset group");
+    assert(hr->rem_set()->cset_group()->length() == 1,
+           "Humongous region cset group must contain exactly one region");
+
+    hr->rem_set()->cset_group()->clear_card_set();
+  }
+
   hr->rem_set()->clear();
   hr->clear_both_card_tables();
   _g1h->concurrent_mark()->reset_region_marking_state(hr);
