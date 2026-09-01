@@ -57,6 +57,9 @@ static const ADAPTER_INFO badHardware[] = {
     // Microsoft Basic Render Driver (as maybe used in VMs such as VirtualBox)
     { 0x1414, 0x008c, NO_VERSION, OS_ALL },
 
+    // AMD / ATI - vendor ID 0x1002, no current hardware block-listed
+    // Nvidia - vendor ID 0x10DE, no current hardware block-listed
+
     // any Matrox board
     // Reason: there are no known Matrox boards with proper Direct3D support
     { 0x102B, ALL_DEVICEIDS, NO_VERSION, OS_ALL },
