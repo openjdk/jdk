@@ -3971,10 +3971,16 @@ const Type* TypeOopPtr::xjoin_helper(const Type* t) const {
 
     case OopPtr: {
       const TypeOopPtr* tp = t->is_oopptr();
-      int instance_id = join_instance_id(tp->instance_id());
       const TypePtr* speculative = xjoin_speculative(tp);
       int depth = join_inline_depth(tp->inline_depth());
-      return make(join_ptr(tp->ptr()), join_offset(tp->offset()), instance_id, speculative, depth);
+
+      Offset offset = join_offset(tp->offset());
+      if (offset == Offset::top) {
+        return TypePtr::make(AnyPtr, TopPTR, offset, speculative, depth);
+      }
+
+      int instance_id = join_instance_id(tp->instance_id());
+      return make(join_ptr(tp->ptr()), offset, instance_id, speculative, depth);
     }
 
     case InstPtr:
