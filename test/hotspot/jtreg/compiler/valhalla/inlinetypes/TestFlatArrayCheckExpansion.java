@@ -26,10 +26,9 @@ package compiler.valhalla.inlinetypes;
 import jdk.internal.value.ValueClass;
 import jdk.test.lib.Asserts;
 
-// TODO bug ID
-
 /**
  * @test
+ * @bug 8391280
  * @summary Test macro expansion of merged flat-array checks with array and klass inputs
  * @enablePreview
  * @library /test/lib
@@ -39,10 +38,7 @@ import jdk.test.lib.Asserts;
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  */
-
 public class TestFlatArrayCheckExpansion {
-
-// TODO different arrays
 
     static int test1(Object[] array) {
         int res = 0;
