@@ -68,8 +68,6 @@ public non-sealed interface JsonArray extends JsonValue {
      *      any values that are {@code null}
      */
     static JsonArray of(List<? extends JsonValue> src) {
-        // Careful not to use List::contains on src for null checking which
-        // throws NPE for immutable lists
         return new JsonArrayImpl(src);
     }
 }
