@@ -133,7 +133,7 @@ class LayoutKindHelper : AllStatic {
 
 // The different layouts available for a particular Klass
 struct LayoutDescriptions {
-  constexpr static int MissingValue = -1; // Missing layouts are assigned this value
+  constexpr static int NoValue = -1; // Unsupported layouts are assigned this value
   int _payload_alignment; // Alignment required for payload
   int _non_atomic_alignment; // Alignment requirement for the non-atomic layouts
   int _payload_offset;
@@ -141,16 +141,16 @@ struct LayoutDescriptions {
   // Size of each LayoutKind. For atomic layouts, the size also acts as alignment.
   int _sizes[static_cast<size_t>(LayoutKind::COUNT) - 1]; // REFERENCE has no size, so we remove 1
   LayoutDescriptions()
-  : _payload_alignment(MissingValue),
-    _non_atomic_alignment(MissingValue),
-    _payload_offset(MissingValue),
-    _null_marker_offset(MissingValue),
+  : _payload_alignment(NoValue),
+    _non_atomic_alignment(NoValue),
+    _payload_offset(NoValue),
+    _null_marker_offset(NoValue),
     _sizes() {
-    set_size_in_bytes_of(LayoutKind::BUFFERED, MissingValue);
-    set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, MissingValue);
-    set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, MissingValue);
-    set_size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, MissingValue);
-    set_size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT, MissingValue);
+    set_size_in_bytes_of(LayoutKind::BUFFERED, NoValue);
+    set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, NoValue);
+    set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, NoValue);
+    set_size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, NoValue);
+    set_size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT, NoValue);
   }
 
   void set_size_in_bytes_of(LayoutKind lk, int value) {
@@ -162,7 +162,7 @@ struct LayoutDescriptions {
     assert(lk != LayoutKind::REFERENCE, "must be");
     // - 1 to ignore REFERENCE
     auto sz = _sizes[static_cast<size_t>(lk) - 1];
-    return sz == MissingValue ? default_value : sz;
+    return sz == NoValue ? default_value : sz;
   }
 
   int alignment_of(LayoutKind lk) const {
@@ -195,17 +195,17 @@ struct LayoutDescriptions {
     return _payload_alignment;
   }
 
-  bool has_payload_alignment() const { return _payload_alignment != MissingValue; }
+  bool has_payload_alignment() const { return _payload_alignment != NoValue; }
   void set_payload_alignment(int alignment) { _payload_alignment = alignment; }
 
   int non_atomic_alignment() const {
-    assert(_non_atomic_alignment != LayoutDescriptions::MissingValue, "Uninitialized");
+    assert(_non_atomic_alignment != LayoutDescriptions::NoValue, "Uninitialized");
     return _non_atomic_alignment;
   }
   void set_non_atomic_alignment(int alignment) { _non_atomic_alignment = alignment; }
 
   bool has_a(LayoutKind lk) const {
-    return size_in_bytes_of(lk) != MissingValue;
+    return size_in_bytes_of(lk) != NoValue;
   }
 
   template<typename... Ts>

@@ -1315,14 +1315,14 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
         }
         layouts().set_payload_alignment(required_alignment);
       } else {
-        layouts().set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, LayoutDescriptions::MissingValue);
+        layouts().set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, LayoutDescriptions::NoValue);
         if (layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT) &&
             !layouts().has_a(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) &&
             !_is_empty_inline_class) {  // empty values don't have a dedicated NULL_MARKER block
           _layout->remove_null_marker();
-          layouts().set_null_marker_offset(LayoutDescriptions::MissingValue);
+          layouts().set_null_marker_offset(LayoutDescriptions::NoValue);
         }
-        layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, LayoutDescriptions::MissingValue);
+        layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, LayoutDescriptions::NoValue);
       }
     } else {
       layouts().set_payload_alignment(required_alignment);
