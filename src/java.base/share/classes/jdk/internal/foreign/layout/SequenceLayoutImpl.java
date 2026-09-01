@@ -174,7 +174,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         MemoryLayout elemLayout = elementLayout();
         boolean hasZeroCount = elementCount() == 0;
         // Do an intitial pass and check if any of the element counts are zero
-        // to prevent throwing on overflow in that case.
+        // to prevent throwing an overflow in that case.
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
             long elemCount = elemSeq.elementCount();
             hasZeroCount |= elemCount == 0;
