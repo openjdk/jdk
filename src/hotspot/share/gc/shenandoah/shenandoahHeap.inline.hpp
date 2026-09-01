@@ -301,32 +301,18 @@ inline HeapWord* ShenandoahHeap::allocate_from_gclab(Thread* thread, size_t size
 
 void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   // This operates on new copy of an object. This means that the object's mark-word
-  // is thread-local and therefore safe to access. However, when the mark is
-  // displaced (i.e. stack-locked or monitor-locked), then it must be considered
-  // a shared memory location. It can be accessed by other threads.
-  // In particular, a competing evacuating thread can succeed to install its copy
-  // as the forwardee and continue to unlock the object, at which point 'our'
-  // write to the foreign stack-location would potentially over-write random
-  // information on that stack. Writing to a monitor is less problematic,
-  // but still not safe: while the ObjectMonitor would not randomly disappear,
-  // the other thread would also write to the same displaced header location,
-  // possibly leading to increase the age twice.
-  // For all these reasons, we take the conservative approach and not attempt
-  // to increase the age when the header is displaced.
+  // is thread-local and therefore safe to access.
   markWord w = obj->mark();
   // It is possible that we have copied the object after another thread has
   // already successfully completed evacuation. While harmless (we would never
   // publish our copy), don't even attempt to modify the age when that
   // happens.
-  if (!w.has_displaced_mark_helper() && !w.is_marked()) {
+  if (!w.is_marked()) {
     w = w.set_age(MIN2(markWord::max_age, w.age() + additional_age));
     obj->set_mark(w);
   }
 }
 
-// Return the object's age, or a sentinel value when the age can't
-// necessarily be determined because of concurrent locking by the
-// mutator
 uint ShenandoahHeap::get_object_age(oop obj) {
   markWord w = obj->mark();
   assert(!w.is_marked(), "must not be forwarded");
@@ -375,11 +361,36 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 }
 
 inline bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::YOUNG_GENERATION);
+  return has_affiliation(p, YOUNG_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::OLD_GENERATION);
+  return has_affiliation(p, OLD_GENERATION);
+}
+
+inline bool ShenandoahHeap::is_old_to_young(const void* maybe_old, oop maybe_young) const {
+  if (maybe_young == nullptr) {
+    return false;
+  }
+  if (ShenandoahHeapRegion::is_in_same_region(maybe_old, maybe_young)) {
+    return false;
+  }
+  return has_affiliation(maybe_old, OLD_GENERATION) && has_affiliation(maybe_young, YOUNG_GENERATION);
+}
+
+inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation affiliation) const {
+  if (!is_in_reserved(p)) {
+    return false;
+  }
+
+  const size_t index = p2u(p) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
+}
+
+inline bool ShenandoahHeap::has_affiliation(oop obj, ShenandoahAffiliation affiliation) const {
+  assert(is_in_reserved(obj), "Expected decoded oop (" PTR_FORMAT ") to be in the heap", p2i(obj));
+  const size_t index = p2u(obj) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
 }
 
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {

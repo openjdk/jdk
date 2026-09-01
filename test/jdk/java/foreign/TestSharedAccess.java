@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng/othervm --enable-native-access=ALL-UNNAMED TestSharedAccess
+ * @run junit/othervm --enable-native-access=ALL-UNNAMED TestSharedAccess
  */
 
 import java.lang.foreign.*;
@@ -37,9 +37,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.testng.annotations.*;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestSharedAccess {
 
@@ -74,7 +73,7 @@ public class TestSharedAccess {
             for (Spliterator<MemorySegment> spliterator : spliterators) {
                 threads.add(new Thread(() -> {
                     spliterator.tryAdvance(local -> {
-                        assertEquals(getInt(local), 42);
+                        assertEquals(42, getInt(local));
                         accessCount.incrementAndGet();
                     });
                 }));
@@ -87,7 +86,7 @@ public class TestSharedAccess {
                     throw new IllegalStateException(e);
                 }
             });
-            assertEquals(accessCount.get(), 1024);
+            assertEquals(1024, accessCount.get());
         }
     }
 
@@ -96,11 +95,11 @@ public class TestSharedAccess {
         try (Arena arena = Arena.ofShared()) {
             MemorySegment s = arena.allocate(4, 1);;
             setInt(s, 42);
-            assertEquals(getInt(s), 42);
+            assertEquals(42, getInt(s));
             List<Thread> threads = new ArrayList<>();
             for (int i = 0 ; i < 1000 ; i++) {
                 threads.add(new Thread(() -> {
-                    assertEquals(getInt(s), 42);
+                    assertEquals(42, getInt(s));
                 }));
             }
             threads.forEach(Thread::start);

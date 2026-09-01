@@ -685,6 +685,9 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
+
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
@@ -1839,7 +1842,7 @@ public:
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
-    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+    return (Assembler::ld_instr(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);

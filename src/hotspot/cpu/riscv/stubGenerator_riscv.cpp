@@ -1240,8 +1240,8 @@ class StubGenerator: public StubCodeGenerator {
   void verify_oop_array(size_t size, Register a, Register count, Register temp) {
     Label loop, end;
     __ mv(t1, zr);
-    __ slli(t0, count, exact_log2(size));
     __ bind(loop);
+    __ slli(t0, count, exact_log2(size));
     __ bgeu(t1, t0, end);
 
     __ add(temp, a, t1);

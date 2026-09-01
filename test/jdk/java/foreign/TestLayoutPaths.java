@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,12 @@
 
 /*
  * @test
- * @run testng TestLayoutPaths
+ * @run junit TestLayoutPaths
  */
 
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 
-import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.VarHandle;
@@ -46,84 +45,116 @@ import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLayoutPaths {
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadByteSelectFromSeq() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(groupElement("foo"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(groupElement("foo"));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadByteSelectFromStruct() {
         GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
-        g.byteOffset(sequenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            g.byteOffset(sequenceElement());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadByteSelectFromValue() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(sequenceElement(), sequenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(sequenceElement(), sequenceElement());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testUnknownByteStructField() {
         GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
-        g.byteOffset(groupElement("foo"));
+        assertThrows(IllegalArgumentException.class, () -> {
+            g.byteOffset(groupElement("foo"));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testTooBigGroupElementIndex() {
         GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
-        g.byteOffset(groupElement(1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            g.byteOffset(groupElement(1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNegativeGroupElementIndex() {
         GroupLayout g = MemoryLayout.structLayout(JAVA_INT);
-        g.byteOffset(groupElement(-1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            g.byteOffset(groupElement(-1));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testByteOutOfBoundsSeqIndex() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(sequenceElement(6));
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(sequenceElement(6));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNegativeSeqIndex() {
-       sequenceElement(-2);
+        assertThrows(IllegalArgumentException.class, () -> {
+            sequenceElement(-2);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testByteNegativeSeqIndex() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(sequenceElement(-2));
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(sequenceElement(-2));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testOutOfBoundsSeqRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(sequenceElement(6, 2));
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(sequenceElement(6, 2));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNegativeSeqRange() {
-        sequenceElement(-2, 2);
+        assertThrows(IllegalArgumentException.class, () -> {
+            sequenceElement(-2, 2);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testByteNegativeSeqRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, JAVA_INT);
-        seq.byteOffset(sequenceElement(-2, 2));
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffset(sequenceElement(-2, 2));
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testIncompleteAccess() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
-        seq.varHandle(sequenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.varHandle(sequenceElement());
+        });
     }
 
     @Test
@@ -132,10 +163,12 @@ public class TestLayoutPaths {
         seq.byteOffsetHandle(sequenceElement(0, 1));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testByteOffsetHandleBadRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
-        seq.byteOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
+        assertThrows(IllegalArgumentException.class, () -> {
+            seq.byteOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
+        });
     }
 
     @Test
@@ -143,23 +176,23 @@ public class TestLayoutPaths {
         MemoryLayout struct = MemoryLayout.structLayout(
             JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN),
             JAVA_SHORT.withOrder(ByteOrder.LITTLE_ENDIAN).withName("x"));
-        assertEquals(struct.byteAlignment(), 4);
+        assertEquals(4, struct.byteAlignment());
 
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(struct.byteSize() + 2, struct.byteAlignment()).asSlice(2);
-            assertEquals(seg.address() % JAVA_SHORT.byteAlignment(), 0); // should be aligned
-            assertNotEquals(seg.address() % struct.byteAlignment(), 0); // should not be aligned
+            assertEquals(0, seg.address() % JAVA_SHORT.byteAlignment()); // should be aligned
+            assertNotEquals(0, seg.address() % struct.byteAlignment()); // should not be aligned
 
             String expectedMessage = "Target offset 0 is incompatible with alignment constraint " + struct.byteAlignment() + " (of [i4s2(x)]) for segment MemorySegment";
 
             VarHandle vhX = struct.varHandle(groupElement("x"));
-            IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
+            IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () -> {
                 vhX.set(seg, 0L, (short) 42);
             });
             assertTrue(iae.getMessage().startsWith(expectedMessage));
 
             MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
-            iae = expectThrows(IllegalArgumentException.class, () -> {
+            iae = assertThrows(IllegalArgumentException.class, () -> {
                 MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg, 0L);
             });
             assertTrue(iae.getMessage().startsWith(expectedMessage));
@@ -175,9 +208,9 @@ public class TestLayoutPaths {
 
         var expectedMessage = "Bad layout path: attempting to select a sequence element from a non-sequence layout: [i4i4]";
 
-        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () ->
                 struct.select(PathElement.sequenceElement()));
-        assertEquals(iae.getMessage(), expectedMessage);
+        assertEquals(expectedMessage, iae.getMessage());
     }
 
     @Test
@@ -195,11 +228,11 @@ public class TestLayoutPaths {
                 "[2:[i4(3a)i4(3b)](2)](1), selected from: " +
                 "[[2:[i4(3a)i4(3b)](2)](1)](0)";
 
-        IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () ->
+        IllegalArgumentException iae = assertThrows(IllegalArgumentException.class, () ->
                 struct.select(PathElement.groupElement("1"),
                         PathElement.sequenceElement(),
                         PathElement.sequenceElement()));
-        assertEquals(iae.getMessage(), expectedMessage);
+        assertEquals(expectedMessage, iae.getMessage());
     }
 
     @Test
@@ -229,7 +262,8 @@ public class TestLayoutPaths {
         }
     }
 
-    @Test(dataProvider = "groupSelectors")
+    @ParameterizedTest
+    @MethodSource("groupSelectors")
     public void testStructPaths(IntFunction<PathElement> groupSelector) {
         long[] offsets = { 0, 1, 3, 7 };
         GroupLayout g = MemoryLayout.structLayout(
@@ -250,11 +284,12 @@ public class TestLayoutPaths {
 
         for (int i = 0 ; i < 4 ; i++) {
             long byteOffset = g.byteOffset(groupSelector.apply(i));
-            assertEquals(offsets[i], byteOffset);
+            assertEquals(byteOffset, offsets[i]);
         }
     }
 
-    @Test(dataProvider = "groupSelectors")
+    @ParameterizedTest
+    @MethodSource("groupSelectors")
     public void testUnionPaths(IntFunction<PathElement> groupSelector) {
         long[] offsets = { 0, 0, 0, 0 };
         GroupLayout g = MemoryLayout.unionLayout(
@@ -275,11 +310,10 @@ public class TestLayoutPaths {
 
         for (int i = 0 ; i < 4 ; i++) {
             long byteOffset = g.byteOffset(groupSelector.apply(i));
-            assertEquals(offsets[i], byteOffset);
+            assertEquals(byteOffset, offsets[i]);
         }
     }
 
-    @DataProvider
     public static Object[][] groupSelectors() {
         return new Object[][] {
                 { (IntFunction<PathElement>) PathElement::groupElement }, // by index
@@ -301,20 +335,22 @@ public class TestLayoutPaths {
 
         for (int i = 0 ; i < 4 ; i++) {
             long byteOffset = g.byteOffset(sequenceElement(i));
-            assertEquals(offsets[i], byteOffset);
+            assertEquals(byteOffset, offsets[i]);
         }
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testOffsetHandle(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                  long expectedByteOffset) throws Throwable {
         MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
         byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
         long actualByteOffset = (long) byteOffsetHandle.invokeExact(0L, indexes);
-        assertEquals(actualByteOffset, expectedByteOffset);
+        assertEquals(expectedByteOffset, actualByteOffset);
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testOffsetHandleOOBIndex(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                  long expectedByteOffset) throws Throwable {
         int[] badIndices = { -1, 10 };
@@ -332,15 +368,19 @@ public class TestLayoutPaths {
         }
     }
 
-    @Test(dataProvider = "testLayouts", expectedExceptions = ArithmeticException.class)
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testOffsetHandleOverflow(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                          long expectedByteOffset) throws Throwable {
         MethodHandle byteOffsetHandle = layout.byteOffsetHandle(pathElements);
-        byteOffsetHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
-        byteOffsetHandle.invoke(Long.MAX_VALUE, indexes);
+        MethodHandle finalHandle = byteOffsetHandle.asSpreader(long[].class, indexes.length);
+        assertThrows(ArithmeticException.class, () -> {
+            finalHandle.invoke(Long.MAX_VALUE, indexes);
+        });
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                          long expectedByteOffset) throws Throwable {
         MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
@@ -357,7 +397,8 @@ public class TestLayoutPaths {
         assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testSliceHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                         long expectedByteOffset) throws Throwable {
         MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
@@ -373,7 +414,8 @@ public class TestLayoutPaths {
         assertThrows(IndexOutOfBoundsException.class, () -> getter_handle.invoke(segment, 0L, seqIndexes));
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testArrayElementVarHandleBadSegment(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                           long expectedByteOffset) throws Throwable {
         MemoryLayout seqLayout = MemoryLayout.sequenceLayout(10, layout);
@@ -395,46 +437,45 @@ public class TestLayoutPaths {
     public void testHashCodeCollision() {
         PathElement sequenceElement = PathElement.sequenceElement();
         PathElement dereferenceElement = PathElement.dereferenceElement();
-        assertNotEquals(sequenceElement.hashCode(), dereferenceElement.hashCode());
+        assertNotEquals(dereferenceElement.hashCode(), sequenceElement.hashCode());
     }
 
     @Test
     public void testGroupElementIndexToString() {
         PathElement e = PathElement.groupElement(2);
-        assertEquals(e.toString(), "groupElement(2)");
+        assertEquals("groupElement(2)", e.toString());
     }
 
     @Test
     public void testGroupElementNameToString() {
         PathElement e = PathElement.groupElement("x");
-        assertEquals(e.toString(), "groupElement(\"x\")");
+        assertEquals("groupElement(\"x\")", e.toString());
     }
 
     @Test
     public void testSequenceElementToString() {
         PathElement e = PathElement.sequenceElement();
-        assertEquals(e.toString(), "sequenceElement()");
+        assertEquals("sequenceElement()", e.toString());
     }
 
     @Test
     public void testSequenceElementIndexToString() {
         PathElement e = PathElement.sequenceElement(2);
-        assertEquals(e.toString(), "sequenceElement(2)");
+        assertEquals("sequenceElement(2)", e.toString());
     }
 
     @Test
     public void testSequenceElementRangeToString() {
         PathElement e = PathElement.sequenceElement(2, 4);
-        assertEquals(e.toString(), "sequenceElement(2, 4)");
+        assertEquals("sequenceElement(2, 4)", e.toString());
     }
 
     @Test
     public void testDerefereceElementToString() {
         PathElement e = PathElement.dereferenceElement();
-        assertEquals(e.toString(), "dereferenceElement()");
+        assertEquals("dereferenceElement()", e.toString());
     }
 
-    @DataProvider
     public static Object[][] testLayouts() {
         List<Object[]> testCases = new ArrayList<>();
 
@@ -510,7 +551,8 @@ public class TestLayoutPaths {
         return testCases.toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "testLayouts")
+    @ParameterizedTest
+    @MethodSource("testLayouts")
     public void testSliceHandle(MemoryLayout layout, PathElement[] pathElements, long[] indexes,
                                 long expectedByteOffset) throws Throwable {
         MemoryLayout selected = layout.select(pathElements);
@@ -520,8 +562,8 @@ public class TestLayoutPaths {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);
             MemorySegment slice = (MemorySegment) sliceHandle.invokeExact(segment, 0L, indexes);
-            assertEquals(slice.address() - segment.address(), expectedByteOffset);
-            assertEquals(slice.byteSize(), selected.byteSize());
+            assertEquals(expectedByteOffset, slice.address() - segment.address());
+            assertEquals(selected.byteSize(), slice.byteSize());
         }
     }
 
