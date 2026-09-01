@@ -2808,6 +2808,11 @@ public class IRNode {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
     }
 
+    public static final String X86_MASK_XNOR = PREFIX + "X86_MASK_XNOR" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_MASK_XNOR, "mask_xnor_evex");
+    }
+
     public static final String VMLA = PREFIX + "VMLA" + POSTFIX;
     static {
         machOnlyNameRegex(VMLA, "vmla");

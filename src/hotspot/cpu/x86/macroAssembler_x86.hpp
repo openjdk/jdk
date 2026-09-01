@@ -1869,6 +1869,7 @@ public:
   void kor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
   void knot(uint masklen, KRegister dst, KRegister src, KRegister ktmp = knoreg, Register rtmp = noreg);
   void kxor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
+  void kxnor(BasicType type, KRegister dst, KRegister src1, KRegister src2);
   void kortest(uint masklen, KRegister src1, KRegister src2);
   void ktest(uint masklen, KRegister src1, KRegister src2);
 

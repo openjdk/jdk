@@ -99,6 +99,42 @@ public class MaskLogicOperationsBenchmark {
     }
 
     @Benchmark
+    public void byteMaskEq() {
+        VectorMask<Byte> vm1 = VectorMask.fromArray(B_SPECIES, ma, 0);
+        for (int i = 0; i < B_SPECIES.loopBound(size); i += B_SPECIES.length()) {
+            VectorMask<Byte> vm2 = VectorMask.fromArray(B_SPECIES, mb, i);
+            vm1.eq(vm2).intoArray(mc, i);
+        }
+    }
+
+    @Benchmark
+    public void shortMaskEq() {
+        VectorMask<Short> vm1 = VectorMask.fromArray(S_SPECIES, ma, 0);
+        for (int i = 0; i < S_SPECIES.loopBound(size); i += S_SPECIES.length()) {
+            VectorMask<Short> vm2 = VectorMask.fromArray(S_SPECIES, mb, i);
+            vm1.eq(vm2).intoArray(mc, i);
+        }
+    }
+
+    @Benchmark
+    public void intMaskEq() {
+        VectorMask<Integer> vm1 = VectorMask.fromArray(I_SPECIES, ma, 0);
+        for (int i = 0; i < I_SPECIES.loopBound(size); i += I_SPECIES.length()) {
+            VectorMask<Integer> vm2 = VectorMask.fromArray(I_SPECIES, mb, i);
+            vm1.eq(vm2).intoArray(mc, i);
+        }
+    }
+
+    @Benchmark
+    public void longMaskEq() {
+        VectorMask<Long> vm1 = VectorMask.fromArray(L_SPECIES, ma, 0);
+        for (int i = 0; i < L_SPECIES.loopBound(size); i += L_SPECIES.length()) {
+            VectorMask<Long> vm2 = VectorMask.fromArray(L_SPECIES, mb, i);
+            vm1.eq(vm2).intoArray(mc, i);
+        }
+    }
+
+    @Benchmark
     public int highMaskRegisterPressureWithNots() {
         int res = 0;
         VectorMask<Byte> vm1 = VectorMask.fromArray(B_SPECIES, ma, 0);

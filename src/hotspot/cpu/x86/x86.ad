@@ -4070,6 +4070,22 @@ static bool is_bmi_pattern(Node* n, Node* m) {
   return false;
 }
 
+// Returns true if (n, m) matches "(XorVMask vm2 (MaskAll m1))" used only by an
+// outer XorVMask for mask equality (XNOR).
+static bool is_vector_mask_not_operand_in_xnor_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
+    return false;
+  }
+
+  if (VectorNode::is_all_ones_vector(m) &&
+      n->Opcode() == Op_XorVMask &&
+      n->outcnt() == 1 &&
+      n->unique_out()->Opcode() == Op_XorVMask) {
+    return true;
+  }
+  return false;
+}
+
 // Should the matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
   // If 'n' and 'm' are part of a graph for BMI instruction, clone the input 'm'.
@@ -4082,6 +4098,10 @@ bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
     return true;
   }
   if (is_encode_and_store_pattern(n, m)) {
+    mstack.push(m, Visit);
+    return true;
+  }
+  if (is_vector_mask_not_operand_in_xnor_pattern(n, m)) {
     mstack.push(m, Visit);
     return true;
   }
@@ -24805,6 +24825,48 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   format %{ "long_to_mask_evex $dst, $src\t!" %}
   ins_encode %{
     __ kmov($dst$$KRegister, $src$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_xnor_evex(kReg dst, kReg src1, kReg src2, immI_M1 m1) %{
+  match(Set dst (XorVMask src1 (XorVMask src2 (MaskAll m1))));
+  format %{ "mask_xnor_evex $dst, $src1, $src2\t! ~($src1 ^ $src2)" %}
+  ins_encode %{
+    uint masklen = Matcher::vector_length(this);
+    masklen = (masklen < 16 && !VM_Version::supports_avx512dq()) ? 16 : masklen;
+    BasicType etype = T_ILLEGAL;
+    switch(masklen) {
+      case 2:
+      case 4:
+      case 8:  etype = T_BYTE; break;
+      case 16: etype = T_SHORT; break;
+      case 32: etype = T_INT; break;
+      case 64: etype = T_LONG; break;
+      default: ShouldNotReachHere(); break;
+    }
+    __ kxnor(etype, $dst$$KRegister, $src1$$KRegister, $src2$$KRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct mask_xnor_evexL(kReg dst, kReg src1, kReg src2, immL_M1 m1) %{
+  match(Set dst (XorVMask src1 (XorVMask src2 (MaskAll m1))));
+  format %{ "mask_xnor_evex $dst, $src1, $src2\t! ~($src1 ^ $src2)" %}
+  ins_encode %{
+    // ConL MaskAll is only used for long/double masks (max 8 lanes at 512-bit).
+    // Without AVX-512DQ, sub-16-lane k-reg ops are widened to 16 (see mask_opers_evex).
+    uint masklen = Matcher::vector_length(this);
+    masklen = (masklen < 16 && !VM_Version::supports_avx512dq()) ? 16 : masklen;
+    BasicType etype = T_ILLEGAL;
+    switch(masklen) {
+      case 2:
+      case 4:
+      case 8:  etype = T_BYTE; break;
+      case 16: etype = T_SHORT; break;
+      default: ShouldNotReachHere(); break;
+    }
+    __ kxnor(etype, $dst$$KRegister, $src1$$KRegister, $src2$$KRegister);
   %}
   ins_pipe( pipe_slow );
 %}
