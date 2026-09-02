@@ -2540,6 +2540,20 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   uint use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
+    // CMoveNode::Identity folds "(x == y) ? y : x" by comparing the inputs of
+    // the Cmp with those of the CMove, so a CMove behind the Bool has to be
+    // revisited when an input of the Cmp changes.
+    for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = use->fast_out(j);
+      if (bol->is_Bool()) {
+        for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+          Node* cmov = bol->fast_out(k);
+          if (cmov->is_CMove()) {
+            worklist.push(cmov);
+          }
+        }
+      }
+    }
     if (use->outcnt() > 0) {
       Node* bol = use->raw_out(0);
       if (bol->outcnt() > 0) {
