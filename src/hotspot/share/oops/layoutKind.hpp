@@ -148,7 +148,7 @@ struct LayoutDescriptions {
     _payload_offset(NoValue),
     _null_marker_offset(NoValue),
     _sizes() {
-    set_size_in_bytes_of(LayoutKind::REFERENCE, UseCompressedOops ? sizeof(narrowOop) : oopSize);
+    set_size_in_bytes_of(LayoutKind::REFERENCE, heapOopSize);
     set_size_in_bytes_of(LayoutKind::BUFFERED, NoValue);
     set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, NoValue);
     set_size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, NoValue);
