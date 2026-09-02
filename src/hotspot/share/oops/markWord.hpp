@@ -49,13 +49,13 @@
 //  -------------------------------
 //  klass:22   hash:31  valhalla:4  age:4  self-fwd:1  lock:2
 //
-//  - lock bits are used to describe lock states: locked/unlocked/monitor-locked
+//  - lock bits are used to describe lock states: fast-locked/lock-neutral/inflated
 //    and to indicate that an object has been GC marked / forwarded.
 //
-//    [header          | 00]  locked             locked regular object header (fast-locking in use)
-//    [header          | 01]  unlocked           regular object header
-//    [header          | 10]  monitor            inflated lock
-//    [ptr             | 11]  marked             used to mark an object (header is swapped out)
+//    [header          | 00]  fast_locked   object has been fast-locked
+//    [header          | 01]  lock_neutral  object has no monitor and is not locked
+//    [header          | 10]  monitor       object has a monitor (lock state recorded there)
+//    [ptr             | 11]  marked        used to mark an object (header is swapped out)
 //
 //  - self-fwd - used by some GCs to indicate in-place forwarding.
 //
@@ -179,17 +179,17 @@ class markWord {
   static constexpr uintptr_t klass_mask_in_place  = klass_mask << klass_shift;
 #endif
 
-  static const uintptr_t locked_value             = 0;
-  static const uintptr_t unlocked_value           = 1;
+  static const uintptr_t fast_locked_value        = 0;
+  static const uintptr_t lock_neutral_value       = 1;
   static const uintptr_t monitor_value            = 2;
   static const uintptr_t marked_value             = 3;
 
-  static const uintptr_t inline_type_pattern      = inline_type_bit_in_place | unlocked_value;
-  static const uintptr_t inline_type_pattern_mask = inline_type_bit_in_place | lock_mask_in_place;
+  static const uintptr_t inline_type_pattern      = inline_type_bit_in_place;
+  static const uintptr_t inline_type_pattern_mask = inline_type_bit_in_place;
 
   static const uintptr_t no_hash                  = 0 ;  // no hash value assigned
   static const uintptr_t no_hash_in_place         = (uintptr_t)no_hash << hash_shift;
-  static const uintptr_t no_lock_in_place         = unlocked_value;
+  static const uintptr_t no_lock_in_place         = lock_neutral_value;
 
   static const uint max_age                       = age_mask;
 
@@ -197,6 +197,7 @@ class markWord {
   static markWord zero() { return markWord(uintptr_t(0)); }
 
   bool is_inline_type() const {
+    precond(!is_marked());
 #ifdef _LP64 // 64 bit encodings only
     return (mask_bits(value(), inline_type_pattern_mask) == inline_type_pattern);
 #else
@@ -205,20 +206,14 @@ class markWord {
   }
 
   // lock accessors (note that these assume lock_shift == 0)
-  bool is_locked()   const {
-    return (mask_bits(value(), lock_mask_in_place) != unlocked_value);
-  }
-  bool is_unlocked() const {
-    return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
-  }
-  bool is_marked()   const {
-    return (mask_bits(value(), lock_mask_in_place) == marked_value);
+  STATIC_ASSERT(lock_shift == 0);
+
+  bool is_lock_neutral() const {
+    return (mask_bits(value(), lock_mask_in_place) == lock_neutral_value);
   }
 
-  bool is_neutral()  const {  // Not locked, or marked - a "clean" neutral state
-    LP64_ONLY(assert(!is_unlocked() || mask_bits(value(), inline_type_bit_in_place) == 0,
-                     "Inline types should not be used for locking. _value: " PTR_FORMAT, _value));
-    return (mask_bits(value(), lock_mask_in_place) == unlocked_value);
+  bool is_marked()   const {
+    return (mask_bits(value(), lock_mask_in_place) == marked_value);
   }
 
   bool is_forwarded() const {
@@ -228,24 +223,24 @@ class markWord {
 
   // Should this header be preserved during GC?
   bool must_be_preserved() const {
-    // The reserved bits are only guaranteed to be unset if the mark word is "unlocked"
-    LP64_ONLY(assert(!is_unlocked() || mask_bits(value(),  valhalla_reserved_bit_in_place) == 0,
+    precond(!is_marked());
+    LP64_ONLY(assert(mask_bits(value(),  valhalla_reserved_bit_in_place) == 0,
                      "Reserved bits should not be used. _value: " PTR_FORMAT, _value));
-    return !is_unlocked() || has_hash();
+    return !is_lock_neutral() || has_hash();
   }
 
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
   // They must get updated if markWord layout get changed.
-  markWord set_unlocked() const {
-    return markWord(value() | unlocked_value);
+  markWord set_lock_neutral() const {
+    return markWord((value() & ~lock_mask_in_place) | lock_neutral_value);
   }
 
   bool is_fast_locked() const {
-    return (value() & lock_mask_in_place) == locked_value;
+    return (value() & lock_mask_in_place) == fast_locked_value;
   }
   markWord set_fast_locked() const {
-    // Clear the lock_mask_in_place bits to set locked_value:
+    // Clear the lock_mask_in_place bits to set fast_locked_value:
     return markWord(value() & ~lock_mask_in_place);
   }
 
@@ -259,10 +254,10 @@ class markWord {
   // used to encode pointers during GC
   markWord clear_lock_bits() const { return markWord(value() & ~lock_mask_in_place); }
 
-  // age operations
   markWord set_marked()   { return markWord((value() & ~lock_mask_in_place) | marked_value); }
-  markWord set_unmarked() { return markWord((value() & ~lock_mask_in_place) | unlocked_value); }
+  markWord set_unmarked() { return markWord((value() & ~lock_mask_in_place) | lock_neutral_value); }
 
+  // age operations
   uint     age()           const { return (uint) mask_bits(value() >> age_shift, age_mask); }
   markWord set_age(uint v) const {
     assert((v & ~age_mask) == 0, "shouldn't overflow age field");
@@ -314,26 +309,26 @@ class markWord {
   // Prototype marks for initialization
 
   static markWord prototype() {
-    return markWord(unlocked_value);
+    return markWord(lock_neutral_value);
   }
 
   static markWord inline_type_prototype() {
     NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
-    return markWord(unlocked_value | inline_type_bit_in_place);
+    return markWord(lock_neutral_value | inline_type_bit_in_place);
   }
 
   static markWord flat_array_prototype(bool null_free) {
     NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
     if (null_free) {
-      return markWord(unlocked_value | flat_array_bit_in_place | null_free_array_bit_in_place);
+      return markWord(lock_neutral_value | flat_array_bit_in_place | null_free_array_bit_in_place);
     } else {
-      return markWord(unlocked_value | flat_array_bit_in_place);
+      return markWord(lock_neutral_value | flat_array_bit_in_place);
     }
   }
 
   static markWord null_free_array_prototype() {
     NOT_LP64(assert(false, "Should not be called in 32 bit mode"));
-    return markWord(unlocked_value | null_free_array_bit_in_place);
+    return markWord(lock_neutral_value | null_free_array_bit_in_place);
   }
 
   // Debugging
