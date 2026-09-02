@@ -121,8 +121,10 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                 int strippedZeros = 0;
 
                 // Remove trailing zeros from the significand and compensate in the power.
-                // We do this to avoid possible overflow when we parse the coefficient as a long.
-                // E.g. 9223372036854775807.000000 or 922337203685477580700.0e-2
+                // This helps us avoid overflow for a value that fits in a long but has trailing zeros.
+                // For example, the JSON number 9223372036854775807.000000 that fits in a long causes
+                // overflow when parsing its digits but normalizing the zeros lets us parse the
+                // sig as 9223372036854775807.
                 while (sigEnd > startOffset) {
                     var c = doc[sigEnd - 1];
                     if (c == '0') {
@@ -136,17 +138,21 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                 }
 
                 // A zero significand represents zero regardless of exponent size.
-                // For non-zero significands, an exponent outside int range cannot be
-                // offset by fraction length or trailing zeros within a Java char[] input.
-                // This must be checked before calculating exp.
                 if (sigEnd == startOffset || (doc[startOffset] == '-' && sigEnd == startOffset + 1)) {
                     return OptionalLong.of(0L);
                 }
+
+                // If not zero, we will derive the final value from
+                // -> sig * 10^(exp - fracLen + strippedZeros)
+                // -> sig * 10^power
+                // -> sig * scale
                 int exp = exponentOffset == -1 ? 0 : Integer.parseInt(new String(doc,
                         exponentOffset + 1, endOffset - exponentOffset - 1));
                 int power = Math.addExact(Math.subtractExact(exp, fracLen), strippedZeros);
                 long sig = decimalOffset == -1 || sigEnd <= decimalOffset
+                        // Decimal point does not interfere with parsing sig
                         ? Long.parseLong(new String(doc, startOffset, sigEnd - startOffset))
+                        // Parse both chunks to the left and right of the decimal point
                         : Long.parseLong(new String(doc, startOffset, decimalOffset - startOffset) +
                                 new String(doc, decimalOffset + 1, sigEnd - decimalOffset - 1));
                 if (power >= 0) {
