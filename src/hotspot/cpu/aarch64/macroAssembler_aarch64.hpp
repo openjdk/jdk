@@ -104,7 +104,6 @@ class MacroAssembler: public Assembler {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk,
     KlassDecodeFallback
   };
 

@@ -3076,15 +3076,37 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-// FlatArrayCheckNode (array1 array2 ...) is expanded into:
+// FlatArrayCheckNode inputs must be homogeneous: either all array inputs
+// (array1 array2 ...) or all klass inputs (klass1 klass2 ...).
+//
+// For array inputs whose users are all If nodes, the check is expanded using
+// mark words:
 //
 // long mark = array1.mark | array2.mark | ...;
 // if ((mark & markWord::flat_array_bit_in_place) == 0) {
-//    ...
+//   ...
+// }
+//
+// For klass inputs, and for array inputs with a non-If user, the check is
+// expanded using the klass layout helpers. For array inputs, the klasses are
+// loaded first:
+//
+// int layout = klass1.layout_helper | klass2.layout_helper | ...;
+// if ((layout & Klass::_lh_array_tag_flat_value_bit_inplace) == 0) {
+//   ...
 // }
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
-  bool array_inputs = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
-  if (array_inputs) {
+  bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
+  Node* bol = check->unique_out();
+  for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
+    if (!bol->fast_out(i)->is_If()) {
+      // No control input, fall back to layout helper check
+      use_mark_word = false;
+      break;
+    }
+  }
+
+  if (use_mark_word) {
     Node* mark = MakeConX(0);
     Node* mem = check->in(FlatArrayCheckNode::Memory);
     for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
@@ -3099,15 +3121,14 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     assert(!mark->is_Con(), "Should have been optimized out");
 
     // Replace the bool node
-    Node* old_bol = check->unique_out();
-    assert(old_bol->is_Bool() && old_bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
+    assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
 
     // Check if flat array bits are set
     Node* mask = MakeConX(markWord::flat_array_bit_in_place);
-    Node* masked = _igvn.transform(new AndXNode(_igvn.transform(mark), mask));
+    Node* masked = _igvn.transform(new AndXNode(mark, mask));
     Node* cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
     Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
-    _igvn.replace_node(old_bol, is_not_flat);
+    _igvn.replace_node(bol, is_not_flat);
 
     _igvn.replace_node(check, C->top());
   } else {
@@ -3131,18 +3152,16 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     }
     Node* masked = transform_later(new AndINode(lhs, intcon(Klass::_lh_array_tag_flat_value_bit_inplace)));
     Node* cmp = transform_later(new CmpINode(masked, intcon(0)));
-    Node* bol = transform_later(new BoolNode(cmp, BoolTest::eq));
+    Node* new_bol = transform_later(new BoolNode(cmp, BoolTest::eq));
     Node* m2b = transform_later(new Conv2BNode(masked));
     // The matcher expects the input to If/CMove nodes to be produced by a Bool(CmpI..)
     // pattern, but the input to other potential users (e.g. Phi) to be some
     // other pattern (e.g. a Conv2B node, possibly idealized as a CMoveI).
-    Node* old_bol = check->unique_out();
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      Node* user = old_bol->last_out(i);
+    for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+      Node* user = bol->last_out(i);
       for (uint j = 0; j < user->req(); j++) {
-        Node* n = user->in(j);
-        if (n == old_bol) {
-          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? bol : m2b);
+        if (user->in(j) == bol) {
+          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? new_bol : m2b);
         }
       }
     }

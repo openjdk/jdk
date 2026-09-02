@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @test
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
  * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
  *          to hit compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessValue
@@ -48,9 +49,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessValue extends VarHandleBaseTest {
     static final Value static_final_v = Value.getInstance(10);
 
-    static Value static_v;
+    static Value static_v = Value.getInstance(10);
 
-    final Value final_v = Value.getInstance(10);
+    final Value final_v;
 
     Value v;
 
@@ -63,6 +64,12 @@ public class VarHandleTestMethodHandleAccessValue extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessValue() {
+        final_v = Value.getInstance(10);
+        v = Value.getInstance(10);
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {

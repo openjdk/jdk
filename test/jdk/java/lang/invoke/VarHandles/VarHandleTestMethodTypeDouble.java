@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ public class VarHandleTestMethodTypeDouble extends VarHandleBaseTest {
 
     static double static_v = 1.0d;
 
-    final double final_v = 1.0d;
+    final double final_v;
 
-    double v = 1.0d;
+    double v;
 
     VarHandle vhFinalField;
 
@@ -64,6 +64,12 @@ public class VarHandleTestMethodTypeDouble extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodTypeDouble() {
+        final_v = 1.0d;
+        v = 1.0d;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @bug 8156486
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
  * @run junit/othervm VarHandleTestMethodTypeValue
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodTypeValue
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodTypeValue
@@ -53,9 +54,9 @@ public class VarHandleTestMethodTypeValue extends VarHandleBaseTest {
 
     static Value static_v = Value.getInstance(10);
 
-    final Value final_v = Value.getInstance(10);
+    final Value final_v;
 
-    Value v = Value.getInstance(10);
+    Value v;
 
     VarHandle vhFinalField;
 
@@ -66,6 +67,12 @@ public class VarHandleTestMethodTypeValue extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodTypeValue() {
+        final_v = Value.getInstance(10);
+        v = Value.getInstance(10);
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
