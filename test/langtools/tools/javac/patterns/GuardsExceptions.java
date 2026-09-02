@@ -143,6 +143,37 @@ public class GuardsExceptions {
                 "1 error"));
     }
 
+    @Test
+    void testUnreachableStatementReportedFromSwitchExpression() throws Exception {
+        Path classes = base.resolve("classes");
+        Files.createDirectories(classes);
+        List<String> out = new JavacTask(tb)
+                .options("-d", classes.toString(), "-XDrawDiagnostics", "-nowarn")
+                .sources("""
+                         package test;
+
+                         import java.io.IOException;
+
+                         public class Test {
+                             public static int test(Object o) {
+                                 return switch (o) {
+                                     case String s when switch(s.length()) {
+                                         case 0 -> { yield false; System.out.println(); }
+                                         default -> true;
+                                     } -> 1;
+                                     default -> 0;
+                                 };
+                             }
+                         }
+                         """)
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+        tb.checkEqual(out, List.of(
+                "Test.java:9:42: compiler.err.unreachable.stmt",
+                "1 error"));
+    }
+
     @BeforeEach
     public void setUp(TestInfo info) {
         base = Paths.get(".")
