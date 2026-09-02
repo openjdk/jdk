@@ -291,7 +291,7 @@ public:
 
   PenaltyData consume_penalty_data();
 
-  DEBUG_ONLY( static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
+  DEBUG_ONLY(static void assert_humongous_mark_consistency(ShenandoahHeapRegion* region));
 };
 
 #endif // SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
