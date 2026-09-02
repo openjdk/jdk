@@ -58,6 +58,10 @@ struct PSPendingAllocation {
   bool is_present() const {
     return _word_size != 0;
   }
+
+  bool is_non_tlab() const {
+    return is_present() && !_is_tlab;
+  }
 };
 
 // ParallelScavengeHeap is the implementation of CollectedHeap for Parallel GC.

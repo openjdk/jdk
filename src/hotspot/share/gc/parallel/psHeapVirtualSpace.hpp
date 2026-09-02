@@ -29,6 +29,8 @@
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 
+// Manages the heap reservation shared by the old and young generations. The
+// generations are separated by a movable boundary and committed independently.
 class PSHeapVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
 
@@ -39,17 +41,13 @@ class PSHeapVirtualSpace : public CHeapObj<mtGC> {
   // OS page size used. If using Transparent Huge Pages, it's the desired large page-size.
   const size_t _page_size;
 
-  // Reserved area
   char* _reserved_low_addr;
   char* _reserved_high_addr;
 
-  // Committed area for Old Gen
   char* _old_gen_committed_high_addr;
 
-  // Generation boundary
   char* _gen_boundary;
 
-  // Committed area for Young Gen
   char* _young_gen_committed_high_addr;
 
   // The entire space has been committed and pinned in memory, no
@@ -68,7 +66,6 @@ public:
   PSHeapVirtualSpace(ReservedSpace rs, size_t alignment, char* gen_boundary);
   ~PSHeapVirtualSpace();
 
-  // Accessors
   size_t alignment()          const { return _alignment; }
   size_t page_size()          const { return _page_size; }
 

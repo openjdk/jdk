@@ -1088,7 +1088,7 @@ bool ParallelScavengeHeap::adjust_gen_boundary_after_full_gc(size_t live_bytes,
 
   const size_t remaining_heap_bytes = MaxHeapSize - live_bytes;
 
-  const bool has_pending_non_tlab_allocation = pending_allocation.is_present() && !pending_allocation._is_tlab;
+  const bool has_pending_non_tlab_allocation = pending_allocation.is_non_tlab();
   const size_t young_gen_bytes = UseAdaptiveSizePolicy ? _young_gen->reserved_size() : MaxNewSize;
   // Promotion headroom is optional. Do not let it consume the current adaptive
   // reservation or the non-adaptive maximum reservation.
