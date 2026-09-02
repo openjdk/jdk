@@ -84,8 +84,12 @@ public class InstanceStackChunkKlass extends InstanceKlass {
   @Override
   public void iterateNonStaticFields(OopVisitor visitor, Oop obj) {
     super.iterateNonStaticFields(visitor, obj);
-    // Visit the oops in the copied stack, mirroring the bitmap path of
-    // oop_oop_iterate_stack in the VM.
+    iterateStackOops(visitor, obj);
+  }
+
+  // Visits the oops in the copied stack, mirroring the bitmap path of
+  // oop_oop_iterate_stack in the VM.
+  public void iterateStackOops(OopVisitor visitor, Oop obj) {
     byte flags = ((ByteField) findField("flags", "B")).getValue(obj);
     if ((flags & 0x10) == 0) {   // FLAG_HAS_BITMAP, only set once the GC transforms the chunk
       return;
