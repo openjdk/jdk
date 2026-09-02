@@ -2084,12 +2084,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     }
   }
 
-  if (kit.stopped()) {
-    assert(static_overflow, "no reachable success path for a non-overflow case.");
-    C->record_failure(C2Compiler::retry_no_stringopts());
-    return;
-  }
-
   {
     // Hook
     PreserveJVMState pjvms(&kit);
@@ -2097,6 +2091,12 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
     C->record_for_igvn(overflow);
     kit.uncommon_trap(Deoptimization::Reason_intrinsic,
                       Deoptimization::Action_make_not_entrant);
+  }
+
+  if (kit.stopped()) {
+    assert(static_overflow, "no reachable success path for a non-overflow case.");
+    C->record_failure(C2Compiler::retry_no_stringopts());
+    return;
   }
 
   Node* result;
