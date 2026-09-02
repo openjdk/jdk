@@ -210,9 +210,14 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
     address addr = (address) info->si_addr;
 
-    // Make sure the high order byte is sign extended, as it may be masked away by the hardware.
-    if ((uintptr_t(addr) & (uintptr_t(1) << 55)) != 0) {
-      addr = address(uintptr_t(addr) | (uintptr_t(0xFF) << 56));
+    // Make sure the high order bits are sign extended, as they may be masked
+    // away by the hardware. The sign bit depends on the active address mode.
+    const int va_bits = VM_Version::max_va_bits();
+    if (va_bits > 0 && va_bits < BitsPerWord) {
+      const uintptr_t sign_bit = uintptr_t(1) << (va_bits - 1);
+      if ((uintptr_t(addr) & sign_bit) != 0) {
+        addr = address(uintptr_t(addr) | (~uintptr_t(0) << va_bits));
+      }
     }
 
     // Handle ALL stack overflow variations here

@@ -1221,12 +1221,12 @@ int MachCallDynamicJavaNode::ret_addr_offset() const
 int MachCallRuntimeNode::ret_addr_offset() const {
   // For address inside the code cache the call will be:
   //   auipc + jalr
-  // For real runtime callouts it will be 8 instructions
-  // (7 on sv39, whose movptr is one instruction shorter)
+  // For real runtime callouts it will be 7 instructions on sv39,
+  // 8 on sv48, and 9 on sv57.
   // see riscv_enc_java_to_runtime
   //   la(t0, retaddr)                                             ->  auipc + addi
   //   sd(t0, Address(xthread, JavaThread::last_Java_pc_offset())) ->  sd
-  //   movptr(t1, addr, offset, t0)                                ->  lui + lui + slli + add
+  //   movptr(t1, addr, offset, t0)                                ->  mode-dependent sequence
   //   jalr(t1, offset)                                            ->  jalr
   if (CodeCache::contains(_entry_point)) {
     return 2 * NativeInstruction::instruction_size;
@@ -1258,7 +1258,9 @@ int CallStaticJavaDirectNode::compute_padding(int current_offset) const
 int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 {
   // skip the movptr in MacroAssembler::ic_call():
-  // lui, lui, slli, add, addi (sv39: lui, addi, slli, addi)
+  // sv39: lui, addi, slli, addi
+  // sv48: lui, lui, slli, add, addi
+  // sv57: lui, addi, lui, slli, add, addi
   // Though movptr() has already 4-byte aligned with or without RVC,
   // We need to prevent from further changes by explicitly calculating the size.
   current_offset += MacroAssembler::movptr_instruction_size();

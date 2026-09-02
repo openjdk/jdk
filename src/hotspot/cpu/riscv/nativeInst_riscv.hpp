@@ -66,6 +66,8 @@ class NativeInstruction {
   bool is_movptr_sv39()                     const { return MacroAssembler::is_movptr_sv39_at(addr_at(0));  }
   bool is_movptr1_sv48()                    const { return MacroAssembler::is_movptr1_sv48_at(addr_at(0)); }
   bool is_movptr2_sv48()                    const { return MacroAssembler::is_movptr2_sv48_at(addr_at(0)); }
+  bool is_movptr1_sv57()                    const { return MacroAssembler::is_movptr1_sv57_at(addr_at(0)); }
+  bool is_movptr2_sv57()                    const { return MacroAssembler::is_movptr2_sv57_at(addr_at(0)); }
   bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
   bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
   bool is_call()                            const { return is_call_at(addr_at(0));                        }
@@ -170,7 +172,8 @@ class NativeMovConstReg: public NativeInstruction {
     movptr_sv39_instruction_size        =    MacroAssembler::movptr_sv39_instruction_size,
     movptr1_sv48_instruction_size       =    MacroAssembler::movptr1_sv48_instruction_size,
     movptr2_sv48_instruction_size       =    MacroAssembler::movptr2_sv48_instruction_size,
-
+    movptr1_sv57_instruction_size       =    MacroAssembler::movptr1_sv57_instruction_size,
+    movptr2_sv57_instruction_size       =    MacroAssembler::movptr2_sv57_instruction_size,
     load_pc_relative_instruction_size   =    MacroAssembler::load_pc_relative_instruction_size // auipc, ld
   };
 
@@ -252,10 +255,10 @@ inline NativeJump* nativeJump_at(address addr) {
 class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
-    // Maximum sequence size, used by shared C1 code-buffer estimates.
-    instruction_size            =    5 * NativeInstruction::instruction_size, // sv48: lui, lui, slli, add, jalr
+    instruction_size            =    6 * NativeInstruction::instruction_size, // Maximum: sv57 movptr2 + jalr
     instruction_size_sv39       =    4 * NativeInstruction::instruction_size, // lui, addi, slli, jalr
     instruction_size_sv48       =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
+    instruction_size_sv57       =    6 * NativeInstruction::instruction_size, // lui, addi, lui, slli, add, jalr
   };
 
   static int insn_size() {

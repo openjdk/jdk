@@ -148,6 +148,32 @@ bool MacroAssembler::is_movptr2_sv48_at(address instr) {
          check_movptr2_sv48_data_dependency(instr);
 }
 
+bool MacroAssembler::is_movptr1_sv57_at(address instr) {
+  return is_lui_at(instr) &&
+         is_addi_at(instr + MacroAssembler::instruction_size) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 2, 11) &&
+         is_addi_at(instr + MacroAssembler::instruction_size * 3) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 4, 10) &&
+         is_addi_at(instr + MacroAssembler::instruction_size * 5) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 6, 6) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 7) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 7) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 7)) &&
+         check_movptr1_sv57_data_dependency(instr);
+}
+
+bool MacroAssembler::is_movptr2_sv57_at(address instr) {
+  return is_lui_at(instr) &&
+         is_addi_at(instr + MacroAssembler::instruction_size) &&
+         is_lui_at(instr + MacroAssembler::instruction_size * 2) &&
+         is_slli_shift_at(instr + MacroAssembler::instruction_size * 3, 30) &&
+         is_add_at(instr + MacroAssembler::instruction_size * 4) &&
+         (is_addi_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_jalr_at(instr + MacroAssembler::instruction_size * 5) ||
+          is_load_at(instr + MacroAssembler::instruction_size * 5)) &&
+         check_movptr2_sv57_data_dependency(instr);
+}
+
 bool MacroAssembler::is_li16u_at(address instr) {
   return is_lui_at(instr) && // lui
          is_srli_at(instr + MacroAssembler::instruction_size) && // srli
@@ -2935,6 +2961,47 @@ static int patch_addr_in_movptr2_sv48(address instruction_address, address targe
   return MacroAssembler::movptr2_sv48_instruction_size;
 }
 
+static int patch_addr_in_movptr1_sv57(address instruction_address, address target) {
+  uintptr_t addr = (uintptr_t)target;
+
+  assert(addr < (1ull << 57), "57-bit overflow in address constant");
+  uint64_t upper30 = addr >> 27;
+  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
+  int64_t hi20 = upper30 - lower12;
+
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (hi20 >> 12) & 0xfffff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, lower12 & 0xfff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 3), 31, 20, (addr >> 16) & 0x7ff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 5), 31, 20, (addr >> 6) & 0x3ff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 7), 31, 20, addr & 0x3f);
+
+  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+
+  return MacroAssembler::movptr1_sv57_instruction_size;
+}
+
+static int patch_addr_in_movptr2_sv57(address instruction_address, address target) {
+  uintptr_t addr = (uintptr_t)target;
+
+  assert(addr < (1ull << 57), "57-bit overflow in address constant");
+  uint64_t upper27 = addr >> 30;
+  int64_t upper_lower12 = ((int64_t)(upper27 << 52)) >> 52;
+  int64_t upper_hi20 = upper27 - upper_lower12;
+
+  uint64_t lower30 = addr & 0x3fffffff;
+  int64_t lower12 = ((int64_t)(lower30 << 52)) >> 52;
+  int64_t mid18 = (lower30 - lower12) >> 12;
+
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (upper_hi20 >> 12) & 0xfffff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, upper_lower12 & 0xfff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 2), 31, 12, mid18 & 0xfffff);
+  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 5), 31, 20, lower12 & 0xfff);
+
+  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+
+  return MacroAssembler::movptr2_sv57_instruction_size;
+}
+
 static bool patch_addr_in_movptr_for_mode(address instruction_address, address target, int& patched_size) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
@@ -2949,6 +3016,15 @@ static bool patch_addr_in_movptr_for_mode(address instruction_address, address t
         return true;
       } else if (MacroAssembler::is_movptr2_sv48_at(instruction_address)) {
         patched_size = patch_addr_in_movptr2_sv48(instruction_address, target);
+        return true;
+      }
+      break;
+    case VM_Version::VM_SV57:
+      if (MacroAssembler::is_movptr1_sv57_at(instruction_address)) {
+        patched_size = patch_addr_in_movptr1_sv57(instruction_address, target);
+        return true;
+      } else if (MacroAssembler::is_movptr2_sv57_at(instruction_address)) {
+        patched_size = patch_addr_in_movptr2_sv57(instruction_address, target);
         return true;
       }
       break;
@@ -3037,6 +3113,28 @@ static address get_target_of_movptr2_sv48(address insn_addr) {
   return ret;
 }
 
+static address get_target_of_movptr1_sv57(address insn_addr) {
+  assert_cond(insn_addr != nullptr);
+  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12;
+  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20);
+  target_address <<= 11;
+  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 3), 31, 20);
+  target_address <<= 10;
+  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 5), 31, 20);
+  target_address <<= 6;
+  target_address += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 7), 31, 20);
+  return (address)target_address;
+}
+
+static address get_target_of_movptr2_sv57(address insn_addr) {
+  assert_cond(insn_addr != nullptr);
+  intptr_t upper27 = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12;
+  upper27 += (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20);
+  intptr_t mid18 = ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 2), 31, 12)) & 0xfffff;
+  intptr_t low12 = (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 5), 31, 20);
+  return (address)((upper27 << 30) + (mid18 << 12) + low12);
+}
+
 static bool get_target_of_movptr_for_mode(address insn_addr, address& target) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
@@ -3051,6 +3149,15 @@ static bool get_target_of_movptr_for_mode(address insn_addr, address& target) {
         return true;
       } else if (MacroAssembler::is_movptr2_sv48_at(insn_addr)) {
         target = get_target_of_movptr2_sv48(insn_addr);
+        return true;
+      }
+      break;
+    case VM_Version::VM_SV57:
+      if (MacroAssembler::is_movptr1_sv57_at(insn_addr)) {
+        target = get_target_of_movptr1_sv57(insn_addr);
+        return true;
+      } else if (MacroAssembler::is_movptr2_sv57_at(insn_addr)) {
+        target = get_target_of_movptr2_sv57(insn_addr);
         return true;
       }
       break;
@@ -3119,8 +3226,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
-  // OOPs are either narrow (32 bits) or wide (48 bits on sv48, 39 bits
-  // on sv39).  We encode narrow OOPs by setting the upper 16 bits in the
+  // OOPs are either narrow (32 bits) or wide (up to 57 bits, depending on
+  // the satp mode). We encode narrow OOPs by setting the upper 16 bits in the
   // first instruction.
   int movptr_size = 0;
   if (MacroAssembler::is_li32_at(insn_addr)) {
@@ -3186,6 +3293,13 @@ void MacroAssembler::movptr_for_mode(Register Rd, uint64_t addr, int32_t &offset
         movptr2_sv48(Rd, addr, offset, temp);
       }
       break;
+    case VM_Version::VM_SV57:
+      if (temp == noreg) {
+        movptr1_sv57(Rd, addr, offset);
+      } else {
+        movptr2_sv57(Rd, addr, offset, temp);
+      }
+      break;
     default:
       ShouldNotReachHere();
   }
@@ -3197,6 +3311,8 @@ int MacroAssembler::movptr_instruction_size() {
       return movptr_sv39_instruction_size;
     case VM_Version::VM_SV48:
       return movptr2_sv48_instruction_size;
+    case VM_Version::VM_SV57:
+      return movptr2_sv57_instruction_size;
     default: ShouldNotReachHere(); return 0;
   }
 }
@@ -3273,6 +3389,46 @@ void MacroAssembler::movptr2_sv48(Register Rd, uint64_t addr, int32_t &offset, R
   lui(Rd, mid18);
 
   slli(tmp, tmp, 18);
+  add(Rd, Rd, tmp);
+
+  offset = lower12;
+}
+
+void MacroAssembler::movptr1_sv57(Register Rd, uint64_t addr, int32_t &offset) {
+  // addr: [upper30[hi20, low12], mid11, mid10, lower6]
+  // Keeping the initial value within 30 bits avoids sign extension by lui
+  // and covers the complete [0, 2^57) range, including non-address sentinels.
+  uint64_t upper30 = addr >> 27;
+  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
+  int64_t hi20 = upper30 - lower12;
+  lui(Rd, hi20);
+  addi(Rd, Rd, lower12);
+
+  slli(Rd, Rd, 11);
+  addi(Rd, Rd, (addr >> 16) & 0x7ff);
+  slli(Rd, Rd, 10);
+  addi(Rd, Rd, (addr >> 6) & 0x3ff);
+  slli(Rd, Rd, 6);
+
+  offset = addr & 0x3f;
+}
+
+void MacroAssembler::movptr2_sv57(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
+  assert_different_registers(Rd, tmp, noreg);
+
+  // addr: [upper27(bits 56:30), lower30(mid18, lower12)]
+  uint64_t upper27 = addr >> 30;
+  int64_t upper_lower12 = ((int64_t)(upper27 << 52)) >> 52;
+  int64_t upper_hi20 = upper27 - upper_lower12;
+  lui(tmp, upper_hi20);
+  addi(tmp, tmp, upper_lower12);
+
+  uint64_t lower30 = addr & 0x3fffffff;
+  int64_t lower12 = ((int64_t)(lower30 << 52)) >> 52;
+  int64_t mid18 = lower30 - lower12;
+  lui(Rd, mid18);
+
+  slli(tmp, tmp, 30);
   add(Rd, Rd, tmp);
 
   offset = lower12;
@@ -5828,6 +5984,8 @@ int MacroAssembler::static_call_stub_size() {
       return 2 * movptr_sv39_instruction_size;
     case VM_Version::VM_SV48:
       return movptr1_sv48_instruction_size + movptr2_sv48_instruction_size;
+    case VM_Version::VM_SV57:
+      return movptr1_sv57_instruction_size + movptr2_sv57_instruction_size;
     default:
       ShouldNotReachHere();
       return 0;
