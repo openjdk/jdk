@@ -1949,16 +1949,16 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
 }
 
 #ifndef PRODUCT
-class VerifyNoCSetOops {
+class G1VerifyNoCollectionSetOops {
   G1CollectedHeap* _g1h;
-  const char* _phase;
-  int _info;
+  const char* _location;
+  int _index;
 
 public:
-  VerifyNoCSetOops(const char* phase, int info = -1) :
+  G1VerifyNoCollectionSetOops(const char* location, int index = -1) :
     _g1h(G1CollectedHeap::heap()),
-    _phase(phase),
-    _info(info)
+    _location(location),
+    _index(index)
   { }
 
   void operator()(G1TaskQueueEntry task_entry) const {
@@ -1966,12 +1966,12 @@ public:
             ? task_entry.to_partial_array_state()->source()
             : task_entry.to_oop();
     guarantee(oopDesc::is_oop(obj),
-              "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(obj), _phase, _info);
+              "Non-oop " PTR_FORMAT ", location: %s, index: %d",
+              p2i(obj), _location, _index);
     G1HeapRegion* r = _g1h->heap_region_containing(obj);
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(obj), _phase, _info, r->hrm_index());
+              p2i(obj), _location, _index, r->hrm_index());
   }
 };
 
@@ -1983,15 +1983,17 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
   }
 
   // Verify entries on the global mark stack
-  _global_mark_stack.iterate(VerifyNoCSetOops("Stack"));
+  _global_mark_stack.iterate(G1VerifyNoCollectionSetOops("Stack"));
 
   // Verify entries on the task queues
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* queue = _task_queues->queue(i);
-    queue->iterate(VerifyNoCSetOops("Queue", i));
+    queue->iterate(G1VerifyNoCollectionSetOops("Queue", i));
   }
 
-  // Verify the global finger
+  // Verify the global finger. Unlike the task fingers, it only moves in whole
+  // regions as tasks claim them, so it must be at a region bottom. That region
+  // may be in the collection set: nothing in it has been scanned yet.
   HeapWord* global_finger = finger();
   if (global_finger != nullptr && global_finger < _heap.end()) {
     // Since we always iterate over all regions, we might get a null G1HeapRegion
@@ -2008,7 +2010,8 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
     G1CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
     if (task_finger != nullptr && task_finger < _heap.end()) {
-      // See above note on the global finger verification.
+      // Since we always iterate over all regions, we might get a null G1HeapRegion
+      // here.
       G1HeapRegion* r = _g1h->heap_region_containing_or_null(task_finger);
       guarantee(r == nullptr || task_finger == r->bottom() ||
                 !(r->in_collection_set() || r->has_index_in_opt_cset()),
