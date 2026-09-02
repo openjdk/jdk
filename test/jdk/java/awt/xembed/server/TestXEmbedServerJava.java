@@ -64,11 +64,12 @@ public class TestXEmbedServerJava extends TestXEmbedServer {
         f.setLayout(new BorderLayout());
         f.add(instructionArea, BorderLayout.CENTER);
         f.pack();
-        f.setLocation(20, 20);
+        f.setLocation(120, 60);
         f.setVisible(true);
 
         TestXEmbedServerJava lock = new TestXEmbedServerJava();
-        lock.f.setLocation(260, lock.f.getY());
+        lock.f.setLocation(f.getX() + f.getWidth() + 20,
+                           f.getY() + f.getHeight() + 40);
         try {
             synchronized(lock) {
                 lock.wait();
