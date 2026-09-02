@@ -218,7 +218,7 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == CSetBuildType::Active, "Precondition");
 
-  // Add to remembered set/cardset group.
+  // Add to remembered set/cset group.
   _g1h->policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->young_regions_cset_group()->add(hr);
 
@@ -388,6 +388,11 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     if (candidates()->retained_groups().num_regions() > 0) {
       select_candidates_from_retained(time_remaining_ms);
     }
+    // Optional groups are selected separately from marking and retained candidate
+    // lists; sort the combined list to maintain the GC efficiency ordering.
+    _optional_groups.sort_by_efficiency();
+    _optional_groups.verify();
+
     candidates()->verify();
   } else {
     log_debug(gc, ergo, cset)("No candidates to reclaim.");
@@ -609,7 +614,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   // for the regions in these groups.
   candidates()->remove(&remove_from_retained);
 
-  groups_to_abandon.clear(true /* uninstall_group_cardset */);
+  groups_to_abandon.clear(true /* uninstall_cset_group */);
 
   assert(num_optional_regions >= prev_num_optional_regions, "Sanity");
   uint selected_optional_regions = num_optional_regions - prev_num_optional_regions;

@@ -66,6 +66,9 @@ public:
     return _buf_empty && taskqueue_t::is_empty();
   }
 
+  NOINLINE
+  void pop_more_overflow();
+
 private:
   bool _buf_empty;
   E _elem;

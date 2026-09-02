@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #if[Value]
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
 #end[Value]
  * @run junit/othervm VarHandleTestMethodType$Type$
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodType$Type$
@@ -44,6 +45,11 @@ import java.util.List;
 
 import static java.lang.invoke.MethodType.*;
 
+#if[NullRestricted]
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.NullRestricted;
+
+#end[NullRestricted]
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,13 +57,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
-    static final $type$ static_final_v = $value1$;
+    static final {#if[NullRestricted]?@NullRestricted }$type$ static_final_v = $value1$;
 
-    static $type$ static_v = $value1$;
+    static {#if[NullRestricted]?@NullRestricted }$type$ static_v = $value1$;
 
-    final $type$ final_v = $value1$;
+    final {#if[NullRestricted]?@NullRestricted }$type$ final_v;
 
-    $type$ v = $value1$;
+    {#if[NullRestricted]?@NullRestricted }$type$ v;
 
     VarHandle vhFinalField;
 
@@ -68,6 +74,12 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodType$Type$() {
+        final_v = $value1$;
+        v = $value1$;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -2026,7 +2038,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
 
     static void testArrayWrongMethodType(VarHandle vh) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
         Arrays.fill(array, $value1$);
 
         // Get
@@ -3006,7 +3018,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
     }
 
     static void testArrayWrongMethodType(Handles hs) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
         Arrays.fill(array, $value1$);
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {

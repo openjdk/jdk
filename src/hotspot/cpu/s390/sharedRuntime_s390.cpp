@@ -2745,8 +2745,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
       break;
   }
 
-  // Transition from _thread_in_native to _thread_in_vm.
-  __ set_thread_state(_thread_in_vm);
+  // Transition from _thread_in_native to _thread_in_Java.
+  __ set_thread_state(_thread_in_Java);
+
+  // Force this write out before the read below.
+  if (!UseSystemMemoryBarrier) {
+    __ z_fence();
+  }
 
   // Safepoint synchronization
   //--------------------------------------------------------------------
@@ -2760,11 +2765,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     save_native_result(masm, ret_type, workspace_slot_offset); // Make Z_R2 available as work reg.
 
-    // Force this write out before the read below.
-    if (!UseSystemMemoryBarrier) {
-      __ z_fence();
-    }
-
     __ safepoint_poll(sync, Z_R1);
 
     __ load_and_test_int(Z_R0, Address(Z_thread, JavaThread::suspend_flags_offset()));
@@ -2776,22 +2776,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // a distinct one for this pc.
     //
     __ bind(sync);
-    __ z_acquire();
 
-    address entry_point = CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans);
+    address entry_point = CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans);
 
     __ call_VM_leaf(entry_point, Z_thread);
 
     __ bind(no_block);
     restore_native_result(masm, ret_type, workspace_slot_offset);
   }
-
-  //--------------------------------------------------------------------
-  // Thread state is _thread_in_vm. Any safepoint blocking has
-  // already happened so we can now change state to _thread_in_Java.
-  //--------------------------------------------------------------------
-  // Transition from _thread_in_vm to _thread_in_Java.
-  __ set_thread_state(_thread_in_Java);
 
   // Check preemption for Object.wait()
   if (method->is_object_wait0()) {

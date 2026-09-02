@@ -81,6 +81,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = nullptr;
 
@@ -899,6 +902,7 @@ void ClassLoaderData::free_deallocate_list() {
         HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
+        JFR_ONLY(Jfr::on_deallocation(static_cast<Klass*>(m));)
         if (!((Klass*)m)->is_inline_klass()) {
           MetadataFactory::free_metadata(this, (InstanceKlass*)m);
         } else {

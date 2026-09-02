@@ -5318,12 +5318,6 @@ void MacroAssembler::cmp_klasses_from_objects(Register obj1, Register obj2, Regi
   cmpw(tmp1, tmp2);
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  Register tmp = (dst == rscratch1) ? rscratch2 : rscratch1;
-  load_klass(dst, src, tmp);
-  ldr(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
   // FIXME: Should this be a store release?  concurrent gcs assumes
   // klass length is valid if klass field is not null.
@@ -5494,12 +5488,6 @@ MacroAssembler::KlassDecodeMode  MacroAssembler::klass_decode_mode(address base,
     }
   }
 
-  const uint64_t shifted_base =
-    (uint64_t)base >> shift;
-  if ((shifted_base & 0xffff0000ffffffff) == 0) {
-    return KlassDecodeMovk;
-  }
-
   return KlassDecodeFallback;
 }
 
@@ -5543,14 +5531,6 @@ void MacroAssembler::emit_encode_klass_not_null(Register dst, Register src, Regi
   case KlassDecodeXor:
     eor(dst, src, (uint64_t)base);
     lsr(dst, dst, shift);
-    break;
-
-  case KlassDecodeMovk:
-    if (shift != 0) {
-      ubfx(dst, src, shift, 32);
-    } else {
-      movw(dst, src);
-    }
     break;
 
   case KlassDecodeFallback: {
@@ -5608,16 +5588,6 @@ void MacroAssembler::emit_decode_klass_not_null(Register dst, Register src, Regi
     lsl(dst, src, shift);
     eor(dst, dst, (uint64_t)base);
     break;
-
-  case KlassDecodeMovk: { // 1-3 instructions
-    const uint64_t shifted_base =
-      (uint64_t)base >> shift;
-
-    if (dst != src) movw(dst, src);
-    movk(dst, shifted_base >> 32, 32);
-    lsl(dst, dst, shift);
-    break;
-  }
 
   case KlassDecodeFallback: { // 3-4 instructions
     mov(tmp, base);
@@ -7920,13 +7890,13 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register t1, R
 
   // Try to lock. Transition lock bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  orr(mark, mark, markWord::unlocked_value);
+  orr(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
     // Mask inline_type bit such that we go to the slow path if object is an inline type
     andr(mark, mark, ~((int) markWord::inline_type_bit_in_place));
   }
 
-  eor(t, mark, markWord::unlocked_value);
+  eor(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword, memory_order_acquire);
   br(Assembler::NE, slow);
 
@@ -7985,16 +7955,16 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   tbnz(mark, log2i_exact(markWord::monitor_value), push_and_slow);
 
 #ifdef ASSERT
-  // Check header not unlocked (0b01).
+  // Check header not unlocked / lock-neutral (0b01).
   Label not_unlocked;
-  tbz(mark, log2i_exact(markWord::unlocked_value), not_unlocked);
+  tbz(mark, log2i_exact(markWord::lock_neutral_value), not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
 #endif
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  orr(t, mark, markWord::unlocked_value);
+  orr(t, mark, markWord::lock_neutral_value);
   cmpxchg(obj, mark, t, Assembler::xword, memory_order_release);
   br(Assembler::EQ, unlocked);
 
