@@ -202,12 +202,10 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZACAS)) {
     VM_Version::ext_Zacas.enable_feature();
   }
-#endif
-#ifndef PRODUCT
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZALASR)) {
     VM_Version::ext_Zalasr.enable_feature();
   }
-#ifndef PRODUCT
+#endif
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZBA)) {
     VM_Version::ext_Zba.enable_feature();
   }
