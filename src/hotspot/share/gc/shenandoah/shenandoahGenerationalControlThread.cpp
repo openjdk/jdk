@@ -57,22 +57,6 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   create_and_start();
 }
 
-void ShenandoahGenerationalControlThread::maybe_cancel_old_cycle(GCCause::Cause cause) {
-  if (gc_mode() == servicing_old) {
-    MonitorLocker control_locker(&_control_lock, Mutex::_no_safepoint_check_flag);
-    if (gc_mode() == servicing_old) {
-      _heap->cancel_gc(cause);
-    }
-  }
-}
-
-void ShenandoahGenerationalControlThread::request_gc(GCCause::Cause cause) {
-  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
-    maybe_cancel_old_cycle(cause);
-    handle_requested_gc(cause);
-  }
-}
-
 void ShenandoahGenerationalControlThread::run_service() {
 
   // This is the only instance of request.
@@ -121,13 +105,7 @@ void ShenandoahGenerationalControlThread::notify_alloc_stall(GCCause::Cause caus
   generation->heuristics()->record_allocation_stall();
 
   MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-  if (notify_control_thread(ml, cause, generation)) {
-    // We have set the request and notified the control thread.
-    if (gc_mode() == servicing_old) {
-      // If an old mark increment is running, set cancellation flag for workers to observe.
-      _heap->cancel_gc(cause);
-    }
-  }
+  notify_control_thread(ml, cause, generation);
 }
 
 void ShenandoahGenerationalControlThread::check_for_request(ShenandoahGCRequest& request) {
@@ -476,9 +454,7 @@ void ShenandoahGenerationalControlThread::resume_concurrent_old_cycle(Shenandoah
     // for an old cycle and because cycle waiters would have requested a global cycle that would
     // have cancelled the old mark anyway.
     clear_allocation_failure_and_notify_waiters();
-  }
-
-  if (_heap->cancelled_gc() && cause == GCCause::_shenandoah_concurrent_gc) {
+  } else if (cause == GCCause::_shenandoah_concurrent_gc) {
     _heap->shenandoah_policy()->record_interrupted_old();
   }
 }
@@ -589,9 +565,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     // Cancel the old GC and wait for the control thread to start servicing the new request.
     log_info(gc, phases)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
-      if (notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation)) {
-        _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
-      }
+      notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);
       ml.wait();
     }
     return true;
@@ -623,34 +597,38 @@ bool ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause c
   return notify_control_thread(ml, cause, generation);
 }
 
-bool ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker &ml, GCCause::Cause cause,
+bool ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause,
                                                                 ShenandoahGeneration* generation) {
-  assert(_control_lock.is_locked(), "Request lock must be held here");
+  assert(_control_lock.owned_by_self(), "Request lock must be held here");
   if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
     return false;
   }
 
   log_debug(gc, thread)("Notify control (%s): %s, %s", gc_mode_name(gc_mode()), GCCause::to_string(cause), generation->name());
-  _requested_gc_cause = cause;
-  _requested_generation = generation;
+  request_gc_and_interrupt_old(cause, generation);
   ml.notify_all();
   return true;
 }
 
-void ShenandoahGenerationalControlThread::notify_control_thread(GCCause::Cause cause) {
-  MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
-  notify_control_thread(ml, cause);
+void ShenandoahGenerationalControlThread::request_gc_and_interrupt_old(GCCause::Cause cause,
+                                                                       ShenandoahGeneration* generation) {
+  assert(_control_lock.owned_by_self(), "Request lock must be held here");
+  _requested_gc_cause = cause;
+  _requested_generation = generation;
+  if (gc_mode() == servicing_old && !generation->is_old()) {
+    _heap->cancel_gc(cause);
+  }
 }
 
 void ShenandoahGenerationalControlThread::notify_control_thread(MonitorLocker& ml, GCCause::Cause cause) {
-  assert(_control_lock.is_locked(), "Request lock must be held here");
+  assert(_control_lock.owned_by_self(), "Request lock must be held here");
   if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
   } else {
     log_debug(gc, thread)("Notify control (%s): %s", gc_mode_name(gc_mode()), GCCause::to_string(cause));
     _requested_gc_cause = cause;
-    ml.notify();
+    ml.notify_all();
   }
 }
 
