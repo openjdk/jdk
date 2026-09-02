@@ -35,9 +35,14 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
 import java.io.IOException;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
+import java.util.jar.Attributes.Name;
+
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.util.JarUtils;
 
 public class MultiReleaseJars {
 
@@ -149,14 +154,12 @@ public class MultiReleaseJars {
 
         // version4.jar is exactly the same as version3.jar, except that the manifest file contains
         // "Multi-Release: truex" instead of "true".
-        String[] meta3 = {
-            "Multi-Release: truex",
-            "Main-Class: version.Main"
-        };
-        metainf = new File(tempDir, "mf3.txt");
-        writeFile(metainf, meta3);
-        JarBuilder.build("version4", baseDir, metainf.getAbsolutePath(),
-            "--release", MAJOR_VERSION_STRING, "-C", vDir.getAbsolutePath(), ".");
+        Manifest manifest = new Manifest();
+        try (JarFile jar = new JarFile("version3.jar")) {
+            manifest = jar.getManifest();
+        }
+        manifest.getMainAttributes().put(Name.MULTI_RELEASE, "truex");
+        JarUtils.updateManifest("version3.jar", "version4.jar", manifest);
     }
 
     static void checkExecOutput(OutputAnalyzer output, String expectedOutput) throws Exception {
@@ -307,6 +310,7 @@ public class MultiReleaseJars {
         // 10. AOT Test with "Multi-Release: truex" instead of "true". The unexpected value
         // is ignored and "true" is used by default
         SimpleCDSAppTester.of("Multi-Release-AOT-Misspelled")
+            .setCheckExitValue(false)
             .addVmArgs("-Xlog:aot",
                        enableMultiRelease)
             .classpath(appJar4)
@@ -315,7 +319,8 @@ public class MultiReleaseJars {
                 out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
             })
             .setProductionChecker((OutputAnalyzer out) -> {
-                out.shouldContain("I am running on version " + MAJOR_VERSION_STRING);
+                out.shouldHaveExitValue(1);
+                out.shouldContain("java.lang.ClassNotFoundException: version.Version");
             })
             .runAOTWorkflow();
     }

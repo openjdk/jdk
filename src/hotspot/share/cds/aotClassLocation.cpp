@@ -282,7 +282,7 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
   const char* multi_release = cs->get_attr("Multi-Release: ");
-  if (multi_release != nullptr && strncasecmp(multi_release, "true", 5) == 0) {
+  if (multi_release != nullptr && strcasecmp(multi_release, "true") == 0) {
     cs->_is_multi_release_jar = true;
   }
 
