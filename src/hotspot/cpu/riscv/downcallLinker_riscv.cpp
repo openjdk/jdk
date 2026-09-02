@@ -229,7 +229,7 @@ void DowncallLinker::StubGenerator::generate() {
     // State transition
     __ mv(t1, _thread_in_native);
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sw(t1, Address(xthread, JavaThread::thread_state_offset()), t0);
+    __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
     __ block_comment("} thread java2native");
   }
 

@@ -354,12 +354,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     bind(not_recursive);
 
-    const Register tmp2_owner_addr = tmp2;
-
     // Set owner to null.
     // Release to satisfy the JMM
     membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp1_monitor, ObjectMonitor::owner_offset()), tmp2_owner_addr);
+    sd(zr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.
     membar(StoreLoad);

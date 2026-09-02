@@ -1801,7 +1801,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Now set thread in native
   __ mv(t1, _thread_in_native);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()), t0);
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   // Clobbers t1
   __ rt_call(native_func);

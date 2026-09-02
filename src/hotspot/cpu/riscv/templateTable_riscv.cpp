@@ -159,9 +159,9 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       __ load_field_entry(temp_reg, bc_reg);
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
       if (byte_no == f1_byte) {
-        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::get_code_offset())), bc_reg);
+        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::get_code_offset())));
       } else {
-        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())), bc_reg);
+        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
       }
       __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
@@ -3742,7 +3742,7 @@ void TemplateTable::_new() {
   // how Constant Pool is update (see ConstantPool::klass_at_put)
   const int tags_offset = Array<u1>::base_offset_in_bytes();
   __ add(t1, x10, x13);
-  __ lbu(t1, Address(t1, tags_offset), t0);
+  __ lbu(t1, Address(t1, tags_offset));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ subi(t1, t1, (u1)JVM_CONSTANT_Class);
   __ bnez(t1, slow_case);
