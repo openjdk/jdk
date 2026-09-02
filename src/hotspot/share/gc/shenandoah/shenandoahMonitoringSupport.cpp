@@ -31,8 +31,7 @@
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/globals.hpp"
 #include "services/memoryService.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahYoungGenerationCounters : public GenerationCounters {
 public:

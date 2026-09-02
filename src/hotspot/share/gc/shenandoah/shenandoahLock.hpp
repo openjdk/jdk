@@ -31,10 +31,9 @@
 #include "runtime/orderAccess.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
-#include <stdint.h>
 
 class JavaThread;
 

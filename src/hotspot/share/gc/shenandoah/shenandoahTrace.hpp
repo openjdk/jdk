@@ -29,8 +29,7 @@
 #include "gc/shared/gcTrace.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahCollectionSet;
 class ShenandoahInPlacePromotionPlanner;

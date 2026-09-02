@@ -30,8 +30,7 @@
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class PerfLongVariable;
 class ShenandoahHeap;

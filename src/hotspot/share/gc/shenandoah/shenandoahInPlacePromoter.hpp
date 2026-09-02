@@ -27,8 +27,7 @@
 
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;

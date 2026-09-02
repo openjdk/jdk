@@ -30,8 +30,7 @@
 #include "gc/shenandoah/shenandoahClosures.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/stackWatermark.hpp"
-
-#include <stdint.h>
+#include "utilities/globalDefinitions.hpp"
 
 class BarrierSetNMethod;
 class frame;

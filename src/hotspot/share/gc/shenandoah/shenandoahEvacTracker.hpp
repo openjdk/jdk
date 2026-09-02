@@ -28,8 +28,7 @@
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class outputStream;
 class Thread;

@@ -33,8 +33,7 @@
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class outputStream;
 class ShenandoahHeap;

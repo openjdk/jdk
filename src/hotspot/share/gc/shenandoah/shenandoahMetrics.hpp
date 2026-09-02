@@ -26,8 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMETRICS_HPP
 
 #include "memory/allocation.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahFreeSet;
 

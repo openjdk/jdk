@@ -30,8 +30,7 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocRequest;
 

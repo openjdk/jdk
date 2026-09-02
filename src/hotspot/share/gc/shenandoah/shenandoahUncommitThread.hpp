@@ -28,8 +28,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "runtime/mutex.hpp"
-
-#include <stddef.h>
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeap;
 

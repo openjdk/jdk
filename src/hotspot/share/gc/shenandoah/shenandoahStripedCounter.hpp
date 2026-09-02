@@ -29,9 +29,7 @@
 #include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/atomic.hpp"
-
-#include <stddef.h>
-#include <stdint.h>
+#include "utilities/globalDefinitions.hpp"
 
 // A contended-counter optimized for many concurrent writers and infrequent reads.
 // Each writer accumulates into a stripe chosen by its thread hash, each on its own cache line to
