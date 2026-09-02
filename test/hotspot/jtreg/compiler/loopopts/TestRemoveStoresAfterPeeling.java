@@ -42,6 +42,8 @@ public class TestRemoveStoresAfterPeeling {
         var framework = new TestFramework();
         framework.addScenarios(new Scenario(0));
         if (Platform.isDebugBuild()) {
+            // When a store is not removed from a loop after that loop is peeled, there will be
+            // multiple stores in the graph
             framework.addScenarios(new Scenario(1, "-XX:+StressLoopPeeling"));
         }
         framework.start();
@@ -129,6 +131,32 @@ public class TestRemoveStoresAfterPeeling {
         a2 = testStorePeeling3(200, a1, 1, 1);
         Asserts.assertEQ(1, a1.v);
         Asserts.assertEQ(Float.floatToRawIntBits(64), a2.v);
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"})
+    private int testStorePeeling4(A[] array, A a, int v) {
+        int sum = 0;
+        for (int i = 1; i < 100; i *= 2) {
+            // The store cannot be hoisted because there is a preceding load interfering with it
+            sum += array[i].v;
+            a.v = v;
+        }
+        return sum;
+    }
+
+    @Run(test = "testStorePeeling4")
+    public void runStorePeeling4() {
+        A[] array = new A[100];
+        for (int i = 0; i < 100; i++) {
+            array[i] = new A();
+        }
+
+        A unrelated = new A();
+        Asserts.assertEQ(0, testStorePeeling4(array, unrelated, 1));
+        Asserts.assertEQ(1, testStorePeeling4(array, array[2], 1));
+        array[2].v = 0;
+        Asserts.assertEQ(0, testStorePeeling4(array, array[1], 1));
     }
 
     @Test
