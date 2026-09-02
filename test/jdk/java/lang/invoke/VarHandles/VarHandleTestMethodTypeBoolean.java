@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,9 +51,9 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
 
     static boolean static_v = true;
 
-    final boolean final_v = true;
+    final boolean final_v;
 
-    boolean v = true;
+    boolean v;
 
     VarHandle vhFinalField;
 
@@ -64,6 +64,12 @@ public class VarHandleTestMethodTypeBoolean extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodTypeBoolean() {
+        final_v = true;
+        v = true;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {

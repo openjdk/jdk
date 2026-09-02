@@ -105,6 +105,17 @@ public class Scenario {
     }
 
     /**
+     * Prepend additional VM flags to this scenario.
+     *
+     * @param flags the additional scenario VM flags.
+     */
+    public void prependFlags(String... flags) {
+        if (flags != null) {
+            this.flags.addAll(0, Arrays.asList(flags));
+        }
+    }
+
+    /**
      * Get all scenario specific VM flags as defined in {@link #Scenario(int, String...)}.
      *
      * @return the scenario VM flags.
