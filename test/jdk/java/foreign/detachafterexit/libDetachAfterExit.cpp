@@ -26,7 +26,7 @@
 
 #include <stdbool.h>
 
-static ThreadHelper THREAD_HELPER;
+static TestThread THREAD;
 static volatile bool FLAG = false;
 
 static void proc(void* ctxt) {
@@ -40,17 +40,14 @@ static void proc(void* ctxt) {
 static void await_join() {
     puts("[await_join] joining...");
     FLAG = true;
-    join_thread(&THREAD_HELPER);
+    THREAD.join();
     puts("[await_join] done joining");
 }
 
 extern "C"
 EXPORT void create_thread_and_register_atexit(void (*callback)(void)) {
     puts("[create_thread_and_register_atexit] creating native thread");
-    THREAD_HELPER.proc = proc;
-    THREAD_HELPER.context = (void*) callback;
-
-    create_thread(&THREAD_HELPER);
-
+    THREAD = TestThread(proc, (void*) callback);
+    THREAD.start();
     atexit(&await_join);
 }

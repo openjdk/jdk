@@ -37,20 +37,8 @@
 #endif
 
 extern "C" {
-
-typedef void(*PROCEDURE)(void*);
-
-#ifdef _WIN32
-typedef HANDLE THREAD;
-#else
-typedef pthread_t THREAD;
-#endif
-
-struct ThreadHelper {
-    THREAD _thread;
-    PROCEDURE proc;
-    void* context;
-};
+    typedef void(*PROCEDURE)(void*);
+}
 
 static void fatal(const char* message, int code) {
     fputs(message, stderr);
@@ -58,61 +46,82 @@ static void fatal(const char* message, int code) {
     exit(code);
 }
 
-// Adapt from the callback type the OS API expects to
-// our OS-independent PROCEDURE type.
+class TestThread {
+private:
+    using proc_t = PROCEDURE;
 #ifdef _WIN32
-DWORD WINAPI procedure(_In_ LPVOID ctxt) {
+    using thread_t = HANDLE;
 #else
-void* procedure(void* ctxt) {
+    using thread_t = pthread_t;
 #endif
-    ThreadHelper* helper = (ThreadHelper*)ctxt;
-    helper->proc(helper->context);
-    return 0;
-}
+    thread_t _thread;
+    proc_t _proc;
+    void* _context;
+public:
+    TestThread()
+            : _proc(nullptr), _context(nullptr) { }
 
-void create_thread(ThreadHelper* helper) {
-#ifdef _WIN32
-    helper->_thread = CreateThread(nullptr, 0, procedure, helper, 0, nullptr);
-    if (helper->_thread == nullptr) {
-        fatal("failed to create thread", GetLastError());
-    }
-#else
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    size_t stack_size = 0x100000;
-    pthread_attr_setstacksize(&attr, stack_size);
-    int result = pthread_create(&helper->_thread, &attr, procedure, helper);
-    if (result != 0) {
-        fatal("failed to create thread", result);
-    }
-    pthread_attr_destroy(&attr);
-#endif
-}
+    TestThread(proc_t proc, void* context = nullptr)
+            : _proc(proc), _context(context) { }
 
-void join_thread(ThreadHelper* helper) {
+    void start() {
 #ifdef _WIN32
-    if (WaitForSingleObject(helper->_thread, INFINITE) != WAIT_OBJECT_0) {
-        // Should be WAIT_FAILED, since this is not a mutex, and
-        // we set no timeout.
-        fatal("failed to join thread", GetLastError());
-    }
+        _thread = CreateThread(nullptr, 0, TestThread::procedure, this, 0, nullptr);
+        if (_thread == nullptr) {
+            fatal("failed to create thread", GetLastError());
+        }
 #else
-    int result = pthread_join(helper->_thread, nullptr);
-    if (result != 0) {
-        fatal("failed to join thread", result);
-    }
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        size_t stack_size = 0x100000;
+        pthread_attr_setstacksize(&attr, stack_size);
+        int result = pthread_create(&_thread, &attr, TestThread::procedure, this);
+        if (result != 0) {
+            fatal("failed to create thread", result);
+        }
+        pthread_attr_destroy(&attr);
 #endif
-}
+    }
+
+    void join() {
+#ifdef _WIN32
+        if (WaitForSingleObject(_thread, INFINITE) != WAIT_OBJECT_0) {
+            // Should be WAIT_FAILED, since this is not a mutex, and
+            // we set no timeout.
+            fatal("failed to join thread", GetLastError());
+        }
+#else
+        int result = pthread_join(_thread, nullptr);
+        if (result != 0) {
+            fatal("failed to join thread", result);
+        }
+#endif
+    }
+
+private:
+
+    // Adapt from the callback type the OS API expects to
+    // our OS-independent PROCEDURE type.
+    static
+    #ifdef _WIN32
+    DWORD WINAPI procedure(_In_ LPVOID ctxt) {
+    #else
+    void* procedure(void* ctxt) {
+    #endif
+        TestThread* helper = (TestThread*)ctxt;
+        helper->_proc(helper->_context);
+        return 0;
+    }
+};
+
+extern "C" {
 
 // Run 'proc' in a newly started thread, passing 'context' to it
 // as an argument, and then join that thread.
 void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
-    struct ThreadHelper helper;
-    helper.proc = proc;
-    helper.context = context;
-
-    create_thread(&helper);
-    join_thread(&helper);
+    TestThread thread(proc, context);
+    thread.start();
+    thread.join();
 }
 
 }
