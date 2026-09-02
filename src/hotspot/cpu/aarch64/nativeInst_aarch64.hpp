@@ -97,7 +97,7 @@ public:
     udf_marker_stop  = 0x8001,
     udf_marker_deopt = 0x8002,
   };
-
+enum { udf_stop, udf_deopt };
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
 
