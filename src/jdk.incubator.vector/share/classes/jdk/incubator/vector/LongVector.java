@@ -1911,10 +1911,6 @@ public abstract sealed class LongVector extends AbstractVector<Long>
     M testTemplate(Class<M> maskType, Test op) {
         LongSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Long> m;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (long) 0);
@@ -1922,6 +1918,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
                 m = compare(LT, (long) 0);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -1946,10 +1943,6 @@ public abstract sealed class LongVector extends AbstractVector<Long>
         LongSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Long> m = mask;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (long) 0, m);
@@ -1957,6 +1950,7 @@ public abstract sealed class LongVector extends AbstractVector<Long>
                 m = compare(LT, (long) 0, m);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);

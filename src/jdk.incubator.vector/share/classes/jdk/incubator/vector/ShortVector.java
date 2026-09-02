@@ -2014,10 +2014,6 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
     M testTemplate(Class<M> maskType, Test op) {
         ShortSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Short> m;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (short) 0);
@@ -2025,6 +2021,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2049,10 +2046,6 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         ShortSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Short> m = mask;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (short) 0, m);
@@ -2060,6 +2053,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0, m);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);

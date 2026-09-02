@@ -1915,10 +1915,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
     M testTemplate(Class<M> maskType, Test op) {
         Float16Species vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             ShortVector bits = this.viewAsIntegralLanes();
             VectorMask<Short> m;
             if (op == IS_DEFAULT) {
@@ -1943,6 +1939,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 }
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1967,10 +1964,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         Float16Species vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             ShortVector bits = this.viewAsIntegralLanes();
             VectorMask<Short> m = mask.cast(ShortVector.species(shape()));
             if (op == IS_DEFAULT) {
@@ -1995,6 +1988,7 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
                 }
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));

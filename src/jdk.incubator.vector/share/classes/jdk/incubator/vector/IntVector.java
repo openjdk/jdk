@@ -1998,10 +1998,6 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
     M testTemplate(Class<M> maskType, Test op) {
         IntSpecies vsp = vspecies();
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Integer> m;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (int) 0);
@@ -2009,6 +2005,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2033,10 +2030,6 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
         IntSpecies vsp = vspecies();
         mask.check(maskType, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (!op.compatibleWith(vsp.elementType())) {
-                throw new UnsupportedOperationException(
-                        op + ": incompatible with " + vsp.elementType().getSimpleName());
-            }
             VectorMask<Integer> m = mask;
             if (op == IS_DEFAULT) {
                 m = compare(EQ, (int) 0, m);
@@ -2044,6 +2037,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0, m);
             }
             else {
+                opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
