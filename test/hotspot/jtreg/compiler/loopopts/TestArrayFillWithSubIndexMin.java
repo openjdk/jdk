@@ -21,57 +21,55 @@
  * questions.
  */
 
-/**
- * @test id=default
- * @summary Exercise minimal int array fill with i - c index and default fill optimization settings.
- * @requires vm.compiler2.enabled
- *
- * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
- *                   -XX:-TieredCompilation
- *                   -XX:CompileCommand=quiet
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::offsetMinusLiteral
- *                   compiler.loopopts.TestArrayFillWithSubIndexMin
- */
 
 /**
- * @test id=optimize-fill
+ * @test id=coh
  * @summary Exercise minimal int array fill with i - c index and forced fill optimization.
  * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
- *                   -XX:LoopUnrollLimit=0 -XX:+OptimizeFill
- *                   -XX:CompileCommand=quiet
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::offsetMinusLiteral
+ *                   -XX:+OptimizeFill
+ *                   -XX:+UseCompactObjectHeaders
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_coh
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_nocoh
  *                   compiler.loopopts.TestArrayFillWithSubIndexMin
  */
 
 /**
- * @test id=no-optimize-fill
+ * @test id=no-coh
  * @summary Exercise minimal int array fill with i - c index and disabled fill optimization.
  * @requires vm.compiler2.enabled
  *
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
- *                   -XX:-OptimizeFill
- *                   -XX:CompileCommand=quiet
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::offsetMinusLiteral
+ *                   -XX:+OptimizeFill
+ *                   -XX:-UseCompactObjectHeaders
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_coh
+ *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_nocoh
  *                   compiler.loopopts.TestArrayFillWithSubIndexMin
  */
 
 package compiler.loopopts;
 
 public class TestArrayFillWithSubIndexMin {
-    static final int N = 1000;
-    static final int[] A = new int[N + 16];
+    static final int ARRAY_SIZE = 100;
+    static final int[] ARRAY = new int[ARRAY_SIZE];
 
-    public static void offsetMinusLiteral() {
-        for (int i = 3; i < N + 3; i++) {
-            A[i - 3] = 7;
+    public static void test_coh() {
+        for (int i = 3; i < ARRAY_SIZE; i++) {
+            ARRAY[i - 3] = 42;
+        }
+    }
+
+    public static void test_nocoh() {
+        for (int i = 4; i < ARRAY_SIZE; i++) {
+            ARRAY[i - 4] = 42;
         }
     }
 
     public static void main(String[] args) {
-        offsetMinusLiteral();
+        test_coh();
+        test_nocoh();
     }
 }
