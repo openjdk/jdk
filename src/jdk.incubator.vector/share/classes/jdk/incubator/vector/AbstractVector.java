@@ -35,7 +35,7 @@ import static jdk.incubator.vector.VectorOperators.*;
 
 @SuppressWarnings("cast")
 abstract sealed class AbstractVector<E> extends Vector<E>
-        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector {
+        permits ByteVector, DoubleVector, FloatVector, IntVector, LongVector, ShortVector, Float16Vector {
     /**
      * The order of vector bytes when stored in natural,
      * array elements of the same lane type.
@@ -329,6 +329,15 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     @ForceInline
     public DoubleVector reinterpretAsDoubles() {
         return (DoubleVector) asVectorRaw(LaneType.DOUBLE);
+    }
+
+    /**
+     * {@inheritDoc} <!--workaround-->
+     */
+    @Override
+    @ForceInline
+    public Float16Vector reinterpretAsFloat16s() {
+        return (Float16Vector) asVectorRaw(LaneType.FLOAT16);
     }
 
     /**
@@ -682,6 +691,8 @@ abstract sealed class AbstractVector<E> extends Vector<E>
             return FloatVector.fromMemorySegment(rsp.check(float.class), ms, 0, bo, m.check(float.class)).check0(rsp);
         case LaneType.SK_DOUBLE:
             return DoubleVector.fromMemorySegment(rsp.check(double.class), ms, 0, bo, m.check(double.class)).check0(rsp);
+        case LaneType.SK_FLOAT16:
+            return Float16Vector.fromMemorySegment(rsp.check(Float16.class), ms, 0, bo, m.check(Float16.class)).check0(rsp);
         default:
             throw new AssertionError(rsp.toString());
         }
@@ -744,6 +755,13 @@ abstract sealed class AbstractVector<E> extends Vector<E>
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
             }
+            case LaneType.SK_FLOAT16: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return Float16Vector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
+            }
             default: break;
             }
         } else {
@@ -793,6 +811,13 @@ abstract sealed class AbstractVector<E> extends Vector<E>
                     a[i] = (double) lanes[i];
                 }
                 return DoubleVector.fromArray(dsp.check(double.class), a, 0).check0(dsp);
+            }
+            case LaneType.SK_FLOAT16: {
+                short[] a = new short[rlength];
+                for (int i = 0; i < limit; i++) {
+                    a[i] = Float16.float16ToRawShortBits(Float16.valueOf((float) lanes[i]));
+                }
+                return Float16Vector.fromArray(dsp.check(Float16.class), a, 0).check0(dsp);
             }
             default: break;
             }

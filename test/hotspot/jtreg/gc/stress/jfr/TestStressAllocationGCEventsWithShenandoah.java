@@ -30,7 +30,7 @@ package jdk.jfr.event.gc.detailed;
  * @requires vm.hasJFR
  * @requires vm.gc.Shenandoah
  * @library /test/lib /test/jdk
- * @run main/othervm -XX:+UseShenandoahGC -Xmx64m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
+ * @run main/othervm -XX:+UseShenandoahGC -Xmx128m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
  */
 
  /**
@@ -39,7 +39,7 @@ package jdk.jfr.event.gc.detailed;
   * @requires vm.hasJFR
   * @requires vm.gc.Shenandoah
   * @library /test/lib /test/jdk
-  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx64m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
+  * @run main/othervm -XX:+UseShenandoahGC -XX:ShenandoahGCMode=generational -Xmx128m -XX:ActiveProcessorCount=1 jdk.jfr.event.gc.detailed.TestStressAllocationGCEventsWithShenandoah
   */
 public class TestStressAllocationGCEventsWithShenandoah {
 
