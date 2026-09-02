@@ -24,17 +24,29 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
+#include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/ostream.hpp"
 
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   switch (t) {
@@ -3029,3 +3041,12 @@ double ShenandoahFreeSet::external_fragmentation() {
   }
 }
 
+#ifdef ASSERT
+void ShenandoahFreeSet::assert_region_usage_more_than_usage() {
+  if (ShenandoahHeap::heap()->mode()->is_generational()) {
+    assert(_young_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_young_used, "sanity");
+    assert(_old_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_old_used, "sanity");
+  }
+  assert(_global_affiliated_regions * ShenandoahHeapRegion::region_size_bytes() >= _total_global_used, "sanity");
+}
+#endif

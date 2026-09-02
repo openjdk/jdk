@@ -25,16 +25,28 @@
  */
 
 
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/reservedSpace.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/os.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahCollectionSet::ShenandoahCollectionSet(ShenandoahHeap* heap, ReservedSpace space, char* heap_base) :
   _map_size(heap->num_regions()),

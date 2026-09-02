@@ -25,15 +25,25 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
+#include "oops/typeArrayKlass.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
+#include "runtime/javaThread.hpp"
+#include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+class Klass;
+class Thread;
 
 ShenandoahObjArrayAllocator::ShenandoahObjArrayAllocator(
     Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)

@@ -29,6 +29,12 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+
+class ShenandoahGeneration;
+class ShenandoahHeap;
 
 // Constructs a MemoryUsage from concurrently sampled values, clamping committed
 // to be at least as large as used to account for concurrent updates. See JDK-8207200.

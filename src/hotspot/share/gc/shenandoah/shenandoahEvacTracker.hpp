@@ -25,9 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHEVACTRACKER_HPP
 
-#include "gc/shared/ageTable.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "utilities/ostream.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class outputStream;
+class Thread;
 
 class ShenandoahEvacuationStats : public CHeapObj<mtGC> {
 private:

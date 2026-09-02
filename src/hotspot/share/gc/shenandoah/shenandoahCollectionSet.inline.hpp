@@ -28,7 +28,6 @@
 
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 

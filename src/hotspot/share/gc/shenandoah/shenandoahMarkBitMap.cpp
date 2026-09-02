@@ -25,9 +25,17 @@
  */
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
 
 ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
   _shift(LogMinObjAlignment),

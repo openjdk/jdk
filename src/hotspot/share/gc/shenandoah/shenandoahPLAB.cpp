@@ -22,13 +22,18 @@
  *
  */
 
+#include "gc/shared/plab.hpp"
+#include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahPLAB.hpp"
 #include "logging/log.hpp"
+#include "oops/oop.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
   _plab(nullptr),

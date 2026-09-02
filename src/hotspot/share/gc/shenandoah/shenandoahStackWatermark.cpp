@@ -25,13 +25,25 @@
  */
 
 
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+class RegisterMap;
+class nmethod;
 
 uint32_t ShenandoahStackWatermark::_epoch_id = MIN_EPOCH_ID;
 

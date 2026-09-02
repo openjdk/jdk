@@ -25,8 +25,9 @@
 
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/debug.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 bool ShenandoahBreakpoint::_start_gc = false;
 

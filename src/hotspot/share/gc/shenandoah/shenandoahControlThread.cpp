@@ -23,8 +23,10 @@
  *
  */
 
+#include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
@@ -39,6 +41,12 @@
 #include "logging/log.hpp"
 #include "memory/metaspaceStats.hpp"
 #include "memory/metaspaceUtils.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/os.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ShenandoahController(),

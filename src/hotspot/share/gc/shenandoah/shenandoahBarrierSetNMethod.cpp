@@ -23,16 +23,14 @@
  */
 
 
+#include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "memory/iterator.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {

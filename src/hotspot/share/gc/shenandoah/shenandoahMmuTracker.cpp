@@ -23,14 +23,16 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahMmuTask : public PeriodicTask {
   ShenandoahMmuTracker* _mmu_tracker;

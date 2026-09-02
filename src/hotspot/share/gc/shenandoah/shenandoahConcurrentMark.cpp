@@ -24,8 +24,12 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -33,15 +37,22 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.inline.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/continuation.hpp"
+#include "runtime/handshake.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+class ShenandoahReferenceProcessor;
 
 template <ShenandoahGenerationType GENERATION>
 class ShenandoahConcurrentMarkingTask : public WorkerTask {

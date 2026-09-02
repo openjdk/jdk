@@ -22,10 +22,11 @@
  *
  */
 
+#include "gc/shared/gcId.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
-#include "jfr/jfrEvents.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
 
 void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cset,
     size_t free_regions, size_t regions_immediate, size_t immediate_size) {

@@ -32,11 +32,7 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 class ShenandoahGeneration;
-
-class VM_ShenandoahInitMark;
-class VM_ShenandoahFinalMarkStartEvac;
-class VM_ShenandoahInitUpdateRefs;
-class VM_ShenandoahFinalUpdateRefs;
+class ShenandoahHeap;
 
 class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahInitMark;

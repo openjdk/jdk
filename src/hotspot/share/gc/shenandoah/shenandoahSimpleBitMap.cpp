@@ -24,6 +24,13 @@
  */
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/align.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
     _num_bits(num_bits),

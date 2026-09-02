@@ -23,13 +23,46 @@
  *
  */
 
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCardStats.hpp"
+#include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
+#include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
+#include "memory/iterator.hpp"
+#include "oops/access.hpp"
+#include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+#include <sys/types.h>
+
+class HeapWordImpl;
+class Thread;
 
 // A closure that takes an oop in the old generation and, if it's pointing
 // into the young generation, dirties the corresponding remembered set entry.

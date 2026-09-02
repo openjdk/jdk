@@ -25,14 +25,36 @@
 
 
 
+#include "code/codeCache.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskTerminator.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "oops/flatArrayKlass.inline.hpp"
+#include "oops/instanceKlass.inline.hpp"
+#include "oops/instanceRefKlass.inline.hpp"
+#include "oops/instanceStackChunkKlass.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/refArrayKlass.inline.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahMark::start_mark() {
   if (!CodeCache::is_gc_marking_cycle_active()) {

@@ -172,23 +172,28 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
-#include "memory/iterator.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
-class ShenandoahReferenceProcessor;
-class ShenandoahConcurrentMark;
-class ShenandoahHeap;
+class OopIterateClosure;
 class ShenandoahHeapRegion;
-class ShenandoahRegionIterator;
 class ShenandoahMarkingContext;
+class ShenandoahObjToScanQueueSet;
+class ShenandoahReferenceProcessor;
 
-class CardTable;
 typedef CardTable::CardValue CardValue;
 
 class ShenandoahDirectCardMarkRememberedSet: public CHeapObj<mtGC> {

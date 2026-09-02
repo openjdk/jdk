@@ -25,7 +25,11 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
-#include "jfr/jfrEvents.hpp"
+#include "jfrfiles/jfrEventClasses.hpp"
+#include "jfrfiles/jfrTypes.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 #if INCLUDE_JFR
 #include "jfr/metadata/jfrSerializer.hpp"
 #endif

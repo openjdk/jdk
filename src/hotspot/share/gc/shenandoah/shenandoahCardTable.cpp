@@ -26,10 +26,15 @@
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "logging/log.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/reservedSpace.hpp"
+#include "nmt/memTag.hpp"
 #include "nmt/memTracker.hpp"
-#include "runtime/init.hpp"
+#include "runtime/java.hpp"
+#include "runtime/os.hpp"
+#include "utilities/align.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahCardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());

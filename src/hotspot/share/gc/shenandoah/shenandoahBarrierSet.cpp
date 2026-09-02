@@ -23,7 +23,13 @@
  *
  */
 
+#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/plab.hpp"
+#include "gc/shared/satbMarkQueue.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
@@ -31,12 +37,38 @@
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahPLAB.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
+#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
+#include "memory/memRegion.hpp"
+#include "oops/access.hpp"
+#include "oops/accessDecorators.hpp"
 #include "oops/compressedOops.inline.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/stackChunkOop.inline.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/stackWatermarkSet.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/vmassert_reinstall.hpp"
+
+class BarrierSetAssembler;
+class StackWatermark;
 #ifdef COMPILER1
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
 #endif
