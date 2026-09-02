@@ -87,10 +87,20 @@ public class InstanceStackChunkKlass extends InstanceKlass {
     iterateStackOops(visitor, obj);
   }
 
+  // findField only sees the Java fields, this covers the ones injected by the VM.
+  private Field findInjectedField(String name, String sig) {
+    for (int i = getJavaFieldsCount(); i < getAllFieldsCount(); i++) {
+      if (getFieldName(i).equals(name) && getFieldSignature(i).equals(sig)) {
+        return getFieldByIndex(i);
+      }
+    }
+    return null;
+  }
+
   // Visits the oops in the copied stack, mirroring the bitmap path of
   // oop_oop_iterate_stack in the VM.
   public void iterateStackOops(OopVisitor visitor, Oop obj) {
-    byte flags = ((ByteField) findField("flags", "B")).getValue(obj);
+    byte flags = ((ByteField) findInjectedField("flags", "B")).getValue(obj);
     if ((flags & 0x10) == 0) {   // FLAG_HAS_BITMAP, only set once the GC transforms the chunk
       return;
     }

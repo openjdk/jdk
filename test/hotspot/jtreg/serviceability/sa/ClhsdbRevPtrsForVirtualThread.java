@@ -65,7 +65,8 @@ public class ClhsdbRevPtrsForVirtualThread {
 
             String output = test.run(theApp.getPid(), List.of("revptrs " + addr), null, null);
             OutputAnalyzer out = new OutputAnalyzer(output);
-            out.shouldContain("StackChunk");
+            out.shouldNotContain("ReversePtrs: WARNING");
+            out.shouldContain("jdk/internal/vm/StackChunk");
         } finally {
             LingeredApp.stopApp(theApp);
         }
