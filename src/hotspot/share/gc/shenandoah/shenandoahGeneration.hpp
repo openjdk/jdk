@@ -140,7 +140,7 @@ public:
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
 
-  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
+  virtual bool contains(ShenandoahAffiliation affiliation) const override = 0;
 
   // Return true if this region is affiliated with this generation.
   virtual bool contains(ShenandoahHeapRegion* region) const override = 0;

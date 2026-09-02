@@ -62,6 +62,9 @@ public:
     return _buf_empty && taskqueue_t::is_empty();
   }
 
+  NOINLINE
+  void pop_more_overflow();
+
   inline size_t full_size();
 
   inline size_t capacity() const;

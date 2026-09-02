@@ -22,16 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
-#define SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
 
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 #include "gc/g1/g1CardSet.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1FromCardCache.inline.hpp"
-#include "gc/g1/g1HeapRegion.inline.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "runtime/safepoint.hpp"
 
 void G1HeapRegionRemSet::set_state_untracked() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
@@ -144,4 +144,4 @@ void G1HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
   card_set()->print_info(st, to_card(from));
 }
 
-#endif // SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
