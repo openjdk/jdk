@@ -1377,7 +1377,7 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
     int field_offset = field->field_offset();
     if (obj.is_flat()) {
       // the object is inlined, its fields are stored without the header
-      field_offset += obj.offset() - obj.inline_klass()->payload_offset();
+      field_offset += obj.offset() - obj.inline_klass()->layouts().payload_offset();
     }
     // check for possible nulls
     if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
@@ -3110,7 +3110,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     int field_offset = field->field_offset();
     if (o.is_flat()) {
       // the object is inlined, its fields are stored without the header
-      field_offset += o.offset() - o.inline_klass()->payload_offset();
+      field_offset += o.offset() - o.inline_klass()->layouts().payload_offset();
     }
     if (!is_primitive_field_type(type)) {
       if (field->is_flat()) {

@@ -177,13 +177,13 @@ size_t ObjArrayKlass::oop_size(oop obj) const {
   ShouldNotReachHere();
 }
 
-ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProperties props) {
+ArrayDescription ObjArrayKlass::array_layout_selection(const Klass* element, ArrayProperties props) {
   // TODO FIXME: the layout selection should take the array size in consideration
   // to avoid creation of arrays too big to be handled by the VM. See JDK-8233189
   if (!UseArrayFlattening || element->is_array_klass() || element->is_identity_class() || element->is_abstract()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }
-  InlineKlass* vk = InlineKlass::cast(element);
+  const InlineKlass* vk = InlineKlass::cast(element);
   if (!vk->maybe_flat_in_array()) {
     return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
   }
@@ -192,18 +192,18 @@ ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProp
   if (props.is_null_restricted()) {
     if (props.is_non_atomic()) {
       // Null-restricted + non-atomic
-      if (vk->has_null_free_non_atomic_layout()) {
+      if (vk->layouts().has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->has_null_free_atomic_layout()) {
+      } else if (vk->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_ATOMIC_FLAT);
       } else {
         return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
       }
     } else {
       // Null-restricted + atomic
-      if (vk->is_naturally_atomic(true /* null-free */) && vk->has_null_free_non_atomic_layout()) {
+      if (vk->is_naturally_atomic(true /* null-free */) && vk->layouts().has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);
-      } else if (vk->has_null_free_atomic_layout()) {
+      } else if (vk->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT)) {
         return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULL_FREE_ATOMIC_FLAT);
       } else {
         return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);
@@ -211,7 +211,7 @@ ArrayDescription ObjArrayKlass::array_layout_selection(Klass* element, ArrayProp
     }
   } else {
     // nullable implies atomic, so the non-atomic property is ignored
-    if (vk->has_nullable_atomic_layout()) {
+    if (vk->layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT)) {
       return ArrayDescription(FlatArrayKlassKind, props, LayoutKind::NULLABLE_ATOMIC_FLAT);
     } else {
       return ArrayDescription(RefArrayKlassKind, props, LayoutKind::REFERENCE);

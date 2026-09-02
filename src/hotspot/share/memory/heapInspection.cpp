@@ -580,7 +580,7 @@ static void print_flat_field(outputStream* st, int level, int offset, InstanceKl
   fields->sort(compare_offset);
   for(int i = 0; i < fields->length(); i++) {
     FieldDesc fd = fields->at(i);
-    int offset2 = offset + fd.offset() - vklass->payload_offset();
+    int offset2 = offset + fd.offset() - vklass->layouts().payload_offset();
     print_field(st, level, offset2, fd,
         fd.is_null_free_inline_type(), fd.holder()->field_is_flat(fd.index()));
     if (fd.holder()->field_is_flat(fd.index())) {

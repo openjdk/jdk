@@ -5389,7 +5389,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // We build the mask for a 64-bit load from the start of the payload. For each contiguous piece of memory
   // we build the mask containing 1's where it would be in the loaded long.
   for (int i = 0; i < _layout_info->_nonoop_acmp_map->length(); i++) {
-    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_payload_offset;
+    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_available_layouts.payload_offset();
     int piece_size = _layout_info->_nonoop_acmp_map->at(i)._size;
     int piece_end = piece_start + piece_size - 1;
     if (piece_end >= BytesPerLong) {  // Too far! Can't fit in an 8-byte load, fast path will not be taken
@@ -5420,7 +5420,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     assert(trailing_zeroes % BitsPerByte == 0, "we should mask full bytes");
     mask = (int64_t)((uint64_t)mask >> trailing_zeroes);
     assert(count_trailing_zeros(static_cast<uint64_t>(mask)) == 0, "fast acmp mask can be moved further!");
-    int offset = _layout_info->_payload_offset - trailing_zeroes / BitsPerByte;
+    int offset = _layout_info->_available_layouts.payload_offset() - trailing_zeroes / BitsPerByte;
     assert(offset >= 0, "fast acmp path shouldn't load before the object");
     vk->set_fast_acmp_offset(offset);
     vk->set_fast_acmp_mask(mask);
@@ -5442,7 +5442,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // we build the mask containing 1's where it would be in the loaded long: it must be as
   // long as the memory that is being accessed, but the placement depends on the endianness.
   for (int i = 0; i < _layout_info->_nonoop_acmp_map->length(); i++) {
-    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_payload_offset;
+    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_available_layouts.payload_offset();
     int piece_size = _layout_info->_nonoop_acmp_map->at(i)._size;
     int piece_end = piece_start + piece_size - 1;
     if (piece_end >= BytesPerLong) {  // Too far! Can't fit in an 8-byte load, fast path will not be taken
@@ -5475,7 +5475,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     assert(leading_zeroes % BitsPerByte == 0, "we should mask full bytes");
     mask <<= leading_zeroes;
     assert(count_leading_zeros(mask) == 0, "fast acmp mask can be moved further!");
-    int offset = _layout_info->_payload_offset - leading_zeroes / BitsPerByte;
+    int offset = _layout_info->_available_layouts.payload_offset() - leading_zeroes / BitsPerByte;
     assert(offset >= 0, "fast acmp path shouldn't load before the object");
     vk->set_fast_acmp_offset(offset);
     vk->set_fast_acmp_mask(mask);
@@ -5735,15 +5735,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
   if (is_inline_type()) {
     InlineKlass* vk = InlineKlass::cast(ik);
-    vk->set_payload_alignment(_layout_info->_payload_alignment);
-    vk->set_payload_offset(_layout_info->_payload_offset);
-    vk->set_payload_size_in_bytes(_layout_info->_payload_size_in_bytes);
-    vk->set_null_free_non_atomic_size_in_bytes(_layout_info->_null_free_non_atomic_size_in_bytes);
-    vk->set_null_free_non_atomic_alignment(_layout_info->_null_free_non_atomic_alignment);
-    vk->set_null_free_atomic_size_in_bytes(_layout_info->_null_free_atomic_layout_size_in_bytes);
-    vk->set_nullable_atomic_size_in_bytes(_layout_info->_nullable_atomic_layout_size_in_bytes);
-    vk->set_nullable_non_atomic_size_in_bytes(_layout_info->_nullable_non_atomic_layout_size_in_bytes);
-    vk->set_null_marker_offset(_layout_info->_null_marker_offset);
+    vk->set_layouts(_layout_info->_available_layouts);
     vk->set_null_reset_value_offset(_layout_info->_null_reset_value_offset);
     if (_layout_info->_is_empty_inline_klass) vk->set_is_empty_inline_type();
 

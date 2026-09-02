@@ -3780,7 +3780,7 @@ BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(con
   assert(j == regs->length(), "missed a field?");
   if (vk->supports_nullable_layouts()) {
     // Set the null marker
-    __ movb(Address(rax, vk->null_marker_offset()), 1);
+    __ movb(Address(rax, vk->layouts().null_marker_offset()), 1);
   }
   __ ret(0);
 

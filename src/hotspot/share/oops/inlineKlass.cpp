@@ -64,15 +64,7 @@ InlineKlass::Members::Members()
     _pack_handler_jobject(nullptr),
     _unpack_handler(nullptr),
     _null_reset_value_offset(0),
-    _payload_offset(-1),
-    _payload_size_in_bytes(-1),
-    _payload_alignment(-1),
-    _null_free_non_atomic_size_in_bytes(-1),
-    _null_free_non_atomic_alignment(-1),
-    _null_free_atomic_size_in_bytes(-1),
-    _nullable_atomic_size_in_bytes(-1),
-    _nullable_non_atomic_size_in_bytes(-1),
-    _null_marker_offset(-1),
+    _available_layouts(),
     _fast_acmp_offset(-1),
     _fast_acmp_mask(0),
     _fast_hashcode_offset(-1),
@@ -125,7 +117,7 @@ inlineOop InlineKlass::allocate_instance(TRAPS) {
   return oop;
 }
 
-int InlineKlass::nonstatic_oop_count() {
+int InlineKlass::nonstatic_oop_count() const {
   int oops = 0;
   int map_count = nonstatic_oop_map_count();
   OopMapBlock* block = start_of_nonstatic_oop_maps();
@@ -139,7 +131,7 @@ int InlineKlass::nonstatic_oop_count() {
 
 // Arrays of...
 
-bool InlineKlass::maybe_flat_in_array() {
+bool InlineKlass::maybe_flat_in_array() const {
   if (!UseArrayFlattening) {
     return false;
   }
@@ -148,9 +140,12 @@ bool InlineKlass::maybe_flat_in_array() {
     return false;
   }
   // No flat layout?
-  if (!has_nullable_atomic_layout() && !has_null_free_atomic_layout() && !has_null_free_non_atomic_layout()) {
+  if (!layouts().has_any(LayoutKind::NULLABLE_ATOMIC_FLAT,
+                         LayoutKind::NULL_FREE_ATOMIC_FLAT,
+                         LayoutKind::NULL_FREE_NON_ATOMIC_FLAT)) {
     return false;
   }
+
   return true;
 }
 
@@ -182,13 +177,13 @@ int InlineKlass::collect_fields(GrowableArray<SigEntry>* sig, int base_off, int 
   SigEntry::add_entry(sig, T_METADATA, name(), base_off);
   for (TopDownHierarchicalNonStaticFieldStreamBase fs(this); !fs.done(); fs.next()) {
     assert(!fs.access_flags().is_static(), "TopDownHierarchicalNonStaticFieldStreamBase should not let static fields pass.");
-    int offset = base_off + fs.offset() - (base_off > 0 ? payload_offset() : 0);
+    int offset = base_off + fs.offset() - (base_off > 0 ? layouts().payload_offset() : 0);
     InstanceKlass* field_holder = fs.field_descriptor().field_holder();
     if (fs.is_flat()) {
       // Resolve klass of flat field and recursively collect fields
       int field_null_marker_offset = -1;
       if (!fs.is_null_free_inline_type()) {
-        field_null_marker_offset = base_off + fs.null_marker_offset() - (base_off > 0 ? payload_offset() : 0);
+        field_null_marker_offset = base_off + fs.null_marker_offset() - (base_off > 0 ? layouts().payload_offset() : 0);
       }
       Klass* vk = field_holder->get_inline_type_field_klass(fs.index());
       count += InlineKlass::cast(vk)->collect_fields(sig, offset, field_null_marker_offset);
@@ -198,7 +193,7 @@ int InlineKlass::collect_fields(GrowableArray<SigEntry>* sig, int base_off, int 
       count += type2size[bt];
     }
   }
-  int offset = base_off + size_helper()*HeapWordSize - (base_off > 0 ? payload_offset() : 0);
+  int offset = base_off + size_helper()*HeapWordSize - (base_off > 0 ? layouts().payload_offset() : 0);
   // Null markers are no real fields, add them manually at the end (C2 relies on this) of the flat fields
   if (null_marker_offset != -1) {
     SigEntry::add_null_marker(sig, name(), null_marker_offset);
@@ -525,10 +520,10 @@ void InlineKlass::print_on(outputStream* st) const {
   members().print_on(st);
   st->print_cr(BULLET"---- LayoutKinds:");
   auto print_layout_kind = [&](LayoutKind lk) {
-    if (is_layout_supported(lk)) {
+    if (layouts().has_a(lk)) {
       st->print_cr(BULLET"%s layout: %d/%d",
                    LayoutKindHelper::layout_kind_as_string(lk),
-                   layout_size_in_bytes(lk), layout_alignment(lk));
+                   layouts().size_in_bytes_of(lk), layouts().alignment_of(lk));
     } else {
       st->print_cr(BULLET"%s layout: -/-",
                    LayoutKindHelper::layout_kind_as_string(lk));
@@ -567,15 +562,15 @@ void InlineKlass::Members::print_on(outputStream* st) const {
   st->print_cr(BULLET"pack handler (jobject):            " PTR_FORMAT, p2i(_pack_handler_jobject));
   st->print_cr(BULLET"unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
   st->print_cr(BULLET"null reset offset:                 %d", _null_reset_value_offset);
-  st->print_cr(BULLET"payload offset:                    %d", _payload_offset);
-  st->print_cr(BULLET"payload size (bytes):              %d", _payload_size_in_bytes);
-  st->print_cr(BULLET"payload alignment:                 %d", _payload_alignment);
-  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", _null_free_non_atomic_size_in_bytes);
-  st->print_cr(BULLET"null-free non-atomic alignment:    %d", _null_free_non_atomic_alignment);
-  st->print_cr(BULLET"null-free atomic size (bytes):     %d", _null_free_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable atomic size (bytes):      %d", _nullable_atomic_size_in_bytes);
-  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", _nullable_non_atomic_size_in_bytes);
-  st->print_cr(BULLET"null marker offset:                %d", _null_marker_offset);
+  st->print_cr(BULLET"payload offset:                    %d", layouts().payload_offset());
+  st->print_cr(BULLET"payload size (bytes):              %d", layouts().size_in_bytes_of(LayoutKind::BUFFERED));
+  st->print_cr(BULLET"payload alignment:                 %d", layouts().payload_alignment());
+  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT));
+  st->print_cr(BULLET"null-free non-atomic alignment:    %d", layouts().non_atomic_alignment());
+  st->print_cr(BULLET"null-free atomic size (bytes):     %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT));
+  st->print_cr(BULLET"nullable atomic size (bytes):      %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT));
+  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT));
+  st->print_cr(BULLET"null marker offset:                %d", layouts().null_marker_offset());
   st->print_cr(BULLET"fast acmp offset:                  %d", _fast_acmp_offset);
   st->print_cr(BULLET"fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
   st->print_cr(BULLET"fast hashcode offset:              %d", _fast_hashcode_offset);

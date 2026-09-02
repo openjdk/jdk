@@ -32,7 +32,7 @@
 
 // Offset of the first field in the inline type
 int ciInlineKlass::payload_offset() const {
-  GUARDED_VM_ENTRY(return to_InlineKlass()->payload_offset();)
+  GUARDED_VM_ENTRY(return to_InlineKlass()->layouts().payload_offset();)
 }
 
 // Could any array containing an instance of this value class ever be flat?
@@ -98,33 +98,36 @@ address ciInlineKlass::unpack_handler() const {
   GUARDED_VM_ENTRY(return get_InlineKlass()->unpack_handler();)
 }
 
-InlineKlass* ciInlineKlass::get_InlineKlass() const {
+const InlineKlass* ciInlineKlass::get_InlineKlass() const {
+  GUARDED_VM_ENTRY(return to_InlineKlass();)
+}
+InlineKlass* ciInlineKlass::get_InlineKlass() {
   GUARDED_VM_ENTRY(return to_InlineKlass();)
 }
 
 bool ciInlineKlass::has_null_free_non_atomic_layout() const {
-  GUARDED_VM_ENTRY(return get_InlineKlass()->has_null_free_non_atomic_layout();)
+  GUARDED_VM_ENTRY(return get_InlineKlass()->layouts().has_a(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT);)
 }
 
 bool ciInlineKlass::has_null_free_atomic_layout() const {
-  GUARDED_VM_ENTRY(return get_InlineKlass()->has_null_free_atomic_layout();)
+  GUARDED_VM_ENTRY(return get_InlineKlass()->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT);)
 }
 
 bool ciInlineKlass::has_nullable_atomic_layout() const {
-  GUARDED_VM_ENTRY(return get_InlineKlass()->has_nullable_atomic_layout();)
+  GUARDED_VM_ENTRY(return get_InlineKlass()->layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT);)
 }
 
 int ciInlineKlass::null_marker_offset_in_payload() const {
-  GUARDED_VM_ENTRY(return get_InlineKlass()->null_marker_offset_in_payload();)
+  GUARDED_VM_ENTRY(return get_InlineKlass()->layouts().null_marker_offset_in_payload();)
 }
 
 // Convert size of atomic layout in bytes to corresponding BasicType
 BasicType ciInlineKlass::atomic_size_to_basic_type(bool null_free) const {
   VM_ENTRY_MARK
-  InlineKlass* vk = get_InlineKlass();
-  assert(!null_free || vk->has_null_free_atomic_layout(), "No null-free atomic layout available");
-  assert( null_free || vk->has_nullable_atomic_layout(), "No nullable atomic layout available");
-  int size = null_free ? vk->null_free_atomic_size_in_bytes() : vk->nullable_atomic_size_in_bytes();
+  const InlineKlass* vk = get_InlineKlass();
+  assert(!null_free || vk->layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT), "No null-free atomic layout available");
+  assert( null_free || vk->layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT), "No nullable atomic layout available");
+  int size = vk->layouts().size_in_bytes_of(null_free ? LayoutKind::NULL_FREE_ATOMIC_FLAT : LayoutKind::NULLABLE_ATOMIC_FLAT);
   BasicType bt = T_ILLEGAL;
   if (size == sizeof(jlong)) {
     bt = T_LONG;
@@ -150,7 +153,7 @@ int ciInlineKlass::field_map_offset() const {
 
 ciConstant ciInlineKlass::get_field_map() const {
   VM_ENTRY_MARK
-  InlineKlass* vk = get_InlineKlass();
+  const InlineKlass* vk = get_InlineKlass();
   oop array = vk->java_mirror()->obj_field(vk->acmp_maps_offset());
   return ciConstant(T_ARRAY, CURRENT_ENV->get_object(array));
 }
@@ -161,7 +164,7 @@ ciConstant ciInlineKlass::get_field_map() const {
 ciConstant ciInlineKlass::get_null_reset_value() {
   assert(is_initialized(), "null_reset_value is only allocated during initialization of %s", name()->as_utf8());
   VM_ENTRY_MARK
-  InlineKlass* vk = get_InlineKlass();
+  const InlineKlass* vk = get_InlineKlass();
   oop null_reset_value = vk->null_reset_value();
   return ciConstant(T_OBJECT, CURRENT_ENV->get_object(null_reset_value));
 }

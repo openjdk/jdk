@@ -498,7 +498,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_h
   InlineKlass* const klass = src.klass();
 
   const LayoutKind layout_kind = LayoutKindHelper::get_copy_layout(src.layout_kind(), dst.layout_kind());
-  const size_t payload_size = klass->layout_size_in_bytes(layout_kind);
+  const size_t payload_size = klass->layouts().size_in_bytes_of(layout_kind);
 
   // The addr() points at the payload start, not the object start.
   const address src_payload = src.addr();
@@ -537,7 +537,7 @@ inline void ZBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_nul
     return;
   }
 
-  const size_t payload_size = klass->layout_size_in_bytes(layout_kind);
+  const size_t payload_size = klass->layouts().size_in_bytes_of(layout_kind);
 
   // The addr() points at the payload start, not the object start.
   const address dst_payload = dst.addr();

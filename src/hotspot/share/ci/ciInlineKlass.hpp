@@ -72,7 +72,8 @@ public:
   int oop_count() const;
   address pack_handler() const;
   address unpack_handler() const;
-  InlineKlass* get_InlineKlass() const;
+  const InlineKlass* get_InlineKlass() const;
+  InlineKlass* get_InlineKlass();
   bool has_null_free_non_atomic_layout() const;
   bool has_null_free_atomic_layout() const;
   bool has_nullable_atomic_layout() const;

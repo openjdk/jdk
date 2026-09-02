@@ -32,87 +32,13 @@
 #include "utilities/devirtualizer.inline.hpp"
 
 inline bool InlineKlass::layout_has_null_marker(LayoutKind lk) const {
-  assert(is_layout_supported(lk), "Must be");
+  assert(layouts().has_a(lk), "Must be");
   return LayoutKindHelper::is_nullable_flat(lk) ||
          (lk == LayoutKind::BUFFERED && supports_nullable_layouts());
 }
 
-inline bool InlineKlass::is_layout_supported(LayoutKind lk) const {
-  switch(lk) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      return has_null_free_non_atomic_layout();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      return has_null_free_atomic_layout();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      return has_nullable_atomic_layout();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      return has_nullable_non_atomic_layout();
-      break;
-    case LayoutKind::BUFFERED:
-      return true;
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-}
-
-inline int InlineKlass::layout_size_in_bytes(LayoutKind kind) const {
-  switch(kind) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      assert(has_null_free_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      assert(has_null_free_atomic_layout(), "Layout not available");
-      return null_free_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      assert(has_nullable_atomic_layout(), "Layout not available");
-      return nullable_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      assert(has_nullable_non_atomic_layout(), "Layout not available");
-      return nullable_non_atomic_size_in_bytes();
-      break;
-    case LayoutKind::BUFFERED:
-      return payload_size_in_bytes();
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-}
-
-inline int InlineKlass::layout_alignment(LayoutKind kind) const {
-  switch(kind) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-      assert(has_null_free_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_alignment();
-      break;
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      assert(has_null_free_atomic_layout(), "Layout not available");
-      return null_free_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
-      assert(has_nullable_atomic_layout(), "Layout not available");
-      return nullable_atomic_size_in_bytes();
-      break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-      assert(has_nullable_non_atomic_layout(), "Layout not available");
-      return null_free_non_atomic_alignment();
-    break;
-    case LayoutKind::BUFFERED:
-      return payload_alignment();
-      break;
-    default:
-      ShouldNotReachHere();
-  }
-}
-
 inline address InlineKlass::payload_addr(oop o) const {
-  return cast_from_oop<address>(o) + payload_offset();
+  return cast_from_oop<address>(o) + layouts().payload_offset();
 }
 
 template <typename T, typename Function>
@@ -123,7 +49,7 @@ void InlineKlass::oop_iterate_value_payload_f(address payload, Function function
   // OopMap offsets are relative to an object header, but we are iterating over
   // inlined value payloads, which often don't have an object header. Set up a
   // synthetic object base that can be used by the oop map offset calculations.
-  const address synthetic_object_base = payload - payload_offset();
+  const address synthetic_object_base = payload - layouts().payload_offset();
 
   for (; map < end_map; map++) {
     T* p = (T*) (synthetic_object_base + map->offset());
@@ -152,7 +78,7 @@ inline void InlineKlass::oop_iterate_value_payload_bounded(address payload, OopC
   // OopMap offsets are relative to an object header, but we are iterating over
   // inlined value payloads, which often don't have an object header. Set up a
   // synthetic object base that can be used by the oop map offset calculations.
-  const address synthetic_object_base = payload - payload_offset();
+  const address synthetic_object_base = payload - layouts().payload_offset();
 
   for (; map < end_map; map++) {
     T* p = (T*) (synthetic_object_base + map->offset());

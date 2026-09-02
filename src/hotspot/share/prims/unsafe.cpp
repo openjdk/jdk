@@ -285,7 +285,7 @@ UNSAFE_ENTRY(void, Unsafe_PutReference(JNIEnv *env, jobject unsafe, jobject obj,
 UNSAFE_ENTRY(jlong, Unsafe_ValueHeaderSize(JNIEnv *env, jobject unsafe, jclass c)) {
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(c));
   InlineKlass* vk = InlineKlass::cast(k);
-  return vk->payload_offset();
+  return vk->layouts().payload_offset();
 } UNSAFE_END
 
 UNSAFE_ENTRY(jboolean, Unsafe_IsFlatField(JNIEnv *env, jobject unsafe, jobject o)) {
@@ -362,7 +362,7 @@ UNSAFE_ENTRY(jarray, Unsafe_NewSpecialArray(JNIEnv *env, jobject unsafe, jclass 
   InlineKlass* vk = InlineKlass::cast(klass);
   // WARNING: test below will need modifications when flat layouts supported for fields
   // but not for arrays are introduce (NULLABLE_NON_ATOMIC_FLAT for instance)
-  if (!UseArrayFlattening || !vk->is_layout_supported(lk)) {
+  if (!UseArrayFlattening || !vk->layouts().has_a(lk)) {
     THROW_MSG_NULL(vmSymbols::java_lang_UnsupportedOperationException(), "Layout not supported");
   }
   ArrayProperties props = ArrayKlass::array_properties_from_layout(lk);

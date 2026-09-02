@@ -951,7 +951,7 @@ void StaticFieldPrinter::do_field_helper(fieldDescriptor* fd, oop mirror, bool i
         InlineKlass* vk = InlineKlass::cast(k);
         oop obj;
         if (is_flat) {
-          int field_offset = fd->offset() - vk->payload_offset();
+          int field_offset = fd->offset() - vk->layouts().payload_offset();
           obj = cast_to_oop(cast_from_oop<address>(mirror) + field_offset);
         } else {
           obj = mirror->obj_field_acquire(fd->offset());
