@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ bool os::win32::register_code_area(char *low, char *high) {
   pDCD = (pDynamicCodeData) masm->pc();
 
   masm->jump(RuntimeAddress((address)&HandleExceptionFromCodeCache), rscratch1);
-  masm->flush();
+  masm->invalidate_icache();
 
   // Create an Unwind Structure specifying no unwind info
   // other than an Exception Handler
