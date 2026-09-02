@@ -237,7 +237,9 @@ public:
     _table_scanner.set(&_table, BucketClaimSize);
   }
 
-  size_t mem_size() { return sizeof(*this) + _table.get_mem_size(Thread::current()); }
+  size_t mem_size() {
+    return sizeof(*this) - sizeof(_table) + _table.get_mem_size(Thread::current());
+  }
 
   size_t number_of_entries() const { return _num_entries.load_relaxed(); }
 };
