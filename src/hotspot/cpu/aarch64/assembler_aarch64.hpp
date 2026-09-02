@@ -1028,11 +1028,10 @@ public:
 
 #undef INSN
 
-  // UDF
+  // Reserved
   void udf(uint16_t imm) {
     starti;
-    f(0, 31, 16);
-    f(imm, 15, 0);
+    f(0, 31, 16), f(imm, 15, 0);
   }
 
   // System
