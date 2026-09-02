@@ -69,6 +69,8 @@
   // No CMOVF/CMOVD with SSE2
   static int float_cmove_cost() { return ConditionalMoveLimit; }
 
+  static constexpr bool supports_conditional_zero_arithmetic() { return false; }
+
   static bool narrow_oop_use_complex_address() {
     assert(UseCompressedOops, "only for compressed oops code");
     return (LogMinObjAlignmentInBytes <= 3);

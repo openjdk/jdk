@@ -2235,6 +2235,19 @@ encode %{
     __ mv(dst_reg, con);
   %}
 
+  enc_class riscv_enc_czero_cond(zicondCmpOpEqNe cop, iRegIorL dst, iRegIorL cond) %{
+    switch ($cop$$cmpcode) {
+      case BoolTest::eq:
+        __ czero_eqz(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($cond$$reg));
+        break;
+      case BoolTest::ne:
+        __ czero_nez(as_Register($dst$$reg), as_Register($dst$$reg), as_Register($cond$$reg));
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+
   enc_class riscv_enc_mov_p(iRegP dst, immP src) %{
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
@@ -3726,6 +3739,29 @@ operand cmpOpEqNe()
     overflow(0x2, "overflow");
     less(0x3, "lt");
     not_equal(0x4, "ne");
+    less_equal(0x5, "le");
+    no_overflow(0x6, "no_overflow");
+    greater_equal(0x7, "ge");
+  %}
+%}
+
+// Equal/not-equal comparison used as the zero condition of a Zicond
+// instruction. The condition codes are unchanged, but the format strings
+// use the architectural instruction suffixes.
+operand zicondCmpOpEqNe()
+%{
+  match(Bool);
+  op_cost(0);
+  predicate(n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::eq);
+
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x0, "eqz");
+    greater(0x1, "gt");
+    overflow(0x2, "overflow");
+    less(0x3, "lt");
+    not_equal(0x4, "nez");
     less_equal(0x5, "le");
     no_overflow(0x6, "no_overflow");
     greater_equal(0x7, "ge");
@@ -10647,6 +10683,33 @@ instruct cmovI_cmpP_zero(iRegINoSp dst, immI0 src, iRegP op1, iRegP op2, cmpOpU 
   ins_pipe(pipe_class_compare);
 %}
 
+// Specialize the zero-result CMove rules above when the comparison is also
+// against zero. Zicond can then use the compared register directly as its
+// condition and emit a single instruction.
+
+instruct cmovI_cmpI_zero_cond(iRegINoSp dst, immI0 result_zero, iRegI cond, immI0 cmp_zero, zicondCmpOpEqNe cop) %{
+  predicate(UseZicond);
+  match(Set dst (CMoveI (Binary cop (CmpI cond cmp_zero)) (Binary dst result_zero)));
+  ins_cost(ALU_COST);
+
+  format %{ "czero.$cop $dst, $dst, $cond\t#@cmovI_cmpI_zero_cond" %}
+
+  ins_encode(riscv_enc_czero_cond(cop, dst, cond));
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct cmovI_cmpL_zero_cond(iRegINoSp dst, immI0 result_zero, iRegL cond, immL0 cmp_zero, zicondCmpOpEqNe cop) %{
+  predicate(UseZicond);
+  match(Set dst (CMoveI (Binary cop (CmpL cond cmp_zero)) (Binary dst result_zero)));
+  ins_cost(ALU_COST);
+
+  format %{ "czero.$cop $dst, $dst, $cond\t#@cmovI_cmpL_zero_cond" %}
+
+  ins_encode(riscv_enc_czero_cond(cop, dst, cond));
+
+  ins_pipe(ialu_reg_reg);
+%}
 // --------- CMoveL ---------
 
 instruct cmovL_cmpL(iRegLNoSp dst, iRegL src, iRegL op1, iRegL op2, cmpOp cop) %{
@@ -10817,6 +10880,29 @@ instruct cmovL_cmpUL_zero(iRegLNoSp dst, immL0 src, iRegL op1, iRegL op2, cmpOpU
   ins_pipe(pipe_class_compare);
 %}
 
+instruct cmovL_cmpI_zero_cond(iRegLNoSp dst, immL0 result_zero, iRegI cond, immI0 cmp_zero, zicondCmpOpEqNe cop) %{
+  predicate(UseZicond);
+  match(Set dst (CMoveL (Binary cop (CmpI cond cmp_zero)) (Binary dst result_zero)));
+  ins_cost(ALU_COST);
+
+  format %{ "czero.$cop $dst, $dst, $cond\t#@cmovL_cmpI_zero_cond" %}
+
+  ins_encode(riscv_enc_czero_cond(cop, dst, cond));
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct cmovL_cmpL_zero_cond(iRegLNoSp dst, immL0 result_zero, iRegL cond, immL0 cmp_zero, zicondCmpOpEqNe cop) %{
+  predicate(UseZicond);
+  match(Set dst (CMoveL (Binary cop (CmpL cond cmp_zero)) (Binary dst result_zero)));
+  ins_cost(ALU_COST);
+
+  format %{ "czero.$cop $dst, $dst, $cond\t#@cmovL_cmpL_zero_cond" %}
+
+  ins_encode(riscv_enc_czero_cond(cop, dst, cond));
+
+  ins_pipe(ialu_reg_reg);
+%}
 // --------- CMoveF ---------
 
 instruct cmovF_cmpI(fRegF dst, fRegF src, iRegI op1, iRegI op2, cmpOp cop) %{
