@@ -174,15 +174,14 @@ public interface SegmentAllocator {
      *                 string bytes
      * @param srcIndex the starting index of the source string
      * @param numChars the number of characters to be copied
-     * @return a new native segment containing the encoded string
+     * @return a segment containing the encoded string
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
      * @throws IndexOutOfBoundsException if {@code srcIndex > str.length() - numChars}
      *
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling
      *           {@code this.allocate(B)}, where {@code B} is the size, in bytes, of
-     *           the string encoded using the provided charset
-     *           (e.g. {@code str.getBytes(charset).length});
+     *           {@code str.substring(srcIndex, srcIndex + numChars)} encoded using the provided charset.
      * @since 27
      */
     @ForceInline
