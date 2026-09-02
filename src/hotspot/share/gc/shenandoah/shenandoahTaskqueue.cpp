@@ -24,9 +24,7 @@
 
 
 #include "gc/shared/taskqueue.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"

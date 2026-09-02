@@ -31,7 +31,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/stack.hpp"
 #include "utilities/stack.inline.hpp"
 
 

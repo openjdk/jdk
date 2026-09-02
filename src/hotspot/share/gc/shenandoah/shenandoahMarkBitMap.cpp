@@ -24,12 +24,9 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
-#include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/os.hpp"

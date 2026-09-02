@@ -25,7 +25,6 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "logging/log.hpp"

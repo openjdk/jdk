@@ -24,11 +24,8 @@
 
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahObjArrayAllocator.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"

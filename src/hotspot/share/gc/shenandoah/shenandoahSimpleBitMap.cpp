@@ -23,7 +23,6 @@
  *
  */
 
-#include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"

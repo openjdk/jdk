@@ -26,7 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskqueue.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "jni_md.h"

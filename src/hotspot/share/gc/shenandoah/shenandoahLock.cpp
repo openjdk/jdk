@@ -26,9 +26,7 @@
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/os.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/safepointMechanism.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {

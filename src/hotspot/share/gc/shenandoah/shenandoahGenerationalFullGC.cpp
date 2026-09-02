@@ -23,10 +23,8 @@
  *
  */
 
-#include "gc/shared/fullGCForwarding.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/gcId.hpp"
-#include "gc/shared/preservedMarks.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
@@ -36,11 +34,8 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahMmuTracker.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -49,7 +44,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "oops/oop.hpp"
 #include "oops/oop.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmassert_reinstall.hpp"

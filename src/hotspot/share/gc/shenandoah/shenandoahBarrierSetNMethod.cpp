@@ -27,7 +27,6 @@
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahNMethod.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"

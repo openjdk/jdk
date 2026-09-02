@@ -23,14 +23,11 @@
  */
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
 #include "oops/access.hpp"
 #include "oops/accessDecorators.hpp"
-#include "oops/compressedOops.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/oop.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "utilities/vmassert_reinstall.hpp"

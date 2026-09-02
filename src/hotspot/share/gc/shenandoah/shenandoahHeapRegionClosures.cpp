@@ -25,7 +25,6 @@
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
