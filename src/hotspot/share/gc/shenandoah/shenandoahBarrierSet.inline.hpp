@@ -34,6 +34,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
