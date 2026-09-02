@@ -136,7 +136,8 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     heap->shenandoah_policy()->record_alloc_failure_to_full();
   }
-  heap->shenandoah_policy()->record_success_full();
+
+  heap->shenandoah_policy()->record_success_full(heap->control_thread()->get_gc_id());
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);

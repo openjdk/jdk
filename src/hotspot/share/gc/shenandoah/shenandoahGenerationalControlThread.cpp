@@ -493,7 +493,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_cycle(ShenandoahGen
     // In the generational mode, we don't use global heuristics to trigger global cycles, so
     // direct heuristic signals to the young heuristics
     _heap->young_generation()->heuristics()->record_concurrent_completion();
-    _heap->shenandoah_policy()->record_success_concurrent(generation->is_young(), gc.abbreviated());
+    _heap->shenandoah_policy()->record_success_concurrent(get_gc_id(), generation->is_young(), gc.abbreviated());
 
     // Notify threads waiting for GC and/or memory when a young or global cycle completes
     notify_gc_waiters();
