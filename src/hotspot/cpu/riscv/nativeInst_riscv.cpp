@@ -56,6 +56,13 @@ static int current_mode_movptr_size_at(address addr) {
         return MacroAssembler::movptr2_sv48_instruction_size;
       }
       return 0;
+    case VM_Version::VM_SV57:
+      if (MacroAssembler::is_movptr1_sv57_at(addr)) {
+        return MacroAssembler::movptr1_sv57_instruction_size;
+      } else if (MacroAssembler::is_movptr2_sv57_at(addr)) {
+        return MacroAssembler::movptr2_sv57_instruction_size;
+      }
+      return 0;
     default:
       ShouldNotReachHere();
       return 0;

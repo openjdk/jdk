@@ -536,6 +536,7 @@ private:
     switch ((int)satp_mode.value()) {
       case VM_SV39: return 39;
       case VM_SV48: return 48;
+      case VM_SV57: return 57;
       default:      return 48;
     }
   }

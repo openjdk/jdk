@@ -962,7 +962,8 @@ public:
   void movptr_sv39(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr1_sv48(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2_sv48(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
-
+  void movptr1_sv57(Register Rd, uintptr_t addr, int32_t &offset);
+  void movptr2_sv57(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
  public:
   // float imm move
   static bool can_hf_imm_load(short imm);
@@ -1706,6 +1707,8 @@ public:
     movptr_sv39_instruction_size = 4 * MacroAssembler::instruction_size, // lui, addi, slli, addi.  See movptr_sv39().
     movptr1_sv48_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1_sv48().
     movptr2_sv48_instruction_size = 5 * MacroAssembler::instruction_size, // lui, lui, slli, add, addi.  See movptr2_sv48().
+    movptr1_sv57_instruction_size = 8 * MacroAssembler::instruction_size, // lui, addi, slli, addi, slli, addi, slli, addi.
+    movptr2_sv57_instruction_size = 6 * MacroAssembler::instruction_size, // lui, addi, lui, slli, add, addi.
     load_pc_relative_instruction_size = 2 * MacroAssembler::instruction_size // auipc, ld
   };
 
@@ -1744,6 +1747,8 @@ public:
   static bool is_movptr_sv39_at(address instr);
   static bool is_movptr1_sv48_at(address instr);
   static bool is_movptr2_sv48_at(address instr);
+  static bool is_movptr1_sv57_at(address instr);
+  static bool is_movptr2_sv57_at(address instr);
 
   static bool is_lwu_to_zr(address instr);
 
@@ -1812,6 +1817,51 @@ public:
            extract_rs2(add) == extract_rd(slli) &&
            extract_rs1(slli) == extract_rd(lui1) &&
            extract_rd(slli) == extract_rd(lui1) &&
+           extract_rs1(last_instr) == extract_rd(add);
+  }
+
+  // movptr1_sv57: lui, addi, slli(11), addi, slli(10), addi,
+  //                slli(6), addi/jalr/load
+  static bool check_movptr1_sv57_data_dependency(address instr) {
+    address lui = instr;
+    address addi1 = lui + MacroAssembler::instruction_size;
+    address slli1 = addi1 + MacroAssembler::instruction_size;
+    address addi2 = slli1 + MacroAssembler::instruction_size;
+    address slli2 = addi2 + MacroAssembler::instruction_size;
+    address addi3 = slli2 + MacroAssembler::instruction_size;
+    address slli3 = addi3 + MacroAssembler::instruction_size;
+    address last_instr = slli3 + MacroAssembler::instruction_size;
+    return extract_rs1(addi1) == extract_rd(lui) &&
+           extract_rd(addi1) == extract_rd(lui) &&
+           extract_rs1(slli1) == extract_rd(addi1) &&
+           extract_rd(slli1) == extract_rd(addi1) &&
+           extract_rs1(addi2) == extract_rd(slli1) &&
+           extract_rd(addi2) == extract_rd(slli1) &&
+           extract_rs1(slli2) == extract_rd(addi2) &&
+           extract_rd(slli2) == extract_rd(addi2) &&
+           extract_rs1(addi3) == extract_rd(slli2) &&
+           extract_rd(addi3) == extract_rd(slli2) &&
+           extract_rs1(slli3) == extract_rd(addi3) &&
+           extract_rd(slli3) == extract_rd(addi3) &&
+           extract_rs1(last_instr) == extract_rd(slli3);
+  }
+
+  // movptr2_sv57: lui(tmp), addi(tmp), lui(Rd), slli(tmp, 30),
+  //                add(Rd, Rd, tmp), addi/jalr/load
+  static bool check_movptr2_sv57_data_dependency(address instr) {
+    address lui1 = instr;
+    address addi = lui1 + MacroAssembler::instruction_size;
+    address lui2 = addi + MacroAssembler::instruction_size;
+    address slli = lui2 + MacroAssembler::instruction_size;
+    address add = slli + MacroAssembler::instruction_size;
+    address last_instr = add + MacroAssembler::instruction_size;
+    return extract_rs1(addi) == extract_rd(lui1) &&
+           extract_rd(addi) == extract_rd(lui1) &&
+           extract_rs1(slli) == extract_rd(addi) &&
+           extract_rd(slli) == extract_rd(addi) &&
+           extract_rd(add) == extract_rd(lui2) &&
+           extract_rs1(add) == extract_rd(lui2) &&
+           extract_rs2(add) == extract_rd(slli) &&
            extract_rs1(last_instr) == extract_rd(add);
   }
 

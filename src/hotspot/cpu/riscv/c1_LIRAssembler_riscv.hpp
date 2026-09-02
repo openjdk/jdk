@@ -64,10 +64,10 @@ private:
   void deoptimize_trap(CodeEmitInfo *info);
 
   enum {
-    // call stub: CompiledDirectCall::to_interp_stub_size() +
-    //            CompiledDirectCall::to_trampoline_stub_size()
-    _call_stub_size = 11 * MacroAssembler::instruction_size +
-                      1 * MacroAssembler::instruction_size + wordSize,
+    // Maximum call stub size used by the shared C1 code-buffer estimate.
+    _call_stub_size = MacroAssembler::movptr1_sv57_instruction_size +
+                      MacroAssembler::movptr2_sv57_instruction_size +
+                      MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175), // or smaller
     // See emit_deopt_handler for detail
