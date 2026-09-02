@@ -418,6 +418,9 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       continue;
     }
 
+    assert(!region->is_pinned() || region->has_live(),
+           "Pinned region %zu should have live (pinned) objects.", region->index());
+
     size_t garbage = region->garbage();
     size_t live_bytes = region->get_live_data_bytes();
     if (!region->was_promoted_in_place()) {
@@ -434,7 +437,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       // for the collection set here. That happens later during the next young GC cycle,
       // by which time, the pinned region may no longer be pinned.
       if (!region->has_live()) {
-        assert(!region->is_pinned(), "Pinned region should have live (pinned) objects.");
         region->make_trash_immediate();
         immediate_regions++;
         immediate_garbage += garbage;
@@ -448,7 +450,6 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
       // If they are pinned, we expect them to hold live data, so they will not be
       // turned into immediate garbage.
       if (!region->has_live()) {
-        assert(!region->is_pinned(), "Pinned region should have live (pinned) objects.");
         // The humongous object is dead, we can just return this region and the continuations
         // immediately to the freeset - no evacuations are necessary here. The continuations
         // will be made into trash by this method, so they'll be skipped by the 'is_regular'
