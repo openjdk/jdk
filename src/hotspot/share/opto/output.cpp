@@ -1903,11 +1903,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 #if defined(SUPPORT_OPTO_ASSEMBLY)
   // Dump the assembly code, including basic-block numbers
   if (C->print_assembly()) {
-    ttyLocker ttyl;  // keep the following output all in one block
-    if (!VMThread::should_terminate()) {  // test this under the tty lock
-      // print_metadata and dump_asm may safepoint which makes us loose the ttylock.
-      // We call them first and write to a stringStream, then we retake the lock to
-      // make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
+    if (!VMThread::should_terminate()) {
       ResourceMark rm;
       stringStream method_metadata_str;
       if (C->method() != nullptr) {
@@ -1918,7 +1914,7 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
 
       // Make sure the end tag is coherent, and that xmlStream->pop_tag is done thread safe.
       NoSafepointVerifier nsv;
-      ttyLocker ttyl2;
+      ttyLocker ttyl;
       // This output goes directly to the tty, not the compiler log.
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
