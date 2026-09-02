@@ -58,11 +58,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahHeuristics* const heuristics = heap->heuristics();
   while (!should_terminate()) {
-    const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-    if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-      break;
-    }
-    assert(cancelled_cause == GCCause::_no_gc, "Cannot be cancelled for: %s", GCCause::to_string(cancelled_cause));
+    assert(!heap->cancelled_gc() || should_terminate(), "Can only be cancelled for shutdown");
 
     // Figure out if we have pending requests.
     GCCause::Cause cause;
@@ -137,6 +133,7 @@ void ShenandoahControlThread::run_service() {
 
       // Notify waiters that a cycle is completed. They'll decide for themselves to continue waiting or not.
       notify_gc_waiters();
+      notify_alloc_waiters();
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
@@ -210,6 +207,7 @@ void ShenandoahControlThread::run_service() {
 
   // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
   notify_gc_waiters();
+  notify_alloc_waiters();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -221,7 +219,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // heuristics say there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (check_cancellation()) {
+  if (ShenandoahHeap::heap()->cancelled_gc()) {
     // Need to report at "gc" level to report GC ID proper.
     log_info(gc)("Cancelled before cycle started");
     return;
@@ -236,31 +234,16 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     heap->notify_gc_progress();
     heap->global_generation()->heuristics()->record_concurrent_completion();
-    heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
+    heap->shenandoah_policy()->record_success_concurrent(get_gc_id(), false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation();
     heap->log_heap_status("At end of cancelled GC");
   }
 }
 
-bool ShenandoahControlThread::check_cancellation() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-  if (cancelled_cause == GCCause::_no_gc) {
-    return false;
-  }
-
-  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-    return true;
-  }
-
-  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
-}
-
 void ShenandoahControlThread::stop_service() {
-  ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_stop_vm);
+  // Nothing to do here, worker threads will also check should_terminate, by way of shHeap::is_stopping.
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
@@ -273,90 +256,25 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   gc.collect(cause);
 }
 
-void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
-  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
-    handle_alloc_failure_full();
-  } else if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
-    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      ShenandoahHeap* heap = ShenandoahHeap::heap();
-      heap->global_generation()->heuristics()->record_allocation_stall();
-      heap->shenandoah_policy()->record_allocation_stall(get_phase());
-    }
-    handle_requested_gc(cause);
-  }
-}
-
-void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
-  // Although setting gc request is under _controller_lock, the read side (run_service())
-  // does not take the lock. We need to enforce following order, so that read side sees
-  // latest requested gc cause when the flag is set. Do not let a lower priority cause
-  // overwrite a higher priority cause.
+bool ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
   if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
-  } else {
-    _requested_gc_cause = cause;
+    return false;
   }
-  controller.notify();
+
+  _requested_gc_cause = cause;
+  controller.notify_all();
+  return true;
 }
 
-void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
-  if (should_terminate()) {
-    log_info(gc, phases)("Control thread is terminating, no more GCs");
-    return;
-  }
+void ShenandoahControlThread::notify_alloc_stall(GCCause::Cause cause) {
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahGeneration* generation = heap->global_generation();
 
-  // For normal requested GCs (System.gc) we want to block the caller. However,
-  // for whitebox requested GC, we want to initiate the GC and return immediately.
-  // The whitebox caller thread will arrange for itself to wait until the GC notifies
-  // it that has reached the requested breakpoint (phase in the GC).
-  if (cause == GCCause::_wb_breakpoint) {
-    notify_control_thread(cause);
-    return;
-  }
+  // Inform global heuristics of allocation stall
+  generation->heuristics()->record_allocation_stall();
 
-  // Make sure we have at least one complete GC cycle before unblocking
-  // from the explicit GC request.
-  //
-  // This is especially important for weak references cleanup and/or native
-  // resources (e.g. DirectByteBuffers) machinery: when explicit GC request
-  // comes very late in the already running cycle, it would miss lots of new
-  // opportunities for cleanup that were made available before the caller
-  // requested the GC.
-
-  MonitorLocker ml(&_gc_waiters_lock);
-  size_t current_gc_id = get_gc_id();
-  size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id && !should_terminate()) {
-    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      _alloc_stall_count.add_then_fetch(1UL);
-      increase_concurrent_worker_count();
-    }
-
-    notify_control_thread(cause);
-    ml.wait();
-    current_gc_id = get_gc_id();
-    if (ShenandoahCollectorPolicy::is_allocation_failure(cause)) {
-      break;
-    }
-  }
-}
-
-void ShenandoahControlThread::handle_alloc_failure_full() {
-  if (should_terminate()) {
-    log_info(gc)("Control thread is terminating, no more GCs");
-    return;
-  }
-
-  // Make sure we have at least one full GC cycle before unblocking
-  // from the explicit GC request.
-  const ShenandoahCollectorPolicy* policy = ShenandoahHeap::heap()->shenandoah_policy();
-  MonitorLocker ml(&_gc_waiters_lock);
-  size_t full_gc_count = policy->full_gc_count();
-  const size_t required_count = full_gc_count + 1;
-  while (full_gc_count < required_count && !should_terminate()) {
-    notify_control_thread(GCCause::_shenandoah_upgrade_to_full_gc);
-    ml.wait();
-    full_gc_count = policy->full_gc_count();
-  }
+  // Run a global cycle (no other kind for this control thread).
+  notify_control_thread(cause, generation);
 }

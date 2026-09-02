@@ -124,8 +124,7 @@ void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
 
     if (_heap->check_cancelled_gc_and_yield()) {
       // GC is cancelled (vm is stopping), no further work
-      assert(_heap->cancelled_cause() == GCCause::_shenandoah_stop_vm,
-        "Evacuation should not be cancelled for: %s", GCCause::to_string(_heap->cancelled_cause()));
+      assert(_heap->is_stopping(), "Can only stop evacuation for shutdown");
       return;
     }
   }

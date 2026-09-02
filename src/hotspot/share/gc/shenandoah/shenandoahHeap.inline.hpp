@@ -251,8 +251,12 @@ inline void ShenandoahHeap::atomic_clear_oop(narrowOop* addr, narrowOop compare)
   AtomicAccess::cmpxchg(addr, compare, narrowOop(), memory_order_relaxed);
 }
 
+inline bool ShenandoahHeap::is_stopping() const {
+  return control_thread()->should_terminate();
+}
+
 inline bool ShenandoahHeap::cancelled_gc() const {
-  return _cancelled_gc.get() != GCCause::_no_gc;
+  return _cancelled_gc.is_set() || is_stopping();
 }
 
 inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
@@ -264,21 +268,9 @@ inline bool ShenandoahHeap::check_cancelled_gc_and_yield(bool sts_active) {
   return cancelled_gc();
 }
 
-inline GCCause::Cause ShenandoahHeap::cancelled_cause() const {
-  return _cancelled_gc.get();
-}
-
 inline void ShenandoahHeap::clear_cancelled_gc() {
-  _cancelled_gc.set(GCCause::_no_gc);
+  _cancelled_gc.unset();
   reset_cancellation_time();
-}
-
-inline GCCause::Cause ShenandoahHeap::clear_cancellation(const GCCause::Cause expected) {
-  const GCCause::Cause cancellation_cause = _cancelled_gc.cmpxchg(GCCause::_no_gc, expected);
-  if (cancellation_cause == expected) {
-    reset_cancellation_time();
-  }
-  return cancellation_cause;
 }
 
 inline void ShenandoahHeap::reset_cancellation_time() {
