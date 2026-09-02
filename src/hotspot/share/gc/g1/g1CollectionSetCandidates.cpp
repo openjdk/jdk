@@ -24,9 +24,8 @@
 
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "utilities/growableArray.hpp"
-
-uint G1CSetCandidateGroup::_next_group_id = G1CSetCandidateGroup::InitialId;
 
 G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id) :
   _candidates(4, mtGCCardSet),
@@ -38,10 +37,16 @@ G1CSetCandidateGroup::G1CSetCandidateGroup(G1CardSetConfiguration* config, G1Mon
 { }
 
 G1CSetCandidateGroup::G1CSetCandidateGroup() :
-  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), _next_group_id++)
+  G1CSetCandidateGroup(G1CollectedHeap::heap()->card_set_config(), G1CollectedHeap::heap()->card_set_freelist_pool(), InvalidId)
 { }
 
 void G1CSetCandidateGroup::add(G1HeapRegion* hr) {
+  precond(hr->is_young() == (_group_id == YoungId));
+
+  if (_candidates.is_empty() && _group_id != YoungId) {
+    precond(_group_id == InvalidId);
+    _group_id = FirstNonYoungId + hr->hrm_index();
+  }
   G1CollectionSetCandidateInfo c(hr);
   _candidates.append(c);
   hr->install_cset_group(this);
@@ -63,16 +68,23 @@ double G1CSetCandidateGroup::liveness_percent() const {
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
-void G1CSetCandidateGroup::clear(bool uninstall_group_cardset) {
-  if (uninstall_group_cardset) {
+void G1CSetCandidateGroup::clear(bool uninstall_cset_group) {
+  clear_card_set();
+  if (uninstall_cset_group) {
     for (G1CollectionSetCandidateInfo ci : _candidates) {
       G1HeapRegion* r = ci._r;
       r->uninstall_cset_group();
-      r->rem_set()->clear(true /* only_cardset */);
+      r->rem_set()->set_state_untracked();
     }
   }
-  _card_set.clear();
   _candidates.clear();
+  if (_group_id != YoungId) {
+    _group_id = InvalidId;
+  }
+}
+
+void G1CSetCandidateGroup::clear_card_set() {
+  _card_set.clear();
 }
 
 double G1CSetCandidateGroup::predict_group_total_time_ms() const {
@@ -141,9 +153,9 @@ G1CSetCandidateGroup* G1CSetCandidateGroupList::at(uint index) {
   return _groups.at(index);
 }
 
-void G1CSetCandidateGroupList::clear(bool uninstall_group_cardset) {
+void G1CSetCandidateGroupList::clear(bool uninstall_cset_group) {
   for (G1CSetCandidateGroup* gr : _groups) {
-    gr->clear(uninstall_group_cardset);
+    gr->clear(uninstall_cset_group);
     delete gr;
   }
   _groups.clear();
@@ -232,8 +244,8 @@ void G1CollectionSetCandidates::initialize(uint max_regions) {
 }
 
 void G1CollectionSetCandidates::clear() {
-  _retained_groups.clear(true /* uninstall_group_cardset */);
-  _from_marking_groups.clear(true /* uninstall_group_cardset */);
+  _retained_groups.clear(true /* uninstall_cset_group */);
+  _from_marking_groups.clear(true /* uninstall_cset_group */);
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
@@ -267,7 +279,6 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   // the same Mixed GC.
   uint group_limit = p->calc_min_old_cset_length(num_candidates);
 
-  G1CSetCandidateGroup::reset_next_group_id();
   G1CSetCandidateGroup* current = nullptr;
 
   current = new G1CSetCandidateGroup();

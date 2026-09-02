@@ -297,10 +297,14 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     }
 
 #if defined(__linux__)
-    /* IPv4 or IPv6 datagram socket: disable IP_MULTICAST_ALL (Linux 2.6.31) */
+    /*
+     * IPv4 or IPv6 datagram socket: disable IP_MULTICAST_ALL (Linux 2.6.31)
+     * Not supported by the Linux binary compatibility layer on BSD
+     */
     if (type == SOCK_DGRAM && ipv4_available()) {
         int arg = 0;
-        if ((setsockopt(fd, IPPROTO_IP, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0)) {
+        if ((setsockopt(fd, IPPROTO_IP, IP_MULTICAST_ALL, (char*)&arg, sizeof(arg)) < 0) &&
+            (errno != ENOPROTOOPT)) {
             JNU_ThrowByNameWithLastError(env,
                                          JNU_JAVANETPKG "SocketException",
                                          "Unable to set IP_MULTICAST_ALL");

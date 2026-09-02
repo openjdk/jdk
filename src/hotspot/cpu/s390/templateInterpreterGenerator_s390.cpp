@@ -1575,13 +1575,14 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // In order for GC to work, don't clear the last_Java_sp until after
   // blocking.
 
-  __ set_thread_state(_thread_in_vm);
+  // Transition from _thread_in_native to _thread_in_Java.
+  // Force this write out before the read below;
+  __ set_thread_state(_thread_in_Java);
   if (!UseSystemMemoryBarrier) {
     __ z_fence();
   }
 
-  // Now before we return to java we must look for a current safepoint
-  // (a new safepoint can not start since we entered _thread_in_vm).
+  // Now before we return to java we must look for a current safepoint.
   // We must check here because a current safepoint could be in progress.
 
   // Check for safepoint operation in progress and/or pending suspend requests.
@@ -1593,16 +1594,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ z_bre(Continue); // 0 -> no flag set -> not suspended
     __ bind(do_safepoint);
     __ z_lgr(Z_ARG1, Z_thread);
-    __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ bind(Continue);
   }
 
   //=============================================================================
   // Back in Interpreter Frame.
-
-  // We are in _thread_in_vm here and back in the normal
-  // interpreter frame. We don't have to do anything special about
-  // safepoints and we can switch to Java mode anytime we are ready.
 
   // Note: frame::interpreter_frame_result has a dependency on how the
   // method result is saved across the call to post_method_exit. For
@@ -1613,10 +1610,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   //=============================================================================
   // Back in Java.
-
-  // Memory ordering: Z does not reorder store/load with subsequent
-  // load. That's strong enough.
-  __ set_thread_state(_thread_in_Java);
 
   __ reset_last_Java_frame();
 

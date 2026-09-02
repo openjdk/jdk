@@ -1209,9 +1209,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  // Force all preceding writes to be observed prior to thread state change
-  __ mv(t0, _thread_in_vm);
-  __ sw_release(t0, Address(xthread, JavaThread::thread_state_offset()), t1);
+  __ mv(t1, _thread_in_vm);
+  __ sw_release(t1, Address(xthread, JavaThread::thread_state_offset()), t0);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1233,7 +1232,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1241,8 +1240,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   // Force all preceding writes to be observed prior to thread state change
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+
   __ mv(t0, _thread_in_Java);
-  __ sw_release(t0, Address(xthread, JavaThread::thread_state_offset()), t1);
+  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Check preemption for Object.wait()
   Label not_preempted;

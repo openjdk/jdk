@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -208,7 +209,8 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
       wasted_bytes + reclaimable > allowed_waste) {
       break;
     }
-    r->rem_set()->clear(true /* cardset_only */);
+    assert(!r->rem_set()->has_cset_group(), "must not have a cset group");
+    r->rem_set()->set_state_untracked();
 
     wasted_bytes += reclaimable;
     num_pruned++;

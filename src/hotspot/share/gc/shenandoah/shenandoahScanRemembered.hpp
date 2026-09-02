@@ -172,6 +172,7 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -368,9 +369,7 @@ private:
   static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
-  // The value for maximum card size is based on the constraints for GCCardSizeInBytes in gc_globals.hpp.
-  static const int MaxCardSize = NOT_LP64(512) LP64_ONLY(1024);
-  STATIC_ASSERT((MaxCardSize / HeapWordSize) - 1 <= FirstStartBits);
+  STATIC_ASSERT((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
 
   crossing_info* _object_starts;
 
