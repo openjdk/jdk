@@ -37,6 +37,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
@@ -3092,6 +3093,19 @@ void ThawBase::finish_thaw(frame& f) {
   if (!is_aligned(f.sp(), frame::frame_alignment)) {
     assert(f.is_interpreted_frame(), "");
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
+  }
+  // A frame popped by JVMTI PopFrame returned through the barrier into this
+  // frame, which was still frozen. The interpreter's popframe entry took the
+  // deoptimized caller path and left the reexecution to a deoptimization that
+  // never happens. Resume at the invoke instead of after it, the arguments are
+  // still on the expression stack of the thawed frame.
+  if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
+    assert(f.is_interpreted_frame(), "popframe reexecution into a frozen compiled caller is not handled");
+    if (f.is_interpreted_frame()) {
+      f = frame(f.sp(), f.unextended_sp(), f.fp(), Interpreter::deopt_entry(vtos, 0));
+    }
+    _thread->popframe_free_preserved_args();
+    _thread->clear_popframe_condition();
   }
   push_return_frame(f);
    // can only fix caller after push_return_frame (due to callee saved regs)
