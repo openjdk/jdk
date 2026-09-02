@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
     static final char static_final_v = '\u0123';
 
-    static char static_v;
+    static char static_v = '\u0123';
 
-    final char final_v = '\u0123';
+    final char final_v;
 
     char v;
 
@@ -61,6 +61,12 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessChar() {
+        final_v = '\u0123';
+        v = '\u0123';
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {

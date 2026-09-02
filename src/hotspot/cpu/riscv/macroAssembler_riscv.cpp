@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "ci/ciInlineKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -161,8 +162,7 @@ uint32_t MacroAssembler::get_membar_kind(address addr) {
   assert_cond(addr != nullptr);
   assert(is_membar(addr), "no membar found");
 
-  uint32_t insn = Bytes::get_native_u4(addr);
-
+  uint32_t insn = Assembler::ld_instr(addr);
   uint32_t predecessor = Assembler::extract(insn, 27, 24);
   uint32_t successor = Assembler::extract(insn, 23, 20);
 
@@ -178,7 +178,7 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
 
   MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
 
-  uint32_t insn = Bytes::get_native_u4(addr);
+  uint32_t insn = Assembler::ld_instr(addr);
   address pInsn = (address) &insn;
   Assembler::patch(pInsn, 27, 24, predecessor);
   Assembler::patch(pInsn, 23, 20, successor);
@@ -523,20 +523,25 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -709,7 +714,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -722,13 +735,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ld(x10, addr);
   }
 
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -1255,13 +1265,33 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 
 #undef INSN
 
-// cmov
+// cmov_zicond_eqz: dst = (cond == 0) ? src : dst
+void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_eqz(dst, dst, cond);
+  if (src != zr) {
+    czero_nez(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
+// cmov_zicond_nez: dst = (cond != 0) ? src : dst
+void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_nez(dst, dst, cond);
+  if (src != zr) {
+    czero_eqz(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
 void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1271,11 +1301,10 @@ void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1285,11 +1314,10 @@ void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1299,11 +1327,10 @@ void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1313,11 +1340,10 @@ void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1327,11 +1353,10 @@ void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1341,11 +1366,10 @@ void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1355,11 +1379,10 @@ void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1369,11 +1392,10 @@ void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1383,11 +1405,10 @@ void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -3822,11 +3843,17 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       mv(d, s);
     }
   } else {
-    Label notNull;
-    sub(d, s, xheapbase);
-    bgez(d, notNull);
-    mv(d, zr);
-    bind(notNull);
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      sub(t0, s, xheapbase);
+      czero_eqz(d, t0, s);  // d = s == 0 ? 0 : t0
+    } else {
+      Label notNull;
+      sub(d, s, xheapbase);
+      bgez(d, notNull);
+      mv(d, zr);
+      bind(notNull);
+    }
     if (CompressedOops::shift() != 0) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
@@ -4038,11 +4065,18 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
       slli(d, s, CompressedOops::shift());
     }
   } else {
-    Label done;
-    mv(d, s);
-    beqz(s, done);
-    shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
-    bind(done);
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      shadd(t0, s, xheapbase, t0, LogMinObjAlignmentInBytes);
+      czero_eqz(d, t0, s);   // d = s == 0 ? 0 : t0
+    } else {
+      Label done;
+      mv(d, s);
+      beqz(s, done);
+      shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
+      bind(done);
+    }
   }
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
@@ -5353,7 +5387,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mv(x11, r_sub_klass);
     mv(x12, tmp3);
     mv(x13, result);
-    mv(x14, (address)("mismatch"));
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    la(x14, ExternalAddress((address) str));
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
     should_not_reach_here();
   }

@@ -50,6 +50,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
@@ -944,6 +945,12 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Now generate code
   Code_Gen();
+
+#ifdef ASSERT
+  if (StressVerifyMeetJoin) {
+    Type::verify_meet_join();
+  }
+#endif // ASSERT
 }
 
 // C2 uses runtime stubs serialized generation to initialize its static tables
@@ -1442,7 +1449,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
 
     // Remove size and stability
-    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_not_null_free(), ta->is_atomic());
+    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_null_free(), ta->is_not_null_free(), ta->is_atomic());
     // Remove ptr, const_oop, and offset
     if (ta->elem() == Type::BOTTOM) {
       // Bottom array (meet of int[] and byte[] for example), accesses to it will be done with
@@ -1465,7 +1472,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
     // All arrays of references share the same slice
     if (!ta->is_flat() && ta->elem()->make_oopptr() != nullptr) {
-      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, true, true);
+      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, false, true, true);
       tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, tary, nullptr, false, Type::Offset::bottom);
     }
 
@@ -1726,7 +1733,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_oopptr() && !flat->isa_klassptr()) {
+    if (flat->isa_instptr()) {
       const TypeOopPtr* foop = flat->is_oopptr();
       // Scalarizable allocations have exact klass always.
       bool exact = !foop->klass_is_exact() || foop->is_known_instance();
@@ -2307,15 +2314,17 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     }
   }
 
-#ifdef ASSERT
+  int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
     const TypePtr* adr_type = m->adr_type();
+#ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
-  }
 #endif // ASSERT
+    // This has the side effect of allocating new aliases for flat array accesses
+    get_alias_index(adr_type);
+  }
 
-  int start_alias = num_alias_types(); // Start of new aliases
   Node_Stack stack(0);
 #ifdef ASSERT
   VectorSet seen(Thread::current()->resource_area());
@@ -3087,7 +3096,7 @@ void Compile::Optimize() {
   }
   assert(!has_vbox_nodes(), "sanity");
 
-  if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
+  if (RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp(_t_renumberLive);
     igvn_worklist()->ensure_empty(); // should be done with igvn
     {
@@ -3320,7 +3329,7 @@ void Compile::Optimize() {
       return;
     }
     print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
-    if (mex.expand_macro_nodes()) {
+    if (!mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
@@ -3425,8 +3434,12 @@ bool Compile::has_vbox_nodes() {
 //---------------------------- Bitwise operation packing optimization ---------------------------
 
 static bool is_vector_unary_bitwise_op(Node* n) {
-  return n->Opcode() == Op_XorV &&
-         VectorNode::is_vector_bitwise_not_pattern(n);
+  // A masked XorV not-pattern is NOT unary: on inactive lanes the masked
+  // operation keeps its first operand, so both inputs must be preserved (and
+  // their order matters, since in(1) becomes the masked MacroLogicV
+  // passthrough). Only an unmasked not-pattern is genuinely unary.
+return VectorNode::is_vector_bitwise_not_pattern(n) &&
+       !n->is_predicated_vector();
 }
 
 static bool is_vector_binary_bitwise_op(Node* n) {
@@ -3469,7 +3482,7 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
-    if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+    if (is_vector_unary_bitwise_op(n)) {
       assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
       Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
       if (!inputs.member(opnd)) {
@@ -3630,7 +3643,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
         res = func1 & func2;
         break;
       case Op_XorV:
-        if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+        if (is_vector_unary_bitwise_op(n)) {
           assert(func2 == 0 && func3 == 0, "not unary");
           res = (~func1) & 0xFF;
         } else {
@@ -6066,10 +6079,10 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   precond(type != nullptr);
-
-  if (phase->type(value)->higher_equal(type)) {
+  if (type->base() == Type::Int && phase->type(value)->higher_equal(type)) {
     return value;
   }
+
   Node* result = nullptr;
   if (bt == T_BYTE) {
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));
