@@ -110,13 +110,13 @@ public class popframes001a {
             int boo = 0;
 
             log.display("Breakpoint line reached");
-
-             Thread thread = Thread.ofVirtual().start(() -> { });
-             try {
-                 thread.join();
+            // joining a virtual thread unmounts a virtual tested thread, so the frame below is frozen when popped
+            Thread parker = Thread.ofVirtual().start(() -> { });
+            try {
+                parker.join();
             } catch (InterruptedException e) {
+                throw new RuntimeException(e);
             }
-             //
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
