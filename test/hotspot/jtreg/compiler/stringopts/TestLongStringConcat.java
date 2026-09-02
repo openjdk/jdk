@@ -28,6 +28,15 @@
  * @run main/othervm -Xbatch compiler.stringopts.TestLongStringConcat
  */
 
+/*
+ * @test
+ * @bug 8391643
+ * @summary We miss ResourceMark for TypeInterfaces::intersection_with and
+ *          TypeInterfaces::union_with.
+ * @run main/othervm -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+StressVerifyMeetJoin
+ *                   ${test.main.class}
+ */
+
 package compiler.stringopts;
 
 public class TestLongStringConcat {
