@@ -96,12 +96,8 @@ class ObjectWaiter : public CHeapObj<mtThread> {
 //
 // ObjectMonitor Layout Overview/Highlights/Restrictions:
 //
-// - The _object and _owner fields should be separated by enough space
-//   to avoid false sharing due to parallel access by different threads.
-//   This is an advisory recommendation.
 // - The general layout of the fields in ObjectMonitor is:
 //     _object
-//     <optional padding>
 //     _owner
 //     <optional padding>
 //     <remaining_fields>
@@ -151,12 +147,6 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
 
   WeakHandle _object;               // backward object pointer
 
-  // Since the _owner field is frequently modified, we make sure to
-  // put it on a different cache line than the _object field. The
-  // _object does not change, but it's frequently read during
-  // ObjectMonitorTable lookups.
-  DEFINE_PAD_MINUS_SIZE(0, OM_CACHE_LINE_SIZE, sizeof(_object));
-
   static const int64_t NO_OWNER = 0;
   static const int64_t ANONYMOUS_OWNER = 1;
   static const int64_t DEFLATER_MARKER = 2;
@@ -167,7 +157,7 @@ class ObjectMonitor : public CHeapObj<mtObjectMonitor> {
   // both can have busy multi-threaded access. _previous_owner_tid is only
   // changed by ObjectMonitor::exit() so it is a good choice to share the
   // cache line with _owner.
-  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(void* volatile) +
+  DEFINE_PAD_MINUS_SIZE(1, OM_CACHE_LINE_SIZE, sizeof(int64_t volatile) +
                         sizeof(volatile uint64_t));
   ObjectMonitor* _next_om;          // Next ObjectMonitor* linkage
   volatile intx _recursions;        // recursion count, 0 for first entry

@@ -2586,11 +2586,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 //
 // (ObjectMonitor) 0x00007fdfb6012e40 = {
 //   _object = 0x000000070ff45fd0
-//   _pad_buf0 = {
-//     [0] = '\0'
-//     ...
-//     [55] = '\0'
-//   }
 //   _owner = 0x0000000000000000
 //   _previous_owner_tid = 0
 //   _pad_buf1 = {
@@ -2613,11 +2608,6 @@ void ObjectMonitor::print() const { print_on(tty); }
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
-  st->print_cr("  _pad_buf0 = {");
-  st->print_cr("    [0] = '\\0'");
-  st->print_cr("    ...");
-  st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
-  st->print_cr("  }");
   st->print_cr("  _owner = " INT64_FORMAT, owner_raw());
   st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf1 = {");

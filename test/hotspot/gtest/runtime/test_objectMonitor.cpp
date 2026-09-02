@@ -30,10 +30,6 @@ TEST_VM(ObjectMonitor, sanity) {
 
   if (cache_line_size != 0) {
 
-    EXPECT_GE((size_t) in_bytes(ObjectMonitor::owner_offset() - ObjectMonitor::object_offset()), cache_line_size)
-        << "the _object and _owner fields are closer "
-        << "than a cache line which permits false sharing.";
-
     EXPECT_GE((size_t) in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), cache_line_size)
         << "the _owner and _recursions fields are closer "
         << "than a cache line which permits false sharing.";
