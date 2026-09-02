@@ -1372,15 +1372,10 @@
                                                                           \
   declare_constant(_thread_uninitialized)                                 \
   declare_constant(_thread_new)                                           \
-  declare_constant(_thread_new_trans)                                     \
   declare_constant(_thread_in_native)                                     \
-  declare_constant(_thread_in_native_trans)                               \
   declare_constant(_thread_in_vm)                                         \
-  declare_constant(_thread_in_vm_trans)                                   \
   declare_constant(_thread_in_Java)                                       \
-  declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
-  declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
@@ -1820,8 +1815,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \

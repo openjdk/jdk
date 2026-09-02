@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,17 +258,12 @@ void ShenandoahGeneration::prepare_regions_and_collection_set(bool concurrent) {
   {
     ShenandoahGCPhase phase(concurrent ? ShenandoahPhaseTimings::final_update_region_states :
                             ShenandoahPhaseTimings::degen_gc_final_update_region_states);
-    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
-    parallel_heap_region_iterate(&cl);
-
-    if (is_young()) {
-      // We always need to update the watermark for old regions. If there
-      // are mixed collections pending, we also need to synchronize the
-      // pinned status for old regions. Since we are already visiting every
-      // old region here, go ahead and sync the pin status too.
-      ShenandoahFinalMarkUpdateRegionStateClosure old_cl(nullptr);
-      heap->old_generation()->parallel_heap_region_iterate(&old_cl);
-    }
+    // Update region state for every active region, but only update the liveness data for
+    // the generation we marked. We always need to update the watermark for old regions.
+    // If there are mixed collections pending, we also need to synchronize the pinned status
+    // for old regions.
+    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context(), this);
+    heap->global_generation()->parallel_heap_region_iterate(&cl);
   }
 
   // Tally the census counts and compute the adaptive tenuring threshold

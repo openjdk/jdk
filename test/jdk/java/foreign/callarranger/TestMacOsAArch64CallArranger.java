@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.aarch64
  * @build CallArrangerTestBase
- * @run testng TestMacOsAArch64CallArranger
+ * @run junit TestMacOsAArch64CallArranger
  */
 
 import java.lang.foreign.FunctionDescriptor;
@@ -43,8 +43,6 @@ import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.StubLocations;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.aarch64.CallArranger;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodType;
 
@@ -54,9 +52,11 @@ import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.*;
 import static jdk.internal.foreign.abi.aarch64.AArch64Architecture.Regs.*;
 import static platform.PlatformLayouts.AArch64.*;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
@@ -71,8 +71,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fdExpected);
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fdExpected, callingSequence.functionDesc());
 
         // The two variadic arguments should be allocated on the stack
         checkArgumentBindings(callingSequence, new Binding[][]{
@@ -99,8 +99,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -143,8 +143,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -199,8 +199,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -252,8 +252,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -304,8 +304,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },
@@ -358,8 +358,8 @@ public class TestMacOsAArch64CallArranger extends CallArrangerTestBase {
 
         assertFalse(bindings.isInMemoryReturn());
         CallingSequence callingSequence = bindings.callingSequence();
-        assertEquals(callingSequence.callerMethodType(), mt.insertParameterTypes(0, MemorySegment.class));
-        assertEquals(callingSequence.functionDesc(), fd.insertArgumentLayouts(0, ADDRESS));
+        assertEquals(mt.insertParameterTypes(0, MemorySegment.class), callingSequence.callerMethodType());
+        assertEquals(fd.insertArgumentLayouts(0, ADDRESS), callingSequence.functionDesc());
 
         checkArgumentBindings(callingSequence, new Binding[][]{
             { unboxAddress(), vmStore(TARGET_ADDRESS_STORAGE, long.class) },

@@ -139,7 +139,7 @@ public:
 
   inline void add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache);
 
-  // Clear the code roots and remset state.
+  // Clear the region-specific remset state.
   void clear();
 
   void reset_code_root_table_scanner();
@@ -150,7 +150,7 @@ public:
   // The actual # of bytes this hr_remset takes up. Also includes the code
   // root set.
   size_t mem_size() {
-    return sizeof(G1HeapRegionRemSet) + code_roots_mem_size();
+    return sizeof(G1HeapRegionRemSet) - sizeof(G1CodeRootSet) + code_roots_mem_size();
   }
 
   // Returns the memory occupancy of all static data structures associated
@@ -190,6 +190,10 @@ public:
   // Returns the amount of memory, in bytes, currently
   // consumed by the code roots.
   size_t code_roots_mem_size();
+
+#ifndef PRODUCT
+  static void test();
+#endif
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGIONREMSET_HPP

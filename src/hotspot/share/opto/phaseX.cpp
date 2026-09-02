@@ -1195,6 +1195,9 @@ bool PhaseIterGVN::deep_revisit() {
 }
 
 void PhaseIterGVN::optimize(bool deep) {
+  // A correctly handled failure returns at the failing() call that raised it, so
+  // the compilation must never get here failed, with the graph already flushed.
+  assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
@@ -1909,23 +1912,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   test/jdk/jdk/incubator/vector/VectorRuns.java
     //   -XX:VerifyIterativeGVN=1110
 
-    // CallDynamicJavaNode::Ideal, and I think also for CallStaticJavaNode::Ideal
-    //  and possibly their subclasses.
-    // During late inlining it can call CallJavaNode::register_for_late_inline
-    // That means we do more rounds of late inlining, but might fail.
-    // Then we do IGVN again, and register the node again for late inlining.
-    // This creates an endless cycle. Everytime we try late inlining, we
-    // are also creating more nodes, especially SafePoint and MergeMem.
-    // These nodes are immediately rejected when the inlining fails in the
-    // do_late_inline_check, but they still grow the memory, until we hit
-    // the MemLimit and crash.
-    // The assumption here seems that CallDynamicJavaNode::Ideal does not get
-    // called repeatedly, and eventually we terminate. I fear this is not
-    // a great assumption to make. We should investigate more.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     return;
   }
 
@@ -2548,16 +2534,6 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
     if (p != nullptr) {
       add_users_to_worklist0(p, worklist);
-    }
-  }
-
-  // AndLNode::Ideal folds GraphKit::mark_word_test patterns. Give it a chance to run.
-  if (n->is_Load() && use->is_Phi()) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* u = use->fast_out(i);
-      if (u->Opcode() == Op_AndL) {
-        worklist.push(u);
-      }
     }
   }
 

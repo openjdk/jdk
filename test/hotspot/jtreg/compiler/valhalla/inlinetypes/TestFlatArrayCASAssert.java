@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,31 @@
  */
 
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+
 /*
  * @test
- * @requires os.family != "windows" & os.family != "aix"
- *
- * @summary converted from VM testbase runtime/signal/sigstop01.
- * VM testbase keywords: [signal, runtime, linux, macosx]
- *
- * @library /test/lib
- * @run main/native SigTestDriver SIGSTOP
+ * @bug 8389390
+ * @summary [Valhalla] Compile::adjust_flat_array_access_aliases asserts due SCMemProj
+ * @enablePreview
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline ${test.main.class}
  */
 
+public class TestFlatArrayCASAssert {
+    static value class V { }
+
+    static final VarHandle VH = MethodHandles.arrayElementVarHandle(V[].class);
+
+    static void test() {
+        VH.getAndSet(new V[1], 0, null);
+    }
+
+    public static void main(String[] args) {
+        for (int i = 0; i < 30_000; i++) {
+            if ((i & 255) == 0) {
+                test();
+            }
+        }
+    }
+}

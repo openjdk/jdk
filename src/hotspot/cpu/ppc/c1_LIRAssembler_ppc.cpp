@@ -2250,7 +2250,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
 
 void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   LP64_ONLY( __ extsw(op->len()->as_register(), op->len()->as_register()); )
-  if (UseSlowPath ||
+  if (UseSlowPath || op->always_slow_path() ||
       (!UseFastNewObjectArray && (is_reference_type(op->type()))) ||
       (!UseFastNewTypeArray   && (!is_reference_type(op->type())))) {
     __ b(*op->stub()->entry());
@@ -3127,13 +3127,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ ld(tmp, oopDesc::mark_offset_in_bytes(), op->array()->as_register());
-  __ andi_(R0, tmp, markWord::unlocked_value);
-  __ bne(CR0, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ andi(R0, tmp, markWord::null_free_array_bit_in_place);
   __ cmpwi(BOOL_RESULT, R0, 0);
 }

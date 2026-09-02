@@ -2099,14 +2099,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
   }
 
-  // The object could become unlocked through a JNI call, which we have no other checks for.
-  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
-  if (obj->is_unlocked()) {
-    if (CheckJNICalls) {
-      fatal("Object has been unlocked by JNI");
-    }
-    return;
-  }
   ObjectSynchronizer::exit(obj, lock, current);
 }
 
@@ -3336,13 +3328,17 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                          allocate_code_blob);
 
   if (ces.has_scalarized_args()) {
-    // Save a C heap allocated version of the scalarized signature and store it in the adapter
-    GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc());
-    handler->set_sig_cc(heap_sig);
-    heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc_ro());
-    handler->set_sig_cc_ro(heap_sig);
+    assert((handler->get_sig_cc() == nullptr) == (handler->get_sig_cc_ro() == nullptr), "Inconsistency");
+    // Check if scalarized signatures have to be initialized
+    if (handler->get_sig_cc() == nullptr) {
+      // Save a C heap allocated version of the scalarized signature and store it in the adapter
+      GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc());
+      handler->set_sig_cc(heap_sig);
+      heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc_ro());
+      handler->set_sig_cc_ro(heap_sig);
+    }
   }
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.
@@ -4214,4 +4210,25 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   }
   JRT_BLOCK_END;
 }
+JRT_END
+
+// Slow path when the native==>Java barriers detect a safepoint/handshake is
+// pending, when _suspend_flags is non-zero or when we need to process a stack
+// watermark. Also check for pending async exceptions (except unsafe access error).
+JRT_BLOCK_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(JavaThread *current))
+  assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
+  JRT_BLOCK
+  // This block looks empty, but the ThreadInVMfromJava hidden in the macro
+  // does all the heavy lifting.
+
+  // On block exit, process safepoint, check for pending async exceptions, etc
+  JRT_BLOCK_END
+
+  // After returning from native, it could be that the stack frames are not
+  // yet safe to use. We catch such situations in the subsequent stack watermark
+  // barrier, which will trap unsafe stack frames.
+  // This must happen after processing the safepoint, otherwise preconditions for
+  // before_unwind are not met.
+  StackWatermarkSet::before_unwind(current);
 JRT_END
