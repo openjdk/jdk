@@ -2034,7 +2034,7 @@ static bool getWindowsInstallationType(char* buffer, int bufferSize) {
   }
 
   // If the value being queried is a string the value returned is NOT guaranteed to be null-terminated
-  buffer[valueLength - 1] = '\0'
+  buffer[valueLength - 1] = '\0';
 
   RegCloseKey(hKey);
   return true;
