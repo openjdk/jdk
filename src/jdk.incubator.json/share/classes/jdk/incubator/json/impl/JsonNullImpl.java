@@ -28,7 +28,12 @@ package jdk.incubator.json.impl;
 import jdk.incubator.json.JsonNull;
 
 /**
- * JsonNull implementation class
+ * JsonNull implementation class. Instances of this class are immutable.
+ *
+ * <p>For a parsed instance, {@code doc} is the backing input JSON
+ * text and {@code offset} indicates the starting offset in {@code doc}.
+ * For a factory-created instance, {@code doc} and {@code offset} are
+ * {@code null} and {@code -1}, respectively.
  */
 public final class JsonNullImpl implements JsonNull, JsonValueSupport {
 

@@ -32,7 +32,22 @@ import java.util.OptionalLong;
 import jdk.incubator.json.JsonNumber;
 
 /**
- * JsonNumber implementation class
+ * JsonNumber implementation class. Instances of this class are immutable.
+ *
+ * <p>A JSON number is represented by the range {@code [startOffset, endOffset)}
+ * in {@code doc}. For a parsed instance, {@code doc} is the backing input JSON text.
+ * For a factory-created instance, it is a private character array backing the
+ * JSON number. If the JSON number contains a decimal point and/or an exponent,
+ * their offsets are stored in {@code decimalOffset} and/or {@code exponentOffset}.
+ * {@code -1} offset indicates it is absent.
+ *
+ * <p>{@code numString} lazily instantiates the JSON representation returned by
+ * {@code toString()}. It preserves the original representation for a parsed value.
+ *
+ * <p>{@code numInteger}, {@code numLong}, and {@code numDouble} lazily instantiate
+ * the {@code OptionalInt}, {@code OptionalLong}, and {@code OptionalDouble},
+ * used by the conversion methods {@code asInt()}, {@code asLong()},
+ * and {@code asDouble()}, respectively.
  */
 public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
 

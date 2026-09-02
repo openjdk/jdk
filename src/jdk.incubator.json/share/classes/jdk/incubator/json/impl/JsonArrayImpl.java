@@ -25,7 +25,6 @@
 
 package jdk.incubator.json.impl;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -34,6 +33,15 @@ import jdk.incubator.json.JsonValue;
 
 /**
  * JsonArray implementation class. Instances of this class are immutable.
+ *
+ * <p>For a parsed instance, {@code doc} is the backing input JSON
+ * text and {@code offset} indicates the starting offset in {@code doc}.
+ * For a factory-created instance, {@code doc} and {@code offset} are
+ * {@code null} and {@code -1}, respectively.
+ *
+ * <p>{@code theValues} holds an immutable shallow copy of JSON values
+ * parsed from the backing JSON text or supplied to the factory method.
+ * {@code asList()} returns this immutable list.
  */
 public final class JsonArrayImpl implements JsonArray, JsonValueSupport {
 
