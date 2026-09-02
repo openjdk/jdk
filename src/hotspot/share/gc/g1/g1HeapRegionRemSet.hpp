@@ -29,12 +29,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/safepoint.hpp"
-#include "utilities/bitMap.hpp"
 
-class G1CardSetMemoryManager;
-class G1CSetCandidateGroup;
 class G1FromCardCache;
 class outputStream;
 
@@ -43,7 +38,6 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
 
-  // The collection set groups to which the region owning this RSet is assigned.
   G1CSetCandidateGroup* _cset_group;
 
   // Cached value of heap base address.
@@ -59,13 +53,13 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
     return cset_group()->card_set();
   }
 
-public:
-  G1HeapRegionRemSet();
-  ~G1HeapRegionRemSet();
-
   bool card_set_is_empty() const {
     return !has_cset_group() || card_set()->is_empty();
   }
+
+public:
+  G1HeapRegionRemSet();
+  ~G1HeapRegionRemSet();
 
   void install_cset_group(G1CSetCandidateGroup* cset_group) {
     assert(cset_group != nullptr, "pre-condition");
@@ -101,7 +95,7 @@ public:
     return (code_roots_list_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
   }
 
-  // Iterate the card based remembered set for merging them into the card table.
+  // Iterate the cards in this remembered set for merging them into the card table.
   // The passed closure must be a CardOrRangeVisitor; we use a template parameter
   // to pass it in to facilitate inlining as much as possible.
   template <class CardOrRangeVisitor>
@@ -114,7 +108,6 @@ public:
     assert(has_cset_group(), "pre-condition");
     return card_set()->occupied();
   }
-
 
   static void initialize(MemRegion reserved);
 
@@ -172,10 +165,9 @@ public:
 
   inline void print_info(outputStream* st, OopOrNarrowOopStar from);
 
-  // Routines for managing the list of code roots that point into
-  // the heap region that owns this RSet.
+  // Routines for managing the code roots that point into the heap region
+  // that owns this RSet.
   void add_code_root(nmethod* nm);
-  void remove_code_root(nmethod* nm);
   void bulk_remove_code_roots();
   void prepare_for_adding_code_roots(size_t num_code_roots);
 
