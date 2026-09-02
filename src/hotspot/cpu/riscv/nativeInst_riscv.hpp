@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2018, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -62,12 +62,10 @@ class NativeInstruction {
   }
 
   bool is_jal()                             const { return MacroAssembler::is_jal_at(addr_at(0));         }
-  bool is_movptr()                          const { return MacroAssembler::is_movptr1_at(addr_at(0)) ||
-                                                           MacroAssembler::is_movptr2_at(addr_at(0)) ||
-                                                           MacroAssembler::is_movptr_sv39_at(addr_at(0)); }
-  bool is_movptr1()                         const { return MacroAssembler::is_movptr1_at(addr_at(0));     }
-  bool is_movptr2()                         const { return MacroAssembler::is_movptr2_at(addr_at(0));     }
-  bool is_movptr_sv39()                     const { return MacroAssembler::is_movptr_sv39_at(addr_at(0)); }
+  bool is_movptr() const;
+  bool is_movptr_sv39()                     const { return MacroAssembler::is_movptr_sv39_at(addr_at(0));  }
+  bool is_movptr1_sv48()                    const { return MacroAssembler::is_movptr1_sv48_at(addr_at(0)); }
+  bool is_movptr2_sv48()                    const { return MacroAssembler::is_movptr2_sv48_at(addr_at(0)); }
   bool is_auipc()                           const { return MacroAssembler::is_auipc_at(addr_at(0));       }
   bool is_jump()                            const { return MacroAssembler::is_jump_at(addr_at(0));        }
   bool is_call()                            const { return is_call_at(addr_at(0));                        }
@@ -169,50 +167,15 @@ class NativeCall: private NativeInstruction {
 class NativeMovConstReg: public NativeInstruction {
  public:
   enum RISCV_specific_constants {
-    movptr1_instruction_size            =    MacroAssembler::movptr1_instruction_size, // lui, addi, slli, addi, slli, addi.  See movptr1().
-    movptr2_instruction_size            =    MacroAssembler::movptr2_instruction_size, // lui, lui, slli, add, addi.  See movptr2().
-    movptr_sv39_instruction_size        =    MacroAssembler::movptr_sv39_instruction_size, // lui, addi, slli, addi.  See movptr_sv39().
+    movptr_sv39_instruction_size        =    MacroAssembler::movptr_sv39_instruction_size,
+    movptr1_sv48_instruction_size       =    MacroAssembler::movptr1_sv48_instruction_size,
+    movptr2_sv48_instruction_size       =    MacroAssembler::movptr2_sv48_instruction_size,
+
     load_pc_relative_instruction_size   =    MacroAssembler::load_pc_relative_instruction_size // auipc, ld
   };
 
   address instruction_address() const       { return addr_at(0); }
-  address next_instruction_address() const  {
-    // if the instruction at 5 * instruction_size is addi,
-    // it means a lui + addi + slli + addi + slli + addi instruction sequence,
-    // and the next instruction address should be addr_at(6 * instruction_size).
-    // However, when the instruction at 5 * instruction_size isn't addi,
-    // the next instruction address should be addr_at(5 * instruction_size)
-    if (MacroAssembler::is_movptr1_at(instruction_address())) {
-      if (MacroAssembler::is_addi_at(addr_at(movptr1_instruction_size - NativeInstruction::instruction_size))) {
-        // Assume: lui, addi, slli, addi, slli, addi
-        return addr_at(movptr1_instruction_size);
-      } else {
-        // Assume: lui, addi, slli, addi, slli
-        return addr_at(movptr1_instruction_size - NativeInstruction::instruction_size);
-      }
-    } else if (MacroAssembler::is_movptr2_at(instruction_address())) {
-      if (MacroAssembler::is_addi_at(addr_at(movptr2_instruction_size - NativeInstruction::instruction_size))) {
-        // Assume: lui, lui, slli, add, addi
-        return addr_at(movptr2_instruction_size);
-      } else {
-        // Assume: lui, lui, slli, add
-        return addr_at(movptr2_instruction_size - NativeInstruction::instruction_size);
-      }
-    } else if (MacroAssembler::is_movptr_sv39_at(instruction_address())) {
-      if (MacroAssembler::is_addi_at(addr_at(movptr_sv39_instruction_size - NativeInstruction::instruction_size))) {
-        // Assume: lui, addi, slli, addi
-        return addr_at(movptr_sv39_instruction_size);
-      } else {
-        // Assume: lui, addi, slli
-        return addr_at(movptr_sv39_instruction_size - NativeInstruction::instruction_size);
-      }
-    } else if (MacroAssembler::is_load_pc_relative_at(instruction_address())) {
-      // Assume: auipc, ld
-      return addr_at(load_pc_relative_instruction_size);
-    }
-    guarantee(false, "Unknown instruction in NativeMovConstReg");
-    return nullptr;
-  }
+  address next_instruction_address() const;
 
   intptr_t data() const;
   void set_data(intptr_t x);
@@ -289,12 +252,14 @@ inline NativeJump* nativeJump_at(address addr) {
 class NativeGeneralJump: public NativeJump {
 public:
   enum RISCV_specific_constants {
-    instruction_size            =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
+    // Maximum sequence size, used by shared C1 code-buffer estimates.
+    instruction_size            =    5 * NativeInstruction::instruction_size, // sv48: lui, lui, slli, add, jalr
     instruction_size_sv39       =    4 * NativeInstruction::instruction_size, // lui, addi, slli, jalr
+    instruction_size_sv48       =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
   };
 
   static int insn_size() {
-    return MacroAssembler::use_movptr_sv39() ? instruction_size_sv39 : instruction_size;
+    return MacroAssembler::movptr_instruction_size();
   }
 
   address jump_destination() const;

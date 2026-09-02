@@ -459,6 +459,7 @@ private:
 
   static void useRVA23U64Profile();
 
+ public:
   // VM modes (satp.mode) privileged ISA 1.10
   enum VM_MODE : int {
     VM_NOTSET = -1,
@@ -469,6 +470,7 @@ private:
     VM_SV64   = 64
   };
 
+ private:
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
