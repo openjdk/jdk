@@ -84,10 +84,6 @@ public class JVMTIUtils {
         }
     }
 
-    private static native int getThreadState0(Thread t);
-
-    public static int getThreadState(Thread t) {
-        return getThreadState0(t);
-    }
+    public static native int getThreadState(Thread t);
 
 }

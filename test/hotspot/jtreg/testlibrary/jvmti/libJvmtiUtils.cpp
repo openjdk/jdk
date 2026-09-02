@@ -70,7 +70,7 @@ Java_jvmti_JVMTIUtils_resumeThread0(JNIEnv *jni, jclass cls, jthread thread) {
 }
 
 JNIEXPORT jint JNICALL
-Java_jvmti_JVMTIUtils_getThreadState0(JNIEnv *jni, jclass cls, jthread thread) {
+Java_jvmti_JVMTIUtils_getThreadState(JNIEnv *jni, jclass cls, jthread thread) {
   jint state = 0;
   jvmtiError err = jvmti->GetThreadState(thread, &state);
   check_jvmti_status(jni, err, "Error during GetThreadState()");
