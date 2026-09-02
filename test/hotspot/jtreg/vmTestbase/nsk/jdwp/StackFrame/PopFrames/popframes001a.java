@@ -41,7 +41,7 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 121;
+    public static final int BREAKPOINT_LINE_NUMBER = 127;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -111,7 +111,13 @@ public class popframes001a {
 
             log.display("Breakpoint line reached");
             // joining a virtual thread unmounts a virtual tested thread, so the frame below is frozen when popped
-            Thread parker = Thread.ofVirtual().start(() -> { });
+            Thread parker = Thread.ofVirtual().start(() -> {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             try {
                 parker.join();
             } catch (InterruptedException e) {
