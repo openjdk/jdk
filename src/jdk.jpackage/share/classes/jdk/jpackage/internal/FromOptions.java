@@ -31,6 +31,7 @@ import static jdk.jpackage.internal.cli.StandardOption.ABOUT_URL;
 import static jdk.jpackage.internal.cli.StandardOption.ADDITIONAL_LAUNCHERS;
 import static jdk.jpackage.internal.cli.StandardOption.ADD_MODULES;
 import static jdk.jpackage.internal.cli.StandardOption.APP_CONTENT;
+import static jdk.jpackage.internal.cli.StandardOption.APP_RESOURCES;
 import static jdk.jpackage.internal.cli.StandardOption.APP_VERSION;
 import static jdk.jpackage.internal.cli.StandardOption.COPYRIGHT;
 import static jdk.jpackage.internal.cli.StandardOption.DESCRIPTION;
@@ -187,6 +188,10 @@ final class FromOptions {
             // from the original list of source files for the given destination file.
             return v.reversed().stream().flatMap(Collection::stream).toList();
         }).ifPresent(appBuilder::contentDirSources);
+        APP_RESOURCES.findIn(options).map((List<Collection<RootedPath>> v) -> {
+            return v.reversed().stream().flatMap(Collection::stream).toList();
+        }).ifPresent(appBuilder::resourcesDirSources);
+
 
         if (isRuntimeInstaller) {
             appBuilder.appImageLayout(runtimeLayout);

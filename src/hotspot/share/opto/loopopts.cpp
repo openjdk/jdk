@@ -140,7 +140,7 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node* y = x->Identity(&_igvn);
+      Node* y = _igvn.apply_identity(x);
       if (y != x) {
         wins.add_win(i);
         x = y;
@@ -1124,9 +1124,9 @@ void PhaseIdealLoop::try_move_store_after_loop(Node* n) {
 }
 
 // We can't use immutable memory for the flat array check because we are loading the mark word which is
-// mutable. Although the bits we are interested in are immutable (we check for markWord::unlocked_value),
-// we need to use raw memory to not break anti dependency analysis. Below code will attempt to still move
-// flat array checks out of loops, mainly to enable loop unswitching.
+// mutable. Although the bits we are interested in are immutable, we need to use raw memory to not break
+// anti dependency analysis. The code below will attempt to still move flat array checks out of loops,
+// mainly to enable loop unswitching.
 void PhaseIdealLoop::move_flat_array_check_out_of_loop(Node* n) {
   // Skip checks for more than one array
   if (n->req() > 3) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,16 @@
 
 void BasicLock::print_on(outputStream* st, oop owner) const {
   st->print("monitor");
-  if (UseObjectMonitorTable) {
-    ObjectMonitor* mon = object_monitor_cache();
-    if (mon != nullptr) {
-      mon->print_on(st);
-    }
+  ObjectMonitor* mon = object_monitor_cache();
+  if (mon != nullptr) {
+    mon->print_on(st);
   }
 }
 
 void BasicLock::move_to(oop obj, BasicLock* dest) {
   // Check to see if we need to inflate the lock. This is only needed
   // if an object is locked using "this" lightweight monitor. In that
-  // case, the displaced_header() is unlocked/neutral, because the
+  // case, the displaced_header() is lock-neutral, because the
   // displaced_header() contains the header for the originally unlocked
   // object. However the lock could have already been inflated. But it
   // does not matter, this inflation will just be a no-op. For other cases,
@@ -66,15 +64,8 @@ void BasicLock::move_to(oop obj, BasicLock* dest) {
   // small (given the support for inflated fast-path locking in the fast_lock, etc)
   // we'll leave that optimization for another time.
 
-  if (UseObjectMonitorTable) {
-    // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
-    // and only read while the lock is held, so no stale ObjectMonitor* is
-    // encountered.
-    dest->set_object_monitor_cache(object_monitor_cache());
-  }
-#ifdef ASSERT
-  else {
-    dest->set_bad_monitor_deopt();
-  }
-#endif
+  // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
+  // and only read while the lock is held, so no stale ObjectMonitor* is
+  // encountered.
+  dest->set_object_monitor_cache(object_monitor_cache());
 }

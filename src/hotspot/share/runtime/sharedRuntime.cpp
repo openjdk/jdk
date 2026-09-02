@@ -28,6 +28,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/compactHashtable.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -591,7 +592,14 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
-    if (nm->is_deopt_pc(return_address)) {
+    // For platform threads, checking the return pc already covers the case
+    // where only this compiled frame was deoptimized, as well as the case
+    // where the nmethod was marked for deoptimization. For virtual threads,
+    // we also need to check if the nmethod is marked for deoptimization because
+    // the return pc may not have been patched if the nmethod was deoptimized
+    // while the frame was frozen. Since this check is benign for platform
+    // threads, we do it unconditionally.
+    if (nm->is_deopt_pc(return_address) || nm->is_marked_for_deoptimization()) {
       // If we come here because of a stack overflow, the stack may be
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
@@ -1240,8 +1248,9 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
       }
     } else {
       assert(attached_method->has_scalarized_args(), "invalid use of attached method");
-      if (!attached_method->method_holder()->is_inline_klass() || attached_method->is_static()) {
-        // Ignore the attached method in this case to not confuse below code
+      if (attached_method->is_static() || !attached_method->is_scalarized_arg(0)) {
+        // Ignore the attached method if it is only needed to describe scalarized
+        // arguments. It remains attached to the call site for outgoing oop scanning.
         attached_method = methodHandle(current, nullptr);
       }
     }
@@ -2090,14 +2099,6 @@ void SharedRuntime::monitor_exit_helper(oopDesc* obj, BasicLock* lock, JavaThrea
     }
   }
 
-  // The object could become unlocked through a JNI call, which we have no other checks for.
-  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
-  if (obj->is_unlocked()) {
-    if (CheckJNICalls) {
-      fatal("Object has been unlocked by JNI");
-    }
-    return;
-  }
   ObjectSynchronizer::exit(obj, lock, current);
 }
 
@@ -2754,7 +2755,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
   _method(method), _num_inline_args(0), _has_inline_recv(false),
   _regs(nullptr), _regs_cc(nullptr), _regs_cc_ro(nullptr),
   _args_on_stack(0), _args_on_stack_cc(0), _args_on_stack_cc_ro(0),
-  _c1_needs_stack_repair(false), _c2_needs_stack_repair(false), _supers(nullptr) {
+  _needs_stack_repair(false), _supers(nullptr) {
   _sig = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
   _sig_cc_ro = new GrowableArray<SigEntry>((method != nullptr) ? method->size_of_parameters() : 1);
@@ -2969,15 +2970,40 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     _regs_cc_ro = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc_ro->length());
     _args_on_stack_cc_ro = SharedRuntime::java_calling_convention(_sig_cc_ro, _regs_cc_ro);
 
-    _c1_needs_stack_repair = (_args_on_stack_cc < _args_on_stack) || (_args_on_stack_cc_ro < _args_on_stack);
-    _c2_needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
+    assert(_args_on_stack_cc >= _args_on_stack && _args_on_stack_cc_ro >= _args_on_stack, "Sanity check");
+    _needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
 
-    // Upper bound on stack arguments to avoid hitting the argument limit and
-    // bailing out of compilation ("unsupported incoming calling sequence").
-    // TODO 8281260 We need a reasonable limit (flag?) here
-    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= 75) {
+    // Limit the scalarized stack argument area to ensure that generated entry
+    // points fit into nmethod's uint16_t *_entry_offset fields.
+    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
+    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
       return; // Success
     }
+
+    // We exceeded the scalarized stack-slot limit. Check if not scalarizing the
+    // receiver would help. If so, use the receiver-as-oop convention for the
+    // method body but keep scalarizing the other arguments. This also preserves
+    // the convention used by calls through super methods.
+    if (_has_inline_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_inline_args > 1) {
+      _sig_cc = _sig_cc_ro;
+      _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
+      assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
+      _has_inline_recv = false;
+      _num_inline_args--;
+      _needs_stack_repair = _args_on_stack_cc > _args_on_stack;
+      return; // Success
+    }
+
+#ifdef ASSERT
+    if (link_time) {
+      GrowableArray<Method*>* supers = get_supers();
+      for (int i = 0; i < supers->length(); ++i) {
+        Method* super_method = supers->at(i);
+        assert(super_method->mismatch() || !super_method->has_scalarized_args(),
+               "cannot fall back with a scalarized super method");
+      }
+    }
+#endif
   }
 
   // No scalarized args
@@ -3122,8 +3148,8 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
     _regs_cc_ro = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc_ro->length());
     _args_on_stack_cc_ro = SharedRuntime::java_calling_convention(_sig_cc_ro, _regs_cc_ro);
 
-    _c1_needs_stack_repair = (_args_on_stack_cc < _args_on_stack) || (_args_on_stack_cc_ro < _args_on_stack);
-    _c2_needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
+    assert(_args_on_stack_cc >= _args_on_stack && _args_on_stack_cc_ro >= _args_on_stack, "Sanity check");
+    _needs_stack_repair = (_args_on_stack_cc > _args_on_stack) || (_args_on_stack_cc > _args_on_stack_cc_ro);
   } else {
     // No scalarized args
     _sig_cc = _sig;
@@ -3183,11 +3209,8 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     if (!method->has_scalarized_args()) {
       method->set_has_scalarized_args();
     }
-    if (ces.c1_needs_stack_repair()) {
-      method->set_c1_needs_stack_repair();
-    }
-    if (ces.c2_needs_stack_repair() && !method->c2_needs_stack_repair()) {
-      method->set_c2_needs_stack_repair();
+    if (ces.needs_stack_repair() && !method->needs_stack_repair()) {
+      method->set_needs_stack_repair();
     }
   }
 
@@ -3305,13 +3328,17 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                          allocate_code_blob);
 
   if (ces.has_scalarized_args()) {
-    // Save a C heap allocated version of the scalarized signature and store it in the adapter
-    GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc());
-    handler->set_sig_cc(heap_sig);
-    heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc_ro());
-    handler->set_sig_cc_ro(heap_sig);
+    assert((handler->get_sig_cc() == nullptr) == (handler->get_sig_cc_ro() == nullptr), "Inconsistency");
+    // Check if scalarized signatures have to be initialized
+    if (handler->get_sig_cc() == nullptr) {
+      // Save a C heap allocated version of the scalarized signature and store it in the adapter
+      GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc());
+      handler->set_sig_cc(heap_sig);
+      heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc_ro());
+      handler->set_sig_cc_ro(heap_sig);
+    }
   }
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.
@@ -3380,8 +3407,6 @@ void AdapterHandlerEntry::remove_unshareable_info() {
 #endif // ASSERT
    _adapter_blob = nullptr;
    _linked = false;
-   _sig_cc = nullptr;
-   _sig_cc_ro = nullptr;
 }
 
 class CopyAdapterTableToArchive : StackObj {
@@ -3460,23 +3485,6 @@ void AdapterHandlerEntry::link() {
     if (_adapter_blob == nullptr) {
       log_warning(aot)("Failed to link AdapterHandlerEntry (fp=%s) to its code in the AOT code cache", _fingerprint->as_basic_args_string());
       generate_code = true;
-    }
-
-    if (get_sig_cc() == nullptr) {
-      // Calling conventions have to be regenerated at runtime and are accessed through method adapters,
-      // which are archived in the AOT code cache. If the adapters are not regenerated, the
-      // calling conventions should be regenerated here.
-      CompiledEntrySignature ces;
-      ces.initialize_from_fingerprint(_fingerprint);
-      if (ces.has_scalarized_args()) {
-        // Save a C heap allocated version of the scalarized signature and store it in the adapter
-        GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-        heap_sig->appendAll(ces.sig_cc());
-        set_sig_cc(heap_sig);
-        heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-        heap_sig->appendAll(ces.sig_cc_ro());
-        set_sig_cc_ro(heap_sig);
-      }
     }
   } else {
     generate_code = true;
@@ -3569,6 +3577,8 @@ void AdapterHandlerEntry::metaspace_pointers_do(MetaspaceClosure* it) {
     lsh.cr();
   }
   it->push(&_fingerprint);
+  it->push(&_sig_cc);
+  it->push(&_sig_cc_ro);
 }
 
 AdapterHandlerEntry::~AdapterHandlerEntry() {
@@ -3858,15 +3868,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
        kptr2 = fr.next_monitor_in_interpreter_frame(kptr2) ) {
     if (kptr2->obj() != nullptr) {         // Avoid 'holes' in the monitor array
       BasicLock *lock = kptr2->lock();
-      if (UseObjectMonitorTable) {
-        buf[i] = (intptr_t)lock->object_monitor_cache();
-      }
-#ifdef ASSERT
-      else {
-        buf[i] = badDispHeaderOSR;
-      }
-#endif
-      i++;
+      buf[i++] = (intptr_t)lock->object_monitor_cache();
       buf[i++] = cast_from_oop<intptr_t>(kptr2->obj());
     }
   }
@@ -4083,6 +4085,7 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
     assert(reg_pos < (uint)arg_size, "");
     VMRegPair reg_pair = reg_pairs[reg_pos];
     oop* buffer = callerFrame.oopmapreg_to_oop_location(reg_pair.first(), &reg_map2);
+    guarantee(buffer != nullptr, "bad register save location");
     instanceHandle h_buffer(THREAD, (instanceOop)*buffer);
     InlineKlass* vk = InlineKlass::cast(holder);
     if (h_buffer.not_null()) {
@@ -4121,6 +4124,7 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
       assert(reg_pos < (uint)arg_size, "out of bound register?");
       VMRegPair reg_pair = reg_pairs[reg_pos];
       oop* buffer = callerFrame.oopmapreg_to_oop_location(reg_pair.first(), &reg_map2);
+      guarantee(buffer != nullptr, "bad register save location");
       instanceHandle h_buffer(THREAD, (instanceOop)*buffer);
       InlineKlass* vk = ss.as_inline_klass(holder);
       assert(vk != nullptr, "Unexpected klass");
@@ -4206,4 +4210,25 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   }
   JRT_BLOCK_END;
 }
+JRT_END
+
+// Slow path when the native==>Java barriers detect a safepoint/handshake is
+// pending, when _suspend_flags is non-zero or when we need to process a stack
+// watermark. Also check for pending async exceptions (except unsafe access error).
+JRT_BLOCK_ENTRY(void, SharedRuntime::check_special_condition_for_native_trans(JavaThread *current))
+  assert(!current->has_last_Java_frame() || current->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
+
+  JRT_BLOCK
+  // This block looks empty, but the ThreadInVMfromJava hidden in the macro
+  // does all the heavy lifting.
+
+  // On block exit, process safepoint, check for pending async exceptions, etc
+  JRT_BLOCK_END
+
+  // After returning from native, it could be that the stack frames are not
+  // yet safe to use. We catch such situations in the subsequent stack watermark
+  // barrier, which will trap unsafe stack frames.
+  // This must happen after processing the safepoint, otherwise preconditions for
+  // before_unwind are not met.
+  StackWatermarkSet::before_unwind(current);
 JRT_END

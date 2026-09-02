@@ -30,7 +30,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classPrinter.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -379,6 +379,12 @@ void before_exit(JavaThread* thread, bool halt) {
   static jint volatile _before_exit_status = BEFORE_EXIT_NOT_RUN;
 
   Events::log(thread, "Before exit entered");
+
+  // A GC requested after we shut down the heap blocks that requesting Java thread.
+  // Suppress GC-a-lot for threads entering shutdown as Monitor::lock() calls in the
+  // remainder of the shutdown sequence could otherwise block when executing a
+  // GC-a-lot caused collection.
+  NOT_PRODUCT(thread->set_skip_gcalot(true);)
 
   // Note: don't use a Mutex to guard the entire before_exit(), as
   // JVMTI post_thread_end_event and post_vm_death_event will run native code.

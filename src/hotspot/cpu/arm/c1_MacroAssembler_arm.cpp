@@ -44,7 +44,7 @@
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
-                                    bool needs_stack_repair, bool has_scalarized_args,
+                                    bool has_scalarized_args,
                                     Label* verified_inline_entry_label) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   assert((frame_size_in_bytes % StackAlignmentInBytes) == 0, "frame size should be aligned");
@@ -220,6 +220,10 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register basic
   // Success: fall through
 }
 
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
+  Unimplemented();
+}
+
 #ifndef PRODUCT
 
 void C1_MacroAssembler::verify_stack_oop(int stack_offset) {
@@ -234,10 +238,6 @@ void C1_MacroAssembler::verify_not_null_oop(Register r) {
   bind(not_null);
   if (!VerifyOops) return;
   verify_oop(r);
-}
-
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
-  Unimplemented();
 }
 
 #endif // !PRODUCT

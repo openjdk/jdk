@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "jni.h"
 #include "memory/iterator.hpp"
 
+class InstanceKlass;
 class JavaThread;
 class JfrFilter;
 class Klass;
@@ -54,6 +55,13 @@ typedef ResizeableHashTable<traceid, jclass,
                                     knuth_hash,
                                     equals_traceid> ClosureSet;
 
+typedef ResizeableHashTable<traceid,
+                            const InstanceKlass*,
+                            AnyObj::C_HEAP,
+                            mtTracing,
+                            knuth_hash,
+                            equals_traceid> JfrPlaceholderTable;
+
 //
 // Class that collects classes that should be retransformed,
 // either for adding instrumentation by matching the current
@@ -66,14 +74,16 @@ class JfrFilterClassClosure : public KlassClosure {
   JavaThread* const _thread;
 
   bool match(const InstanceKlass* klass) const;
+  void add(const InstanceKlass* ik);
   void do_klass(Klass* k);
 
  public:
   JfrFilterClassClosure(JavaThread* thread);
-  void iterate_all_classes(GrowableArray<JfrInstrumentedClass>* instrumented_klasses);
+  void iterate_all_classes(GrowableArray<JfrInstrumentedClass>* instrumented_klasses, JfrPlaceholderTable* table);
   // Returned set is Resource allocated.
   ClosureSet* to_modify() const;
   int number_of_classes() const;
+  bool do_entry(const traceid& id, const InstanceKlass*& ik);
 };
 
 #endif // SHARE_JFR_SUPPORT_METHODTRACER_JFRFILTERCLASSCLOSURE_HPP
