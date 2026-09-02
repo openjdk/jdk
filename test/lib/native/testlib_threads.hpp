@@ -40,7 +40,14 @@ extern "C" {
 
 typedef void(*PROCEDURE)(void*);
 
-struct Helper {
+#ifdef _WIN32
+typedef HANDLE THREAD;
+#else
+typedef pthread_t THREAD;
+#endif
+
+struct ThreadHelper {
+    THREAD _thread;
     PROCEDURE proc;
     void* context;
 };
@@ -58,43 +65,54 @@ DWORD WINAPI procedure(_In_ LPVOID ctxt) {
 #else
 void* procedure(void* ctxt) {
 #endif
-    Helper* helper = (Helper*)ctxt;
+    ThreadHelper* helper = (ThreadHelper*)ctxt;
     helper->proc(helper->context);
     return 0;
 }
 
-// Run 'proc' in a newly started thread, passing 'context' to it
-// as an argument, and then join that thread.
-void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
-    struct Helper helper;
-    helper.proc = proc;
-    helper.context = context;
+void create_thread(ThreadHelper* helper) {
 #ifdef _WIN32
-    HANDLE thread = CreateThread(nullptr, 0, procedure, &helper, 0, nullptr);
-    if (thread == nullptr) {
+    helper->_thread = CreateThread(nullptr, 0, procedure, helper, 0, nullptr);
+    if (helper->_thread == nullptr) {
         fatal("failed to create thread", GetLastError());
     }
-    if (WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0) {
+#else
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t stack_size = 0x100000;
+    pthread_attr_setstacksize(&attr, stack_size);
+    int result = pthread_create(&helper->_thread, &attr, procedure, helper);
+    if (result != 0) {
+        fatal("failed to create thread", result);
+    }
+    pthread_attr_destroy(&attr);
+#endif
+}
+
+void join_thread(ThreadHelper* helper) {
+#ifdef _WIN32
+    if (WaitForSingleObject(helper->_thread, INFINITE) != WAIT_OBJECT_0) {
         // Should be WAIT_FAILED, since this is not a mutex, and
         // we set no timeout.
         fatal("failed to join thread", GetLastError());
     }
 #else
-    pthread_t thread;
-    pthread_attr_t attr;
-    pthread_attr_init(&attr);
-    size_t stack_size = 0x100000;
-    pthread_attr_setstacksize(&attr, stack_size);
-    int result = pthread_create(&thread, &attr, procedure, &helper);
-    if (result != 0) {
-        fatal("failed to create thread", result);
-    }
-    pthread_attr_destroy(&attr);
-    result = pthread_join(thread, nullptr);
+    int result = pthread_join(helper->_thread, nullptr);
     if (result != 0) {
         fatal("failed to join thread", result);
     }
 #endif
+}
+
+// Run 'proc' in a newly started thread, passing 'context' to it
+// as an argument, and then join that thread.
+void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
+    struct ThreadHelper helper;
+    helper.proc = proc;
+    helper.context = context;
+
+    create_thread(&helper);
+    join_thread(&helper);
 }
 
 }
