@@ -285,9 +285,6 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   if (multi_release != nullptr && strncasecmp(multi_release, "true", 5) == 0) {
     cs->_is_multi_release_jar = true;
   }
-  // if (StringUtils::strstr_nocase(cs->manifest(), "Multi-Release: true") != nullptr) {
-  //   cs->_is_multi_release_jar = true;
-  // }
 
   if (strstr(cs->manifest(), "Extension-List:") != nullptr) {
     vm_exit_during_cds_dumping(err_msg("-Xshare:dump does not support Extension-List in JAR manifest: %s", path));

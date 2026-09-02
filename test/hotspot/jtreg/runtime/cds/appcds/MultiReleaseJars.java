@@ -304,9 +304,9 @@ public class MultiReleaseJars {
             })
             .runAOTWorkflow();
 
-        // 10. AOT Test with "Multi-Release: truex" instead of "true"
+        // 10. AOT Test with "Multi-Release: truex" instead of "true". The unexpected value
+        // is ignored and "true" is used by default
         SimpleCDSAppTester.of("Multi-Release-AOT-Misspelled")
-            .setCheckExitValue(false)
             .addVmArgs("-Xlog:aot",
                        enableMultiRelease)
             .classpath(appJar4)
@@ -315,8 +315,7 @@ public class MultiReleaseJars {
                 out.shouldNotMatch("class version/Version cannot be archived because it was not defined");
             })
             .setProductionChecker((OutputAnalyzer out) -> {
-                out.shouldHaveExitValue(1);
-                out.shouldContain("java.lang.ClassNotFoundException: version.Version");
+                out.shouldContain("I am running on version " + MAJOR_VERSION_STRING);
             })
             .runAOTWorkflow();
     }
