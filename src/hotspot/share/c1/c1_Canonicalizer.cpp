@@ -731,7 +731,7 @@ void Canonicalizer::do_If(If* x) {
     if (l_exact_type != nullptr && l_exact_type->is_inlinetype() &&
         r_exact_type != nullptr && r_exact_type->is_inlinetype() && x->substitutability_check()) {
       // If we have a substitutability check and both sides are known inline types we must
-      // preserve it instread of performing a pointer comparison during compile time.
+      // preserve it instead of performing a pointer comparison during compile time.
       return;
     }
 
