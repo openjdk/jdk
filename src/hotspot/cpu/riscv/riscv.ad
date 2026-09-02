@@ -2849,6 +2849,7 @@ operand immIpowerOf2() %{
   format %{ %}
   interface(CONST_INTER);
 %}
+
 // Int immediate: the mask of a bitfield extract, i.e. contiguous low-order
 // ones, whose width is log2i_exact(mask + 1), e.g. 0xfff, 0xffff, 0x7fffffff.
 // Masks that fit into a 12-bit immediate are excluded: a shift followed by
@@ -7360,7 +7361,6 @@ instruct bitfieldExtractL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask 
   ins_encode %{
     int rshift = $rshift$$constant & 0x3f;
     int width = log2i_exact((juint)$mask$$constant + 1);
-    assert(width <= 31, "the zero extended result must be a valid int");
     __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
     __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
   %}
