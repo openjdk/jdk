@@ -882,14 +882,14 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
   }
   if (t_oop->is_ptr_to_boxed_value() && is_CallStaticJava()) {
     ciKlass* boxing_klass = t_oop->is_instptr()->instance_klass();
-    if (is_CallStaticJava() && as_CallStaticJava()->is_boxing_method()) {
+    if (as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
       Node* proj = proj_out_or_null(TypeFunc::Parms);
       if ((proj == nullptr) || (phase->type(proj)->is_instptr()->instance_klass() != boxing_klass)) {
         return false;
       }
     }
-    ciMethod* meth = as_CallJava()->method();
+    ciMethod* meth = as_CallStaticJava()->method();
     if (meth != nullptr && meth->is_getter()) {
       return false;
     }

@@ -40,9 +40,10 @@ import jdk.test.lib.Asserts;
 public class TestWrappedBoxedPrimitive {
     private static class Holder {
         Integer notZero = 0xbad;
+        Integer value = 42;
 
         Integer get() {
-            return notZero;
+            return value;
         }
 
         private void touch () {
@@ -54,8 +55,23 @@ public class TestWrappedBoxedPrimitive {
         @Override
         Integer get() {
             notZero = 1234;
-            return notZero;
+            return value;
         }
+    }
+
+    private static final class FooHolder extends Holder { }
+    private static final class BarHolder extends Holder { }
+
+    static Holder make(boolean evil, int i) {
+        if (evil) {
+            return new EvilHolder();
+        }
+
+        return switch (i % 3) {
+            case 0   -> new FooHolder();
+            case 1  -> new BarHolder();
+            default -> new Holder();
+        };
     }
 
     private static int testHolderKlass() {
@@ -75,8 +91,8 @@ public class TestWrappedBoxedPrimitive {
 
     }
 
-    private static int testGetter() {
-        Holder holder = new EvilHolder();
+    private static int testGetter(boolean evil, int i) {
+        Holder holder = make(evil, i);
         holder.get();
         return holder.notZero;
     }
@@ -84,15 +100,15 @@ public class TestWrappedBoxedPrimitive {
     public static void main(String[] args) {
         int intHolderKlass = testHolderKlass();
         int intHolderArray = testArray();
-        int intHolderGetter = testGetter();
+        int intHolderGetter = testGetter(true, 0);
         for (int i = 0; i < 10_000; i++) {
             testHolderKlass();
             testArray();
-            testGetter();
+            testGetter(i % 2 == 0, i);
         }
         int c2HolderKlass = testHolderKlass();
         int c2HolderArray = testArray();
-        int c2HolderGetter = testGetter();
+        int c2HolderGetter = testGetter(true, 0);
 
         Asserts.assertEQ(intHolderKlass, c2HolderKlass);
         Asserts.assertEQ(intHolderArray, c2HolderArray);
