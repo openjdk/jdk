@@ -37,9 +37,9 @@
 inline Handle::Handle(Thread* thread, oop obj) {
   assert(thread == Thread::current(), "sanity check");
   if (obj == nullptr) {
-    _handle = nullptr;
+    _raw_handle = nullptr;
   } else {
-    _handle = thread->handle_area()->allocate_handle(obj);
+    _raw_handle = thread->handle_area()->allocate_raw_handle(obj);
   }
 }
 
@@ -47,8 +47,8 @@ inline void Handle::replace(oop obj) {
   // Unlike in OopHandle::replace, we shouldn't use a barrier here.
   // OopHandle has its storage in OopStorage, which is walked concurrently and uses barriers.
   // Handle is thread private, and iterated by Thread::oops_do, which is why it shouldn't have any barriers at all.
-  assert(_handle != nullptr, "should not use replace");
-  *_handle = obj;
+  assert(_raw_handle != nullptr, "should not use replace");
+  *_raw_handle = obj;
 }
 
 // Inline constructors for Specific Handles for different oop types
