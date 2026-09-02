@@ -1853,7 +1853,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                 }
             }
             else {
-                opCode(op);
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1902,7 +1902,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                 }
             }
             else {
-                opCode(op);
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));

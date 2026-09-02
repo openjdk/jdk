@@ -2020,7 +2020,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                 m = compare(LT, (byte) 0);
             }
             else {
-                opCode(op);
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2052,7 +2052,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                 m = compare(LT, (byte) 0, m);
             }
             else {
-                opCode(op);
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
