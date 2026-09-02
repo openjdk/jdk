@@ -57,7 +57,7 @@ public class TestPushInlineTypeThruNarrowPhi {
             this.x = x;
         }
     }
-    
+
     static value class MyValue3 {
         @NullRestricted
         MyValue2 v;
@@ -75,7 +75,7 @@ public class TestPushInlineTypeThruNarrowPhi {
     static MyValue3 fieldV4 = new MyValue3(fieldV2);
 
     static int field;
-    
+
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             test1(true);
@@ -144,4 +144,3 @@ public class TestPushInlineTypeThruNarrowPhi {
         return 42;
     }
 }
-
