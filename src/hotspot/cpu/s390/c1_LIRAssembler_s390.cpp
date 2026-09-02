@@ -2532,9 +2532,9 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
 
   if (op->should_profile()) {
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj);
-      type_profile_helper(mdo, md, data, recv, Rtmp1);
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   }
 
   Label *failure_target = failure;
