@@ -102,7 +102,7 @@
  *     default -> throw new JsonValueException("unexpected type");
  * }
  * }
- * While the code above throws an exception if the type is neither {@code JsonString} or
+ * While the code above throws an exception if the type is neither {@code JsonString} nor
  * {@code JsonArray}, there are times when you may prefer a fallback value instead.
  * For example:
  * {@snippet lang = java:
