@@ -26,6 +26,7 @@ package jdk.tools.jlink.internal.plugins;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -34,10 +35,10 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import jdk.tools.jlink.internal.ResourcePoolEntryFactory;
 import jdk.tools.jlink.plugin.PluginException;
@@ -49,15 +50,14 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  * Security properties plugin.
  *
  * Creates the java.security configuration file in the output image and
- * overrides the property values with corresponding properties in the
- * specified file.
+ * adds or overrides properties from the specified file.
  */
 public class SecurityPropertiesPlugin extends AbstractPlugin {
 
     private static final String RES = "/java.base/conf/security/java.security";
 
-    // holds properties and values that will be overridden
-    private Map<String, String> props;
+    // holds additional properties to be added or overridden
+    private Properties extraProps;
 
     public SecurityPropertiesPlugin() {
         super("security-properties");
@@ -80,17 +80,13 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
             throw new AssertionError();
         }
 
-        props = new HashMap<>();
-        Properties overrideProps = new Properties();
+        extraProps = new Properties();
         try (FileInputStream fis = new FileInputStream(propsFile)) {
-            overrideProps.load(fis);
+            extraProps.load(fis);
         } catch (IOException ioe) {
             throw new IllegalArgumentException(ioe);
         }
-        for (String name : overrideProps.stringPropertyNames()) {
-            props.put(name, overrideProps.getProperty(name));
-        }
-        if (props.isEmpty()) {
+        if (extraProps.isEmpty()) {
             throw new IllegalArgumentException("No properties in " + propsFile);
         }
     }
@@ -120,27 +116,37 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
                 BufferedReader br = new BufferedReader(isr)) {
             String line = br.readLine();
             while (line != null) {
-                if (line.isEmpty() || line.charAt(0) == '#'
-                        || line.charAt(0) == '!') {
+                if (isBlankOrComment(line)) {
                     lines.add(line);
                     line = br.readLine();
                     continue;
                 }
-                // assume "=", ":", or whitespace used as delimiter
-                String[] res = line.stripLeading().split("[=:\s]", 2);
-                String propName = res[0];
-                // if propName is empty, then line contained all whitespace
-                if (!propName.isEmpty()) {
-                    String propValue = props.remove(propName.trim());
-                    if (propValue != null) {
-                        // skip multi-line values in original
-                        while (line.endsWith("\\")) {
-                            line = br.readLine();
-                        }
-                        line = propName + "=" + propValue;
-                    }
+                StringBuilder sb = new StringBuilder(line);
+                while (lineContinues(line)) {
+                    // multi-lined value
+                    line = br.readLine();
+                    sb.append("\n");
+                    sb.append(line);
                 }
-                lines.add(line);
+
+                // use Properties.load() to ensure property is parsed correctly
+                ByteArrayInputStream bais = new ByteArrayInputStream(
+                    sb.toString().getBytes(StandardCharsets.ISO_8859_1));
+                Properties jsProps = new Properties();
+                jsProps.load(bais);
+                Set<String> propNames = jsProps.stringPropertyNames();
+                // should only be one property
+                if (propNames.size() != 1) {
+                    throw new PluginException("Parsing error: " + propNames);
+                }
+                String propName = propNames.iterator().next();
+                String propValue = (String) extraProps.remove(propName);
+                if (propValue != null) {
+                    // override value
+                    lines.add(propName + "=" + propValue);
+                } else {
+                    lines.add(sb.toString());
+                }
                 line = br.readLine();
             }
         } catch (Exception e) {
@@ -148,10 +154,10 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
         }
 
         // extract and remove include property if it exists
-        String includeValue = props.remove("include");
+        String includeValue = (String) extraProps.remove("include");
 
         // add user-defined properties at end
-        props.forEach((k, v) -> lines.add(k + "=" + v));
+        extraProps.forEach((k, v) -> lines.add(k + "=" + v));
 
         // add include property at end if it has been specified and use
         // space character as delimiter
@@ -173,5 +179,42 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
             throw new PluginException(e);
         }
         return baos.toByteArray();
+    }
+
+    /**
+     * Returns true if line is empty, or only contains whitespace, or has an
+     * ASCII '#' or '!' as its first non-whitespace character. Whitespace
+     * characters are as specified by java.util.Properties.
+     */
+    private static boolean isBlankOrComment(String line) {
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '#' || c == '!') {
+                return true;
+            } else if (c == ' ' || c == '\t' || c == '\f') {
+                continue;
+            } else if (c == '\n' || c == '\r') {
+                return true;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Returns true if line ends in an odd number of contiguous backslashes.
+     */
+    private static boolean lineContinues(String line) {
+        int backslashes = 0;
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c == '\\') {
+                backslashes++;
+            } else {
+                backslashes = 0;
+            }
+        }
+        return (backslashes % 2 == 0) ? false : true;
     }
 }
