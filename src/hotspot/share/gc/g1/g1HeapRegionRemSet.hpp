@@ -88,11 +88,11 @@ public:
   }
 
   bool is_empty() const {
-    return (code_roots_list_length() == 0) && card_set_is_empty();
+    return (code_roots_length() == 0) && card_set_is_empty();
   }
 
   bool occupancy_less_or_equal_than(size_t occ) const {
-    return (code_roots_list_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
+    return (code_roots_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
   }
 
   // Iterate the cards in this remembered set for merging them into the card table.
@@ -177,13 +177,13 @@ public:
   void clean_code_roots(G1HeapRegion* hr);
 
   // Returns the number of elements in _code_roots
-  size_t code_roots_list_length() const {
+  size_t code_roots_length() const {
     return _code_roots.length();
   }
 
   // Returns true if the code roots contains the given
   // nmethod.
-  bool code_roots_list_contains(nmethod* nm) {
+  bool code_roots_contains(nmethod* nm) {
     return _code_roots.contains(nm);
   }
 
