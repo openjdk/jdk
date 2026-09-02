@@ -1815,8 +1815,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \

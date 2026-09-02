@@ -1184,7 +1184,7 @@ double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+  size_t code_root_length = hr->rem_set()->code_roots_length();
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);

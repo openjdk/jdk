@@ -938,8 +938,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     __ ldr(Rtemp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-    assert(markWord::unlocked_value == 1, "adjust this code");
-    __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
+    assert(markWord::lock_neutral_value == 1, "adjust this code");
+    __ tbz(Rtemp, exact_log2(markWord::lock_neutral_value), slow_case);
 
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);
@@ -1263,9 +1263,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ c2bool(R0);
   }
 
-  // Do a safepoint check
+  // Perform thread state transition
   Label call_safepoint_runtime, return_to_java;
-  __ mov(Rtemp, _thread_in_vm);
+  __ mov(Rtemp, _thread_in_Java);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // make sure the store is observed before reading the SafepointSynchronize state and further mem refs
@@ -1273,6 +1273,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
   }
 
+  // Do a safepoint check
   __ safepoint_poll(R2, call_safepoint_runtime);
   __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
   __ cmp(R3, 0);
@@ -1280,12 +1281,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ bind(return_to_java);
 
-  // Perform thread state transition and reguard stack yellow pages if needed
+  // Reguard stack yellow pages if needed
   Label reguard, reguard_done;
-  __ mov(Rtemp, _thread_in_Java);
   __ ldr_s32(R2, Address(Rthread, JavaThread::stack_guard_state_offset()));
-  __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
-
   __ cmp(R2, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ b(reguard, eq);
   __ bind(reguard_done);
@@ -1336,7 +1334,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(call_safepoint_runtime);
   push_result_registers(masm, ret_type);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
   pop_result_registers(masm, ret_type);
   __ b(return_to_java);
 

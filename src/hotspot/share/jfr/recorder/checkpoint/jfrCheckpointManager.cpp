@@ -38,7 +38,6 @@
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
 #include "jfr/recorder/storage/jfrReferenceCountedStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageUtils.inline.hpp"
-#include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
@@ -507,7 +506,6 @@ void JfrCheckpointManager::shift_epoch() {
   DEBUG_ONLY(const u1 current_epoch = JfrTraceIdEpoch::current();)
   JfrTraceIdEpoch::shift_epoch();
   assert(current_epoch != JfrTraceIdEpoch::current(), "invariant");
-  JfrStringPool::on_epoch_shift();
 }
 
 size_t JfrCheckpointManager::write() {

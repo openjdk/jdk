@@ -1817,9 +1817,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label safepoint_in_progress, safepoint_in_progress_done;
 
-  __ mv(t0, _thread_in_vm);
-
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+  // change thread state
+  __ mv(t1, _thread_in_Java);
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1833,12 +1834,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bnez(t0, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);
   }
-
-  // change thread state
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
@@ -2040,7 +2035,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);

@@ -354,7 +354,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
                                               // always pointing to the end of the
                                               // last claimed region
 
-  uint                    _worker_id_offset;
   uint                    _max_num_tasks;    // Maximum number of marking tasks
   uint                    _num_active_tasks; // Number of tasks currently active
   G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
@@ -566,8 +565,6 @@ public:
   inline void update_top_at_rebuild_start(G1HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
-
-  uint worker_id_offset() const { return _worker_id_offset; }
 
   // Fully allocates and initializes data structures for the concurrent cycle.
   // Methods that use concurrent cycle state such as the concurrent mark threads,
