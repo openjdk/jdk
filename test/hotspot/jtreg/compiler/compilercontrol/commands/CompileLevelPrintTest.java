@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8313713 8386284
+ * @bug 8313713
  * @summary Test -XX:CompileCommand=exclude and compileonly with different compilation levels,
  *          monitoring compilation events in VM -XX:+PrintCompilation output
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
