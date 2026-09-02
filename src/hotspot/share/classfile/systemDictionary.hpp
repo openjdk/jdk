@@ -344,10 +344,6 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
-  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
-                                             const InstanceKlass* k,
-                                             const ClassLoaderData* init_cld);)
-
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -362,6 +358,10 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
+
+  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
+                                             const InstanceKlass* k,
+                                             const ClassLoaderData* init_cld);)
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

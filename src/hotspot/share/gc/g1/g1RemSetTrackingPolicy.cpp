@@ -102,11 +102,17 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
+      G1CSetCandidateGroup* group = r->rem_set()->cset_group();
+
+      assert(group != nullptr, "humongous start must have a cset group");
+      assert(group->length() == 1, "humongous group must have only one region");
+
+      group->clear_card_set();
       g1h->humongous_obj_regions_iterate(r,
                                          [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
-                                           r->rem_set()->clear(true /* only_cardset */);
+                                           r->rem_set()->set_state_untracked();
                                          });
     }
 

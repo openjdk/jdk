@@ -1195,6 +1195,9 @@ bool PhaseIterGVN::deep_revisit() {
 }
 
 void PhaseIterGVN::optimize(bool deep) {
+  // A correctly handled failure returns at the failing() call that raised it, so
+  // the compilation must never get here failed, with the graph already flushed.
+  assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
@@ -2531,16 +2534,6 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     Node* p = use->as_CallDynamicJava()->proj_out_or_null(TypeFunc::Control);
     if (p != nullptr) {
       add_users_to_worklist0(p, worklist);
-    }
-  }
-
-  // AndLNode::Ideal folds GraphKit::mark_word_test patterns. Give it a chance to run.
-  if (n->is_Load() && use->is_Phi()) {
-    for (DUIterator_Fast imax, i = use->fast_outs(imax); i < imax; i++) {
-      Node* u = use->fast_out(i);
-      if (u->Opcode() == Op_AndL) {
-        worklist.push(u);
-      }
     }
   }
 

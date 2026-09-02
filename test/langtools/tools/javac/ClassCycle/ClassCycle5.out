@@ -1,0 +1,3 @@
+ClassCycle5.java:9:61: compiler.err.cant.resolve.location: kindname.class, NoSuchType, , , (compiler.misc.location: kindname.class, ClassCycle5, null)
+ClassCycle5.java:9:1: compiler.err.cyclic.inheritance: ClassCycle5
+2 errors

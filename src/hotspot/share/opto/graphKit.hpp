@@ -844,7 +844,7 @@ class GraphKit : public Phase {
                       bool maybe_larval = false);
 
   // Inline types
-  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool check_lock = true);
+  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq);
   Node* inline_type_test(Node* obj, bool is_inline = true);
   Node* flat_array_test(Node* array_or_klass, bool flat = true);
   Node* null_free_array_test(Node* array, bool null_free = true);
