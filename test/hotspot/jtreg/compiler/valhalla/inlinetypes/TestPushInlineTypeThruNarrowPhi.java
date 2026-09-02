@@ -26,8 +26,15 @@
  * @bug 8389623
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline ${test.main.class}
- * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline XX:-UseFieldFlattening ${test.main.class}
+ * @run main/othervm -XX:-BackgroundCompilation
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline ${test.main.class}
+ * @run main/othervm -XX:-BackgroundCompilation
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline
+ *                   -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:-UseFieldFlattening ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;
@@ -66,8 +73,6 @@ public class TestPushInlineTypeThruNarrowPhi {
     static MyValue3 fieldV3 = new MyValue3(fieldV2);
     @NullRestricted
     static MyValue3 fieldV4 = new MyValue3(fieldV2);
-    @NullRestricted
-    static final MyValue3 fieldV5 = new MyValue3(fieldV2);
 
     static int field;
     
@@ -97,22 +102,6 @@ public class TestPushInlineTypeThruNarrowPhi {
     static void lateInlined1() {
         fieldV1 = new MyValue1(42);
     }
-
-    static MyValue1 test2(boolean flag1) {
-        MyValue1 res = null;
-        A a = fieldA;
-        for (int i = 1; i < 4; i *= 2) {
-            if (flag1) {
-                a = lateInlined2(a);
-                res = fieldV1;
-            } else {
-                a = lateInlined2(a);
-                res = fieldV1;
-            }
-        }
-        return res;
-    }
-
 
     static MyValue3 test2(boolean flag1, MyValue3 v3) {
         int flag2 = 42;

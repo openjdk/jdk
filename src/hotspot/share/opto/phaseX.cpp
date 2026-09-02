@@ -2930,6 +2930,15 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     const int add_op = (use_op == Op_SubI) ? Op_AddI : Op_AddL;
     add_users_to_worklist_if(worklist, use, [=](Node* u) { return u->Opcode() == add_op; });
   }
+  if (use->is_Phi() || use->is_EncodeP() || use->is_DecodeN() || use->is_ConstraintCast()) {
+    auto is_boundary = [](Node* n){ return !n->is_EncodeP() && !n->is_DecodeN() && !n->is_ConstraintCast(); };
+    auto push_and_to_worklist = [&worklist](Node* n){
+      if (n->is_Phi()) {
+        worklist.push(n);
+      }
+    };
+    use->visit_uses(push_and_to_worklist, is_boundary);
+  }
 }
 
 /**
