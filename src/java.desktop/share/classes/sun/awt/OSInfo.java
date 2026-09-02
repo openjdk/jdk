@@ -50,7 +50,6 @@ public class OSInfo {
        It allows compare objects by "==" instead of "equals".
      */
     public static final WindowsVersion WINDOWS_UNKNOWN = new WindowsVersion(-1, -1);
-    public static final WindowsVersion WINDOWS_7 = new WindowsVersion(6, 1);
 
     private static final String OS_VERSION = "os.version";
 
@@ -58,11 +57,6 @@ public class OSInfo {
 
     // Cache the OSType for getOSType()
     private static final OSType CURRENT_OSTYPE = getOSTypeImpl();
-
-
-    static {
-        windowsVersionMap.put(WINDOWS_7.toString(), WINDOWS_7);
-    }
 
     private OSInfo() {
         // Don't allow to create instances
