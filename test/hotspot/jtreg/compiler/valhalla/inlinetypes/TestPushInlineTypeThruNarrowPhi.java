@@ -25,10 +25,14 @@
  * @test
  * @bug 8389623
  * @enablePreview
- * @run main/othervm -XX:-BackgroundCompilation -XX:+IgnoreUnrecognizedVMOptions -XX:+AlwaysIncrementalInline ${test.main.class}
+ * @modules java.base/jdk.internal.vm.annotation
+ * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline ${test.main.class}
+ * @run main/othervm -XX:-BackgroundCompilation -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline XX:-UseFieldFlattening ${test.main.class}
  */
 
 package compiler.valhalla.inlinetypes;
+
+import jdk.internal.vm.annotation.NullRestricted;
 
 public class TestPushInlineTypeThruNarrowPhi {
     static value class MyValue1 {
@@ -39,12 +43,42 @@ public class TestPushInlineTypeThruNarrowPhi {
         }
     }
 
-    static MyValue1 fieldV1 = new MyValue1(42);
+    static value class MyValue2 {
+        long x;
 
+        MyValue2(long x) {
+            this.x = x;
+        }
+    }
+    
+    static value class MyValue3 {
+        @NullRestricted
+        MyValue2 v;
+
+        MyValue3(MyValue2 v) {
+            this.v = v;
+        }
+    }
+
+    static MyValue1 fieldV1 = new MyValue1(42);
+    static MyValue2 fieldV2 = new MyValue2(42);
+    @NullRestricted
+    static MyValue3 fieldV3 = new MyValue3(fieldV2);
+    @NullRestricted
+    static MyValue3 fieldV4 = new MyValue3(fieldV2);
+    @NullRestricted
+    static final MyValue3 fieldV5 = new MyValue3(fieldV2);
+
+    static int field;
+    
     public static void main(String[] args) {
         for (int i = 0; i < 20_000; i++) {
             test1(true);
             test1(false);
+            test2(true, fieldV3);
+            test2(false, fieldV3);
+            inlined1(true, 0, fieldV3);
+            inlined1(true, 42, fieldV3);
         }
     }
 
@@ -63,4 +97,62 @@ public class TestPushInlineTypeThruNarrowPhi {
     static void lateInlined1() {
         fieldV1 = new MyValue1(42);
     }
+
+    static MyValue1 test2(boolean flag1) {
+        MyValue1 res = null;
+        A a = fieldA;
+        for (int i = 1; i < 4; i *= 2) {
+            if (flag1) {
+                a = lateInlined2(a);
+                res = fieldV1;
+            } else {
+                a = lateInlined2(a);
+                res = fieldV1;
+            }
+        }
+        return res;
+    }
+
+
+    static MyValue3 test2(boolean flag1, MyValue3 v3) {
+        int flag2 = 42;
+        MyValue3 v = new MyValue3(new MyValue2(42));
+        for (int i = 1; i < 4; i *= 2) {
+            v = inlined1(flag1, flag2, v3);
+            flag2 = lateInlined3();
+        }
+        return v;
+    }
+
+    static MyValue3 inlined1(boolean flag1, int flag2, MyValue3 v3) {
+        MyValue3 v;
+        lateInlined2(flag2, v3, flag1);
+        if (flag1) {
+            v = fieldV3;
+        } else {
+            v = fieldV4;
+        }
+        return v;
+    }
+
+    static void lateInlined2(int flag2, MyValue3 v3, boolean flag3) {
+        MyValue3 v;
+        if (flag2 == 42) {
+            if (flag3) {
+                v = new MyValue3(new MyValue2(42));
+            } else {
+                v = new MyValue3(new MyValue2(42));
+            }
+            field = 42;
+        } else {
+            v = fieldV4;
+        }
+        fieldV3 = v;
+        fieldV4 = new MyValue3(new MyValue2(42));
+    }
+
+    static int lateInlined3() {
+        return 42;
+    }
 }
+
