@@ -166,6 +166,7 @@ class GCTracer;
 class Klass;
 class nmethod;
 enum class VerifyOption : uint;
+class MemoryPool;
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif

@@ -27,6 +27,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocator.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"

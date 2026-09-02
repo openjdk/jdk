@@ -52,7 +52,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-
 class ShenandoahReferenceProcessor;
 
 template <ShenandoahGenerationType GENERATION>

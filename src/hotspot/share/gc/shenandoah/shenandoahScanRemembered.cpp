@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"

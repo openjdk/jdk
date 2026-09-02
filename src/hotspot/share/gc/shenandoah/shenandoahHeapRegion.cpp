@@ -25,9 +25,12 @@
  */
 
 #include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -43,16 +46,21 @@
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "utilities/vmassert_reinstall.hpp"
 
 #include <inttypes.h>
 #include <string.h>

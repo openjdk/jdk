@@ -95,8 +95,8 @@ public:
   void synchronize_pin_count(ShenandoahHeapRegion* r);
 };
 
-class ShenandoahMarkingContext;
 class ShenandoahGeneration;
+class ShenandoahMarkingContext;
 
 // Synchronizes region pinned status, sets update watermark and adjusts live data tally for regions.
 // Live data tally is only adjusted for regions in the given generation.

@@ -67,7 +67,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 
-
 class BarrierSetAssembler;
 class StackWatermark;
 #ifdef COMPILER1

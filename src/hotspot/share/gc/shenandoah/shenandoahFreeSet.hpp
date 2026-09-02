@@ -26,7 +26,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -44,6 +43,7 @@ class LogStream;
 class outputStream;
 class ShenandoahAllocRequest;
 class ShenandoahFreeSet;
+class ShenandoahHeap;
 
 typedef ShenandoahLock                           ShenandoahRebuildLock;
 typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;

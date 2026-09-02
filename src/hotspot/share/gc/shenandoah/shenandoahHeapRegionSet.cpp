@@ -33,6 +33,7 @@
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 

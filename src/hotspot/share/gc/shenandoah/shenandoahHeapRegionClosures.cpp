@@ -24,6 +24,7 @@
  */
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "utilities/globalDefinitions.hpp"

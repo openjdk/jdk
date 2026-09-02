@@ -33,7 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-
 class MarkBitMap;
 class ShenandoahGeneration;
 class ShenandoahHeap;
