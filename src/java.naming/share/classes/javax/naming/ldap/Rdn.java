@@ -166,6 +166,10 @@ public class Rdn implements Serializable, Comparable<Object> {
     public Rdn(String rdnString) throws InvalidNameException {
         entries = new ArrayList<>(DEFAULT_SIZE);
         (new Rfc2253Parser(rdnString)).parseRdn(this);
+        if (entries.isEmpty()) {
+            throw new InvalidNameException(
+                "RDN cannot be empty, got: \"" + rdnString + "\"");
+        }
     }
 
     /**
