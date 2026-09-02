@@ -2456,7 +2456,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   default       : ShouldNotReachHere();
   }
 
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_vm);
+  // change thread state
+  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -2488,16 +2489,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ mov(r12, rsp); // remember sp
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ mov(rsp, r12); // restore sp
     __ reinit_heapbase();
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
     __ bind(Continue);
   }
-
-  // change thread state
-  __ movl(Address(r15_thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
