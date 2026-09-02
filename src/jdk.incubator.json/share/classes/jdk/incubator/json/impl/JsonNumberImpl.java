@@ -32,7 +32,22 @@ import java.util.OptionalLong;
 import jdk.incubator.json.JsonNumber;
 
 /**
- * JsonNumber implementation class
+ * JsonNumber implementation class. Instances of this class are immutable.
+ *
+ * <p>A JSON number is represented by the range {@code [startOffset, endOffset)}
+ * in {@code doc}. For a parsed instance, {@code doc} is the backing input JSON text.
+ * For a factory-created instance, it is a private character array backing the
+ * JSON number. If the JSON number contains a decimal point and/or an exponent,
+ * their offsets are stored in {@code decimalOffset} and/or {@code exponentOffset}.
+ * {@code -1} offset indicates it is absent.
+ *
+ * <p>{@code numString} lazily instantiates the JSON representation returned by
+ * {@code toString()}. It preserves the original representation for a parsed value.
+ *
+ * <p>{@code numInteger}, {@code numLong}, and {@code numDouble} lazily instantiate
+ * the {@code OptionalInt}, {@code OptionalLong}, and {@code OptionalDouble},
+ * used by the conversion methods {@code asInt()}, {@code asLong()},
+ * and {@code asDouble()}, respectively.
  */
 public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
 
@@ -121,8 +136,10 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                 int strippedZeros = 0;
 
                 // Remove trailing zeros from the significand and compensate in the power.
-                // We do this to avoid possible overflow when we parse the coefficient as a long.
-                // E.g. 9223372036854775807.000000 or 922337203685477580700.0e-2
+                // This helps us avoid overflow for a value that fits in a long but has trailing zeros.
+                // For example, the JSON number 9223372036854775807.000000 that fits in a long causes
+                // overflow when parsing its digits but normalizing the zeros lets us parse the
+                // sig as 9223372036854775807.
                 while (sigEnd > startOffset) {
                     var c = doc[sigEnd - 1];
                     if (c == '0') {
@@ -136,17 +153,21 @@ public final class JsonNumberImpl implements JsonNumber, JsonValueSupport {
                 }
 
                 // A zero significand represents zero regardless of exponent size.
-                // For non-zero significands, an exponent outside int range cannot be
-                // offset by fraction length or trailing zeros within a Java char[] input.
-                // This must be checked before calculating exp.
                 if (sigEnd == startOffset || (doc[startOffset] == '-' && sigEnd == startOffset + 1)) {
                     return OptionalLong.of(0L);
                 }
+
+                // If not zero, we will derive the final value from
+                // -> sig * 10^(exp - fracLen + strippedZeros)
+                // -> sig * 10^power
+                // -> sig * scale
                 int exp = exponentOffset == -1 ? 0 : Integer.parseInt(new String(doc,
                         exponentOffset + 1, endOffset - exponentOffset - 1));
                 int power = Math.addExact(Math.subtractExact(exp, fracLen), strippedZeros);
                 long sig = decimalOffset == -1 || sigEnd <= decimalOffset
+                        // Decimal point does not interfere with parsing sig
                         ? Long.parseLong(new String(doc, startOffset, sigEnd - startOffset))
+                        // Parse both chunks to the left and right of the decimal point
                         : Long.parseLong(new String(doc, startOffset, decimalOffset - startOffset) +
                                 new String(doc, decimalOffset + 1, sigEnd - decimalOffset - 1));
                 if (power >= 0) {

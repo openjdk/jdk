@@ -28,7 +28,21 @@ package jdk.incubator.json.impl;
 import jdk.incubator.json.JsonString;
 
 /**
- * JsonString implementation class
+ * JsonString implementation class. Instances of this class are immutable.
+ *
+ * <p>A JSON string is represented by the range {@code [startOffset, endOffset)}
+ * in {@code doc}. The range always includes the opening and closing quotation
+ * marks. For a parsed instance, {@code doc} is the backing input JSON text. For a
+ * factory-created instance, it is a private character array containing the generated
+ * JSON string.
+ *
+ * <p>{@code jsonStr} lazily instantiates the quoted and escaped JSON
+ * representation returned by {@code toString()}. It preserves the original
+ * representation for a parsed value. {@code value} lazily instantiates the
+ * unquoted and unescaped Java string returned by {@code asString()}.
+ *
+ * <p>{@code hasEscape} indicates whether the represented JSON string contains
+ * a JSON escape sequence.
  */
 public final class JsonStringImpl implements JsonString, JsonValueSupport {
 

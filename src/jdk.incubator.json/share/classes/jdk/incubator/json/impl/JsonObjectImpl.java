@@ -35,11 +35,20 @@ import jdk.incubator.json.JsonObject;
 import jdk.incubator.json.JsonValue;
 
 /**
- * JsonObject implementation class
+ * JsonObject implementation class. Instances of this class are immutable.
+ *
+ * <p>For a parsed instance, {@code doc} is the backing input JSON
+ * text and {@code offset} indicates the starting offset in {@code doc}.
+ * For a factory-created instance, {@code doc} and {@code offset} are
+ * {@code null} and {@code -1}, respectively.
+ *
+ * <p>{@code theMembers} is a {@code SequencedMap} that preserves member
+ * order. For a parsed instance, the member order follows the input JSON text.
+ * For a factory-created instance, it retains the iteration order of the given
+ * {@code Map}. {@code asMap()} returns an unmodifiable view of this map.
  */
 public final class JsonObjectImpl implements JsonObject, JsonValueSupport {
 
-    // Preserves member order
     private final SequencedMap<String, JsonValue> theMembers;
     private final int offset;
     private final char[] doc;
