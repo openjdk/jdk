@@ -3076,20 +3076,42 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-// FlatArrayCheckNode (array1 array2 ...) is expanded into:
+// FlatArrayCheckNode inputs must be homogeneous: either all array inputs
+// (array1 array2 ...) or all klass inputs (klass1 klass2 ...).
+//
+// For array inputs whose users are all If nodes, the check is expanded using
+// mark words:
 //
 // long mark = array1.mark | array2.mark | ...;
 // long locked_bit = markWord::unlocked_value & array1.mark & array2.mark & ...;
 // if (locked_bit == 0) {
-//   // One array is locked, load prototype header from the klass
-//   mark = array1.klass.proto | array2.klass.proto | ...
+//   // One array is locked, load its prototype header from the klass
+//   mark = array1.klass.proto | array2.klass.proto | ...;
 // }
 // if ((mark & markWord::flat_array_bit_in_place) == 0) {
-//    ...
+//   ...
+// }
+//
+// For klass inputs, and for array inputs with a non-If user, the check is
+// expanded using the klass layout helpers. For array inputs, the klasses are
+// loaded first:
+//
+// int layout = klass1.layout_helper | klass2.layout_helper | ...;
+// if ((layout & Klass::_lh_array_tag_flat_value_bit_inplace) == 0) {
+//   ...
 // }
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
-  bool array_inputs = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
-  if (array_inputs) {
+  bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
+  Node* bol = check->unique_out();
+  for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
+    if (!bol->fast_out(i)->is_If()) {
+      // No control input, fall back to layout helper check
+      use_mark_word = false;
+      break;
+    }
+  }
+
+  if (use_mark_word) {
     Node* mark = MakeConX(0);
     Node* locked_bit = MakeConX(markWord::unlocked_value);
     Node* mem = check->in(FlatArrayCheckNode::Memory);
@@ -3108,10 +3130,9 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     Node* is_unlocked = _igvn.transform(new BoolNode(cmp, BoolTest::ne));
 
     // BoolNode might be shared, replace each if user
-    Node* old_bol = check->unique_out();
-    assert(old_bol->is_Bool() && old_bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      IfNode* old_iff = old_bol->last_out(i)->as_If();
+    assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
+    for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+      IfNode* old_iff = bol->last_out(i)->as_If();
       Node* ctrl = old_iff->in(0);
       RegionNode* region = new RegionNode(3);
       Node* mark_phi = new PhiNode(region, TypeX_X);
@@ -3170,18 +3191,16 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     }
     Node* masked = transform_later(new AndINode(lhs, intcon(Klass::_lh_array_tag_flat_value_bit_inplace)));
     Node* cmp = transform_later(new CmpINode(masked, intcon(0)));
-    Node* bol = transform_later(new BoolNode(cmp, BoolTest::eq));
+    Node* new_bol = transform_later(new BoolNode(cmp, BoolTest::eq));
     Node* m2b = transform_later(new Conv2BNode(masked));
     // The matcher expects the input to If/CMove nodes to be produced by a Bool(CmpI..)
     // pattern, but the input to other potential users (e.g. Phi) to be some
     // other pattern (e.g. a Conv2B node, possibly idealized as a CMoveI).
-    Node* old_bol = check->unique_out();
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      Node* user = old_bol->last_out(i);
+    for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+      Node* user = bol->last_out(i);
       for (uint j = 0; j < user->req(); j++) {
-        Node* n = user->in(j);
-        if (n == old_bol) {
-          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? bol : m2b);
+        if (user->in(j) == bol) {
+          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? new_bol : m2b);
         }
       }
     }
