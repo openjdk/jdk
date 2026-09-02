@@ -81,23 +81,13 @@ public:
   bool is_stop();
 
   bool is_udf(uint16_t imm) {
-    return (Instruction_aarch64::extract(uint_at(0), 31, 16) == 0
-            && Instruction_aarch64::extract(uint_at(0), 15, 0) == imm);
-  }
-  static uint32_t make_udf(uint16_t imm) {
-    uint32_t insn = imm;
-#ifdef ASSERT
-    NativeInstruction* udf = (NativeInstruction*)&insn;
-    assert(udf->is_udf(imm), "incorrect UDF");
-#endif
-    return insn;
+    uint32_t insn = uint_at(0);
+    return Instruction_aarch64::extract(insn, 31, 16) == 0 &&
+      Instruction_aarch64::extract(insn, 15, 0) == imm;
   }
 
-  enum : uint16_t {
-    udf_marker_stop  = 0x8001,
-    udf_marker_deopt = 0x8002,
-  };
-enum { udf_stop, udf_deopt };
+  enum : uint16_t { udf_stop = 1, udf_deopt };
+
 protected:
   address addr_at(int offset) const { return address(this) + offset; }
 
@@ -632,7 +622,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    return nativeInstruction_at(instr)->is_udf(udf_marker_deopt);
+    return nativeInstruction_at(instr)->is_udf(udf_deopt);
   }
 
   // MT-safe patching

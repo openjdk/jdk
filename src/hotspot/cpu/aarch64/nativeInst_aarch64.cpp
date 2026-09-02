@@ -347,7 +347,7 @@ bool NativeInstruction::is_movk() {
 }
 
 bool NativeInstruction::is_stop() {
-  return is_udf(udf_marker_stop);
+  return is_udf(udf_stop);
 }
 
 //-------------------------------------------------------------------
@@ -394,8 +394,7 @@ void NativeDeoptInstruction::verify() {
 
 // Inserts an undefined instruction at a given pc
 void NativeDeoptInstruction::insert(address code_pos) {
-  uint32_t insn = make_udf(udf_marker_deopt);
-  uint32_t *pos = (uint32_t *) code_pos;
-  *pos = insn;
+  *(uint32_t*)code_pos = udf_deopt;
+  assert(((NativeInstruction*)code_pos)->is_udf(udf_deopt), "incorrect UDF");
   ICache::invalidate_range(code_pos, 4);
 }

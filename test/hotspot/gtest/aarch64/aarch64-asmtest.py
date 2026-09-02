@@ -1606,7 +1606,7 @@ generate (ExtractOp, ["extrw", "extr"])
 generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "VC",
                         "HI", "LS", "GE", "LT", "GT", "LE", "AL", "NV" ])
 
-generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
+generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", "udf", # "dcps1",  "dcps2",  "dcps3"
                ])
 
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
