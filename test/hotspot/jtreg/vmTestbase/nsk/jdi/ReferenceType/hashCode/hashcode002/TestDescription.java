@@ -62,7 +62,6 @@
  *
  * @run driver
  *      nsk.jdi.ReferenceType.hashCode.hashcode002
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java

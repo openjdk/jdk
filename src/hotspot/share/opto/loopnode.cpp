@@ -706,9 +706,14 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
 }
 
 void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt) {
+  if (!UseParsePredicates) {
+    return;
+  }
+
   if (ShortRunningLongLoop) {
     add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
   }
+
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
     if (UseProfiledLoopPredicate) {
@@ -720,7 +725,9 @@ void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* in
     add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
   }
 
-  add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  if (UseLoopLimitCheckPredicate) {
+    add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  }
 }
 
 // If the loop has the shape of a counted loop but with a long
@@ -2412,7 +2419,7 @@ bool CountedLoopConverter::is_counted_loop() {
 #endif
 
 #ifndef PRODUCT
-  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+  if (StressCountedLoop && (_phase->C->stress().random() % 2 == 0)) {
     return false;
   }
 #endif
@@ -4039,7 +4046,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // disappear it.  In JavaGrande I have a case where this useless
       // Phi is the loop limit and prevents recognizing a CountedLoop
       // which in turn prevents removing an empty loop.
-      Node *id_old_phi = old_phi->Identity(&igvn);
+      Node* id_old_phi = igvn.apply_identity(old_phi);
       if( id_old_phi != old_phi ) { // Found a simple identity?
         // Note that I cannot call 'replace_node' here, because
         // that will yank the edge from old_phi to the Region and

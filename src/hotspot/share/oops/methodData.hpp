@@ -2701,7 +2701,7 @@ public:
 
   // Deallocation support
   void deallocate_contents(ClassLoaderData* loader_data);
-  void release_C_heap_structures() {}
+  void release_C_heap_structures();
 
   // GC support
   void set_size(int object_size_in_bytes) { _size = object_size_in_bytes; }
@@ -2724,6 +2724,8 @@ public:
   static bool profile_arguments_jsr292_only();
   static bool profile_return();
   static bool profile_parameters();
+  static bool profile_array_accesses();
+  static bool profile_acmp();
   static bool profile_return_jsr292_only();
 
   void clean_method_data(bool always_clean);

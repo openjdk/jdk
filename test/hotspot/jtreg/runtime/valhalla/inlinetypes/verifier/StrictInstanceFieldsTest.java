@@ -31,7 +31,9 @@
  *          BadChild1.jasm
  *          StrictFieldNotSubset.jasm
  *          ControlFlowChildBad.jasm
+ *          ControlFlowAlias.jasm
  *          TryCatchChildBad.jasm
+ *          UninitThisOnStack.jasm
  *          NestedEarlyLarval.jcod
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
@@ -44,6 +46,7 @@
  * @run main/othervm -Xlog:verification StrictInstanceFieldsTest
  */
 
+import java.util.Arrays;
 import java.lang.reflect.Field;
 import jdk.test.lib.helpers.StrictInit;
 
@@ -51,7 +54,15 @@ public class StrictInstanceFieldsTest {
 
     public static <T> void negativeTest(Class<T> clazz, String msg, boolean... args) throws Exception {
         try {
-            T child = clazz.getDeclaredConstructor().newInstance(args);
+            Class<?>[] parameters = new Class<?>[args.length];
+            Object[] ctorArgs = new Object[args.length];
+            Arrays.fill(parameters, boolean.class);
+
+            for (int i = 0; i < args.length; i++) {
+                ctorArgs[i] = new Boolean(args[i]);
+            }
+
+            T child = clazz.getDeclaredConstructor(parameters).newInstance(ctorArgs);
             System.out.println(child);
             throw new RuntimeException("Should fail verification");
         } catch (java.lang.VerifyError e) {
@@ -92,9 +103,12 @@ public class StrictInstanceFieldsTest {
         NestedConstructorChild c5 = new NestedConstructorChild();
         System.out.println(c5);
 
-        // Final stirct fields defined in constructor
+        // Final strict fields defined in constructor
         FinalChild fc = new FinalChild();
         System.out.println(fc);
+
+        UninitThisOnStack c6 = new UninitThisOnStack();
+        System.out.println(c6);
 
         // --------------
         // NEGATIVE TESTS
@@ -111,6 +125,9 @@ public class StrictInstanceFieldsTest {
 
         // Constructor with control flow but field is not initialized
         negativeTest(ControlFlowChildBad.class, "Inconsistent stackmap frames at branch target", true, false);
+
+        // Constructor with control flow but field is not initialized and stackmap is malformed
+        negativeTest(ControlFlowAlias.class, "All strict final fields must be initialized before super()", false);
 
         // Constructor with try-catch but field is not initialized
         negativeTest(TryCatchChildBad.class, "Inconsistent stackmap frames at branch target");

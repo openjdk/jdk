@@ -473,7 +473,7 @@ class methodHandle;
                                                                                                                         \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
-   do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \
+   do_name(vectorizedMismatch_name, "vectorizedMismatchInternal")                                                       \
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \

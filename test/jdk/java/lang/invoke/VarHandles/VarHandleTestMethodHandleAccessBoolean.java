@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
     static final boolean static_final_v = true;
 
-    static boolean static_v;
+    static boolean static_v = true;
 
-    final boolean final_v = true;
+    final boolean final_v;
 
     boolean v;
 
@@ -61,6 +61,12 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessBoolean() {
+        final_v = true;
+        v = true;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
