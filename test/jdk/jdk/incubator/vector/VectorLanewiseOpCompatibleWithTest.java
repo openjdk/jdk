@@ -93,12 +93,8 @@ public class VectorLanewiseOpCompatibleWithTest {
         return operatorProvider(compatible,
                                 op -> op instanceof VectorOperators.Unary ||
                                       op instanceof VectorOperators.Binary ||
-                                      op instanceof VectorOperators.Ternary);
-    }
-
-    private static Object[][] testOperatorProvider(boolean compatible) {
-        return operatorProvider(compatible,
-                                op -> op instanceof VectorOperators.Test);
+                                      op instanceof VectorOperators.Ternary ||
+                                      op instanceof VectorOperators.Test);
     }
 
     @DataProvider
@@ -109,16 +105,6 @@ public class VectorLanewiseOpCompatibleWithTest {
     @DataProvider
     public Object[][] supportedOperatorProvider() {
         return operatorProvider(true);
-    }
-
-    @DataProvider
-    public Object[][] unsupportedTestOperatorProvider() {
-        return testOperatorProvider(false);
-    }
-
-    @DataProvider
-    public Object[][] supportedTestOperatorProvider() {
-        return testOperatorProvider(true);
     }
 
     @Test(dataProvider = "unsupportedOperatorProvider")
@@ -150,6 +136,12 @@ public class VectorLanewiseOpCompatibleWithTest {
                 Assert.assertThrows(UnsupportedOperationException.class,
                         () -> vector.lanewise(ternary, vector, vector, mask));
             }
+            case VectorOperators.Test test -> {
+                Assert.assertThrows(UnsupportedOperationException.class,
+                        () -> vector.test(test));
+                Assert.assertThrows(UnsupportedOperationException.class,
+                        () -> vector.test(test, mask));
+            }
             default -> throw new AssertionError("Not a lanewise operator: " + op);
         }
     }
@@ -175,43 +167,11 @@ public class VectorLanewiseOpCompatibleWithTest {
                 vector.lanewise(ternary, vector, vector);
                 vector.lanewise(ternary, vector, vector, mask);
             }
+            case VectorOperators.Test test -> {
+                vector.test(test);
+                vector.test(test, mask);
+            }
             default -> throw new AssertionError("Not a lanewise operator: " + op);
         }
-    }
-
-    @Test(dataProvider = "unsupportedTestOperatorProvider")
-    public <E> void testUnsupportedTestOperator(VectorSpecies<E> species,
-                                                VectorOperators.Test op) {
-        Vector<E> vector = species.zero();
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.test(op));
-    }
-
-    @Test(dataProvider = "unsupportedTestOperatorProvider")
-    public <E> void testUnsupportedMaskedTestOperator(VectorSpecies<E> species,
-                                                      VectorOperators.Test op) {
-        Vector<E> vector = species.zero();
-        VectorMask<E> mask = species.maskAll(false);
-
-        Assert.assertThrows(UnsupportedOperationException.class,
-                () -> vector.test(op, mask));
-    }
-
-    @Test(dataProvider = "supportedTestOperatorProvider")
-    public <E> void testSupportedTestOperator(VectorSpecies<E> species,
-                                              VectorOperators.Test op) {
-        Vector<E> vector = species.zero();
-
-        vector.test(op);
-    }
-
-    @Test(dataProvider = "supportedTestOperatorProvider")
-    public <E> void testSupportedMaskedTestOperator(VectorSpecies<E> species,
-                                                    VectorOperators.Test op) {
-        Vector<E> vector = species.zero();
-        VectorMask<E> mask = species.maskAll(true);
-
-        vector.test(op, mask);
     }
 }
