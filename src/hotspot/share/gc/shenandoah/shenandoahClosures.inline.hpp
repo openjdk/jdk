@@ -76,10 +76,10 @@ ShenandoahMarkRefsSuperClosure::ShenandoahMarkRefsSuperClosure(ShenandoahObjToSc
         _mark_context(ShenandoahHeap::heap()->marking_context()),
         _weak(false) {}
 
-template<class T, ShenandoahGenerationType GENERATION>
+template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
 ALWAYSINLINE
 void ShenandoahMarkRefsSuperClosure::work(T* p) {
-  ShenandoahMark::mark_through_ref<T, GENERATION>(p, _queue, _old_queue, _mark_context, _weak);
+  ShenandoahMark::mark_through_ref<T, GENERATION, REDIRTY>(p, _queue, _old_queue, _mark_context, _weak);
 }
 
 ShenandoahForwardedIsAliveClosure::ShenandoahForwardedIsAliveClosure() :
@@ -118,12 +118,7 @@ template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   assert(ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Only for concurrent marking phase");
   assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
-
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    _bs->enqueue(obj);
-  }
+  _bs->keepalive_barrier(ON_STRONG_OOP_REF, p, nullptr, ShenandoahBarrierSet::FILTER_MARKED);
 }
 
 
@@ -144,7 +139,7 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop(
 template <bool CONCURRENT, bool STABLE_THREAD>
 template <class T>
 void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_work(T* p) {
-  assert(_heap->is_concurrent_weak_root_in_progress() ||
+  assert((_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) ||
          _heap->is_concurrent_strong_root_in_progress(),
          "Only do this in root processing phase");
 
@@ -229,7 +224,7 @@ inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);
 
   // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION>(p);
+  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
 }
 
 template<class T>

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,49 +37,49 @@ $(call FillFindCache, $(wildcard $(TOPDIR)/src/java.desktop/*/native))
 include lib/AwtLibraries.gmk
 include lib/ClientLibraries.gmk
 
-ifeq ($(call isTargetOs, aix), false)
-  ##############################################################################
-  # Build libjsound
-  ##############################################################################
+ifeq ($(ENABLE_JSOUND), true)
+  ifeq ($(call isTargetOs, aix), false)
+    ##############################################################################
+    # Build libjsound
+    ##############################################################################
 
-  LIBJSOUND_CFLAGS := \
-      $(ALSA_CFLAGS) \
-      -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
-      -DUSE_PORTS=TRUE \
-      -DUSE_DAUDIO=TRUE \
-      -DUSE_PLATFORM_MIDI_OUT=TRUE \
-      -DUSE_PLATFORM_MIDI_IN=TRUE \
-      #
+    LIBJSOUND_CFLAGS := \
+        $(ALSA_CFLAGS) \
+        -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
+        -DUSE_PORTS=TRUE \
+        -DUSE_DAUDIO=TRUE \
+        -DUSE_PLATFORM_MIDI_OUT=TRUE \
+        -DUSE_PLATFORM_MIDI_IN=TRUE \
+        #
 
-  LIBJSOUND_LINK_TYPE := C
-  ifeq ($(call isTargetOs, macosx), true)
-    LIBJSOUND_LINK_TYPE := C++
+    LIBJSOUND_LINK_TYPE := C
+    ifeq ($(call isTargetOs, macosx), true)
+      LIBJSOUND_LINK_TYPE := C++
+    endif
+
+    $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
+        NAME := jsound, \
+        LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
+        OPTIMIZATION := LOW, \
+        EXTRA_HEADER_DIRS := java.base:libjava, \
+        CFLAGS := $(LIBJSOUND_CFLAGS), \
+        CXXFLAGS := $(LIBJSOUND_CFLAGS), \
+        DISABLED_WARNINGS_gcc := undef, \
+        DISABLED_WARNINGS_clang := undef, \
+        DISABLED_WARNINGS_clang_DirectAudioDevice.c := unused-function, \
+        LIBS_linux := $(ALSA_LIBS), \
+        LIBS_macosx := \
+            -framework AudioToolbox \
+            -framework AudioUnit \
+            -framework CoreAudio \
+            -framework CoreFoundation \
+            -framework CoreMIDI \
+            -framework CoreServices, \
+        LIBS_windows := advapi32.lib dsound.lib ole32.lib user32.lib winmm.lib, \
+    ))
+
+    TARGETS += $(BUILD_LIBJSOUND)
   endif
-
-  $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
-      NAME := jsound, \
-      LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
-      OPTIMIZATION := LOW, \
-      EXTRA_HEADER_DIRS := java.base:libjava, \
-      CFLAGS := $(LIBJSOUND_CFLAGS), \
-      CXXFLAGS := $(LIBJSOUND_CFLAGS), \
-      DISABLED_WARNINGS_gcc := undef unused-variable, \
-      DISABLED_WARNINGS_clang := undef unused-variable, \
-      DISABLED_WARNINGS_clang_PLATFORM_API_MacOSX_MidiUtils.c := \
-          unused-but-set-variable, \
-      DISABLED_WARNINGS_clang_DirectAudioDevice.c := unused-function, \
-      LIBS_linux := $(ALSA_LIBS), \
-      LIBS_macosx := \
-          -framework AudioToolbox \
-          -framework AudioUnit \
-          -framework CoreAudio \
-          -framework CoreFoundation \
-          -framework CoreMIDI \
-          -framework CoreServices, \
-      LIBS_windows := advapi32.lib dsound.lib ole32.lib user32.lib winmm.lib, \
-  ))
-
-  TARGETS += $(BUILD_LIBJSOUND)
 endif
 
 ifeq ($(call isTargetOs, macosx), true)

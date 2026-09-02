@@ -32,6 +32,7 @@
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -46,6 +47,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -143,7 +145,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
 
   HandleMark hm(THREAD);
   int len = _lambdaform_lines->length();
-  objArrayHandle list_lines = oopFactory::new_objArray_handle(vmClasses::String_klass(), len, CHECK);
+  refArrayHandle list_lines = oopFactory::new_refArray_handle(vmClasses::String_klass(), len, CHECK);
   for (int i = 0; i < len; i++) {
     Handle h_line = java_lang_String::create_from_str(_lambdaform_lines->at(i), CHECK);
     list_lines->obj_at_put(i, h_line());
@@ -172,7 +174,7 @@ void LambdaFormInvokers::regenerate_holder_classes(TRAPS) {
     return;
   }
 
-  objArrayHandle h_array(THREAD, (objArrayOop)result.get_oop());
+  refArrayHandle h_array(THREAD, oop_cast<refArrayOop>(result.get_oop()));
   int sz = h_array->length();
   assert(sz % 2 == 0 && sz >= 2, "Must be even size of length");
   for (int i = 0; i < sz; i+= 2) {
@@ -222,6 +224,9 @@ void LambdaFormInvokers::regenerate_class(char* class_name, ClassFileStream& st,
                                                    cld,
                                                    cl_info,
                                                    CHECK);
+
+  // The result InstanceKlass* is never used during the JVM process lifetime.
+  // We create it only for writing to the CDS archive, and so it need not be monitored by JVMTI or JFR.
 
   assert(result->java_mirror() != nullptr, "must be");
   RegeneratedClasses::add_class(InstanceKlass::cast(klass), result);

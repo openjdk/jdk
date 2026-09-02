@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,15 @@
  *
  */
 
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() :
-  _lock(ShenandoahHeap::heap()->lock()) { }
+  _lock(ShenandoahHeap::heap()->lock()) {
+  ShenandoahHeap::heap()->flush_region_pin_cache();
+}
 
 void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
   // Drop "pinned" state from regions that no longer have a pinned count. Put
@@ -52,21 +55,24 @@ void ShenandoahSynchronizePinnedRegionStates::synchronize_pin_count(ShenandoahHe
   }
 }
 
-ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext *ctx) :
-        _ctx(ctx) { }
+ShenandoahFinalMarkUpdateRegionStateClosure::ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx, ShenandoahGeneration* generation) :
+    _ctx(ctx), _generation(generation) {
+  assert(_ctx != nullptr, "Marking context is required");
+  assert(_generation != nullptr, "Generation is required");
+}
 
 void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapRegion* r) {
+  // Region data can only be adjusted for regions in the generation this cycle marked.
+  // For old regions during a young cycle, we only sync the pin status and update
+  // the watermark. We cannot reset the TAMS for old regions because we rely on
+  // that to keep promoted objects alive after old marking is complete.
+  const bool in_marked_generation = _generation->contains(r);
   if (r->is_active()) {
-    if (_ctx != nullptr) {
-      // _ctx may be null when this closure is used to sync only the pin status
-      // update the watermark of old regions. For old regions we cannot reset
-      // the TAMS because we rely on that to keep promoted objects alive after
-      // old marking is complete.
-
+    if (in_marked_generation) {
       // All allocations past TAMS are implicitly live, adjust the region data.
       // Bitmaps/TAMS are swapped at this point, so we need to poll complete bitmap.
-      HeapWord *tams = _ctx->top_at_mark_start(r);
-      HeapWord *top = r->top();
+      HeapWord* tams = _ctx->top_at_mark_start(r);
+      HeapWord* top = r->top();
       if (top > tams) {
         r->increase_live_data_alloc_words(pointer_delta(top, tams));
       }
@@ -87,7 +93,7 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
     }
   } else {
     assert(!r->has_live(), "Region %zu should have no live data", r->index());
-    assert(_ctx == nullptr || _ctx->top_at_mark_start(r) == r->top(),
+    assert(!in_marked_generation || _ctx->top_at_mark_start(r) == r->top(),
            "Region %zu should have correct TAMS", r->index());
   }
 }

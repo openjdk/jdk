@@ -33,10 +33,12 @@
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedKlass.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/markWord.inline.hpp"
 #include "oops/objLayout.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/align.hpp"
@@ -83,7 +85,7 @@ markWord oopDesc::cas_set_mark(markWord new_mark, markWord old_mark, atomic_memo
 }
 
 markWord oopDesc::prototype_mark() const {
-  if (UseCompactObjectHeaders) {
+  if (UseCompactObjectHeaders || Arguments::is_valhalla_enabled()) {
     return klass()->prototype_header();
   } else {
     return markWord::prototype();
@@ -207,12 +209,27 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
-bool oopDesc::is_instance()    const { return klass()->is_instance_klass();             }
-bool oopDesc::is_instanceRef() const { return klass()->is_reference_instance_klass();   }
-bool oopDesc::is_stackChunk()  const { return klass()->is_stack_chunk_instance_klass(); }
-bool oopDesc::is_array()       const { return klass()->is_array_klass();                }
-bool oopDesc::is_objArray()    const { return klass()->is_objArray_klass();             }
-bool oopDesc::is_typeArray()   const { return klass()->is_typeArray_klass();            }
+bool oopDesc::is_instance()         const { return klass()->is_instance_klass();             }
+bool oopDesc::is_inline()           const { return klass()->is_inline_klass();               }
+bool oopDesc::is_instanceRef()      const { return klass()->is_reference_instance_klass();   }
+bool oopDesc::is_stackChunk()       const { return klass()->is_stack_chunk_instance_klass(); }
+bool oopDesc::is_array()            const { return klass()->is_array_klass();                }
+bool oopDesc::is_objArray()         const { return klass()->is_objArray_klass();             }
+bool oopDesc::is_refArray()         const { return klass()->is_refArray_klass();             }
+bool oopDesc::is_typeArray()        const { return klass()->is_typeArray_klass();            }
+bool oopDesc::is_refined_objArray() const { return klass()->is_refined_objArray_klass();     }
+bool oopDesc::is_flatArray()        const { return klass()->is_flatArray_klass();            }
+
+bool oopDesc::is_array_with_oops() const {
+  if (!is_objArray()) {
+    return false;
+  }
+
+  assert(is_refined_objArray(), "Must be");
+  return is_refArray() || FlatArrayKlass::cast(klass())->contains_oops();
+}
+
+bool oopDesc::is_inline_type() const { return mark().is_inline_type(); }
 
 template<typename T>
 T*       oopDesc::field_addr(int offset)     const { return reinterpret_cast<T*>(cast_from_oop<intptr_t>(as_oop()) + offset); }
@@ -254,14 +271,6 @@ inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_add
 
 inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
 inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
-
-bool oopDesc::is_locked() const {
-  return mark().is_locked();
-}
-
-bool oopDesc::is_unlocked() const {
-  return mark().is_unlocked();
-}
 
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
@@ -322,7 +331,6 @@ oop oopDesc::forwardee(markWord mark) const {
   }
 }
 
-// Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
@@ -337,21 +345,13 @@ void oopDesc::unset_self_forwarded() {
 uint oopDesc::age() const {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to read age from forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    return m.displaced_mark_helper().age();
-  } else {
-    return m.age();
-  }
+  return m.age();
 }
 
 void oopDesc::incr_age() {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
-  } else {
-    set_mark(m.incr_age());
-  }
+  set_mark(m.incr_age());
 }
 
 template <typename OopClosureType>
@@ -396,37 +396,21 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == nullptr || obj->klass()->is_subtype_of(klass);
 }
 
-intptr_t oopDesc::identity_hash() {
-  // Fast case; if the object is unlocked and the hash value is set, no locking is needed
+intptr_t oopDesc::identity_hash(Thread* current) {
   // Note: The mark must be read into local variable to avoid concurrent updates.
   markWord mrk = mark();
-  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
-    return mrk.hash();
-  } else if (mrk.is_marked()) {
-    return mrk.hash();
-  } else {
-    return slow_identity_hash();
-  }
-}
-
-// This checks fast simple case of whether the oop has_no_hash,
-// to optimize JVMTI table lookup.
-bool oopDesc::fast_no_hash_check() {
-  markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_unlocked() && mrk.has_no_hash();
+
+  if (mrk.has_hash()) {
+    return mrk.hash();
+  }
+
+  return slow_identity_hash(mrk, current == nullptr ? Thread::current() : current);
 }
 
-bool oopDesc::has_displaced_mark() const {
-  return mark().has_displaced_mark_helper();
-}
-
-markWord oopDesc::displaced_mark() const {
-  return mark().displaced_mark_helper();
-}
-
-void oopDesc::set_displaced_mark(markWord m) {
-  mark().set_displaced_mark_helper(m);
+bool oopDesc::has_identity_hash() {
+  markWord mrk = mark_acquire();
+  return mrk.has_hash();
 }
 
 bool oopDesc::mark_must_be_preserved() const {

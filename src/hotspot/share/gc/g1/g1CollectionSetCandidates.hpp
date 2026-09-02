@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
@@ -72,23 +73,17 @@ class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
+  // The _group_id identifies a candidate group in logging and in the
+  // FromCardCache. A group id must be assigned to at most one cset group
+  // at any time.
+  uint _group_id;
 
 public:
-  // The _group_id uniquely identifies a candidate group when printing, making it
-  // easier to associate regions with their assigned G1CSetCandidateGroup, if any.
-  // Special values for the id:
-  // * id 0 is reserved for regions that do not have a remembered set.
-  // * id 1 is reserved for the G1CollectionSetCandidate that contains all young regions.
-  // * other ids are handed out incrementally, starting from InitialId.
-  static const uint NoRemSetId = 0;
-  static const uint YoungRegionId = 1;
-  static const uint InitialId = 2;
+  static constexpr uint NoGroupId = 0;
+  static constexpr uint YoungId = NoGroupId + 1;
+  static constexpr uint FirstNonYoungId = YoungId + 1;
+  static constexpr uint InvalidId = UINT_MAX;
 
-private:
-  const uint _group_id;
-  static uint _next_group_id;
-
-public:
   G1CSetCandidateGroup();
   G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CSetCandidateGroup() {
@@ -126,7 +121,10 @@ public:
     return _card_set.occupied();
   }
 
-  void clear(bool uninstall_group_cardset = false);
+  // Clear the group-owned card set.
+  void clear_card_set();
+
+  void clear(bool uninstall_cset_group = false);
 
   G1CSetCandidateGroupIterator begin() const {
     return _candidates.begin();
@@ -136,10 +134,9 @@ public:
     return _candidates.end();
   }
 
-  uint group_id() const { return _group_id; }
-
-  static void reset_next_group_id() {
-    _next_group_id = InitialId;
+  uint group_id() const {
+    assert(_group_id != InvalidId, "group must have an assigned id");
+    return _group_id;
   }
 };
 
@@ -147,23 +144,23 @@ using G1CSetCandidateGroupListIterator = GrowableArrayIterator<G1CSetCandidateGr
 
 class G1CSetCandidateGroupList {
   GrowableArray<G1CSetCandidateGroup*> _groups;
-  volatile uint _num_regions;
+  Atomic<uint> _num_regions;
 
 public:
   G1CSetCandidateGroupList();
   void append(G1CSetCandidateGroup* group);
 
-  // Delete all groups from the list. The cardset cleanup for regions within the
-  // groups could have been done elsewhere (e.g. when adding groups to the
-  // collection set or to retained regions). The uninstall_group_cardset is set to
+  // Delete all groups from the list. The card set cleanup for regions within
+  // the groups could have been done elsewhere (e.g. when adding groups to the
+  // collection set or to retained regions). The uninstall_cset_group is set to
   // true if cleanup needs to happen as we clear the groups from the list.
-  void clear(bool uninstall_group_cardset = false);
+  void clear(bool uninstall_cset_group = false);
 
   G1CSetCandidateGroup* at(uint index);
 
   uint length() const { return (uint)_groups.length(); }
 
-  uint num_regions() const { return _num_regions; }
+  uint num_regions() const { return _num_regions.load_relaxed(); }
 
   void remove_selected(uint count, uint num_regions);
 

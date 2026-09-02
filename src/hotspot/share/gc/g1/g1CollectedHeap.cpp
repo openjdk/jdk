@@ -127,16 +127,6 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // apply to TLAB allocation, which is not part of this interface: it
 // is done by clients of this interface.)
 
-void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
-  G1HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
-}
-
-void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  // The from card cache is not the memory that is actually committed. So we cannot
-  // take advantage of the zero_filled parameter.
-  reset_from_card_cache(start_idx, num_regions);
-}
-
 // Collects commonly used scoped objects that are related to initial setup.
 class G1GCMark : StackObj {
   ResourceMark _rm;
@@ -868,7 +858,7 @@ void G1CollectedHeap::prepare_for_mutator_after_full_collection(size_t allocatio
 
   // Rebuild the code root lists for each region
   rebuild_code_roots();
-  finish_codecache_marking_cycle();
+  CodeCache::arm_all_nmethods();
 
   start_new_collection_set();
   _allocator->init_mutator_alloc_regions();
@@ -1306,7 +1296,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(nullptr),
-  _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(nullptr),
@@ -1332,7 +1321,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungRegionId),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungId),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -1502,7 +1491,6 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.base(),
                        heap_rs.size(),
                        page_size);
-  heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
@@ -1541,10 +1529,6 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
-  // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
-  // start within the first card.
-  guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
-  G1FromCardCache::initialize(max_num_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
   _rem_set->initialize(max_num_regions());
@@ -1654,6 +1638,9 @@ void G1CollectedHeap::stop() {
   // that are destroyed during shutdown.
   _cr->stop();
   _service_thread->stop();
+  VM_G1StopMarking op;
+  VMThread::execute(&op);
+
   _cm->stop();
 }
 
@@ -1758,12 +1745,11 @@ size_t G1CollectedHeap::unused_committed_regions_in_bytes() const {
 
 // Computes the sum of the storage used by the various regions.
 size_t G1CollectedHeap::used() const {
-  size_t result = _summary_bytes_used + _allocator->used_in_alloc_regions();
-  return result;
+  return used_unlocked() + _allocator->used_in_alloc_regions();
 }
 
 size_t G1CollectedHeap::used_unlocked() const {
-  return _summary_bytes_used;
+  return _summary_bytes_used.load_relaxed();
 }
 
 class SumUsedClosure: public G1HeapRegionClosure {
@@ -1929,7 +1915,7 @@ static bool should_retry_vm_op(GCCause::Cause cause,
     // GC, so try again.
     LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
     return true;
-  } else if (op->whitebox_attached()) {
+  } else if (op->whitebox_controlled()) {
     // If WhiteBox wants control, wait for notification of a state
     // change in the controller, then try again.  Don't wait for
     // release of control, since collections may complete while in
@@ -1997,7 +1983,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       }
       // When _wb_breakpoint there can't be another cycle or deferred.
       assert(!op.cycle_already_in_progress(), "invariant");
-      assert(!op.whitebox_attached(), "invariant");
+      assert(!op.whitebox_controlled(), "invariant");
       // Concurrent cycle attempt might have been cancelled by some other
       // collection, so retry.  Unlike other cases below, we want to retry
       // even if cancelled by a STW full collection, because we really want
@@ -2022,13 +2008,19 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // Cases (2) and (3) are detected together by a change to
       // _old_marking_cycles_started.
       //
-      // Compared to other "automatic" GCs (see below), we do not consider being
-      // in whitebox as sufficient too because we might be anywhere within that
-      // cycle and we need to make progress.
+      // Compared to other "automatic" GCs (see below), being in WhiteBox is not
+      // addressed here because we need to handle it specially.
       if (op.mark_in_progress() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
+      }
+
+      if (op.whitebox_controlled()) {
+        LOG_COLLECT_CONCURRENTLY(cause, "Suppressed CodeCache GC because of WhiteBox in control.");
+        // The caller in this case does not check the return value, so it does not
+        // really matter what we return. However we did not finish the request.
+        return false;
       }
 
       if (wait_full_mark_finished(cause,
@@ -2038,7 +2030,11 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
         return true;
       }
 
-      if (should_retry_vm_op(cause, &op)) {
+      if (op.cycle_already_in_progress()) {
+        // If VMOp failed because a cycle was already in progress, it
+        // is now complete (we just waited).  But it didn't finish this
+        // request, so try again.
+        LOG_COLLECT_CONCURRENTLY(cause, "retry after in-progress");
         continue;
       }
     } else if (!GCCause::is_user_requested_gc(cause)) {
@@ -2059,7 +2055,7 @@ bool G1CollectedHeap::try_collect_concurrently(size_t allocation_word_size,
       // _old_marking_cycles_started.
       if (op.gc_succeeded() ||
           op.cycle_already_in_progress() ||
-          op.whitebox_attached() ||
+          op.whitebox_controlled() ||
           (old_marking_started_before != old_marking_started_after)) {
         LOG_COLLECT_CONCURRENTLY_COMPLETE(cause, true);
         return true;
@@ -2286,7 +2282,7 @@ size_t G1CollectedHeap::tlab_capacity() const {
 }
 
 size_t G1CollectedHeap::tlab_used() const {
-  return _eden.length() * G1HeapRegion::GrainBytes;
+  return _eden.num_regions() * G1HeapRegion::GrainBytes;
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
@@ -2358,8 +2354,8 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
-static void print_region_type(outputStream* st, const char* type, uint count, bool last = false) {
-  st->print("%u %s (%zuM)%s", count, type, count * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
+static void print_region_type(outputStream* st, const char* type, uint num_regions, bool last = false) {
+  st->print("%u %s (%zuM)%s", num_regions, type, num_regions * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
 }
 
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
@@ -2375,10 +2371,10 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
 
   StreamIndentor si(st, 1);
   st->print("region size %zuM, ", G1HeapRegion::GrainBytes / M);
-  print_region_type(st, "eden", eden_regions_count());
-  print_region_type(st, "survivor", survivor_regions_count());
-  print_region_type(st, "old", old_regions_count());
-  print_region_type(st, "humongous", humongous_regions_count());
+  print_region_type(st, "eden", num_eden_regions());
+  print_region_type(st, "survivor", num_survivor_regions());
+  print_region_type(st, "old", num_old_regions());
+  print_region_type(st, "humongous", num_humongous_regions());
   print_region_type(st, "free", num_free_regions(), true /* last */);
 
   if (_numa->is_enabled()) {
@@ -2612,7 +2608,7 @@ void G1CollectedHeap::start_new_collection_set() {
 
   clear_region_attr();
 
-  guarantee(_eden.length() == 0, "eden should have been cleared");
+  guarantee(_eden.num_regions() == 0, "eden should have been cleared");
   policy()->transfer_survivors_to_cset(survivor());
 
   // We redo the verification but now wrt to the new CSet which
@@ -2723,13 +2719,14 @@ void G1CollectedHeap::do_collection_pause_at_safepoint(size_t allocation_word_si
 
   _bytes_used_during_gc = 0;
 
-  _cm->fully_initialize();
-
   policy()->decide_on_concurrent_start_pause();
   // Record whether this pause may need to trigger a concurrent operation. Later,
   // when we signal the G1ConcurrentMarkThread, the collector state has already
   // been reset for the next pause.
   bool should_start_concurrent_mark_operation = collector_state()->is_in_concurrent_start_gc();
+  if (should_start_concurrent_mark_operation) {
+    _cm->fully_initialize();
+  }
 
   // Perform the collection.
   G1YoungCollector collector(gc_cause(), allocation_word_size);
@@ -2959,7 +2956,7 @@ void G1CollectedHeap::abandon_collection_set() {
 }
 
 size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
-  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
+  const size_t cur_occupancy = (num_old_regions() + num_humongous_regions()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
   // that allocation in the result as well. Otherwise the allocation will always
@@ -2990,7 +2987,7 @@ public:
 };
 
 bool G1CollectedHeap::check_no_young_regions() {
-  bool ret = (young_regions_count() == 0);
+  bool ret = (num_young_regions() == 0);
 
   NoYoungRegionsClosure closure;
   heap_region_iterate(&closure);
@@ -3020,18 +3017,18 @@ void G1CollectedHeap::prepare_region_for_full_compaction(G1HeapRegion* hr) {
 }
 
 void G1CollectedHeap::increase_used(size_t bytes) {
-  _summary_bytes_used += bytes;
+  _summary_bytes_used.add_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::decrease_used(size_t bytes) {
-  assert(_summary_bytes_used >= bytes,
+  assert(used_unlocked() >= bytes,
          "invariant: _summary_bytes_used: %zu should be >= bytes: %zu",
-         _summary_bytes_used, bytes);
-  _summary_bytes_used -= bytes;
+         used_unlocked(), bytes);
+  _summary_bytes_used.sub_then_fetch(bytes, memory_order_relaxed);
 }
 
 void G1CollectedHeap::set_used(size_t bytes) {
-  _summary_bytes_used = bytes;
+  _summary_bytes_used.store_relaxed(bytes);
 }
 
 class RebuildRegionSetsClosure : public G1HeapRegionClosure {
@@ -3152,7 +3149,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   if (dest.is_old()) {
     return true;
   } else {
-    return survivor_regions_count() < policy()->max_survivor_regions();
+    return num_survivor_regions() < policy()->max_survivor_regions();
   }
 }
 
@@ -3328,9 +3325,4 @@ void G1CollectedHeap::start_codecache_marking_cycle_if_inactive(bool concurrent_
   if (concurrent_mark_start) {
     CodeCache::arm_all_nmethods();
   }
-}
-
-void G1CollectedHeap::finish_codecache_marking_cycle() {
-  CodeCache::on_gc_marking_cycle_finish();
-  CodeCache::arm_all_nmethods();
 }

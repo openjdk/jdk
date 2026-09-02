@@ -389,7 +389,11 @@ char* DumpRegion::allocate_metaspace_obj(size_t num_bytes, address src, Metaspac
     assert(read_only == false, "only gaps in RW region are reusable");
     char* gap_bottom = top();
     char* gap_top = align_up(gap_bottom + RuntimeClassInfoPtrSize, alignment) - RuntimeClassInfoPtrSize;
-    size_t gap_bytes = _gap_tree.add_gap(gap_bottom, gap_top);
+    size_t gap_bytes = pointer_delta(gap_top, gap_bottom, 1);
+    // A gap smaller than an allocation unit can never be reused
+    if (gap_bytes >= SharedSpaceObjectAlignment) {
+      _gap_tree.add_gap(gap_bottom, gap_top);
+    }
     allocate(gap_bytes);
   }
 
@@ -551,7 +555,7 @@ bool ArchiveUtils::has_aot_initialized_mirror(InstanceKlass* src_ik) {
 
 size_t HeapRootSegments::size_in_bytes(size_t seg_idx) {
   assert(seg_idx < _count, "In range");
-  return objArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
+  return refArrayOopDesc::object_size(size_in_elems(seg_idx)) * HeapWordSize;
 }
 
 int HeapRootSegments::size_in_elems(size_t seg_idx) {

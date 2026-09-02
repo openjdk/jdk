@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+// -- This file was mechanically generated: Do not edit! -- //
 
 /*
  * @test
@@ -49,9 +51,9 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
 
     static long static_v = 0x0123456789ABCDEFL;
 
-    final long final_v = 0x0123456789ABCDEFL;
+    final long final_v;
 
-    long v = 0x0123456789ABCDEFL;
+    long v;
 
     VarHandle vhFinalField;
 
@@ -62,6 +64,12 @@ public class VarHandleTestMethodTypeLong extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodTypeLong() {
+        final_v = 0x0123456789ABCDEFL;
+        v = 0x0123456789ABCDEFL;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {

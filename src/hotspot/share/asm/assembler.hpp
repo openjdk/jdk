@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -311,8 +311,8 @@ class AbstractAssembler : public ResourceObj  {
   // Creation
   AbstractAssembler(CodeBuffer* code);
 
-  // ensure buf contains all code (call this before using/copying the code)
-  void flush();
+  // Invalidate ICache after writing code to its final location.
+  void invalidate_icache();
 
   void emit_int8(       int x1)                                     { code_section()->emit_int8(narrow_cast<uint8_t>(x1)); }
 

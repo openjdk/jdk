@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ class JavaThread;
 class JfrClassDefineEvent : AllStatic {
  public:
   static void on_creation(const InstanceKlass* ik, const ClassFileParser& parser, JavaThread* jt);
+  static void send_event(const InstanceKlass* k, bool from_boot_loader_modules_image, JavaThread* jt);
   CDS_ONLY(static void on_restoration(const InstanceKlass* ik, JavaThread* jt);)
 };
 

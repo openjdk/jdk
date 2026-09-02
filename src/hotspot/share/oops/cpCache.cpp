@@ -26,6 +26,7 @@
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/resolutionErrors.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -211,6 +212,7 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
       //
       // We set bytecode_2() to _invokevirtual.
       // See also interpreterRuntime.cpp. (8/25/2000)
+      invoke_code = Bytecodes::_invokevirtual;
     } else {
       assert(invoke_code == Bytecodes::_invokevirtual ||
              (invoke_code == Bytecodes::_invokeinterface &&
@@ -226,7 +228,7 @@ void ConstantPoolCache::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
       }
     }
     // set up for invokevirtual, even if linking for invokeinterface also:
-    method_entry->set_bytecode2(Bytecodes::_invokevirtual);
+    method_entry->set_bytecode2(invoke_code);
   } else {
     ShouldNotReachHere();
   }
@@ -276,7 +278,7 @@ ResolvedMethodEntry* ConstantPoolCache::set_method_handle(int method_index, cons
   Bytecodes::Code invoke_code = Bytecodes::_invokehandle;
 
   JavaThread* current = JavaThread::current();
-  objArrayHandle resolved_references(current, constant_pool()->resolved_references());
+  refArrayHandle resolved_references(current, constant_pool()->resolved_references());
   // Use the resolved_references() lock for this cpCache entry.
   // resolved_references are created for all classes with Invokedynamic, MethodHandle
   // or MethodType constant pool cache entries.
@@ -374,7 +376,6 @@ Method* ConstantPoolCache::method_if_resolved(int method_index) const {
 }
 
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      const GrowableArray<ResolvedFieldEntry> field_entries,
                                      const GrowableArray<ResolvedMethodEntry> method_entries,
@@ -388,7 +389,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   Array<ResolvedMethodEntry>* resolved_method_entries = initialize_resolved_entries_array(loader_data, method_entries, CHECK_NULL);
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-              ConstantPoolCache(invokedynamic_map, resolved_indy_entries, resolved_field_entries, resolved_method_entries);
+              ConstantPoolCache(resolved_indy_entries, resolved_field_entries, resolved_method_entries);
 }
 
 // Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
@@ -793,7 +794,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   JavaThread* current = JavaThread::current();
   constantPoolHandle cp(current, constant_pool());
 
-  objArrayHandle resolved_references(current, cp->resolved_references());
+  refArrayHandle resolved_references(current, cp->resolved_references());
   assert(resolved_references() != nullptr,
          "a resolved_references array should have been created for this class");
   ObjectLocker ol(resolved_references, current);
