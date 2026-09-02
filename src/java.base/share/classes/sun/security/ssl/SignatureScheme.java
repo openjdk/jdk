@@ -44,6 +44,19 @@ import sun.security.util.KeyUtil;
 import sun.security.util.SignatureUtil;
 
 enum SignatureScheme {
+    // ML_DSA algorithms
+    MLDSA65                 (0x0905, "mldsa65", "ML-DSA-65",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA87                 (0x0906, "mldsa87", "ML-DSA-87",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
+    MLDSA44                 (0x0904, "mldsa44", "ML-DSA-44",
+                                    "ML-DSA",
+                                    ProtocolVersion.PROTOCOLS_OF_13),
+
     // ECDSA algorithms
     ECDSA_SECP256R1_SHA256  (0x0403, "ecdsa_secp256r1_sha256",
                                     "SHA256withECDSA",
@@ -116,19 +129,6 @@ enum SignatureScheme {
                                     "RSA", null, null, 768,
                                     ProtocolVersion.PROTOCOLS_TO_13,
                                     ProtocolVersion.PROTOCOLS_TO_12),
-
-    // ML_DSA algorithms
-    MLDSA44                 (0x0904, "mldsa44", "ML-DSA-44",
-                                    "ML-DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-
-    MLDSA65                 (0x0905, "mldsa65", "ML-DSA-65",
-                                    "ML-DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
-
-    MLDSA87                 (0x0906, "mldsa87", "ML-DSA-87",
-                                    "ML-DSA",
-                                    ProtocolVersion.PROTOCOLS_OF_13),
 
     // Legacy algorithms
     DSA_SHA256              (0x0402, "dsa_sha256", "SHA256withDSA",
