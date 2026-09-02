@@ -41,7 +41,7 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 114;
+    public static final int BREAKPOINT_LINE_NUMBER = 121;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -110,6 +110,13 @@ public class popframes001a {
             int boo = 0;
 
             log.display("Breakpoint line reached");
+
+             Thread thread = Thread.ofVirtual().start(() -> { });
+             try {
+                 thread.join();
+            } catch (InterruptedException e) {
+            }
+             //
             // next line is for breakpoint
             boo = arg * 2; // BREAKPOINT_LINE_NUMBER
             log.display("Breakpoint line passed");
