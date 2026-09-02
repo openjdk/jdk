@@ -37,6 +37,8 @@ final class ValueObjectMethods {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final boolean VERBOSE =
             System.getProperty("value.bsm.debug") != null;
+    // An alternative non-zero value when the computed hash is zero, to enable caching
+    private static final int ZERO_ALTERNATIVE = System.identityHashCode(ValueObjectMethods.class);
 
     private ValueObjectMethods() {
     }
@@ -169,6 +171,6 @@ final class ValueObjectMethods {
             Object oa = U.getReference(obj, offset);
             result = 31 * result + System.identityHashCode(oa);
         }
-        return result;
+        return result == 0 ? ZERO_ALTERNATIVE : result;
     }
 }
