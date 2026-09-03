@@ -234,7 +234,7 @@ instruct g1StorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp
                       $tmp2$$Register /* tmp1 */,
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $src$$Register) /* preserve */);
-    __ sd_rl($src$$Register, Address($mem$$Register));
+    __ sd_rl($src$$Register, $mem$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
                        $src$$Register  /* new_val */,
@@ -291,7 +291,7 @@ instruct g1StoreNVolatile(indirect mem, iRegN src, iRegPNoSp tmp1, iRegPNoSp tmp
                       $tmp2$$Register /* tmp1 */,
                       $tmp3$$Register /* tmp2 */,
                       RegSet::of($mem$$Register, $src$$Register) /* preserve */);
-    __ sw_rl($src$$Register, Address($mem$$Register));
+    __ sw_rl($src$$Register, $mem$$Register);
     if ((barrier_data() & G1C2BarrierPost) != 0) {
       if ((barrier_data() & G1C2BarrierPostNotNull) == 0) {
         __ decode_heap_oop($tmp1$$Register, $src$$Register);
@@ -360,7 +360,7 @@ instruct g1EncodePAndStoreNVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRe
     } else {
       __ encode_heap_oop_not_null($tmp1$$Register, $src$$Register);
     }
-    __ sw_rl($tmp1$$Register, Address($mem$$Register));
+    __ sw_rl($tmp1$$Register, $mem$$Register);
     write_barrier_post(masm, this,
                        $mem$$Register  /* store_addr */,
                        $src$$Register  /* new_val */,

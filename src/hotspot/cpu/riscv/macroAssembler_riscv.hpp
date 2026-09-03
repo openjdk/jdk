@@ -1193,63 +1193,13 @@ public:
 
 #undef INSN
 
-#define INSN(NAME)                                                             \
-  void NAME(Register Rd, const Address& adr, Register temp = t0) {             \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
-    Register base = adr.base();                                                \
-    intptr_t disp = adr.offset();                                              \
-    Register addr = base;                                                      \
-    if (disp != 0) {                                                           \
-      la(temp, Address(base, disp));                                           \
-      addr = temp;                                                             \
-    }                                                                          \
-    Assembler::NAME(Rd, addr);                                                 \
-  }
-
-INSN(lb_aq);
-INSN(lb_aqrl);
-INSN(lh_aq);
-INSN(lh_aqrl);
-INSN(lw_aq);
-INSN(lw_aqrl);
-INSN(ld_aq);
-INSN(ld_aqrl);
-
-#undef INSN
-
-#define INSN(NAME)                                                             \
-  void NAME(Register Rs2, const Address& adr, Register temp = t0) {            \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
-    Register base = adr.base();                                                \
-    intptr_t disp = adr.offset();                                              \
-    Register addr = base;                                                      \
-    if (disp != 0) {                                                           \
-      assert_different_registers(Rs2, temp);                                   \
-      la(temp, Address(base, disp));                                           \
-      addr = temp;                                                             \
-    }                                                                          \
-    Assembler::NAME(Rs2, addr);                                                \
-  }
-
-INSN(sb_rl);
-INSN(sb_aqrl);
-INSN(sh_rl);
-INSN(sh_aqrl);
-INSN(sw_rl);
-INSN(sw_aqrl);
-INSN(sd_rl);
-INSN(sd_aqrl);
-
-#undef INSN
-
 #define INSN(NAME, LOAD_INSN, ZALASR_INSN, BITS)                               \
-  void NAME(Register Rd, const Address& adr, Register temp = t0) {             \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
+  void NAME(Register Rd, Register Rs1) {                                       \
     if (UseZalasr) {                                                           \
-      ZALASR_INSN(Rd, adr, temp);                                              \
+      Assembler::ZALASR_INSN(Rd, Rs1);                                         \
       zext(Rd, Rd, BITS);                                                      \
     } else {                                                                   \
-      LOAD_INSN(Rd, adr, temp);                                                \
+      Assembler::LOAD_INSN(Rd, Rs1, 0);                                        \
       membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);            \
     }                                                                          \
   }
@@ -1260,24 +1210,22 @@ INSN(lwu_acquire, lwu, lw_aq, 32);
 
 #undef INSN
 
-  void ld_acquire(Register Rd, const Address& adr, Register temp = t0) {
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");
+  void ld_acquire(Register Rd, Register Rs1) {
     if (UseZalasr) {
-      ld_aq(Rd, adr, temp);
+      Assembler::ld_aq(Rd, Rs1);
     } else {
-      ld(Rd, adr, temp);
+      Assembler::ld(Rd, Rs1, 0);
       membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     }
   }
 
 #define INSN(NAME, STORE_INSN, ZALASR_INSN)                                    \
-  void NAME(Register Rs2, const Address& adr, Register temp = t0) {            \
-    assert(adr.getMode() == Address::base_plus_offset, "unsupported");         \
+  void NAME(Register Rs2, Register Rs1) {                                      \
     if (UseZalasr) {                                                           \
-      ZALASR_INSN(Rs2, adr, temp);                                             \
+      Assembler::ZALASR_INSN(Rs2, Rs1);                                        \
     } else {                                                                   \
       membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);          \
-      STORE_INSN(Rs2, adr, temp);                                              \
+      Assembler::STORE_INSN(Rs2, Rs1, 0);                                      \
     }                                                                          \
   }
 

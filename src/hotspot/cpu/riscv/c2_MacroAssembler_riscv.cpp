@@ -361,7 +361,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     // Set owner to null.
     // Release to satisfy the JMM
-    sd_release(zr, Address(tmp2_owner_addr));
+    sd_release(zr, tmp2_owner_addr);
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.
     membar(StoreLoad);

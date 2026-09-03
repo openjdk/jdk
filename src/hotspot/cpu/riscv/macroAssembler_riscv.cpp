@@ -494,7 +494,8 @@ void MacroAssembler::clinit_barrier(Register klass, Register tmp, Label* L_fast_
     L_slow_path = &L_fallthrough;
   }
 
-  lbu_acquire(tmp, Address(klass, InstanceKlass::init_state_offset()), tmp);
+  la(tmp, Address(klass, InstanceKlass::init_state_offset()));
+  lbu_acquire(tmp, tmp);
   sub(tmp, tmp, InstanceKlass::fully_initialized);
   beqz(tmp, *L_fast_path);
 

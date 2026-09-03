@@ -1015,8 +1015,8 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
-    __ lbu_acquire(t0, Address(op->klass()->as_register(),
-                               InstanceKlass::init_state_offset()));
+    __ la(t0, Address(op->klass()->as_register(), InstanceKlass::init_state_offset()));
+    __ lbu_acquire(t0, t0);
     __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);

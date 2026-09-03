@@ -126,7 +126,7 @@ instruct zLoadPVolatile(iRegPNoSp dst, indirect mem, iRegPNoSp tmp, rFlagsReg cr
 
   ins_encode %{
     const Address ref_addr($mem$$Register);
-    __ ld_aq($dst$$Register, ref_addr);
+    __ ld_aq($dst$$Register, ref_addr.base());
     z_load_barrier(masm, this, ref_addr, $dst$$Register, $tmp$$Register);
   %}
 
@@ -161,7 +161,7 @@ instruct zStorePVolatile(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp tmp2
   ins_encode %{
     guarantee($mem$$disp == 0, "impossible encoding");
     z_store_barrier(masm, this, Address($mem$$Register), $src$$Register, $tmp1$$Register, $tmp2$$Register, false /* is_atomic */);
-    __ sd_rl($tmp1$$Register, Address($mem$$Register));
+    __ sd_rl($tmp1$$Register, $mem$$Register);
   %}
   ins_pipe(pipe_serial);
 %}

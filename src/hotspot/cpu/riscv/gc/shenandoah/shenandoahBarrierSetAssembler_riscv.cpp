@@ -599,7 +599,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     if (is_acquire) {
       assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
           "acquire path requires address to be base-only");
-      __ lw_aq(dst, src);
+      __ lw_aq(dst, src.base());
       __ zext(dst, dst, 32);
     } else {
       __ lwu(dst, src);
@@ -608,7 +608,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     if (is_acquire) {
       assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
           "acquire path requires address to be base-only");
-      __ ld_aq(dst, src);
+      __ ld_aq(dst, src.base());
     } else {
       __ ld(dst, src);
     }
@@ -637,7 +637,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
     if (is_volatile) {
       assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
           "volatile path requires address to be base-only");
-      __ sw_rl(src, dst);
+      __ sw_rl(src, dst.base());
     } else {
       __ sw(src, dst);
     }
@@ -645,7 +645,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
     if (is_volatile) {
       assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
           "volatile path requires address to be base-only");
-      __ sd_rl(src, dst);
+      __ sd_rl(src, dst.base());
     } else {
       __ sd(src, dst);
     }

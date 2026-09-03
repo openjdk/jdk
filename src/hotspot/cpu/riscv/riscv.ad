@@ -4562,7 +4562,7 @@ instruct loadB_volatile(iRegINoSp dst, indirect mem)
   format %{ "lb.aq  $dst, $mem\t# byte, #@loadB_volatile" %}
 
   ins_encode %{
-    __ lb_aq($dst$$Register, Address($mem$$Register));
+    __ lb_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4593,7 +4593,7 @@ instruct loadB2L_volatile(iRegLNoSp dst, indirect mem)
   format %{ "lb.aq  $dst, $mem\t# byte, #@loadB2L_volatile" %}
 
   ins_encode %{
-    __ lb_aq($dst$$Register, Address($mem$$Register));
+    __ lb_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4625,7 +4625,7 @@ instruct loadUB_volatile(iRegINoSp dst, indirect mem)
             "zext $dst, $dst, 8"%}
 
   ins_encode %{
-    __ lb_aq($dst$$Register, Address($mem$$Register));
+    __ lb_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 8);
   %}
 
@@ -4658,7 +4658,7 @@ instruct loadUB2L_volatile(iRegLNoSp dst, indirect mem)
             "zext $dst, $dst, 8"%}
 
   ins_encode %{
-    __ lb_aq($dst$$Register, Address($mem$$Register));
+    __ lb_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 8);
   %}
 
@@ -4690,7 +4690,7 @@ instruct loadS_volatile(iRegINoSp dst, indirect mem)
   format %{ "lh.aq  $dst, $mem\t# short, #@loadS_volatile" %}
 
   ins_encode %{
-    __ lh_aq($dst$$Register, Address($mem$$Register));
+    __ lh_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4721,7 +4721,7 @@ instruct loadS2L_volatile(iRegLNoSp dst, indirect mem)
   format %{ "lh.aq  $dst, $mem\t# short, #@loadS2L_volatile" %}
 
   ins_encode %{
-    __ lh_aq($dst$$Register, Address($mem$$Register));
+    __ lh_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4753,7 +4753,7 @@ instruct loadUS_volatile(iRegINoSp dst, indirect mem)
             "zext $dst, $dst, 16"%}
 
   ins_encode %{
-    __ lh_aq($dst$$Register, Address($mem$$Register));
+    __ lh_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 16);
   %}
 
@@ -4786,7 +4786,7 @@ instruct loadUS2L_volatile(iRegLNoSp dst, indirect mem)
             "zext $dst, $dst, 16"%}
 
   ins_encode %{
-    __ lh_aq($dst$$Register, Address($mem$$Register));
+    __ lh_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 16);
   %}
 
@@ -4818,7 +4818,7 @@ instruct loadI_volatile(iRegINoSp dst, indirect mem)
   format %{ "lw.aq  $dst, $mem\t# int, #@loadI_volatile" %}
 
   ins_encode %{
-    __ lw_aq($dst$$Register, Address($mem$$Register));
+    __ lw_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4849,7 +4849,7 @@ instruct loadI2L_volatile(iRegLNoSp dst, indirect mem)
   format %{ "lw.aq  $dst, $mem\t# int, #@loadI2L_volatile" %}
 
   ins_encode %{
-    __ lw_aq($dst$$Register, Address($mem$$Register));
+    __ lw_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4881,7 +4881,7 @@ instruct loadUI2L_volatile(iRegLNoSp dst, indirect mem, immL_32bits mask)
             "zext $dst, $dst, 32"%}
 
   ins_encode %{
-    __ lw_aq($dst$$Register, Address($mem$$Register));
+    __ lw_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 32);
   %}
 
@@ -4913,7 +4913,7 @@ instruct loadL_volatile(iRegLNoSp dst, indirect mem)
   format %{ "ld.aq  $dst, $mem\t# int, #@loadL_volatile" %}
 
   ins_encode %{
-    __ ld_aq($dst$$Register, Address($mem$$Register));
+    __ ld_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4959,7 +4959,7 @@ instruct loadP_volatile(iRegPNoSp dst, indirect mem)
   format %{ "ld.aq  $dst, $mem\t# ptr, #@loadP_volatile" %}
 
   ins_encode %{
-    __ ld_aq($dst$$Register, Address($mem$$Register));
+    __ ld_aq($dst$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -4991,7 +4991,7 @@ instruct loadN_volatile(iRegNNoSp dst, indirect mem)
             "zext $dst, $dst, 32"%}
 
   ins_encode %{
-    __ lw_aq($dst$$Register, Address($mem$$Register));
+    __ lw_aq($dst$$Register, $mem$$Register);
     __ zext($dst$$Register, $dst$$Register, 32);
   %}
 
@@ -5076,7 +5076,7 @@ instruct loadF_volatile(fRegF dst, indirect mem, iRegPNoSp tmp)
             "fmv.w.x $dst, $tmp" %}
 
   ins_encode %{
-    __ lw_aq($tmp$$Register, Address($mem$$Register));
+    __ lw_aq($tmp$$Register, $mem$$Register);
     __ fmv_w_x($dst$$FloatRegister, $tmp$$Register);
   %}
 
@@ -5110,7 +5110,7 @@ instruct loadD_volatile(fRegD dst, indirect mem, iRegPNoSp tmp)
             "fmv.d.x $dst, $tmp" %}
 
   ins_encode %{
-    __ ld_aq($tmp$$Register, Address($mem$$Register));
+    __ ld_aq($tmp$$Register, $mem$$Register);
     __ fmv_d_x($dst$$FloatRegister, $tmp$$Register);
   %}
 
@@ -5364,7 +5364,7 @@ instruct storeB_volatile(iRegIorL2I src, indirect mem)
   format %{ "sb.rl $src, $mem\t# byte, #@storeB_volatile" %}
 
   ins_encode %{
-    __ sb_rl($src$$Register, Address($mem$$Register));
+    __ sb_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5394,7 +5394,7 @@ instruct storeimmB0_volatile(immI0 zero, indirect mem)
   format %{ "sb.rl zr, $mem\t# byte, #@storeimmB0_volatile" %}
 
   ins_encode %{
-    __ sb_rl(zr, Address($mem$$Register));
+    __ sb_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5425,7 +5425,7 @@ instruct storeC_volatile(iRegIorL2I src, indirect mem)
   format %{ "sh.rl $src, $mem\t# char, #@storeC_volatile" %}
 
   ins_encode %{
-    __ sh_rl($src$$Register, Address($mem$$Register));
+    __ sh_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5455,7 +5455,7 @@ instruct storeimmC0_volatile(immI0 zero, indirect mem)
   format %{ "sh.rl zr, $mem\t# char, #@storeimmC0_volatile" %}
 
   ins_encode %{
-    __ sh_rl(zr, Address($mem$$Register));
+    __ sh_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5486,7 +5486,7 @@ instruct storeI_volatile(iRegIorL2I src, indirect mem)
   format %{ "sw.rl $src, $mem\t# int, #@storeI_volatile" %}
 
   ins_encode %{
-    __ sw_rl($src$$Register, Address($mem$$Register));
+    __ sw_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5516,7 +5516,7 @@ instruct storeimmI0_volatile(immI0 zero, indirect mem)
   format %{ "sw.rl zr, $mem\t# int, #@storeimmI0_volatile" %}
 
   ins_encode %{
-    __ sw_rl(zr, Address($mem$$Register));
+    __ sw_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5547,7 +5547,7 @@ instruct storeL_volatile(iRegL src, indirect mem)
   format %{ "sd.rl $src, $mem\t# long, #@storeL_volatile" %}
 
   ins_encode %{
-    __ sd_rl($src$$Register, Address($mem$$Register));
+    __ sd_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5578,7 +5578,7 @@ instruct storeimmL0_volatile(immL0 zero, indirect mem)
   format %{ "sd.rl zr, $mem\t# long, #@storeimmL0_volatile" %}
 
   ins_encode %{
-    __ sd_rl(zr, Address($mem$$Register));
+    __ sd_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5609,7 +5609,7 @@ instruct storeP_volatile(iRegP src, indirect mem)
   format %{ "sd.rl $src, $mem\t# ptr, #@storeP_volatile" %}
 
   ins_encode %{
-    __ sd_rl($src$$Register, Address($mem$$Register));
+    __ sd_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5640,7 +5640,7 @@ instruct storeimmP0_volatile(immP0 zero, indirect mem)
   format %{ "sd.rl zr, $mem\t# ptr, #@storeimmP0_volatile" %}
 
   ins_encode %{
-    __ sd_rl(zr, Address($mem$$Register));
+    __ sd_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5671,7 +5671,7 @@ instruct storeN_volatile(iRegN src, indirect mem)
   format %{ "sw.rl $src, $mem\t# compressed ptr, #@storeN_volatile" %}
 
   ins_encode %{
-    __ sw_rl($src$$Register, Address($mem$$Register));
+    __ sw_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5701,7 +5701,7 @@ instruct storeImmN0_volatile(immN0 zero, indirect mem)
   format %{ "sw.rl zr, $mem\t# compressed ptr, #@storeImmN0_volatile" %}
 
   ins_encode %{
-    __ sw_rl(zr, Address($mem$$Register));
+    __ sw_rl(zr, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5735,7 +5735,7 @@ instruct storeF_volatile(fRegF src, indirect mem, iRegPNoSp tmp)
 
   ins_encode %{
     __ fmv_x_w($tmp$$Register, $src$$FloatRegister);
-    __ sw_rl($tmp$$Register, Address($mem$$Register));
+    __ sw_rl($tmp$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5769,7 +5769,7 @@ instruct storeD_volatile(fRegD src, indirect mem, iRegPNoSp tmp)
 
   ins_encode %{
     __ fmv_x_d($tmp$$Register, $src$$FloatRegister);
-    __ sd_rl($tmp$$Register, Address($mem$$Register));
+    __ sd_rl($tmp$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);
@@ -5800,7 +5800,7 @@ instruct storeNKlass_volatile(iRegN src, indirect mem)
   format %{ "sw.rl $src, $mem\t# compressed klass ptr, #@storeNKlass_volatile" %}
 
   ins_encode %{
-    __ sw_rl($src$$Register, Address($mem$$Register));
+    __ sw_rl($src$$Register, $mem$$Register);
   %}
 
   ins_pipe(pipe_serial);

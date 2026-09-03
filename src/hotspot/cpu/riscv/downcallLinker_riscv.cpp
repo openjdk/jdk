@@ -228,7 +228,8 @@ void DowncallLinker::StubGenerator::generate() {
 
     // State transition
     __ mv(t0, _thread_in_native);
-    __ sw_release(t0, Address(xthread, JavaThread::thread_state_offset()), t1);
+    __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
+    __ sw_release(t0, t1);
     __ block_comment("} thread java2native");
   }
 
@@ -309,7 +310,8 @@ void DowncallLinker::StubGenerator::generate() {
 
     // change thread state
     __ mv(t1, _thread_in_Java);
-    __ sw_release(t1, Address(xthread, JavaThread::thread_state_offset()), t0);
+    __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+    __ sw_release(t1, t0);
 
     // Force this write out before the read below
     if (!UseSystemMemoryBarrier) {
