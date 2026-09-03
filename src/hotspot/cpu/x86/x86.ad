@@ -3547,6 +3547,9 @@ bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
       if (!VM_Version::supports_avx512_fp16()) {
         return false;
       }
+      if (size_in_bits < 128) {
+        return false; // Implementation limitation
+      }
       if (size_in_bits < 512 && !VM_Version::supports_avx512vl()) {
         return false;
       }
