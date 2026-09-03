@@ -730,7 +730,7 @@ void Canonicalizer::do_If(If* x) {
     const ciType* r_exact_type = r->exact_type();
     if (l_exact_type != nullptr && l_exact_type->is_value_klass() &&
         r_exact_type != nullptr && r_exact_type->is_value_klass() && x->substitutability_check()) {
-      // If we have a substitutability check and both sides are known inline types we must
+      // If we have a substitutability check and both sides are known value types we must
       // preserve it instead of performing a pointer comparison during compile time.
       return;
     }

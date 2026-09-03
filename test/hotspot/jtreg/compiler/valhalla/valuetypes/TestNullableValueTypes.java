@@ -1020,7 +1020,7 @@ public class TestNullableValueTypes {
         Asserts.assertEquals(result, test33Val);
     }
 
-    // Verify that static nullable inline-type fields are not
+    // Verify that static nullable value-type fields are not
     // treated as never-null by C2 when initialized at compile time.
     private static MyValue1 test34Val;
 

@@ -43,7 +43,7 @@ class Method;
 class RegisterMap;
 class SigEntry;
 
-// An ValueKlass is a specialized InstanceKlass for concrete value classes
+// A ValueKlass is a specialized InstanceKlass for concrete value classes
 // (abstract value classes are represented by InstanceKlass)
 
 class ValueKlass: public InstanceKlass {

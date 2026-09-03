@@ -1959,7 +1959,7 @@ public class TestCallingConventionC1 {
         }
     }
 
-    // C1->C2 GC handling in StubRoutines::store_inline_type_fields_to_buf()
+    // C1->C2 GC handling in SharedRuntime::store_value_type_fields_to_buf()
     @Test(compLevel = CompLevel.C1_SIMPLE)
     public RefPoint test96(RefPoint rp, boolean b) {
         RefPoint p = test96_helper(rp);
@@ -1977,7 +1977,7 @@ public class TestCallingConventionC1 {
 
     @Run(test = "test96")
     public void test96_verifier(RunInfo info) {
-        int count = info.isWarmUp() ? 1 : 20000; // Do enough iteration to cause GC inside StubRoutines::store_inline_type_fields_to_buf
+        int count = info.isWarmUp() ? 1 : 20000; // Do enough iteration to cause GC inside SharedRuntime::store_value_type_fields_to_buf
         Number x = new Number(10); // old object
         for (int i = 0; i < count; i++) {
             Number y = new Number(i); // new object for each iteraton

@@ -56,7 +56,7 @@ public class TestSubstitutabilityExpansionAfterMacro {
 
     // ValueTypeNode removal changes Phi(ValueType<Integer>(oop=null), exact Object)
     // to Phi(null, exact Object) as the right operand. The phi then becomes an exact
-    // nullable Object and can_be_inline_type() changes to false after macro expansion.
+    // nullable Object and can_be_value_type() changes to false after macro expansion.
     static boolean test2(Object obj, boolean b) {
         return equals(obj, b ? (Integer) null : new Object());
     }
@@ -86,4 +86,3 @@ public class TestSubstitutabilityExpansionAfterMacro {
         }
     }
 }
-
