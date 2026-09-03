@@ -767,12 +767,12 @@ void PhaseChaitin::Register_Allocate() {
 
         if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
           const MachNode* mach = n->as_Mach();
-          for (uint i = 1; i < n->req(); i++) {
-            if (mach->is_killed_input(i)) {
-              uint lidx = _lrg_map.live_range_id(n->in(i));
+          for (uint j = 1; j < n->req(); j++) {
+            if (mach->is_killed_input(j)) {
+              uint lidx = _lrg_map.live_range_id(n->in(j));
               assert(lidx != 0, "");
               if (liveout.member(lidx)) {
-                tty->print("input %d of", i); DEBUG_ONLY(n->dump();)
+                tty->print("input %d of", j); DEBUG_ONLY(n->dump();)
                 failed = true;
               }
             }
