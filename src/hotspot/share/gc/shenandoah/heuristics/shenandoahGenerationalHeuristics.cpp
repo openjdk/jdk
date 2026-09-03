@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
@@ -107,9 +108,14 @@ size_t ShenandoahGenerationalHeuristics::prepare_regions_for_promotion(Shenandoa
   assert_no_in_place_promotions();
   size_t candidates = 0;
   for (size_t i = 0, num_regions = heap->num_regions(); i < num_regions; i++) {
+    if (!heap->is_region_young(i)) {
+      // Skip regions that aren't young
+      continue;
+    }
+
     ShenandoahHeapRegion* const r = heap->get_region(i);
-    if (r->is_empty() || !r->has_live() || !r->is_young()) {
-      // skip over regions that aren't young with some live data
+    if (r->is_empty() || !r->has_live()) {
+      // Skip over regions that don't have live data
       continue;
     }
 

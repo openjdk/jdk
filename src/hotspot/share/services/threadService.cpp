@@ -1095,7 +1095,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     // skips JavaThreads in the process of exiting
     // and also skips VM internal JavaThreads
-    // Threads in _thread_new or _thread_new_trans state are included.
+    // Threads in _thread_new state are included.
     // i.e. threads have been started but not yet running.
     if (jt->threadObj() == nullptr   ||
         jt->is_exiting() ||
@@ -1258,7 +1258,7 @@ private:
             // The first stage of async deflation does not affect any field
             // used by this comparison so the ObjectMonitor* is usable here.
             if (mark.has_monitor()) {
-              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner());
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor

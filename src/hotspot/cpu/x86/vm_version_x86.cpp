@@ -1061,8 +1061,7 @@ void VM_Version::get_processor_features() {
   // Currently APX support is only enabled for targets supporting AVX512VL feature.
   if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
     if (FLAG_IS_DEFAULT(UseAPX)) {
-      FLAG_SET_DEFAULT(UseAPX, false); // by default UseAPX is false
-      clear_feature(CPU_APX_F);
+      FLAG_SET_DEFAULT(UseAPX, true); // by default UseAPX is false; enable if supported.
     } else if (!UseAPX) {
       clear_feature(CPU_APX_F);
     }
@@ -1577,12 +1576,18 @@ void VM_Version::get_processor_features() {
       if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
         FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
       }
+    }
+
 #ifdef COMPILER2
+    // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
+    // On Zen3 (family 0x19) and beyond it should be default off.
+    if (cpu_family() >= 0x17 && cpu_family() < 0x19) {
       if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
         FLAG_SET_DEFAULT(UseFPUForSpilling, true);
       }
-#endif
     }
+#endif // COMPILER2
+
   }
 
   if (is_intel()) { // Intel cpus specific settings
