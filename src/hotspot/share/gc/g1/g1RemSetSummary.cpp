@@ -249,8 +249,8 @@ public:
     size_t rs_unused_mem_sz = 0;
     size_t occupied_cards = 0;
 
-    // Accumulate card set details for regions that are assigned to single region
-    // groups. G1HeapRegionRemSet::mem_size() includes the size of the code roots
+    // Accumulate card set details for regions that are assigned to single-region
+    // card set groups. G1HeapRegionRemSet::mem_size() includes the size of the code roots
     if (hrrs->has_card_set_group() && hrrs->card_set_group()->length() == 1) {
       G1CardSet* card_set = hrrs->card_set_group()->card_set();
 

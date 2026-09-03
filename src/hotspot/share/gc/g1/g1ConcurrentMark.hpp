@@ -1027,7 +1027,7 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
   }
 
   void log_card_set_group_add_total(G1CardSetGroup* gr, const char* type);
-  void log_card_set_grouplist(G1CardSetGroupList& gl, const char* type);
+  void log_card_set_group_list(G1CardSetGroupList& gl, const char* type);
   void log_card_set_groups();
 
 public:

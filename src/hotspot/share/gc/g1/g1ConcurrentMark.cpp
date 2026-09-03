@@ -3231,7 +3231,7 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGro
   _total_remset_bytes += group->card_set()->mem_size();
 }
 
-void G1PrintRegionLivenessInfoClosure::log_card_set_grouplist(G1CardSetGroupList& gl, const char* type) {
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_list(G1CardSetGroupList& gl, const char* type) {
   for (G1CardSetGroup* group : gl) {
     log_card_set_group_add_total(group, type);
   }
@@ -3268,6 +3268,6 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
   log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
-  log_card_set_grouplist(candidates->from_marking_groups(), "M");
-  log_card_set_grouplist(candidates->retained_groups(), "R");
+  log_card_set_group_list(candidates->from_marking_groups(), "M");
+  log_card_set_group_list(candidates->retained_groups(), "R");
 }

@@ -63,7 +63,7 @@ using G1CardSetGroupIterator = GrowableArrayIterator<G1CardSetGroupItem>;
 //
 // The shared card set records remembered set entries for all regions in the group
 // as a whole. No references between these regions are recorded. This saves memory,
-// but requires reclamation of multi-region groups together as a single unit.
+// but requires reclamation of multi-region card set groups together as a single unit.
 class G1CardSetGroup : public CHeapObj<mtGCCardSet>{
   GrowableArray<G1CardSetGroupItem> _items;
 
