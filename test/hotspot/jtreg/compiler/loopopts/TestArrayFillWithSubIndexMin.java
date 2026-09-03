@@ -21,33 +21,26 @@
  * questions.
  */
 
-
 /**
- * @test id=coh
+ * @test
  * @summary Exercise minimal int array fill with i - c index and forced fill optimization.
  * @requires vm.compiler2.enabled
  *
- * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
+  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
  *                   -XX:+OptimizeFill
  *                   -XX:+UseCompactObjectHeaders
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_coh
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_nocoh
- *                   compiler.loopopts.TestArrayFillWithSubIndexMin
- */
-
-/**
- * @test id=no-coh
- * @summary Exercise minimal int array fill with i - c index and disabled fill optimization.
- * @requires vm.compiler2.enabled
- *
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test_coh
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test_nocoh
+ *                   ${test.main.class}
  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
  *                   -XX:+OptimizeFill
  *                   -XX:-UseCompactObjectHeaders
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_coh
- *                   -XX:CompileCommand=compileonly,compiler.loopopts.TestArrayFillWithSubIndexMin::test_nocoh
- *                   compiler.loopopts.TestArrayFillWithSubIndexMin
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test_coh
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test_nocoh
+ *                   ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.loopopts;
