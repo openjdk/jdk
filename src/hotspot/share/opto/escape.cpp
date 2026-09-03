@@ -4842,34 +4842,31 @@ void ConnectionGraph::verify_ram_after_reduce_phi(const Unique_Node_List &reduci
       wq.push(_compile->root());
       for (uint i = 0; i < wq.size(); ++i) {
         Node* n = wq.at(i);
+        Node* base = nullptr;
         switch (n->Opcode()) {
           case Op_CastPP:
+            base = n->in(1);
+            if (base->is_AddP()) {
+              // LibraryCallKit::inline_unsafe_flat_access() inserts a CastPP with an AddP input
+              base = get_addp_base(base);
+            }
+            break;
           case Op_AddP:
+            base = get_addp_base(n);
+            break;
           case Op_LoadP:
           case Op_LoadN: {
-            Node* base = nullptr;
-            if (n->Opcode() == Op_CastPP) {
-              base = n->in(1);
-            } else {
-              Node* addp = nullptr;
-              if (n->Opcode() == Op_LoadP || n->Opcode() == Op_LoadN) {
-                addp = n->in(MemNode::Address);
-                if (!addp->is_AddP()) {
-                  addp = nullptr;
-                }
-              } else {
-                assert(n->Opcode() == Op_AddP, "");
-                addp = n;
-              }
-              base = addp != nullptr ? get_addp_base(addp) : nullptr;
+            Node* adr = n->in(MemNode::Address);
+            if (adr->is_AddP()) {
+              base = get_addp_base(adr);
             }
-            assert(base == nullptr || unique_java_object(base) == nullptr || !unique_java_object(base)->scalar_replaceable() ||
-                   (n->_idx < nodes_size() && ptnode_adr(n->_idx) != nullptr), "missing node");
             break;
           }
           default:
             break;
         }
+        assert(base == nullptr || unique_java_object(base) == nullptr || !unique_java_object(base)->scalar_replaceable() ||
+               (n->_idx < nodes_size() && ptnode_adr(n->_idx) != nullptr), "missing node");
         for (DUIterator_Fast jmax, j = n->fast_outs(jmax); j < jmax; j++) {
           Node* u = n->fast_out(j);
           wq.push(u);
