@@ -141,14 +141,14 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
   // Z_R14 (the buffered value array) is the val_array argument to
-  // shuffle_inline_args.  On aarch64 a dedicated callee-saved register is
+  // shuffle_value_args.  On aarch64 a dedicated callee-saved register is
   // used because r0 may hold a live argument; on s390x Z_R14 holds the
   // return address which has already been restored above, so it is free here.
-  // TODO (s390x): confirm this register choice is safe across shuffle_inline_args.
-  shuffle_inline_args(true, is_value_ro_entry, sig_cc,
-                      args_passed_cc, args_on_stack_cc, regs_cc, // from
-                      args_passed,    args_on_stack,    regs,    // to
-                      0, Z_R14);
+  // TODO (s390x): confirm this register choice is safe across shuffle_value_args.
+  shuffle_value_args(true, is_value_ro_entry, sig_cc,
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed,    args_on_stack,    regs,    // to
+                     0, Z_R14);
 
   // Build the real frame.  The jump below skips the stack-bang and frame-setup
   // in verified_value_entry (which uses a different real_frame_size).

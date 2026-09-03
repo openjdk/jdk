@@ -61,14 +61,14 @@ bool ciValueKlass::is_cloneable() const {
   GUARDED_VM_ENTRY(return get_ValueKlass()->is_cloneable();)
 }
 
-int ciValueKlass::inline_arg_length() const {
+int ciValueKlass::value_arg_length() const {
   VM_ENTRY_MARK;
   return get_ValueKlass()->extended_sig()->length();
 }
 
 // When passing a value type's fields as arguments, count the number
 // of argument slots that are needed
-int ciValueKlass::inline_arg_slots() const {
+int ciValueKlass::value_arg_slots() const {
   VM_ENTRY_MARK;
   const Array<SigEntry>* sig_vk = get_ValueKlass()->extended_sig();
   int slots = 0;

@@ -332,10 +332,10 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
-  shuffle_inline_args(true, is_value_ro_entry, sig_cc,
-                      args_passed_cc, args_on_stack_cc, regs_cc, // from
-                      args_passed, args_on_stack, regs,          // to
-                      0, val_array);
+  shuffle_value_args(true, is_value_ro_entry, sig_cc,
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed, args_on_stack, regs,          // to
+                     0, val_array);
 
   // Create the real frame. Below jump will then skip over the stack banging and frame
   // setup code in the verified_value_entry (which has a different real_frame_size).

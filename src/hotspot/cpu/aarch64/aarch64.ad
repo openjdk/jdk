@@ -2191,7 +2191,7 @@ void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   if (!_verified) {
     st->print_cr("\t load_class");
   } else {
-    st->print_cr("\t unpack_inline_arg");
+    st->print_cr("\t unpack_value_arg");
   }
 }
 #endif
@@ -2211,7 +2211,7 @@ void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
     }
     // Unpack value type args passed as oop and then jump to
     // the verified entry point (skipping the unverified entry).
-    int sp_inc = __ unpack_inline_args(ra_->C, _receiver_only);
+    int sp_inc = __ unpack_value_args(ra_->C, _receiver_only);
     // Emit code for verified entry and save increment for stack repair on return
     __ verified_entry(ra_->C, sp_inc);
     if (Compile::current()->output()->in_scratch_emit_size()) {

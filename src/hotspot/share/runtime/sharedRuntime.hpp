@@ -961,8 +961,8 @@ class AdapterHandlerLibrary: public AllStatic {
 class CompiledEntrySignature : public StackObj {
 private:
   Method* _method;
-  int  _num_inline_args;
-  bool _has_inline_recv;
+  int  _num_value_args;
+  bool _has_value_recv;
   GrowableArray<SigEntry>* _sig;
   GrowableArray<SigEntry>* _sig_cc;
   GrowableArray<SigEntry>* _sig_cc_ro;
@@ -1000,8 +1000,8 @@ public:
   int args_on_stack_cc()               const { return _args_on_stack_cc; }
   int args_on_stack_cc_ro()            const { return _args_on_stack_cc_ro; }
 
-  int  num_inline_args()               const { return _num_inline_args; }
-  bool has_inline_recv()               const { return _has_inline_recv; }
+  int  num_value_args()                const { return _num_value_args; }
+  bool has_value_recv()                const { return _has_value_recv; }
 
   bool has_scalarized_args()           const { return _sig != _sig_cc; }
   bool needs_stack_repair()            const { return _needs_stack_repair; }

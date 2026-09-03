@@ -66,8 +66,8 @@ public:
 
   bool is_empty();
   bool is_cloneable() const;
-  int inline_arg_length() const;
-  int inline_arg_slots() const;
+  int value_arg_length() const;
+  int value_arg_slots() const;
   bool contains_oops() const;
   int oop_count() const;
   address pack_handler() const;

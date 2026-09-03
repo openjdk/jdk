@@ -2294,7 +2294,7 @@ const TypeTuple* TypeTuple::make_range(ciSignature* sig, InterfaceHandling inter
   ciType* return_type = sig->return_type();
   uint arg_cnt = return_type->size();
   if (ret_vt_fields) {
-    arg_cnt = return_type->as_value_klass()->inline_arg_slots() + 1;
+    arg_cnt = return_type->as_value_klass()->value_arg_slots() + 1;
     if (is_call) {
       // ValueTypeNode::NullMarker field returned by scalarized calls
       arg_cnt++;

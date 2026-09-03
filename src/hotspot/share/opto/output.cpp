@@ -3205,20 +3205,20 @@ void PhaseOutput::init_scratch_buffer_blob(int const_size) {
         barrier_size += 400;
       }
       ciMethod* method = C->method();
-      auto add_inline_arg_size = [&](ciValueKlass* vk) {
-        size += vk->inline_arg_length() * move_size;
+      auto add_value_arg_size = [&](ciValueKlass* vk) {
+        size += vk->value_arg_length() * move_size;
         size += vk->oop_count() * barrier_size;
       };
       int arg_num = 0;
       if (!method->is_static()) {
         if (method->is_scalarized_arg(arg_num)) {
-          add_inline_arg_size(method->holder()->as_value_klass());
+          add_value_arg_size(method->holder()->as_value_klass());
         }
         arg_num++;
       }
       for (ciSignatureStream str(method->signature()); !str.at_return_type(); str.next()) {
         if (method->is_scalarized_arg(arg_num)) {
-          add_inline_arg_size(str.type()->as_value_klass());
+          add_value_arg_size(str.type()->as_value_klass());
         }
         arg_num++;
       }

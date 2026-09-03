@@ -2752,7 +2752,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
 }
 
 CompiledEntrySignature::CompiledEntrySignature(Method* method) :
-  _method(method), _num_inline_args(0), _has_inline_recv(false),
+  _method(method), _num_value_args(0), _has_value_recv(false),
   _regs(nullptr), _regs_cc(nullptr), _regs_cc_ro(nullptr),
   _args_on_stack(0), _args_on_stack_cc(0), _args_on_stack_cc_ro(0),
   _needs_stack_repair(false), _supers(nullptr) {
@@ -2773,14 +2773,14 @@ CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
     return CodeOffsets::Verified_Entry;
   }
 
-  if (has_inline_recv()) {
-    if (num_inline_args() == 1) {
+  if (has_value_recv()) {
+    if (num_value_args() == 1) {
       // Share same entry for VIEP and VIEP(RO).
       // This is quite common: we have an instance method in an ValueKlass that has
       // no value type args other than <this>.
       return CodeOffsets::Verified_Value_Entry;
     } else {
-      assert(num_inline_args() > 1, "must be");
+      assert(num_value_args() > 1, "must be");
       // No sharing:
       //   VIEP(RO) -- <this> is passed as object
       //   VEP      -- <this> is passed as fields
@@ -2910,8 +2910,8 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
         _sig_cc->appendAll(ValueKlass::cast(holder)->extended_sig());
         _sig_cc->insert_before(1, SigEntry(T_OBJECT, 0, nullptr, false, true)); // buffer argument
         has_scalarized = true;
-        _has_inline_recv = true;
-        _num_inline_args++;
+        _has_value_recv = true;
+        _num_value_args++;
       } else {
         SigEntry::add_entry(_sig_cc, T_OBJECT, holder->name());
       }
@@ -2930,7 +2930,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
             SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
           } else {
-            _num_inline_args++;
+            _num_value_args++;
             has_scalarized = true;
             int last = _sig_cc->length();
             int last_ro = _sig_cc_ro->length();
@@ -2984,12 +2984,12 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     // receiver would help. If so, use the receiver-as-oop convention for the
     // method body but keep scalarizing the other arguments. This also preserves
     // the convention used by calls through super methods.
-    if (_has_inline_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_inline_args > 1) {
+    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_value_args > 1) {
       _sig_cc = _sig_cc_ro;
       _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
-      _has_inline_recv = false;
-      _num_inline_args--;
+      _has_value_recv = false;
+      _num_value_args--;
       _needs_stack_repair = _args_on_stack_cc > _args_on_stack;
       return; // Success
     }
@@ -3017,7 +3017,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 }
 
 void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fingerprint) {
-  _has_inline_recv = fingerprint->has_ro_adapter();
+  _has_value_recv = fingerprint->has_ro_adapter();
 
   int value_object_count = 0;
   BasicType prev_bt = T_ILLEGAL;
@@ -3100,7 +3100,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
         }
         SigEntry::add_entry(_sig_cc, T_METADATA, nullptr, offset);
         if (!skipping_inline_recv) {
-          if (!receiver_handled && _has_inline_recv && value_object_count == 0) {
+          if (!receiver_handled && _has_value_recv && value_object_count == 0) {
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT);
             skipping_inline_recv = true;
             receiver_handled = true;
@@ -3127,7 +3127,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
   assert(value_object_count == 0, "invalid value object count");
 
 #ifdef ASSERT
-  if (_has_inline_recv) {
+  if (_has_value_recv) {
     // In RO signatures, inline receivers must be represented as a single T_OBJECT
     assert(_sig_cc_ro->length() >= 1, "sig_cc_ro must include receiver");
     assert(_sig_cc_ro->at(0)._bt == T_OBJECT,
@@ -3163,7 +3163,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
 
 #ifdef ASSERT
   {
-    AdapterFingerPrint* compare_fp = AdapterFingerPrint::allocate(_sig_cc, _has_inline_recv);
+    AdapterFingerPrint* compare_fp = AdapterFingerPrint::allocate(_sig_cc, _has_value_recv);
     assert(fingerprint->equals(compare_fp), "%s - %s", fingerprint->as_string(), compare_fp->as_string());
     AdapterFingerPrint::deallocate(compare_fp);
   }
@@ -3218,7 +3218,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Lookup method signature's fingerprint
-    entry = lookup(ces.sig_cc(), ces.has_inline_recv());
+    entry = lookup(ces.sig_cc(), ces.has_value_recv());
 
     if (entry != nullptr) {
 #ifndef ZERO
@@ -3381,7 +3381,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
 AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(CompiledEntrySignature& ces,
                                                            bool allocate_code_blob,
                                                            bool is_transient) {
-  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(ces.sig_cc(), ces.has_inline_recv());
+  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(ces.sig_cc(), ces.has_value_recv());
 #ifdef ASSERT
   // Verify that we can successfully restore the compiled entry signature object.
   CompiledEntrySignature ces_verify;
@@ -3533,29 +3533,29 @@ void AdapterHandlerLibrary::lookup_simple_adapters() {
   ResourceMark rm;
   CompiledEntrySignature no_args;
   no_args.compute_calling_conventions();
-  _no_arg_handler = lookup(no_args.sig_cc(), no_args.has_inline_recv());
+  _no_arg_handler = lookup(no_args.sig_cc(), no_args.has_value_recv());
 
   CompiledEntrySignature obj_args;
   SigEntry::add_entry(obj_args.sig(), T_OBJECT);
   obj_args.compute_calling_conventions();
-  _obj_arg_handler = lookup(obj_args.sig_cc(), obj_args.has_inline_recv());
+  _obj_arg_handler = lookup(obj_args.sig_cc(), obj_args.has_value_recv());
 
   CompiledEntrySignature int_args;
   SigEntry::add_entry(int_args.sig(), T_INT);
   int_args.compute_calling_conventions();
-  _int_arg_handler = lookup(int_args.sig_cc(), int_args.has_inline_recv());
+  _int_arg_handler = lookup(int_args.sig_cc(), int_args.has_value_recv());
 
   CompiledEntrySignature obj_int_args;
   SigEntry::add_entry(obj_int_args.sig(), T_OBJECT);
   SigEntry::add_entry(obj_int_args.sig(), T_INT);
   obj_int_args.compute_calling_conventions();
-  _obj_int_arg_handler = lookup(obj_int_args.sig_cc(), obj_int_args.has_inline_recv());
+  _obj_int_arg_handler = lookup(obj_int_args.sig_cc(), obj_int_args.has_value_recv());
 
   CompiledEntrySignature obj_obj_args;
   SigEntry::add_entry(obj_obj_args.sig(), T_OBJECT);
   SigEntry::add_entry(obj_obj_args.sig(), T_OBJECT);
   obj_obj_args.compute_calling_conventions();
-  _obj_obj_arg_handler = lookup(obj_obj_args.sig_cc(), obj_obj_args.has_inline_recv());
+  _obj_obj_arg_handler = lookup(obj_obj_args.sig_cc(), obj_obj_args.has_value_recv());
 
   assert(_no_arg_handler != nullptr &&
          _obj_arg_handler != nullptr &&

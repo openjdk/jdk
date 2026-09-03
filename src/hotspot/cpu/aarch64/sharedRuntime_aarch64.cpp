@@ -636,11 +636,11 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   if (ValueTypePassFieldsAsArgs) {
     // Is there a value type argument?
-    bool has_inline_argument = false;
-    for (int i = 0; i < sig_extended->length() && !has_inline_argument; i++) {
-      has_inline_argument = (sig_extended->at(i)._bt == T_METADATA);
+    bool has_value_argument = false;
+    for (int i = 0; i < sig_extended->length() && !has_value_argument; i++) {
+      has_value_argument = (sig_extended->at(i)._bt == T_METADATA);
     }
-    if (has_inline_argument) {
+    if (has_value_argument) {
       // There is at least a value type argument: we're coming from
       // compiled code so we may not have buffers to back the value
       // objects. Allocate the buffers here with a runtime call for

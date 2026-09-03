@@ -3995,7 +3995,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   }
 
   bool has_this = !m->is_static();
-  if (ces.has_inline_recv() && block_begin == verified_entry_point()) {
+  if (ces.has_value_recv() && block_begin == verified_entry_point()) {
     // <this> argument is scalarized for verified_entry_point()
     has_this = false;
   }

@@ -606,10 +606,10 @@ void LIR_Assembler::add_scalarized_debug_info(int pc_offset) {
 // UEP/UIEP:         VEP:                UEP:                   UEP:
 //   check_icache      pack receiver       check_icache           check_icache
 // VEP/VIEP/VIEP_RO    jump to VIEP      VEP/VIEP_RO:           VIEP_RO:
-//   body            UEP/UIEP:             pack inline args       pack inline args (except receiver)
+//   body            UEP/UIEP:             pack value args        pack value args (except receiver)
 //                     check_icache        jump to VIEP           jump to VIEP
 //                   VIEP/VIEP_RO        UIEP:                  VEP:
-//                     body                check_icache           pack all inline args
+//                     body                check_icache           pack all value args
 //                                       VIEP:                    jump to VIEP
 //                                         body                 UIEP:
 //                                                                check_icache
