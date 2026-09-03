@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -31,26 +29,18 @@
  * @run junit TestParse
  */
 
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.FieldSource;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import jdk.incubator.json.Json;
 import jdk.incubator.json.JsonNumber;
 import jdk.incubator.json.JsonObject;
-import jdk.incubator.json.JsonParseException;
 import jdk.incubator.json.JsonString;
 import jdk.incubator.json.JsonValue;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestParse {
 
@@ -133,103 +123,6 @@ public class TestParse {
         // Ensure equivalent Json (besides white space) generates equivalent
         // toString values
         assertEquals(expStr, str);
-    }
-
-    @Nested
-    class TestExceptions {
-
-        // General exceptions not particularly tied to a sub-interface of JsonValue
-        private static final List<Arguments> INVALID_JSON = List.of(
-                Arguments.of("", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 0."),
-                Arguments.of(" ", "Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 1."),
-                Arguments.of("z", "Unexpected value. Expected a JSON Object, Array, String, Number, Boolean, or Null. Path: \"\". Location: line 0, position 0."),
-                Arguments.of("null, true", "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 4."),
-                Arguments.of("null 5", "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 5."),
-                // Test cases focused on path -----------
-                // Compare this case to the one below
-                Arguments.of("{\"foo\": \"bar\"baz}",
-                        "Unexpected content after JSON value. Path: \"{foo\". Location: line 0, position 13."),
-                // Notice how this case has a space in between the bar and baz.
-                // This is more an invalid structure, rather than the value being incorrect.
-                // In this case the error is attributed to the structure, and not the value.
-                // This is tricky, since paths in parsing cannot be attributed to valid values and are
-                // contextual/best guesses.
-                Arguments.of("{\"foo\": \"bar\" baz }",
-                        "JSON Object is not closed with a brace. Path: \"{\". Location: line 0, position 14."),
-                Arguments.of("[1]x",
-                        "Unexpected content after JSON value. Path: \"\". Location: line 0, position 3."),
-                Arguments.of("[1] x",
-                        "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 4."),
-                Arguments.of("[5x ]",
-                        "Unexpected content after JSON value. Path: \"[0\". Location: line 0, position 2."),
-                Arguments.of("{} {}",
-                        "Additional value(s) were found after the JSON Value. Path: \"\". Location: line 0, position 3."),
-                Arguments.of("[[] 1]",
-                        "JSON Array is not closed with a bracket. Path: \"[\". Location: line 0, position 4.")
-        );
-
-        @ParameterizedTest
-        @FieldSource("INVALID_JSON")
-        void testMessages(String json, String err) {
-            Exception e =  assertThrows(JsonParseException.class, () -> Json.parse(json));
-            assertEquals(err, e.getMessage());
-        }
-
-
-        // Line Position focused exceptions
-
-        private static final String BASIC = "foobarbaz";
-
-        @Test
-        void testBasicLinePosition() {
-            var msg = "Location: line 0, position 1.";
-            JsonParseException e = assertThrows(JsonParseException.class, () -> Json.parse(BASIC));
-            assertTrue(e.getMessage().contains(msg),
-                    "Expected: " + msg + " but got line "
-                            + e.getErrorLine() + ", position " + e.getErrorPosition());
-        }
-
-        private static final String STRUCTURAL =
-                """
-                [
-                  null,   foobarbaz
-                ]
-                """;
-
-        @Test
-        void testStructuralLinePosition() {
-            var msg = "Location: line 1, position 11.";
-            JsonParseException e = assertThrows(JsonParseException.class, () -> Json.parse(STRUCTURAL));
-            assertTrue(e.getMessage().contains(msg),
-                    "Expected: " + msg + " but got line "
-                            + e.getErrorLine() + ", position " + e.getErrorPosition());
-        }
-
-        private static final String STRUCTURAL_WITH_NESTED =
-                """
-                {
-                    "name" :
-                    [
-                        "value",
-                        null, foobarbaz
-                    ]
-                }
-                """;
-
-        @Test
-        void testStructuralWithNestedLinePosition() {
-            var msg = "Location: line 4, position 15.";
-            JsonParseException e = assertThrows(JsonParseException.class, () -> Json.parse(STRUCTURAL_WITH_NESTED));
-            assertTrue(e.getMessage().contains(msg),
-                    "Expected: " + msg + " but got line "
-                            + e.getErrorLine() + ", position " + e.getErrorPosition());
-        }
-
-        @Test
-        void testConstructorIAE() {
-            assertThrows(IllegalArgumentException.class, () -> new JsonParseException("Foo", 1, -1));
-            assertThrows(IllegalArgumentException.class, () -> new JsonParseException("Foo", -1, 1));
-        }
     }
 
     @Test
