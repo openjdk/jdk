@@ -216,8 +216,8 @@ class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   size_t _max_code_root_mem_sz;
   G1HeapRegion* _max_code_root_mem_sz_region;
 
-  size_t _max_group_cardset_mem_sz;
-  G1CardSetGroup* _max_cardset_mem_sz_group;
+  size_t _max_group_card_set_mem_sz;
+  G1CardSetGroup* _max_card_set_mem_sz_group;
 
   size_t total_rs_unused_mem_sz() const     { return _all.rs_unused_mem_size(); }
   size_t total_rs_mem_sz() const            { return _all.rs_mem_size(); }
@@ -226,8 +226,8 @@ class G1HeapRegionStatsClosure: public G1HeapRegionClosure {
   size_t max_rs_mem_sz() const              { return _max_rs_mem_sz; }
   G1HeapRegion* max_rs_mem_sz_region() const  { return _max_rs_mem_sz_region; }
 
-  size_t max_group_cardset_mem_sz() const                 { return _max_group_cardset_mem_sz; }
-  G1CardSetGroup* max_cardset_mem_sz_group() const  { return _max_cardset_mem_sz_group; }
+  size_t max_group_card_set_mem_sz() const                 { return _max_group_card_set_mem_sz; }
+  G1CardSetGroup* max_card_set_mem_sz_group() const  { return _max_card_set_mem_sz_group; }
 
   size_t total_code_root_mem_sz() const     { return _all.code_root_mem_size(); }
   size_t total_code_root_elems() const      { return _all.code_root_elems(); }
@@ -240,7 +240,7 @@ public:
     _free("Free"), _old("Old"), _all("All"),
     _max_rs_mem_sz(0), _max_rs_mem_sz_region(nullptr),
     _max_code_root_mem_sz(0), _max_code_root_mem_sz_region(nullptr),
-    _max_group_cardset_mem_sz(0), _max_cardset_mem_sz_group(nullptr)
+    _max_group_card_set_mem_sz(0), _max_card_set_mem_sz_group(nullptr)
   {}
 
   bool do_heap_region(G1HeapRegion* r) {
@@ -301,9 +301,9 @@ public:
       size_t rs_unused_mem_sz = card_set->unused_mem_size();
       size_t occupied_cards = card_set->occupied();
 
-      if (rs_mem_sz > _max_group_cardset_mem_sz) {
-        _max_group_cardset_mem_sz = rs_mem_sz;
-        _max_cardset_mem_sz_group = group;
+      if (rs_mem_sz > _max_group_card_set_mem_sz) {
+        _max_group_card_set_mem_sz = rs_mem_sz;
+        _max_card_set_mem_sz_group = group;
       }
 
       gen_counter->add(rs_unused_mem_sz, rs_mem_sz, occupied_cards, 0, 0, false);
@@ -356,8 +356,8 @@ public:
                     rem_set->occupied());
     }
 
-    if (max_cardset_mem_sz_group() != nullptr) {
-      G1CardSetGroup* card_set_group = max_cardset_mem_sz_group();
+    if (max_card_set_mem_sz_group() != nullptr) {
+      G1CardSetGroup* card_set_group = max_card_set_mem_sz_group();
       out->print_cr("    Card Set Group with largest card set = %u:(%u regions), "
                     "size = %zu occupied = %zu",
                     card_set_group->group_id(), card_set_group->length(),

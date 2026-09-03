@@ -498,7 +498,7 @@ void G1CardSet::release_and_must_free_container(ContainerPtr container) {
   free_mem_object(container);
 }
 
-class G1ReleaseCardsets : public StackObj {
+class G1ReleaseCardSets : public StackObj {
   G1CardSet* _card_set;
   using ContainerPtr = G1CardSet::ContainerPtr;
 
@@ -520,7 +520,7 @@ class G1ReleaseCardsets : public StackObj {
   }
 
 public:
-  explicit G1ReleaseCardsets(G1CardSet* card_set) : _card_set(card_set) { }
+  explicit G1ReleaseCardSets(G1CardSet* card_set) : _card_set(card_set) { }
 
   void operator ()(Atomic<ContainerPtr>* container_addr) {
     coarsen_to_full(container_addr);
@@ -650,7 +650,7 @@ bool G1CardSet::coarsen_container(Atomic<ContainerPtr>* container_addr,
     assert(!should_free, "must have had more than one reference");
     // Free containers if cur_container is ContainerHowl
     if (container_type(cur_container) == ContainerHowl) {
-      G1ReleaseCardsets rel(this);
+      G1ReleaseCardSets rel(this);
       container_ptr<G1CardSetHowl>(cur_container)->iterate(rel, _config->num_buckets_in_howl());
     }
     return true;

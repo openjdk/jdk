@@ -127,9 +127,9 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
   return total_time_ms;
 }
 
-int G1CSetCandidateGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2) {
-  G1CSetCandidateGroup* group_1 = *gr1;
-  G1CSetCandidateGroup* group_2 = *gr2;
+int G1CardSetGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2) {
+  G1CardSetGroup* group_1 = *gr1;
+  G1CardSetGroup* group_2 = *gr2;
   double gc_eff1 = group_1->gc_efficiency();
   double gc_eff2 = group_2->gc_efficiency();
 
