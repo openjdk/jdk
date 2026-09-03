@@ -1875,7 +1875,7 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
       assert(op, "Support additional KILLS for base operands");
       if (!op->is_bound_register()) {
         fprintf(fp, "  assert(operand_index(%d) == %d, \"\");\n", node->_components.operand_position(comp->_name), index);
-        fprintf(fp, "  if (%d == (int)idx) {\n", index, node->_components.operand_position(comp->_name));
+        fprintf(fp, "  if (%d == (int)idx) {\n", index);
         fprintf(fp, "    return true;\n");
         fprintf(fp, "  }\n");
       }
