@@ -694,7 +694,23 @@ void PhaseChaitin::post_allocate_copy_removal() {
 
       // Remove copies along input edges
       for (k = 1; k < n->req(); k++) {
-        j -= elide_copy(n, k, block, &value, &regnd, two_adr != k);
+        j -= elide_copy(n, k, block, &value, &regnd, (two_adr != k) && !(n->is_Mach() && n->as_Mach()->has_killed_inputs() && n->as_Mach()->is_killed_input(k)));
+      }
+      if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+        for (k = 1; k < n->req(); k++) {
+          if (n->as_Mach()->is_killed_input(k)) {
+            Node* in = n->in(k);
+            uint lidx = _lrg_map.live_range_id(in);
+            OptoReg::Name inreg = lrgs(lidx).reg();
+            uint in_ideal_reg = in->ideal_reg();
+            int in_regs = RegMask::num_registers(in_ideal_reg, lrgs(lidx));
+            assert(in_regs == 1 || RegMask::is_vector(in_ideal_reg) || lrgs(lidx).mask().member(OptoReg::add(inreg,-1)), "");
+            for (int l = 0; l < in_regs; l++) {
+              regnd.map(OptoReg::add(inreg,-l), nullptr);
+              value.map(OptoReg::add(inreg,-l), nullptr);
+            }
+          }
+        }
       }
 
       // Unallocated Nodes define no registers
