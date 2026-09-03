@@ -227,9 +227,9 @@ void DowncallLinker::StubGenerator::generate() {
     _oop_maps->add_gc_map(the_pc - start, map);
 
     // State transition
-    __ mv(t0, _thread_in_native);
-    __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-    __ sw_release(t0, t1);
+    __ mv(t1, _thread_in_native);
+    __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+    __ sw_release(t1, t0);
     __ block_comment("} thread java2native");
   }
 

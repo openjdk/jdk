@@ -846,8 +846,6 @@ class MacroAssembler: public Assembler {
 
   void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
 
-  void load_prototype_header(Register dst, Register src);
-
   void inline_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // inline type data payload offsets...
