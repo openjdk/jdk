@@ -237,7 +237,10 @@ static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st
 static void print_char_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
     jchar c = ta->char_at(index);
-    st->print_cr(" - %3d: %x %c", index, c, isprint(c) ? c : ' ');
+    // isprint() is defined only for a value that fits in an unsigned char,
+    // or EOF.  A jchar does not: NetBSD's libc checks and aborts, which took
+    // out every CDS dump that reached a char[] holding anything non-Latin.
+    st->print_cr(" - %3d: %x %c", index, c, (c <= 0xff && isprint(c)) ? c : ' ');
   }
 }
 
@@ -259,7 +262,7 @@ static void print_double_array(typeArrayOop ta, int print_len, outputStream* st)
 static void print_byte_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
     jbyte c = ta->byte_at(index);
-    st->print_cr(" - %3d: %x %c", index, c, isprint(c) ? c : ' ');
+    st->print_cr(" - %3d: %x %c", index, c, isprint((unsigned char)c) ? c : ' ');
   }
 }
 

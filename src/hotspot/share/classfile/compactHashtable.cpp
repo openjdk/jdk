@@ -434,7 +434,7 @@ void HashtableTextDump::put_utf8(outputStream* st, const char* utf8_string, size
     case '\n': st->print("\\n"); break;
     case '\\': st->print("\\\\"); break;
     default:
-      if (isprint(*c)) {
+      if (isprint((unsigned char)*c)) {
         st->print("%c", *c);
       } else {
         st->print("\\x%02x", ((unsigned int)*c) & 0xff);

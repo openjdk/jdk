@@ -195,7 +195,7 @@ static void print_thread_details(uintx thread_id, const char* name, outputStream
   stringStream ss(tmp, sizeof(tmp));
   ss.print(":%zu-%s", (uintx)thread_id, name);
   for (int i = 0; tmp[i] != '\0'; i++) {
-    if (!isalnum(tmp[i])) {
+    if (!isalnum((unsigned char)tmp[i])) {
       tmp[i] = '-';
     }
   }

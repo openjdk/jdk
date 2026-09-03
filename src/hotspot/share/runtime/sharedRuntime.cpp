@@ -296,7 +296,7 @@ void SharedRuntime::debug_print_value(jshort x) {
 }
 
 void SharedRuntime::debug_print_value(jchar x) {
-  tty->print_cr("char %c %d", isprint(x) ? x : ' ', x);
+  tty->print_cr("char %c %d", (x <= 0xff && isprint(x)) ? x : ' ', x);
 }
 
 void SharedRuntime::debug_print_value(jint x) {

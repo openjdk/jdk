@@ -1657,7 +1657,7 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       const char* spacer = "          " LP64_ONLY("        ");
       st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      if (*fv.description == '#' && isdigit(fv.description[1])) {
+      if (*fv.description == '#' && isdigit((unsigned char)fv.description[1])) {
         // The fv.description string starting with a '#' is the line for the
         // saved frame pointer eg. "#10 method java.lang.invoke.LambdaForm..."
         // basicaly means frame 10.
