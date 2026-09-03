@@ -37,10 +37,6 @@
 #include <pthread.h>
 #endif
 
-extern "C" {
-    typedef void(*PROCEDURE)(void*);
-}
-
 static void fatal(const char* message, int code) {
     fputs(message, stderr);
     // exit the test with a non-zero exit code to avoid accidental false positives
@@ -48,14 +44,17 @@ static void fatal(const char* message, int code) {
 }
 
 class TestThread {
+public:
+    using proc_t = void(*)(void*);
 private:
-    using proc_t = PROCEDURE;
 #ifdef _WIN32
     using thread_t = HANDLE;
 #else
     using thread_t = pthread_t;
 #endif
+
     thread_t _thread;
+
     struct CallbackData {
         proc_t _proc;
         void* _context;
@@ -112,7 +111,6 @@ public:
     }
 
 private:
-
     // Adapt from the callback type the OS API expects to
     // our OS-independent PROCEDURE type.
     static
@@ -127,15 +125,11 @@ private:
     }
 };
 
-extern "C" {
-
 // Run 'proc' in a newly started thread, passing 'context' to it
 // as an argument, and then join that thread.
-void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
+void run_in_new_thread_and_join(TestThread::proc_t proc, void* context) {
     TestThread thread = TestThread::start(proc, context);
     thread.join();
-}
-
 }
 
 #endif // TEST_LIB_NATIVE_THREAD_HPP
