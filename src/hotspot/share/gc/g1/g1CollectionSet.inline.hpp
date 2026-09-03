@@ -30,10 +30,10 @@
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 template <class CardOrRangeVisitor>
-inline void G1CollectionSet::merge_cardsets_for_collection_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
+inline void G1CollectionSet::merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers) {
   uint offset = _groups_inc_part_start;
   if (offset == 0) {
-    G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_cset_group()->card_set(), cl);
+    G1HeapRegionRemSet::iterate_for_merge(_g1h->young_regions_card_set_group()->card_set(), cl);
   }
 
   const uint next_group_increment = num_groups_in_increment();

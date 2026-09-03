@@ -456,7 +456,7 @@ void G1CardSetTest::cardset_mt_test() {
   G1CardSetMtTestTask cl(&card_set);
 
   {
-    GCTraceTime(Error, gc) x("Cardset test");
+    GCTraceTime(Error, gc) x("G1CardSet test");
     _workers->run_task(&cl, num_workers);
   }
 

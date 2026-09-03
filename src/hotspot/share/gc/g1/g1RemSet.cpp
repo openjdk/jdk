@@ -1077,9 +1077,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        G1CSetCandidateGroup* group = r->rem_set()->cset_group();
-        assert(group != nullptr, "must have a cset group");
-        assert(group->length() == 1, "humongous regions cset group must have a single entry");
+        G1CardSetGroup* group = r->rem_set()->card_set_group();
+        assert(group != nullptr, "must have a card set group");
+        assert(group->length() == 1, "Card set groups containing humongous regions must have a single entry");
         group->clear_card_set();
       }
 
@@ -1148,7 +1148,7 @@ public:
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
-        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+        g1h->collection_set()->merge_collection_set_card_set_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
 

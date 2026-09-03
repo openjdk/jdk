@@ -209,7 +209,7 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
       wasted_bytes + reclaimable > allowed_waste) {
       break;
     }
-    assert(!r->rem_set()->has_cset_group(), "must not have a cset group");
+    assert(!r->rem_set()->has_card_set_group(), "must not have a card set group");
     r->rem_set()->set_state_untracked();
 
     wasted_bytes += reclaimable;

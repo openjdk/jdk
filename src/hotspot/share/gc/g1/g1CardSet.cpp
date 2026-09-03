@@ -242,9 +242,9 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
-  // The claim size for group cardsets should be smaller to facilitate
-  // better work distribution. The group cardsets should be larger than
-  // the per region cardsets.
+  // The claim size for multi-region card set groups should be smaller to
+  // improve work distribution. The card set groups should contain more
+  // entries than the single-region card set groups.
   const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   Atomic<bool> _inserted_card;
@@ -782,8 +782,8 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   {
     uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
     G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-    assert(!r->rem_set()->has_cset_group() ||
-           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+    assert(!r->rem_set()->has_card_set_group() ||
+           r->rem_set()->card_set_group()->card_set() != this, "Should not be sharing a card set");
   }
 #endif
 
