@@ -324,7 +324,7 @@
   product(uint, G1OldCardSetGroupSize, 5, EXPERIMENTAL,                     \
           "The maximum number of old regions in a card set group. "         \
           "All regions in a group will be evacuated in the same GC pause. " \
-          "The first group calculated in the concurrent cycle  "            \
+          "The first group calculated in the concurrent cycle "             \
           "may exceed this limit as it is calculated based on "             \
           "G1MixedGCCountTarget.")                                          \
           range(1, 256)                                                     \

@@ -139,8 +139,8 @@ void G1CardSetContainersTest::card_set_inlineptr_test(uint bits_per_card) {
 }
 
 void G1CardSetContainersTest::card_set_array_test(uint cards_per_array) {
-  uint8_t* cardset_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetArray::size_in_bytes(cards_per_array), mtGC);
-  G1CardSetArray* cards = new (cardset_data) G1CardSetArray(1, cards_per_array);
+  uint8_t* card_set_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetArray::size_in_bytes(cards_per_array), mtGC);
+  G1CardSetArray* cards = new (card_set_data) G1CardSetArray(1, cards_per_array);
 
   ASSERT_TRUE(cards->contains(1)); // Added during initialization
   ASSERT_TRUE(cards->num_entries() == 1); // Check it's the only one.
@@ -185,12 +185,12 @@ void G1CardSetContainersTest::card_set_array_test(uint cards_per_array) {
     found.verify_all_found();
   }
 
-  FREE_C_HEAP_ARRAY(cardset_data);
+  FREE_C_HEAP_ARRAY(card_set_data);
 }
 
 void G1CardSetContainersTest::card_set_bitmap_test(uint threshold, uint size_in_bits) {
-  uint8_t* cardset_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetBitMap::size_in_bytes(size_in_bits), mtGC);
-  G1CardSetBitMap* cards = new (cardset_data) G1CardSetBitMap(1, size_in_bits);
+  uint8_t* card_set_data = NEW_C_HEAP_ARRAY(uint8_t, G1CardSetBitMap::size_in_bytes(size_in_bits), mtGC);
+  G1CardSetBitMap* cards = new (card_set_data) G1CardSetBitMap(1, size_in_bits);
 
   ASSERT_TRUE(cards->contains(1, size_in_bits)); // Added during initialization
   ASSERT_TRUE(cards->num_bits_set() == 1); // Should be the only one.
@@ -232,7 +232,7 @@ void G1CardSetContainersTest::card_set_bitmap_test(uint threshold, uint size_in_
     found.verify_part_found(threshold);
   }
 
-  FREE_C_HEAP_ARRAY(cardset_data);
+  FREE_C_HEAP_ARRAY(card_set_data);
 }
 
 TEST_VM_F(G1CardSetContainersTest, basic_card_set_inptr_test) {
