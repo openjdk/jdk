@@ -775,7 +775,6 @@ void PhaseChaitin::Register_Allocate() {
                 tty->print("input %d of", i); DEBUG_ONLY(n->dump();)
                 failed = true;
               }
-              // assert(!liveout.member(lidx), "");
             }
           }
         }

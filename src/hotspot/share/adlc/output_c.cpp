@@ -1701,7 +1701,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   } // done generating expand rule
 
   // Generate projections for instruction's additional DEFs and KILLs
-  if( ! node->expands() && (node->needs_projections(*this) || node->has_temps())) {
+  if (! node->expands() && (node->needs_projections(*this) || node->has_temps())) {
     // Get string representing the MachNode that projections point at
     const char *machNode = "this";
     // Generate the projections
@@ -1758,8 +1758,6 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
         if (!op->is_bound_register()) {
           continue;
-          // syntax_err(node->_linenum, "In %s only bound registers can be killed: %s %s\n",
-          //            node->_ident, comp->_type, comp->_name);
         }
 
         fprintf(fp,"  kill = ");
@@ -1868,12 +1866,8 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
 
   int index = node->oper_input_base(_globalNames) - 1;
   while ((comp = node->_components.iter()) != nullptr) {
-    // printf("XXX %d %s\n", index, comp->isa(Component::KILL) ? "kill" : "");
            
     if (comp->isa(Component::KILL)) {
-      // instr->oper_input_base(_globalNames)
-      //  const char *opcode = machOperEnum(comp->_type);
-      // oper->num_edges(_globalNames);
 
       Form *form = (Form*)_globalNames[comp->_type];
       assert(form, "component type must be a defined form");
