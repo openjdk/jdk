@@ -201,7 +201,8 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
   // in fast bytecode codelets. load_field_entry has a memory barrier that gains
   // the needed ordering, together with control dependency on entering the fast codelet
   // itself.
-  __ sb_release(bc_reg, xbcp);
+  __ la(temp_reg, at_bcp(0));
+  __ sb_release(bc_reg, temp_reg);
   __ bind(L_patch_done);
 }
 
