@@ -944,7 +944,7 @@ bool Arguments::parse_argument(const char* arg, JVMFlagOrigin origin) {
   const char* name = arg;
   while (true) {
     c = *arg;
-    if (isalnum(c) || (c == '_')) {
+    if (isalnum((unsigned char)c) || (c == '_')) {
       ++arg;
     } else {
       break;

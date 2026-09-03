@@ -1267,8 +1267,8 @@ static const char* skip_uri_protocol(const char* source) {
 
 static char decode_percent_encoded(const char *str, size_t& index) {
   if (str[index] == '%'
-      && isxdigit(str[index + 1])
-      && isxdigit(str[index + 2])) {
+      && isxdigit((unsigned char)str[index + 1])
+      && isxdigit((unsigned char)str[index + 2])) {
     char hex[3];
     hex[0] = str[index + 1];
     hex[1] = str[index + 2];
