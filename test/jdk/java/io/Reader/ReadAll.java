@@ -196,26 +196,26 @@ public class ReadAll {
         }
         assertEquals(stringExpected.substring(n), string);
 
-        // InputStreamReader implementation: Called directly after construction (Fast Path)
+        // InputStreamReader implementation: Called directly after construction
         try (InputStreamReader isr = new InputStreamReader(new ByteArrayInputStream(stringExpected.getBytes()))) {
             string = isr.readAllAsString();
         }
         assertEquals(stringExpected, string);
 
-        // InputStreamReader implementation: Called on empty stream (Fast Path)
+        // InputStreamReader implementation: Called on empty stream
         try (InputStreamReader isr = new InputStreamReader(InputStream.nullInputStream())) {
             string = isr.readAllAsString();
         }
         assertEquals("", string);
 
-        // InputStreamReader implementation: Stream ends mid-character (here: last byte of three-byte UTF-8 character missing) (Fast Path)
+        // InputStreamReader implementation: Stream ends mid-character (here: last byte of three-byte UTF-8 character missing)
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0xE2, (byte) 0x82 }), StandardCharsets.UTF_8)) {
             string = isr.readAllAsString();
         }
         assertEquals("\uFFFD", string);
 
-        // InputStreamReader implementation: Complete character + incomplete sequence (Slow Path)
+        // InputStreamReader implementation: Complete character + incomplete sequence
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0xE2 }),
                 StandardCharsets.UTF_8)) {
@@ -224,7 +224,7 @@ public class ReadAll {
         }
         assertEquals("\uFFFD", string);
 
-        // InputStreamReader implementation: Two Complete characters + incomplete sequence (Slow Path)
+        // InputStreamReader implementation: Two Complete characters + incomplete sequence
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0xE2 }),
                 StandardCharsets.UTF_8)) {
@@ -233,7 +233,7 @@ public class ReadAll {
         }
         assertEquals("B\uFFFD", string);
 
-        // InputStreamReader implementation: Three Complete characters + incomplete sequence (Slow Path)
+        // InputStreamReader implementation: Three Complete characters + incomplete sequence
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0x43, (byte) 0xE2 }),
                 StandardCharsets.UTF_8)) {
@@ -243,7 +243,7 @@ public class ReadAll {
         }
         assertEquals("C\uFFFD", string);
 
-        // InputStreamReader implementation: Four Complete characters (Slow Path)
+        // InputStreamReader implementation: Four Complete characters
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(new byte[] { (byte) 0x41, (byte) 0x42, (byte) 0x43, (byte) 0x44 }),
                 StandardCharsets.UTF_8)) {
@@ -253,7 +253,7 @@ public class ReadAll {
         }
         assertEquals("CD", string);
 
-        // InputStreamReader implementation: 8K+ Complete characters (Slow Path)
+        // InputStreamReader implementation: 8K+ Complete characters
         int plen = PHRASE.length();
         String p8192 = PHRASE.repeat((8192 + plen - 1) / plen);
         try (InputStreamReader isr = new InputStreamReader(new SequenceInputStream(
@@ -266,14 +266,14 @@ public class ReadAll {
         }
         assertEquals("CD" + p8192, string);
 
-        // InputStreamReader implementation: read() after readAllString() (Slow path)
+        // InputStreamReader implementation: read() after readAllString()
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(stringExpected.getBytes()))) {
             assertEquals(stringExpected, isr.readAllAsString());
             assertEquals(-1, isr.read()); // must not throw but return -1
         }
 
-        // InputStreamReader implementation: readAllAsString() after readAllString() (Slow path)
+        // InputStreamReader implementation: readAllAsString() after readAllString()
         try (InputStreamReader isr = new InputStreamReader(
                 new ByteArrayInputStream(stringExpected.getBytes()))) {
             assertEquals(stringExpected, isr.readAllAsString());
