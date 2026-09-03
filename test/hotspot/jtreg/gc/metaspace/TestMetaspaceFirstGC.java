@@ -59,6 +59,10 @@ public class TestMetaspaceFirstGC {
 
     private static int classCounter = 0;
 
+    // Counted down from the JFR stream when a collection with cause "Metadata GC Threshold"
+    // arrives, so the event is already in hand when loading stops.
+    private static final CountDownLatch metadataGC = new CountDownLatch(1);
+
     public interface Dummy {}
 
     static class DummyHandler implements InvocationHandler {
@@ -189,11 +193,6 @@ public class TestMetaspaceFirstGC {
             System.out.println("PASSED");
         }
     }
-
-    private static final CountDownLatch metadataGC = new CountDownLatch(1);
-
-    // Counted down from the JFR stream when a collection with cause "Metadata GC Threshold"
-    // arrives, so the event is already in hand when loading stops.
 
     private static void loadClassesUntilGC(int maxIterations) throws InterruptedException {
         for (int i = 0; i < maxIterations; i++) {
