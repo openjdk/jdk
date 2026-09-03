@@ -174,7 +174,7 @@ public interface SegmentAllocator {
      *                 string bytes
      * @param srcIndex the starting index of the source string
      * @param numChars the number of characters to be copied
-     * @return a segment containing the encoded string
+     * @return a new native segment containing the encoded string
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
      * @throws IndexOutOfBoundsException if {@code srcIndex > str.length() - numChars}
      *
