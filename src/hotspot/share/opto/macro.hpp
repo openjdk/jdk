@@ -121,7 +121,7 @@ private:
   bool eliminate_allocate_node(AllocateNode *alloc);
   void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
   bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
-  void process_users_of_allocation(CallNode *alloc, bool inline_alloc = false);
+  void process_users_of_allocation(CallNode *alloc, bool value_type_alloc = false);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);
