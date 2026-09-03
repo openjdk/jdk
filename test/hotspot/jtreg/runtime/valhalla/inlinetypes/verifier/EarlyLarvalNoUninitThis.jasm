@@ -21,44 +21,19 @@
  * questions.
  */
 
-#include <string.h>
-#include "jni.h"
-#include "jvmti.h"
-
-static jvmtiEnv *jvmti;
-
-extern "C" {
-
-extern JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiError err;
-  jvmtiCapabilities caps;
-
-  if (jvm->GetEnv((void **) &jvmti, JVMTI_VERSION) != JNI_OK) {
-    return JNI_ERR;
+public identity class EarlyLarvalNoUninitThis version 72:65535
+{
+  public Method "<init>":"()V"
+    stack 1  locals 1
+  {
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         goto              L7;
+  L7:    stack_frame_type  early_larval;
+           unset_fields;
+           frame_type      full;
+             locals_map    class EarlyLarvalNoUninitThis;
+             stack_map;
+         return;
   }
-
-  memset(&caps, 0, sizeof(caps));
-  caps.can_suspend = 1;
-  caps.can_force_early_return = 1;
-  err = jvmti->AddCapabilities( &caps);
-  if (err != JVMTI_ERROR_NONE) {
-    return JNI_ERR;
-  }
-
-  return JNI_OK;
-}
-
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_suspendThread(JNIEnv *env, jclass ignore, jthread target) {
-  return (jint) jvmti->SuspendThread(target);
-}
-
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_resumeThread(JNIEnv *env, jclass ignore, jthread target) {
-  return (jint) jvmti->ResumeThread(target);
-}
-
-JNIEXPORT jint Java_ForceEarlyReturnValueClass_forceEarlyReturnVoid(JNIEnv *env, jclass ignore, jthread target) {
-  return (jint) jvmti->ForceEarlyReturnVoid(target);
-}
-
 }

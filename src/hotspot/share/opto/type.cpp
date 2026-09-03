@@ -3622,6 +3622,7 @@ void TypeInterfaces::verify() const {
 #endif
 
 const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) const {
+  ResourceMark rm;
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
@@ -3663,6 +3664,7 @@ const TypeInterfaces* TypeInterfaces::union_with(const TypeInterfaces* other) co
 }
 
 const TypeInterfaces* TypeInterfaces::intersection_with(const TypeInterfaces* other) const {
+  ResourceMark rm;
   GrowableArray<ciInstanceKlass*> result_list;
   int i = 0;
   int j = 0;
