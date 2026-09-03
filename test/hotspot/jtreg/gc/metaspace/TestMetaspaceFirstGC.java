@@ -33,6 +33,7 @@
  * @run main/othervm -Xms200m -XX:MetaspaceSize=99m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 99m
  */
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -52,6 +53,7 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
+import jtreg.SkippedException;
 
 public class TestMetaspaceFirstGC {
 
@@ -70,6 +72,18 @@ public class TestMetaspaceFirstGC {
         long expectedSize = -1;
         if (args.length > 0) {
             expectedSize = parseSize(args[0]);
+        }
+
+        long committedAtStart = ManagementFactory.getMemoryPoolMXBeans().stream()
+            .filter(p -> p.getName().equals("Metaspace"))
+            .mapToLong(p -> p.getUsage().getCommitted())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Metaspace pool not found"));
+        System.out.println("Metaspace committed at start: " + committedAtStart);
+        if (expectedSize > 0 && committedAtStart >= expectedSize) {
+            // the first metadata GC already happened during VM startup, nothing left to observe
+            throw new SkippedException("metaspace committed at start (" + committedAtStart
+                + ") already at MetaspaceSize (" + expectedSize + ")");
         }
 
         List<RecordedEvent> events;
@@ -208,7 +222,7 @@ public class TestMetaspaceFirstGC {
     }
 
     private static long getMetaspaceUsed() {
-        return java.lang.management.ManagementFactory.getMemoryPoolMXBeans().stream()
+        return ManagementFactory.getMemoryPoolMXBeans().stream()
             .filter(p -> p.getName().equals("Metaspace"))
             .mapToLong(p -> p.getUsage().getUsed())
             .findFirst()
