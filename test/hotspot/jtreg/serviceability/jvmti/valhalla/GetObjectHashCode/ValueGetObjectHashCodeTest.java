@@ -29,7 +29,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @run main/othervm/native -agentlib:ValueGetObjectHashCodeTest
- *                          -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlineLayout
+ *                          -XX:+UnlockDiagnosticVMOptions -XX:+PrintValueLayout
  *                          ValueGetObjectHashCodeTest
  */
 

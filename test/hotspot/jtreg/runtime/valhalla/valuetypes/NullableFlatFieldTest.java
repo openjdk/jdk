@@ -27,7 +27,7 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseNullableAtomicValueFlattening -XX:+PrintInlineLayout runtime.valhalla.valuetypes.NullableFlatFieldTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UseNullableAtomicValueFlattening -XX:+PrintValueLayout runtime.valhalla.valuetypes.NullableFlatFieldTest
  */
 
 package runtime.valhalla.valuetypes;

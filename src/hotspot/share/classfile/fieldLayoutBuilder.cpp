@@ -1589,7 +1589,7 @@ void FieldLayoutBuilder::epilogue() {
 
   static bool first_layout_print = true;
 
-  if (PrintFieldLayout || (PrintInlineLayout && (_has_inlineable_fields || _is_concrete_value || _is_abstract_value))) {
+  if (PrintFieldLayout || (PrintValueLayout && (_has_inlineable_fields || _is_concrete_value || _is_abstract_value))) {
     ResourceMark rm;
     stringStream st;
     if (first_layout_print) {

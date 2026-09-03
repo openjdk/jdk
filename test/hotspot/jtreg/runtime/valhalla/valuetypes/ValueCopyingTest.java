@@ -28,7 +28,7 @@
  * @modules java.base/jdk.internal.vm.annotation
  * @enablePreview
  * @compile ValueCopyingTest.java
- * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:+PrintInlineLayout runtime.valhalla.valuetypes.ValueCopyingTest
+ * @run main/othervm -Xint -XX:+UnlockDiagnosticVMOptions -XX:+PrintValueLayout runtime.valhalla.valuetypes.ValueCopyingTest
  */
 
 package runtime.valhalla.valuetypes;
