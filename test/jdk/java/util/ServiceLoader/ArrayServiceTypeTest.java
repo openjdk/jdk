@@ -24,32 +24,34 @@
 /**
  * @test
  * @bug 8379812
- * @summary ServiceLoader should handle array service types gracefully
+ * @summary ServiceLoader should reject invalid service types
  */
 
 import java.lang.invoke.MethodType;
+import java.lang.module.ModuleLayer;
 import java.util.ServiceLoader;
 
 public class ArrayServiceTypeTest {
 
     public static void main(String[] args) {
-        assertEmpty(ServiceLoader.loadInstalled(
+        assertFails(() -> ServiceLoader.loadInstalled(
                 MethodType.genericMethodType(1, true).parameterType(1)));
-        assertEmpty(ServiceLoader.loadInstalled(Object[].class));
-        assertEmpty(ServiceLoader.load(Object[].class));
-        assertEmpty(ServiceLoader.load(Object[].class,
+        assertFails(() -> ServiceLoader.loadInstalled(Object[].class));
+        assertFails(() -> ServiceLoader.load(Object[].class));
+        assertFails(() -> ServiceLoader.load(Object[].class,
                 ArrayServiceTypeTest.class.getClassLoader()));
+        assertFails(() -> ServiceLoader.load(ModuleLayer.boot(), Object[].class));
+        assertFails(() -> ServiceLoader.load(int.class));
     }
 
-    private static void assertEmpty(ServiceLoader<?> loader) {
-        if (loader.iterator().hasNext()) {
-            throw new RuntimeException("expected empty ServiceLoader, found provider");
-        }
-        if (loader.stream().findAny().isPresent()) {
-            throw new RuntimeException("expected empty stream, found provider");
-        }
-        if (loader.findFirst().isPresent()) {
-            throw new RuntimeException("expected empty findFirst");
+    private static void assertFails(Runnable action) {
+        try {
+            action.run();
+            throw new RuntimeException("expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            if (!e.getMessage().contains("not a valid service type")) {
+                throw new RuntimeException("unexpected message: " + e.getMessage(), e);
+            }
         }
     }
 }

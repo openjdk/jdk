@@ -391,9 +391,6 @@ public final class ServiceLoader<S>
     // null when locating provider using a module layer
     private final ClassLoader loader;
 
-    // true if the service type cannot have providers (e.g. an array class)
-    private final boolean empty;
-
     // The lazy-lookup iterator for iterator operations
     private Iterator<Provider<S>> lookupIterator1;
     private final List<S> instantiatedProviders = new ArrayList<>();
@@ -449,18 +446,6 @@ public final class ServiceLoader<S>
     }
 
     /**
-     * Initializes an empty service loader for a service type that cannot have
-     * providers, such as an array class.
-     */
-    private ServiceLoader(Class<S> svc) {
-        this.service = Objects.requireNonNull(svc);
-        this.serviceName = svc.getName();
-        this.layer = null;
-        this.loader = null;
-        this.empty = true;
-    }
-
-    /**
      * Initializes a new instance of this class for locating service providers
      * in a module layer.
      *
@@ -478,7 +463,6 @@ public final class ServiceLoader<S>
         this.serviceName = svc.getName();
         this.layer = layer;
         this.loader = null;
-        this.empty = false;
     }
 
     /**
@@ -517,7 +501,6 @@ public final class ServiceLoader<S>
         this.serviceName = svc.getName();
         this.layer = null;
         this.loader = cl;
-        this.empty = false;
     }
 
     /**
@@ -538,14 +521,17 @@ public final class ServiceLoader<S>
         this.serviceName = svc.getName();
         this.layer = null;
         this.loader = cl;
-        this.empty = false;
     }
 
     /**
-     * Returns {@code true} if the given class cannot be a service type.
+     * Throws {@code IllegalArgumentException} if the given class is not a valid
+     * service type.
      */
-    private static boolean isUnlocatableServiceType(Class<?> service) {
-        return service.isArray();
+    private static void checkServiceType(Class<?> service) {
+        if (service.isPrimitive() || service.isArray() || service.isHidden()) {
+            throw new IllegalArgumentException(service.getName()
+                    + ": not a valid service type");
+        }
     }
 
     /**
@@ -1177,9 +1163,6 @@ public final class ServiceLoader<S>
      * Returns a new lookup iterator.
      */
     private Iterator<Provider<S>> newLookupIterator() {
-        if (empty) {
-            return Collections.emptyIterator();
-        }
         assert layer == null || loader == null;
         if (layer != null) {
             return new LayerLookupIterator<>();
@@ -1423,9 +1406,7 @@ public final class ServiceLoader<S>
                                      Module callerModule)
     {
         Objects.requireNonNull(service);
-        if (isUnlocatableServiceType(service)) {
-            return new ServiceLoader<>(service);
-        }
+        checkServiceType(service);
         return new ServiceLoader<>(callerModule, service, loader);
     }
 
@@ -1524,6 +1505,9 @@ public final class ServiceLoader<S>
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         if {@code service} is a primitive type, array class, or hidden class
+     *
      * @throws ServiceConfigurationError
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
@@ -1535,9 +1519,7 @@ public final class ServiceLoader<S>
                                             ClassLoader loader)
     {
         Objects.requireNonNull(service);
-        if (isUnlocatableServiceType(service)) {
-            return new ServiceLoader<>(service);
-        }
+        checkServiceType(service);
         return new ServiceLoader<>(Reflection.getCallerClass(), service, loader);
     }
 
@@ -1572,6 +1554,9 @@ public final class ServiceLoader<S>
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         if {@code service} is a primitive type, array class, or hidden class
+     *
      * @throws ServiceConfigurationError
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
@@ -1580,9 +1565,7 @@ public final class ServiceLoader<S>
     @CallerSensitive
     public static <S> ServiceLoader<S> load(Class<S> service) {
         Objects.requireNonNull(service);
-        if (isUnlocatableServiceType(service)) {
-            return new ServiceLoader<>(service);
-        }
+        checkServiceType(service);
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
         return new ServiceLoader<>(Reflection.getCallerClass(), service, cl);
     }
@@ -1609,6 +1592,9 @@ public final class ServiceLoader<S>
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         if {@code service} is a primitive type, array class, or hidden class
+     *
      * @throws ServiceConfigurationError
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
@@ -1617,9 +1603,7 @@ public final class ServiceLoader<S>
     @CallerSensitive
     public static <S> ServiceLoader<S> loadInstalled(Class<S> service) {
         Objects.requireNonNull(service);
-        if (isUnlocatableServiceType(service)) {
-            return new ServiceLoader<>(service);
-        }
+        checkServiceType(service);
         ClassLoader cl = ClassLoader.getPlatformClassLoader();
         return new ServiceLoader<>(Reflection.getCallerClass(), service, cl);
     }
@@ -1663,6 +1647,9 @@ public final class ServiceLoader<S>
      *
      * @return A new service loader
      *
+     * @throws IllegalArgumentException
+     *         if {@code service} is a primitive type, array class, or hidden class
+     *
      * @throws ServiceConfigurationError
      *         if the service type is not accessible to the caller or the
      *         caller is in an explicit module and its module descriptor does
@@ -1673,9 +1660,7 @@ public final class ServiceLoader<S>
     @CallerSensitive
     public static <S> ServiceLoader<S> load(ModuleLayer layer, Class<S> service) {
         Objects.requireNonNull(service);
-        if (isUnlocatableServiceType(service)) {
-            return new ServiceLoader<>(service);
-        }
+        checkServiceType(service);
         return new ServiceLoader<>(Reflection.getCallerClass(), layer, service);
     }
 
