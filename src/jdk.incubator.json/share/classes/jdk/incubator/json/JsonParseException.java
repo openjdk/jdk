@@ -45,13 +45,17 @@ public final class JsonParseException extends RuntimeException {
     private static final long serialVersionUID = 7022545379651073390L;
 
     /**
-     * Zero-based line number of the error
+     * Zero-based line number of the error, counted by {@code '\n'} (linefeed,
+     * {@code U+000A}) characters.
+     *
      * @serial
      */
     private final int line;
 
     /**
-     * Zero-based position of the error within the line
+     * Zero-based position of the error within the line, counted in UTF-16
+     * code units.
+     *
      * @serial
      */
     private final int pos;
