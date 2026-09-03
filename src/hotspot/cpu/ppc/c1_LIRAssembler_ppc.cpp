@@ -664,7 +664,7 @@ int LIR_Assembler::store(LIR_Opr from_reg, Register base, int offset, BasicType 
           if (UseCompressedOops && !wide) {
             // Encoding done in caller
             __ stw(from_reg->as_register(), offset, base);
-            __ verify_oop(from_reg->as_register(), FILE_AND_LINE, /*compressed*/ true);
+            __ verify_oop(from_reg->as_register(), FILE_AND_LINE, /*compressed*/ true); // kills R0
           } else {
             __ std(from_reg->as_register(), offset, base);
             if (VerifyOops) {
