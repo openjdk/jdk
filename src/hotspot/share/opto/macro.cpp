@@ -464,8 +464,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         values.at_put(j, mem);
       } else if (val->is_Store()) {
         Node* n = val->in(MemNode::ValueIn);
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
           n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
@@ -650,8 +648,6 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
       return value_from_alloc(ft, adr_t, alloc);
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      n = bs->step_over_gc_barrier(n);
       return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
@@ -805,7 +801,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   }
 
   while (can_eliminate && worklist.size() > 0) {
-    BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
     res = worklist.pop();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax); j < jmax && can_eliminate; j++) {
       Node* use = res->fast_out(j);
@@ -827,7 +822,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             NOT_PRODUCT(fail_eliminate = "Mismatched access");
             can_eliminate = false;
           }
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -3083,11 +3078,6 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
 // mark words:
 //
 // long mark = array1.mark | array2.mark | ...;
-// long locked_bit = markWord::unlocked_value & array1.mark & array2.mark & ...;
-// if (locked_bit == 0) {
-//   // One array is locked, load its prototype header from the klass
-//   mark = array1.klass.proto | array2.klass.proto | ...;
-// }
 // if ((mark & markWord::flat_array_bit_in_place) == 0) {
 //   ...
 // }
@@ -3113,7 +3103,6 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
 
   if (use_mark_word) {
     Node* mark = MakeConX(0);
-    Node* locked_bit = MakeConX(markWord::unlocked_value);
     Node* mem = check->in(FlatArrayCheckNode::Memory);
     for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
       Node* ary = check->in(i);
@@ -3123,52 +3112,19 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
       Node* mark_adr = basic_plus_adr(ary, oopDesc::mark_offset_in_bytes());
       Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
       mark = _igvn.transform(new OrXNode(mark, mark_load));
-      locked_bit = _igvn.transform(new AndXNode(locked_bit, mark_load));
     }
     assert(!mark->is_Con(), "Should have been optimized out");
-    Node* cmp = _igvn.transform(new CmpXNode(locked_bit, MakeConX(0)));
-    Node* is_unlocked = _igvn.transform(new BoolNode(cmp, BoolTest::ne));
 
-    // BoolNode might be shared, replace each if user
+    // Replace the bool node
     assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
-    for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
-      IfNode* old_iff = bol->last_out(i)->as_If();
-      Node* ctrl = old_iff->in(0);
-      RegionNode* region = new RegionNode(3);
-      Node* mark_phi = new PhiNode(region, TypeX_X);
 
-      // Check if array is unlocked
-      IfNode* iff = _igvn.transform(new IfNode(ctrl, is_unlocked, PROB_MAX, COUNT_UNKNOWN))->as_If();
+    // Check if flat array bits are set
+    Node* mask = MakeConX(markWord::flat_array_bit_in_place);
+    Node* masked = _igvn.transform(new AndXNode(mark, mask));
+    Node* cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
+    Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
+    _igvn.replace_node(bol, is_not_flat);
 
-      // Unlocked: Use bits from mark word
-      region->init_req(1, _igvn.transform(new IfTrueNode(iff)));
-      mark_phi->init_req(1, mark);
-
-      // Locked: Load prototype header from klass
-      ctrl = _igvn.transform(new IfFalseNode(iff));
-      Node* proto = MakeConX(0);
-      for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
-        Node* ary = check->in(i);
-        // Make loads control dependent to make sure they are only executed if array is locked
-        Node* klass_adr = basic_plus_adr(ary, oopDesc::klass_offset_in_bytes());
-        Node* klass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-        Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-        Node* proto_load = _igvn.transform(LoadNode::make(_igvn, ctrl, C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
-        proto = _igvn.transform(new OrXNode(proto, proto_load));
-      }
-      region->init_req(2, ctrl);
-      mark_phi->init_req(2, proto);
-
-      // Check if flat array bits are set
-      Node* mask = MakeConX(markWord::flat_array_bit_in_place);
-      Node* masked = _igvn.transform(new AndXNode(_igvn.transform(mark_phi), mask));
-      cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
-      Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
-
-      ctrl = _igvn.transform(region);
-      iff = _igvn.transform(new IfNode(ctrl, is_not_flat, PROB_MAX, COUNT_UNKNOWN))->as_If();
-      _igvn.replace_node(old_iff, iff);
-    }
     _igvn.replace_node(check, C->top());
   } else {
     // Fall back to layout helper check
@@ -3323,8 +3279,7 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
-               n->Opcode() == Op_MinL      ||
-               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
+               n->Opcode() == Op_MinL,
                "unknown node type in macro list");
       }
       if (C->failing()) {

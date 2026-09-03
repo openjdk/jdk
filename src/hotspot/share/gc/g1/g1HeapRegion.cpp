@@ -396,7 +396,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   }
 
   G1HeapRegionRemSet* hrrs = rem_set();
-  size_t code_roots_length = hrrs->code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_length();
 
   // if this region is empty then there should be no entries
   // on its code root list

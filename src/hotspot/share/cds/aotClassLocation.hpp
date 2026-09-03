@@ -106,6 +106,7 @@ public:
   // Only boot/app classpaths can contain unnamed module
   bool has_unnamed_module()          const { return from_boot_classpath() || from_app_classpath(); }
 
+  char* get_attr(const char* tag) const;
   char* get_cpattr() const;
   AOTClassLocation* write_to_archive() const;
 

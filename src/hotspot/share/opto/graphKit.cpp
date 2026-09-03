@@ -3922,41 +3922,10 @@ Node* GraphKit::gen_checkcast(Node* obj, Node* superklass, Node** failure_contro
   return res;
 }
 
-Node* GraphKit::mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool check_lock) {
+Node* GraphKit::mark_word_test(Node* obj, uintptr_t mask_val, bool eq) {
   // Load markword
   Node* mark_adr = basic_plus_adr(obj, oopDesc::mark_offset_in_bytes());
   Node* mark = make_load(nullptr, mark_adr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
-  if (check_lock && !UseCompactObjectHeaders) {
-    // COH: Locking does not override the markword with a tagged pointer. We can directly read from the markword.
-    // Check if obj is locked
-    Node* locked_bit = MakeConX(markWord::unlocked_value);
-    locked_bit = _gvn.transform(new AndXNode(locked_bit, mark));
-    Node* cmp = _gvn.transform(new CmpXNode(locked_bit, MakeConX(0)));
-    Node* is_unlocked = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
-    IfNode* iff = new IfNode(control(), is_unlocked, PROB_MAX, COUNT_UNKNOWN);
-    _gvn.transform(iff);
-    Node* locked_region = new RegionNode(3);
-    Node* mark_phi = new PhiNode(locked_region, TypeX_X);
-
-    // Unlocked: Use bits from mark word
-    locked_region->init_req(1, _gvn.transform(new IfTrueNode(iff)));
-    mark_phi->init_req(1, mark);
-
-    // Locked: Load prototype header from klass
-    set_control(_gvn.transform(new IfFalseNode(iff)));
-    // Make loads control dependent to make sure they are only executed if array is locked
-    Node* klass_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-    Node* klass = _gvn.transform(LoadKlassNode::make(_gvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-    Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-    Node* proto = _gvn.transform(LoadNode::make(_gvn, control(), C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
-
-    locked_region->init_req(2, control());
-    mark_phi->init_req(2, proto);
-    set_control(_gvn.transform(locked_region));
-    record_for_igvn(locked_region);
-
-    mark = mark_phi;
-  }
 
   // Now check if mark word bits are set
   Node* mask = MakeConX(mask_val);
@@ -3967,7 +3936,7 @@ Node* GraphKit::mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool chec
 }
 
 Node* GraphKit::inline_type_test(Node* obj, bool is_inline) {
-  return mark_word_test(obj, markWord::inline_type_pattern, is_inline, /* check_lock = */ false);
+  return mark_word_test(obj, markWord::inline_type_pattern, is_inline);
 }
 
 Node* GraphKit::flat_array_test(Node* array_or_klass, bool flat) {
@@ -4697,9 +4666,6 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr) {
   if (ptr == nullptr) {     // reduce dumb test in callers
     return nullptr;
   }
-
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  ptr = bs->step_over_gc_barrier(ptr);
 
   if (ptr->is_CheckCastPP()) { // strip only one raw-to-oop cast
     ptr = ptr->in(1);

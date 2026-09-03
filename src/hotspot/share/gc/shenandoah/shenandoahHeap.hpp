@@ -654,6 +654,10 @@ public:
 
   inline ShenandoahAffiliation region_affiliation(size_t index) const;
 
+  inline bool is_region_young(size_t index) const;
+  inline bool is_region_old(size_t index) const;
+  inline bool is_region_free(size_t index) const;
+
   bool requires_barriers(stackChunkOop obj) const override;
 
   MemRegion reserved_region() const { return _reserved; }

@@ -261,10 +261,6 @@ class oopDesc {
   static void verify_on(outputStream* st, oopDesc* oop_desc);
   static void verify(oopDesc* oopDesc);
 
-  // locking operations
-  inline bool is_locked()   const;
-  inline bool is_unlocked() const;
-
   // asserts and guarantees
   static bool is_oop(oop obj);
   static bool is_oop_or_null(oop obj);
