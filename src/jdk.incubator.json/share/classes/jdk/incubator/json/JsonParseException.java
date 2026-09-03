@@ -25,6 +25,9 @@
 
 package jdk.incubator.json;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.io.Serial;
 
 /**
@@ -65,8 +68,7 @@ public final class JsonParseException extends RuntimeException {
     public JsonParseException(String message, int line, int pos) {
         super(message);
         if (line < 0 || pos < 0) {
-            throw new IllegalArgumentException(
-                    "\"line\" and \"pos\" should be non-negative");
+            throw new IllegalArgumentException(INVALID_LOCATION);
         }
         this.line = line;
         this.pos = pos;
@@ -87,4 +89,15 @@ public final class JsonParseException extends RuntimeException {
     public int getErrorPosition() {
         return pos;
     }
+
+    @Serial
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        if (line < 0 || pos < 0) {
+            throw new InvalidObjectException(INVALID_LOCATION);
+        }
+    }
+
+    private static final String INVALID_LOCATION =
+        "\"line\" and \"pos\" should be non-negative";
 }
