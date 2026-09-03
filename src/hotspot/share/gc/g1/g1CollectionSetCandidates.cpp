@@ -128,16 +128,24 @@ double G1CSetCandidateGroup::predict_group_total_time_ms() const {
 }
 
 int G1CSetCandidateGroup::compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2) {
-  double gc_eff1 = (*gr1)->gc_efficiency();
-  double gc_eff2 = (*gr2)->gc_efficiency();
+  G1CSetCandidateGroup* group_1 = *gr1;
+  G1CSetCandidateGroup* group_2 = *gr2;
+  double gc_eff1 = group_1->gc_efficiency();
+  double gc_eff2 = group_2->gc_efficiency();
 
   if (gc_eff1 > gc_eff2) {
     return -1;
   } else if (gc_eff1 < gc_eff2) {
     return 1;
-  } else {
-    return 0;
   }
+
+  // Make ordering deterministic by breaking ties with group ids.
+  if (group_1->group_id() < group_2->group_id()) {
+    return -1;
+  } else if (group_1->group_id() > group_2->group_id()) {
+    return 1;
+  }
+  return 0;
 }
 
 G1CSetCandidateGroupList::G1CSetCandidateGroupList() : _groups(8, mtGC), _num_regions(0) { }

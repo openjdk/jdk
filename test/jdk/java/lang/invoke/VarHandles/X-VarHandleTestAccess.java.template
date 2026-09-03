@@ -32,8 +32,8 @@
 #end[Value]
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccess$Type$
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccess$Type$
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccess$Type$
@@ -394,7 +394,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         // Lazy
         {
             $type$ x = ($type$) vh.getAcquire(recv);
-            assertEquals($value1$, x, "getRelease $type$ value");
+            assertEquals($value1$, x, "getAcquire $type$ value");
         }
 
         // Opaque
@@ -538,7 +538,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         // Lazy
         {
             $type$ x = ($type$) vh.getAcquire();
-            assertEquals($value1$, x, "getRelease $type$ value");
+            assertEquals($value1$, x, "getAcquire $type$ value");
         }
 
         // Opaque
@@ -880,7 +880,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             vh.set(recv, $value1$);
 
             $type$ o = ($type$) vh.getAndAddRelease(recv, $value2$);
-            assertEquals($value1$, o, "getAndAddRelease$type$");
+            assertEquals($value1$, o, "getAndAddRelease $type$");
             $type$ x = ($type$) vh.get(recv);
             assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
         }
@@ -1289,7 +1289,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
             vh.set($value1$);
 
             $type$ o = ($type$) vh.getAndAddRelease($value2$);
-            assertEquals($value1$, o, "getAndAddRelease$type$");
+            assertEquals($value1$, o, "getAndAddRelease $type$");
             $type$ x = ($type$) vh.get();
             assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
         }
@@ -1701,7 +1701,7 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
                 vh.set(array, i, $value1$);
 
                 $type$ o = ($type$) vh.getAndAddRelease(array, i, $value2$);
-                assertEquals($value1$, o, "getAndAddRelease$type$");
+                assertEquals($value1$, o, "getAndAddRelease $type$");
                 $type$ x = ($type$) vh.get(array, i);
                 assertEquals(($type$)($value1$ + $value2$), x, "getAndAddRelease $type$ value");
             }
@@ -2063,57 +2063,57 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.compareAndSet(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetVolatile
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, $value1$, value);
         });
 
         // CompareAndExchange
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.compareAndExchange(array, 0, $value1$, value);
         });
 
         // CompareAndExchangeAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeAcquire(array, 0, $value1$, value);
         });
 
         // CompareAndExchangeRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeRelease(array, 0, $value1$, value);
         });
 
         // GetAndSet
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkASE(() -> { // receiver reference class
+        checkASE(() -> {
             $type$ x = ($type$) vh.getAndSetRelease(array, 0, value);
         });
     }
@@ -2144,57 +2144,57 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet(recv, $value1$, value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain(recv, $value1$, value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet(recv, $value1$, value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(recv, $value1$, value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchange(recv, $value1$, value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeRelease(recv, $value1$, value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSet(recv, value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetAcquire(recv, value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetRelease(recv, value);
         });
     }
@@ -2223,57 +2223,57 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet($value1$, value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain($value1$, value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet($value1$, value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire($value1$, value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease($value1$, value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchange($value1$, value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeAcquire($value1$, value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeRelease($value1$, value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSet(value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetAcquire(value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetRelease(value);
         });
     }
@@ -2303,57 +2303,57 @@ public class VarHandleTestAccess$Type$ extends VarHandleBaseTest {
         });
 
         // CompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.compareAndSet(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetPlain(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetVolatile
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSet(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetAcquire(array, 0, $value1$, value);
         });
 
         // WeakCompareAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             boolean r = vh.weakCompareAndSetRelease(array, 0, $value1$, value);
         });
 
         // CompareAndExchange
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchange(array, 0, $value1$, value);
         });
 
         // CompareAndExchangeAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeAcquire(array, 0, $value1$, value);
         });
 
         // CompareAndExchangeRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.compareAndExchangeRelease(array, 0, $value1$, value);
         });
 
         // GetAndSet
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSet(array, 0, value);
         });
 
         // GetAndSetAcquire
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetAcquire(array, 0, value);
         });
 
         // GetAndSetRelease
-        checkNPE(() -> { // receiver reference class
+        checkNPE(() -> {
             $type$ x = ($type$) vh.getAndSetRelease(array, 0, value);
         });
     }
