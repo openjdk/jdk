@@ -1866,7 +1866,7 @@ void ArchDesc::defineIsKilledInput(FILE* fp, InstructForm* node) {
 
   int index = node->oper_input_base(_globalNames) - 1;
   while ((comp = node->_components.iter()) != nullptr) {
-           
+
     if (comp->isa(Component::KILL)) {
 
       Form *form = (Form*)_globalNames[comp->_type];
