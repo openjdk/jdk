@@ -144,7 +144,7 @@ class FieldPrinter: public FieldClosure {
   outputStream* _st;
   int _indent;
 public:
-  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, InlineKlass* inline_klass = nullptr, int inline_offset = 0);
+  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
   void do_field(fieldDescriptor* fd);
 };
 

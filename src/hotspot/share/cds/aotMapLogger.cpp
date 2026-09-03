@@ -840,8 +840,8 @@ class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
   outputStream* _st;
   int _indent;
 public:
-  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, InlineKlass* inline_klass = nullptr, int inline_offset = 0)
-    : FieldClosure(inline_klass, inline_offset), _fake_oop(fake_oop), _st(st), _indent(indent) {
+  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
+    : FieldClosure(flat_field_klass, flat_field_offset), _fake_oop(fake_oop), _st(st), _indent(indent) {
     precond(_fake_oop.raw_oop() != nullptr);
   }
 

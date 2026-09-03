@@ -365,14 +365,14 @@ private:
   };
 
   class OopFieldPusher;
-  class InlineKlassFinder;
+  class FlattenedKlassFinder;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
-  static void find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj);
-  static void add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k);
+  static void find_flattened_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj);
+  static void add_flattened_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k);
 
   static void reset_archived_object_states(TRAPS);
   static void ensure_determinism(TRAPS);

@@ -82,13 +82,13 @@ class ModuleEntry;
 class InlineKlass;
 
 // FieldClosure is used to iterate on the fields of an InstanceKlass.
-// - When _inline_klass is null, _inline_offset must be zero. This is used for
+// - When _flat_field_klass is null, _flat_field_offset must be zero. This is used for
 //   - Iterating on the static fields of a class, or
 //   - Iterating on the non-static fields in a heap oop (excluding any fields declared
-//     inside inlined fields).
-// - When _inline_klass is non-null, _inline_offset must be non-zero. This is used for
-//   iterating on the fields of a value object of the type _inline_klass. The
-//   payload of the value object is inlined at _inline_offset from the heap address
+//     inside flattened fields).
+// - When _flat_field_klass is non-null, _flat_field_offset must be non-zero. This is used for
+//   iterating on the fields of a value object of the type _flat_field_klass. The
+//   payload of the value object is located at _flat_field_offset from the heap address
 //   of the oop.
 //
 // For example, if we have a heap oop of the Line class:
@@ -103,32 +103,32 @@ class InlineKlass;
 //      }
 //
 // Assuming that object header is 8 bytes:
-// When do_field() is called on:  _inline_klass: _inline_offset:
-//   Line::p1                       null           0
-//   Line::p2                       null           0
-//   Line::p1::x                    Point          8  -> p1 is inlined at offset 8 of the heap oop
-//   Line::p1::y                    Point          8
-//   Line::p2::x                    Point         16
-//   Line::p2::y                    Point         16
-//   Line::p1::x::value             Integer        8
-//   Line::p1::y::value             Integer       12
-//   Line::p2::x::value             Integer       16
-//   Line::p2::y::value             Integer       20  -> p2.y is inlined at offset 20 of the heap oop
+// When do_field() is called on | _flat_field_klass | _flat_field_offset:
+//   Line::p1                       null               0
+//   Line::p2                       null               0
+//   Line::p1::x                    Point              8  -> p1 is at offset 8 of the heap oop
+//   Line::p1::y                    Point              8
+//   Line::p2::x                    Point             16
+//   Line::p2::y                    Point             16
+//   Line::p1::x::value             Integer            8
+//   Line::p1::y::value             Integer           12
+//   Line::p2::x::value             Integer           16
+//   Line::p2::y::value             Integer           20  -> p2.y is at offset 20 of the heap oop
 class FieldClosure: public StackObj {
-  InlineKlass* _inline_klass;
-  int _inline_offset; // in bytes
+  InlineKlass* _flat_field_klass;
+  int _flat_field_offset; // in bytes
 public:
-  FieldClosure(InlineKlass* inline_klass = nullptr, int inline_offset = 0)
-    : _inline_klass(inline_klass), _inline_offset(inline_offset) {
-    if (inline_klass == nullptr) {
-      precond(inline_offset == 0);
+  FieldClosure(InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
+    : _flat_field_klass(flat_field_klass), _flat_field_offset(flat_field_offset) {
+    if (flat_field_klass == nullptr) {
+      precond(flat_field_offset == 0);
     } else {
-      assert(inline_offset != 0, "value object cannot be inlined at offset 0");
+      assert(flat_field_offset != 0, "flattened value object cannot be at offset 0");
     }
   }
 
-  InlineKlass* inline_klass() const { return _inline_klass; }
-  int inline_offset() const { return _inline_offset; }
+  InlineKlass* flat_field_klass() const { return _flat_field_klass; }
+  int flat_field_offset() const { return _flat_field_offset; }
 
   virtual void do_field(fieldDescriptor* fd) = 0;
 };

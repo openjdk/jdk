@@ -114,24 +114,25 @@ bool fieldDescriptor::is_flat_field_marked_as_null(address obj, FieldClosure* fc
 }
 
 int fieldDescriptor::field_offset_in_obj(FieldClosure* fc) const {
-  if (fc->inline_offset() == 0) {
-    precond(fc->inline_klass() == nullptr);
+  if (fc->flat_field_offset() == 0) {
+    precond(fc->flat_field_klass() == nullptr);
     return offset();
   } else {
-    InlineKlass* vk = fc->inline_klass();
-    int inline_offset = fc->inline_offset();
-    // Compute the offset of the field represented by this fieldDescriptor from the beginning of an heap oop
-    // that (directly or indirectly) has inlined an instance of vk that has this field.
+    InlineKlass* vk = fc->flat_field_klass();
+    int flat_field_offset = fc->flat_field_offset();
+    // Compute the offset of the field represented by this fieldDescriptor from
+    // the beginning of an heap oop. Using the example Point class from the comments
+    // above the declaration of FieldClosure, if we are looking at Point::y::value,
     //
-    // Using the example Point class from the FieldClosure example, if we are printing the Point::y::value,
-    //     this->name()          : "value"
+    //     vk                    : InstanceKlass java/lang/Integer (we are looking at a field in a flattened Integer)
+    //     flat_field_offset     : 12 (this flattened Integer starts at offset 16 of obj)
+    //     this->name()          : "value" (the field that we are looking at. Note: it's NOT "y")
     //     this->field_type()    : T_INT
     //     this->offset()        : 8 (the offset of the "value" field in a regular Integer heap oop)
-    //     vk                    : InstanceKlass java/lang/Integer (we are printing a field in an inlined Integer)
-    //     vk->payload_offset()  : 8 (the payload starts at 8 bytes above a regular Integer heap oop)
-    //     inline_offset         : 16 (this inlined Integer starts at offset 16 of obj
-    //     field_offset_in_obj() : 16 - 8 + 8 == 16
-    return inline_offset - vk->payload_offset() + offset();
+    //     vk->payload_offset()  : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
+    //   =>
+    //     field_offset_in_obj() : 12 - 8 + 8 == 12
+    return flat_field_offset - vk->payload_offset() + this->offset();
   }
 }
 
@@ -307,13 +308,13 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
   }
 }
 
-FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, InlineKlass* inline_klass, int inline_offset) :
-  FieldClosure(inline_klass, inline_offset), _obj(obj), _st(st), _indent(indent) {
+FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, InlineKlass* flat_field_klass, int flat_field_offset) :
+  FieldClosure(flat_field_klass, flat_field_offset), _obj(obj), _st(st), _indent(indent) {
   if (obj == nullptr) {
-    assert(inline_offset == 0, "inlining not supported for static fields");
+    assert(flat_field_offset == 0, "flattening not supported for static fields");
   } else {
-    if (inline_offset != 0) {
-      assert(obj->klass() != inline_klass, "a value class cannot be inlined into itself");
+    if (flat_field_offset != 0) {
+      assert(obj->klass() != flat_field_klass, "a value class cannot be flattened into itself");
     }
   }
 }
@@ -322,8 +323,8 @@ void FieldPrinter::do_field(fieldDescriptor* fd) {
   for (int i = 0; i < _indent; i++) _st->print("  ");
   _st->print(" - ");
   if (_obj == nullptr) {
-    precond(inline_offset() == 0);
-    precond(inline_klass() == nullptr);
+    precond(flat_field_offset() == 0);
+    precond(flat_field_klass() == nullptr);
     fd->print_on(_st);
     _st->cr();
   } else {
