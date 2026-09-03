@@ -118,7 +118,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
 
     size_t remset_bytes = r->rem_set()->mem_size();
     size_t occupied = 0;
-    // Per-region card set group details only valid if group contains a single region.
+    // Per-region card set group statistics are only valid if group contains a single region.
     if (r->rem_set()->has_card_set_group() &&
         r->rem_set()->card_set_group()->length() == 1 ) {
         G1CardSet *card_set = r->rem_set()->card_set_group()->card_set();

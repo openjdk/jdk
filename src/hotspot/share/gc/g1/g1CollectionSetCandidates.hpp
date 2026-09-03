@@ -152,8 +152,8 @@ public:
 
   // Delete all groups from the list. The card set group uninstall for regions within
   // the groups could have been done elsewhere (e.g. when adding groups to the
-  // collection set or to retained regions). The uninstall_card_set_group parameter
-  // should be set to true if the card set groups must be uninstalled from
+  // collection set or to the retained card set group list). The uninstall_card_set_group
+  // parameter should be set to true if the card set groups must be uninstalled from
   // the regions, and their state set to Untracked.
   void clear(bool uninstall_card_set_group = false);
 
@@ -239,8 +239,8 @@ public:
 
   void clear();
 
-  // Merge collection set candidates from marking into the current marking candidates
-  // (which needs to be empty).
+  // Merge collection set candidate regions from marking into the current from_marking candidate
+  // group list (which needs to be empty).
   void set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
@@ -254,7 +254,7 @@ public:
   // Add the given region to the set of retained regions without regards to the
   // gc efficiency sorting. The retained regions must be re-sorted manually later.
   void add_retained_region_unsorted(G1HeapRegion* r);
-  // Remove the given groups from the candidates. All given regions must be part
+  // Remove the given groups from this list. All given card set groups must be part
   // of the candidates.
   void remove(G1CardSetGroupList* other);
 

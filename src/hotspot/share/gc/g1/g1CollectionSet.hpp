@@ -155,10 +155,10 @@ class G1CollectionSet {
 
   Atomic<uint> _num_regions;
 
-  // Old gen groups selected for evacuation.
-  G1CardSetGroupList _groups;
+  // Card set groups selected for evacuation.
+  G1CardSetGroupList _selected_groups;
 
-  uint num_groups() const;
+  uint num_selected_groups() const;
 
   uint _num_eden_regions;
   uint _num_survivor_regions;
@@ -179,8 +179,8 @@ class G1CollectionSet {
 #endif
   // Index into the _regions indicating the start of the current collection set increment.
   uint _regions_inc_part_start;
-  // Index into the _groups indicating the start of the current collection set increment.
-  uint _groups_inc_part_start;
+  // Index into the _selected_groups indicating the start of the current collection set increment.
+  uint _selected_groups_inc_part_start;
 
   G1CollectorState* collector_state() const;
   G1GCPhaseTimes* phase_times();
@@ -268,7 +268,7 @@ public:
   template <class CardOrRangeVisitor>
   inline void merge_collection_set_card_set_groups(CardOrRangeVisitor& cl, uint worker_id, uint num_workers);
 
-  uint num_groups_in_increment() const;
+  uint num_selected_groups_in_increment() const;
 
   // Reset the contents of the collection set.
   void clear();

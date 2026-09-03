@@ -243,8 +243,8 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
 
   const static uint BucketClaimSize = 16;
   // The claim size for multi-region card set groups should be smaller to
-  // improve work distribution. The card set groups should contain more
-  // entries than the single-region card set groups.
+  // improve work distribution. The multi-region card set groups' card set
+  // should contain more entries than the single-region card set groups'.
   const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   Atomic<bool> _inserted_card;

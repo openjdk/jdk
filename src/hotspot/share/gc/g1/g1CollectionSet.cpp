@@ -36,13 +36,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-uint G1CollectionSet::num_groups() const {
+uint G1CollectionSet::num_selected_groups() const {
   assert(_inc_build_state == CSetBuildType::Inactive, "must be");
-  return _groups.length();
+  return _selected_groups.length();
 }
 
-uint G1CollectionSet::num_groups_in_increment() const {
-  return num_groups() - _groups_inc_part_start;
+uint G1CollectionSet::num_selected_groups_in_increment() const {
+  return num_selected_groups() - _selected_groups_inc_part_start;
 }
 
 G1CollectorState* G1CollectionSet::collector_state() const {
@@ -60,14 +60,14 @@ G1CollectionSet::G1CollectionSet(G1CollectedHeap* g1h, G1Policy* policy) :
   _regions(nullptr),
   _max_num_regions(0),
   _num_regions(0),
-  _groups(),
+  _selected_groups(),
   _num_eden_regions(0),
   _num_survivor_regions(0),
   _num_initial_old_regions(0),
   _optional_groups(),
   DEBUG_ONLY(_inc_build_state(CSetBuildType::Inactive) COMMA)
   _regions_inc_part_start(0),
-  _groups_inc_part_start(0) {
+  _selected_groups_inc_part_start(0) {
 }
 
 G1CollectionSet::~G1CollectionSet() {
@@ -113,7 +113,7 @@ void G1CollectionSet::abandon_all_candidates() {
 
 void G1CollectionSet::prepare_for_scan () {
   _g1h->young_regions_card_set_group()->card_set()->reset_table_scanner_for_groups();
-  _groups.prepare_for_scan();
+  _selected_groups.prepare_for_scan();
 }
 
 void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
@@ -139,7 +139,7 @@ void G1CollectionSet::add_old_region(G1HeapRegion* hr) {
 
 void G1CollectionSet::start() {
   assert(num_regions() == 0, "Collection set must be empty before starting a new collection set.");
-  assert(num_groups() == 0, "Card set groups must be empty before starting a new collection set.");
+  assert(num_selected_groups() == 0, "Card set groups must be empty before starting a new collection set.");
   assert(_optional_groups.length() == 0,
          "Optional card set groups must be empty before starting a new collection set.");
 
@@ -153,7 +153,7 @@ void G1CollectionSet::continue_incremental_building() {
   assert(_inc_build_state == CSetBuildType::Inactive, "Precondition");
 
   _regions_inc_part_start = num_regions();
-  _groups_inc_part_start = num_groups();
+  _selected_groups_inc_part_start = num_selected_groups();
 
   DEBUG_ONLY(_inc_build_state = CSetBuildType::Active;)
 }
@@ -165,7 +165,7 @@ void G1CollectionSet::stop_incremental_building() {
 void G1CollectionSet::clear() {
   assert_at_safepoint_on_vm_thread();
   _num_regions.store_relaxed(0);
-  _groups.clear();
+  _selected_groups.clear();
   assert(_optional_groups.length() == 0, "must be");
 }
 
@@ -218,7 +218,6 @@ void G1CollectionSet::add_young_region_common(G1HeapRegion* hr) {
   assert(hr->is_young(), "invariant");
   assert(_inc_build_state == CSetBuildType::Active, "Precondition");
 
-  // Add to remembered set/card set group.
   _g1h->policy()->remset_tracker()->update_at_allocate(hr);
   _g1h->young_regions_card_set_group()->add(hr);
 
@@ -438,7 +437,7 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
   bool make_first_group_optional = G1ForceOptionalEvacuation;
 
   log_debug(gc, ergo, cset)("Start adding marking candidates to collection set. "
-                            "Min %u regions, max %u regions, available %u regions (%u groups), "
+                            "Min %u regions, max %u regions, available %u regions (%u card set groups), "
                             "time remaining %1.2fms, optional threshold %1.2fms",
                             min_num_old_cset_regions, max_num_old_cset_regions, from_marking_groups->num_regions(), from_marking_groups->length(),
                             time_remaining_ms, optional_threshold_ms);
@@ -695,7 +694,7 @@ void G1CollectionSet::add_group_to_collection_set(G1CardSetGroup* gr) {
     assert(r->rem_set()->is_complete(), "must be");
     add_region_to_collection_set(r);
   }
-  _groups.append(gr);
+  _selected_groups.append(gr);
 }
 
 void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
@@ -706,7 +705,7 @@ void G1CollectionSet::add_region_to_collection_set(G1HeapRegion* r) {
 
 void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_ms, G1SurvivorRegions* survivor) {
   assert(_regions_inc_part_start == 0, "must be");
-  assert(_groups_inc_part_start == 0, "must be");
+  assert(_selected_groups_inc_part_start == 0, "must be");
 
   double time_remaining_ms = finalize_young_part(target_pause_time_ms, survivor);
   finalize_old_part(time_remaining_ms);

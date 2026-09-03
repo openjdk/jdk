@@ -547,8 +547,8 @@ double G1Policy::predict_retained_regions_evac_time() const {
   for (G1CardSetGroup* group : *retained_groups) {
     assert(group->length() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
-    // We optimistically assume that any of these marking candidate regions will
-    // be reclaimable the next gc, so just consider them as normal.
+    // We optimistically assume that any regions of these card set groups that contain pinned
+    // regions can be evacuated the next gc, so just consider them like normal.
     if (r->has_pinned_objects()) {
       num_pinned_regions++;
     }

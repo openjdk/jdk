@@ -113,7 +113,7 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
                          predicted_copy_time_ms +
                          non_young_other_time_ms;
 
-  log_trace(gc, ergo, cset) ("Prediction for group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
+  log_trace(gc, ergo, cset) ("Prediction for card set group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
                              group_id(),
                              length(),
                              total_time_ms,
@@ -319,7 +319,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
 }
 
 void G1CollectionSetCandidates::sort_by_efficiency() {
-  // From marking regions must always be sorted so no reason to actually sort
+  // From marking card set groups must always be sorted so no reason to actually sort
   // them.
   _from_marking_groups.verify();
   _retained_groups.sort_by_efficiency();
@@ -329,7 +329,7 @@ void G1CollectionSetCandidates::sort_by_efficiency() {
 void G1CollectionSetCandidates::remove(G1CardSetGroupList* other) {
   // During removal, we exploit the fact that elements in the _from_marking_groups,
   // _retained_groups and other list are sorted by gc_efficiency. Furthermore,
-  // all regions in the passed other list are in one of the two other lists.
+  // all card set groups in the passed other list are in one of the two other lists.
   //
   // Split original list into elements for the marking list and elements from the
   // retained list.
