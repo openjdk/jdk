@@ -754,6 +754,58 @@ void PhaseChaitin::Register_Allocate() {
     }
   }
 
+  {
+    bool failed = false;
+    live.compute(_lrg_map.max_lrg_id());
+    for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+      Block *block = _cfg.get_block(i);
+      IndexSet liveout(live.live(block));
+      uint last_inst = block->end_idx();
+      for (uint location = last_inst; location > 0; location--) {
+        Node *n = block->get_node(location);
+        uint lid = _lrg_map.live_range_id(n);
+
+        if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+          const MachNode* mach = n->as_Mach();
+          for (uint i = 1; i < n->req(); i++) {
+            if (mach->is_killed_input(i)) {
+              uint lidx = _lrg_map.live_range_id(n->in(i));
+              assert(lidx != 0, "");
+              if (liveout.member(lidx)) {
+                tty->print("input %d of", i); DEBUG_ONLY(n->dump();)
+                failed = true;
+              }
+              // assert(!liveout.member(lidx), "");
+            }
+          }
+        }
+        if (lid) {
+          liveout.remove(lid);
+        }
+        if (!n->is_Phi()) {
+          for (uint k = ((n->Opcode() == Op_SCMemProj) ? 0 : 1); k < n->req(); k++) {
+            Node *def = n->in(k);
+            uint lid = _lrg_map.live_range_id(def);
+            if (lid) {
+              liveout.insert(lid);
+            }
+          }
+        }
+      }
+    }
+    if (failed) {
+      for (uint i = 0; i < _cfg.number_of_blocks(); i++) {
+        Block* block = _cfg.get_block(i);
+        for (uint j = 0; j < block->number_of_nodes(); j++) {
+          Node* n = block->get_node(j);
+          OptoReg::Name reg = C->regalloc()->get_reg_first(n);
+          tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+          DEBUG_ONLY(n->dump("\n", false, tty);)
+        }
+      }
+    }
+    assert(!failed, "");
+  }
   // Done!
   _live = nullptr;
   _ifg = nullptr;
