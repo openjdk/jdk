@@ -26,7 +26,7 @@
  * @summary Exercise minimal int array fill with i - c index and forced fill optimization.
  * @requires vm.compiler2.enabled
  *
-  * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xcomp -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation
  *                   -XX:+OptimizeFill
  *                   -XX:+UseCompactObjectHeaders
