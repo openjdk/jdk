@@ -980,7 +980,7 @@ public:
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
 
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);
@@ -1055,7 +1055,7 @@ public:
   );
   void verify_tlab();
 
-  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,

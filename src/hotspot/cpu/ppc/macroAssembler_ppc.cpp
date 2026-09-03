@@ -3374,9 +3374,9 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info) {
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
 void MacroAssembler::payload_offset(Register value_klass, Register offset) {
@@ -3390,17 +3390,17 @@ void MacroAssembler::payload_address(Register oop, Register data, Register value
   add(data, oop, t1);
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     sldi(index, index, log2i_exact(size)); // Scale index by power of 2
   } else {
     mulld(index, index, size); // Scale the index to be the entry index * array_element_size
   }
-  ld(layout_info, InstanceKlass::inline_layout_info_array_offset(), holder_klass);
-  addi(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ld(layout_info, InstanceKlass::value_field_layout_info_array_offset(), holder_klass);
+  addi(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   add(layout_info, layout_info, index);
 }
 

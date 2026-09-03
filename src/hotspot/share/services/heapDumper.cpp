@@ -853,7 +853,7 @@ public:
       if (field.is_flat()) {
         const fieldDescriptor& fd = field.field_descriptor();
         InstanceKlass* holder_klass = fd.field_holder();
-        InlineLayoutInfo* layout_info = holder_klass->inline_layout_info_adr(fd.index());
+        ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
         _value_klass = layout_info->klass();
         _layout_kind = layout_info->kind();
       } else {

@@ -336,7 +336,7 @@ UNSAFE_ENTRY(jint, Unsafe_FieldLayout(JNIEnv *env, jobject unsafe, jobject field
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
     if (ik->field_is_flat(slot)) {
-      return (jint)ik->inline_layout_info(slot).kind();
+      return (jint)ik->value_field_layout_info(slot).kind();
     } else {
       return (jint)LayoutKind::REFERENCE;
     }

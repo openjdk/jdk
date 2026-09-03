@@ -156,16 +156,16 @@
 
 #endif //  ndef DTRACE_ENABLED
 
-void InlineLayoutInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(InlineFieldInfo): %p", this);
+void ValueFieldLayoutInfo::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ValueFieldLayoutInfo): %p", this);
   it->push(&_klass);
 }
 
-void InlineLayoutInfo::print() const {
+void ValueFieldLayoutInfo::print() const {
   print_on(tty);
 }
 
-void InlineLayoutInfo::print_on(outputStream* st) const {
+void ValueFieldLayoutInfo::print_on(outputStream* st) const {
   st->print_cr("_klass: " PTR_FORMAT, p2i(_klass));
   if (_klass != nullptr) {
     StreamIndentor si(st);
@@ -606,7 +606,7 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, mark
   _reference_type(reference_type),
   _acmp_maps_offset(0),
   _init_thread(nullptr),
-  _inline_layout_info_array(nullptr),
+  _value_field_layout_info_array(nullptr),
   _loadable_descriptors(nullptr),
   _acmp_maps_array(nullptr),
   _adr_value_klass_members(nullptr)
@@ -774,10 +774,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fields_status(nullptr);
 
-  if (inline_layout_info_array() != nullptr) {
-    MetadataFactory::free_array<InlineLayoutInfo>(loader_data, inline_layout_info_array());
+  if (value_field_layout_info_array() != nullptr) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(loader_data, value_field_layout_info_array());
   }
-  set_inline_layout_info_array(nullptr);
+  set_value_field_layout_info_array(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -2277,7 +2277,7 @@ bool InstanceKlass::find_local_flat_field_containing_offset(int offset, fieldDes
     }
 
     const int offset_in_flat_field = offset - fs.offset();
-    const InlineLayoutInfo layout_info = inline_layout_info(fs.index());
+    const ValueFieldLayoutInfo layout_info = value_field_layout_info(fs.index());
     const int field_size = layout_info.klass()->layout_size_in_bytes(layout_info.kind());
 
     assert(LayoutKindHelper::is_flat(layout_info.kind()), "Must be flat");
@@ -3083,7 +3083,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_loadable_descriptors);
   it->push(&_acmp_maps_array, MetaspaceClosure::_writable);
   it->push(&_record_components);
-  it->push(&_inline_layout_info_array, MetaspaceClosure::_writable);
+  it->push(&_value_field_layout_info_array, MetaspaceClosure::_writable);
 
   if (CDSConfig::is_dumping_full_module_graph() && !defined_by_other_loaders()) {
     it->push(&_package_entry);

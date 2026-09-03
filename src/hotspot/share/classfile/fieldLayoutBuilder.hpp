@@ -185,7 +185,7 @@ class FieldGroup : public ResourceObj {
 class FieldLayout : public ResourceObj {
  private:
   GrowableArray<FieldInfo>* _field_info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   ConstantPool* _cp;
   LayoutRawBlock* _blocks;  // the layout being computed
   LayoutRawBlock* _start;   // points to the first block where a field can be inserted
@@ -199,7 +199,7 @@ class FieldLayout : public ResourceObj {
   bool _has_inherited_fields;
 
  public:
-  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<InlineLayoutInfo>* inline_layout_info_array, ConstantPool* cp);
+  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array, ConstantPool* cp);
   void initialize_static_layout();
   void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
 
@@ -242,7 +242,7 @@ class FieldLayout : public ResourceObj {
   void shift_fields(int shift);
   LayoutRawBlock* find_null_marker();
   void remove_null_marker();
-  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<InlineLayoutInfo>* inline_fields, bool dummy_field_is_reused_as_null_marker);
+  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldLayoutInfo>* value_fields, bool dummy_field_is_reused_as_null_marker);
 };
 
 
@@ -278,7 +278,7 @@ class FieldLayoutBuilder : public ResourceObj {
   ConstantPool* _constant_pool;
   GrowableArray<FieldInfo>* _field_info;
   FieldLayoutInfo* _info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   FieldGroup* _root_group;
   GrowableArray<FieldGroup*> _contended_groups;
   FieldGroup* _static_fields;
@@ -316,7 +316,7 @@ class FieldLayoutBuilder : public ResourceObj {
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                      GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
-                     bool must_be_atomic, FieldLayoutInfo* info, Array<InlineLayoutInfo>* inline_layout_info_array);
+                     bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array);
 
   int  payload_offset() const                  { assert(_payload_offset != -1, "Uninitialized"); return _payload_offset; }
   int  payload_layout_size_in_bytes() const    { return _payload_size_in_bytes; }

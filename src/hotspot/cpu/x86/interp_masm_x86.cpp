@@ -1146,7 +1146,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, 
   movptr(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
 
   Register layout_info = off;
-  inline_layout_info(tmp2, idx, layout_info);
+  value_field_layout_info(tmp2, idx, layout_info);
 
   flat_field_copy(IN_HEAP, value, obj, layout_info);
   jmp(done);

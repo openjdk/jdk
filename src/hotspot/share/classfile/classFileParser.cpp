@@ -3973,7 +3973,7 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
-  this_klass->set_inline_layout_info_array(_inline_layout_info_array);
+  this_klass->set_value_field_layout_info_array(_value_field_layout_info_array);
 
   DEBUG_ONLY(FieldInfoStream::validate_search_table(_cp, _fieldinfo_stream, _fieldinfo_search_table));
 
@@ -5568,9 +5568,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
         TempNewSymbol name = Signature::strip_envelope(sig);
         if (name == _class_name) {
           // Replace the nullptr previously stored now that we have the InstanceKlass for this klass.
-          _inline_layout_info_array->adr_at(fieldinfo.index())->set_klass(ValueKlass::cast(ik));
+          _value_field_layout_info_array->adr_at(fieldinfo.index())->set_klass(ValueKlass::cast(ik));
         }
-        assert(_inline_layout_info_array->adr_at(fieldinfo.index())->klass()->is_value_klass(), "Must be");
+        assert(_value_field_layout_info_array->adr_at(fieldinfo.index())->klass()->is_value_klass(), "Must be");
       }
     }
   }
@@ -5596,7 +5596,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(nullptr == _combined_annotations, "invariant");
   assert(nullptr == _record_components, "invariant");
   assert(nullptr == _permitted_subclasses, "invariant");
-  assert(nullptr == _inline_layout_info_array, "invariant");
+  assert(nullptr == _value_field_layout_info_array, "invariant");
 
   if (_has_localvariable_table) {
     ik->set_has_localvariable_table(true);
@@ -5862,7 +5862,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _klass_to_deallocate(nullptr),
   _parsed_annotations(nullptr),
   _layout_info(nullptr),
-  _inline_layout_info_array(nullptr),
+  _value_field_layout_info_array(nullptr),
   _temp_field_info(nullptr),
   _method_ordering(nullptr),
   _all_mirandas(nullptr),
@@ -5937,7 +5937,7 @@ void ClassFileParser::clear_class_metadata() {
   _class_annotations = _class_type_annotations = nullptr;
   _fields_annotations = _fields_type_annotations = nullptr;
   _record_components = nullptr;
-  _inline_layout_info_array = nullptr;
+  _value_field_layout_info_array = nullptr;
 }
 
 // Destructor to clean up
@@ -5957,8 +5957,8 @@ ClassFileParser::~ClassFileParser() {
     MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
   }
 
-  if (_inline_layout_info_array != nullptr) {
-    MetadataFactory::free_array<InlineLayoutInfo>(_loader_data, _inline_layout_info_array);
+  if (_value_field_layout_info_array != nullptr) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
   }
 
   if (_methods != nullptr) {
@@ -6415,15 +6415,15 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   FieldLayoutBuilder lb(class_name(), loader_data(), super_klass(), _cp, /*_fields*/ _temp_field_info,
       access_flags().is_identity_class() && _parsed_annotations->is_contended(), is_concrete_value_class(),
       access_flags().is_abstract() && !access_flags().is_identity_class() && !access_flags().is_interface(),
-      _must_be_atomic, _layout_info, _inline_layout_info_array);
+      _must_be_atomic, _layout_info, _value_field_layout_info_array);
   lb.build_layout();
 
   // If it turned out that we didn't inline any of the fields, we deallocate
-  // the array of InlineLayoutInfo since it isn't needed, and so it isn't
+  // the array of ValueFieldLayoutInfo since it isn't needed, and so it isn't
   // transferred to the allocated InstanceKlass.
-  if (_inline_layout_info_array != nullptr && !(_layout_info->_has_inlined_fields || _has_null_restricted_static_fields)) {
-    MetadataFactory::free_array<InlineLayoutInfo>(_loader_data, _inline_layout_info_array);
-    _inline_layout_info_array = nullptr;
+  if (_value_field_layout_info_array != nullptr && !(_layout_info->_has_inlined_fields || _has_null_restricted_static_fields)) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
+    _value_field_layout_info_array = nullptr;
   }
 
   int injected_fields_count = _temp_field_info->length() - _java_fields_count;
@@ -6482,9 +6482,9 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
         if (fieldinfo.field_flags().is_null_free_value_type() && !is_concrete_value_class()) {
           fieldinfo.field_flags_addr()->update_null_free_value_type(false);
         } else {
-          // Dummy setting to trigger the allocation of the inline_layout_info array -
+          // Dummy setting to trigger the allocation of the value_field_layout_info array -
           // the real pointer will be set later in ::fill_instance_klass, once the ValueKlass has been allocated.
-          set_inline_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
+          set_value_field_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
         }
         continue;
       }
@@ -6502,7 +6502,7 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
 
         if (klass != nullptr) {
           if (klass->is_value_klass()) {
-            set_inline_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
+            set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
             log_info(class, preload)("Preloading of class %s during loading of class %s "
                                      "(cause: field type in LoadableDescriptors attribute) succeeded",
                                      name->as_C_string(), _class_name->as_C_string());
@@ -6540,7 +6540,7 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
         oop loader = loader_data()->class_loader();
         InstanceKlass* klass = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, loader));
         if (klass != nullptr && klass->is_value_klass()) {
-          set_inline_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
+          set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
           ResourceMark rm(THREAD);
           log_info(class, preload)("During loading of class %s , class %s found in local system dictionary"
                                    "(field type not in LoadableDescriptors attribute)",
@@ -6576,19 +6576,19 @@ void ClassFileParser::set_klass(InstanceKlass* klass) {
   _klass = klass;
 }
 
-void ClassFileParser::set_inline_layout_info_klass(int field_index, ValueKlass* vk, TRAPS) {
+void ClassFileParser::set_value_field_layout_info_klass(int field_index, ValueKlass* vk, TRAPS) {
   assert(field_index >= 0 && field_index < java_fields_count(), "IOOB: 0 <= %d < %d", field_index, (int)java_fields_count());
 
-  // The array of InlineLayoutInfo is allocated on demand. This way the array is
+  // The array of ValueFieldLayoutInfo is allocated on demand. This way the array is
   // never allocated for an InstanceKlass which has no need for this information.
-  if (_inline_layout_info_array == nullptr) {
-    _inline_layout_info_array = MetadataFactory::new_array<InlineLayoutInfo>(_loader_data,
-                                                                             java_fields_count(),
-                                                                             CHECK);
+  if (_value_field_layout_info_array == nullptr) {
+    _value_field_layout_info_array = MetadataFactory::new_array<ValueFieldLayoutInfo>(_loader_data,
+                                                                                      java_fields_count(),
+                                                                                      CHECK);
   }
 
   // Set the Klass for the field's index
-  _inline_layout_info_array->adr_at(field_index)->set_klass(vk);
+  _value_field_layout_info_array->adr_at(field_index)->set_klass(vk);
 }
 
 void ClassFileParser::set_klass_to_deallocate(InstanceKlass* klass) {

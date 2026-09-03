@@ -2229,13 +2229,13 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   load_klass(tmp1, Z_tos);
   payload_addr(Z_tos, Z_tos, tmp1);
 
-  // Load the InlineLayoutInfo for this field:
+  // Load the ValueFieldLayoutInfo for this field:
   //   field_index (u2) from the entry, holder klass pointer from the entry.
   // Reuse field_offset as the layout_info register from here on.
   Register layout_info = field_offset;
   load_sized_value(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())), sizeof(u2), false);
   load_sized_value(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())), sizeof(void*), false);
-  inline_layout_info(tmp2, tmp1, layout_info);
+  value_field_layout_info(tmp2, tmp1, layout_info);
 
   // Inline byte-copy of the value's payload into the flat field slot.
   flat_field_copy(IN_HEAP, Z_tos, obj, layout_info);

@@ -289,29 +289,29 @@ inline void ValuePayload::assert_is_flat_field(const InstanceKlass* klass, int o
   fieldDescriptor field_descriptor;
   postcond(klass->find_flat_field_containing_offset(offset, &field_descriptor));
 
-  const InlineLayoutInfo inline_layout_info = field_descriptor.field_holder()->inline_layout_info(field_descriptor.index());
+  const ValueFieldLayoutInfo value_field_layout_info = field_descriptor.field_holder()->value_field_layout_info(field_descriptor.index());
 
-  OnVMError on_assertion_failure_inline_layout_info([&](outputStream* st) {
+  OnVMError on_assertion_failure_value_field_layout_info([&](outputStream* st) {
     st->print_cr("=== assert_is_flat_field(" PTR_FORMAT ", %d) failure ===", p2i(klass), offset);
       StreamIndentor si(st);
       st->print("field_descriptor: ");
       field_descriptor.print_on(st);
       st->cr();
-      st->print("inline_layout_info: ");
-      inline_layout_info.print_on(st);
+      st->print("value_field_layout_info: ");
+      value_field_layout_info.print_on(st);
       st->cr();
   });
 
-  if (inline_layout_info.klass() == this->klass()) {
+  if (value_field_layout_info.klass() == this->klass()) {
     // Found the field in klass
     postcond(offset == field_descriptor.offset());
-    postcond(inline_layout_info.kind() == layout_kind());
+    postcond(value_field_layout_info.kind() == layout_kind());
     postcond(field_descriptor.layout_kind() == layout_kind());
     postcond(field_descriptor.is_flat());
   } else {
     // Nested flat field
     postcond(offset >= field_descriptor.offset());
-    const ValueKlass* const field_klass = inline_layout_info.klass();
+    const ValueKlass* const field_klass = value_field_layout_info.klass();
     const int payload_offset = field_klass->payload_offset();
     assert_is_flat_field(field_klass, offset - field_descriptor.offset() + payload_offset);
   }
@@ -593,8 +593,8 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
 
 inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           ptrdiff_t offset,
-                                          InlineLayoutInfo* inline_layout_info)
-    : FlatValuePayload(container, offset, inline_layout_info->klass(), inline_layout_info->kind()) {}
+                                          ValueFieldLayoutInfo* layout_info)
+    : FlatValuePayload(container, offset, layout_info->klass(), layout_info->kind()) {}
 
 #ifdef ASSERT
 
@@ -630,7 +630,7 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           fieldDescriptor* field_descriptor)
     : FlatFieldPayload(container,
                        field_descriptor->offset(),
-                       field_descriptor->field_holder()->inline_layout_info_adr(field_descriptor->index())) {
+                       field_descriptor->field_holder()->value_field_layout_info_adr(field_descriptor->index())) {
   assert_post_construction_invariants(container, field_descriptor);
 }
 
@@ -638,7 +638,7 @@ inline FlatFieldPayload::FlatFieldPayload(instanceOop container,
                                           ResolvedFieldEntry* resolved_field_entry)
     : FlatFieldPayload(container,
                        resolved_field_entry->field_offset(),
-                       resolved_field_entry->field_holder()->inline_layout_info_adr(resolved_field_entry->field_index())) {
+                       resolved_field_entry->field_holder()->value_field_layout_info_adr(resolved_field_entry->field_index())) {
   assert_post_construction_invariants(container, resolved_field_entry);
 }
 

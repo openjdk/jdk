@@ -269,9 +269,9 @@ class MacroAssembler: public Assembler {
   // Check array klass layout helper for flat or null-free arrays...
   void test_flat_array_layout(Register lh, Label& is_flat_array);
 
-  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
 
   // value type data payload offsets...
   void payload_offset(Register value_klass, Register offset);

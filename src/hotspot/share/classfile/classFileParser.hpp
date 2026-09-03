@@ -178,7 +178,7 @@ class ClassFileParser {
 
   ClassAnnotationCollector* _parsed_annotations;
   FieldLayoutInfo* _layout_info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   GrowableArray<FieldInfo>* _temp_field_info;
   const intArray* _method_ordering;
   GrowableArray<Method*>* _all_mirandas;
@@ -254,7 +254,7 @@ class ClassFileParser {
 
   void set_klass(InstanceKlass* instance);
 
-  void set_inline_layout_info_klass(int field_index, ValueKlass* vk, TRAPS);
+  void set_value_field_layout_info_klass(int field_index, ValueKlass* vk, TRAPS);
 
   void set_class_bad_constant_seen(short bad_constant);
   short class_bad_constant_seen() { return  _bad_constant_seen; }

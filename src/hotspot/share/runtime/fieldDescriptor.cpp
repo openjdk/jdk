@@ -199,7 +199,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
 
         if (!is_null_free_value_type()) {
           assert(has_null_marker(), "should have null marker");
-          InlineLayoutInfo* li = field_holder()->inline_layout_info_adr(index());
+          ValueFieldLayoutInfo* li = field_holder()->value_field_layout_info_adr(index());
           nm_offset = li->null_marker_offset();
           st->print("Flat value type field '%s':", vk->name()->as_C_string());
           if (obj->byte_field_acquire(nm_offset) == 0) {
