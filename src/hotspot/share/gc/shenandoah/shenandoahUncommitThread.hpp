@@ -69,6 +69,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
+  ~ShenandoahUncommitThread();
 
   // Periodically check for regions to uncommit
   void run_service() override;

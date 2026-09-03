@@ -43,6 +43,10 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   _uncommit_allowed.set();
 }
 
+ShenandoahUncommitThread::~ShenandoahUncommitThread() {
+  FREE_C_HEAP_ARRAY(_candidate_regions);
+}
+
 void ShenandoahUncommitThread::run_service() {
   assert(ShenandoahUncommit, "Thread should only run when uncommit is enabled");
 
