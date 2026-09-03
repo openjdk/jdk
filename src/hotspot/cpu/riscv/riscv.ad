@@ -2850,10 +2850,44 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
+// Int immediate: the mask of a bitfield extract, i.e. contiguous low-order
+// ones, whose width is log2i_exact(mask + 1), e.g. 0xfff, 0xffff, 0x7fffffff.
+// Masks that fit into a 12-bit immediate are excluded: a shift followed by
+// andi is already as short as the shift pair used to extract the field.
+operand immI_bitmask() %{
+  predicate(is_power_of_2((juint)n->get_int() + 1) &&
+            !Assembler::is_simm12((int64_t)n->get_int()));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long Immediate: low 16-bit mask
+operand immL_16bits()
+%{
+  predicate(n->get_long() == 0xFFFFL);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
   predicate(n->get_long() == 0xFFFFFFFFL);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long immediate: the mask of a bitfield extract, see immI_bitmask above,
+// e.g. 0xfff, 0xffffffff, 0x7fffffffffffffff.
+operand immL_bitmask() %{
+  predicate(is_power_of_2((julong)n->get_long() + 1) &&
+            !Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -7249,6 +7283,86 @@ instruct urShiftP_reg_imm(iRegLNoSp dst, iRegP src1, immI src2) %{
     __ srli(as_Register($dst$$reg),
             as_Register($src1$$reg),
             (unsigned) $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Unsigned bitfield extract: (src >>> rshift) & (2^width - 1)
+instruct bitfieldExtractI(iRegINoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (AndI (URShiftI src rshift) mask));
+  // The field must not extend past the high end of the int.
+  predicate(log2i_exact((juint)n->in(2)->get_int() + 1) + (n->in(1)->in(2)->get_int() & 0x1f) <= 32);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x1f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractI" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x1f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Unsigned bitfield extract from an int with a zero-extending conversion to long.
+instruct bitfieldExtractI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (ConvI2L (AndI (URShiftI src rshift) mask)));
+  predicate(log2i_exact((juint)n->in(1)->in(2)->get_int() + 1) +
+            (n->in(1)->in(1)->in(2)->get_int() & 0x1f) <= 32);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x1f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractI2L" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x1f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct bitfieldExtractL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask) %{
+  match(Set dst (AndL (URShiftL src rshift) mask));
+  // The field must not extend past the high end of the long.
+  predicate(log2i_exact((julong)n->in(2)->get_long() + 1) + (n->in(1)->in(2)->get_int() & 0x3f) <= 64);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x3f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractL" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x3f;
+    int width = log2i_exact((julong)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Extract an int sized field out of a long. The mask is at most 31 bits wide,
+// so the zero extended result is a valid int. This is the shape emitted by
+// LibraryCallKit::inline_native_hashcode.
+instruct bitfieldExtractL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (AndI (ConvL2I (URShiftL src rshift)) mask));
+  predicate(log2i_exact((juint)n->in(2)->get_int() + 1) + (n->in(1)->in(1)->in(2)->get_int() & 0x3f) <= 64);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x3f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractL2I" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x3f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
   %}
 
   ins_pipe(ialu_reg_shift);

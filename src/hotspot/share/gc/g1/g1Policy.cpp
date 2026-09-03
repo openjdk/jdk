@@ -69,6 +69,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
   _pending_cards_from_gc(0),
+  _to_collection_set_cards(0),
   _collection_set(nullptr),
   _g1h(nullptr),
   _phase_times_timer(gc_timer),
@@ -1183,7 +1184,7 @@ double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+  size_t code_root_length = hr->rem_set()->code_roots_length();
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);

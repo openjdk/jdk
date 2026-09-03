@@ -808,6 +808,7 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
     Handle ho(THREAD, obj);
     args.push_oop(ho);
     methodHandle method(THREAD, Universe::value_object_hash_code_method());
+    method->method_holder()->initialize(CHECK_0); // Ensure class ValueObjectMethods is initialized
     JavaCalls::call(&result, method, &args, THREAD);
     Exceptions::wrap_exception_in_internal_error("Internal error in hashCode", CHECK_0);
 
@@ -825,7 +826,7 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
       current_mark = ho->mark();
       new_mark = current_mark.copy_set_hash(identity_hash);
       old_mark = ho->cas_set_mark(new_mark, current_mark);
-      assert(old_mark.has_no_hash() || old_mark.hash() == new_mark.hash(),
+      assert(!old_mark.has_hash() || old_mark.hash() == new_mark.hash(),
             "CAS identity hash invariant violated, expected=" INTPTR_FORMAT " actual=" INTPTR_FORMAT,
             new_mark.hash(),
             old_mark.hash());
@@ -833,7 +834,7 @@ JVM_ENTRY(jint, JVM_IHashCode(JNIEnv* env, jobject handle))
 
     return checked_cast<jint>(new_mark.hash());
   } else {
-    return checked_cast<jint>(ObjectSynchronizer::FastHashCode(THREAD, obj));
+    return checked_cast<jint>(obj->identity_hash(THREAD));
   }
 JVM_END
 

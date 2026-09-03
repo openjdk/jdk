@@ -1780,7 +1780,7 @@ void MacroAssembler::fast_lock(Register obj, Register t1, Register t2, Register 
   Register new_hdr = t2;
   ldr(new_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
   bic(new_hdr, new_hdr, markWord::lock_mask_in_place);  // new header (00)
-  orr(old_hdr, new_hdr, markWord::unlocked_value);      // old header (01)
+  orr(old_hdr, new_hdr, markWord::lock_neutral_value);  // old header (01)
 
   Label dummy;
 
@@ -1829,7 +1829,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Register t2, Registe
   Register new_hdr = t2;
   ldr(old_hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
   bic(old_hdr, old_hdr, markWord::lock_mask_in_place);    // old header (00)
-  orr(new_hdr, old_hdr, markWord::unlocked_value);        // new header (01)
+  orr(new_hdr, old_hdr, markWord::lock_neutral_value);    // new header (01)
 
   // Try to swing header from locked to unlocked
   Label dummy;

@@ -87,11 +87,7 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
-gc/TestGCALotAtAllSafepoints.java#Parallel 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Serial 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#G1 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Z 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Shenandoah 8390661 generic-all
+gc/metaspace/TestMetaspaceFirstGC.java 8391711 generic-all
 
 #############################################################################
 
@@ -107,11 +103,12 @@ runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestLimitsUpdating.java 8390823 linux-all
+containers/docker/ShareTmpDir.java 8390823 linux-all
 
 #############################################################################
 
@@ -140,6 +137,8 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
 
+serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 8390812 windows-x64
+
 #############################################################################
 
 # :hotspot_misc
@@ -155,11 +154,6 @@ serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-
 
 vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
 vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
-
-vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all

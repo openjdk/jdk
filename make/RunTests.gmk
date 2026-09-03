@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET AOT_JDK, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET JCOV_SCALES AOT_JDK, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
@@ -121,8 +121,20 @@ ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_SUPPORT_DIR := $(TEST_SUPPORT_DIR)/jcov-support
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
   JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
+  JCOV_TESTLIST := $(JCOV_OUTPUT_DIR)/testlist.txt
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
+  JCOV_GRABBER_OPTIONS ?=
+  JCOV_REPGEN_OPTIONS ?=
+  TEST_OPTS_JCOV_SCALES ?= false
   JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
+
+  ifeq ($(TEST_OPTS_JCOV_SCALES), true)
+    JCOV_GRABBER_OPTIONS += -scale -mergebyname -outTestList $(JCOV_TESTLIST)
+    TEST_JOBS := 1
+    JTREG_TEST_MODE := othervm
+    JTREG_VM_OPTIONS += -Djcov.extension=com.sun.tdk.jcov.runtime.TestNameDecorator
+    JCOV_REPGEN_OPTIONS += -tests $(JCOV_TESTLIST)
+  endif
 
   # Replace our normal test JDK with the JCov image.
   JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
@@ -1414,6 +1426,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	fi
 	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
+	    $(JCOV_GRABBER_OPTIONS) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
   jcov-start-grabber: jcov-do-start-grabber
@@ -1441,6 +1454,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
+	    $(JCOV_REPGEN_OPTIONS) \
 	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE))
 
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \

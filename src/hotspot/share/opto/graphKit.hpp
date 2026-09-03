@@ -844,7 +844,7 @@ class GraphKit : public Phase {
                       bool maybe_larval = false);
 
   // Inline types
-  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool check_lock = true);
+  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq);
   Node* inline_type_test(Node* obj, bool is_inline = true);
   Node* flat_array_test(Node* array_or_klass, bool flat = true);
   Node* null_free_array_test(Node* array, bool null_free = true);
@@ -886,7 +886,8 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
+  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);

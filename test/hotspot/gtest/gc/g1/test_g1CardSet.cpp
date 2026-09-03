@@ -46,6 +46,19 @@ class G1CardSetTest : public ::testing::Test {
     }
   };
 
+  // Verify Full card containers contents (and amount). Assumes that cards returned are in ascending order.
+  class G1VerifyFullCardContainerClosure : public G1CardSet::CardClosure {
+  public:
+    size_t _cur_card;
+
+    G1VerifyFullCardContainerClosure() : _cur_card(0) { }
+
+    void do_card(uint region_idx, uint card_idx) override {
+      ASSERT_TRUE(card_idx == _cur_card);
+      _cur_card++;
+    }
+  };
+
   static WorkerThreads* _workers;
   static uint _max_workers;
 
@@ -374,9 +387,9 @@ void G1CardSetTest::cardset_basic_test() {
     res = card_set.add_card(99, CardsPerRegion - 2);
     ASSERT_TRUE(res == Found);
 
-    G1CountCardsClosure count_cards;
+    G1VerifyFullCardContainerClosure count_cards;
     card_set.iterate_cards(count_cards);
-    ASSERT_TRUE(count_cards._num_cards == config.max_cards_in_region());
+    ASSERT_TRUE(count_cards._cur_card == config.max_cards_in_region());
 
     card_set.clear();
     ASSERT_TRUE(card_set.occupied() == 0);

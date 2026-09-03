@@ -442,6 +442,7 @@ public class ApplicableIRRulesPrinter {
         return returnValue;
     }
 
+    @SuppressWarnings("preview")
     private boolean check(String flag, String value) {
         if (flag.isEmpty()) {
             TestFormat.failNoThrow("Provided empty flag" + failAt());

@@ -1162,7 +1162,7 @@ bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
   Node* arg2 = argument(1);
 
   const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
-  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), mtype, arg1, arg2, ae)));
   clear_upper_avx();
 
   return true;
@@ -4937,7 +4937,7 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
   Node* bol;
   switch(check) {
     case IsFlat:
-      bol = flat_array_test(load_object_klass(array));
+      bol = flat_array_test(array);
       break;
     case IsNullRestricted:
       bol = null_free_array_test(array);
@@ -4947,8 +4947,7 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
       // 1. If not flat, then atomic, or else...
       RegionNode* atomic_region = new RegionNode(1);
       RegionNode* non_atomic_region = new RegionNode(1);
-      Node* array_klass = load_object_klass(array);
-      Node* is_flat_bol = flat_array_test(array_klass);
+      Node* is_flat_bol = flat_array_test(array);
       IfNode* iff_is_flat = create_and_xform_if(control(), is_flat_bol, PROB_FAIR, COUNT_UNKNOWN);
       atomic_region->add_req(_gvn.transform(new IfFalseNode(iff_is_flat)));
       set_control(_gvn.transform(new IfTrueNode(iff_is_flat)));
@@ -4957,6 +4956,7 @@ bool LibraryCallKit::inline_getArrayProperties(ArrayPropertiesCheck check) {
       Node* layout_kind = atomic_layout_array_test_and_get_layout_kind(array, atomic_region);
 
       // 3. ...if the element type is naturally atomic and null-free OR empty and nullable, then atomic, or else...
+      Node* array_klass = load_object_klass(array);
       int element_klass_offset = in_bytes(ObjArrayKlass::element_klass_offset());
       Node* array_element_klass_addr = off_heap_plus_addr(array_klass, element_klass_offset);
       Node* array_element_klass = _gvn.transform(LoadKlassNode::make(_gvn, immutable_memory(), array_element_klass_addr, _gvn.type(array_klass)->is_klassptr()));
@@ -5263,7 +5263,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
     if (Arguments::is_valhalla_enabled()) {
       // Handle inline type arrays
       // TODO 8251971 This is too strong
-      generate_fair_guard(flat_array_test(load_object_klass(original)), bailout);
+      generate_fair_guard(flat_array_test(original), bailout);
       generate_fair_guard(flat_array_test(refined_klass_node), bailout);
       generate_fair_guard(null_free_array_test(original), bailout);
     }
@@ -5369,7 +5369,7 @@ bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_typ
     return true;
   }
 
-  if (UseArrayFlattening) {
+  if (!UseArrayFlattening) {
     // The remaining checks revolve around array flatness. Without array flatness, we don't need the stronger non-ref
     // runtime check excluding flat arrays.
     return false;
@@ -5391,7 +5391,7 @@ bool LibraryCallKit::should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_typ
   // TODO 8251971: Optimize for the case when flat src/dst are later found to not contain
   //               oops (i.e., move this check to the macro expansion phase).
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (bs->array_copy_requires_gc_barriers(true, T_OBJECT, false, false, BarrierSetC2::Parsing)) {
+  if (!bs->array_copy_requires_gc_barriers(true, T_OBJECT, false, false, BarrierSetC2::Parsing)) {
     // No barriers required.
     return false;
   }
@@ -6320,7 +6320,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           (ary_ptr == nullptr || (!ary_ptr->is_not_flat() && (!ary_ptr->is_flat() || ary_ptr->elem()->inline_klass()->contains_oops())))) {
         // Flat inline type array may have object field that would require a
         // write barrier. Conservatively, go to slow path.
-        generate_fair_guard(flat_array_test(obj_klass), slow_region);
+        generate_fair_guard(flat_array_test(obj), slow_region);
       }
 
       if (!stopped()) {
@@ -7254,11 +7254,18 @@ bool LibraryCallKit::inline_encodeISOArray(bool ascii) {
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
 
-  const TypeAryPtr* mtype = TypeAryPtr::BYTES;
-  Node* enc = new EncodeISOArrayNode(control(), memory(mtype), src_start, dst_start, length, ascii);
+  // See GraphKit::compress_string
+  const TypePtr* src_adr_type = TypeAryPtr::get_array_body_type(src_elem);
+  const TypePtr* dst_adr_type = TypeAryPtr::get_array_body_type(dst_elem);
+  assert(src_adr_type == TypeAryPtr::BYTES || src_adr_type == TypeAryPtr::CHARS, "unexpected src_adr_type");
+  assert(dst_adr_type == TypeAryPtr::BYTES, "unexpected dst_adr_type");
+  const TypePtr* adr_type;
+  Node* mem = capture_memory(adr_type, src_adr_type, dst_adr_type);
+  Node* enc = new EncodeISOArrayNode(control(), mem, adr_type, src_start, dst_start, length, ascii);
   enc = _gvn.transform(enc);
   Node* res_mem = _gvn.transform(new SCMemProjNode(enc));
-  set_memory(res_mem, mtype);
+  memory_effect(res_mem, src_adr_type, dst_adr_type);
+
   set_result(enc);
   clear_upper_avx();
 
@@ -7737,7 +7744,8 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   // Resolve address of first element
   Node* array_start = array_element_address(array, offset, bt);
 
-  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(TypeAryPtr::get_array_body_type(bt)),
+  const TypeAryPtr* in_adr_type = TypeAryPtr::get_array_body_type(bt);
+  set_result(_gvn.transform(new VectorizedHashCodeNode(control(), memory(in_adr_type), in_adr_type,
     array_start, length, initialValue, basic_type)));
   clear_upper_avx();
 

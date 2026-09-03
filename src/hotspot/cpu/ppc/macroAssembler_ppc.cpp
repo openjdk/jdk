@@ -2734,7 +2734,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     // Check for monitor (0b10) or locked (0b00).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(R0, mark, markWord::lock_mask_in_place);
-    cmpldi(CR0, R0, markWord::unlocked_value);
+    cmpldi(CR0, R0, markWord::lock_neutral_value);
     bgt(CR0, inflated);
     bne(CR0, slow_path);
 
@@ -2913,7 +2913,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 #ifdef ASSERT
     // Check header not unlocked (0b01).
     Label not_unlocked;
-    andi_(t, mark, markWord::unlocked_value);
+    andi_(t, mark, markWord::lock_neutral_value);
     beq(CR0, not_unlocked);
     stop("fast_unlock already unlocked");
     bind(not_unlocked);
@@ -3372,11 +3372,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   } else {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   }
-}
-
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  load_klass(dst, src);
-  ld(dst, Klass::prototype_header_offset(), dst);
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info) {
@@ -4838,17 +4833,18 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 
   bind(retry);
-  STATIC_ASSERT(markWord::locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
-    xori(tmp, tmp, markWord::unlocked_value); // flip unlocked bit
+    xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit
     andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
-    bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0) or belongs to an inline type
+    bne(CR0, failed); // failed if new header doesn't contain fast_locked_value (which is 0) or belongs to an inline type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);
-    bne(CR0, failed); // failed if old header doesn't contain locked_value (which is 0)
-    ori(tmp, tmp, markWord::unlocked_value); // set unlocked bit
+    bne(CR0, failed); // failed if old header doesn't contain fast_locked_value (which is 0)
+    ori(tmp, tmp, markWord::lock_neutral_value); // set lock-neutral bit
   }
   stdcx_(tmp, obj);
   bne(CR0, retry);
@@ -4900,7 +4896,7 @@ void MacroAssembler::fast_lock(Register box, Register obj, Register t1, Register
 
   // Check header for monitor (0b10) or locked (0b00).
   ld(mark, oopDesc::mark_offset_in_bytes(), obj);
-  xori(t, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::lock_neutral_value);
   andi_(t, t, markWord::lock_mask_in_place);
   bne(CR0, slow);
 
@@ -4974,7 +4970,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  andi_(t, mark, markWord::unlocked_value);
+  andi_(t, mark, markWord::lock_neutral_value);
   beq(CR0, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);

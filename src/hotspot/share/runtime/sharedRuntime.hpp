@@ -690,6 +690,10 @@ class SharedRuntime: AllStatic {
 #endif // PRODUCT
 
   static void print_statistics() PRODUCT_RETURN;
+
+  // native --> Java safepoint entry point
+  // Check for async exception in addition to safepoint.
+  static void check_special_condition_for_native_trans(JavaThread *current);
 };
 
 

@@ -269,7 +269,7 @@ public:
       _max_code_root_mem_sz = code_root_mem_sz;
       _max_code_root_mem_sz_region = r;
     }
-    size_t code_root_elems = hrrs->code_roots_list_length();
+    size_t code_root_elems = hrrs->code_roots_length();
 
     G1PerRegionTypeRemSetCounters* current = nullptr;
     if (r->is_free()) {
@@ -392,7 +392,7 @@ public:
                   HR_FORMAT_PARAMS(max_code_root_mem_sz_region()),
                   byte_size_in_proper_unit(max_code_root_rem_set->code_roots_mem_size()),
                   proper_unit_for_byte_size(max_code_root_rem_set->code_roots_mem_size()),
-                  max_code_root_rem_set->code_roots_list_length());
+                  max_code_root_rem_set->code_roots_length());
   }
 };
 

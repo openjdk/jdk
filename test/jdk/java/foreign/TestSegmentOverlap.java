@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm TestSegmentOverlap
+ * @run junit/othervm TestSegmentOverlap
  */
 
 import java.io.File;
@@ -37,11 +37,14 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.lang.foreign.MemorySegment;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
 import static java.lang.System.out;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestSegmentOverlap {
 
     static Path tempPath;
@@ -58,7 +61,6 @@ public class TestSegmentOverlap {
         }
     }
 
-    @DataProvider(name = "segmentFactories")
     public Object[][] segmentFactories() {
         List<Supplier<MemorySegment>> l = List.of(
                 () -> Arena.ofAuto().allocate(16, 1),
@@ -80,7 +82,8 @@ public class TestSegmentOverlap {
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
     }
 
-    @Test(dataProvider="segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testBasic(Supplier<MemorySegment> segmentSupplier) {
         var s1 = segmentSupplier.get();
         var s2 = segmentSupplier.get();
@@ -92,39 +95,41 @@ public class TestSegmentOverlap {
         assertTrue(s1.asOverlappingSlice(sOther).isEmpty());
     }
 
-    @Test(dataProvider="segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testIdentical(Supplier<MemorySegment> segmentSupplier) {
         var s1 = segmentSupplier.get();
         var s2 = s1.asReadOnly();
         out.format("testIdentical s1:%s, s2:%s\n", s1, s2);
-        assertEquals(s1.asOverlappingSlice(s2).get().byteSize(), s1.byteSize());
-        assertEquals(s1.asOverlappingSlice(s2).get().scope(), s1.scope());
+        assertEquals(s1.byteSize(), s1.asOverlappingSlice(s2).get().byteSize());
+        assertEquals(s1.scope(), s1.asOverlappingSlice(s2).get().scope());
 
-        assertEquals(s2.asOverlappingSlice(s1).get().byteSize(), s2.byteSize());
-        assertEquals(s2.asOverlappingSlice(s1).get().scope(), s2.scope());
+        assertEquals(s2.byteSize(), s2.asOverlappingSlice(s1).get().byteSize());
+        assertEquals(s2.scope(), s2.asOverlappingSlice(s1).get().scope());
 
         if (s1.isNative()) {
-            assertEquals(s1.asOverlappingSlice(s2).get().address(), s1.address());
-            assertEquals(s2.asOverlappingSlice(s1).get().address(), s2.address());
+            assertEquals(s1.address(), s1.asOverlappingSlice(s2).get().address());
+            assertEquals(s2.address(), s2.asOverlappingSlice(s1).get().address());
         }
     }
 
-    @Test(dataProvider="segmentFactories")
+    @ParameterizedTest
+    @MethodSource("segmentFactories")
     public void testSlices(Supplier<MemorySegment> segmentSupplier) {
         MemorySegment s1 = segmentSupplier.get();
         MemorySegment s2 = segmentSupplier.get();
         for (int offset = 0 ; offset < 4 ; offset++) {
             MemorySegment slice = s1.asSlice(offset);
             out.format("testSlices s1:%s, s2:%s, slice:%s, offset:%d\n", s1, s2, slice, offset);
-            assertEquals(s1.asOverlappingSlice(slice).get().byteSize(), s1.byteSize() - offset);
-            assertEquals(s1.asOverlappingSlice(slice).get().scope(), s1.scope());
+            assertEquals(s1.byteSize() - offset, s1.asOverlappingSlice(slice).get().byteSize());
+            assertEquals(s1.scope(), s1.asOverlappingSlice(slice).get().scope());
 
-            assertEquals(slice.asOverlappingSlice(s1).get().byteSize(), slice.byteSize());
-            assertEquals(slice.asOverlappingSlice(s1).get().scope(), slice.scope());
+            assertEquals(slice.byteSize(), slice.asOverlappingSlice(s1).get().byteSize());
+            assertEquals(slice.scope(), slice.asOverlappingSlice(s1).get().scope());
 
             if (s1.isNative()) {
-                assertEquals(s1.asOverlappingSlice(slice).get().address(), s1.address() + offset);
-                assertEquals(slice.asOverlappingSlice(s1).get().address(), slice.address());
+                assertEquals(s1.address() + offset, s1.asOverlappingSlice(slice).get().address());
+                assertEquals(slice.address(), slice.asOverlappingSlice(s1).get().address());
             }
             assertTrue(s2.asOverlappingSlice(slice).isEmpty());
         }

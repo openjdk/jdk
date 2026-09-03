@@ -4236,11 +4236,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  load_klass(dst, src);
-  z_lg(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   assert_different_registers(dst_oop, klass, Z_R0);
@@ -6377,7 +6372,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
 
   { // Try to lock. Transition lock bits 0b01 => 0b00
     const Register locked_obj = top;
-    z_oill(mark, markWord::unlocked_value);
+    z_oill(mark, markWord::lock_neutral_value);
     if (Arguments::is_valhalla_enabled()) {
       static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
                      "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
@@ -6386,7 +6381,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
     }
     z_lgr(locked_obj, mark);
     // Clear lock-bits from locked_obj (locked state)
-    z_xilf(locked_obj, markWord::unlocked_value);
+    z_xilf(locked_obj, markWord::lock_neutral_value);
     z_csg(mark, locked_obj, mark_offset, obj);
     branch_optimized(Assembler::bcondNotEqual, slow);
   }
@@ -6458,7 +6453,7 @@ void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, L
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   NearLabel not_unlocked;
-  z_tmll(mark, markWord::unlocked_value);
+  z_tmll(mark, markWord::lock_neutral_value);
   z_braz(not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -6467,7 +6462,7 @@ void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, L
   { // Try to unlock. Transition lock bits 0b00 => 0b01
     Register unlocked_obj = top;
     z_lgr(unlocked_obj, mark);
-    z_oill(unlocked_obj, markWord::unlocked_value);
+    z_oill(unlocked_obj, markWord::lock_neutral_value);
     z_csg(mark, unlocked_obj, mark_offset, obj);
     branch_optimized(Assembler::bcondEqual, unlocked);
   }
@@ -6538,7 +6533,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     { // Try to lock. Transition lock bits 0b01 => 0b00
       assert(mark_offset == 0, "required to avoid a lea");
       const Register locked_obj = top;
-      z_oill(mark, markWord::unlocked_value);
+      z_oill(mark, markWord::lock_neutral_value);
       if (Arguments::is_valhalla_enabled()) {
         static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
                       "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
@@ -6547,7 +6542,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       }
       z_lgr(locked_obj, mark);
       // Clear lock-bits from locked_obj (locked state)
-      z_xilf(locked_obj, markWord::unlocked_value);
+      z_xilf(locked_obj, markWord::lock_neutral_value);
       z_csg(mark, locked_obj, mark_offset, obj);
       branch_optimized(Assembler::bcondNotEqual, slow_path);
     }
@@ -6725,7 +6720,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
 #ifdef ASSERT
     // Check header not unlocked (0b01).
     NearLabel not_unlocked;
-    z_tmll(mark, markWord::unlocked_value);
+    z_tmll(mark, markWord::lock_neutral_value);
     z_braz(not_unlocked);
     stop("fast_unlock already unlocked");
     bind(not_unlocked);
@@ -6734,7 +6729,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
     { // Try to unlock. Transition lock bits 0b00 => 0b01
       Register unlocked_obj = top;
       z_lgr(unlocked_obj, mark);
-      z_oill(unlocked_obj, markWord::unlocked_value);
+      z_oill(unlocked_obj, markWord::lock_neutral_value);
       z_csg(mark, unlocked_obj, mark_offset, obj);
       branch_optimized(Assembler::bcondEqual, unlocked);
     }

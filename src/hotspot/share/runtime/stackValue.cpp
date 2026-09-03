@@ -77,7 +77,7 @@ static oop oop_from_oop_location(stackChunkOop chunk, void* addr) {
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (oop*)nullptr);
   }
 #endif
 
@@ -114,7 +114,7 @@ static oop oop_from_narrowOop_location(stackChunkOop chunk, void* addr, bool is_
     // stack values. Note: do not heal the location, to avoid accidentally
     // corrupting the stack. Stack watermark barriers are supposed to handle
     // the healing.
-    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(val);
+    val = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, val, (narrowOop*)nullptr);
   }
 #endif
 
