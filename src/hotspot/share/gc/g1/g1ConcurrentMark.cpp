@@ -3248,7 +3248,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
-                          "groud-id", "num-regions",
+                          "group-id", "num-regions",
                           "gc-eff", "liveness",
                           "remset", "type");
 
