@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,17 @@
  *
  */
 
-#ifndef SHARE_CDS_CPPVTABLES_HPP
-#define SHARE_CDS_CPPVTABLES_HPP
+#ifndef SHARE_COMPILER_AOTCOMPILEBROKER_HPP
+#define SHARE_COMPILER_AOTCOMPILEBROKER_HPP
 
-#include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
-#include "memory/metaspaceClosureType.hpp"
-#include "utilities/globalDefinitions.hpp"
+#include "utilities/exceptions.hpp"
 
 class ArchiveBuilder;
-class Klass;
-class Method;
-class SerializeClosure;
-class CppVtableInfo;
 
-// Support for C++ vtables in CDS archive.
-class CppVtables : AllStatic {
-  static char* _vtables_serialized_base;
+class AOTCompileBroker : AllStatic  {
 public:
-  static void dumptime_init(ArchiveBuilder* builder);
-  static void zero_archived_vtables();
-  static intptr_t* get_archived_vtable(MetaspaceClosureType type, address obj);
-  static void serialize(SerializeClosure* sc);
-  static bool is_valid_shared_method(const Method* m) NOT_CDS_RETURN_(false);
-  static bool is_valid_shared_klass(const Klass* k) NOT_CDS_RETURN_(false);
-  static char* vtables_serialized_base() { return _vtables_serialized_base; }
+  static void compile_aot_code(ArchiveBuilder* builder, TRAPS) NOT_CDS_RETURN;
 };
 
-#endif // SHARE_CDS_CPPVTABLES_HPP
+#endif // SHARE_COMPILER_AOTCOMPILEBROKER_HPP

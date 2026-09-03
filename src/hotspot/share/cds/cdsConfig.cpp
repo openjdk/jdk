@@ -24,17 +24,22 @@
 
 #include "cds/aotLogging.hpp"
 #include "cds/aotMapLogger.hpp"
+#include "cds/aotMetaspace.hpp"
+#include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/classListWriter.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/systemDictionaryShared.hpp"
 #include "code/aotCodeCache.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "prims/jvmtiAgentList.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
@@ -657,11 +662,17 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
   }
 
   if (AOTClassLinking) {
-    // If AOTClassLinking is specified, enable all AOT optimizations by default.
+    // If AOTClassLinking is specified, enable all these optimizations by default.
     FLAG_SET_ERGO_IF_DEFAULT(AOTInvokeDynamicLinking, true);
   } else {
-    // AOTInvokeDynamicLinking depends on AOTClassLinking.
+    // All of these *might* depend on AOTClassLinking. Better be safe than sorry.
     FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+
+    if (CDSConfig::is_dumping_archive()) {
+      FLAG_SET_ERGO(AOTRecordTraining, false);
+      FLAG_SET_ERGO(AOTReplayTraining, false);
+      AOTCodeCache::disable_caching();
+    }
   }
 
   if (is_dumping_static_archive()) {
@@ -675,6 +686,11 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
         // counter-productive. Switching back to mixed mode improves testing time
         // with AOT and -Xcomp.
         Arguments::set_mode_flags(Arguments::_mixed);
+      }
+      if (CompileThresholdScaling < 1.0) {
+        // Set flag to default value to avoid excessive normal JIT
+        // compilations during assembly phase.
+        FLAG_SET_ERGO(CompileThresholdScaling, 1.0);
       }
     } else if (!mode_flag_cmd_line) {
       // By default, -Xshare:dump runs in interpreter-only mode, which is required for deterministic archive.
@@ -739,7 +755,8 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
 
 void CDSConfig::setup_compiler_args() {
   // AOT profiles and AOT-compiled code are supported only in the JEP 483 workflow.
-  bool can_dump_profile_and_compiled_code = AOTClassLinking && new_aot_flags_used();
+  bool can_dump_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && AOTClassLinking && new_aot_flags_used();
+  bool can_use_profile_and_compiled_code = !CompilerConfig::is_interpreter_only() && new_aot_flags_used();
 
   if (is_dumping_preimage_static_archive() && can_dump_profile_and_compiled_code) {
     // JEP 483 workflow -- training
@@ -750,13 +767,24 @@ void CDSConfig::setup_compiler_args() {
     // JEP 483 workflow -- assembly
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-    AOTCodeCache::enable_caching(); // Generate AOT code during assembly phase.
+    // Generate AOT code only when training data enabled
+    if (AOTReplayTraining) {
+      AOTCodeCache::enable_caching();
+    } else {
+      AOTCodeCache::disable_caching();
+    }
     disable_dumping_aot_code();     // Don't dump AOT code until metadata and heap are dumped.
-  } else if (is_using_archive() && new_aot_flags_used()) {
+  } else if (is_using_archive() && can_use_profile_and_compiled_code) {
     // JEP 483 workflow -- production
     FLAG_SET_ERGO(AOTRecordTraining, false);
     FLAG_SET_ERGO_IF_DEFAULT(AOTReplayTraining, true);
-    AOTCodeCache::enable_caching();
+    // Use AOT code only when training data enabled
+    if (AOTReplayTraining) {
+      AOTCodeCache::enable_caching();
+    } else {
+      AOTCodeCache::disable_caching();
+      // Use separate compilation queues and threads for AOT code loading
+    }
   } else {
     FLAG_SET_ERGO(AOTReplayTraining, false);
     FLAG_SET_ERGO(AOTRecordTraining, false);
@@ -852,7 +880,7 @@ bool CDSConfig::is_using_only_default_archive() {
 }
 
 bool CDSConfig::is_logging_lambda_form_invokers() {
-  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
+  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive() || is_dumping_preimage_static_archive();
 }
 
 bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {

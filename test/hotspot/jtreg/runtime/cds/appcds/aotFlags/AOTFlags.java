@@ -52,6 +52,12 @@ public class AOTFlags {
     }
 
     static void positiveTests() throws Exception {
+        String hasTrainingDataPattern = "MethodTrainingData *= *[1-9]";
+        String noTrainingDataPattern = "MethodTrainingData *= *0";
+        String hasAOTCodePattern = "Shared file region .ac. .: *[1-9]";
+        String noAOTCodePattern = "Shared file region .ac. .: *0";
+        String hasMappedAOTCodePattern = "Mapped [0-9]+ bytes at address 0x[0-9a-f]+ from AOT Code Cache";
+
         //----------------------------------------------------------------------
         printTestCase("Training Run");
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
@@ -63,6 +69,8 @@ public class AOTFlags {
         OutputAnalyzer out = CDSTestUtils.executeAndLog(pb, "train");
         out.shouldContain("Hello World");
         out.shouldContain("AOTConfiguration recorded: " + aotConfigFile);
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(noAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -78,6 +86,8 @@ public class AOTFlags {
         out = CDSTestUtils.executeAndLog(pb, "asm");
         out.shouldContain("AOTCache creation is complete");
         out.shouldMatch("hello[.]aot");
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(hasAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -85,11 +95,13 @@ public class AOTFlags {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-Xlog:aot+codecache*",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain("Using AOT-linked classes: true (static archive: has aot-linked classes)");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -143,7 +155,7 @@ public class AOTFlags {
             "-XX:-AOTClassLinking",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
-            "-Xlog:aot",
+            "-Xlog:aot=debug",
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:+AOTCompatibleOopCompression", // avoid production run failure due to incompatible CompressedOops::base
             "-cp", appJar);
@@ -151,6 +163,8 @@ public class AOTFlags {
         out.shouldContain("AOTClassLinking is updated to true (the same as when AOT configuration file");
         out.shouldContain("AOTCache creation is complete");
         out.shouldMatch("hello[.]aot");
+        out.shouldMatch(hasTrainingDataPattern);
+        out.shouldMatch(hasAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
@@ -158,11 +172,13 @@ public class AOTFlags {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:AOTCache=" + aotCacheFile,
             "-Xlog:aot",
+            "-Xlog:aot+codecache*",
             "-cp", appJar, helloClass);
         out = CDSTestUtils.executeAndLog(pb, "prod");
         out.shouldContain("Using AOT-linked classes: true");
         out.shouldContain("Opened AOT cache hello.aot.");
         out.shouldContain("Hello World");
+        out.shouldMatch(hasMappedAOTCodePattern);
         out.shouldHaveExitValue(0);
 
         //----------------------------------------------------------------------
