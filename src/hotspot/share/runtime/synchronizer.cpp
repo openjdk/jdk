@@ -1342,7 +1342,7 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 
   const markWord mark = obj->mark();
-  if (mark.hash() == 0) {
+  if (!mark.has_hash()) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
                   "object must have a non-zero hash code: obj="
                   INTPTR_FORMAT ", mark=" INTPTR_FORMAT,
