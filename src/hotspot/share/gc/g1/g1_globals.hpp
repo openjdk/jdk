@@ -392,7 +392,7 @@
   develop(bool, G1ForceOptionalEvacuation, false,                           \
           "Force optional evacuation for all GCs where there are old gen "  \
           "collection set candidates."                                      \
-          "Also schedule all available optional card setgroups for "        \
+          "Also schedule all available optional card set groups for "       \
           "evacuation regardless of timing.")                               \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
