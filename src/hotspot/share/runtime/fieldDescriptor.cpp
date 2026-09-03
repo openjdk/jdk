@@ -174,11 +174,7 @@ void fieldDescriptor::print_on(outputStream* st, FieldClosure* fc) const {
   name()->print_value_on(st);
   st->print(" (fields 0x%08x) ", field_flags().as_uint());
   signature()->print_value_on(st);
-  if (fc == nullptr) {
-    st->print(" @%d ", offset());
-  } else {
-    st->print(" @%d ", field_offset_in_obj(fc));
-  }
+  st->print(" @%d ", (fc == nullptr) ? offset() : field_offset_in_obj(fc));
   if (WizardMode && has_initial_value()) {
     st->print("(initval ");
     constantTag t = initial_value_tag();

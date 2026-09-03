@@ -1816,9 +1816,7 @@ void HeapShared::find_flattened_classes(KlassSubGraphInfo* subgraph_info, oop or
         // Each element in fa may have different null fields, so we must scan
         // all elements to ensure discovery of all non-null fields.
         if (elem_k->has_inlined_fields()) {
-          size_t value_offset = fa->value_offset(i, fak->layout_helper());
-          guarantee(value_offset <= max_jint, "large value array not supported by AOT");
-          FlattenedKlassFinder finder(subgraph_info, orig_obj, elem_k, checked_cast<int>(value_offset));
+          FlattenedKlassFinder finder(subgraph_info, orig_obj, elem_k, fa->value_offset_as_int(i, fak->layout_helper()));
           elem_k->do_nonstatic_fields(&finder);
         }
       }

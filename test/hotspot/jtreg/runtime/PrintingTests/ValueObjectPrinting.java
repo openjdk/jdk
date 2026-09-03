@@ -176,7 +176,6 @@ value class Point {
     Point(int x, int y) {
         this.x = new Integer(x);
         this.y = new Integer(y);
-        super();
     }
 
 }
@@ -188,7 +187,6 @@ value class Rectangle {
     Rectangle(int x1, int y1, int x2, int y2) {
         this.p1 = new Point(x1, y1);
         this.p2 = new Point(x2, y2);
-        super();
     }
 }
 
@@ -204,7 +202,6 @@ value class PaddedRectangle {
         c = 1000001003;
         d = 1000001004;
         this.p2 = new Point(x2, y2);
-        super();
     }
 }
 
@@ -215,7 +212,6 @@ value class NullableRectangle {
     NullableRectangle(int x1, int y1, int x2, int y2) {
         this.p1 = new Point(x1, y1);
         this.p2 = new Point(x2, y2);
-        super();
     }
     NullableRectangle(int x, int y) {
         if (x < 3000) {
@@ -225,7 +221,6 @@ value class NullableRectangle {
             this.p1 = null;
             this.p2 = new Point(x, y);
         }
-        super();
     }
 }
 
@@ -241,6 +236,5 @@ value class NullableRectanglePair {
             r1 = null;
             r2 = new NullableRectangle(x, y);
         }
-        super();
     }
 }

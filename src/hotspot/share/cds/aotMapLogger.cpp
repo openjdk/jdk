@@ -696,9 +696,7 @@ public:
   }
 
   int value_offset(int i) {
-    size_t offset = raw_flatArrayOop()->value_offset(i, real_klass()->layout_helper());
-    guarantee(offset <= max_jint, "large value array not supported by AOT");
-    return checked_cast<int>(offset);
+    return raw_flatArrayOop()->value_offset_as_int(i, real_klass()->layout_helper());
   }
 }; // AOTMapLogger::FakeFlatArray
 
