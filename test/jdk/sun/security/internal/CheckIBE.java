@@ -25,7 +25,6 @@
  * @test
  * @bug 8383608
  * @summary check that InternalBinaryEncodable exists
- * @enablePreview
  * @modules java.base/sun.security.internal
  * @run main CheckIBE
  */

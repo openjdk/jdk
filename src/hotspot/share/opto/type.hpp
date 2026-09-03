@@ -423,6 +423,8 @@ public:
 #endif // !PRODUCT
   [[noreturn]] void typerr(const Type *t) const; // Mixing types error
 
+  DEBUG_ONLY(static void verify_meet_join());
+
   // Create basic type
   static const Type* get_const_basic_type(BasicType type) {
     assert((uint)type <= T_CONFLICT && _const_basic_type[type] != nullptr, "bad type");
@@ -1818,7 +1820,7 @@ public:
 
   const TypeAryPtr* cast_to_autobox_cache() const;
 
-  static jint max_array_length(BasicType etype);
+  jint max_array_length() const;
 
   int flat_offset() const;
   const Offset field_offset() const { return _field_offset; }

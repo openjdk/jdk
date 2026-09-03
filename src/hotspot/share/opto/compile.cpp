@@ -50,6 +50,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
@@ -435,8 +436,6 @@ void Compile::remove_useless_node(Node* dead) {
       remove_unstable_if_trap(dead->as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(dead);
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
@@ -497,8 +496,6 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   }
 #endif
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
   remove_useless_late_inlines(                &_late_inlines, useful);
   remove_useless_late_inlines(         &_string_late_inlines, useful);
@@ -944,6 +941,12 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Now generate code
   Code_Gen();
+
+#ifdef ASSERT
+  if (StressVerifyMeetJoin) {
+    Type::verify_meet_join();
+  }
+#endif // ASSERT
 }
 
 // C2 uses runtime stubs serialized generation to initialize its static tables
@@ -3089,7 +3092,7 @@ void Compile::Optimize() {
   }
   assert(!has_vbox_nodes(), "sanity");
 
-  if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
+  if (RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp(_t_renumberLive);
     igvn_worklist()->ensure_empty(); // should be done with igvn
     {
@@ -3985,7 +3988,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     MemBarNode* mb = n->as_MemBar();
     if (mb->trailing_store() || mb->trailing_load_store()) {
       assert(mb->leading_membar()->trailing_membar() == mb, "bad membar pair");
-      Node* mem = BarrierSet::barrier_set()->barrier_set_c2()->step_over_gc_barrier(mb->in(MemBarNode::Precedent));
+      Node* mem = mb->in(MemBarNode::Precedent);
       assert((mb->trailing_store() && mem->is_Store() && mem->as_Store()->is_release()) ||
              (mb->trailing_load_store() && mem->is_LoadStore()), "missing mem op");
     } else if (mb->leading()) {
@@ -3999,10 +4002,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
            "unused CallLeafPureNode should have been removed before final graph reshaping");
   }
 #endif
-  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
-  if (!gc_handled) {
-    final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
-  }
+  final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
 
   // Collect CFG split points
   if (n->is_MultiBranch() && !n->is_RangeCheck()) {

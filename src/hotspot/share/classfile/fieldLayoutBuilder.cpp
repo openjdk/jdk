@@ -841,6 +841,64 @@ void FieldLayoutBuilder::prologue() {
   _root_group = new FieldGroup();
 }
 
+int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGroup* group) {
+  BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
+  switch(type) {
+  case T_BYTE:
+  case T_CHAR:
+  case T_DOUBLE:
+  case T_FLOAT:
+  case T_INT:
+  case T_LONG:
+  case T_SHORT:
+  case T_BOOLEAN:
+    group->add_primitive_field(idx, type);
+    return type2aelembytes(type); // alignment == size for primitive types
+  case T_OBJECT:
+  case T_ARRAY:
+  {
+    const bool is_inline_class = _is_inline_type || _is_abstract_value;
+    // Atomic flat fields can always be used in identity classes.
+    // Use them only for inline classes if the container is itself atomic.
+    const bool use_atomic_flat = !is_inline_class || _must_be_atomic;
+    LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, use_atomic_flat);
+    lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
+    if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
+      _has_inlineable_fields = true;
+    }
+
+    if (lk == LayoutKind::REFERENCE) {
+      if (group != _static_fields) {
+        _nonstatic_oopmap_count++;
+      }
+      group->add_oop_field(idx);
+      return type2aelembytes(type); // alignment == size for oops
+    }
+
+    assert(group != _static_fields, "Static fields are not flattened");
+    assert(lk != LayoutKind::BUFFERED && lk != LayoutKind::UNKNOWN,
+           "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
+
+    const int field_index = (int)fieldinfo.index();
+    assert(_inline_layout_info_array != nullptr, "Array must have been created");
+    assert(_inline_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
+    _has_inlined_fields = true;
+    InlineKlass* vk = _inline_layout_info_array->adr_at(field_index)->klass();
+    if (is_inline_class && !vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) {
+      _has_non_naturally_atomic_fields = true;
+    }
+    group->add_flat_field(idx, vk, lk);
+    _inline_layout_info_array->adr_at(field_index)->set_kind(lk);
+    _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
+    _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
+    _field_info->adr_at(idx)->set_layout_kind(lk);
+    return vk->layout_alignment(lk);
+  }
+  default:
+    fatal("Unexpected BasicType");
+  }
+}
+
 // Field sorting for regular (non-inline) classes:
 //   - fields are sorted in static and non-static fields
 //   - non-static fields are also sorted according to their contention group
@@ -869,52 +927,7 @@ void FieldLayoutBuilder::regular_field_sorting() {
       }
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
-    switch(type) {
-    case T_BYTE:
-    case T_CHAR:
-    case T_DOUBLE:
-    case T_FLOAT:
-    case T_INT:
-    case T_LONG:
-    case T_SHORT:
-    case T_BOOLEAN:
-      group->add_primitive_field(idx, type);
-      break;
-    case T_OBJECT:
-    case T_ARRAY:
-    {
-      LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, true);
-      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
-      if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
-        _has_inlineable_fields = true;
-      }
-
-      if (lk == LayoutKind::REFERENCE) {
-        if (group != _static_fields) _nonstatic_oopmap_count++;
-        group->add_oop_field(idx);
-      } else {
-        assert(group != _static_fields, "Static fields are not flattened");
-        assert(lk != LayoutKind::BUFFERED && lk != LayoutKind::UNKNOWN,
-               "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
-
-        const int field_index = (int)fieldinfo.index();
-        assert(_inline_layout_info_array != nullptr, "Array must have been created");
-        assert(_inline_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-        _has_inlined_fields = true;
-        InlineKlass* vk = _inline_layout_info_array->adr_at(field_index)->klass();
-        group->add_flat_field(idx, vk, lk);
-        _inline_layout_info_array->adr_at(field_index)->set_kind(lk);
-        _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
-        _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
-        _field_info->adr_at(idx)->set_layout_kind(lk);
-        // no need to update _must_be_atomic if vk->must_be_atomic() is true because current class is not an inline class
-      }
-      break;
-    }
-    default:
-      fatal("Something wrong?");
-    }
+    add_field_to_group(fieldinfo, idx, group);
   }
   _root_group->sort_by_size();
   _static_fields->sort_by_size();
@@ -952,60 +965,7 @@ void FieldLayoutBuilder::inline_class_field_sorting() {
       group = _root_group;
     }
     assert(group != nullptr, "invariant");
-    BasicType type = Signature::basic_type(fieldinfo.signature(_constant_pool));
-    switch(type) {
-    case T_BYTE:
-    case T_CHAR:
-    case T_DOUBLE:
-    case T_FLOAT:
-    case T_INT:
-    case T_LONG:
-    case T_SHORT:
-    case T_BOOLEAN:
-      if (group != _static_fields) {
-        field_alignment = type2aelembytes(type); // alignment == size for primitive types
-      }
-      group->add_primitive_field(idx, type);
-      break;
-    case T_OBJECT:
-    case T_ARRAY:
-    {
-      bool use_atomic_flat = _must_be_atomic; // flatten atomic fields only if the container is itself atomic
-      LayoutKind lk = field_layout_selection(fieldinfo, _inline_layout_info_array, use_atomic_flat);
-      lk = adjust_with_budget(fieldinfo, _inline_layout_info_array, lk, _flattening_budget);
-      if (field_is_inlineable(fieldinfo, lk, _inline_layout_info_array)) {
-        _has_inlineable_fields = true;
-      }
-
-      if (lk == LayoutKind::REFERENCE) {
-        if (group != _static_fields) {
-          _nonstatic_oopmap_count++;
-          field_alignment = type2aelembytes(type); // alignment == size for oops
-        }
-        group->add_oop_field(idx);
-      } else {
-        assert(group != _static_fields, "Static fields are not flattened");
-        assert(lk != LayoutKind::BUFFERED && lk != LayoutKind::UNKNOWN,
-               "Invalid layout kind for flat field: %s", LayoutKindHelper::layout_kind_as_string(lk));
-
-        const int field_index = (int)fieldinfo.index();
-        assert(_inline_layout_info_array != nullptr, "Array must have been created");
-        assert(_inline_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-        _has_inlined_fields = true;
-        InlineKlass* vk = _inline_layout_info_array->adr_at(field_index)->klass();
-        if (!vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) _has_non_naturally_atomic_fields = true;
-        group->add_flat_field(idx, vk, lk);
-        _inline_layout_info_array->adr_at(field_index)->set_kind(lk);
-        _nonstatic_oopmap_count += vk->nonstatic_oop_map_count();
-        field_alignment = vk->layout_alignment(lk);
-        _field_info->adr_at(idx)->field_flags_addr()->update_flat(true);
-        _field_info->adr_at(idx)->set_layout_kind(lk);
-      }
-      break;
-    }
-    default:
-      fatal("Unexpected BasicType");
-    }
+    field_alignment = add_field_to_group(fieldinfo, idx, group);
     if (!fieldinfo.access_flags().is_static() && field_alignment > alignment) alignment = field_alignment;
   }
   _root_group->sort_by_size();
