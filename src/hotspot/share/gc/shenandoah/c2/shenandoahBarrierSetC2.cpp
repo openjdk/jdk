@@ -460,13 +460,19 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
   }
 
   if (orig_bd != bd) {
-    // We are already in final output.
-    // Strip the extra barrier data if no real bits are left.
-    if ((bd & ShenandoahBitsReal) != 0) {
-      node->set_barrier_data(bd);
-    } else {
-      node->set_barrier_data(0);
-    }
+#ifdef ASSERT
+    PhaseRegAlloc* ra = Compile::current()->regalloc();
+    uint old_size = node->size(ra);
+#endif
+    // We are already in final output. This means all nodes have already matched,
+    // and we are about to use Shenandoah match rules with stripped-down barriers.
+    // In this case, we must *not* strip non-real bits, because it would shift the
+    // encoding.
+    node->set_barrier_data(bd);
+#ifdef ASSERT
+    uint new_size = node->size(ra);
+    assert(new_size <= old_size, "Node must not grow: %u -> %u", old_size, new_size);
+#endif
   }
 }
 
