@@ -310,6 +310,8 @@ public:
 
   // Generator for Expand methods for instructions with expand rules
   void defineExpand      (FILE *fp, InstructForm *node);
+  void defineIsKilledInput      (FILE *fp, InstructForm *node);
+  
   // Generator for Peephole methods for instructions with peephole rules
   void definePeephole    (FILE *fp, InstructForm *node);
   // Generator for Size methods for instructions

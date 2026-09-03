@@ -132,7 +132,8 @@ public:
   // This instruction sets a result
   virtual bool        sets_result() const;
   // This instruction needs projections for additional DEFs or KILLs
-  virtual bool        needs_projections();
+  virtual bool        needs_projections(ArchDesc& AD);
+  bool        kills_some_inputs(ArchDesc &AD);
   // This instruction needs extra nodes for temporary inputs
   virtual bool        has_temps();
   // This instruction defines or kills more than one object

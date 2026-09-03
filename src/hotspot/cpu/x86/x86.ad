@@ -15281,12 +15281,12 @@ instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compareL_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+instruct string_compareL_evex(rRegP str1, rcx_RegI cnt1, rRegP str2, rdx_RegI cnt2,
                               rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
@@ -15313,12 +15313,12 @@ instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI c
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compareU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+instruct string_compareU_evex(rRegP str1, rcx_RegI cnt1, rRegP str2, rdx_RegI cnt2,
                               rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
@@ -15345,12 +15345,12 @@ instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI 
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compareLU_evex(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+instruct string_compareLU_evex(rRegP str1, rcx_RegI cnt1, rRegP str2, rdx_RegI cnt2,
                                rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
@@ -15377,12 +15377,12 @@ instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI 
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compareUL_evex(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI cnt2,
+instruct string_compareUL_evex(rRegP str1, rdx_RegI cnt1, rRegP str2, rcx_RegI cnt2,
                                rax_RegI result, legRegD tmp1, kReg ktmp, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw() && ((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
-  effect(TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
   format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
@@ -15560,12 +15560,12 @@ instruct stringL_indexof_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
 %}
 
 // fast string equals
-instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
-                       legRegD tmp1, legRegD tmp2, rbx_RegI tmp3, rFlagsReg cr)
+instruct string_equals(rRegP str1, rRegP str2, rRegI cnt, rRegI result,
+                       legRegD tmp1, legRegD tmp2, rRegI tmp3, rFlagsReg cr)
 %{
   predicate(!VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp3, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
@@ -15576,12 +15576,12 @@ instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI resu
   ins_pipe( pipe_slow );
 %}
 
-instruct string_equals_evex(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI result,
-                           legRegD tmp1, legRegD tmp2, kReg ktmp, rbx_RegI tmp3, rFlagsReg cr)
+instruct string_equals_evex(rRegP str1, rRegP str2, rRegI cnt, rRegI result,
+                           legRegD tmp1, legRegD tmp2, kReg ktmp, rRegI tmp3, rFlagsReg cr)
 %{
   predicate(VM_Version::supports_avx512vlbw());
   match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL tmp3, KILL cr);
+  effect(TEMP_DEF result, TEMP tmp1, TEMP tmp2, TEMP ktmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP tmp3, KILL cr);
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
