@@ -1140,7 +1140,7 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
 }
 
 // Do the instruction predicates allow target_instr to be replaced by replacement_instr for cisc-spill optimzation.
-static bool hasPredicateSubset( const InstructForm *target_instr, const InstructForm *replacement_instr ) {
+static bool has_predicate_subset( const InstructForm *target_instr, const InstructForm *replacement_instr ) {
   const Predicate *target_p  = target_instr->_predicate;
   const Predicate *replacement_p  = replacement_instr->_predicate;
   if( target_p == nullptr && replacement_p == nullptr ) {
@@ -1184,7 +1184,7 @@ bool InstructForm::cisc_spills_to(ArchDesc &AD, InstructForm *instr) {
   const char *reg_type           = nullptr;
   FormDict   &globals            = AD.globalNames();
   cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type, this, instr);
-  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && hasPredicateSubset(this, instr) ) {
+  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && has_predicate_subset(this, instr) ) {
     cisc_spill_operand = operand_position(op_name, Component::USE);
     int def_oper  = operand_position(op_name, Component::DEF);
     if( def_oper == NameList::Not_in_list && instr->num_opnds() == num_opnds()) {
