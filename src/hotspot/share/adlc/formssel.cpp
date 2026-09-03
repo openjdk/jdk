@@ -839,7 +839,11 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       strcmp(_matrule->_opType,"TailJump"  )==0 ||
       strcmp(_matrule->_opType,"ForwardException")==0 ||
       strcmp(_matrule->_opType,"SafePoint" )==0 ||
-      strcmp(_matrule->_opType,"Halt"      )==0 )
+      strcmp(_matrule->_opType,"Halt"      )==0 ||
+      // This is required because PhaseMacroExpand::expand_mh_intrinsic_return() uses
+      // a special version of CallLeafNoFP that takes the target of the call as first
+      // argument
+      strcmp(_matrule->_opType,"CallLeafNoFP")==0)
     return AdlcVMDeps::Parms;   // Skip the machine-state edges
 
   if( _matrule->_rChild &&
@@ -3577,7 +3581,7 @@ void MatchNode::forms_do(FormClosure *f) {
 
 int MatchNode::needs_ideal_memory_edge(FormDict &globals) const {
   static const char *needs_ideal_memory_list[] = {
-    "StoreI","StoreL","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
+    "StoreI","StoreL","StoreLSpecial","StoreP","StoreN","StoreNKlass","StoreD","StoreF" ,
     "StoreB","StoreC","Store" ,"StoreFP",
     "LoadI", "LoadL", "LoadP" ,"LoadN", "LoadD" ,"LoadF"  ,
     "LoadB" , "LoadUB", "LoadUS" ,"LoadS" ,"Load" ,
@@ -3891,15 +3895,14 @@ void MatchNode::count_commutative_op(int& count) {
     "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulHF","MulF","MulD",
     "OrI","OrL",
-    "XorI","XorL"
-    "UMax","UMin"
+    "XorI","XorL",
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
-    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMaxV", "UMinV",
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {

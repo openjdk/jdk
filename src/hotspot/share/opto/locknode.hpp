@@ -93,7 +93,7 @@ public:
 
   void set_local()      {
     assert((_kind == Regular || _kind == Local || _kind == Coarsened),
-           "incorrect kind for Local transitioni: %s", _kind_name[(int)_kind]);
+           "incorrect kind for Local transition: %s", _kind_name[(int)_kind]);
     _kind = Local;
   }
   void set_nested()     {
@@ -138,7 +138,7 @@ public:
   }
 
   virtual int Opcode() const;
-  virtual const Type* Value(PhaseGVN* phase) const { return TypeInt::CC; }
+  virtual const Type* Value(PhaseGVN* phase) const;
   const Type* sub(const Type* t1, const Type* t2) const { return TypeInt::CC;}
 
 private:

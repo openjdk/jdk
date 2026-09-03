@@ -99,7 +99,9 @@ Node *PhaseIdealLoop::get_early_ctrl( Node *n ) {
   assert( !n->is_Phi() && !n->is_CFG(), "this code only handles data nodes" );
   uint i;
   Node *early;
-  if (n->in(0) && !n->is_expensive()) {
+  // During verification we also get early control for expensive nodes here,
+  // as get_early_ctrl_for_expensive is skipped because it modifies the graph.
+  if (n->in(0) != nullptr && (!n->is_expensive() || _verify_me != nullptr || _verify_only)) {
     early = n->in(0);
     if (!early->is_CFG()) // Might be a non-CFG multi-def
       early = get_ctrl(early);        // So treat input as a straight data input
@@ -222,8 +224,7 @@ Node *PhaseIdealLoop::get_early_ctrl_for_expensive(Node *n, Node* earliest) {
         if (nb_ctl_proj > 1) {
           break;
         }
-        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_Call() ||
-               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(parent_ctl), "unexpected node");
+        assert(parent_ctl->is_Start() || parent_ctl->is_MemBar() || parent_ctl->is_Call(), "unexpected node");
         assert(idom(ctl) == parent_ctl, "strange");
         next = idom(parent_ctl);
       }
@@ -706,9 +707,14 @@ SafePointNode* PhaseIdealLoop::find_safepoint(Node* back_control, const Node* he
 }
 
 void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* inner_head, SafePointNode* cloned_sfpt) {
+  if (!UseParsePredicates) {
+    return;
+  }
+
   if (ShortRunningLongLoop) {
     add_parse_predicate(Deoptimization::Reason_short_running_long_loop, inner_head, outer_ilt, cloned_sfpt);
   }
+
   if (UseLoopPredicate) {
     add_parse_predicate(Deoptimization::Reason_predicate, inner_head, outer_ilt, cloned_sfpt);
     if (UseProfiledLoopPredicate) {
@@ -720,7 +726,9 @@ void PhaseIdealLoop::add_parse_predicates(IdealLoopTree* outer_ilt, LoopNode* in
     add_parse_predicate(Deoptimization::Reason_auto_vectorization_check, inner_head, outer_ilt, cloned_sfpt);
   }
 
-  add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  if (UseLoopLimitCheckPredicate) {
+    add_parse_predicate(Deoptimization::Reason_loop_limit_check, inner_head, outer_ilt, cloned_sfpt);
+  }
 }
 
 // If the loop has the shape of a counted loop but with a long
@@ -2412,7 +2420,7 @@ bool CountedLoopConverter::is_counted_loop() {
 #endif
 
 #ifndef PRODUCT
-  if (StressCountedLoop && (_phase->C->random() % 2 == 0)) {
+  if (StressCountedLoop && (_phase->C->stress().random() % 2 == 0)) {
     return false;
   }
 #endif
@@ -4039,7 +4047,7 @@ void IdealLoopTree::split_fall_in( PhaseIdealLoop *phase, int fall_in_cnt ) {
       // disappear it.  In JavaGrande I have a case where this useless
       // Phi is the loop limit and prevents recognizing a CountedLoop
       // which in turn prevents removing an empty loop.
-      Node *id_old_phi = old_phi->Identity(&igvn);
+      Node* id_old_phi = igvn.apply_identity(old_phi);
       if( id_old_phi != old_phi ) { // Found a simple identity?
         // Note that I cannot call 'replace_node' here, because
         // that will yank the edge from old_phi to the Region and
@@ -5295,14 +5303,11 @@ void PhaseIdealLoop::build_and_optimize() {
     return;
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
   // Nothing to do, so get out
   bool stop_early = !C->has_loops() && !skip_loop_opts && !do_split_ifs && !do_max_unroll &&
-                    !do_expand_reachability_fences && !_verify_me && !_verify_only &&
-                    !bs->is_gc_specific_loop_opts_pass(_mode) ;
+                    !do_expand_reachability_fences && !_verify_me && !_verify_only;
   bool do_expensive_nodes = C->should_optimize_expensive_nodes(_igvn);
   bool do_optimize_reachability_fences = OptimizeReachabilityFences && (C->reachability_fences_count() > 0);
-  bool strip_mined_loops_expanded = bs->strip_mined_loops_expanded(_mode);
   if (stop_early && !do_expensive_nodes && !do_optimize_reachability_fences) {
     return;
   }
@@ -5379,7 +5384,7 @@ void PhaseIdealLoop::build_and_optimize() {
 
   // Given early legal placement, try finding counted loops.  This placement
   // is good enough to discover most loop invariants.
-  if (!_verify_me && !_verify_only && !strip_mined_loops_expanded && !do_expand_reachability_fences) {
+  if (!_verify_me && !_verify_only && !do_expand_reachability_fences) {
     _ltree_root->counted_loop( this );
   }
 
@@ -5483,10 +5488,6 @@ void PhaseIdealLoop::build_and_optimize() {
     }
 
     C->restore_major_progress(old_progress);
-    return;
-  }
-
-  if (bs->optimize_loops(this, _mode, visited, nstack, worklist)) {
     return;
   }
 
@@ -7184,7 +7185,7 @@ void PhaseIdealLoop::build_loop_late_post_work(Node *n, bool pinned) {
   }
   // Try not to place code on a loop entry projection
   // which can inhibit range check elimination.
-  if (least != early && !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_specific_loop_opts_pass(_mode)) {
+  if (least != early) {
     Node* ctrl_out = least->unique_ctrl_out_or_null();
     if (ctrl_out != nullptr && ctrl_out->is_Loop() &&
         least == ctrl_out->in(LoopNode::EntryControl) &&

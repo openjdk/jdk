@@ -868,6 +868,38 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
+  // Search for GraphKit::mark_word_test patterns and fold the test if the result is statically known
+  if (in1->is_Load() && phase->type(in1)->isa_long()) {
+    const TypePtr* adr_t = phase->type(in1->in(MemNode::Address))->isa_ptr();
+    if (adr_t != nullptr && adr_t->offset() == oopDesc::mark_offset_in_bytes()) {
+      if (mask == markWord::inline_type_pattern) {
+        if (adr_t->is_inlinetypeptr()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (!adr_t->can_be_inline_type()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
+        }
+      } else if (mask == markWord::null_free_array_bit_in_place) {
+        if (adr_t->is_null_free()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (adr_t->is_not_null_free()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
+        }
+      } else if (mask == markWord::flat_array_bit_in_place) {
+        if (adr_t->is_flat()) {
+          set_req_X(1, in(2), phase);
+          return this;
+        } else if (adr_t->is_not_flat()) {
+          set_req_X(1, phase->longcon(0), phase);
+          return this;
+        }
+      }
+    }
+  }
+
   return MulNode::Ideal(phase, can_reshape);
 }
 

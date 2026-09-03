@@ -40,10 +40,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
-ShenandoahBarrierSetC2* ShenandoahBarrierSetC2::bsc2() {
-  return reinterpret_cast<ShenandoahBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());
-}
-
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :
     BarrierSetC2State(comp_arena),
     _stubs(new (comp_arena) GrowableArray<ShenandoahBarrierStubC2*>(comp_arena, 8,  0, nullptr)),
@@ -418,7 +414,7 @@ void ShenandoahBarrierSetC2::eliminate_gc_barrier_data(Node* node) const {
   }
 }
 
-void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* macro, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 
@@ -464,13 +460,19 @@ void ShenandoahBarrierSetC2::elide_dominated_barrier(MachNode* node, MachNode* d
   }
 
   if (orig_bd != bd) {
-    // We are already in final output.
-    // Strip the extra barrier data if no real bits are left.
-    if ((bd & ShenandoahBitsReal) != 0) {
-      node->set_barrier_data(bd);
-    } else {
-      node->set_barrier_data(0);
-    }
+#ifdef ASSERT
+    PhaseRegAlloc* ra = Compile::current()->regalloc();
+    uint old_size = node->size(ra);
+#endif
+    // We are already in final output. This means all nodes have already matched,
+    // and we are about to use Shenandoah match rules with stripped-down barriers.
+    // In this case, we must *not* strip non-real bits, because it would shift the
+    // encoding.
+    node->set_barrier_data(bd);
+#ifdef ASSERT
+    uint new_size = node->size(ra);
+    assert(new_size <= old_size, "Node must not grow: %u -> %u", old_size, new_size);
+#endif
   }
 }
 
@@ -557,8 +559,10 @@ bool ShenandoahBarrierSetC2::clone_needs_barrier(const TypeOopPtr* src_type, boo
   } else if (src_type->isa_aryptr() != nullptr) {
     // Array: need barrier only if array is oop-bearing.
     BasicType src_elem = src_type->isa_aryptr()->elem()->array_element_basic_type();
-    if (is_reference_type(src_elem, true)) {
+    if (is_reference_type(src_elem, true) && src_type->is_not_flat()) {
       is_oop_array = true;
+    } else if (!src_type->is_not_flat()) {
+      // Maybe flat, assume the worst.
     } else {
       return false;
     }
@@ -636,6 +640,12 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
   const jlong offset = src_offset->get_long();
   const TypeAryPtr* const ary_ptr = src->get_ptr_type()->isa_aryptr();
   BasicType bt = ary_ptr->elem()->array_element_basic_type();
+  if (offset != arrayOopDesc::base_offset_in_bytes(bt)) {
+    // Something is off with flat arrays. Go to runtime instead.
+    // TODO: Figure this out.
+    clone_in_runtime(phase, ac, ShenandoahRuntime::clone_addr(), "ShenandoahRuntime::clone");
+    return;
+  }
   assert(offset == arrayOopDesc::base_offset_in_bytes(bt), "should match");
 
   const char*   copyfunc_name = "arraycopy";
@@ -657,10 +667,6 @@ void ShenandoahBarrierSetC2::clone_at_expansion(PhaseMacroExpand* phase, ArrayCo
 
 void* ShenandoahBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new(comp_arena) ShenandoahBarrierSetC2State(comp_arena);
-}
-
-ShenandoahBarrierSetC2State* ShenandoahBarrierSetC2::state() const {
-  return reinterpret_cast<ShenandoahBarrierSetC2State*>(Compile::current()->barrier_set_state());
 }
 
 void ShenandoahBarrierSetC2::print_barrier_data(outputStream* os, uint8_t data) {
@@ -880,7 +886,7 @@ void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
         skipped_after, skipped_before, skipped_after - skipped_before);
 #endif
 
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 void ShenandoahBarrierStubC2::register_stub(ShenandoahBarrierStubC2* stub) {

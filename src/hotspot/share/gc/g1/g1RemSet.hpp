@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,6 @@ public:
   // Scan all cards in the non-collection set regions that potentially contain
   // references into the current whole collection set.
   void scan_heap_roots(G1ParScanThreadState* pss,
-                       uint worker_id,
                        G1GCPhaseTimes::GCParPhases scan_phase,
                        G1GCPhaseTimes::GCParPhases objcopy_phase,
                        bool remember_already_scanned_cards);
@@ -109,12 +108,10 @@ public:
   // Do work for regions in the current increment of the collection set, scanning
   // non-card based (heap) roots.
   void scan_collection_set_code_roots(G1ParScanThreadState* pss,
-                                      uint worker_id,
                                       G1GCPhaseTimes::GCParPhases coderoots_phase,
                                       G1GCPhaseTimes::GCParPhases objcopy_phase);
 
   void scan_collection_set_optional_roots(G1ParScanThreadState* pss,
-                                          uint worker_id,
                                           G1GCPhaseTimes::GCParPhases scan_phase,
                                           G1GCPhaseTimes::GCParPhases objcopy_phase);
 
@@ -129,8 +126,7 @@ public:
   // Refine the region corresponding to "card_ptr". Must be called after
   // being filtered by clean_card_before_refine(), and after proper
   // fence/synchronization.
-  RefineResult refine_card_concurrently(CardValue* const card_ptr,
-                                        const uint worker_id);
+  RefineResult refine_card_concurrently(CardValue* const card_ptr);
 
   // Print accumulated summary info from the start of the VM.
   void print_summary_info();

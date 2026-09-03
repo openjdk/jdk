@@ -27,9 +27,11 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
@@ -43,7 +45,8 @@ Symbol* fieldDescriptor::generic_signature() const {
 
 bool fieldDescriptor::is_trusted_final() const {
   InstanceKlass* ik = field_holder();
-  return is_final() && (is_static() || ik->is_hidden() || ik->is_record());
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->is_inline_klass()
+                        || (ik->is_abstract() && !ik->is_identity_class() && !ik->is_interface()));
 }
 
 bool fieldDescriptor::is_mutable_static_final() const {
@@ -96,7 +99,7 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
-void fieldDescriptor::reinitialize(InstanceKlass* ik, const FieldInfo& fieldinfo) {
+void fieldDescriptor::reinitialize(const InstanceKlass* ik, const FieldInfo& fieldinfo) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
     // _cp should now reference ik's constant pool; i.e., ik is now field_holder.
@@ -119,15 +122,21 @@ void fieldDescriptor::print_access_flags(outputStream* st) const {
   if (flags.is_transient()) st->print("transient ");
   if (flags.is_enum     ()) st->print("enum ");
   if (flags.is_synthetic()) st->print("synthetic ");
+  if (Arguments::is_valhalla_enabled()) {
+    if (flags.is_identity_class()) st->print("identity ");
+    if (!flags.is_identity_class()) st->print("value "  );
+  }
 }
 
-void fieldDescriptor::print_on(outputStream* st) const {
+void fieldDescriptor::print_on(outputStream* st, int base_offset) const {
   print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
+  bool flat = field_flags().is_flat();
+  if (flat) st->print("flat ");
   name()->print_value_on(st);
-  st->print(" ");
+  st->print(" (fields 0x%08x) ", field_flags().as_uint());
   signature()->print_value_on(st);
-  st->print(" @%d ", offset());
+  st->print(" @%d ", offset() + base_offset);
   if (WizardMode && has_initial_value()) {
     st->print("(initval ");
     constantTag t = initial_value_tag();
@@ -140,16 +149,18 @@ void fieldDescriptor::print_on(outputStream* st) const {
     } else if (t.is_double()){
       st->print("double %lf)", double_initial_value());
     }
+    st->print(" ");
   }
+  if (flat) LayoutKindHelper::print_on(layout_kind(), st);
 }
 
 void fieldDescriptor::print() const { print_on(tty); }
 
-void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
-  print_on(st);
-  st->print(" ");
-
+void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int base_offset) {
   BasicType ft = field_type();
+  print_on(st, base_offset);
+  st->print(" ");
+  jint as_int = 0;
   switch (ft) {
     case T_BYTE:
       st->print("%d", obj->byte_field(offset()));
@@ -179,13 +190,44 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj) {
       st->print("%s", obj->bool_field(offset()) ? "true" : "false");
       break;
     case T_ARRAY:
-      if (obj->obj_field(offset()) != nullptr) {
-        obj->obj_field(offset())->print_value_on(st);
-      } else {
-        st->print("null");
-      }
-      break;
     case T_OBJECT:
+      if (is_flat()) { // only some inline types can be flat
+        bool is_null = false;
+        InlineKlass* vk = InlineKlass::cast(field_holder()->get_inline_type_field_klass(index()));
+        int field_offset = offset() - vk->payload_offset();
+        int nm_offset = 0;
+
+        if (!is_null_free_inline_type()) {
+          assert(has_null_marker(), "should have null marker");
+          InlineLayoutInfo* li = field_holder()->inline_layout_info_adr(index());
+          nm_offset = li->null_marker_offset();
+          st->print("Flat inline type field '%s':", vk->name()->as_C_string());
+          if (obj->byte_field_acquire(nm_offset) == 0) {
+            st->print(" null");
+            is_null = true;
+          }
+          st->cr();
+        } else {
+          st->print_cr("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+        }
+
+        // Print fields of flat field (recursively) is not null
+        if (!is_null) {
+          obj = cast_to_oop(cast_from_oop<address>(obj) + field_offset);
+          FieldPrinter print_field(st, obj, indent + 1, base_offset + field_offset);
+          vk->do_nonstatic_fields(&print_field);
+        }
+
+        if (this->field_flags().has_null_marker()) {
+          for (int i = 0; i < indent + 1; i++) st->print("  ");
+          assert(nm_offset > 0, "must be");
+          st->print_cr(" - [null_marker] @%d %s",
+                    base_offset + nm_offset,
+                    is_null ? "Field marked as null" : "Field marked as non-null");
+        }
+        return; // Do not print underlying representation
+      }
+      // Not flat inline type field, fall through
       if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {
