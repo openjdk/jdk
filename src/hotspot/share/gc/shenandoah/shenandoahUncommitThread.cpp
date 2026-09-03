@@ -28,10 +28,14 @@
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/events.hpp"
+#include "utilities/quickSort.hpp"
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
+  _candidate_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC);
+  _candidate_regions_count = 0;
+
   set_name("ShenUncommit");
   create_and_start();
 
@@ -63,7 +67,7 @@ void ShenandoahUncommitThread::run_service() {
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
       // Periodic uncommit tries to uncommit suitable regions down to min capacity.
-      if (should_uncommit(shrink_before, shrink_until)) {
+      if (plan_work(shrink_before, shrink_until)) {
         uncommit(shrink_before, shrink_until);
       }
     }
@@ -75,28 +79,45 @@ void ShenandoahUncommitThread::run_service() {
   }
 }
 
-bool ShenandoahUncommitThread::should_uncommit(double shrink_before, size_t shrink_until) const {
-  // Only start uncommit if the GC is idle, is not trying to run and there is work to do.
-  return _heap->is_idle() && is_uncommit_allowed() && has_work(shrink_before, shrink_until);
+static int compare_by_empty_time_asc(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b) {
+  return a->empty_time() > b->empty_time();
 }
 
-bool ShenandoahUncommitThread::has_work(double shrink_before, size_t shrink_until) const {
-  // Determine if there is work to do. This avoids locking the heap if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are held.
+bool ShenandoahUncommitThread::plan_work(double shrink_before, size_t shrink_until)  {
+  _candidate_regions_count = 0;
 
-  if (_heap->committed() <= shrink_until) {
+  if (!_heap->is_idle() || !is_uncommit_allowed()) {
+    // Uncommits are not welcome.
     return false;
   }
 
+  if (_heap->committed() <= shrink_until) {
+    // Do not uncommit below target.
+    return false;
+  }
+
+  // Determine if there is work to do. This avoids locking the heap if there is
+  // no work available, avoids spamming logs with superfluous logging messages,
+  // and minimises the amount of work while locks are held. Fill out all candidates:
+  // even if they are currently not targeted, byy the time we get to uncommit them,
+  // they might become eligible too.
+  bool has_work = false;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = _heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      return true;
+    ShenandoahHeapRegion* r = _heap->get_region(i);
+    if (r->is_empty_committed()) {
+      has_work |= (r->empty_time() < shrink_before);
+      _candidate_regions[_candidate_regions_count++] = r;
     }
   }
 
-  return false;
+  if (!has_work) {
+    // No regions that match our target at all.
+    return false;
+  }
+
+  // Sort candidates by earliest empty time.
+  QuickSort::sort(_candidate_regions, _candidate_regions_count, compare_by_empty_time_asc);
+  return true;
 }
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
@@ -162,33 +183,29 @@ void ShenandoahUncommitThread::uncommit(double shrink_before, size_t shrink_unti
                elapsed * MILLIUNITS);
 }
 
-size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_before, size_t shrink_until) const {
+size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_before, size_t shrink_until) {
   size_t count = 0;
-  // Application allocates from the beginning of the heap, and GC allocates at
-  // the end of it. It is more efficient to uncommit from the end, so that applications
-  // could enjoy the near committed regions. GC allocations are much less frequent,
-  // and therefore can accept the committing costs.
-  for (size_t i = _heap->num_regions(); i > 0; i--) {
-    if (!is_uncommit_allowed()) {
-      // GC wants to start, so the uncommit operation must stop
+  for (int i = 0; i < _candidate_regions_count; i++) {
+    // Before we go for uncommits, stall here and allow allocators to proceed
+    // taking the heap lock and start using the region. We are not in a hurry to uncommit,
+    // otherwise, we will just trip through uncommit-commit wastefully.
+    // Terminate early if we detect that GC wants to start.
+    if (!check_uncommit_or_delay()) {
       break;
     }
 
-    ShenandoahHeapRegion* r = _heap->get_region(i - 1);
+    ShenandoahHeapRegion* r = _candidate_regions[i];
+    SuspendibleThreadSetJoiner sts_joiner;
+    ShenandoahHeapLocker heap_locker(_heap->lock());
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      SuspendibleThreadSetJoiner sts_joiner;
-      ShenandoahHeapLocker heap_locker(_heap->lock());
-      if (r->is_empty_committed()) {
-        if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-          // We have uncommitted enough regions to hit the target heap committed size
-          break;
-        }
-
-        r->make_uncommitted();
-        count++;
-      }
+      r->make_uncommitted();
+      count++;
     }
-    SpinPause(); // allow allocators to take the lock
+
+    if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
+      // Do not uncommit below the target.
+      break;
+    }
   }
   return count;
 }
@@ -200,9 +217,16 @@ void ShenandoahUncommitThread::stop_service() {
   locker.notify_all();
 }
 
+bool ShenandoahUncommitThread::check_uncommit_or_delay() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  locker.wait(5);
+  return _uncommit_allowed.is_set();
+}
+
 void ShenandoahUncommitThread::forbid_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   _uncommit_allowed.unset();
+  locker.notify_all();
   while (_uncommit_in_progress.is_set()) {
     locker.wait();
   }

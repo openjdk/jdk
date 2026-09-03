@@ -28,9 +28,14 @@
 #include "gc/shared/concurrentGCThread.hpp"
 
 class ShenandoahHeap;
+class ShenandoahHeapRegion;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
+
+  // Candidate regions
+  ShenandoahHeapRegion** _candidate_regions;
+  int _candidate_regions_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -47,12 +52,8 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
-  // True if there are regions to uncommit and uncommits are allowed
-  bool should_uncommit(double shrink_before, size_t shrink_until) const;
-
-  // True if there are regions that have been empty for longer than ShenandoahUncommitDelay and the committed
-  // memory is higher than soft max capacity or minimum capacity
-  bool has_work(double shrink_before, size_t shrink_until) const;
+  // Plan work, fill out candidate regions. True if there is work.
+  bool plan_work(double shrink_before, size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
   void uncommit(double shrink_before, size_t shrink_until);
@@ -64,7 +65,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
   // it was last made empty is before `shrink_before` seconds since jvm start.
   // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
-  size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
+  size_t do_uncommit_work(double shrink_before, size_t shrink_until);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
@@ -77,6 +78,9 @@ public:
 
   // Wake up this thread and try to uncommit for min heap size
   void notify_explicit_gc_requested();
+
+  // Stall uncommit thread to allow allocator progress
+  bool check_uncommit_or_delay();
 
   // Wait for uncommit operations to stop, returns immediately if uncommit thread is idle
   void forbid_uncommit();
