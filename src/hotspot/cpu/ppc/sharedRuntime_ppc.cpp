@@ -1389,7 +1389,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   // compiled code, which relies solely on SP and not FP, get sick).
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
-  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
   Label skip_fixup;
 
   gen_inline_cache_check(masm, skip_fixup);
@@ -1400,10 +1400,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
   // Scalarized c2i adapter with non-scalarized receiver (i.e., don't pack receiver)
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+  entry_address[AdapterBlob::C2I_Value_RO] = __ pc();
   if (regs_cc != regs_cc_ro) {
     // No class init barrier needed because method is guaranteed to be non-static
-    __ unimplemented("C2I_Inline_RO");
+    __ unimplemented("C2I_Value_RO");
 #if 0
     gen_c2i_adapter(masm, sig_cc_ro, regs_cc_ro, /* requires_clinit_barrier = */ false, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                     skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
@@ -1413,24 +1413,24 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
   // Scalarized c2i adapter
   entry_address[AdapterBlob::C2I]        = __ pc();
-  entry_address[AdapterBlob::C2I_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                   skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);
 
   // Non-scalarized c2i adapter
   if (regs != regs_cc) {
-    entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
-    Label inline_entry_skip_fixup;
-    __ unimplemented("C2I_Unverified_Inline");
+    entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
+    Label value_entry_skip_fixup;
+    __ unimplemented("C2I_Unverified_Value");
 #if 0
-    gen_inline_cache_check(masm, inline_entry_skip_fixup);
+    gen_inline_cache_check(masm, value_entry_skip_fixup);
 #endif
 
-    entry_address[AdapterBlob::C2I_Inline] = __ pc();
-    __ unimplemented("C2I_Inline2");
+    entry_address[AdapterBlob::C2I_Value] = __ pc();
+    __ unimplemented("C2I_Value2");
 #if 0
     gen_c2i_adapter(masm, sig, regs, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    inline_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
 #endif
   }
   // The c2i adapters might safepoint and trigger a GC. The caller must make sure that

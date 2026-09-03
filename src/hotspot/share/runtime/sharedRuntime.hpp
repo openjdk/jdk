@@ -812,19 +812,19 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif // ZERO
   }
 
-  address get_c2i_inline_entry() const {
+  address get_c2i_value_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_inline_entry();
+    return _adapter_blob->c2i_value_entry();
 #else
     return nullptr;
 #endif // ZERO
   }
 
-  address get_c2i_inline_ro_entry() const {
+  address get_c2i_value_ro_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_inline_ro_entry();
+    return _adapter_blob->c2i_value_ro_entry();
 #else
     return nullptr;
 #endif // ZERO
@@ -839,10 +839,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif // ZERO
   }
 
-  address get_c2i_unverified_inline_entry() const {
+  address get_c2i_unverified_value_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_unverified_inline_entry();
+    return _adapter_blob->c2i_unverified_value_entry();
 #else
     return nullptr;
 #endif // ZERO
@@ -956,8 +956,8 @@ class AdapterHandlerLibrary: public AllStatic {
 // Utility class for computing the calling convention of the 3 types
 // of compiled method entries:
 //     Method::_from_compiled_entry               - sig_cc
-//     Method::_from_compiled_inline_ro_entry     - sig_cc_ro
-//     Method::_from_compiled_inline_entry        - sig
+//     Method::_from_compiled_value_ro_entry     - sig_cc_ro
+//     Method::_from_compiled_value_entry        - sig
 class CompiledEntrySignature : public StackObj {
 private:
   Method* _method;
@@ -983,13 +983,13 @@ private:
 public:
   Method* method()                     const { return _method; }
 
-  // Used by Method::_from_compiled_inline_entry
+  // Used by Method::_from_compiled_value_entry
   GrowableArray<SigEntry>* sig()       const { return _sig; }
 
   // Used by Method::_from_compiled_entry
   GrowableArray<SigEntry>* sig_cc()    const { return _sig_cc; }
 
-  // Used by Method::_from_compiled_inline_ro_entry
+  // Used by Method::_from_compiled_value_ro_entry
   GrowableArray<SigEntry>* sig_cc_ro() const { return _sig_cc_ro; }
 
   VMRegPair* regs()                    const { return _regs; }
@@ -1005,7 +1005,7 @@ public:
 
   bool has_scalarized_args()           const { return _sig != _sig_cc; }
   bool needs_stack_repair()            const { return _needs_stack_repair; }
-  CodeOffsets::Entries c1_inline_ro_entry_type() const;
+  CodeOffsets::Entries c1_value_ro_entry_type() const;
 
   CompiledEntrySignature(Method* method = nullptr);
   void compute_calling_conventions(bool link_time = true);

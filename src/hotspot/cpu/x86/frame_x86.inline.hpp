@@ -475,7 +475,7 @@ ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 #ifdef COMPILER1
     nmethod* nm = _cb->as_nmethod_or_null();
     if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
-        pc() < nm->verified_inline_entry_point()) {
+        pc() < nm->verified_value_entry_point()) {
       // The VEP and VIEP(RO) of C1-compiled methods call buffer_value_args_xxx
       // before doing any argument shuffling, so we need to scan the oops
       // as the caller passes them.

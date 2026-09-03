@@ -342,23 +342,23 @@ void PhaseOutput::Output() {
     if (!C->method()->is_static()) {
       // We have entries at the beginning of the method, implemented by the first 4 nodes.
       // Entry                     (unverified) @ offset 0
-      // Verified_Inline_Entry_RO
-      // Inline_Entry              (unverified)
-      // Verified_Inline_Entry
+      // Verified_Value_Entry_RO
+      // Value_Entry              (unverified)
+      // Verified_Value_Entry
       uint offset = 0;
       _code_offsets.set_value(CodeOffsets::Entry, offset);
 
       offset += ((MachVEPNode*)broot->get_node(0))->size(C->regalloc());
-      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry_RO, offset);
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, offset);
 
       offset += ((MachVEPNode*)broot->get_node(1))->size(C->regalloc());
-      _code_offsets.set_value(CodeOffsets::Inline_Entry, offset);
+      _code_offsets.set_value(CodeOffsets::Value_Entry, offset);
 
       offset += ((MachVEPNode*)broot->get_node(2))->size(C->regalloc());
-      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, offset);
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, offset);
     } else {
       _code_offsets.set_value(CodeOffsets::Entry, CodeOffsets::no_such_entry_point); // will be patched later
-      _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, 0);
+      _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, 0);
     }
   }
 
@@ -3338,11 +3338,11 @@ void PhaseOutput::install_code(ciMethod*         target,
       _code_offsets.set_value(CodeOffsets::OSR_Entry, _first_block_size);
     } else {
       _code_offsets.set_value(CodeOffsets::Verified_Entry, _first_block_size);
-      if (_code_offsets.value(CodeOffsets::Verified_Inline_Entry) == CodeOffsets::no_such_entry_point) {
-        _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry, _first_block_size);
+      if (_code_offsets.value(CodeOffsets::Verified_Value_Entry) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Value_Entry, _first_block_size);
       }
-      if (_code_offsets.value(CodeOffsets::Verified_Inline_Entry_RO) == CodeOffsets::no_such_entry_point) {
-        _code_offsets.set_value(CodeOffsets::Verified_Inline_Entry_RO, _first_block_size);
+      if (_code_offsets.value(CodeOffsets::Verified_Value_Entry_RO) == CodeOffsets::no_such_entry_point) {
+        _code_offsets.set_value(CodeOffsets::Verified_Value_Entry_RO, _first_block_size);
       }
       if (_code_offsets.value(CodeOffsets::Entry) == CodeOffsets::no_such_entry_point) {
         _code_offsets.set_value(CodeOffsets::Entry, _first_block_size);

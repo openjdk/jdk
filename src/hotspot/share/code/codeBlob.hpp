@@ -434,10 +434,10 @@ public:
   enum Entry {
     I2C,
     C2I,
-    C2I_Inline,
-    C2I_Inline_RO,
+    C2I_Value,
+    C2I_Value_RO,
     C2I_Unverified,
-    C2I_Unverified_Inline,
+    C2I_Unverified_Value,
     C2I_No_Clinit_Check,
     ENTRY_COUNT
   };
@@ -446,10 +446,10 @@ private:
 
   // _i2c_offset is always 0 so no need to store it
   int _c2i_offset;
-  int _c2i_inline_offset;
-  int _c2i_inline_ro_offset;
+  int _c2i_value_offset;
+  int _c2i_value_ro_offset;
   int _c2i_unverified_offset;
-  int _c2i_unverified_inline_offset;
+  int _c2i_unverified_value_offset;
   int _c2i_no_clinit_check_offset;
 public:
   // Creation
@@ -464,10 +464,10 @@ public:
   static AdapterBlob* create(CodeBuffer* cb, int entry_offset[ENTRY_COUNT]);
   address i2c_entry() { return code_begin(); }
   address c2i_entry() { return i2c_entry() + _c2i_offset; }
-  address c2i_inline_entry() { return i2c_entry() + _c2i_inline_offset; }
-  address c2i_inline_ro_entry() { return i2c_entry() + _c2i_inline_ro_offset; }
+  address c2i_value_entry() { return i2c_entry() + _c2i_value_offset; }
+  address c2i_value_ro_entry() { return i2c_entry() + _c2i_value_ro_offset; }
   address c2i_unverified_entry() { return i2c_entry() + _c2i_unverified_offset; }
-  address c2i_unverified_inline_entry() { return i2c_entry() + _c2i_unverified_inline_offset; }
+  address c2i_unverified_value_entry() { return i2c_entry() + _c2i_unverified_value_offset; }
   address c2i_no_clinit_check_entry() { return _c2i_no_clinit_check_offset == -1 ? nullptr : i2c_entry() + _c2i_no_clinit_check_offset; }
 };
 

@@ -471,10 +471,10 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   }
 #endif // ASSERT
   _c2i_offset = entry_offset[C2I];
-  _c2i_inline_offset = entry_offset[C2I_Inline];
-  _c2i_inline_ro_offset = entry_offset[C2I_Inline_RO];
+  _c2i_value_offset = entry_offset[C2I_Value];
+  _c2i_value_ro_offset = entry_offset[C2I_Value_RO];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
-  _c2i_unverified_inline_offset = entry_offset[C2I_Unverified_Inline];
+  _c2i_unverified_value_offset = entry_offset[C2I_Unverified_Value];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];
   CodeCache::commit(this);
 }

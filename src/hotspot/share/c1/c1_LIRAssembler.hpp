@@ -48,7 +48,7 @@ class LIR_Assembler: public CompilationResourceObj {
   int                _immediate_oops_patched;
 
   Label              _unwind_handler_entry;
-  Label              _verified_inline_entry;
+  Label              _verified_value_entry;
 
 #ifdef ASSERT
   BlockList          _branch_target_blocks;

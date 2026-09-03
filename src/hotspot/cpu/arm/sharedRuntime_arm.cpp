@@ -707,7 +707,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   gen_i2c_adapter(masm, comp_args_on_stack, sig, regs);
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
-  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
@@ -721,8 +721,8 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
 
   entry_address[AdapterBlob::C2I] = __ pc();
-  entry_address[AdapterBlob::C2I_Inline] = __ pc();
-  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+  entry_address[AdapterBlob::C2I_Value] = __ pc();
+  entry_address[AdapterBlob::C2I_Value_RO] = __ pc();
 
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
   gen_c2i_adapter(masm, comp_args_on_stack, sig, regs, skip_fixup);

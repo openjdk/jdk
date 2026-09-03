@@ -61,7 +61,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   int       slop_delta = 0;
   // No variance was detected in vtable stub sizes. Setting index_dependent_slop == 0 will unveil any deviation from this observation.
   const int index_dependent_slop     = 0;
-  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_value_offset() :  Method::from_compiled_value_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -142,7 +142,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
 VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_value_offset() :  Method::from_compiled_value_ro_offset();
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be nullptr if there is no free space in the code cache.
   if (s == nullptr) {

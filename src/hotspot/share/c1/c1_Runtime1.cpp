@@ -559,7 +559,7 @@ JRT_END
 
 void Runtime1::buffer_value_args_impl(JavaThread* current, Method* m, bool allocate_receiver) {
   JavaThread* THREAD = current;
-  methodHandle method(current, m); // We are inside the verified_entry or verified_inline_ro_entry of this method.
+  methodHandle method(current, m); // We are inside the verified_entry or verified_value_ro_entry of this method.
   oop obj = SharedRuntime::allocate_value_types_impl(current, method, allocate_receiver, true, CHECK);
   current->set_vm_result_oop(obj);
 }

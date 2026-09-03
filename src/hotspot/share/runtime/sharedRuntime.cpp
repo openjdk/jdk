@@ -1539,7 +1539,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
       return callee->get_c2i_no_clinit_check_entry();
     } else {
       if (caller_frame.is_interpreted_frame()) {
-        return callee->get_c2i_inline_entry();
+        return callee->get_c2i_value_entry();
       } else {
         return callee->get_c2i_entry();
       }
@@ -1605,10 +1605,10 @@ address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle call
 
   if (caller_does_not_scalarize) {
     if (go_to_interpreter) {
-      return callee_method->get_c2i_inline_entry();
+      return callee_method->get_c2i_value_entry();
     }
-    assert(callee_method->verified_inline_code_entry() != nullptr, "Jump to zero!");
-    return callee_method->verified_inline_code_entry();
+    assert(callee_method->verified_value_code_entry() != nullptr, "Jump to zero!");
+    return callee_method->verified_value_code_entry();
   } else if (is_static_call || is_optimized) {
     if (go_to_interpreter) {
       return callee_method->get_c2i_entry();
@@ -1617,10 +1617,10 @@ address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle call
     return callee_method->verified_code_entry();
   } else {
     if (go_to_interpreter) {
-      return callee_method->get_c2i_inline_ro_entry();
+      return callee_method->get_c2i_value_ro_entry();
     }
-    assert(callee_method->verified_inline_ro_code_entry() != nullptr, "Jump to zero!");
-    return callee_method->verified_inline_ro_code_entry();
+    assert(callee_method->verified_value_ro_code_entry() != nullptr, "Jump to zero!");
+    return callee_method->verified_value_ro_code_entry();
   }
 }
 
@@ -2763,7 +2763,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
 
 // See if we can save space by sharing the same entry for VIEP and VIEP(RO),
 // or the same entry for VEP and VIEP(RO).
-CodeOffsets::Entries CompiledEntrySignature::c1_inline_ro_entry_type() const {
+CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   if (!has_scalarized_args()) {
     // VEP/VIEP/VIEP(RO) all share the same entry. There's no packing.
     return CodeOffsets::Verified_Entry;
@@ -2778,13 +2778,13 @@ CodeOffsets::Entries CompiledEntrySignature::c1_inline_ro_entry_type() const {
       // Share same entry for VIEP and VIEP(RO).
       // This is quite common: we have an instance method in an ValueKlass that has
       // no value type args other than <this>.
-      return CodeOffsets::Verified_Inline_Entry;
+      return CodeOffsets::Verified_Value_Entry;
     } else {
       assert(num_inline_args() > 1, "must be");
       // No sharing:
       //   VIEP(RO) -- <this> is passed as object
       //   VEP      -- <this> is passed as fields
-      return CodeOffsets::Verified_Inline_Entry_RO;
+      return CodeOffsets::Verified_Value_Entry_RO;
     }
   }
 
@@ -2793,7 +2793,7 @@ CodeOffsets::Entries CompiledEntrySignature::c1_inline_ro_entry_type() const {
     // No sharing:
     // Some arguments are passed on the stack, and we have inserted reserved entries
     // into the VEP, but we never insert reserved entries into the VIEP(RO).
-    return CodeOffsets::Verified_Inline_Entry_RO;
+    return CodeOffsets::Verified_Value_Entry_RO;
   } else {
     // Share same entry for VEP and VIEP(RO).
     return CodeOffsets::Verified_Entry;
@@ -3285,10 +3285,10 @@ void AdapterHandlerLibrary::address_to_offset(address entry_address[AdapterBlob:
                                               int entry_offset[AdapterBlob::ENTRY_COUNT]) {
   entry_offset[AdapterBlob::I2C] = 0;
   entry_offset[AdapterBlob::C2I] = entry_address[AdapterBlob::C2I] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Inline] = entry_address[AdapterBlob::C2I_Inline] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Inline_RO] = entry_address[AdapterBlob::C2I_Inline_RO] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Value] = entry_address[AdapterBlob::C2I_Value] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Value_RO] = entry_address[AdapterBlob::C2I_Value_RO] - entry_address[AdapterBlob::I2C];
   entry_offset[AdapterBlob::C2I_Unverified] = entry_address[AdapterBlob::C2I_Unverified] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Unverified_Inline] = entry_address[AdapterBlob::C2I_Unverified_Inline] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Unverified_Value] = entry_address[AdapterBlob::C2I_Unverified_Value] - entry_address[AdapterBlob::I2C];
   if (entry_address[AdapterBlob::C2I_No_Clinit_Check] == nullptr) {
     entry_offset[AdapterBlob::C2I_No_Clinit_Check] = -1;
   } else {
@@ -3937,10 +3937,10 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   if (adapter_blob() != nullptr) {
     st->print(" i2c: " INTPTR_FORMAT, p2i(get_i2c_entry()));
     st->print(" c2i: " INTPTR_FORMAT, p2i(get_c2i_entry()));
-    st->print(" c2iVE: " INTPTR_FORMAT, p2i(get_c2i_inline_entry()));
-    st->print(" c2iVROE: " INTPTR_FORMAT, p2i(get_c2i_inline_ro_entry()));
+    st->print(" c2iVE: " INTPTR_FORMAT, p2i(get_c2i_value_entry()));
+    st->print(" c2iVROE: " INTPTR_FORMAT, p2i(get_c2i_value_ro_entry()));
     st->print(" c2iUE: " INTPTR_FORMAT, p2i(get_c2i_unverified_entry()));
-    st->print(" c2iUVE: " INTPTR_FORMAT, p2i(get_c2i_unverified_inline_entry()));
+    st->print(" c2iUVE: " INTPTR_FORMAT, p2i(get_c2i_unverified_value_entry()));
     if (get_c2i_no_clinit_check_entry() != nullptr) {
       st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
     }
