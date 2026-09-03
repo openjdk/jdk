@@ -136,10 +136,10 @@ public class TestNullableArrays {
     public static void main(String[] args) {
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[2].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
-        scenarios[5].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[2].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[3].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[5].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])
@@ -979,7 +979,7 @@ public class TestNullableArrays {
     }
 
     @Test
-    @IR(failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(failOn = {LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     @IR(failOn = LOAD_OF_ANY_KLASS, applyIf = {"InlineTypeReturnedAsFields", "false"})
     @IR(counts = {LOAD_OF_ANY_KLASS, "4"}, applyIf = {"InlineTypeReturnedAsFields", "true"})
     public MyValue2 test29(MyValue2[] src) {

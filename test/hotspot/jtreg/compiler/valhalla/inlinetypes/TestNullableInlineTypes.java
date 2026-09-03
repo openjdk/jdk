@@ -164,8 +164,8 @@ public class TestNullableInlineTypes {
     public static void main(String[] args) {
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck");
+        scenarios[3].addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
+        scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])
@@ -3018,7 +3018,6 @@ public class TestNullableInlineTypes {
     }
 
     // Test that the ConstraintCastNode::Ideal transformation propagates null-free information
-    /* TODO 8389088: Re-enable once fixed.
     @Test
     public MyValue1 test103() {
         Object obj = hide(null);
@@ -3029,7 +3028,6 @@ public class TestNullableInlineTypes {
     public void test103_verifier() {
         Asserts.assertEQ(test103(), null);
     }
-    */
 
     // Test null restricted fields
 

@@ -1261,12 +1261,13 @@ bool CallStaticJavaNode::is_uncommon_trap() const {
 int CallStaticJavaNode::uncommon_trap_request() const {
   return is_uncommon_trap() ? extract_uncommon_trap_request(this) : 0;
 }
+
 int CallStaticJavaNode::extract_uncommon_trap_request(const Node* call) {
 #ifndef PRODUCT
   if (!(call->req() > TypeFunc::Parms &&
         call->in(TypeFunc::Parms) != nullptr &&
-        call->in(TypeFunc::Parms)->is_Con() &&
-        call->in(TypeFunc::Parms)->bottom_type()->isa_int())) {
+        call->in(TypeFunc::Parms)->bottom_type()->isa_int() &&
+        call->in(TypeFunc::Parms)->bottom_type()->is_int()->is_con())) {
     assert(in_dump() != 0, "OK if dumping");
     tty->print("[bad uncommon trap]");
     return 0;
@@ -1560,6 +1561,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       assert(IncrementalInlineVirtual, "required");
       assert(cg->call_node() == this, "mismatch");
 
+      Node* receiver_node = in(TypeFunc::Parms);
+      const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
+
       if (cg->callee_method() == nullptr) {
         // Recover symbolic info for method resolution.
         ciMethod* caller = jvms()->method();
@@ -1578,9 +1582,6 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
         ciInstanceKlass* klass = ciEnv::get_instance_klass_for_declared_method_holder(holder);
 
-        Node* receiver_node = in(TypeFunc::Parms);
-        const TypeOopPtr* receiver_type = phase->type(receiver_node)->isa_oopptr();
-
         int  not_used3;
         bool call_does_dispatch;
         ciMethod* callee = phase->C->optimize_virtual_call(caller, klass, holder, orig_callee, receiver_type, true /*is_virtual*/,
@@ -1589,8 +1590,9 @@ Node* CallDynamicJavaNode::Ideal(PhaseGVN* phase, bool can_reshape) {
           cg->set_callee_method(callee);
         }
       }
-      if (cg->callee_method() != nullptr) {
-        // Register for late inlining.
+      if (cg->callee_method() != nullptr && receiver_type != nullptr && !receiver_type->maybe_null()) {
+        // Only register for late inlining if the receiver is null-free because
+        // LateInlineVirtualCallGenerator::do_late_inline_check() rejects nullable receivers.
         register_for_late_inline(); // MH late inlining prepends to the list, so do the same
       }
     } else {
@@ -2360,9 +2362,8 @@ bool AbstractLockNode::find_matching_unlock(const Node* ctrl, LockNode* lock,
     Node *n = ctrl_proj->in(0);
     if (n != nullptr && n->is_Unlock()) {
       UnlockNode *unlock = n->as_Unlock();
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      Node* lock_obj = bs->step_over_gc_barrier(lock->obj_node());
-      Node* unlock_obj = bs->step_over_gc_barrier(unlock->obj_node());
+      Node* lock_obj = lock->obj_node();
+      Node* unlock_obj = unlock->obj_node();
       if (lock_obj->eqv_uncast(unlock_obj) &&
           BoxLockNode::same_slot(lock->box_node(), unlock->box_node()) &&
           !unlock->is_eliminated()) {
@@ -2408,9 +2409,8 @@ LockNode *AbstractLockNode::find_matching_lock(UnlockNode* unlock) {
   }
   if (ctrl->is_Lock()) {
     LockNode *lock = ctrl->as_Lock();
-    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    Node* lock_obj = bs->step_over_gc_barrier(lock->obj_node());
-    Node* unlock_obj = bs->step_over_gc_barrier(unlock->obj_node());
+    Node* lock_obj = lock->obj_node();
+    Node* unlock_obj = unlock->obj_node();
     if (lock_obj->eqv_uncast(unlock_obj) &&
         BoxLockNode::same_slot(lock->box_node(), unlock->box_node())) {
       lock_result = lock;
@@ -2442,9 +2442,8 @@ bool AbstractLockNode::find_lock_and_unlock_through_if(Node* node, LockNode* loc
       }
       if (lock1_node != nullptr && lock1_node->is_Lock()) {
         LockNode *lock1 = lock1_node->as_Lock();
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        Node* lock_obj = bs->step_over_gc_barrier(lock->obj_node());
-        Node* lock1_obj = bs->step_over_gc_barrier(lock1->obj_node());
+        Node* lock_obj = lock->obj_node();
+        Node* lock1_obj = lock1->obj_node();
         if (lock_obj->eqv_uncast(lock1_obj) &&
             BoxLockNode::same_slot(lock->box_node(), lock1->box_node()) &&
             !lock1->is_eliminated()) {
@@ -2705,8 +2704,6 @@ bool LockNode::is_nested_lock_region(Compile * c) {
     return false;
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  obj = bs->step_over_gc_barrier(obj);
   // Look for external lock for the same object.
   SafePointNode* sfn = this->as_SafePoint();
   JVMState* youngest_jvms = sfn->jvms();
@@ -2717,7 +2714,6 @@ bool LockNode::is_nested_lock_region(Compile * c) {
     // Loop over monitors
     for (int idx = 0; idx < num_mon; idx++) {
       Node* obj_node = sfn->monitor_obj(jvms, idx);
-      obj_node = bs->step_over_gc_barrier(obj_node);
       BoxLockNode* box_node = sfn->monitor_box(jvms, idx)->as_BoxLock();
       if ((box_node->stack_slot() < stk_slot) && obj_node->eqv_uncast(obj)) {
         box->set_nested();

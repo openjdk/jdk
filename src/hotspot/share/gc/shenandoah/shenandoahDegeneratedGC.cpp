@@ -498,7 +498,7 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 }
 
 void ShenandoahDegenGC::upgrade_to_full() {
-  log_info(gc)("Degenerated GC upgrading to Full GC");
+  log_info(gc, phases)("Degenerated GC upgrading to Full GC");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
   heap->increment_total_collections(true);

@@ -106,6 +106,7 @@ public:
   // Only boot/app classpaths can contain unnamed module
   bool has_unnamed_module()          const { return from_boot_classpath() || from_app_classpath(); }
 
+  char* get_attr(const char* tag) const;
   char* get_cpattr() const;
   AOTClassLocation* write_to_archive() const;
 
@@ -162,6 +163,9 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
 
+  bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
+  bool check_jrt(bool has_aot_linked_classes) const;
+  bool check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css) const;
   bool check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
                         int index_start, int index_end, ClassLocationStream& runtime_css,
                         bool use_lcp_match, const char* runtime_lcp, size_t runtime_lcp_len) const;

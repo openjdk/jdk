@@ -410,6 +410,7 @@ jint ShenandoahHeap::initialize() {
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
   _affiliations = NEW_C_HEAP_ARRAY(uint8_t, _num_regions, mtGC);
+  _biased_affiliations = _affiliations - (p2u(base()) >> ShenandoahHeapRegion::region_size_bytes_shift());
 
   {
     ShenandoahHeapLocker locker(lock());
@@ -568,6 +569,7 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _num_regions(0),
   _regions(nullptr),
   _affiliations(nullptr),
+  _biased_affiliations(nullptr),
   _gc_state_changed(false),
   _gc_no_progress_count(0),
   _cancel_requested_time(0),
@@ -1747,19 +1749,17 @@ class ObjectIterateScanRootClosure : public BasicOopIterateClosure {
 private:
   MarkBitMap* _bitmap;
   ShenandoahScanObjectStack* _oop_stack;
-  ShenandoahHeap* const _heap;
-  ShenandoahMarkingContext* const _marking_context;
 
   template <class T>
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
-        // There may be dead oops in weak roots in concurrent root phase, do not touch them.
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_PHANTOM_OOP_REF, obj, (T*)nullptr);
+      if (obj == nullptr) {
+        // Dead oop, cannot touch it.
         return;
       }
-      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
 
       assert(oopDesc::is_oop(obj), "must be a valid oop");
       if (!_bitmap->is_marked(obj)) {
@@ -1770,8 +1770,7 @@ private:
   }
 public:
   ObjectIterateScanRootClosure(MarkBitMap* bitmap, ShenandoahScanObjectStack* oop_stack) :
-    _bitmap(bitmap), _oop_stack(oop_stack), _heap(ShenandoahHeap::heap()),
-    _marking_context(_heap->marking_context()) {}
+    _bitmap(bitmap), _oop_stack(oop_stack) {}
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
@@ -1859,20 +1858,17 @@ class ShenandoahObjectIterateParScanClosure : public BasicOopIterateClosure {
 private:
   MarkBitMap* _bitmap;
   ShenandoahObjToScanQueue* _queue;
-  ShenandoahHeap* const _heap;
-  ShenandoahMarkingContext* const _marking_context;
 
   template <class T>
   void do_oop_work(T* p) {
     T o = RawAccess<>::oop_load(p);
     if (!CompressedOops::is_null(o)) {
       oop obj = CompressedOops::decode_not_null(o);
-      if (_heap->is_concurrent_weak_root_in_progress() && !_marking_context->is_marked(obj)) {
-        // There may be dead oops in weak roots in concurrent root phase, do not touch them.
+      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_PHANTOM_OOP_REF, obj, (T*)nullptr);
+      if (obj == nullptr) {
+        // Dead oop, cannot touch it.
         return;
       }
-      obj = ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
-
       assert(oopDesc::is_oop(obj), "Must be a valid oop");
       if (_bitmap->par_mark(obj)) {
         _queue->push(ShenandoahMarkTask(obj));
@@ -1881,8 +1877,7 @@ private:
   }
 public:
   ShenandoahObjectIterateParScanClosure(MarkBitMap* bitmap, ShenandoahObjToScanQueue* q) :
-    _bitmap(bitmap), _queue(q), _heap(ShenandoahHeap::heap()),
-    _marking_context(_heap->marking_context()) {}
+    _bitmap(bitmap), _queue(q) {}
   void do_oop(oop* p)       { do_oop_work(p); }
   void do_oop(narrowOop* p) { do_oop_work(p); }
 };
@@ -1997,9 +1992,7 @@ ParallelObjectIteratorImpl* ShenandoahHeap::parallel_object_iterator(uint worker
 
 // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
 void ShenandoahHeap::keep_alive(oop obj) {
-  if (is_concurrent_mark_in_progress() && (obj != nullptr)) {
-    ShenandoahBarrierSet::barrier_set()->enqueue(obj);
-  }
+  ShenandoahBarrierSet::barrier_set()->keepalive_barrier(ON_STRONG_OOP_REF, (oop*)nullptr, obj, ShenandoahBarrierSet::FILTER_MARKED);
 }
 
 void ShenandoahHeap::heap_region_iterate(ShenandoahHeapRegionClosure* blk) const {
@@ -2505,11 +2498,14 @@ void ShenandoahHeap::assert_pinned_region_status() const {
 
 void ShenandoahHeap::assert_pinned_region_status(ShenandoahGeneration* generation) const {
   for (size_t i = 0; i < num_regions(); i++) {
-    ShenandoahHeapRegion* r = get_region(i);
-    if (generation->contains(r)) {
-      assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
-             "Region %zu pinning status is inconsistent", i);
+    if (!generation->contains(region_affiliation(i))) {
+      // Skip regions outside this generation
+      continue;
     }
+
+    ShenandoahHeapRegion* r = get_region(i);
+    assert((r->is_pinned() && r->pin_count() > 0) || (!r->is_pinned() && r->pin_count() == 0),
+           "Region %zu pinning status is inconsistent", i);
   }
 }
 #endif

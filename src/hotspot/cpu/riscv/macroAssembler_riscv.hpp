@@ -201,7 +201,6 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
-  void load_prototype_header(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
   void load_narrow_klass(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
@@ -684,6 +683,9 @@ class MacroAssembler: public Assembler {
   void bgez(Register Rs, const address dest);
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
+
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
 
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
@@ -1839,7 +1841,7 @@ public:
   static bool is_pc_relative_at(address branch);
 
   static bool is_membar(address addr) {
-    return (Bytes::get_native_u4(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
+    return (Assembler::ld_instr(addr) & 0x7f) == 0b1111 && extract_funct3(addr) == 0;
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);
