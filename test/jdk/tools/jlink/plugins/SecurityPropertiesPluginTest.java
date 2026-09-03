@@ -72,7 +72,7 @@ public class SecurityPropertiesPluginTest {
         \t# Comment with leading tab
         \f# Comment with leading form-feed
         # Next 3 are blank lines
-                
+
         \n
         \r\n
         # Normal property
@@ -89,7 +89,7 @@ public class SecurityPropertiesPluginTest {
                                          kiwi, mango
         # Property with ':' delimiter
         Truth:Beauty
-        """; 
+        """;
 
     /*
      * Test with file containing the following properties:
