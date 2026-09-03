@@ -4121,14 +4121,15 @@ void MacroAssembler::merge_ldst(T rt,
   code_section()->set_end(prev);
 
   const unsigned sz = (unsigned)prev_ldst->size_in_bytes();
+  SIMD_RegVariant variant = sz == 16 ? Q : elemBytes_to_regVariant(sz);
   switch (dir) {
     case LOAD:
       BLOCK_COMMENT("merged ldr pair");
-      load_pair(rt_low, rt_high, adr_p, sz);
+      load_pair(rt_low, rt_high, adr_p, variant);
       break;
     case STORE:
       BLOCK_COMMENT("merged str pair");
-      store_pair(rt_low, rt_high, adr_p, sz);
+      store_pair(rt_low, rt_high, adr_p, variant);
       break;
     default: ShouldNotReachHere();
   }

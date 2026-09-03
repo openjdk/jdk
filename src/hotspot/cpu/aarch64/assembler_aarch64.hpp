@@ -741,6 +741,7 @@ public:
   enum { instruction_size = 4 };
 
   enum AccessDir { LOAD = false, STORE = true };
+  enum SIMD_RegVariant { B, H, S, D, Q, INVALID };
 
   //---<  calculate length of instruction  >---
   // We just use the values set above.
@@ -1465,10 +1466,10 @@ public:
 
 #define INSN(NAME, op)                                                   \
   void NAME(Register Rt1, Register Rt2, Address adr,                     \
-            const unsigned size_in_bytes,                                \
+            SIMD_RegVariant T,                                           \
             const bool no_allocate = false) {                            \
-    assert(size_in_bytes == 4 || size_in_bytes == 8, "");                \
-    int size = (size_in_bytes == 4)? 0b00 : 0b10;                        \
+    assert(T == S || T == D, "unsupported variant");                     \
+    int size = T == S ? 0b00 : 0b10;                                     \
     ld_st1(size, 0b101, 0, op, Rt1, Rt2, adr, no_allocate);              \
   }
 
@@ -1477,18 +1478,18 @@ public:
 
 #undef INSN
 
-#define INSN(NAME1, NAME2, size, no_allocate)                            \
+#define INSN(NAME1, NAME2, variant, no_allocate)                         \
   void NAME1(Register Rt1, Register Rt2, Address adr) {                  \
-    load_pair(Rt1, Rt2, adr, size, no_allocate);                         \
+    load_pair(Rt1, Rt2, adr, variant, no_allocate);                      \
   }                                                                      \
   void NAME2(Register Rt1, Register Rt2, Address adr) {                  \
-    store_pair(Rt1, Rt2, adr, size, no_allocate);                        \
+    store_pair(Rt1, Rt2, adr, variant, no_allocate);                     \
   }
 
-  INSN(ldpw,  stpw,  4, false);
-  INSN(ldp,   stp,   8, false);
-  INSN(ldnpw, stnpw, 4, true);
-  INSN(ldnp,  stnp,  8, true);
+  INSN(ldpw,  stpw,  S, false);
+  INSN(ldp,   stp,   D, false);
+  INSN(ldnpw, stnpw, S, true);
+  INSN(ldnp,  stnp,  D, true);
 
 #undef INSN
 
@@ -1498,10 +1499,9 @@ public:
 
 #define INSN(NAME, op)                                                    \
   void NAME(FloatRegister Rt1, FloatRegister Rt2, Address adr,            \
-            const unsigned size_in_bytes) {                               \
-    assert(size_in_bytes == 4 || size_in_bytes == 8 ||                    \
-           size_in_bytes == 16, "");                                      \
-    ld_st1(exact_log2(size_in_bytes) - 2, 0b101, 1, op, as_Register(Rt1), \
+            SIMD_RegVariant T) {                                          \
+    assert(T == S || T == D || T == Q, "unsupported variant");            \
+    ld_st1(T - S, 0b101, 1, op, as_Register(Rt1),                         \
            as_Register(Rt2), adr, false);                                 \
   }
 
@@ -1510,17 +1510,17 @@ public:
 
 #undef INSN
 
-#define INSN(NAME1, NAME2, size)                                          \
+#define INSN(NAME1, NAME2, variant)                                       \
   void NAME1(FloatRegister Rt1, FloatRegister Rt2, Address adr) {         \
-    load_pair(Rt1, Rt2, adr, size);                                       \
+    load_pair(Rt1, Rt2, adr, variant);                                    \
   }                                                                       \
   void NAME2(FloatRegister Rt1, FloatRegister Rt2, Address adr) {         \
-    store_pair(Rt1, Rt2, adr, size);                                      \
+    store_pair(Rt1, Rt2, adr, variant);                                   \
   }
 
-  INSN(ldps, stps, 4);
-  INSN(ldpd, stpd, 8);
-  INSN(ldpq, stpq, 16);
+  INSN(ldps, stps, S);
+  INSN(ldpd, stpd, D);
+  INSN(ldpq, stpq, Q);
 
 #undef INSN
 
@@ -1592,10 +1592,6 @@ public:
 
   enum SIMD_Arrangement {
     T8B, T16B, T4H, T8H, T2S, T4S, T1D, T2D, T1Q, INVALID_ARRANGEMENT
-  };
-
-  enum SIMD_RegVariant {
-      B, H, S, D, Q, INVALID
   };
 
 private:
