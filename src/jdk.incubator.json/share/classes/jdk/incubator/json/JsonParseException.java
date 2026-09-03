@@ -90,6 +90,14 @@ public final class JsonParseException extends RuntimeException {
         return pos;
     }
 
+    /**
+     * Restores the state of this exception from the specified stream.
+     *
+     * @param in the stream from which to read the exception
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a class in the stream cannot be found
+     * @throws InvalidObjectException if {@code line} or {@code pos} is negative
+     */
     @Serial
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
