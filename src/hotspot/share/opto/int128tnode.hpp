@@ -43,27 +43,28 @@ public:
   Node* lo2() const { return in(3); }
   Node* hi2() const { return in(4); }
 
-  virtual const Type* bottom_type() const override final { return TypeTuple::LONG_PAIR; }
-  virtual bool        is_CFG()      const override final { return false; }
-  virtual uint        ideal_reg()   const override final { return NotAMachineReg; }
-  virtual Node* match(const ProjNode* proj, const Matcher* m) override;
+  const Type* bottom_type() const final { return TypeTuple::LONG_PAIR; }
+  bool        is_CFG()      const final { return false; }
+  uint        ideal_reg()   const final { return NotAMachineReg; }
+
+  Node* match(const ProjNode* proj, const Matcher* m) final;
 
   static constexpr uint lo_proj_num = 0;
   static constexpr uint hi_proj_num = 1;
 };
 
-class AddI128TNode : public Int128TBinaryNode {
+class AddI128TNode final : public Int128TBinaryNode {
 public:
   AddI128TNode(Node* lo1, Node* hi1, Node* lo2, Node* hi2) : Int128TBinaryNode(lo1, hi1, lo2, hi2) {}
 
-  virtual int Opcode() const override;
+  int Opcode() const final;
 };
 
-class SubI128TNode : public Int128TBinaryNode {
+class SubI128TNode final : public Int128TBinaryNode {
 public:
   SubI128TNode(Node* lo1, Node* hi1, Node* lo2, Node* hi2) : Int128TBinaryNode(lo1, hi1, lo2, hi2) {}
 
-  virtual int Opcode() const override;
+  int Opcode() const final;
 };
 
 #endif // SHARE_OPTO_INT128NODE_HPP
