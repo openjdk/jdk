@@ -228,8 +228,11 @@ public class TestMemoryAllocationLogging {
                 }
                 case "testReleaseFailed": {
                     long addr = wb.NMTReserveMemory(PAGE_SIZE);
-                    /* addr is not a multiple of system page size, so it should fail */
-                    wb.NMTReleaseMemory(addr - 1, PAGE_SIZE);
+                    /* A length that runs off the end of the address space fails
+                       everywhere.  An unaligned address does not: NetBSD's
+                       munmap rounds it down and reports success, so the release
+                       the test wanted to see fail did not fail. */
+                    wb.NMTReleaseMemory(addr, -PAGE_SIZE);
                     break;
                 }
                 default: {
