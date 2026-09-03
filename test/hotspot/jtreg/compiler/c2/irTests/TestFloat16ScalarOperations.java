@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8308363 8336406 8381617
+* @bug 8308363 8336406 8381617 8391717
 * @summary Validate compiler IR for various Float16 scalar operations.
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
@@ -99,6 +99,7 @@ public class TestFloat16ScalarOperations {
 
     public static void main(String args[]) {
         new TestFramework().addFlags("--add-modules=jdk.incubator.vector").start();
+        new TestFramework().addFlags("--add-modules=jdk.incubator.vector", "-XX:-UseFMA").start();
     }
 
     public TestFloat16ScalarOperations() {
@@ -287,9 +288,13 @@ public class TestFloat16ScalarOperations {
 
     @Test
     @IR(counts = {IRNode.FMA_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.FMA_HF, " >0 ", IRNode.REINTERPRET_S2HF, " >0 ", IRNode.REINTERPRET_HF2S, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @IR(failOn = {IRNode.FMA_HF},
+        applyIf = {"UseFMA", "false"})
     public void testFma() {
         Float16 res = shortBitsToFloat16((short)0);
         for (int i = 0; i < count; i++) {
@@ -799,9 +804,21 @@ public class TestFloat16ScalarOperations {
     @Test
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
                   IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 ", IRNode.FMA_HF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
     @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
                   IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 ", IRNode.FMA_HF, " >0 "},
+        applyIf = {"UseFMA", "true"},
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
+                  IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 "},
+        failOn = {IRNode.FMA_HF},
+        applyIf = {"UseFMA", "false"},
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+    @IR(counts = {IRNode.ADD_HF, " >0 ", IRNode.SUB_HF, " >0 ", IRNode.MUL_HF, " >0 ",
+                  IRNode.DIV_HF, " >0 ", IRNode.SQRT_HF, " >0 "},
+        failOn = {IRNode.FMA_HF},
+        applyIf = {"UseFMA", "false"},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     @Warmup(10000)
     public void testRounding2() {
