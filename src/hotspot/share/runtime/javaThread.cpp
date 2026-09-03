@@ -26,6 +26,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -289,8 +290,15 @@ void JavaThread::check_for_valid_safepoint_state() {
   // are held.
   check_possible_safepoint();
 
-  if (thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
+  switch (thread_state()) {
+  case _thread_in_vm:
+    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier (checked above).
+    if (handle_area()->no_handle_mark_active()) {
+      fatal("LEAF method calling lock?");
+    }
+    break;
+  default:
+    fatal("illegal thread state %d, LEAF method calling lock?", thread_state());
   }
 
   if (GCALotAtAllSafepoints) {
@@ -1095,28 +1103,6 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>Java barriers detect a safepoint/handshake is
-// pending, when _suspend_flags is non-zero or when we need to process a stack
-// watermark. Also check for pending async exceptions (except unsafe access error).
-// Note only the native==>Java barriers can call this function when thread state
-// is _thread_in_native_trans.
-void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  thread->set_thread_state(_thread_in_vm);
-
-  // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
-
-  // After returning from native, it could be that the stack frames are not
-  // yet safe to use. We catch such situations in the subsequent stack watermark
-  // barrier, which will trap unsafe stack frames.
-  StackWatermarkSet::before_unwind(thread);
-}
-
 #ifndef PRODUCT
 // Deoptimization
 // Function for testing deoptimization
@@ -1124,6 +1110,10 @@ void JavaThread::deoptimize() {
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   bool deopt = false;           // Dump stack only if a deopt actually happens.
   bool only_at = strlen(DeoptimizeOnlyAt) > 0;
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Trace, msg);
+
   // Iterate over all frames in the thread and deoptimize
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->can_be_deoptimized()) {
@@ -1152,19 +1142,20 @@ void JavaThread::deoptimize() {
         }
       }
 
-      if (DebugDeoptimization && !deopt) {
+      if (!deopt && ls.is_enabled()) {
         deopt = true; // One-time only print before deopt
-        tty->print_cr("[BEFORE Deoptimization]");
-        trace_frames();
-        trace_stack();
+        ls.print_cr("[BEFORE Deoptimization]");
+        trace_frames_on(&ls);
+        trace_stack_on(&ls);
       }
       Deoptimization::deoptimize(this, *fst.current());
     }
   }
 
-  if (DebugDeoptimization && deopt) {
-    tty->print_cr("[AFTER Deoptimization]");
-    trace_frames();
+
+  if (deopt && ls.is_enabled()) {
+    ls.print_cr("[AFTER Deoptimization]");
+    trace_frames_on(&ls);
   }
 }
 
@@ -1327,15 +1318,10 @@ static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
-  case _thread_new_trans:         return "_thread_new_trans";
   case _thread_in_native:         return "_thread_in_native";
-  case _thread_in_native_trans:   return "_thread_in_native_trans";
   case _thread_in_vm:             return "_thread_in_vm";
-  case _thread_in_vm_trans:       return "_thread_in_vm_trans";
   case _thread_in_Java:           return "_thread_in_Java";
-  case _thread_in_Java_trans:     return "_thread_in_Java_trans";
   case _thread_blocked:           return "_thread_blocked";
-  case _thread_blocked_trans:     return "_thread_blocked_trans";
   default:                        return "unknown thread state";
   }
 }
@@ -1730,13 +1716,12 @@ void JavaThread::popframe_free_preserved_args() {
 
 #ifndef PRODUCT
 
-void JavaThread::trace_frames() {
-  tty->print_cr("[Describe stack]");
+void JavaThread::trace_frames_on(outputStream* st) {
+  st->print_cr("[Describe stack]");
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-    tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty);
-    tty->cr();
+    st->print("  %d. ", frame_no++);
+    fst.current()->print_value_on(st);
   }
 }
 
@@ -1783,24 +1768,24 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
 }
 #endif
 
-void JavaThread::trace_stack_from(vframe* start_vf) {
+void JavaThread::trace_stack_from(outputStream* st, vframe* start_vf) {
   ResourceMark rm;
   int vframe_no = 1;
   for (vframe* f = start_vf; f; f = f->sender()) {
     if (f->is_java_frame()) {
-      javaVFrame::cast(f)->print_activation(vframe_no++);
+      javaVFrame::cast(f)->print_activation(st, vframe_no++);
     } else {
-      f->print();
+      f->print(st);
     }
     if (vframe_no > StackPrintLimit) {
-      tty->print_cr("...<more frames>...");
+      st->print_cr("...<more frames>...");
       return;
     }
   }
 }
 
 
-void JavaThread::trace_stack() {
+void JavaThread::trace_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1809,7 +1794,7 @@ void JavaThread::trace_stack() {
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
-  trace_stack_from(last_java_vframe(&reg_map));
+  trace_stack_from(st, last_java_vframe(&reg_map));
 }
 
 

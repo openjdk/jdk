@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 class AllClassLocationStreams;
 class ClassLocationStream;
 class ClassPathZipEntry;
+class ModulePathClassLocationStream;
 class LogStream;
 
 // An AOTClassLocation is a location where the application is configured to load Java classes
@@ -105,6 +106,7 @@ public:
   // Only boot/app classpaths can contain unnamed module
   bool has_unnamed_module()          const { return from_boot_classpath() || from_app_classpath(); }
 
+  char* get_attr(const char* tag) const;
   char* get_cpattr() const;
   AOTClassLocation* write_to_archive() const;
 
@@ -161,11 +163,14 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
 
+  bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
+  bool check_jrt(bool has_aot_linked_classes) const;
+  bool check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css) const;
   bool check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
                         int index_start, int index_end, ClassLocationStream& runtime_css,
                         bool use_lcp_match, const char* runtime_lcp, size_t runtime_lcp_len) const;
-  bool check_module_paths(bool has_aot_linked_classes, int index_start, int index_end, ClassLocationStream& runtime_css,
-                          bool* has_extra_module_paths) const;
+  bool check_module_paths(bool has_aot_linked_classes, bool has_full_module_graph, ModulePathClassLocationStream& runtime_module_css) const;
+  bool check_module_paths_exact_match(ModulePathClassLocationStream& runtime_module_css) const;
   bool file_exists(const char* filename) const;
   bool check_paths_existence(ClassLocationStream& runtime_css) const;
 
@@ -270,7 +275,7 @@ public:
   AOTClassLocationConfig* write_to_archive() const;
 
   // Functions used only during runtime
-  bool validate(const char* cache_filename, bool has_aot_linked_classes, bool* has_extra_module_paths) const;
+  bool validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
 
   bool is_valid_classpath_index(int classpath_index, InstanceKlass* ik);
 

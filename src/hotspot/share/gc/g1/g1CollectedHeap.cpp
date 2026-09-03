@@ -127,16 +127,6 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // apply to TLAB allocation, which is not part of this interface: it
 // is done by clients of this interface.)
 
-void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
-  G1HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
-}
-
-void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  // The from card cache is not the memory that is actually committed. So we cannot
-  // take advantage of the zero_filled parameter.
-  reset_from_card_cache(start_idx, num_regions);
-}
-
 // Collects commonly used scoped objects that are related to initial setup.
 class G1GCMark : StackObj {
   ResourceMark _rm;
@@ -1306,7 +1296,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(nullptr),
-  _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(nullptr),
@@ -1332,7 +1321,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungRegionId),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungId),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -1502,7 +1491,6 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.base(),
                        heap_rs.size(),
                        page_size);
-  heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
@@ -1541,10 +1529,6 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
-  // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
-  // start within the first card.
-  guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
-  G1FromCardCache::initialize(max_num_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
   _rem_set->initialize(max_num_regions());
@@ -2298,7 +2282,7 @@ size_t G1CollectedHeap::tlab_capacity() const {
 }
 
 size_t G1CollectedHeap::tlab_used() const {
-  return _eden.length() * G1HeapRegion::GrainBytes;
+  return _eden.num_regions() * G1HeapRegion::GrainBytes;
 }
 
 // For G1 TLABs should not contain humongous objects, so the maximum TLAB size
@@ -2370,8 +2354,8 @@ void G1CollectedHeap::print_heap_regions() const {
   }
 }
 
-static void print_region_type(outputStream* st, const char* type, uint count, bool last = false) {
-  st->print("%u %s (%zuM)%s", count, type, count * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
+static void print_region_type(outputStream* st, const char* type, uint num_regions, bool last = false) {
+  st->print("%u %s (%zuM)%s", num_regions, type, num_regions * G1HeapRegion::GrainBytes / M, last ? "\n" : ", ");
 }
 
 void G1CollectedHeap::print_heap_on(outputStream* st) const {
@@ -2387,10 +2371,10 @@ void G1CollectedHeap::print_heap_on(outputStream* st) const {
 
   StreamIndentor si(st, 1);
   st->print("region size %zuM, ", G1HeapRegion::GrainBytes / M);
-  print_region_type(st, "eden", eden_regions_count());
-  print_region_type(st, "survivor", survivor_regions_count());
-  print_region_type(st, "old", old_regions_count());
-  print_region_type(st, "humongous", humongous_regions_count());
+  print_region_type(st, "eden", num_eden_regions());
+  print_region_type(st, "survivor", num_survivor_regions());
+  print_region_type(st, "old", num_old_regions());
+  print_region_type(st, "humongous", num_humongous_regions());
   print_region_type(st, "free", num_free_regions(), true /* last */);
 
   if (_numa->is_enabled()) {
@@ -2624,7 +2608,7 @@ void G1CollectedHeap::start_new_collection_set() {
 
   clear_region_attr();
 
-  guarantee(_eden.length() == 0, "eden should have been cleared");
+  guarantee(_eden.num_regions() == 0, "eden should have been cleared");
   policy()->transfer_survivors_to_cset(survivor());
 
   // We redo the verification but now wrt to the new CSet which
@@ -2972,7 +2956,7 @@ void G1CollectedHeap::abandon_collection_set() {
 }
 
 size_t G1CollectedHeap::non_young_occupancy_after_allocation(size_t allocation_word_size) const {
-  const size_t cur_occupancy = (old_regions_count() + humongous_regions_count()) * G1HeapRegion::GrainBytes -
+  const size_t cur_occupancy = (num_old_regions() + num_humongous_regions()) * G1HeapRegion::GrainBytes -
                                _allocator->free_bytes_in_retained_old_region();
   // Humongous allocations will always be assigned to non-young heap, so consider
   // that allocation in the result as well. Otherwise the allocation will always
@@ -3003,7 +2987,7 @@ public:
 };
 
 bool G1CollectedHeap::check_no_young_regions() {
-  bool ret = (young_regions_count() == 0);
+  bool ret = (num_young_regions() == 0);
 
   NoYoungRegionsClosure closure;
   heap_region_iterate(&closure);
@@ -3165,7 +3149,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   if (dest.is_old()) {
     return true;
   } else {
-    return survivor_regions_count() < policy()->max_survivor_regions();
+    return num_survivor_regions() < policy()->max_survivor_regions();
   }
 }
 

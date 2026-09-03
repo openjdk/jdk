@@ -36,24 +36,24 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.CHECKCAST_ARRAYCOPY;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.CLONE_INTRINSIC_SLOW_PATH;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.INLINE_ARRAY_NULL_GUARD;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.JLONG_ARRAYCOPY;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_UNKNOWN_INLINE;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_UNKNOWN_INLINE;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
 import static compiler.lib.ir_framework.IRNode.ALLOC_ARRAY;
+import static compiler.lib.ir_framework.IRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.CHECKCAST_ARRAYCOPY;
 import static compiler.lib.ir_framework.IRNode.CLASS_CHECK_TRAP;
+import static compiler.lib.ir_framework.IRNode.CLONE_INTRINSIC_SLOW_PATH;
+import static compiler.lib.ir_framework.IRNode.INLINE_ARRAY_NULL_GUARD;
 import static compiler.lib.ir_framework.IRNode.INTRINSIC_TRAP;
+import static compiler.lib.ir_framework.IRNode.JLONG_ARRAYCOPY;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.LOAD_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.LOOP;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
@@ -145,10 +145,10 @@ public class TestArrays {
 
     public static void main(String[] args) {
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[2].addFlags("--enable-preview", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
-        scenarios[3].addFlags("--enable-preview", "-XX:-MonomorphicArrayCheck", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:-UncommonNullCast");
-        scenarios[4].addFlags("--enable-preview", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
-        scenarios[5].addFlags("--enable-preview", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[2].addFlags("--enable-preview", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[3].addFlags("--enable-preview", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[4].addFlags("--enable-preview", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[5].addFlags("--enable-preview", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])

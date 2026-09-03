@@ -230,6 +230,7 @@ class ClassFileParser {
   bool _has_contended_fields;
   bool _has_aot_runtime_setup_method;
   bool _has_strict_static_fields;
+  bool _has_strict_instance_fields;
   bool _has_null_restricted_static_fields;
 
   bool _must_be_atomic;
@@ -543,6 +544,7 @@ class ClassFileParser {
 
   void create_acmp_maps(InstanceKlass* ik, TRAPS);
   void set_fast_acmp_members(InlineKlass* vk) const;
+  void set_fast_hashcode_members(InlineKlass* vk) const;
 
  public:
   ClassFileParser(ClassFileStream* stream,

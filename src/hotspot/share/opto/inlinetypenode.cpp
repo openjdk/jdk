@@ -1021,6 +1021,115 @@ Node* InlineTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node
   return result;
 }
 
+// Check if identityHashCode of 'arg' can be implemented in IR.
+// Set klass_hash to be used as the seed of the hash. It might not be available later,
+// and we want emit_identity_hash_code not to fail on that.
+bool InlineTypeNode::can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash) {
+  const Type* arg_type = igvn.type(arg);
+  if (arg_type == TypePtr::NULL_PTR) {
+    return true;
+  }
+  if (!arg_type->is_inlinetypeptr()) {
+    return false;
+  }
+  ciInlineKlass* vk = arg_type->inline_klass();
+  if (vk->number_of_oop_entries_in_acmp_map() > 0) {
+    return false;
+  }
+  klass_hash = vk->java_mirror()->hash();
+  if (klass_hash == markWord::no_hash) {
+    return false;
+  }
+  return true;
+}
+
+Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t klass_hash) {
+  if (!kit->C->allow_macro_nodes()) {
+    // After macro expansion, InlineTypeNodes are also eliminated, creation of new ones then is not
+    // allowed
+    return nullptr;
+  }
+  PhaseIterGVN& igvn = *kit->gvn().is_IterGVN();
+
+  RegionNode* region = new RegionNode(1);
+  PhiNode* phi_result = new PhiNode(region, TypeInt::INT);
+  igvn.register_new_node_with_optimizer(region);
+  igvn.register_new_node_with_optimizer(phi_result);
+
+  Node* null_ctl = kit->top();
+  arg = kit->null_check_oop(arg, &null_ctl, false, false, false);
+  if (!null_ctl->is_top()) {
+    region->add_req(null_ctl);
+    phi_result->add_req(kit->intcon(0));
+  }
+  const Type* arg_type = igvn.type(arg);
+  if (arg_type->empty()) {
+    kit->set_control(region);
+    return phi_result;
+  }
+
+  assert(arg_type->is_inlinetypeptr(), "should be a value object at this point");
+  assert(!arg_type->maybe_null(), "must check null beforehand");
+  ciInlineKlass* vk = arg_type->inline_klass();
+  int number_of_nonoop_entries = vk->number_of_nonoop_entries_in_acmp_map();
+  assert(vk->number_of_oop_entries_in_acmp_map() == 0, "cannot have oops here");
+
+  auto make_load = [&](int offset, const Type* type, BasicType bt) -> Node* {
+    Node* adr = kit->basic_plus_adr(arg, offset);
+    ciField* field = vk->get_field_by_offset(offset, false);
+    // If the load is by chance not a mismatch, let's mark it so. This way, loading the field can be simplified
+    bool is_mismatch = field == nullptr || field->type()->basic_type() != bt;
+    if (bt == T_BYTE && field != nullptr && field->type()->basic_type() == T_BOOLEAN) {
+      is_mismatch = false;
+      bt = T_BOOLEAN;
+      type = TypeInt::BOOL;
+    }
+    return kit->make_load(kit->control(), adr, type, bt, MemNode::unordered, LoadNode::DependsOnlyOnTest, false, false, is_mismatch, is_mismatch);
+  };
+
+  Node* const thirty_one = kit->intcon(31);
+  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  for (int i = 0; i < number_of_nonoop_entries; i++) {
+    AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
+    int offset = segment._offset;
+    int size = segment._size;
+    int nlong = size / 8;
+    for (int j = 0; j < nlong; j++) {
+      Node* la = make_load(offset, TypeLong::LONG, T_LONG);
+      result = kit->AddI(kit->MulI(thirty_one, result), kit->ConvL2I(la));
+      result = kit->AddI(kit->MulI(thirty_one, result), kit->ConvL2I(kit->URShiftL(la, kit->intcon(32))));
+      offset += 8;
+    }
+    size -= nlong * 8;
+    int nint = size / 4;
+    for (int j = 0; j < nint; j++) {
+      Node* ia = make_load(offset, TypeInt::INT, T_INT);
+      result = kit->AddI(kit->MulI(thirty_one, result), ia);
+      offset += 4;
+    }
+    size -= nint * 4;
+    int nshort = size / 2;
+    for (int j = 0; j < nshort; j++) {
+      Node* sa = make_load(offset, TypeInt::SHORT, T_SHORT);
+      result = kit->AddI(kit->MulI(thirty_one, result), sa);
+      offset += 2;
+    }
+    size -= nshort * 2;
+    for (int j = 0; j < size; j++) {
+      Node* ba = make_load(offset, TypeInt::BYTE, T_BYTE);
+      result = kit->AddI(kit->MulI(thirty_one, result), ba);
+      offset++;
+    }
+  }
+  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+
+  region->add_req(kit->control());
+  phi_result->add_req(result);
+
+  kit->set_control(region);
+  return phi_result;
+}
+
 InlineTypeNode* InlineTypeNode::buffer(GraphKit* kit, bool safe_for_replace) {
   if (is_allocated(&kit->gvn())) {
     // Already buffered

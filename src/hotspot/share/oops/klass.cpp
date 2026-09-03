@@ -841,6 +841,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -858,8 +859,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
-
-  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
