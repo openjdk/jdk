@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,9 +126,10 @@ public class referringObjects002 extends HeapwalkingDebugger {
 
         // each class instances has reference to class object +
         // + 'includedIntoReferrersCountTypes.size()' referrers was additionally created
+        // +1 referrer is classloader
         // +1 referrer is debugee class unloader
         // +1 self-reference from this_class index
-        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 2;
+        int expectedReferrersCount = createInstances + HeapwalkingDebuggee.includedIntoReferrersCountTypes.size() + 3;
 
         ClassObjectReference classObjectReference = debuggee.classByName(className).classObject();
 
@@ -140,9 +141,10 @@ public class referringObjects002 extends HeapwalkingDebugger {
             return;
 
         // Only this referrers should left:
+        // 1 referrer is classloader
         // 1 referrer is debugee class unloader
         // 1 self-reference from this_class index
-        expectedReferrersCount = 2;
+        expectedReferrersCount = 3;
 
         checkClassObjectReferrersCount(classObjectReference, expectedReferrersCount);
         // disable collection and try unload class object

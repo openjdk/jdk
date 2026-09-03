@@ -73,8 +73,8 @@ public class ClassLoaderTest {
             throw new RuntimeException("Test not loaded");
         }
 
-        Asserts.assertFalse(targetReachedFrom(ldr, test),
-                            "FollowReferences starting at MyLoader reached Test.class");
+        Asserts.assertTrue(targetReachedFrom(ldr, test),
+                           "FollowReferences starting at MyLoader reached Test.class");
 
         Reference.reachabilityFence(ldr);
         Reference.reachabilityFence(test);
