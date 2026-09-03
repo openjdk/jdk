@@ -40,10 +40,6 @@
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 
-ShenandoahBarrierSetC2* ShenandoahBarrierSetC2::bsc2() {
-  return reinterpret_cast<ShenandoahBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());
-}
-
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :
     BarrierSetC2State(comp_arena),
     _stubs(new (comp_arena) GrowableArray<ShenandoahBarrierStubC2*>(comp_arena, 8,  0, nullptr)),
@@ -667,10 +663,6 @@ void* ShenandoahBarrierSetC2::create_barrier_state(Arena* comp_arena) const {
   return new(comp_arena) ShenandoahBarrierSetC2State(comp_arena);
 }
 
-ShenandoahBarrierSetC2State* ShenandoahBarrierSetC2::state() const {
-  return reinterpret_cast<ShenandoahBarrierSetC2State*>(Compile::current()->barrier_set_state());
-}
-
 void ShenandoahBarrierSetC2::print_barrier_data(outputStream* os, uint8_t data) {
   os->print(" Node barriers: ");
   if ((data & ShenandoahBitStrong) != 0) {
@@ -888,7 +880,7 @@ void ShenandoahBarrierSetC2::emit_stubs(CodeBuffer& cb) const {
         skipped_after, skipped_before, skipped_after - skipped_before);
 #endif
 
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 void ShenandoahBarrierStubC2::register_stub(ShenandoahBarrierStubC2* stub) {

@@ -1,7 +1,6 @@
 /**
  * @test /nodynamiccopyright/
  * @bug 8314578
- * @enablePreview
  * @summary Parsing of erroneous patterns succeeds
  * @compile/fail/ref=T8314578.out -XDrawDiagnostics T8314578.java
  */

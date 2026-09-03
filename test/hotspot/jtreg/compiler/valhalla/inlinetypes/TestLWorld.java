@@ -178,8 +178,8 @@ public class TestLWorld {
         class2.getDeclaredFields();
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UseArrayFlattening");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck");
+        scenarios[3].addFlags("-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
+        scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
         InlineTypes.getFramework()
                     // TODO 8337821: Temporarily increased MemLimit - remove again with JDK-8378328 once fixed.

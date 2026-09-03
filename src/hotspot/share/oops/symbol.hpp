@@ -101,7 +101,8 @@ class ClassLoaderData;
 #define PERM_REFCOUNT 0xffff
 #endif
 
-class Symbol : public MetaspaceObj {
+// VerificationType::TypeMask == 0x7 demands 8-byte aligned Symbol*
+class alignas(8) Symbol : public MetaspaceObj {
   friend class VMStructs;
   friend class SymbolTable;
   friend class vmSymbols;

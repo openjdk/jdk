@@ -1070,12 +1070,6 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
 }
 
 static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
-  // Return the klass node for (indirect load from OopHandle)
-  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  //   or null if not matching.
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    n = bs->step_over_gc_barrier(n);
-
   if (n->Opcode() != Op_LoadP) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
@@ -2118,8 +2112,9 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
 Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
-  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
-      phase->type(in1)->higher_equal(TypeLong::POS)) {
+  const Type* in_type = phase->type(in1);
+  if ((in_type->isa_int() && in_type->is_int()->_lo >= 0) ||
+      (in_type->isa_long() && in_type->is_long()->_lo >= 0)) {
     return in1;
   }
   // Convert "abs(abs(x))" into "abs(x)"

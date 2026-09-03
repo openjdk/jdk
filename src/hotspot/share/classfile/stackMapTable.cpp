@@ -271,6 +271,13 @@ StackMapFrame* StackMapReader::next_helper(TRAPS) {
   VerificationType* locals = nullptr;
   u1 frame_type = _stream->get_u1(CHECK_NULL);
   if (frame_type == EARLY_LARVAL) {
+    // early_larval frames are only supported in classes that support strict fields (preview classes)
+    if (!Verifier::supports_strict_fields(_verifier->current_class())) {
+       // reserved frame types when preview classes are disabled
+      _stream->stackmap_format_error(
+         "reserved frame type", CHECK_VERIFY_(_verifier, nullptr));
+    }
+
     u2 num_unset_fields = _stream->get_u2(CHECK_NULL);
     StackMapFrame::AssertUnsetFieldTable* new_fields = new StackMapFrame::AssertUnsetFieldTable();
 

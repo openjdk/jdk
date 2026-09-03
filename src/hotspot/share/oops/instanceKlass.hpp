@@ -771,6 +771,7 @@ public:
   Symbol* source_file_name() const;
   u2 source_file_name_index() const;
   void set_source_file_name_index(u2 sourcefile_index);
+  Symbol* source_file_name(int version) const;
 
   // minor and major version numbers of class file
   u2 minor_version() const;
@@ -892,6 +893,11 @@ public:
   void notify_strict_static_access(int field_index, bool is_writing, TRAPS);
   const char* format_strict_static_message(Symbol* field_name, const char* doing_what = nullptr);
   void throw_strict_static_exception(Symbol* field_name, const char* when, TRAPS);
+
+  // strict instance fields
+  bool has_strict_instance_fields() const     { return _misc_flags.has_strict_instance_fields(); }
+  void set_has_strict_instance_fields(bool b) { _misc_flags.set_has_strict_instance_fields(b); }
+  bool has_strict_instance_fields_in_hierarchy() const;
 
   // generics support
   Symbol* generic_signature() const;

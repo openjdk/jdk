@@ -2647,10 +2647,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                  Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
                  // R12_scratch2 used by load_field_cp_cache_entry
 
-  static address field_branch_table[number_of_states],
+  static address field_rw_branch_table[number_of_states],
+                 field_norw_branch_table[number_of_states],
                  static_branch_table[number_of_states];
 
-  address* branch_table = (is_static || rc == may_not_rewrite) ? static_branch_table : field_branch_table;
+  address* branch_table = is_static ? static_branch_table :
+    (rc == may_rewrite ? field_rw_branch_table : field_norw_branch_table);
 
   // Get field offset.
   resolve_cache_and_index_for_field(byte_no, Rcache, Rscratch);
@@ -2698,14 +2700,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef ASSERT
   __ bind(LFlagInvalid);
   __ stop("got invalid flag");
-#endif
 
-  if (!is_static && rc == may_not_rewrite) {
-    // We reuse the code from is_static.  It's jumped to via the table above.
-    return;
-  }
-
-#ifdef ASSERT
   // __ bind(Lvtos);
   address pc_before_fence = __ pc();
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).

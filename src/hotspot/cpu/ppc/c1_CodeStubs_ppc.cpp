@@ -155,6 +155,7 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
 
 void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
   // Pass arguments on stack.
   __ std(_array->as_register(), -16, R1_SP);
   __ std(_index->as_register(), -8, R1_SP);
@@ -182,6 +183,7 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
 
 void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
   // Pass arguments on stack.
   __ std(_array->as_register(), -24, R1_SP);
   __ std(_index->as_register(), -16, R1_SP);

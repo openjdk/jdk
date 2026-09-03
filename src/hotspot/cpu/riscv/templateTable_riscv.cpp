@@ -157,13 +157,10 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
       __ load_field_entry(temp_reg, bc_reg);
-      if (byte_no == f1_byte) {
-        __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::get_code_offset())));
-      } else {
-        __ la(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
-      }
+      int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                             : in_bytes(ResolvedFieldEntry::put_code_offset());
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      __ lbu(temp_reg, Address(temp_reg, 0));
+      __ lbu(temp_reg, Address(temp_reg, code_offset));
       __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
       __ beqz(temp_reg, L_patch_done);
@@ -2351,13 +2348,10 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   __ load_field_entry(Rcache, index);
-  if (byte_no == f1_byte) {
-    __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::get_code_offset())));
-  } else {
-    __ la(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
-  }
+  int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                         : in_bytes(ResolvedFieldEntry::put_code_offset());
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  __ lbu(temp, Address(temp, 0));
+  __ lbu(temp, Address(Rcache, code_offset));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ mv(t0, (int) code);  // have we resolved this bytecode?
 
@@ -3743,11 +3737,10 @@ void TemplateTable::_new() {
   // This is done before loading InstanceKlass to be consistent with the order
   // how Constant Pool is update (see ConstantPool::klass_at_put)
   const int tags_offset = Array<u1>::base_offset_in_bytes();
-  __ add(t0, x10, x13);
-  __ la(t0, Address(t0, tags_offset));
-  __ lbu(t0, t0);
+  __ add(t1, x10, x13);
+  __ lbu(t1, Address(t1, tags_offset));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
-  __ subi(t1, t0, (u1)JVM_CONSTANT_Class);
+  __ subi(t1, t1, (u1)JVM_CONSTANT_Class);
   __ bnez(t1, slow_case);
 
   // get InstanceKlass

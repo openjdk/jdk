@@ -44,8 +44,9 @@ import jdk.test.lib.process.OutputAnalyzer;
 
 public class AddExports {
     static final String SEP = File.separator;
+    // runtime/cds/appcds/jigsaw/modulepath/src
     static final Path SRC = Paths.get(System.getProperty("test.src")).
-        resolve( ".." + SEP + "jigsaw" + SEP + "modulepath" + SEP + "src");
+        resolve( ".." + SEP + ".." + SEP + "jigsaw" + SEP + "modulepath" + SEP + "src");
     static final Path nonModuleNeedsJdkAddExportDir = SRC.resolve("com.nomodule.needsjdkaddexport");
     static final String nonModuleNeedsJdkAddExportJar = "nonModuleNeedsJdkAddExport.jar";
 

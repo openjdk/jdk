@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,7 +137,8 @@ ciSymbol* ciObjArrayKlass::construct_array_name(ciSymbol* element_name,
 // ciObjArrayKlass::make_impl
 //
 // Implementation of make.
-ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
+ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined_type, bool null_free,
+                                            bool atomic, bool force_ref_layout) {
   if (element_klass->is_loaded()) {
     EXCEPTION_CONTEXT;
     // The element klass is loaded
@@ -158,13 +159,19 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
       .with_null_restricted(null_free)
       .with_non_atomic(!atomic);
 
-    array = ObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);
+    if (force_ref_layout) {
+      const ArrayDescription description(Klass::RefArrayKlassKind, props, LayoutKind::REFERENCE);
+      array = ObjArrayKlass::cast(array)->klass_from_description(description, THREAD);
+    } else {
+      array = ObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);
+    }
     if (HAS_PENDING_EXCEPTION) {
       CLEAR_PENDING_EXCEPTION;
       CURRENT_THREAD_ENV->record_out_of_memory_failure();
       return ciEnv::unloaded_ciobjarrayklass();
     }
     assert(array != nullptr, "klass_with_properties should return a klass or throw");
+    assert(!force_ref_layout || array->is_refArray_klass(), "must be a reference array klass");
     if (array->is_flatArray_klass()) {
       return CURRENT_THREAD_ENV->get_flat_array_klass(array);
     } else {
@@ -186,8 +193,9 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
 // ciObjArrayKlass::make
 //
 // Make an array klass corresponding to the specified primitive type.
-ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type, bool null_free, bool atomic) {
-  GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type, null_free, atomic);)
+ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, bool refined_type, bool null_free,
+                                       bool atomic, bool force_ref_layout) {
+  GUARDED_VM_ENTRY(return make_impl(element_klass, refined_type, null_free, atomic, force_ref_layout);)
 }
 
 ciObjArrayKlass* ciObjArrayKlass::make(ciKlass* element_klass, int dims) {

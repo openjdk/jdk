@@ -305,7 +305,7 @@ static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code 
   return name->as_C_string();
 }
 
-static bool is_null_restricted_field(Method* method, address code_base, int bci) {
+static bool might_be_null_restricted_field(Method* method, address code_base, int bci) {
   ConstantPool* cp = method->constants();
   int cp_index = Bytes::get_native_u2(code_base + bci + 1);
   ResolvedFieldEntry* field = cp->resolved_field_entry_at(cp_index);
@@ -315,18 +315,10 @@ static bool is_null_restricted_field(Method* method, address code_base, int bci)
   if (is_resolved) {
     return field->is_null_free_inline_type();
   } else {
-    // This is more expensive but rare. C1 might not have resolved the field
-    // in the interpreter first.
-    fieldDescriptor fd;
-    Klass* klass = cp->resolved_klass_ref_at(cp_index, bc);
-    assert (klass != nullptr, "must be resolved if we got an NPE here");
-
-    Symbol* name  = cp->name_ref_at(cp_index, bc);
-    Symbol* sig  =  cp->signature_ref_at(cp_index, bc);
-    Klass* owner = InstanceKlass::cast(klass)->find_field(name, sig, false, &fd);
-    return owner != nullptr && fd.is_null_free_inline_type();
+    // This is rare. The compiler might not have resolved the field or the klass
+    // in the interpreter first. Just say it might be null restricted because we don't know.
+    return true;
   }
-  return false;
 }
 
 static void print_local_var(outputStream *os, unsigned int bci, Method* method, int slot, bool is_parameter) {
@@ -1205,7 +1197,7 @@ bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slo
   if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, " because \"")) {
     if (code == Bytecodes::_aastore) {
       os->print("\" is null or is a null-free array and there's an attempt to store null in it");
-    } else if (code == Bytecodes::_putfield && is_null_restricted_field(_method, code_base, bci)) {
+    } else if (code == Bytecodes::_putfield && might_be_null_restricted_field(_method, code_base, bci)) {
       int cp_index = Bytes::get_native_u2(code_base + bci + 1);
       os->print("\" is null or \"%s\" is a null restricted field and there's an attempt to store null in it",
                 get_field_name(_method, cp_index, code));

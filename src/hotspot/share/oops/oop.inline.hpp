@@ -272,14 +272,6 @@ inline void   oopDesc::float_field_put(int offset, jfloat value)    { *field_add
 inline jdouble oopDesc::double_field(int offset) const              { return *field_addr<jdouble>(offset);  }
 inline void    oopDesc::double_field_put(int offset, jdouble value) { *field_addr<jdouble>(offset) = value; }
 
-bool oopDesc::is_locked() const {
-  return mark().is_locked();
-}
-
-bool oopDesc::is_unlocked() const {
-  return mark().is_unlocked();
-}
-
 bool oopDesc::is_gc_marked() const {
   return mark().is_marked();
 }
@@ -339,7 +331,6 @@ oop oopDesc::forwardee(markWord mark) const {
   }
 }
 
-// Note that the forwardee is not the same thing as the displaced_mark.
 // The forwardee is used when copying during scavenge and mark-sweep.
 // It does need to clear the low two locking- and GC-related bits.
 oop oopDesc::forwardee() const {
@@ -354,21 +345,13 @@ void oopDesc::unset_self_forwarded() {
 uint oopDesc::age() const {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to read age from forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    return m.displaced_mark_helper().age();
-  } else {
-    return m.age();
-  }
+  return m.age();
 }
 
 void oopDesc::incr_age() {
   markWord m = mark();
   assert(!m.is_marked(), "Attempt to increment age of forwarded mark");
-  if (m.has_displaced_mark_helper()) {
-    m.set_displaced_mark_helper(m.displaced_mark_helper().incr_age());
-  } else {
-    set_mark(m.incr_age());
-  }
+  set_mark(m.incr_age());
 }
 
 template <typename OopClosureType>
@@ -413,37 +396,21 @@ bool oopDesc::is_instanceof_or_null(oop obj, Klass* klass) {
   return obj == nullptr || obj->klass()->is_subtype_of(klass);
 }
 
-intptr_t oopDesc::identity_hash() {
-  // Fast case; if the object is unlocked and the hash value is set, no locking is needed
+intptr_t oopDesc::identity_hash(Thread* current) {
   // Note: The mark must be read into local variable to avoid concurrent updates.
   markWord mrk = mark();
-  if (mrk.is_unlocked() && !mrk.has_no_hash()) {
-    return mrk.hash();
-  } else if (mrk.is_marked()) {
-    return mrk.hash();
-  } else {
-    return slow_identity_hash();
-  }
-}
-
-// This checks fast simple case of whether the oop has_no_hash,
-// to optimize JVMTI table lookup.
-bool oopDesc::fast_no_hash_check() {
-  markWord mrk = mark_acquire();
   assert(!mrk.is_marked(), "should never be marked");
-  return mrk.is_unlocked() && mrk.has_no_hash();
+
+  if (mrk.has_hash()) {
+    return mrk.hash();
+  }
+
+  return slow_identity_hash(mrk, current == nullptr ? Thread::current() : current);
 }
 
-bool oopDesc::has_displaced_mark() const {
-  return mark().has_displaced_mark_helper();
-}
-
-markWord oopDesc::displaced_mark() const {
-  return mark().displaced_mark_helper();
-}
-
-void oopDesc::set_displaced_mark(markWord m) {
-  mark().set_displaced_mark_helper(m);
+bool oopDesc::has_identity_hash() {
+  markWord mrk = mark_acquire();
+  return mrk.has_hash();
 }
 
 bool oopDesc::mark_must_be_preserved() const {

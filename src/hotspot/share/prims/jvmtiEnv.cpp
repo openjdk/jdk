@@ -1913,9 +1913,7 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
       return JVMTI_ERROR_NONE;
     }
     k = java_lang_Class::as_Klass(k_mirror);
-    if (klass == nullptr) {
-      return JVMTI_ERROR_INVALID_CLASS;
-    }
+    assert(k != nullptr, "k_mirror is not null and not primitive, must have a valid klass");
   }
 
   if (initial_object != nullptr) {

@@ -3109,13 +3109,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ z_lg(tmp, oopDesc::mark_offset_in_bytes(), op->array()->as_register());
-  __ z_tmll(tmp, markWord::unlocked_value);
-  __ z_brnaz(test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ z_tmll(tmp, markWord::null_free_array_bit_in_place);
 }
 

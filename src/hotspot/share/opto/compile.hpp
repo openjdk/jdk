@@ -104,7 +104,7 @@ class InlineTypeNode;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
-class VerifyMeetResult;
+class VerifyMeetJoinResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -1392,7 +1392,7 @@ public:
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
 #ifdef ASSERT
-  VerifyMeetResult* _type_verify;
+  VerifyMeetJoinResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

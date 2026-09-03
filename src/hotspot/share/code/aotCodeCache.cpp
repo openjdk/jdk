@@ -39,6 +39,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
+#include "oops/klass.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/deoptimization.hpp"
@@ -2098,10 +2099,11 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
-    // already added for
 #if defined(AARCH64) && ! defined(PRODUCT)
     ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64 && !PRODUCT
+    // Used by lookup_secondary_supers_table
+    ADD_EXTERNAL_ADDRESS(Klass::on_secondary_supers_verification_failure);
   }
 #endif // COMPILER2
 

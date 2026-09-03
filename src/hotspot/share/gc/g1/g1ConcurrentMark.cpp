@@ -36,7 +36,6 @@
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -448,7 +447,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _finger(nullptr), // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   _num_active_tasks(0), // _num_active_tasks set in set_non_marking_state()
   _tasks(nullptr),
@@ -502,7 +500,7 @@ void G1ConcurrentMark::fully_initialize() {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
 
-  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
   _max_concurrent_workers = ConcGCThreads;
@@ -3161,7 +3159,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   const char* remset_type = r->rem_set()->get_short_state_str();
   uint cset_group_id     = r->rem_set()->has_cset_group()
                          ? r->rem_set()->cset_group_id()
-                         : G1CSetCandidateGroup::NoRemSetId;
+                         : G1CSetCandidateGroup::NoGroupId;
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
