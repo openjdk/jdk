@@ -3186,6 +3186,13 @@ void PhaseMacroExpand::expand_add_sub_i128_node(Int128TBinaryNode* addsub) {
     _igvn.replace_node(lo, new_lo);
   }
 
+  // uint64_t lo1, lo2, hi1, hi2
+  // uint64_t sum_lo = lo1 + lo2
+  // uint64_t sum_lo_overflow = sum_lo < lo2 ? 1 : 0
+  // uint64_t sum_hi = hi1 + hi2 + sum_lo_overflow = hi1 + hi2 + (sum_lo < lo2 ? 1 : 0)
+  // uint64_t dif_lo = lo1 - lo2
+  // uint64_t dif_lo_overflow = lo1 < lo2
+  // uint64_t dif_hi = hi1 - hi2 - dif_lo_overflow = hi1 - hi2 - (lo1 < lo2 ? 1 : 0)
   if (Node* hi = addsub->result_hi_or_null(); hi != nullptr) {
     Node* overflow_cmp = _igvn.transform(new CmpULNode(is_add ? new_lo : addsub->lo1(), addsub->lo2()));
     Node* overflow_bol = _igvn.transform(new BoolNode(overflow_cmp, BoolTest::lt));
