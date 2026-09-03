@@ -60,6 +60,7 @@ class OpenAddressedHashTable : public StackObj {
                 std::is_trivially_destructible<KVElement>::value,
                 "These are required for the hashtable to function correctly");
   static_assert(LoadFactorPercentage <= 100, "Load factor cannot be higher than 100% in an open addressed hashtable");
+  static_assert(LoadFactorPercentage > 0, "Load factor must be at least 1%");
 
 private:
   // Load factor before resize is necessary
@@ -133,7 +134,7 @@ private:
     ShouldNotReachHere();
   }
 
-  bool rehash_to_length(int new_length, bool c_heap) {
+  bool rehash_to_length(int new_length) {
     assert(is_power_of_2(new_length), "must be");
     assert(new_length >= small_size, "must be");
 
@@ -146,7 +147,7 @@ private:
       return true;
     }
 
-    if (!c_heap && _members == small() && new_length == small_size) {
+    if (_members == small() && new_length == small_size) {
       clear_occupied_map();
       return true;
     }
@@ -193,7 +194,7 @@ private:
   }
 
   bool grow_and_rehash() {
-    return rehash_to_length(_length * 2, true);
+    return rehash_to_length(_length * 2);
   }
 
   bool has_capacity_for_insert() const {
@@ -269,6 +270,7 @@ private:
     }
 
     KVElement* resulting_array = nullptr;
+    int result_index = 0;
     if (_members == small()) {
       // Can't return the _small array, need to allocate one.
       resulting_array = allocate_kvelement_array(_occupied);
@@ -276,39 +278,32 @@ private:
         *length = 0;
         return nullptr;
       }
-      for (int i = 0; i < _occupied; i++) {
-        ::new (&resulting_array[i]) KVElement(small()[i]);
+      // Remove all empty spaces in the array, making it dense.
+      for (int i = 0; i < _length; i++) {
+        if (is_occupied(i)) {
+          ::new (&resulting_array[result_index]) KVElement(small()[i]);
+          result_index++;
+        }
       }
     } else {
       resulting_array = _members;
-    }
-
-    // Remove all empty spaces in the array, making it dense.
-    int result_index = 0;
-    int index = 0;
-    while (result_index < _occupied) {
-      if (is_occupied(index)) {
-        if (result_index != index) {
-          ::new (&resulting_array[result_index]) KVElement(resulting_array[index]);
+      // Remove all empty spaces in the array, making it dense.
+      int index = 0;
+      while (result_index < _occupied) {
+        if (is_occupied(index)) {
+          if (result_index != index) {
+            ::new (&resulting_array[result_index]) KVElement(resulting_array[index]);
+          }
+          result_index++;
         }
-        result_index++;
+        index++;
       }
-      index++;
     }
     assert(result_index == _occupied, "must be");
-
     *length = _occupied;
-
-    if (_members == small()) {
-      clear();
-    } else {
-      _members = small();
-      _length = small_size;
-      _occupied = 0;
-      clear_members(small(), small_size);
-      clear_occupied_map();
-    }
-
+    _members = small();
+    _length = small_size;
+    clear();
     return resulting_array;
   }
 };

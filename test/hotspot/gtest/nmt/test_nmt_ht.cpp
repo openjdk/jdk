@@ -95,3 +95,43 @@ TEST(NMTOAHTTest, PointerKeyAccessor) {
   EXPECT_TRUE(found);
   EXPECT_EQ(1, found_kv->_v);
 }
+
+TEST(NMTOAHTTest, Detach) {
+  auto hash = [](const PointerKeyElement& kv) { return kv.key()->hash(); };
+  auto equals = [](const PointerKeyElement& a, const PointerKeyElement& b) {
+    return a.key()->equals(*b.key());
+  };
+  using PointerKeyHT = OpenAddressedHashTable<PointerKeyElement,
+                                              decltype(hash),
+                                              decltype(equals)>;
+  PointerKeyHT ht(hash, equals);
+  bool found = false;
+  PointerKeyElement kv{{1}, 1};
+  ht.put_if_absent(kv, &found);
+  PointerKeyElement kv2{{2}, 1};
+  ht.put_if_absent(kv2, &found);
+
+  // Check state of returned array
+  int len = 0;
+  PointerKeyElement* array = ht.detach(&len);
+  EXPECT_EQ(2, len);
+  // Check both elements are inserted
+  bool found_elts[2] = {false, false};
+  for (int i = 0; i < len; i++) {
+    PointerKeyElement x = array[i];
+    found_elts[0] = found_elts[0] || x.key()->equals(*kv.key());
+    found_elts[1] = found_elts[1] || x.key()->equals(*kv2.key());
+  }
+  EXPECT_TRUE(found_elts[0]);
+  EXPECT_TRUE(found_elts[1]);
+
+  // Check state of the hashtable
+  EXPECT_EQ(0, ht.occupied());
+  found = false;
+  EXPECT_NE(nullptr, ht.put_if_absent(kv, &found));
+  EXPECT_FALSE(found);
+  EXPECT_NE(nullptr, ht.put_if_absent(kv2, &found));
+  EXPECT_FALSE(found);
+
+  FREE_C_HEAP_ARRAY(array);
+}
