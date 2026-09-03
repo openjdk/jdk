@@ -51,7 +51,12 @@ public class TestVmlaAArch64 {
   private static long[] b;
   private static long[] c;
   private static VectorMask<Long> mask;
-  private static long lres;
+
+  private static void assertResult(String test, long expected, long actual) {
+      if (actual != expected) {
+          throw new RuntimeException(test + ": expected " + expected + ", but got " + actual);
+      }
+  }
 
   public static void main(String args[]) {
       if (Platform.isAArch64()) {
@@ -83,13 +88,17 @@ public class TestVmlaAArch64 {
   public void test_vector_add_dot_product() {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
+          expected += a[i] * b[i];
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_add_dot_product();
+          result = vector_add_dot_product();
       }
+      assertResult("vector_add_dot_product", expected, result);
   }
 
   @Test
@@ -113,19 +122,23 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       c = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
           c[i] = i;
+          expected += (a[i] * b[i]) + (a[i] * c[i]) - (b[i] * c[i]);
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_sub_dot_product();
+          result = vector_sub_dot_product();
       }
+      assertResult("vector_sub_dot_product", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       // The peeled first iteration generates one VMLA, but the main loop should not.
       counts = {IRNode.VMLA, "=1"})
   @IR(applyIfCPUFeature = {"sve", "true"},
@@ -145,18 +158,22 @@ public class TestVmlaAArch64 {
   public void test_vector_api_add_dot_product() {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
+          expected += a[i] * b[i];
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_api_add_dot_product();
+          result = vector_api_add_dot_product();
       }
+      assertResult("vector_api_add_dot_product", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       // The peeled first iteration generates one VMLS, but the main loop should not.
       counts = {IRNode.VMLS, "=1"})
   @IR(applyIfCPUFeature = {"sve", "true"},
@@ -176,18 +193,22 @@ public class TestVmlaAArch64 {
   public void test_vector_api_sub_dot_product() {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
+          expected -= a[i] * b[i];
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_api_sub_dot_product();
+          result = vector_api_sub_dot_product();
       }
+      assertResult("vector_api_sub_dot_product", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       // The peeled first iteration generates one VMLA, but the main loop should not.
       counts = {IRNode.VMLA_MASKED, "=1"})
   @IR(applyIfCPUFeature = {"sve", "true"},
@@ -208,18 +229,24 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       mask = VectorMask.fromLong(SPECIES_128, 1);
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
+          if (mask.laneIsSet(i % SPECIES_128.length())) {
+              expected += a[i] * b[i];
+          }
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_api_add_dot_product_masked();
+          result = vector_api_add_dot_product_masked();
       }
+      assertResult("vector_api_add_dot_product_masked", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       // The peeled first iteration generates one VMLS, but the main loop should not.
       counts = {IRNode.VMLS_MASKED, "=1"})
   @IR(applyIfCPUFeature = {"sve", "true"},
@@ -240,13 +267,19 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       mask = VectorMask.fromLong(SPECIES_128, 1);
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
+          if (mask.laneIsSet(i % SPECIES_128.length())) {
+              expected -= a[i] * b[i];
+          }
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_api_sub_dot_product_masked();
+          result = vector_api_sub_dot_product_masked();
       }
+      assertResult("vector_api_sub_dot_product_masked", expected, result);
   }
 
   @Test
@@ -266,14 +299,19 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       c = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
           c[i] = i;
+          long val = a[i] * b[i];
+          expected += val + val * c[i];
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_mul_add_shared();
+          result = vector_mul_add_shared();
       }
+      assertResult("vector_mul_add_shared", expected, result);
   }
 
   @Test
@@ -293,19 +331,24 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       c = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
           c[i] = i;
+          long val = a[i] * b[i];
+          expected += val - val * c[i];
       }
+      long result = 0L;
       for (int i = 0; i < ITERS; i++) {
-          lres = vector_mul_sub_shared();
+          result = vector_mul_sub_shared();
       }
+      assertResult("vector_mul_sub_shared", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       counts = {IRNode.VMLA, "=0"})
   @IR(applyIfCPUFeature = {"sve", "true"},
       applyIf = {"AvoidMLAChain", "false"},
@@ -332,19 +375,30 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       c = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
           c[i] = i;
       }
-      for (int i = 0; i < ITERS; i++) {
-          lres = if_else_phi_add();
+      for (int i = 0; i < SPECIES_128.loopBound(ARRLEN); i += SPECIES_128.length()) {
+          boolean first = (i & SPECIES_128.length()) == 0;
+          for (int lane = 0; lane < SPECIES_128.length(); lane++) {
+              int index = i + lane;
+              long selected = first ? a[index] * b[index] : b[index] * c[index];
+              expected += selected + a[index] * c[index];
+          }
       }
+      long result = 0L;
+      for (int i = 0; i < ITERS; i++) {
+          result = if_else_phi_add();
+      }
+      assertResult("if_else_phi_add", expected, result);
   }
 
   @Test
   @IR(applyIfCPUFeature = {"sve", "true"},
-      applyIfAnd = {"MaxVectorSize", "<= 16", "AvoidMLAChain", "true"},
+      applyIf = {"AvoidMLAChain", "true"},
       counts = {IRNode.VMLS, "=0"})
   @IR(applyIfCPUFeature = {"sve", "true"},
       applyIf = {"AvoidMLAChain", "false"},
@@ -371,13 +425,24 @@ public class TestVmlaAArch64 {
       a = new long[ARRLEN];
       b = new long[ARRLEN];
       c = new long[ARRLEN];
+      long expected = 0L;
       for (int i = 0; i < ARRLEN; i++) {
           a[i] = i;
           b[i] = i;
           c[i] = i;
       }
-      for (int i = 0; i < ITERS; i++) {
-          lres = if_else_phi_sub();
+      for (int i = 0; i < SPECIES_128.loopBound(ARRLEN); i += SPECIES_128.length()) {
+          boolean first = (i & SPECIES_128.length()) == 0;
+          for (int lane = 0; lane < SPECIES_128.length(); lane++) {
+              int index = i + lane;
+              long selected = first ? a[index] * b[index] : b[index] * c[index];
+              expected += selected - a[index] * c[index];
+          }
       }
+      long result = 0L;
+      for (int i = 0; i < ITERS; i++) {
+          result = if_else_phi_sub();
+      }
+      assertResult("if_else_phi_sub", expected, result);
   }
 }
