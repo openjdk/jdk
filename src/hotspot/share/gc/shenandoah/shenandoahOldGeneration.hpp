@@ -29,6 +29,7 @@
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
@@ -57,24 +58,21 @@ private:
   // and in addition to the evacuation reserve for intra-generation evacuations (ShenandoahGeneration::_evacuation_reserve).
   // If there is more data ready to be promoted than can fit within this reserve, the promotion of some objects will be
   // deferred until a subsequent evacuation pass.
-  size_t _promoted_reserve;
+  Atomic<size_t> _promoted_reserve;
 
   // Bytes of old-gen memory expended on promotions. This may be modified concurrently
   // by mutators and gc workers when promotion LABs are retired during evacuation. It
   // is therefore always accessed through atomic operations. This is increased when a
   // PLAB is allocated for promotions. The value is decreased by the amount of memory
   // remaining in a PLAB when it is retired.
+  shenandoah_padding(0);
   Atomic<size_t> _promoted_expended;
+  shenandoah_padding(1);
 
   // Represents the quantity of live bytes we expect to promote during the next GC cycle, either by
   // evacuation or by promote-in-place.  This value is used by the young heuristic to trigger mixed collections.
   // It is also used when computing the optimum size for the old generation.
   size_t _promotion_potential;
-
-  // When a region is selected to be promoted in place, the remaining free memory is filled
-  // in to prevent additional allocations (preventing premature promotion of newly allocated
-  // objects). This field records the total amount of padding used for such regions.
-  size_t _pad_for_promote_in_place;
 
   // During construction of the collection set, we keep track of regions that are eligible
   // for promotion in place. These fields track the count of those humongous and regular regions.
@@ -111,8 +109,10 @@ public:
   // This zeros out the expended promotion count after the promotion reserve is computed
   void reset_promoted_expended();
 
-  // This is incremented when allocations are made to copy promotions into the old generation
-  size_t expend_promoted(size_t increment);
+  // Atomically reserve `increment` bytes of promotion budget. Returns true if the full amount
+  // was reserved without exceeding the reserve. Lock-free: safe to call without the heap lock.
+  // Use this to gate a promotion decision before promoting.
+  bool try_expend_promoted(size_t increment);
 
   // This is used to return unused memory from a retired promotion LAB
   size_t unexpend_promoted(size_t decrement);
@@ -147,10 +147,6 @@ public:
   // See description in field declaration
   void set_promotion_potential(size_t val) { _promotion_potential = val; }
   size_t get_promotion_potential() const { return _promotion_potential; }
-
-  // See description in field declaration
-  void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
-  size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
 
   // See description in field declaration
   void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }

@@ -1014,7 +1014,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // Do safepoint check
-  __ mov(Rtemp, _thread_in_native_trans);
+  __ mov(Rtemp, _thread_in_vm);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
@@ -1139,7 +1139,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1252,6 +1252,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
         __ bind(L);
       }
 #endif
+  }
+
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore, R1_tmp);
   }
 
   // start execution

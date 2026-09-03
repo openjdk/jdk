@@ -26,6 +26,9 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "cds/archiveBuilder.hpp"
+#include "ci/ciInlineKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -43,6 +46,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.hpp"
+#include "oops/resolvedFieldEntry.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -520,20 +524,25 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop: %s: %s (%s:%d)", reg->name(), s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop {");
 
   push_reg(RegSet::of(ra, t0, t1, c_rarg0), sp);
 
   mv(c_rarg0, reg); // c_rarg0 : x10
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -706,7 +715,15 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ResourceMark rm;
     stringStream ss;
     ss.print("verify_oop_addr: %s (%s:%d)", s, file, line);
-    b = code_string(ss.as_string());
+#if INCLUDE_CDS
+    if (AOTCodeCache::is_on_for_dump() && !code_section()->scratch_emit()) {
+      // This will duplicate string to preserve it.
+      b = AOTCodeCache::add_C_string(ss.as_string());
+    } else
+#endif
+    {
+      b = code_string(ss.as_string());
+    }
   }
   BLOCK_COMMENT("verify_oop_addr {");
 
@@ -719,13 +736,10 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
     ld(x10, addr);
   }
 
-  {
-    // The length of the instruction sequence emitted should not depend
-    // on the address of the char buffer so that the size of mach nodes for
-    // scratch emit and normal emit matches.
-    IncompressibleScope scope(this); // Fixed length
-    movptr(t0, (address) b);
-  }
+  // The length of the instruction sequence emitted should not depend
+  // on the address of the char buffer so that the size of mach nodes for
+  // scratch emit and normal emit matches.
+  la(t0, ExternalAddress((address)b));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -877,9 +891,13 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 }
 
 void MacroAssembler::stop(const char* msg) {
-  BLOCK_COMMENT(msg);
+  // Skip AOT caching C strings in scratch buffer.
+  const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+  BLOCK_COMMENT(str);
+  // load msg into a0 so we can access it from the signal handler
+  // ExternalAddress enables saving and restoring via the code cache
+  la(c_rarg0, ExternalAddress((address) str));
   illegal_instruction(Assembler::csr::time);
-  emit_int64((uintptr_t)msg);
 }
 
 void MacroAssembler::unimplemented(const char* what) {
@@ -909,10 +927,8 @@ void MacroAssembler::emit_static_call_stub() {
 void MacroAssembler::call_VM_leaf_base(address entry_point,
                                        int number_of_arguments,
                                        Label *retaddr) {
-  int32_t offset = 0;
   push_reg(RegSet::of(t1, xmethod), sp);   // push << t1 & xmethod >> to sp
-  movptr(t1, entry_point, offset, t0);
-  jalr(t1, offset);
+  rt_call(entry_point, t1, t0);
   if (retaddr != nullptr) {
     bind(*retaddr);
   }
@@ -943,6 +959,10 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0,
   pass_arg1(this, arg_1);
   pass_arg2(this, arg_2);
   call_VM_leaf_base(entry_point, 3);
+}
+
+void MacroAssembler::super_call_VM_leaf(address entry_point) {
+  MacroAssembler::call_VM_leaf_base(entry_point, 1);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
@@ -1158,16 +1178,17 @@ void MacroAssembler::jalr(Register Rs, int32_t offset) {
   Assembler::jalr(x1, Rs, offset);
 }
 
-void MacroAssembler::rt_call(address dest, Register tmp) {
-  assert(tmp != x5, "tmp register must not be x5.");
+void MacroAssembler::rt_call(address dest, Register tmp1, Register tmp2) {
+  assert_different_registers(tmp1, x5);
+  assert_different_registers(tmp1, tmp2);
   RuntimeAddress target(dest);
   if (CodeCache::contains(dest)) {
-    far_call(target, tmp);
+    far_call(target, tmp1);
   } else {
     relocate(target.rspec(), [&] {
       int32_t offset;
-      movptr(tmp, target.target(), offset);
-      jalr(tmp, offset);
+      movptr(tmp1, target.target(), offset, tmp2);
+      jalr(tmp1, offset);
     });
   }
 }
@@ -1245,13 +1266,33 @@ void MacroAssembler::wrap_label(Register r1, Register r2, Label &L,
 
 #undef INSN
 
-// cmov
+// cmov_zicond_eqz: dst = (cond == 0) ? src : dst
+void MacroAssembler::cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_eqz(dst, dst, cond);
+  if (src != zr) {
+    czero_nez(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
+// cmov_zicond_nez: dst = (cond != 0) ? src : dst
+void MacroAssembler::cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp) {
+  assert(UseZicond, "UseZicond must be enabled");
+  assert_different_registers(dst, src, cond);
+  czero_nez(dst, dst, cond);
+  if (src != zr) {
+    czero_eqz(tmp, src, cond);
+    add(dst, dst, tmp);
+  }
+}
+
 void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1261,11 +1302,10 @@ void MacroAssembler::cmov_eq(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     xorr(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0 , src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1275,11 +1315,10 @@ void MacroAssembler::cmov_ne(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1289,11 +1328,10 @@ void MacroAssembler::cmov_le(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1303,11 +1341,10 @@ void MacroAssembler::cmov_leu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1317,11 +1354,10 @@ void MacroAssembler::cmov_ge(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_eqz(dst, dst, t0);
-    czero_nez(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_eqz(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1331,11 +1367,10 @@ void MacroAssembler::cmov_geu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1345,11 +1380,10 @@ void MacroAssembler::cmov_lt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp1, cmp2);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1359,11 +1393,10 @@ void MacroAssembler::cmov_ltu(Register cmp1, Register cmp2, Register dst, Regist
 }
 
 void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     slt(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -1373,11 +1406,10 @@ void MacroAssembler::cmov_gt(Register cmp1, Register cmp2, Register dst, Registe
 }
 
 void MacroAssembler::cmov_gtu(Register cmp1, Register cmp2, Register dst, Register src) {
+  assert_different_registers(dst, src);
   if (UseZicond) {
     sltu(t0, cmp2, cmp1);
-    czero_nez(dst, dst, t0);
-    czero_eqz(t0,  src, t0);
-    orr(dst, dst, t0);
+    cmov_zicond_nez(dst, src, t0, t0);
     return;
   }
   Label no_set;
@@ -2168,15 +2200,15 @@ void MacroAssembler::vector_update_crc32(Register crc, Register buf, Register le
     mv(tmp5, 0xff);
 
     if (MaxVectorSize == 16) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
     } else if (MaxVectorSize == 32) {
-      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m2, Assembler::mu, Assembler::tu);
     } else {
       assert(MaxVectorSize > 32, "sanity");
-      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::ma, Assembler::ta);
+      vsetivli(zr, N, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
     }
 
-    vmv_v_x(vcrc, zr);
+    vmv_v_i(vcrc, 0);
     vmv_s_x(vcrc, crc);
 
     // multiple of 64
@@ -2321,7 +2353,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_16(Register crc, Regist
   vle64_v(v6, buf); addi(buf, buf, STEP);
   vle64_v(v7, buf); addi(buf, buf, STEP);
 
-  vmv_v_x(v31, zr);
+  vmv_v_i(v31, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m1, Assembler::mu, Assembler::tu);
   vmv_s_x(v31, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m1, Assembler::mu, Assembler::tu);
@@ -2444,7 +2476,7 @@ void MacroAssembler::kernel_crc32_vclmul_fold_vectorsize_32(Register crc, Regist
   //    now, v1 should contains: 010101...
 
   // initial crc
-  vmv_v_x(v24, zr);
+  vmv_v_i(v24, 0);
   vsetivli(zr, 1, Assembler::e32, Assembler::m4, Assembler::mu, Assembler::tu);
   vmv_s_x(v24, crc);
   vsetivli(zr, N, Assembler::e64, Assembler::m4, Assembler::mu, Assembler::tu);
@@ -3048,7 +3080,7 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
 
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
-    if (Universe::is_fully_initialized()) {
+    if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
       mv(xheapbase, CompressedOops::base());
     } else {
       ld(xheapbase, ExternalAddress(CompressedOops::base_addr()));
@@ -3595,6 +3627,46 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   movptr(dst, Address((address)obj, rspec));
 }
 
+void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+  assert_different_registers(holder_klass, index, layout_info);
+  InlineLayoutInfo array[2];
+  int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
+  if (is_power_of_2(size)) {
+    slli(index, index, log2i_exact(size)); // Scale index by power of 2
+  } else {
+    mv(layout_info, size);
+    mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
+  }
+  ld(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  add(layout_info, layout_info, index);
+  la(layout_info, Address(layout_info));
+}
+
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
+                                     Register inline_layout_info) {
+  BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
+  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+}
+
+void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
+  ld(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
+  lwu(offset, Address(offset, InlineKlass::payload_offset_offset()));
+}
+
+void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+  assert_different_registers(data, t0);
+  // ((address) (void*) o) + vk->payload_offset();
+  Register offset = (data == oop) ? t0 : data;
+  payload_offset(inline_klass, offset);
+  if (data == oop) {
+    add(data, data, offset);
+  } else {
+    add(data, oop, offset);
+    la(data, Address(data));
+  }
+}
+
 // Writes to stack successive pages until offset reached to check for
 // stack overflow + shadow pages.  This clobbers tmp.
 void MacroAssembler::bang_stack_size(Register size, Register tmp) {
@@ -3678,6 +3750,74 @@ void MacroAssembler::null_check(Register reg, int offset) {
     // nothing to do, (later) access of M[reg + offset]
     // will provoke OS null exception if reg is null
   }
+}
+
+void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  bnez(temp_reg, is_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
+  beqz(temp_reg, not_null_free_inline_type);
+}
+
+void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_flat_shift);
+  bnez(temp_reg, is_flat);
+}
+
+void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+  assert_different_registers(markword, t1);
+  mv(t1, markWord::inline_type_pattern_mask);
+  andr(markword, markword, t1);
+  mv(t1, markWord::inline_type_pattern);
+  beq(markword, t1, is_inline_type);
+}
+
+void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+  assert_different_registers(tmp, t0);
+  if (can_be_null) {
+    beqz(object, not_inline_type);
+  }
+  const int is_inline_type_mask = markWord::inline_type_pattern;
+  ld(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
+  mv(t0, is_inline_type_mask);
+  andr(tmp, tmp, t0);
+  bne(tmp, t0, not_inline_type);
+}
+
+void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
+  assert_different_registers(temp_reg, t0);
+  // load mark word
+  ld(temp_reg, Address(oop, oopDesc::mark_offset_in_bytes()));
+  andi(temp_reg, temp_reg, tst_bit);
+  if (jmp_set) {
+    bnez(temp_reg, jmp_label, /* is_far */ true);
+  } else {
+    beqz(temp_reg, jmp_label, /* is_far */ true);
+  }
+}
+
+void MacroAssembler::test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, true, is_flat_array);
+}
+
+void MacroAssembler::test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, true, is_null_free_array);
+}
+
+void MacroAssembler::test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::flat_array_bit_in_place, false, is_non_flat_array);
+}
+
+void MacroAssembler::test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array) {
+  test_oop_prototype_bit(oop, temp_reg, markWord::null_free_array_bit_in_place, false, is_non_null_free_array);
+}
+
+void MacroAssembler::test_flat_array_layout(Register lh, Label& is_flat_array) {
+  test_bit(t0, lh, exact_log2(Klass::_lh_array_tag_flat_value_bit_inplace));
+  bnez(t0, is_flat_array);
 }
 
 void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
@@ -3767,16 +3907,24 @@ void MacroAssembler::load_narrow_klass_compact(Register dst, Register src) {
   srli(dst, dst, markWord::klass_shift);
 }
 
+void MacroAssembler::load_narrow_klass(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
 void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
-  if (UseCompactObjectHeaders) {
-    load_narrow_klass_compact(dst, src);
-    decode_klass_not_null(dst, tmp);
-  } else {
-    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
-    decode_klass_not_null(dst, tmp);
-  }
+  load_narrow_klass(dst, src);
+  decode_klass_not_null(dst, tmp);
+}
+
+void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
+  load_klass(dst, src, tmp);
+  ld(dst, Address(dst, Klass::prototype_header_offset()));
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -3803,18 +3951,27 @@ void MacroAssembler::decode_klass_not_null(Register dst, Register src, Register 
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
 
-  if (CompressedKlassPointers::base() == nullptr) {
+  Register xbase = tmp;
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically, we cannot just bake it in as immediate.
+    // Note that we only need to do this for base. The encoding shift would be the
+    // same between build time and runtime: the standard precomputed shift.
+    assert(CompressedKlassPointers::shift() == ArchiveBuilder::precomputed_narrow_klass_shift(),
+           "unexpected compressed klass shift!");
+    ld(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+  } else if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
       slli(dst, src, CompressedKlassPointers::shift());
     } else {
       mv(dst, src);
     }
     return;
+  } else {
+    mv(xbase, (uintptr_t)CompressedKlassPointers::base());
   }
-
-  Register xbase = tmp;
-
-  mv(xbase, (uintptr_t)CompressedKlassPointers::base());
 
   if (CompressedKlassPointers::shift() != 0) {
     // dst = (src << shift) + xbase
@@ -3830,6 +3987,28 @@ void MacroAssembler::encode_klass_not_null(Register r, Register tmp) {
 }
 
 void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register tmp) {
+  Register xbase = dst;
+  if (dst == src) {
+    xbase = tmp;
+  }
+
+  if (AOTCodeCache::is_on_for_dump()) {
+    // We are generating code during AOT buildup that will run in *future* processes
+    // with likely different encoding settings. Therefore, we have to load the
+    // encoding base dynamically and must not take the base-value dependent zext
+    // short cut below. Note that we only need to do this for base; the encoding
+    // shift is the same at build and run time: the standard precomputed shift.
+    assert(CompressedKlassPointers::shift() == ArchiveBuilder::precomputed_narrow_klass_shift(),
+           "unexpected compressed klass shift!");
+    assert_different_registers(src, xbase);
+    ld(xbase, ExternalAddress(CompressedKlassPointers::base_addr()));
+    sub(dst, src, xbase);
+    if (CompressedKlassPointers::shift() != 0) {
+      srli(dst, dst, CompressedKlassPointers::shift());
+    }
+    return;
+  }
+
   if (CompressedKlassPointers::base() == nullptr) {
     if (CompressedKlassPointers::shift() != 0) {
       srli(dst, src, CompressedKlassPointers::shift());
@@ -3843,11 +4022,6 @@ void MacroAssembler::encode_klass_not_null(Register dst, Register src, Register 
       CompressedKlassPointers::shift() == 0) {
     zext(dst, src, 32);
     return;
-  }
-
-  Register xbase = dst;
-  if (dst == src) {
-    xbase = tmp;
   }
 
   assert_different_registers(src, xbase);
@@ -5201,7 +5375,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mv(x11, r_sub_klass);
     mv(x12, tmp3);
     mv(x13, result);
-    mv(x14, (address)("mismatch"));
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    la(x14, ExternalAddress((address) str));
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
     should_not_reach_here();
   }
@@ -5231,8 +5407,7 @@ void MacroAssembler::get_thread(Register thread) {
                       RegSet::range(x28, x31) + ra - thread;
   push_reg(saved_regs, sp);
 
-  mv(t1, CAST_FROM_FN_PTR(address, Thread::current));
-  jalr(t1);
+  rt_call(CAST_FROM_FN_PTR(address, Thread::current), t1, t0);
   if (thread != c_rarg0) {
     mv(thread, c_rarg0);
   }
@@ -5242,8 +5417,31 @@ void MacroAssembler::get_thread(Register thread) {
 }
 
 void MacroAssembler::load_byte_map_base(Register reg) {
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    address byte_map_base_adr = AOTRuntimeConstants::card_table_base_address();
+    ld(reg, ExternalAddress(byte_map_base_adr));
+    return;
+  }
+#endif
   CardTableBarrierSet* ctbs = CardTableBarrierSet::barrier_set();
+  // Strictly speaking the card table base isn't an address at all, and it might
+  // even be negative. It is thus materialised as a constant.
   mv(reg, (uint64_t)ctbs->card_table_base_const());
+}
+
+void MacroAssembler::load_aotrc_address(Register reg, address a) {
+#if INCLUDE_CDS
+  assert(AOTRuntimeConstants::contains(a), "address out of range for data area");
+  if (AOTCodeCache::is_on_for_dump()) {
+    // all aotrc field addresses should be registered in the AOTCodeCache address table
+    la(reg, ExternalAddress(a));
+  } else {
+    mv(reg, (intptr_t)a);
+  }
+#else
+  ShouldNotReachHere();
+#endif
 }
 
 void MacroAssembler::build_frame(int framesize) {
@@ -5261,6 +5459,74 @@ void MacroAssembler::remove_frame(int framesize) {
   ld(fp, Address(sp, framesize - 2 * wordSize));
   ld(ra, Address(sp, framesize - wordSize));
   add(sp, sp, framesize);
+}
+
+void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair) {
+  assert(!needs_stack_repair, "unimplemented");
+  remove_frame(initial_framesize);
+}
+
+#ifdef COMPILER2
+// C2 compiled method's prolog code
+// Moved here from riscv.ad to support Valhalla code belows
+void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+  if (C->clinit_barrier_on_entry()) {
+    assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
+
+    Label L_skip_barrier;
+
+    mov_metadata(t1, C->method()->holder()->constant_encoding());
+    clinit_barrier(t1, t0, &L_skip_barrier);
+    far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
+    bind(L_skip_barrier);
+  }
+
+  int bangsize = C->output()->bang_size_in_bytes();
+  if (C->output()->need_stack_bang(bangsize)) {
+    generate_stack_overflow_check(bangsize);
+  }
+
+  // n.b. frame size includes space for return pc and fp
+  const long framesize = C->output()->frame_size_in_bytes();
+  build_frame(framesize);
+
+  assert(!C->needs_stack_repair(), "unimplemented");
+}
+#endif // COMPILER2
+
+// Move a value between registers/stack slots and update the reg_state
+bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState reg_state[]) {
+  Unimplemented();
+  return false;
+}
+
+// Read all fields from an inline type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                          RegState reg_state[]) {
+
+  Unimplemented();
+  return false;
+}
+
+// Pack fields back into an inline type oop
+bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                        RegState reg_state[], Register val_array) {
+  Unimplemented();
+  return false;
+}
+
+// Calculate the extra stack space required for packing or unpacking inline
+// args and adjust the stack pointer
+int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+  Unimplemented();
+  return false;
+}
+
+VMReg MacroAssembler::spill_reg_for(VMReg reg) {
+  Unimplemented();
+  return reg;
 }
 
 void MacroAssembler::reserved_stack_check() {
@@ -5526,6 +5792,14 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ld(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
   ld(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
+}
+
+void MacroAssembler::load_metadata(Register dst, Register src) {
+  if (UseCompactObjectHeaders) {
+    load_narrow_klass_compact(dst, src);
+  } else {
+    lwu(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
 }
 
 // string indexof
@@ -6825,10 +7099,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // instruction emitted as it is part of C1's null check semantics.
   ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  sd(zr, Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes()))));
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -6854,6 +7126,11 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::unlocked_value);
+  if (Arguments::is_valhalla_enabled()) {
+    // Mask inline_type bit such that we go to the slow path if object is an inline type
+    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+  }
+
   xori(t, mark, markWord::unlocked_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);

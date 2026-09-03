@@ -26,6 +26,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -280,7 +281,7 @@ void JavaThread::check_possible_safepoint() {
 #endif // CHECK_UNHANDLED_OOPS
 }
 
-void JavaThread::check_for_valid_safepoint_state() {
+void JavaThread::check_for_valid_safepoint_state(bool allow_gcalot) {
   // Don't complain if running a debugging command.
   if (DebuggingContext::is_enabled()) return;
 
@@ -293,7 +294,7 @@ void JavaThread::check_for_valid_safepoint_state() {
     fatal("LEAF method calling lock?");
   }
 
-  if (GCALotAtAllSafepoints) {
+  if (GCALotAtAllSafepoints && allow_gcalot) {
     // We could enter a safepoint here and thus have a gc
     InterfaceSupport::check_gc_alot();
   }
@@ -325,6 +326,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _monitor_owner_id(0),
 
   _suspend_flags(0),
+
+  _at_no_async_entry_count(0),
 
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
@@ -971,6 +974,9 @@ void JavaThread::handle_async_exception(oop java_throwable) {
 }
 
 void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
+  DEBUG_ONLY(Thread* current = Thread::current();)
+  assert(is_handshake_safe_for(current), "must be");
+
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
@@ -994,28 +1000,6 @@ void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
     // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
     this->interrupt();
   }
-}
-
-class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
-  AsyncExceptionHandshakeClosure* _aehc;
-public:
-  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aehc) :
-    HandshakeClosure("InstallAsyncException"), _aehc(aehc) {}
-  ~InstallAsyncExceptionHandshakeClosure() {
-    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aehc.
-    delete _aehc;
-  }
-  void do_thread(Thread* thr) {
-    JavaThread* target = JavaThread::cast(thr);
-    target->install_async_exception(_aehc);
-    _aehc = nullptr;
-  }
-};
-
-void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
-  OopHandle e(Universe::vm_global(), java_throwable);
-  InstallAsyncExceptionHandshakeClosure iaeh(new AsyncExceptionHandshakeClosure(e));
-  Handshake::execute(&iaeh, target);
 }
 
 bool JavaThread::is_in_vthread_transition() const {
@@ -1115,13 +1099,9 @@ void JavaThread::verify_not_published() {
 // Slow path when the native==>Java barriers detect a safepoint/handshake is
 // pending, when _suspend_flags is non-zero or when we need to process a stack
 // watermark. Also check for pending async exceptions (except unsafe access error).
-// Note only the native==>Java barriers can call this function when thread state
-// is _thread_in_native_trans.
 void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
+  assert(thread->thread_state() == _thread_in_vm, "wrong state");
   assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  thread->set_thread_state(_thread_in_vm);
 
   // Enable WXWrite: called directly from interpreter native wrapper.
   MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
@@ -1141,6 +1121,10 @@ void JavaThread::deoptimize() {
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   bool deopt = false;           // Dump stack only if a deopt actually happens.
   bool only_at = strlen(DeoptimizeOnlyAt) > 0;
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Trace, msg);
+
   // Iterate over all frames in the thread and deoptimize
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->can_be_deoptimized()) {
@@ -1169,19 +1153,20 @@ void JavaThread::deoptimize() {
         }
       }
 
-      if (DebugDeoptimization && !deopt) {
+      if (!deopt && ls.is_enabled()) {
         deopt = true; // One-time only print before deopt
-        tty->print_cr("[BEFORE Deoptimization]");
-        trace_frames();
-        trace_stack();
+        ls.print_cr("[BEFORE Deoptimization]");
+        trace_frames_on(&ls);
+        trace_stack_on(&ls);
       }
       Deoptimization::deoptimize(this, *fst.current());
     }
   }
 
-  if (DebugDeoptimization && deopt) {
-    tty->print_cr("[AFTER Deoptimization]");
-    trace_frames();
+
+  if (deopt && ls.is_enabled()) {
+    ls.print_cr("[AFTER Deoptimization]");
+    trace_frames_on(&ls);
   }
 }
 
@@ -1344,15 +1329,10 @@ static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
-  case _thread_new_trans:         return "_thread_new_trans";
   case _thread_in_native:         return "_thread_in_native";
-  case _thread_in_native_trans:   return "_thread_in_native_trans";
   case _thread_in_vm:             return "_thread_in_vm";
-  case _thread_in_vm_trans:       return "_thread_in_vm_trans";
   case _thread_in_Java:           return "_thread_in_Java";
-  case _thread_in_Java_trans:     return "_thread_in_Java_trans";
   case _thread_blocked:           return "_thread_blocked";
-  case _thread_blocked_trans:     return "_thread_blocked_trans";
   default:                        return "unknown thread state";
   }
 }
@@ -1747,13 +1727,12 @@ void JavaThread::popframe_free_preserved_args() {
 
 #ifndef PRODUCT
 
-void JavaThread::trace_frames() {
-  tty->print_cr("[Describe stack]");
+void JavaThread::trace_frames_on(outputStream* st) {
+  st->print_cr("[Describe stack]");
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-    tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty);
-    tty->cr();
+    st->print("  %d. ", frame_no++);
+    fst.current()->print_value_on(st);
   }
 }
 
@@ -1800,24 +1779,24 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
 }
 #endif
 
-void JavaThread::trace_stack_from(vframe* start_vf) {
+void JavaThread::trace_stack_from(outputStream* st, vframe* start_vf) {
   ResourceMark rm;
   int vframe_no = 1;
   for (vframe* f = start_vf; f; f = f->sender()) {
     if (f->is_java_frame()) {
-      javaVFrame::cast(f)->print_activation(vframe_no++);
+      javaVFrame::cast(f)->print_activation(st, vframe_no++);
     } else {
-      f->print();
+      f->print(st);
     }
     if (vframe_no > StackPrintLimit) {
-      tty->print_cr("...<more frames>...");
+      st->print_cr("...<more frames>...");
       return;
     }
   }
 }
 
 
-void JavaThread::trace_stack() {
+void JavaThread::trace_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1826,7 +1805,7 @@ void JavaThread::trace_stack() {
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
-  trace_stack_from(last_java_vframe(&reg_map));
+  trace_stack_from(st, last_java_vframe(&reg_map));
 }
 
 

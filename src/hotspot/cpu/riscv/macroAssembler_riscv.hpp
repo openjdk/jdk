@@ -28,10 +28,14 @@
 #define CPU_RISCV_MACROASSEMBLER_RISCV_HPP
 
 #include "asm/assembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/powerOfTwo.hpp"
+#include "runtime/signature.hpp"
+
+class ciInlineKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -138,6 +142,7 @@ class MacroAssembler: public Assembler {
 
   // These always tightly bind to MacroAssembler::call_VM_base
   // bypassing the virtual implementation
+  void super_call_VM_leaf(address entry_point);
   void super_call_VM_leaf(address entry_point, Register arg_0);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1);
   void super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2);
@@ -196,7 +201,9 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst,
                        Register val, Register tmp1, Register tmp2, Register tmp3);
   void load_klass(Register dst, Register src, Register tmp = t0);
+  void load_prototype_header(Register dst, Register src, Register tmp = t0);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void store_klass(Register dst, Register src, Register tmp = t0);
   void cmp_klass_beq(Register obj, Register klass,
                      Register tmp1, Register tmp2,
@@ -248,6 +255,29 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
 
+  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register klass, Register temp_reg, Label& is_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label&is_non_flat_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label&is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
+  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_address(Register oop, Register data, Register inline_klass);
+
   // interface method calling
   void lookup_interface_method(Register recv_klass,
                                Register intf_klass,
@@ -290,6 +320,7 @@ class MacroAssembler: public Assembler {
   }
 
   // allocation
+
   void tlab_allocate(
     Register obj,                   // result: pointer to object after successful allocation
     Register var_size_in_bytes,     // object size in bytes if unknown at compile time; invalid otherwise
@@ -654,6 +685,9 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
+  void cmov_zicond_eqz(Register dst, Register src, Register cond, Register tmp = t0);
+  void cmov_zicond_nez(Register dst, Register src, Register cond, Register tmp = t0);
+
   void cmov_eq(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_ne(Register cmp1, Register cmp2, Register dst, Register src);
   void cmov_le(Register cmp1, Register cmp2, Register dst, Register src);
@@ -740,7 +774,7 @@ class MacroAssembler: public Assembler {
   // is used to keep the entry address for jalr/movptr.
   // Uses call() for intra code cache, else movptr + jalr.
   // Clobebrs t1
-  void rt_call(address dest, Register tmp = t1);
+  void rt_call(address dest, Register tmp1 = t1, Register tmp2 = noreg);
 
   // ret: jalr x0, 0(x1)
   inline void ret() {
@@ -1261,6 +1295,9 @@ public:
 
   void load_byte_map_base(Register reg);
 
+  // Load a constant address in the AOT Runtime Constants area
+  void load_aotrc_address(Register reg, address a);
+
   void bang_stack_with_offset(int offset) {
     // stack grows down, caller passes positive offset
     assert(offset > 0, "must bang with negative offset");
@@ -1277,6 +1314,8 @@ public:
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
   void remove_frame(int framesize);
+
+  void verified_entry(Compile* C, int sp_inc);
 
   void reserved_stack_check();
 
@@ -1350,6 +1389,7 @@ public:
 
   void load_method_holder_cld(Register result, Register method);
   void load_method_holder(Register holder, Register method);
+  void load_metadata(Register dst, Register src);
 
   void compute_index(Register str1, Register trailing_zeros, Register match_mask,
                      Register result, Register char_tmp, Register tmp,
@@ -1806,6 +1846,10 @@ public:
   }
   static uint32_t get_membar_kind(address addr);
   static void set_membar_kind(address addr, uint32_t order_kind);
+
+ public:
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #ifdef ASSERT

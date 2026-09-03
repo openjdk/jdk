@@ -112,6 +112,7 @@
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
+# include <sys/un.h>
 # include <sys/utsname.h>
 # include <syscall.h>
 # include <time.h>
@@ -1547,11 +1548,47 @@ int os::current_process_id() {
   return ::getpid();
 }
 
-// DLL functions
+static bool is_writable_directory(const char* name) {
+  struct stat mystat;
+  int ret_val = stat(name, &mystat);
+  return (ret_val != -1 && S_ISDIR(mystat.st_mode) > 0 && access(name, R_OK|W_OK|X_OK) == 0);
+}
 
-// This must be hard coded because it's the system's temporary
-// directory not the java application's temp directory, ala java.io.tmpdir.
-const char* os::get_temp_directory() { return "/tmp"; }
+// Check that a given alternate temporary directory name specifies an absolute path and is an existing, writable
+// directory.
+
+// If it is not an absolute path, revert back to hardcoded /tmp. If the directory is non existant or not
+// writable give a warning but use AltTempDir. In the latter case, we may be connecting to a process that is
+// inside a container.
+//
+// Since the attach mechanism uses the socket name length, this limits the length of the alternate
+// temporary directory name.  We don't check that here since the temporary directory is
+// used for many things. The perfData and attach code will check it.
+
+void os::pd_check_temp_directory() {
+  if (AltTempDir != nullptr && AltTempDir[0] != '\0') {
+    if (AltTempDir[0] != '/') {
+      log_warning(os)("Warning: AltTempDir is ignored because it must be an absolute pathname");
+      AltTempDir = nullptr;
+    } else {
+      if (!is_writable_directory(AltTempDir)) {
+        // This is only a warning and still uses AltTempDir, which is needed to attach to a
+        // containerized process from the host.
+        log_warning(os)("Warning: AltTempDir is not an existing or writable directory");
+      }
+    }
+  } else {
+    if (!is_writable_directory("/tmp")) {
+      log_warning(os)("Warning: /tmp is not writable. Consider using -XX:AltTempDir=/<dir> to set a writable temp directory");
+    }
+    AltTempDir = nullptr; // avoid checking AltTempDir[0] again.
+  }
+}
+
+const char* os::get_temp_directory() {
+  // AltTempDir is already checked.
+  return AltTempDir != nullptr ? AltTempDir : "/tmp";
+}
 
 // check if addr is inside libjvm.so
 bool os::address_is_in_vm(address addr) {
@@ -4662,20 +4699,6 @@ void os::Linux::numa_init() {
   if (UseNUMA && !UseNUMAInterleaving) {
     FLAG_SET_ERGO_IF_DEFAULT(UseNUMAInterleaving, true);
   }
-
-#if INCLUDE_PARALLELGC
-  if (UseParallelGC && UseNUMA && UseLargePages && !can_commit_large_page_memory()) {
-    // With static large pages we cannot uncommit a page, so there's no way
-    // we can make the adaptive lgrp chunk resizing work. If the user specified both
-    // UseNUMA and UseLargePages on the command line - warn and disable adaptive resizing.
-    if (UseAdaptiveSizePolicy || UseAdaptiveNUMAChunkSizing) {
-      warning("UseNUMA is not fully compatible with +UseLargePages, "
-              "disabling adaptive resizing (-XX:-UseAdaptiveSizePolicy -XX:-UseAdaptiveNUMAChunkSizing)");
-      UseAdaptiveSizePolicy = false;
-      UseAdaptiveNUMAChunkSizing = false;
-    }
-  }
-#endif
 }
 
 void os::Linux::disable_numa(const char* reason, bool warning) {
