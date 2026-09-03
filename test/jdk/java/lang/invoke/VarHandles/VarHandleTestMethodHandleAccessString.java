@@ -25,8 +25,8 @@
 
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessString
  */
 
@@ -294,10 +294,30 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, "foo");
+
             String o = (String) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, "bar");
             assertEquals("foo", o, "getAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals("bar", x, "getAndSet String value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, "foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, "bar");
+            assertEquals("foo", o, "getAndSetAcquire String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals("bar", x, "getAndSetAcquire String value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, "foo");
+
+            String o = (String) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, "bar");
+            assertEquals("foo", o, "getAndSetRelease String");
+            String x = (String) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals("bar", x, "getAndSetRelease String value");
         }
 
 
@@ -482,7 +502,7 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact("bar", "baz");
             assertEquals(success, false, "failing weakCompareAndSet String");
             String x = (String) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals("foo", x, "failing weakCompareAndSetRe String value");
+            assertEquals("foo", x, "failing weakCompareAndSet String value");
         }
 
         // Compare set and get
@@ -495,7 +515,6 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             assertEquals("bar", x, "getAndSet String value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact("foo");
 
@@ -505,7 +524,6 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             assertEquals("bar", x, "getAndSetAcquire String value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact("foo");
 
@@ -677,10 +695,10 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, "foo", "baz");
-                assertEquals(success, false, "failing weakCompareAndSetAcquire String");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, "foo", "baz");
+                assertEquals(success, false, "failing weakCompareAndSetRelease String");
                 String x = (String) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals("bar", x, "failing weakCompareAndSetAcquire String value");
+                assertEquals("bar", x, "failing weakCompareAndSetRelease String value");
             }
 
             {

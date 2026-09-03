@@ -87,6 +87,7 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/metaspace/TestMetaspaceFirstGC.java 8391711 generic-all
 
 #############################################################################
 
@@ -153,11 +154,6 @@ serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 83
 
 vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
 vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
-
-vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all

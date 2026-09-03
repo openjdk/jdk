@@ -24,10 +24,12 @@
  */
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionClosures.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -320,12 +322,16 @@ bool ShenandoahGeneration::is_bitmap_clear() {
   ShenandoahMarkingContext* context = heap->marking_context();
   const size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
+    const ShenandoahAffiliation affiliation = heap->region_affiliation(idx);
+    if (!contains(affiliation) || affiliation == FREE) {
+      // Skip regions outside this generation or those that are unaffiliated
+      continue;
+    }
+
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (contains(r) && r->is_affiliated()) {
-      if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
-          !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
-        return false;
-      }
+    if (heap->is_bitmap_slice_committed(r) && (context->top_at_mark_start(r) > r->bottom()) &&
+        !context->is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
+      return false;
     }
   }
   return true;
