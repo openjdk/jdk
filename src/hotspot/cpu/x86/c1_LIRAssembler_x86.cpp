@@ -1375,7 +1375,7 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   Register mdo = noreg;
   if (op->should_profile()) {
-    mdo  = klass_RInfo;
+    mdo = klass_RInfo;
     __ mov_metadata(mdo, md->constant_encoding());
   }
 
