@@ -442,6 +442,8 @@ class PhaseChaitin : public PhaseRegAlloc {
   // Compact live ranges, removing unused ones.  Return new maxlrg.
   void compact();
 
+  void verify_killed_inputs(PhaseLive& live) PRODUCT_RETURN;
+
   uint _lo_degree;              // Head of lo-degree LRGs list
   uint _lo_stk_degree;          // Head of lo-stk-degree LRGs list
   uint _hi_degree;              // Head of hi-degree LRGs list
