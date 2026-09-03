@@ -1818,7 +1818,7 @@ void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_
         if (elem_k->has_inlined_fields()) {
           size_t value_offset = fa->value_offset(i, fak->layout_helper());
           guarantee(value_offset <= max_jint, "large value array not supported by AOT");
-          InlineKlassFinder finder(subgraph_info, orig_obj, elem_k, value_offset);
+          InlineKlassFinder finder(subgraph_info, orig_obj, elem_k, checked_cast<int>(value_offset));
           elem_k->do_nonstatic_fields(&finder);
         }
       }
