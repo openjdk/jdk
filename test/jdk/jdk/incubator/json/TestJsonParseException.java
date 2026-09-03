@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.FieldSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -143,16 +144,15 @@ public class TestJsonParseException {
         assertThrows(IllegalArgumentException.class, () -> new JsonParseException("Foo", -1, 1));
     }
 
-    @Test
-    void testMalformedLocationDeserialized() throws Exception {
-        for (String field: List.of("line", "pos")) {
-            var jpe = new JsonParseException("message", 0, 0);
-            var f = JsonParseException.class.getDeclaredField(field);
-            f.setAccessible(true);
-            f.setInt(jpe, -1);
+    @ParameterizedTest
+    @ValueSource(strings = {"line", "pos"})
+    void testMalformedLocationDeserialized(String field) throws Exception {
+        var jpe = new JsonParseException("message", 0, 0);
+        var f = JsonParseException.class.getDeclaredField(field);
+        f.setAccessible(true);
+        f.setInt(jpe, -1);
 
-            assertThrows(InvalidObjectException.class, () -> deser(jpe));
-        }
+        assertThrows(InvalidObjectException.class, () -> deser(jpe));
     }
 
     private static Object deser(Object jpe) throws Exception {
