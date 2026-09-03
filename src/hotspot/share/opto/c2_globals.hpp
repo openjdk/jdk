@@ -40,10 +40,6 @@
                  range,                                                     \
                  constraint)                                                \
                                                                             \
-  product(bool, EliminateDoubledIndex, true, DIAGNOSTIC,                    \
-          "Recompute a value that lags a counted loop's induction variable "\
-          "so the loop carries one index instead of two")                   \
-                                                                            \
   product(bool, StressLCM, false, DIAGNOSTIC,                               \
           "Randomize instruction scheduling in LCM")                        \
                                                                             \

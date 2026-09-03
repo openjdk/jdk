@@ -3948,10 +3948,6 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
   if ( n->outcnt() == 0 ) return; // dead node
   uint nop = n->Opcode();
 
-  if (EliminateDoubledIndex) {
-    eliminate_doubled_index(n);
-  }
-
   // Check for 2-input instruction with "last use" on right input.
   // Swap to left input.  Implements item (2).
   if( n->req() == 3 &&          // two-input instruction
@@ -6261,50 +6257,3 @@ Node* Compile::make_debug_print_call(const char* str, address call_addr, PhaseGV
   return call;
 }
 #endif // !PRODUCT
-
-//  Replace Phi and SafePoint debug inputs:
-//
-//  n->in(i) : Phi(CountedLoop, _, incr=AddI(self, ConI(stride)))
-//             => AddI(incr, ConI(-stride))
-//
-//  to avoid a doubled index, where the loop body never reads prev:
-//    for (int i=init, prev=init-stride; ; ) { prev=i; i += stride; }  use(prev);
-//  =>
-//    for (int i=init ; ; )                  {         i += stride; }  use(i-stride);
-//
-void Compile::eliminate_doubled_index(Node* n) {
-  uint start = 0, end = 0;
-  if (n->is_Phi()) {
-    start = 1;
-    end = n->req();
-  } else if (n->is_SafePoint()) {
-    JVMState* jvms = n->as_SafePoint()->jvms();
-    if (jvms == nullptr) { return; }
-    start = jvms->debug_start();
-    end = jvms->debug_end();
-  }
-  for (uint i = start; i < end; i++) {
-    Node* phi = n->in(i);
-    jint k = 0; // after unrolling the lagging value is AddI(phi, k), not phi itself
-    if (phi != nullptr && phi->Opcode() == Op_AddI && phi->in(2)->is_Con()) {
-      k = phi->in(2)->get_int();
-      phi = phi->in(1);
-    }
-    if (phi != nullptr && phi->is_Phi() && phi->req() == 3 && phi->in(0)->is_CountedLoop()) {
-      Node* incr = phi->in(2);
-      if (incr != nullptr && incr->Opcode() == Op_AddI && incr->outcnt() >= 2 &&
-          incr->in(1) == phi &&
-          incr->in(2)->is_Con()) {
-        { // here we skip uses before the increment: reading incr there would force it early and cost a copy
-          Node* ctrl = n->is_Phi() ? n->in(0)->in(i) : n->in(0); // expected ctrl is "IF(incr < limit)"
-          if (ctrl == nullptr || !ctrl->is_Proj() || !ctrl->in(0)->is_If()) { continue; }
-          Node* cmp = ctrl->in(0)->in(1)->is_Bool() ? ctrl->in(0)->in(1)->in(1) : nullptr;
-          if (cmp == nullptr || (cmp->in(1) != incr && cmp->in(2) != incr)) { continue; }
-        }
-        jint delta = java_subtract(k, incr->in(2)->get_int());
-        if (delta == 0) { continue; }
-        n->set_req(i, new AddINode(incr, ConINode::make(delta)));
-      }
-    }
-  }
-}

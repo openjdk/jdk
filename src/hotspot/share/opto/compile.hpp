@@ -1313,7 +1313,6 @@ public:
 
   // Logic cone optimization.
   void optimize_logic_cones(PhaseIterGVN &igvn);
-  void eliminate_doubled_index(Node* n);
   void collect_logic_cone_roots(Unique_Node_List& list);
   void process_logic_cone_root(PhaseIterGVN &igvn, Node* n, VectorSet& visited);
   bool compute_logic_cone(Node* n, Unique_Node_List& partition, Unique_Node_List& inputs);
