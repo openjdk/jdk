@@ -157,12 +157,10 @@ void TemplateTable::patch_bytecode(Bytecodes::Code bc, Register bc_reg,
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
       __ load_field_entry(temp_reg, bc_reg);
+      int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                             : in_bytes(ResolvedFieldEntry::put_code_offset());
       // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-      if (byte_no == f1_byte) {
-        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::get_code_offset())));
-      } else {
-        __ lbu(temp_reg, Address(temp_reg, in_bytes(ResolvedFieldEntry::put_code_offset())));
-      }
+      __ lbu(temp_reg, Address(temp_reg, code_offset));
       __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
       __ mv(bc_reg, bc);
       __ beqz(temp_reg, L_patch_done);
@@ -2350,12 +2348,10 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   __ load_field_entry(Rcache, index);
+  int code_offset = (byte_no == f1_byte) ? in_bytes(ResolvedFieldEntry::get_code_offset())
+                                         : in_bytes(ResolvedFieldEntry::put_code_offset());
   // Load-acquire the bytecode to match store-release in ResolvedFieldEntry::fill_in()
-  if (byte_no == f1_byte) {
-    __ lbu(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::get_code_offset())));
-  } else {
-    __ lbu(temp, Address(Rcache, in_bytes(ResolvedFieldEntry::put_code_offset())));
-  }
+  __ lbu(temp, Address(Rcache, code_offset));
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ mv(t0, (int) code);  // have we resolved this bytecode?
 
