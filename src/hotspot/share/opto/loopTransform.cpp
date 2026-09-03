@@ -739,13 +739,12 @@ bool IdealLoopTree::can_elide_store_after_peeling(StoreNode* store, Node* domina
       continue;
     }
 
-    if (dominating_store == nullptr && is_invariant(mem)) {
+    if (dominating_store == nullptr) {
       // We should only be able to step outside the loop from the loop phi, so this means the graph
-      // is broken, bail out for now
-      return false;
+      // is broken
+      assert(!is_invariant(mem), "broken memory graph");
     } else if (mem->in(0) == _phase->C->start()) {
-      // We should not be able to walk past 'dominating_store' since it dominates 'store', this
-      // means the graph is broken
+      // This means 'dominating_store' does not dominate 'store', so we cannot remove 'store'
       return false;
     }
 
