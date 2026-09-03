@@ -47,7 +47,6 @@ static void await_join() {
 extern "C"
 EXPORT void create_thread_and_register_atexit(void (*callback)(void)) {
     puts("[create_thread_and_register_atexit] creating native thread");
-    THREAD = TestThread(proc, (void*) callback);
-    THREAD.start();
+    THREAD = TestThread::start(proc, (void*) callback);
     atexit(&await_join);
 }
