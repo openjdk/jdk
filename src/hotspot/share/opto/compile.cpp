@@ -480,7 +480,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_reachability_fences, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
-  remove_useless_nodes(_value_type_nodes,  useful); // remove useless value type nodes
+  remove_useless_nodes(_value_type_nodes,  useful);  // remove useless value type nodes
   remove_useless_nodes(_flat_access_nodes, useful);  // remove useless flat access nodes
 #ifdef ASSERT
   if (_modified_nodes != nullptr) {

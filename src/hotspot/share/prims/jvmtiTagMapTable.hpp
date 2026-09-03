@@ -38,10 +38,10 @@ class JvmtiEnv;
 // - value heap object: _obj: oop, offset == 0, _value_klass == _obj.klass();
 // - flat value object: _obj: holder object, offset == offset in the holder, _value_klass == klass of the flattened object;
 class JvmtiHeapwalkObject {
-  oop _obj;                   // for flattened value object this is holder object
-  int _offset;                // == 0 for heap objects
+  oop _obj;                 // for flattened value object this is holder object
+  int _offset;              // == 0 for heap objects
   ValueKlass* _value_klass; // for value object, nullptr otherwise
-  LayoutKind _layout_kind;    // layout kind in holder object, used only for flat->heap conversion
+  LayoutKind _layout_kind;  // layout kind in holder object, used only for flat->heap conversion
 
   static ValueKlass* value_klass_or_null(oop obj) {
     Klass* k = obj->klass();

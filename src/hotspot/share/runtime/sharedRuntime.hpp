@@ -955,7 +955,7 @@ class AdapterHandlerLibrary: public AllStatic {
 
 // Utility class for computing the calling convention of the 3 types
 // of compiled method entries:
-//     Method::_from_compiled_entry               - sig_cc
+//     Method::_from_compiled_entry              - sig_cc
 //     Method::_from_compiled_value_ro_entry     - sig_cc_ro
 //     Method::_from_compiled_value_entry        - sig
 class CompiledEntrySignature : public StackObj {

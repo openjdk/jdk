@@ -92,7 +92,7 @@ class Method : public Metadata {
   address _i2i_entry;           // All-args-on-stack calling convention
   // Entry point for calling from compiled code, to compiled code if it exists
   // or else the interpreter.
-  volatile address _from_compiled_entry;           // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
+  volatile address _from_compiled_entry;          // Cache of: _code ? _code->entry_point() : _adapter->c2i_entry()
   volatile address _from_compiled_value_ro_entry; // Cache of: _code ? _code->verified_value_ro_entry_point() : _adapter->c2i_value_ro_entry()
   volatile address _from_compiled_value_entry;    // Cache of: _code ? _code->verified_value_entry_point()    : _adapter->c2i_value_entry()
   // The entry point for calling both from and to compiled code is

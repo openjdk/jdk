@@ -998,7 +998,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   }
 
   // Scalarized c2i adapter
-  entry_address[AdapterBlob::C2I]        = __ pc();
+  entry_address[AdapterBlob::C2I]       = __ pc();
   entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                   skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);

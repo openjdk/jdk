@@ -220,7 +220,7 @@ public:
   bool is_adapter_blob() const                { return _kind == CodeBlobKind::Adapter; }
   bool is_vtable_blob() const                 { return _kind == CodeBlobKind::Vtable; }
   bool is_method_handles_adapter_blob() const { return _kind == CodeBlobKind::MHAdapter; }
-  bool is_buffered_value_type_blob() const   { return _kind == CodeBlobKind::BufferedValueType; }
+  bool is_buffered_value_type_blob() const    { return _kind == CodeBlobKind::BufferedValueType; }
   bool is_upcall_stub() const                 { return _kind == CodeBlobKind::Upcall; }
 
   // Casting

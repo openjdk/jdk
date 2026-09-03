@@ -77,7 +77,7 @@ public:
   CodeOffsets() {
     _values[Entry         ] = 0;
     _values[Verified_Entry] = 0;
-    _values[Value_Entry  ] = 0;
+    _values[Value_Entry   ] = 0;
     _values[Verified_Value_Entry   ] = no_such_entry_point;
     _values[Verified_Value_Entry_RO] = no_such_entry_point;
     _values[Frame_Complete] = frame_never_safe;

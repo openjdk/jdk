@@ -343,7 +343,7 @@ void PhaseOutput::Output() {
       // We have entries at the beginning of the method, implemented by the first 4 nodes.
       // Entry                     (unverified) @ offset 0
       // Verified_Value_Entry_RO
-      // Value_Entry              (unverified)
+      // Value_Entry               (unverified)
       // Verified_Value_Entry
       uint offset = 0;
       _code_offsets.set_value(CodeOffsets::Entry, offset);
