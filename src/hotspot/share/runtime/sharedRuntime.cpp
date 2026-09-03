@@ -592,7 +592,14 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     // native nmethods don't have exception handlers
     assert(!nm->is_native_method() || nm->method()->is_continuation_enter_intrinsic(), "no exception handler");
     assert(nm->header_begin() != nm->exception_begin(), "no exception handler");
-    if (nm->is_deopt_pc(return_address)) {
+    // For platform threads, checking the return pc already covers the case
+    // where only this compiled frame was deoptimized, as well as the case
+    // where the nmethod was marked for deoptimization. For virtual threads,
+    // we also need to check if the nmethod is marked for deoptimization because
+    // the return pc may not have been patched if the nmethod was deoptimized
+    // while the frame was frozen. Since this check is benign for platform
+    // threads, we do it unconditionally.
+    if (nm->is_deopt_pc(return_address) || nm->is_marked_for_deoptimization()) {
       // If we come here because of a stack overflow, the stack may be
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
@@ -3329,13 +3336,17 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
                                          allocate_code_blob);
 
   if (ces.has_scalarized_args()) {
-    // Save a C heap allocated version of the scalarized signature and store it in the adapter
-    GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc());
-    handler->set_sig_cc(heap_sig);
-    heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
-    heap_sig->appendAll(ces.sig_cc_ro());
-    handler->set_sig_cc_ro(heap_sig);
+    assert((handler->get_sig_cc() == nullptr) == (handler->get_sig_cc_ro() == nullptr), "Inconsistency");
+    // Check if scalarized signatures have to be initialized
+    if (handler->get_sig_cc() == nullptr) {
+      // Save a C heap allocated version of the scalarized signature and store it in the adapter
+      GrowableArray<SigEntry>* heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc());
+      handler->set_sig_cc(heap_sig);
+      heap_sig = new (mtCode) GrowableArray<SigEntry>(ces.sig_cc_ro()->length(), mtCode);
+      heap_sig->appendAll(ces.sig_cc_ro());
+      handler->set_sig_cc_ro(heap_sig);
+    }
   }
   // On zero there is no code to save and no need to create a blob and
   // or relocate the handler.

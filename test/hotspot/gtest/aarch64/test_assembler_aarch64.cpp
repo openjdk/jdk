@@ -568,7 +568,7 @@ struct GtestFriendToMacroAssembler {
                                       real_mode);
       masm.ret(lr);
 
-      masm.flush(); // icache invalidate
+      masm.invalidate_icache();
     }
 
     {

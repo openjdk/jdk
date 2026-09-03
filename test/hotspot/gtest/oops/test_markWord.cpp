@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ class LockerThread : public JavaTestThread {
     // state we have...
     ObjectLocker ol(h_obj, THREAD);
     ol.notify_all(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
   }
 };
 
@@ -91,7 +91,7 @@ TEST_VM(markWord, printing) {
   // Thread tries to lock it.
   {
     ObjectLocker ol(h_obj, THREAD);
-    assert_mark_word_print_pattern(h_obj, "locked");
+    assert_mark_word_print_pattern(h_obj, "is_locked");
   }
   assert_mark_word_print_pattern(h_obj, "is_unlocked no_hash");
 
@@ -109,13 +109,12 @@ TEST_VM(markWord, printing) {
     st->doit();
 
     ol.wait_uninterruptibly(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 }
 
 static void assert_unlocked_state(markWord mark) {
-  EXPECT_FALSE(mark.has_displaced_mark_helper());
   EXPECT_FALSE(mark.is_fast_locked());
   EXPECT_FALSE(mark.has_monitor());
   EXPECT_FALSE(mark.is_locked());
@@ -124,10 +123,10 @@ static void assert_unlocked_state(markWord mark) {
 
 static void assert_copy_set_hash(markWord mark) {
   const intptr_t hash = 4711;
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   markWord copy = mark.copy_set_hash(hash);
   EXPECT_EQ(hash, copy.hash());
-  EXPECT_FALSE(copy.has_no_hash());
+  EXPECT_TRUE(copy.has_hash());
 }
 
 static void assert_type(markWord mark) {
@@ -142,7 +141,7 @@ TEST_VM(markWord, prototype) {
 
   assert_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -163,7 +162,7 @@ TEST_VM(markWord, inline_type_prototype) {
 
   assert_inline_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 }
 
@@ -182,7 +181,7 @@ TEST_VM(markWord, null_free_flat_array_prototype) {
   assert_flat_array_type(mark);
   EXPECT_TRUE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -200,7 +199,7 @@ TEST_VM(markWord, nullable_flat_array_prototype) {
   assert_flat_array_type(mark);
   EXPECT_FALSE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -223,7 +222,7 @@ TEST_VM(markWord, null_free_array_prototype) {
 
   assert_null_free_array_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);

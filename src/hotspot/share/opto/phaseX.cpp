@@ -686,9 +686,9 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
 }
 
 Node* PhaseGVN::apply_identity(Node* n) {
-  DEBUG_ONLY(uint old_unique = is_verify_Identity_return() ? C->unique() : 0;)
+  DEBUG_ONLY(uint old_unique = is_verify_IGVN_method_return() ? C->unique() : 0;)
   Node* const i = n->Identity(this);
-  assert(!is_verify_Identity_return() || i->_idx < old_unique,
+  assert(!is_verify_IGVN_method_return() || i->_idx < old_unique,
          "Identity() must return an existing node");
   return i;
 }
@@ -1195,6 +1195,9 @@ bool PhaseIterGVN::deep_revisit() {
 }
 
 void PhaseIterGVN::optimize(bool deep) {
+  // A correctly handled failure returns at the failing() call that raised it, so
+  // the compilation must never get here failed, with the graph already flushed.
+  assert(!C->failing_internal(), "should not run IGVN on a failed compilation");
   bool deep_revisit_converged = false;
   DEBUG_ONLY(_num_processed = 0;)
   NOT_PRODUCT(init_verifyPhaseIterGVN();)
@@ -1431,7 +1434,7 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   }
     //   break; // keep verifying
 
-    // AddFNode::Ideal calls "commute", which can reorder the inputs for this:
+    // AddFPNode::Ideal calls "commute", which can reorder the inputs for this:
     //   Check for tight loop increments: Loop-phi of Add of loop-phi
     // It wants to take the phi into in(1):
     //    471  Phi  === 435 38 390
@@ -1909,23 +1912,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //   test/jdk/jdk/incubator/vector/VectorRuns.java
     //   -XX:VerifyIterativeGVN=1110
 
-    // CallDynamicJavaNode::Ideal, and I think also for CallStaticJavaNode::Ideal
-    //  and possibly their subclasses.
-    // During late inlining it can call CallJavaNode::register_for_late_inline
-    // That means we do more rounds of late inlining, but might fail.
-    // Then we do IGVN again, and register the node again for late inlining.
-    // This creates an endless cycle. Everytime we try late inlining, we
-    // are also creating more nodes, especially SafePoint and MergeMem.
-    // These nodes are immediately rejected when the inlining fails in the
-    // do_late_inline_check, but they still grow the memory, until we hit
-    // the MemLimit and crash.
-    // The assumption here seems that CallDynamicJavaNode::Ideal does not get
-    // called repeatedly, and eventually we terminate. I fear this is not
-    // a great assumption to make. We should investigate more.
-    //
-    // Found with:
-    //   compiler/loopopts/superword/TestDependencyOffsets.java#vanilla-U
-    //   -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
     return;
   }
 
@@ -2235,18 +2221,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
   C->remove_modified_node(k);
-#ifndef PRODUCT
-  uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
-#endif
+  DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
   Node* i = apply_ideal(k, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
-#ifndef PRODUCT
-  if (is_verify_Ideal_return()) {
-    assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
-  }
-  verify_step(k);
-#endif
-
+  assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+         i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+  NOT_PRODUCT(verify_step(k);)
   DEBUG_ONLY(uint loop_count = 1;)
   if (i != nullptr) {
     set_progress();
@@ -2270,17 +2250,12 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
     C->remove_modified_node(k);
-#ifndef PRODUCT
-    uint hash_before = is_verify_Ideal_return() ? k->hash() : 0;
-#endif
+    DEBUG_ONLY(uint hash_before = is_verify_IGVN_method_return() ? k->hash() : 0;)
     i = apply_ideal(k, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
-#ifndef PRODUCT
-    if (is_verify_Ideal_return()) {
-      assert(k->outcnt() == 0 || i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
-    }
-    verify_step(k);
-#endif
+    assert(!is_verify_IGVN_method_return() || k->outcnt() == 0 ||
+           i != nullptr || hash_before == k->hash(), "hash changed after Ideal returned nullptr for %s", k->Name());
+    NOT_PRODUCT(verify_step(k);)
     DEBUG_ONLY(loop_count++;)
   }
 
