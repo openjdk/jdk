@@ -134,23 +134,8 @@ private:
     ShouldNotReachHere();
   }
 
-  bool rehash_to_length(int new_length) {
-    assert(is_power_of_2(new_length), "must be");
-    assert(new_length >= small_size, "must be");
-
-    if (new_length < _length) {
-      new_length = _length;
-    }
-    guarantee(_occupied <= new_length / 2, "must have enough room");
-
-    if (_members != small() && new_length == _length) {
-      return true;
-    }
-
-    if (_members == small() && new_length == small_size) {
-      clear_occupied_map();
-      return true;
-    }
+  bool grow_and_rehash() {
+    int new_length = _length * 2;
 
     KVElement* new_members = allocate_kvelement_array(new_length);
     if (new_members == nullptr) {
@@ -168,7 +153,6 @@ private:
     const bool old_members_on_c_heap = old_members != small();
 
     int new_occupied = 0;
-
     if (_occupied > 0) {
       assert(_occupied_map.size() == (size_t)old_length, "must be");
       for (int index = 0; index < old_length; index++) {
@@ -191,10 +175,6 @@ private:
       FREE_C_HEAP_ARRAY(old_members);
     }
     return true;
-  }
-
-  bool grow_and_rehash() {
-    return rehash_to_length(_length * 2);
   }
 
   bool has_capacity_for_insert() const {
