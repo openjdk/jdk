@@ -185,33 +185,41 @@ public class DisambiguatePatterns {
         test.forDisambiguationTest("m((GPoint<?>)null, cond ? b() : i)",
                                  ForType.TRADITIONAL_FOR);
 
-        // Local Variable Declaration or Enhanced Local Variable Declaration?
-        test.variableDeclDisambiguationTest("Point(Integer a, Integer b) = p",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("Point(var a, var b) = p",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("R(T[] a) = r",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("ForEachPatterns.Point(Integer a, Integer b) = fp",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("GPoint<Point>(Point(var a, Integer b), Point c) = gp",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("GPoint<Point>(Point(@Ann Integer a, @Ann Integer b), @Ann Point c) = gp",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("RecordOfLists2(List<List<Integer>> lr) = rol2",
-                                 LocalVariableDeclType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("Point p = p0",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("@Ann Point p = p0",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("GPoint<Integer> gp = g",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("T[] a = arr",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("int i = 0",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
-        test.variableDeclDisambiguationTest("var v = method()",
-                                 LocalVariableDeclType.LOCAL_VARIABLE_DECLARATION);
+        // Local Variable Declaration, Enhanced Local Variable Declaration, or Expression Staement?
+        test.statementDisambiguationTest("Point(Integer a, Integer b) = p",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("Point(var a, var b) = p",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("R(T[] a) = r",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("ForEachPatterns.Point(Integer a, Integer b) = fp",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("GPoint<Point>(Point(var a, Integer b), Point c) = gp",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("GPoint<Point>(Point(@Ann Integer a, @Ann Integer b), @Ann Point c) = gp",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("RecordOfLists2(List<List<Integer>> lr) = rol2",
+                                 BlockStatementType.ENHANCED_LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("Point p = p0",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("@Ann Point p = p0",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("GPoint<Integer> gp = g",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("T[] a = arr",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("int i = 0",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("var v = method()",
+                                 BlockStatementType.LOCAL_VARIABLE_DECLARATION);
+        test.statementDisambiguationTest("a.m(A.<byte[]>m())",
+                                 BlockStatementType.EXPRESSION_STATEMENT);
+        test.statementDisambiguationTest("a.m(A.<B, byte[]>m(b, bytes))",
+                                 BlockStatementType.EXPRESSION_STATEMENT);
+        test.statementDisambiguationTest("a.m(A.<B[]>m())",
+                                 BlockStatementType.EXPRESSION_STATEMENT);
+        test.statementDisambiguationTest("a.m(b.<byte[]>m(c), d)",
+                                 BlockStatementType.EXPRESSION_STATEMENT);
     }
 
     private final ParserFactory factory;
@@ -297,7 +305,7 @@ public class DisambiguatePatterns {
         }
     }
 
-    void variableDeclDisambiguationTest(String snippet, LocalVariableDeclType varDeclType, String... expectedErrors) {
+    void statementDisambiguationTest(String snippet, BlockStatementType expectedType, String... expectedErrors) {
         String code = """
                       public class Test {
                           private void test() {
@@ -310,7 +318,7 @@ public class DisambiguatePatterns {
         ClassTree clazz = (ClassTree) result.getTypeDecls().get(0);
         MethodTree method = (MethodTree) clazz.getMembers().get(0);
         StatementTree st = method.getBody().getStatements().get(0);
-        switch (varDeclType) {
+        switch (expectedType) {
             case ENHANCED_LOCAL_VARIABLE_DECLARATION -> {
                 if (!(st instanceof JCEnhancedVariableDeclaration)) {
                     throw new AssertionError("Expected JCEnhancedVariableDecl, got: " + st.getClass() +
@@ -331,6 +339,12 @@ public class DisambiguatePatterns {
                             ", for: " + code + ", parsed: " + result);
                 }
             }
+            case EXPRESSION_STATEMENT -> {
+                if (st.getKind() != Kind.EXPRESSION_STATEMENT) {
+                    throw new AssertionError("Expected expression statement, got: " + st.getKind() +
+                            ", for: " + code + ", parsed: " + result);
+                }
+            }
         }
     }
 
@@ -345,8 +359,9 @@ public class DisambiguatePatterns {
         EXPRESSION;
     }
 
-    enum LocalVariableDeclType {
+    enum BlockStatementType {
         LOCAL_VARIABLE_DECLARATION,
-        ENHANCED_LOCAL_VARIABLE_DECLARATION;
+        ENHANCED_LOCAL_VARIABLE_DECLARATION,
+        EXPRESSION_STATEMENT;
     }
 }

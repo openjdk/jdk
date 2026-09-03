@@ -3358,9 +3358,13 @@ public class JavacParser implements Parser {
                             }
                         }
 
-                        return inSelectionAndParenthesis ?
-                               VariableDeclKind.EnhancedLocalVarDecl :
-                               VariableDeclKind.LocalVarDecl;
+                        if (inSelectionAndParenthesis && !peekToken(i, IDENTIFIER)) {
+                            lookahead = i - 1;
+                            break;
+                        }
+                        return inSelectionAndParenthesis
+                                ? VariableDeclKind.EnhancedLocalVarDecl
+                                : VariableDeclKind.LocalVarDecl;
                     }
                     return VariableDeclKind.LocalVarDecl;
                 case LT:
