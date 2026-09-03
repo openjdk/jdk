@@ -37,8 +37,6 @@ final class ValueObjectMethods {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final boolean VERBOSE =
             System.getProperty("value.bsm.debug") != null;
-    // An alternative non-zero value when the computed hash is zero, to enable caching
-    private static final int ZERO_ALTERNATIVE = System.identityHashCode(ValueObjectMethods.class);
 
     private ValueObjectMethods() {
     }
@@ -133,7 +131,8 @@ final class ValueObjectMethods {
         Class<?> type = obj.getClass();
         final Unsafe U = UNSAFE;
         int[] map = U.getFieldMap(type);
-        int result = System.identityHashCode(type);
+        int typeHash = System.identityHashCode(type);
+        int result = typeHash;
         int nbNonRef = map[0];
         for (int i = 0; i < nbNonRef; i++) {
             int offset = map[i * 2 + 1];
@@ -171,6 +170,9 @@ final class ValueObjectMethods {
             Object oa = U.getReference(obj, offset);
             result = 31 * result + System.identityHashCode(oa);
         }
-        return result == 0 ? ZERO_ALTERNATIVE : result;
+        // Use an alternative non-zero value when the computed hash is zero,
+        // to enable caching. The identity hash of the value class distinguishes
+        // different value classes and is easy for the compiler to fetch.
+        return result == 0 ? typeHash : result;
     }
 }
