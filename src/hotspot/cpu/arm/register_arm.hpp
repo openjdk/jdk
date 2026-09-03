@@ -171,6 +171,8 @@ constexpr Register SP = R13;
 constexpr Register LR = R14;
 constexpr Register PC = R15;
 
+// State for randomized profile counters. Used by C1.
+constexpr Register r_profile_rng = R9;
 
 
 class FloatRegister {

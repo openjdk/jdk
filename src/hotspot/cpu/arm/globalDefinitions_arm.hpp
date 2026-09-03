@@ -62,4 +62,6 @@ const bool HaveVFP = true;
 #define AD_MD_HPP              "adfiles/ad_arm_32.hpp"
 #define C1_LIRGENERATOR_MD_HPP "c1_LIRGenerator_arm.hpp"
 
+#define RANDOMIZED_PROFILE_CAPTURE
+
 #endif // CPU_ARM_GLOBALDEFINITIONS_ARM_HPP

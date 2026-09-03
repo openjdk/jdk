@@ -389,6 +389,13 @@
           "available.")                                                     \
           range(0, max_juint)                                               \
                                                                             \
+  product(int, ProfileCaptureRatio, 1, EXPERIMENTAL,                        \
+          "Reduce and randomize tiered-compilation profile captures "       \
+          "in order to reduce cache contention on shared method data. "     \
+          "Must be a power of 2.")                                          \
+          constraint(ProfileCaptureRatioConstraintFunc, AtParse)            \
+          range(1, 65536)                                                   \
+
 // end of COMPILER_FLAGS
 
 DECLARE_FLAGS(COMPILER_FLAGS)

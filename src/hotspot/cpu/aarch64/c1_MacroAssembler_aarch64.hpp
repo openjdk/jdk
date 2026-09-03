@@ -26,7 +26,6 @@
 #ifndef CPU_AARCH64_C1_MACROASSEMBLER_AARCH64_HPP
 #define CPU_AARCH64_C1_MACROASSEMBLER_AARCH64_HPP
 
-using MacroAssembler::build_frame;
 using MacroAssembler::null_check;
 
 // C1_MacroAssembler contains high-level macros for C1
@@ -110,7 +109,15 @@ using MacroAssembler::null_check;
 
   // This platform only uses signal-based null checks. The Label is not needed.
   void null_check(Register r, Label *Lnull = nullptr) { MacroAssembler::null_check(r); }
+  void remove_frame(int frame_size_in_bytes);
 
   void load_parameter(int offset_in_words, Register reg);
+
+  // Randomized profile capture
+  void step_random(Register state, Register temp, Register data = zr);
+  void save_profile_rng();
+  void restore_profile_rng();
+
+  void adjust_mdo_address(Address *a, BasicType type);
 
 #endif // CPU_AARCH64_C1_MACROASSEMBLER_AARCH64_HPP

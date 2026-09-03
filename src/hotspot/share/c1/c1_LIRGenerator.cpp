@@ -927,6 +927,8 @@ LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   return tmp;
 }
 
+#ifndef RANDOMIZED_PROFILE_CAPTURE
+
 void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
   if (if_instr->should_profile()) {
     ciMethod* method = if_instr->profiled_method();
@@ -963,6 +965,42 @@ void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
     __ move(data_reg, data_addr);
   }
 }
+
+#else // RANDOMIZED_PROFILE_CAPTURE
+
+void LIRGenerator::profile_branch(If* if_instr, If::Condition cond) {
+  if (if_instr->should_profile()) {
+    ciMethod* method = if_instr->profiled_method();
+    assert(method != nullptr, "method should be set if branch is profiled");
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != nullptr, "Sanity");
+    ciProfileData* data = md->bci_to_data(if_instr->profiled_bci());
+    assert(data != nullptr, "must have profiling data");
+    assert(data->is_BranchData(), "need BranchData for two-way branches");
+    int taken_count_offset     = md->byte_offset_of_slot(data, BranchData::taken_offset());
+    int not_taken_count_offset = md->byte_offset_of_slot(data, BranchData::not_taken_offset());
+    if (if_instr->is_swapped()) {
+      int t = taken_count_offset;
+      taken_count_offset = not_taken_count_offset;
+      not_taken_count_offset = t;
+    }
+
+    LIR_Opr md_reg = new_register(T_METADATA);
+
+    LIR_Opr data_offset_reg = new_pointer_register();
+    __ cmove(lir_cond(cond),
+             LIR_OprFact::intptrConst(taken_count_offset),
+             LIR_OprFact::intptrConst(not_taken_count_offset),
+             data_offset_reg, as_BasicType(if_instr->x()->type()));
+
+    LIR_Opr tmp = new_pointer_register();  // really an intptr_t counter
+    LIR_Opr step = LIR_OprFact::intConst(DataLayout::counter_increment);
+    __ increment_counter(step, tmp, md_reg, md->constant_encoding(), data_offset_reg);
+  }
+}
+
+#endif // RANDOMIZED_PROFILE_CAPTURE
+
 
 // Phi technique:
 // This is about passing live values from one basic block to the other.
@@ -1124,6 +1162,12 @@ void LIRGenerator::do_ExceptionObject(ExceptionObject* x) {
   __ move_wide(LIR_OprFact::oopConst(nullptr),
                new LIR_Address(thread_reg, in_bytes(JavaThread::exception_pc_offset()), T_OBJECT));
 
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+  if (ProfileCaptureRatio > 1) {
+    __ move(new LIR_Address(thread_reg, in_bytes(JavaThread::profile_rng_offset()), T_INT),
+            profile_rng_opr());
+  }
+#endif
   LIR_Opr result = new_register(T_OBJECT);
   __ move(exceptionOopOpr(), result);
   set_result(x, result);
@@ -2885,10 +2929,16 @@ void LIRGenerator::do_Goto(Goto* x) {
       offset = md->byte_offset_of_slot(data, JumpData::taken_offset());
     }
     LIR_Opr md_reg = new_register(T_METADATA);
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+    LIR_Opr tmp = new_pointer_register();
+    LIR_Opr inc = LIR_OprFact::intConst(DataLayout::counter_increment);
+    __ increment_counter(inc, tmp, md_reg, md->constant_encoding(), offset);
+#else
     __ metadata2reg(md->constant_encoding(), md_reg);
 
     increment_counter(new LIR_Address(md_reg, offset,
                                       NOT_LP64(T_INT) LP64_ONLY(T_LONG)), DataLayout::counter_increment);
+#endif
   }
 
   // emit phi-instruction move after safepoint since this simplifies
@@ -3834,6 +3884,61 @@ void LIRGenerator::increment_event_counter(CodeEmitInfo* info, LIR_Opr step, int
   increment_event_counter_impl(info, info->scope()->method(), step, right_n_bits(freq_log), bci, backedge, true);
 }
 
+#ifdef RANDOMIZED_PROFILE_CAPTURE
+
+void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
+                                                ciMethod *method, LIR_Opr step, int frequency,
+                                                int bci, bool backedge, bool notify) {
+  assert(frequency == 0 || is_power_of_2(frequency + 1), "Frequency must be x^2 - 1 or 0");
+  int level = _compilation->env()->comp_level();
+  assert(level > CompLevel_simple, "Shouldn't be here");
+
+  int offset = -1;
+  LIR_Opr counter_holder;
+  LIR_Opr counters_base;
+  if (level == CompLevel_limited_profile) {
+    MethodCounters* counters_adr = method->ensure_method_counters();
+    if (counters_adr == nullptr) {
+      bailout("method counters allocation failed");
+      return;
+    }
+    counter_holder = new_pointer_register();
+    offset = in_bytes(backedge ? MethodCounters::backedge_counter_offset() :
+                                 MethodCounters::invocation_counter_offset());
+    counters_base = LIR_OprFact::intptrConst(counters_adr);
+  } else if (level == CompLevel_full_profile) {
+    counter_holder = new_register(T_METADATA);
+    offset = in_bytes(backedge ? MethodData::backedge_counter_offset() :
+                                 MethodData::invocation_counter_offset());
+    ciMethodData* md = method->method_data_or_null();
+    assert(md != nullptr, "Sanity");
+    counters_base = LIR_OprFact::metadataConst(md->constant_encoding());
+  } else {
+    ShouldNotReachHere();
+  }
+
+  LIR_Opr result = new_pointer_register();
+  if (notify && (!backedge || UseOnStackReplacement)) {
+    int ratio_shift = exact_log2(ProfileCaptureRatio);
+    LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
+    // The bci for info can point to cmp for if's we want the if bci
+    CodeStub* overflow = new CounterOverflowStub (info, bci, meth);
+    unsigned int freq = (unsigned int)frequency
+                         << InvocationCounter::count_shift;
+    __ increment_counter(step, result,
+                         LIR_OprFact::intConst(freq),
+                         counter_holder, counters_base, offset,
+                         overflow, info);
+  } else {
+    __ increment_counter(step, result,
+                         /*freq*/LIR_OprFact::illegalOpr,
+                         counter_holder, counters_base, offset,
+                         /*overflow*/nullptr, info);
+  }
+}
+
+#else // RANDOMIZED_PROFILE_CAPTURE
+
 void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
                                                 ciMethod *method, LIR_Opr step, int frequency,
                                                 int bci, bool backedge, bool notify) {
@@ -3894,6 +3999,8 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     __ branch_destination(overflow->continuation());
   }
 }
+
+#endif // RANDOMIZED_PROFILE_CAPTURE
 
 void LIRGenerator::do_RuntimeCall(RuntimeCall* x) {
   LIR_OprList* args = new LIR_OprList(x->number_of_arguments());
@@ -4040,7 +4147,6 @@ LIR_Opr LIRGenerator::call_runtime(Value arg1, Value arg2, address entry, ValueT
 
   return call_runtime(&signature, &args, entry, result_type, info);
 }
-
 
 LIR_Opr LIRGenerator::call_runtime(BasicTypeArray* signature, LIR_OprList* args,
                                    address entry, ValueType* result_type, CodeEmitInfo* info) {
