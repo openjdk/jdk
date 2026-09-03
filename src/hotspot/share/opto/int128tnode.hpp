@@ -43,9 +43,9 @@ public:
   Node* lo2() const { return in(3); }
   Node* hi2() const { return in(4); }
 
-  virtual const Type* bottom_type() const override final;
-  virtual bool is_CFG() const override final { return false; }
-  virtual uint ideal_reg() const override final { return NotAMachineReg; }
+  virtual const Type* bottom_type() const override final { return TypeTuple::LONG_PAIR; }
+  virtual bool        is_CFG()      const override final { return false; }
+  virtual uint        ideal_reg()   const override final { return NotAMachineReg; }
   virtual Node* match(const ProjNode* proj, const Matcher* m) override;
 
   static constexpr uint lo_proj_num = 0;

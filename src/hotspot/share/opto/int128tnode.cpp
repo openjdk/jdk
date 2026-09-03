@@ -39,13 +39,6 @@ Int128TBinaryNode::Int128TBinaryNode(Node* lo1, Node* hi1, Node* lo2, Node* hi2)
   C->add_macro_node(this);
 }
 
-const Type* Int128TBinaryNode::bottom_type() const {
-  const Type* proj_types[2];
-  proj_types[0] = TypeLong::LONG;
-  proj_types[1] = TypeLong::LONG;
-  return TypeTuple::make(2, proj_types);
-}
-
 Node* Int128TBinaryNode::match(const ProjNode* proj, const Matcher* matcher) {
   return new MachProjNode(this, proj->_con, *matcher->idealreg2regmask[Op_RegL], Op_RegL);
 }
