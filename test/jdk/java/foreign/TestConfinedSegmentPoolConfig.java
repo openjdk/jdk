@@ -59,6 +59,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.foreign.Arena;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -73,25 +74,25 @@ final class TestConfinedSegmentPoolConfig {
         boolean pageAligned = "PAGE_ALIGN".equals(System.getProperty(POOLED_MEMORY_SIZE_PROPERTY));
         long configuredSize = pageAligned
                 ? DISABLED
-                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(
-                        POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
+                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
         int expectedCount = pageAligned
                 ? DISABLED
-                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(
-                        THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
+                : TestConfinedSegmentPoolUtils.configuredPowerOfTwo(THREAD_POOL_COUNT_PROPERTY, 0, 3, 2);
         long expectedSize = configuredSize > 0 && expectedCount > 0
                 ? configuredSize
                 : DISABLED;
 
         assertEquals(expectedSize, ConfinedSegmentPool.pooledMemorySize());
 
+        AtomicReference<long[]> threadPools = new AtomicReference<>();
+
         Thread thread = TestConfinedSegmentPoolUtils.runOn(Thread.ofPlatform(), () -> {
             try (Arena arena = Arena.ofConfined()) {
                 arena.allocate(1);
             }
 
-            long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(
-                    Thread.currentThread());
+            long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(Thread.currentThread());
+            threadPools.set(pools);
             if (expectedSize > 0 && expectedCount > 0) {
                 assertNotNull(pools);
                 assertEquals(expectedCount, pools.length);
@@ -101,7 +102,7 @@ final class TestConfinedSegmentPoolConfig {
             }
         });
 
-        long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(thread);
+        long[] pools = threadPools.get();
         if (expectedSize > 0 && expectedCount > 0) {
             assertArrayEquals(new long[expectedCount], pools);
         } else {

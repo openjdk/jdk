@@ -81,6 +81,7 @@ final class TestConfinedSegmentPool {
     @ParameterizedTest
     @MethodSource("threadFactories")
     void basic(String name, Thread.Builder threadBuilder) throws Throwable {
+        AtomicReference<long[]> threadPools = new AtomicReference<>();
         Thread thread = TestConfinedSegmentPoolUtils.runOn(threadBuilder, () -> {
             // Virtual threads are using the underlying carrier thread's pool so
             // there might already be a pool there.
@@ -115,14 +116,20 @@ final class TestConfinedSegmentPool {
                 assertEquals(0L, firstSegment.get(ValueLayout.JAVA_LONG, 0));
                 assertEquals(0L, secondSegment.get(ValueLayout.JAVA_LONG, 0));
             }
+
+            if (!Thread.currentThread().isVirtual()) {
+                threadPools.set(TestConfinedSegmentPoolUtils.confinedMemoryPools(Thread.currentThread()));
+            }
         });
 
         if (!thread.isVirtual()) {
-            long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(thread);
+            long[] pools = threadPools.get();
             if (TestConfinedSegmentPoolUtils.isPoolEnabled()) {
                 assertNotNull(pools);
                 // Thread-exit cleanup must clear every cache entry.
                 assertArrayEquals(new long[THREAD_POOL_COUNT], pools);
+                // Thread-exit cleanup must clear the array reference
+                assertNull(TestConfinedSegmentPoolUtils.confinedMemoryPools(thread));
             } else {
                 // No pool array was ever allocated
                 assertNull(pools);
@@ -374,6 +381,7 @@ final class TestConfinedSegmentPool {
         assumeTrue(TestConfinedSegmentPoolUtils.isPoolEnabled());
 
         AtomicReference<Throwable> failure = new AtomicReference<>();
+        AtomicReference<long[]> threadPools = new AtomicReference<>();
 
         Thread thread = Thread.ofPlatform().unstarted(() -> {
             Arena[] cached = new Arena[THREAD_POOL_COUNT];
@@ -384,8 +392,8 @@ final class TestConfinedSegmentPool {
 
                 long[] pools = TestConfinedSegmentPoolUtils.confinedMemoryPools(Thread.currentThread());
                 assertNotNull(pools);
-                assertEquals(THREAD_POOL_COUNT,
-                        Arrays.stream(pools).filter(p -> p != 0).count());
+                threadPools.set(pools);
+                assertEquals(THREAD_POOL_COUNT, Arrays.stream(pools).filter(p -> p != 0).count());
             } catch (Throwable ex) {
                 failure.set(ex);
             }
@@ -400,7 +408,9 @@ final class TestConfinedSegmentPool {
         }
 
         // Thread-exit cleanup must clear every cache entry.
-        assertArrayEquals(new long[THREAD_POOL_COUNT], TestConfinedSegmentPoolUtils.confinedMemoryPools(thread));
+        assertArrayEquals(new long[THREAD_POOL_COUNT], threadPools.get());
+        // Thread-exit cleanup must clear the array reference
+        assertNull(TestConfinedSegmentPoolUtils.confinedMemoryPools(thread));
     }
 
     @Test
@@ -424,7 +434,7 @@ final class TestConfinedSegmentPool {
 
                     // Simulate thread-exit cleanup while the pool is detached and
                     // exclusively owned by this still-open arena.
-                    ConfinedSegmentPool.releaseOnThreadExit(Thread.currentThread());
+                    ConfinedSegmentPool.threadTerminated(TestConfinedSegmentPoolUtils.confinedMemoryPools(Thread.currentThread()));
                     assertEquals((byte) 42, segment.get(ValueLayout.JAVA_BYTE, 0));
                 }
                 assertEquals(pool, TestConfinedSegmentPoolUtils.currentPool());

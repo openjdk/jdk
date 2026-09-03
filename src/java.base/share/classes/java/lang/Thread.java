@@ -380,24 +380,17 @@ public class Thread implements Runnable {
         return holder.confinedMemoryPools;
     }
 
+    void setConfinedMemoryPools(long[] confinedMemoryPools) {
+        holder.confinedMemoryPools = confinedMemoryPools;
+    }
+
     long[] getOrCreateConfinedMemoryPools(int poolSlots) {
         long[] confinedMemoryPools = holder.confinedMemoryPools;
         if (confinedMemoryPools == null) {
-            confinedMemoryPools = holder.confinedMemoryPools = new long[poolSlots];
+            confinedMemoryPools = new long[poolSlots];
+            setConfinedMemoryPools(confinedMemoryPools);
         }
         return confinedMemoryPools;
-    }
-
-    boolean hasAvailableConfinedMemoryPools() {
-        final long[] confinedMemoryPools = holder.confinedMemoryPools;
-        if (confinedMemoryPools != null) {
-            for (long pool : confinedMemoryPools) {
-                if (pool != 0) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -1603,18 +1596,26 @@ public class Thread implements Runnable {
             }
         }
 
-        try {
-            if (terminatingThreadLocals() != null) {
+        if (terminatingThreadLocals() != null) {
+            try {
                 TerminatingThreadLocal.threadTerminated();
-            }
-        } finally {
-            // Avoid initializing ConfinedSegmentPool for threads that
-            // have never used pooling.
-            if (hasAvailableConfinedMemoryPools()) {
-                ConfinedSegmentPool.releaseOnThreadExit(this);
-            }
-            clearReferences();
+            } catch (Throwable _) { }
+            setTerminatingThreadLocals(null);
         }
+
+        // Must run after terminating-thread-local callbacks, as these callbacks
+        // may use confined arenas and return pools to this thread's cache.
+        // ConfinedSegmentPool.threadTerminated must remain leaf cleanup: it
+        // must not invoke user code or access/register thread-local variables.
+        long[] confinedMemoryPools = confinedMemoryPools();
+        if (confinedMemoryPools != null) {
+            try {
+                ConfinedSegmentPool.threadTerminated(confinedMemoryPools);
+            } catch (Throwable _) { }
+            setConfinedMemoryPools(null);
+        }
+
+        clearReferences();
     }
 
     /**

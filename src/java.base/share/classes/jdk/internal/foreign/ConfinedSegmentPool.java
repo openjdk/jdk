@@ -177,11 +177,7 @@ public final class ConfinedSegmentPool {
      * cache. Pools owned by open arenas are detached from the cache and are not
      * affected.
      */
-    public static void releaseOnThreadExit(Thread cacheOwner) {
-        final long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
-        if (pools == null) {
-            return;
-        }
+    public static void threadTerminated(long[] pools) {
         for (int i = 0; i < pools.length; i++) {
             final long pool = pools[i];
             if (pool != 0) {
