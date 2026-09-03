@@ -341,6 +341,7 @@ class FieldLayoutBuilder : public ResourceObj {
  protected:
   void prologue();
   void epilogue();
+  int add_field_to_group(FieldInfo fieldinfo, int idx, FieldGroup* group);
   void regular_field_sorting();
   void inline_class_field_sorting();
   void add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_map, InlineKlass* vk, int offset);

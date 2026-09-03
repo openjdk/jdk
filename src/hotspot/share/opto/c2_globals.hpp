@@ -70,6 +70,9 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  develop(bool, StressVerifyMeetJoin, false,                                \
+          "Perform cross meet/join sanity checks on all Type instances")    \
+                                                                            \
   product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
           "Optimize reachability fences "                                   \
           "(leave reachability fence nodes intact when turned off)")        \
@@ -245,6 +248,9 @@
   product(bool, UseCountedLoopSafepoints, false,                            \
           "Force counted loops to keep a safepoint")                        \
                                                                             \
+  product(bool, UseParsePredicates, true, DIAGNOSTIC,                       \
+          "Use Parse Predicates for speculative optimizations.")            \
+                                                                            \
   product(bool, UseLoopPredicate, true,                                     \
           "Move checks with uncommon trap out of loops.")                   \
                                                                             \
@@ -256,6 +262,11 @@
                                                                             \
   develop(bool, TraceSplitIf, false,                                        \
           "Trace Split-If optimization")                                    \
+                                                                            \
+  product(bool, UseLoopLimitCheckPredicate, true, DIAGNOSTIC,               \
+          "Use Loop Limit Check Predicate to speculatively transform "      \
+          "loops to counted loops where overflow is uncertain at "          \
+          "compile time.")                                                  \
                                                                             \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \

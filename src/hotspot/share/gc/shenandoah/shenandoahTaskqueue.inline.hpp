@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,29 @@ bool BufferedOverflowTaskQueue<E, MT, N>::pop(E &t) {
     return true;
   }
 
-  return taskqueue_t::pop_overflow(t);
+  if (taskqueue_t::pop_overflow(t)) {
+    pop_more_overflow();
+    return true;
+  }
+
+  return false;
+}
+
+template <class E, MemTag MT, unsigned int N>
+void BufferedOverflowTaskQueue<E, MT, N>::pop_more_overflow() {
+  // Local queue is empty and we have overflow. Overflow queue is invisible
+  // for work stealing, so we want to transfer as much as practically possible
+  // from it. Pulling too little hinders work balancing. Pulling too much
+  // incurs stalls (important e.g. when we need to respond to yield/cancellation).
+  // Local queues must also have some space left for local pushes.
+  constexpr uint fill = MIN2<uint>(16*K, N/2);
+
+  E tmp;
+  assert(taskqueue_t::size() == 0, "Local queue is empty");
+  for (uint i = 0; (i < fill) && taskqueue_t::pop_overflow(tmp); i++) {
+    bool pushed = taskqueue_t::try_push_to_taskqueue(tmp);
+    assert(pushed, "Should always succeed pushing");
+  }
 }
 
 template <class E, MemTag MT, unsigned int N>

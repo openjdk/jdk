@@ -818,10 +818,6 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
 
   Node* c = mb->in(0);
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  // step over g1 gc barrier if we're at e.g. a clone with ReduceInitialCardMarks off
-  c = bs->step_over_gc_barrier(c);
-
   CallNode* call = nullptr;
   guarantee(c != nullptr, "step_over_gc_barrier failed, there must be something to step to.");
   if (c->is_Region()) {
@@ -836,6 +832,7 @@ bool ArrayCopyNode::may_modify(const TypeOopPtr* t_oop, MemBarNode* mb, PhaseVal
     }
   } else if (may_modify_helper(t_oop, c->in(0), phase, ac)) {
 #ifdef ASSERT
+    BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bool use_ReduceInitialCardMarks = BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
       static_cast<CardTableBarrierSetC2*>(bs)->use_ReduceInitialCardMarks();
     assert(c == mb->in(0) || (ac->is_clonebasic() && !use_ReduceInitialCardMarks), "only for clone");

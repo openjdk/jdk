@@ -3606,6 +3606,37 @@ jint Arguments::apply_ergo() {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
   }
+
+  bool any_parse_predicate_flag_enabled = UseLoopLimitCheckPredicate ||
+                                          UseAutoVectorizationPredicate ||
+                                          UseLoopPredicate ||
+                                          UseProfiledLoopPredicate ||
+                                          ShortRunningLongLoop;
+
+  if (!UseParsePredicates && any_parse_predicate_flag_enabled) {
+    // Disable any Parse Predicate enabling flag when UseParsePredicates is not set.
+    FLAG_SET_ERGO(UseLoopLimitCheckPredicate, false);
+    FLAG_SET_ERGO(UseLoopPredicate, false);
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+    FLAG_SET_ERGO(UseAutoVectorizationPredicate, false);
+    FLAG_SET_ERGO(ShortRunningLongLoop, false);
+
+    if ((!FLAG_IS_DEFAULT(UseLoopLimitCheckPredicate) && UseLoopLimitCheckPredicate) ||
+        (!FLAG_IS_DEFAULT(UseAutoVectorizationPredicate) && UseAutoVectorizationPredicate) ||
+        (!FLAG_IS_DEFAULT(UseLoopPredicate) && UseLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(UseProfiledLoopPredicate) && UseProfiledLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(ShortRunningLongLoop) && ShortRunningLongLoop)) {
+      warning("Disabling UseParsePredicates disables all Parse Predicate enabling flags: UseLoopLimitCheckPredicate,"
+              " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    }
+
+  }
+
+  if (UseParsePredicates && !any_parse_predicate_flag_enabled) {
+    warning("Disabling UseParsePredicates because all Parse Predicate flags are disabled: UseLoopLimitCheckPredicate,"
+            " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    FLAG_SET_ERGO(UseParsePredicates, false);
+  }
 #endif // COMPILER2
 
   if (log_is_enabled(Info, perf, class, link)) {
