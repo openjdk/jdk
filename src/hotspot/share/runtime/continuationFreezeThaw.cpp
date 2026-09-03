@@ -3095,18 +3095,21 @@ void ThawBase::finish_thaw(frame& f) {
   // frame, which was still frozen. The interpreter's popframe entry took the
   // deoptimized caller path, preserved the arguments and left the reexecution
   // to a deoptimization that never happens. The frozen caller was copied
-  // without the callee's arguments, so extend the frame by them, put the
-  // preserved arguments back and resume at the invoke instead of after it,
-  // like vframeArrayElement::unpack_on_stack does for a deoptimized caller.
+  // without the callee's arguments, so put the preserved arguments back on its
+  // expression stack and resume at the invoke instead of after it, like
+  // vframeArrayElement::unpack_on_stack does for a deoptimized caller.
   if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
     assert(f.is_interpreted_frame(), "popframe reexecution into a frozen compiled caller is not handled");
     if (f.is_interpreted_frame()) {
       int words = in_words(_thread->popframe_preserved_args_size_in_words());
-      intptr_t* args = f.sp() + frame::metadata_words_at_top - words;
       if (words > 0) {
-        Copy::conjoint_jbytes(_thread->popframe_preserved_args(), args, words * wordSize);
+        // the thawed frame's sp already covers the argument slots, last_sp was
+        // saved after the arguments were pushed
+        int top_element = f.interpreter_frame_expression_stack_size() - 1;
+        intptr_t* base = f.interpreter_frame_expression_stack_at(top_element);
+        Copy::conjoint_jbytes(_thread->popframe_preserved_args(), base, words * wordSize);
       }
-      f = frame(args - frame::metadata_words_at_top, args - frame::metadata_words_at_top, f.fp(), Interpreter::deopt_entry(vtos, 0));
+      f = frame(f.sp(), f.unextended_sp(), f.fp(), Interpreter::deopt_entry(vtos, 0));
     }
     _thread->popframe_free_preserved_args();
     _thread->clear_popframe_condition();
