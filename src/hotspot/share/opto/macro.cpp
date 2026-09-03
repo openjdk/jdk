@@ -873,7 +873,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             }
           } else {
             // Add other uses to the worklist to process individually
-            worklist.push(use);
+            worklist.push(u);
           }
         }
       } else if (use->Opcode() == Op_StoreX && use->in(MemNode::Address) == res) {
