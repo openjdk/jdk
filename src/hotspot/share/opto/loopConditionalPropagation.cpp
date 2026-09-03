@@ -1723,7 +1723,7 @@ bool PhaseConditionalPropagation::Transformer::is_safe_for_replacement_at_phi(No
         j == LoopNode::LoopBackControl &&
         use == r->as_BaseCountedLoop()->phi() &&
         node == r->as_BaseCountedLoop()->incr())) {
-    return false;
+    return true;
   }
   BaseCountedLoopNode* cl = r->as_BaseCountedLoop();
   if (!cl->is_valid_counted_loop(cl->bt())) {

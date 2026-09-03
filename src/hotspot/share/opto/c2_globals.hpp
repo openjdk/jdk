@@ -964,7 +964,7 @@
   develop(bool, VerifyLoopConditionalPropagation, false,                    \
           "expensive Loop Conditional Propagation verification")            \
                                                                             \
-  product(bool, LoopConditionalPropagationALot, false,                      \
+  develop(bool, LoopConditionalPropagationALot, false,                      \
           "run Loop Conditional Propagation on every round of loop opts")   \
                                                                             \
   develop(bool, StressCountedLoop, false,                                   \
