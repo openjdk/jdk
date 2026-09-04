@@ -37,6 +37,25 @@
  *      compiler.uncommontrap.Test8009761
  */
 
+/*
+ * @test
+ * @bug 8009761
+ * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
+ * @library /test/lib /
+ * @modules java.base/jdk.internal.misc
+ *
+ * @requires os.arch == "aarch64"
+ * @requires vm.compiler2.enabled
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xss512K
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:CompileCommand=exclude,compiler.uncommontrap.Test8009761::m2
+ *      -XX:+PreferCallBasedUncommonTraps
+ *      compiler.uncommontrap.Test8009761
+ */
+
 package compiler.uncommontrap;
 
 import jdk.test.whitebox.WhiteBox;

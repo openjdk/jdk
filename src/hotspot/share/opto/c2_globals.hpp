@@ -993,6 +993,9 @@
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
           range(0, max_juint)                                               \
+                                                                            \
+  product(bool, PreferCallBasedUncommonTraps, false, EXPERIMENTAL,          \
+          "Prefer MachCall-based uncommon trap sequences.")                 \
 
 // end of C2_FLAGS
 
