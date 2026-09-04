@@ -109,7 +109,7 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
   // and minimises the amount of work while locks are held. Fill out all candidates:
   // even if they are currently not targeted, byy the time we get to uncommit them,
   // they might become eligible too.
-  double shrink_before = os::elapsedTime() + shrink_delay;
+  double shrink_before = os::elapsedTime() - shrink_delay;
   bool has_work = false;
   for (size_t i = 0; i < _heap->num_regions(); i++) {
     ShenandoahHeapRegion* r = _heap->get_region(i);
@@ -120,8 +120,9 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
 
       // The regions that were freed in the same cycle would have roughly the same empty time.
       // Coarsen that time to about 100ms window. Within that window, uncommit from higher
-      // indexes, to allow allocation path to take earlier regions first.
-      candidate._priority = (uint64_t)(r->empty_time() * 100) * _heap->num_regions() + r->index();
+      // indexes, to allow allocation path to take earlier regions first. The windows themselves
+      // have higher priority the earlier the empty time was.
+      candidate._priority = (int64_t)r->index() - (int64_t)r->empty_time() * 100 * _heap->num_regions();
     }
   }
 
