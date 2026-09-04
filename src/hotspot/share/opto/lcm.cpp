@@ -407,6 +407,28 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     if( e->is_MachNullCheck() && e->in(1) == mach )
       continue;                 // Already being used as a null check
 
+    // If a load used for an implicit null check is spilled, the spill is
+    // inserted in the branch-not-taken block. Ensure that this block
+    // dominates all uses of the load so the spill can reach them.
+    if (!was_store) {
+      bool has_non_dominated_use = false;
+      for (DUIterator_Fast imax, i = mach->fast_outs(imax);
+           i < imax && !has_non_dominated_use; i++) {
+        Node* use = mach->fast_out(i);
+        for (uint j = 1; j < use->req(); j++) {
+          if (use->in(j) == mach) {
+            if (!not_null_block->dominates(get_block_for_node(use))) {
+              has_non_dominated_use = true;
+            }
+            break;
+          }
+        }
+      }
+      if (has_non_dominated_use) {
+        continue;
+      }
+    }
+
     // Found a candidate!  Pick one with least dom depth - the highest
     // in the dom tree should be closest to the null check.
     if (best == nullptr || get_block_for_node(mach)->_dom_depth < get_block_for_node(best)->_dom_depth) {
