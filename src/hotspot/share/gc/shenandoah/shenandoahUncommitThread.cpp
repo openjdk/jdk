@@ -174,12 +174,13 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   // From here on, uncommit is in progress. Attempts to stop the uncommit must wait
   // until the cancellation request is acknowledged and uncommit is no longer in progress.
   const char* msg = "Concurrent uncommit";
-  const double start = os::elapsedTime();
   EventMark em("%s", msg);
   log_info(gc, start)("%s", msg);
 
-  // This is the number of regions uncommitted during this increment of uncommit work.
-  const size_t uncommitted_region_count = do_uncommit_work(shrink_delay, shrink_until);
+  double elapsed = 0.0;
+  size_t uncommitted_count = 0;
+
+  do_uncommit_work(shrink_delay, shrink_until, uncommitted_count, elapsed);
 
   {
     MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
@@ -187,18 +188,20 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     locker.notify_all();
   }
 
-  if (uncommitted_region_count > 0) {
+  if (uncommitted_count > 0) {
     _heap->notify_heap_changed();
   }
 
-  const double elapsed = os::elapsedTime() - start;
   log_info(gc)("%s " PROPERFMT " (" PROPERFMT ") %.3fms",
-               msg, PROPERFMTARGS(uncommitted_region_count * ShenandoahHeapRegion::region_size_bytes()), PROPERFMTARGS(_heap->capacity()),
+               msg, PROPERFMTARGS(uncommitted_count * ShenandoahHeapRegion::region_size_bytes()), PROPERFMTARGS(_heap->capacity()),
                elapsed * MILLIUNITS);
 }
 
-size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until) {
-  size_t count = 0;
+void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed) {
+  uncommitted_count = 0;
+
+  double start = os::elapsedTime();
+
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i]._region;
     double shrink_before = os::elapsedTime() + shrink_delay;
@@ -213,7 +216,10 @@ size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t sh
       // taking the heap lock and start using the region. We are not in a hurry to uncommit,
       // otherwise, we will just trip through uncommit-commit wastefully.
       // Terminate early if we detect that GC wants to start.
-      if (!check_uncommit_or_delay()) {
+      double wait_since = os::elapsedTime();
+      bool terminate = !check_uncommit_or_delay();
+      elapsed -= os::elapsedTime() - wait_since;
+      if (terminate) {
         break;
       }
 
@@ -221,11 +227,12 @@ size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t sh
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
         r->make_uncommitted();
-        count++;
+        uncommitted_count++;
       }
     }
   }
-  return count;
+
+  elapsed += os::elapsedTime() - start;
 }
 
 
