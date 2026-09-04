@@ -509,20 +509,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
       if (thr!=thr_cur && thr->thread_state() == _thread_in_native) {
         num_active++;
         if (thr->is_Compiler_thread()) {
-#if INCLUDE_JVMCI
-          CompilerThread* ct = (CompilerThread*) thr;
-          if (ct->compiler() == nullptr || !ct->compiler()->is_jvmci()) {
-            num_active_compiler_thread++;
-          } else {
-            // A JVMCI compiler thread never accesses VM data structures
-            // while in _thread_in_native state so there's no need to wait
-            // for it and potentially add a 300 millisecond delay to VM
-            // shutdown.
-            num_active--;
-          }
-#else
           num_active_compiler_thread++;
-#endif
         }
       }
     }
@@ -615,5 +602,9 @@ void VM_PrintCompileQueue::doit() {
 #if INCLUDE_SERVICES
 void VM_PrintClassHierarchy::doit() {
   KlassHierarchy::print_class_hierarchy(_out, _print_interfaces, _print_subclasses, _classname);
+}
+
+void VM_ClassPrintLayout::doit() {
+  ClassPrintLayout::class_print_layout(_out, _class_name);
 }
 #endif

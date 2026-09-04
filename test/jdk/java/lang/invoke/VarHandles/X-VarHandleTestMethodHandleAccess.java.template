@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,17 @@
  * questions.
  */
 
+#warn
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+#if[Value]
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
+#end[Value]
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccess$Type$
  */
 
@@ -34,6 +41,11 @@ import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 
+#if[NullRestricted]
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.NullRestricted;
+
+#end[NullRestricted]
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -42,13 +54,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
-    static final $type$ static_final_v = $value1$;
+    static final {#if[NullRestricted]?@NullRestricted }$type$ static_final_v = $value1$;
 
-    static $type$ static_v;
+    static {#if[NullRestricted]?@NullRestricted }$type$ static_v = $value1$;
 
-    final $type$ final_v = $value1$;
+    final {#if[NullRestricted]?@NullRestricted }$type$ final_v;
 
-    $type$ v;
+    {#if[NullRestricted]?@NullRestricted }$type$ v;
 
     VarHandle vhFinalField;
 
@@ -59,6 +71,12 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccess$Type$() {
+        final_v = $value1$;
+        v = $value1$;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -86,12 +104,22 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             cases.add(new MethodHandleAccessTestCase("Instance field unsupported",
                                                      vhField, f, hs -> testInstanceFieldUnsupported(this, hs),
                                                      false));
+#if[NullRestricted]
+            cases.add(new MethodHandleAccessTestCase("Instance field null pointer exception",
+                                                     vhField, f, hs -> testInstanceFieldNullPointerException(this, hs),
+                                                     false));
+#end[NullRestricted]
 
             cases.add(new MethodHandleAccessTestCase("Static field",
                                                      vhStaticField, f, VarHandleTestMethodHandleAccess$Type$::testStaticField));
             cases.add(new MethodHandleAccessTestCase("Static field unsupported",
                                                      vhStaticField, f, VarHandleTestMethodHandleAccess$Type$::testStaticFieldUnsupported,
                                                      false));
+#if[NullRestricted]
+            cases.add(new MethodHandleAccessTestCase("Static field null pointer exception",
+                                                     vhStaticField, f, VarHandleTestMethodHandleAccess$Type$::testStaticFieldNullPointerException,
+                                                     false));
+#end[NullRestricted]
 
             cases.add(new MethodHandleAccessTestCase("Array",
                                                      vhArray, f, VarHandleTestMethodHandleAccess$Type$::testArray));
@@ -101,6 +129,11 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             cases.add(new MethodHandleAccessTestCase("Array index out of bounds",
                                                      vhArray, f, VarHandleTestMethodHandleAccess$Type$::testArrayIndexOutOfBounds,
                                                      false));
+#if[NullRestricted]
+            cases.add(new MethodHandleAccessTestCase("Array null pointer exception",
+                                                     vhArray, f, VarHandleTestMethodHandleAccess$Type$::testArrayNullPointerException,
+                                                     false));
+#end[NullRestricted]
         }
 
         // Work around issue with jtreg summary reporting which truncates
@@ -287,10 +320,30 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
+
             $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, $value2$);
             assertEquals($value1$, o, "getAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals($value2$, x, "getAndSet $type$ value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
+
+            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, $value2$);
+            assertEquals($value1$, o, "getAndSetAcquire $type$");
+            $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals($value2$, x, "getAndSetAcquire $type$ value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, $value1$);
+
+            $type$ o = ($type$) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, $value2$);
+            assertEquals($value1$, o, "getAndSetRelease $type$");
+            $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals($value2$, x, "getAndSetRelease $type$ value");
         }
 #end[CAS]
 
@@ -614,7 +667,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact($value2$, $value3$);
             assertEquals(success, false, "failing weakCompareAndSet $type$");
             $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals($value1$, x, "failing weakCompareAndSetRe $type$ value");
+            assertEquals($value1$, x, "failing weakCompareAndSet $type$ value");
         }
 
         // Compare set and get
@@ -627,7 +680,6 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             assertEquals($value2$, x, "getAndSet $type$ value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
@@ -637,7 +689,6 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             assertEquals($value2$, x, "getAndSetAcquire $type$ value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact($value1$);
 
@@ -805,7 +856,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
 
 
     static void testArray(Handles hs) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
 
         for (int i = 0; i < array.length; i++) {
             // Plain
@@ -948,10 +999,10 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, $value1$, $value3$);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire $type$");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, $value1$, $value3$);
+                assertEquals(success, false, "failing weakCompareAndSetRelease $type$");
                 $type$ x = ($type$) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals($value2$, x, "failing weakCompareAndSetAcquire $type$ value");
+                assertEquals($value2$, x, "failing weakCompareAndSetRelease $type$ value");
             }
 
             {
@@ -1121,7 +1172,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
     }
 
     static void testArrayUnsupported(Handles hs) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
 
         final int i = 0;
 #if[!CAS]
@@ -1162,7 +1213,7 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
     }
 
     static void testArrayIndexOutOfBounds(Handles hs) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
 
         for (int i : new int[]{-1, Integer.MIN_VALUE, 10, 11, Integer.MAX_VALUE}) {
             final int ci = i;
@@ -1216,5 +1267,99 @@ public class VarHandleTestMethodHandleAccess$Type$ extends VarHandleBaseTest {
 #end[Bitwise]
         }
     }
+#if[NullRestricted]
+
+    static void testInstanceFieldNullPointerException(VarHandleTestMethodHandleAccess$Type$ recv, Handles hs) throws Throwable {
+        $type$ value = null;
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
+            checkNPE(am, () -> {
+                hs.get(am).invokeExact(recv, value);
+            });
+        }
+#if[CAS]
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            checkNPE(am, () -> {
+                boolean r = (boolean) hs.get(am).invokeExact(recv, $value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact(recv, $value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact(recv, value);
+            });
+        }
+#end[CAS]
+    }
+
+    static void testStaticFieldNullPointerException(Handles hs) throws Throwable {
+        $type$ value = null;
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
+            checkNPE(am, () -> {
+                hs.get(am).invokeExact(value);
+            });
+        }
+#if[CAS]
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            checkNPE(am, () -> {
+                boolean r = (boolean) hs.get(am).invokeExact($value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact($value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact(value);
+            });
+        }
+#end[CAS]
+    }
+
+    static void testArrayNullPointerException(Handles hs) throws Throwable {
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
+        $type$ value = null;
+
+        final int i = 0;
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
+            checkNPE(am, () -> {
+                hs.get(am).invokeExact(array, i, value);
+            });
+        }
+#if[CAS]
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
+            checkNPE(am, () -> {
+                boolean r = (boolean) hs.get(am).invokeExact(array, i, $value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact(array, i, $value1$, value);
+            });
+        }
+
+        for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
+            checkNPE(am, () -> {
+                $type$ r = ($type$) hs.get(am).invokeExact(array, i, value);
+            });
+        }
+#end[CAS]
+    }
+#end[NullRestricted]
 }
 

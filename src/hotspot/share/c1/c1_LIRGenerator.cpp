@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,11 @@
 #include "c1/c1_LIRGenerator.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
+#include "ci/ciFlatArrayKlass.hpp"
+#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArray.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciUtilities.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerOracle.hpp"
@@ -39,6 +42,7 @@
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodCounters.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
@@ -215,6 +219,8 @@ void LIRItem::set_result(LIR_Opr opr) {
 }
 
 void LIRItem::load_item() {
+  assert(!_gen->in_conditional_code(), "LIRItem cannot be loaded in conditional code");
+
   if (result()->is_illegal()) {
     // update the items result
     _result = value()->operand();
@@ -478,7 +484,7 @@ void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitI
   /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if tiered compilation
    * is active and the class hasn't yet been resolved we need to emit a patch that resolves
    * the class. */
-  if ((!CompilerConfig::is_c1_only_no_jvmci() && need_resolve) || !obj->is_loaded() || PatchALot) {
+  if ((!CompilerConfig::is_c1_only() && need_resolve) || !obj->is_loaded() || PatchALot) {
     assert(info != nullptr, "info must be set if class is not loaded");
     __ klass2reg_patch(nullptr, r, info);
   } else {
@@ -622,12 +628,13 @@ void LIRGenerator::logic_op (Bytecodes::Code code, LIR_Opr result_op, LIR_Opr le
 }
 
 
-void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no, CodeEmitInfo* info_for_exception, CodeEmitInfo* info) {
+void LIRGenerator::monitor_enter(LIR_Opr object, LIR_Opr lock, LIR_Opr hdr, LIR_Opr scratch, int monitor_no,
+                                 CodeEmitInfo* info_for_exception, CodeEmitInfo* info, CodeStub* throw_ie_stub) {
   // for slow path, use debug info for state after successful locking
-  CodeStub* slow_path = new MonitorEnterStub(object, lock, info);
+  CodeStub* slow_path = new MonitorEnterStub(object, lock, info, throw_ie_stub, scratch);
   __ load_stack_address_monitor(monitor_no, lock);
   // for handling NullPointerException, use debug info representing just the lock stack before this monitorenter
-  __ lock_object(hdr, object, lock, scratch, slow_path, info_for_exception);
+  __ lock_object(hdr, object, lock, scratch, slow_path, info_for_exception, throw_ie_stub);
 }
 
 
@@ -644,16 +651,21 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
 void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
   if (PrintNotLoaded && !new_instance->klass()->is_loaded()) {
     tty->print_cr("   ###class not loaded at new bci %d", new_instance->printable_bci());
-  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only_no_jvmci() && new_instance->is_unresolved())) {
+  } else if (PrintNotLoaded && (!CompilerConfig::is_c1_only() && new_instance->is_unresolved())) {
     tty->print_cr("   ###class not resolved at new bci %d", new_instance->printable_bci());
   }
 }
 #endif
 
-void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
-  // If klass is not loaded we do not know if the klass has finalizers:
-  if (UseFastNewInstance && klass->is_loaded()
+void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
+  if (allow_inline) {
+    assert(!is_unresolved && klass->is_loaded(), "inline type klass should be resolved");
+    __ metadata2reg(klass->constant_encoding(), klass_reg);
+  } else {
+    klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
+  }
+  // If klass is not loaded we do not know if the klass has finalizers or is an unexpected inline klass
+  if (UseFastNewInstance && klass->is_loaded() && (allow_inline || !klass->is_inlinetype())
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
     StubId stub_id = klass->is_initialized() ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
@@ -668,7 +680,7 @@ void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unr
                        oopDesc::header_size(), instance_size, klass_reg, !klass->is_initialized(), slow_path);
   } else {
     CodeStub* slow_path = new NewInstanceStub(klass_reg, dst, klass, info, StubId::c1_new_instance_id);
-    __ branch(lir_cond_always, slow_path);
+    __ jump(slow_path);
     __ branch_destination(slow_path->continuation());
   }
 }
@@ -760,6 +772,11 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
     if (expected_type == nullptr) expected_type = src_declared_type;
     if (expected_type == nullptr) expected_type = dst_declared_type;
 
+    if (expected_type != nullptr && expected_type->is_obj_array_klass() && !expected_type->is_refined()) {
+      // For a direct pointer comparison, we need the refined array klass pointer
+      expected_type = ciObjArrayKlass::make(expected_type->as_array_klass()->element_klass(), true /* refined_type */);
+    }
+
     src_objarray = (src_exact_type && src_exact_type->is_obj_array_klass()) || (src_declared_type && src_declared_type->is_obj_array_klass());
     dst_objarray = (dst_exact_type && dst_exact_type->is_obj_array_klass()) || (dst_declared_type && dst_declared_type->is_obj_array_klass());
   }
@@ -767,6 +784,18 @@ void LIRGenerator::arraycopy_helper(Intrinsic* x, int* flagsp, ciArrayKlass** ex
   // if a probable array type has been identified, figure out if any
   // of the required checks for a fast case can be elided.
   int flags = LIR_OpArrayCopy::all_flags;
+
+  // TODO 8251971 Compare ArrayKlass::properties() of source and destination
+  // array here instead, see also LIR_Assembler::arraycopy_inlinetype_check
+  if (!src->is_loaded_flat_array() && !dst->is_loaded_flat_array()) {
+    flags &= ~LIR_OpArrayCopy::always_slow_path;
+  }
+  if (!src->maybe_flat_array()) {
+    flags &= ~LIR_OpArrayCopy::src_inlinetype_check;
+  }
+  if (!dst->maybe_flat_array() && !dst->maybe_null_free_array()) {
+    flags &= ~LIR_OpArrayCopy::dst_inlinetype_check;
+  }
 
   if (!src_objarray)
     flags &= ~LIR_OpArrayCopy::src_objarray;
@@ -1460,6 +1489,19 @@ LIR_Opr LIRGenerator::load_constant(Constant* x) {
 
 LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   BasicType t = c->type();
+  if (in_conditional_code()) {
+    // TODO 8353851: Control flow introduced by check_flat_array() is currently opaque to the register allocator.
+    // Do not use or update the constant -> register cache in such conditional code because the register allocator could
+    // spill a constant and only rematerialize it into a register in one branch of check_flat_array() but not the other.
+    // Since the control flow is opaque to the register allocator, it assumes the rematerialized constant in the register
+    // dominates all subsequent uses in the block and does not insert another rematerialization. When taking the
+    // non-rematerialized branch of check_flat_array() at runtime, the register contains garbage potentially causing
+    // a crash.
+    LIR_Opr result = new_register(t);
+    __ move(c, result);
+    return result;
+  }
+
   for (int i = 0; i < _constants.length(); i++) {
     LIR_Const* other = _constants.at(i);
     if (t == other->type()) {
@@ -1484,11 +1526,17 @@ LIR_Opr LIRGenerator::load_constant(LIR_Const* c) {
   }
 
   LIR_Opr result = new_register(t);
-  __ move((LIR_Opr)c, result);
+  __ move(c, result);
   _constants.append(c);
   _reg_for_constants.append(result);
   return result;
 }
+
+void LIRGenerator::set_in_conditional_code(bool v) {
+  assert(v != _in_conditional_code, "must change state");
+  _in_conditional_code = v;
+}
+
 
 //------------------------field access--------------------------------------
 
@@ -1505,6 +1553,18 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   LIR_Opr result = access_atomic_cmpxchg_at(IN_HEAP, as_BasicType(type),
                                             obj, offset, cmp, val);
   set_result(x, result);
+}
+
+// Returns an int/long value with the null marker bit set.
+static LIR_Opr null_marker_mask(BasicType bt, int nm_offset) {
+  assert(nm_offset >= 0, "field does not have null marker");
+  jlong null_marker = 1ULL << (nm_offset << LogBitsPerByte);
+  return (bt == T_LONG) ? LIR_OprFact::longConst(null_marker) : LIR_OprFact::intConst(null_marker);
+}
+
+static LIR_Opr null_marker_mask(BasicType bt, ciField* field) {
+  assert(field->null_marker_offset() != -1, "field does not have null marker");
+  return null_marker_mask(bt, field->null_marker_offset() - field->offset_in_bytes());
 }
 
 // Comment copied form templateTable_i486.cpp
@@ -1536,8 +1596,9 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 
 
 void LIRGenerator::do_StoreField(StoreField* x) {
+  ciField* field = x->field();
   bool needs_patching = x->needs_patching();
-  bool is_volatile = x->field()->is_volatile();
+  bool is_volatile = field->is_volatile();
   BasicType field_type = x->field_type();
 
   CodeEmitInfo* info = nullptr;
@@ -1558,18 +1619,22 @@ void LIRGenerator::do_StoreField(StoreField* x) {
 
   object.load_item();
 
-  if (is_volatile || needs_patching) {
-    // load item if field is volatile (fewer special cases for volatiles)
-    // load item if field not initialized
-    // load item if field not constant
-    // because of code patching we cannot inline constants
-    if (field_type == T_BYTE || field_type == T_BOOLEAN) {
-      value.load_byte_item();
-    } else  {
-      value.load_item();
-    }
+  if (field->is_flat()) {
+    value.load_item();
   } else {
-    value.load_for_store(field_type);
+    if (is_volatile || needs_patching) {
+      // load item if field is volatile (fewer special cases for volatiles)
+      // load item if field not initialized
+      // load item if field not constant
+      // because of code patching we cannot inline constants
+      if (field_type == T_BYTE || field_type == T_BOOLEAN) {
+        value.load_byte_item();
+      } else  {
+        value.load_item();
+      }
+    } else {
+      value.load_for_store(field_type);
+    }
   }
 
   set_no_result(x);
@@ -1598,18 +1663,264 @@ void LIRGenerator::do_StoreField(StoreField* x) {
     decorators |= C1_NEEDS_PATCHING;
   }
 
+  if (field->is_flat()) {
+    ciInlineKlass* vk = field->type()->as_inline_klass();
+
+#ifdef ASSERT
+    assert(field->is_atomic(), "No atomic access required %s.%s", field->holder()->name()->as_utf8(), field->name()->as_utf8());
+    // ZGC does not support compressed oops, so only one oop can be in the payload which is written by a "normal" oop store.
+    assert(!vk->contains_oops() || !UseZGC, "ZGC does not support embedded oops in flat fields");
+#endif
+
+    // Zero the payload
+    BasicType bt = vk->atomic_size_to_basic_type(field->is_null_free());
+    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+    LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
+    __ move(zero, payload);
+
+    bool is_constant_null = value.is_constant() && value.value()->is_null_obj();
+    if (!is_constant_null) {
+      LabelObj* L_isNull = new LabelObj();
+      bool needs_null_check = !value.is_constant();
+      if (needs_null_check) {
+        __ cmp(lir_cond_equal, value.result(), LIR_OprFact::oopConst(nullptr));
+        __ branch(lir_cond_equal, L_isNull->label());
+      }
+      // Load payload (if not empty) and set null marker (if not null-free)
+      if (!vk->is_empty()) {
+        access_load_at(decorators, bt, value, LIR_OprFact::intConst(vk->payload_offset()), payload);
+      }
+      if (!field->is_null_free()) {
+        __ logical_or(payload, null_marker_mask(bt, field), payload);
+      }
+      if (needs_null_check) {
+        __ branch_destination(L_isNull->label());
+      }
+    }
+    access_store_at(decorators, bt, object, LIR_OprFact::intConst(x->offset()), payload,
+                    // Make sure to emit an implicit null check and pass the information
+                    // that this is a flat store that might require gc barriers for oop fields.
+                    info != nullptr ? new CodeEmitInfo(info) : nullptr, info, vk);
+    return;
+  }
+
   access_store_at(decorators, field_type, object, LIR_OprFact::intConst(x->offset()),
                   value.result(), info != nullptr ? new CodeEmitInfo(info) : nullptr, info);
 }
 
+// Wrap an already computed address register as a C1 Instruction so it
+// can be passed as LIRItem into access_load_at() / access_store_at().
+class ComputedAddressValue: public Instruction {
+ public:
+  ComputedAddressValue(ValueType* type, LIR_Opr addr) : Instruction(type) {
+    set_operand(addr);
+  }
+  virtual void input_values_do(ValueVisitor*) {}
+  virtual void visit(InstructionVisitor* v)   {}
+  virtual const char* name() const { return "ComputedAddressValue"; }
+};
+
+LIR_Opr LIRGenerator::get_and_load_element_address(LIRItem& array, LIRItem& index) {
+#ifndef _LP64
+  // We need to be careful with overflows in 32-bit arithmetic
+  Unimplemented();
+#endif
+  ciType* array_type = array.value()->declared_type();
+  ciFlatArrayKlass* flat_array_klass = array_type->as_flat_array_klass();
+  assert(flat_array_klass->is_loaded(), "must be");
+
+  int array_header_size = flat_array_klass->array_header_in_bytes();
+  int shift = flat_array_klass->log2_element_size();
+
+  LIR_Opr index_op = new_register(T_LONG);
+  if (index.result()->is_constant()) {
+    jint const_index = index.result()->as_jint();
+    __ move(LIR_OprFact::longConst(static_cast<jlong>(const_index) << shift), index_op);
+  } else {
+    __ convert(Bytecodes::_i2l, index.result(), index_op);
+    // Need to shift manually, as LIR_Address can scale only up to 3.
+    __ shift_left(index_op, shift, index_op);
+  }
+
+  LIR_Opr elm_op = new_pointer_register();
+  LIR_Address* elm_address = generate_address(array.result(), index_op, 0, array_header_size, T_ADDRESS);
+  __ leal(LIR_OprFact::address(elm_address), elm_op);
+  return elm_op;
+}
+
+void LIRGenerator::access_sub_element(LIRItem& array, LIRItem& index, LIR_Opr& result, ciField* field, size_t sub_offset) {
+  assert(field != nullptr, "Need a subelement type specified");
+
+  // Find the starting address of the source (inside the array)
+  LIR_Opr elm_op = get_and_load_element_address(array, index);
+
+  BasicType subelt_type = field->type()->basic_type();
+  ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(subelt_type), elm_op);
+  LIRItem elm_item(elm_resolved_addr, this);
+
+  DecoratorSet decorators = IN_HEAP;
+  access_load_at(decorators, subelt_type,
+                 elm_item, LIR_OprFact::longConst(sub_offset), result,
+                 nullptr, nullptr);
+}
+
+LIR_Opr LIRGenerator::access_flat_array(bool is_load, LIRItem& array, LIRItem& index, LIRItem& obj_item,
+                                        ciField* field, size_t sub_offset) {
+  assert(sub_offset == 0 || field != nullptr, "Sanity check");
+
+  // Find the starting address of the source (inside the array)
+  LIR_Opr elm_op = get_and_load_element_address(array, index);
+
+  ciFlatArrayKlass* array_klass = array.value()->declared_type()->as_flat_array_klass();
+  ciInlineKlass* elem_klass = nullptr;
+  if (field != nullptr) {
+    elem_klass = field->type()->as_inline_klass();
+  } else {
+    elem_klass = array_klass->element_klass()->as_inline_klass();
+  }
+
+  bool null_free = array_klass->is_elem_null_free();
+  bool atomic = array_klass->is_elem_atomic();
+  assert(null_free || atomic, "nullable flat arrays must use an atomic layout");
+  if (atomic) {
+    assert(field == nullptr && sub_offset == 0, "delayed sub-element access is only supported for non-atomic arrays");
+    BasicType bt = elem_klass->atomic_size_to_basic_type(null_free);
+    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+    ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(bt), elm_op);
+    LIRItem elm_item(elm_resolved_addr, this);
+    DecoratorSet decorators = IN_HEAP;
+    if (is_load) {
+      access_load_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr);
+      access_store_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload,
+                      nullptr, nullptr, elem_klass);
+      // Null check is performed in the caller
+    } else {
+      // Zero the payload
+      LIR_Opr zero = (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0);
+      __ move(zero, payload);
+
+      if (null_free) {
+        if (!elem_klass->is_empty()) {
+          access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload);
+        }
+      } else {
+        bool is_constant_null = obj_item.is_constant() && obj_item.value()->is_null_obj();
+        if (!is_constant_null) {
+          LabelObj* L_isNull = new LabelObj();
+          bool needs_null_check = !obj_item.is_constant();
+          if (needs_null_check) {
+            __ cmp(lir_cond_equal, obj_item.result(), LIR_OprFact::oopConst(nullptr));
+            __ branch(lir_cond_equal, L_isNull->label());
+          }
+          // Load payload (if not empty) and set null marker.
+          if (!elem_klass->is_empty()) {
+            access_load_at(decorators, bt, obj_item, LIR_OprFact::intConst(elem_klass->payload_offset()), payload);
+          }
+          __ logical_or(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
+          if (needs_null_check) {
+            __ branch_destination(L_isNull->label());
+          }
+        }
+      }
+      access_store_at(decorators, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr, elem_klass);
+    }
+    return payload;
+  }
+
+  for (int i = 0; i < elem_klass->nof_nonstatic_fields(); i++) {
+    ciField* inner_field = elem_klass->nonstatic_field_at(i);
+    assert(!inner_field->is_flat(), "flat fields must have been expanded");
+    int obj_offset = inner_field->offset_in_bytes();
+    size_t elm_offset = obj_offset - elem_klass->payload_offset() + sub_offset; // object header is not stored in array.
+    BasicType field_type = inner_field->type()->basic_type();
+
+    // Types which are smaller than int are still passed in an int register.
+    BasicType reg_type = field_type;
+    switch (reg_type) {
+    case T_BYTE:
+    case T_BOOLEAN:
+    case T_SHORT:
+    case T_CHAR:
+      reg_type = T_INT;
+      break;
+    default:
+      break;
+    }
+
+    LIR_Opr temp = new_register(reg_type);
+    ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(field_type), elm_op);
+    LIRItem elm_item(elm_resolved_addr, this);
+
+    DecoratorSet decorators = IN_HEAP;
+    if (is_load) {
+      access_load_at(decorators, field_type,
+                     elm_item, LIR_OprFact::longConst(elm_offset), temp,
+                     nullptr, nullptr);
+      access_store_at(decorators, field_type,
+                      obj_item, LIR_OprFact::intConst(obj_offset), temp,
+                      nullptr, nullptr);
+    } else {
+      access_load_at(decorators, field_type,
+                     obj_item, LIR_OprFact::intConst(obj_offset), temp,
+                     nullptr, nullptr);
+      access_store_at(decorators, field_type,
+                      elm_item, LIR_OprFact::longConst(elm_offset), temp,
+                      nullptr, nullptr);
+    }
+  }
+  return LIR_OprFact::illegalOpr;
+}
+
+void LIRGenerator::check_flat_array(LIR_Opr array, CodeStub* slow_path) {
+  LIR_Opr tmp = new_register(T_METADATA);
+  __ check_flat_array(array, tmp, slow_path);
+}
+
+void LIRGenerator::check_null_free_array(LIRItem& array, LIRItem& value, CodeEmitInfo* info) {
+  LabelObj* L_end = new LabelObj();
+  LIR_Opr tmp = new_register(T_METADATA);
+  __ check_null_free_array(array.result(), tmp);
+#ifdef RISCV
+  // tmp is used to hold the result of null free array check on riscv
+  // See LIR_Assembler::emit_opNullFreeArrayCheck
+  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
+#endif
+  __ branch(lir_cond_equal, L_end->label());
+  __ null_check(value.result(), info);
+  __ branch_destination(L_end->label());
+}
+
+bool LIRGenerator::needs_flat_array_store_check(StoreIndexed* x) {
+  if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
+    ciType* type = x->value()->declared_type();
+    if (type != nullptr && type->is_klass()) {
+      ciKlass* klass = type->as_klass();
+      if (!klass->can_be_inline_klass() || (klass->is_inlinetype() && !klass->as_inline_klass()->maybe_flat_in_array())) {
+        // This is known to be a non-flat object. If the array is a flat array,
+        // it will be caught by the code generated by array_store_check().
+        return false;
+      }
+    }
+    // We're not 100% sure, so let's do the flat_array_store_check.
+    return true;
+  }
+  return false;
+}
+
+bool LIRGenerator::needs_null_free_array_store_check(StoreIndexed* x) {
+  return x->elt_type() == T_OBJECT && x->array()->maybe_null_free_array();
+}
+
 void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   assert(x->is_pinned(),"");
+  assert(x->elt_type() != T_ARRAY, "never used");
+  bool is_loaded_flat_array = x->array()->is_loaded_flat_array();
   bool needs_range_check = x->compute_needs_range_check();
   bool use_length = x->length() != nullptr;
   bool obj_store = is_reference_type(x->elt_type());
-  bool needs_store_check = obj_store && (x->value()->as_Constant() == nullptr ||
-                                         !get_jobject_constant(x->value())->is_null_object() ||
-                                         x->should_profile());
+  bool needs_store_check = obj_store && !(is_loaded_flat_array && x->is_exact_flat_array_store()) &&
+                                        (x->value()->as_Constant() == nullptr ||
+                                         !get_jobject_constant(x->value())->is_null_object());
 
   LIRItem array(x->array(), this);
   LIRItem index(x->index(), this);
@@ -1622,9 +1933,10 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
   if (use_length && needs_range_check) {
     length.set_instruction(x->length());
     length.load_item();
-
   }
-  if (needs_store_check || x->check_boolean()) {
+
+  if (needs_store_check || x->check_boolean()
+      || is_loaded_flat_array || needs_flat_array_store_check(x) || needs_null_free_array_store_check(x)) {
     value.load_item();
   } else {
     value.load_for_store(x->elt_type());
@@ -1652,18 +1964,70 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
     }
   }
 
-  if (GenerateArrayStoreCheck && needs_store_check) {
+  if (needs_store_check) {
     CodeEmitInfo* store_check_info = new CodeEmitInfo(range_check_info);
     array_store_check(value.result(), array.result(), store_check_info, x->profiled_method(), x->profiled_bci());
   }
 
-  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
-  if (x->check_boolean()) {
-    decorators |= C1_MASK_BOOLEAN;
+  if (x->should_profile()) {
+    if (is_loaded_flat_array) {
+      // No need to profile a store to a flat array of known type. This can happen if
+      // the type only became known after optimizations (for example, after the PhiSimplifier).
+      x->set_should_profile(false);
+    } else {
+      int bci = x->profiled_bci();
+      ciMethodData* md = x->profiled_method()->method_data();
+      assert(md != nullptr, "Sanity");
+      ciProfileData* data = md->bci_to_data(bci);
+      assert(data != nullptr && data->is_ArrayStoreData(), "incorrect profiling entry");
+      ciArrayStoreData* store_data = (ciArrayStoreData*)data;
+      profile_array_type(x, md, store_data);
+      assert(store_data->is_ArrayStoreData(), "incorrect profiling entry");
+      if (x->array()->maybe_null_free_array()) {
+        profile_null_free_array(array, md, data);
+      }
+    }
   }
 
-  access_store_at(decorators, x->elt_type(), array, index.result(), value.result(),
-                  nullptr, null_check_info);
+  if (is_loaded_flat_array) {
+    ciFlatArrayKlass* array_klass = x->array()->declared_type()->as_flat_array_klass();
+    ciInlineKlass* elem_klass = array_klass->element_klass()->as_inline_klass();
+    bool null_free = array_klass->is_elem_null_free();
+    if (null_free && !x->value()->is_null_free()) {
+      __ null_check(value.result(), new CodeEmitInfo(range_check_info));
+    }
+    // If array element is an empty null-free inline type, no need to copy anything.
+    // Nullable empty arrays still need their null marker updated.
+    if (!elem_klass->is_empty() || !null_free) {
+      access_flat_array(false, array, index, value);
+    }
+  } else {
+    StoreFlattenedArrayStub* slow_path = nullptr;
+
+    if (needs_flat_array_store_check(x)) {
+      // Check if we indeed have a flat array
+      index.load_item();
+      slow_path = new StoreFlattenedArrayStub(array.result(), index.result(), value.result(), state_for(x, x->state_before()));
+      check_flat_array(array.result(), slow_path);
+      set_in_conditional_code(true);
+    }
+
+    if (needs_null_free_array_store_check(x)) {
+      CodeEmitInfo* info = new CodeEmitInfo(range_check_info);
+      check_null_free_array(array, value, info);
+    }
+
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+    if (x->check_boolean()) {
+      decorators |= C1_MASK_BOOLEAN;
+    }
+
+    access_store_at(decorators, x->elt_type(), array, index.result(), value.result(), nullptr, null_check_info);
+    if (slow_path != nullptr) {
+      __ branch_destination(slow_path->continuation());
+      set_in_conditional_code(false);
+    }
+  }
 }
 
 void LIRGenerator::access_load_at(DecoratorSet decorators, BasicType type,
@@ -1692,9 +2056,10 @@ void LIRGenerator::access_load(DecoratorSet decorators, BasicType type,
 
 void LIRGenerator::access_store_at(DecoratorSet decorators, BasicType type,
                                    LIRItem& base, LIR_Opr offset, LIR_Opr value,
-                                   CodeEmitInfo* patch_info, CodeEmitInfo* store_emit_info) {
+                                   CodeEmitInfo* patch_info, CodeEmitInfo* store_emit_info,
+                                   ciInlineKlass* vk) {
   decorators |= ACCESS_WRITE;
-  LIRAccess access(this, decorators, base, offset, type, patch_info, store_emit_info);
+  LIRAccess access(this, decorators, base, offset, type, patch_info, store_emit_info, vk);
   if (access.is_raw()) {
     _barrier_set->BarrierSetC1::store_at(access, value);
   } else {
@@ -1745,8 +2110,9 @@ LIR_Opr LIRGenerator::access_atomic_add_at(DecoratorSet decorators, BasicType ty
 }
 
 void LIRGenerator::do_LoadField(LoadField* x) {
+  ciField* field = x->field();
   bool needs_patching = x->needs_patching();
-  bool is_volatile = x->field()->is_volatile();
+  bool is_volatile = field->is_volatile();
   BasicType field_type = x->field_type();
 
   CodeEmitInfo* info = nullptr;
@@ -1795,6 +2161,61 @@ void LIRGenerator::do_LoadField(LoadField* x) {
   }
   if (needs_patching) {
     decorators |= C1_NEEDS_PATCHING;
+  }
+
+  if (field->is_flat()) {
+    ciInlineKlass* vk = field->type()->as_inline_klass();
+#ifdef ASSERT
+    assert(field->is_atomic(), "No atomic access required");
+    assert(!is_volatile, "Flat fields cannot be volatile");
+    assert(x->state_before() != nullptr, "Needs state before");
+#endif
+
+    NewInstance* buffer = nullptr;
+    bool assert_null = !field->is_null_free() && !vk->is_initialized();
+    if (!assert_null) {
+      // Allocate the buffer before loading the payload because allocation may safepoint
+      // and a payload may contain oops represented as raw bits and thus invisible to the GC.
+      // We can't easily allocate conditionally on the null check below because branches
+      // added in the LIR are opaque to the register allocator.
+      buffer = new NewInstance(vk, x->state_before(), false, true);
+      do_NewInstance(buffer);
+    }
+
+    BasicType bt = vk->atomic_size_to_basic_type(field->is_null_free());
+    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+    access_load_at(decorators, bt, object, LIR_OprFact::intConst(field->offset_in_bytes()), payload,
+                   // Make sure to emit an implicit null check
+                   info ? new CodeEmitInfo(info) : nullptr, info);
+
+    if (assert_null) {
+      // Deoptimize on non-null because buffering requires the value class to be initialized
+      CodeEmitInfo* null_assert_info = state_for(x, x->state_before());
+      __ logical_and(payload, null_marker_mask(bt, field), payload);
+      __ cmp(lir_cond_notEqual, payload, (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0));
+      __ branch(lir_cond_notEqual, new DeoptimizeStub(null_assert_info, Deoptimization::Reason_null_assert,
+                                                      Deoptimization::Action_make_not_entrant));
+      __ move(LIR_OprFact::oopConst(nullptr), rlock_result(x));
+      return;
+    }
+
+    // Copy the payload to the buffer
+    assert(buffer != nullptr, "buffer required");
+    LIRItem dest(buffer, this);
+    access_store_at(decorators, bt, dest, LIR_OprFact::intConst(vk->payload_offset()), payload);
+
+    if (field->is_null_free()) {
+      set_result(x, buffer->operand());
+    } else {
+      // Check the null marker and set result to null if it's not set
+      __ logical_and(payload, null_marker_mask(bt, field), payload);
+      __ cmp(lir_cond_equal, payload, (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0));
+      __ cmove(lir_cond_equal, LIR_OprFact::oopConst(nullptr), buffer->operand(), rlock_result(x), T_OBJECT);
+    }
+
+    // Ensure the copy is visible before any subsequent store that publishes the buffer.
+    __ membar_storestore();
+    return;
   }
 
   LIR_Opr result = rlock_result(x, field_type);
@@ -1945,12 +2366,105 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
     }
   }
 
-  DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+  ciMethodData* md = nullptr;
+  ciProfileData* data = nullptr;
+  if (x->should_profile()) {
+    if (x->array()->is_loaded_flat_array()) {
+      // No need to profile a load from a flat array of known type. This can happen if
+      // the type only became known after optimizations (for example, after the PhiSimplifier).
+      x->set_should_profile(false);
+    } else {
+      int bci = x->profiled_bci();
+      md = x->profiled_method()->method_data();
+      assert(md != nullptr, "Sanity");
+      data = md->bci_to_data(bci);
+      assert(data != nullptr && data->is_ArrayLoadData(), "incorrect profiling entry");
+      ciArrayLoadData* load_data = (ciArrayLoadData*)data;
+      profile_array_type(x, md, load_data);
+    }
+  }
 
-  LIR_Opr result = rlock_result(x, x->elt_type());
-  access_load_at(decorators, x->elt_type(),
-                 array, index.result(), result,
-                 nullptr, null_check_info);
+  ciFlatArrayKlass* flat_array_klass = x->array()->is_loaded_flat_array() ?
+                                       x->array()->declared_type()->as_flat_array_klass() : nullptr;
+  bool assert_null = flat_array_klass != nullptr && !flat_array_klass->is_elem_null_free() &&
+                     !flat_array_klass->element_klass()->as_inline_klass()->is_initialized();
+  if (assert_null) {
+    // Deoptimize on non-null because buffering requires the value class to be initialized
+    assert(x->buffer() == nullptr && x->delayed() == nullptr, "null assertion should not buffer");
+    assert(flat_array_klass->is_elem_atomic(), "nullable flat arrays must use an atomic layout");
+    ciInlineKlass* elem_klass = flat_array_klass->element_klass()->as_inline_klass();
+    CodeEmitInfo* null_assert_info = state_for(x, x->state_before());
+    BasicType bt = elem_klass->atomic_size_to_basic_type(false);
+    LIR_Opr elm_op = get_and_load_element_address(array, index);
+    ComputedAddressValue* elm_resolved_addr = new ComputedAddressValue(as_ValueType(bt), elm_op);
+    LIRItem elm_item(elm_resolved_addr, this);
+    LIR_Opr payload = new_register((bt == T_LONG) ? bt : T_INT);
+    access_load_at(IN_HEAP, bt, elm_item, LIR_OprFact::intConst(0), payload, nullptr, nullptr);
+    __ logical_and(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
+    __ cmp(lir_cond_notEqual, payload, (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0));
+    __ branch(lir_cond_notEqual, new DeoptimizeStub(null_assert_info, Deoptimization::Reason_null_assert,
+                                                    Deoptimization::Action_make_not_entrant));
+    __ move(LIR_OprFact::oopConst(nullptr), rlock_result(x));
+    return;
+  }
+
+  Value element = nullptr;
+  if (x->buffer() != nullptr) {
+    assert(x->array()->is_loaded_flat_array(), "must be");
+    // Find the destination address (of the NewInlineTypeInstance).
+    LIRItem buffer(x->buffer(), this);
+    LIR_Opr payload = access_flat_array(true, array, index, buffer,
+                                        x->delayed() == nullptr ? nullptr : x->delayed()->field(),
+                                        x->delayed() == nullptr ? 0 : x->delayed()->offset());
+    ciFlatArrayKlass* array_klass = x->array()->declared_type()->as_flat_array_klass();
+    if (array_klass->is_elem_null_free()) {
+      set_result(x, x->buffer()->operand());
+    } else {
+      // Check the null marker and set result to null if it's not set
+      ciInlineKlass* elem_klass = array_klass->element_klass()->as_inline_klass();
+      BasicType bt = elem_klass->atomic_size_to_basic_type(false);
+      assert(payload->is_valid(), "nullable flat array load must return the atomic payload");
+      __ logical_and(payload, null_marker_mask(bt, elem_klass->null_marker_offset_in_payload()), payload);
+      __ cmp(lir_cond_equal, payload, (bt == T_LONG) ? LIR_OprFact::longConst(0) : LIR_OprFact::intConst(0));
+      __ cmove(lir_cond_equal, LIR_OprFact::oopConst(nullptr), buffer.result(), rlock_result(x), T_OBJECT);
+    }
+  } else if (x->delayed() != nullptr) {
+    assert(x->array()->is_loaded_flat_array(), "must be");
+    LIR_Opr result = rlock_result(x, x->delayed()->field()->type()->basic_type());
+    access_sub_element(array, index, result, x->delayed()->field(), x->delayed()->offset());
+  } else {
+    LIR_Opr result = rlock_result(x, x->elt_type());
+    LoadFlattenedArrayStub* slow_path = nullptr;
+
+    if (x->should_profile() && x->array()->maybe_null_free_array()) {
+      profile_null_free_array(array, md, data);
+    }
+
+    if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
+      assert(x->delayed() == nullptr, "Delayed LoadIndexed only apply to loaded_flat_arrays");
+      index.load_item();
+      // if we are loading from a flat array, load it using a runtime call
+      slow_path = new LoadFlattenedArrayStub(array.result(), index.result(), result, state_for(x, x->state_before()));
+      check_flat_array(array.result(), slow_path);
+      set_in_conditional_code(true);
+    }
+
+    DecoratorSet decorators = IN_HEAP | IS_ARRAY;
+    access_load_at(decorators, x->elt_type(),
+                   array, index.result(), result,
+                   nullptr, null_check_info);
+
+    if (slow_path != nullptr) {
+      __ branch_destination(slow_path->continuation());
+      set_in_conditional_code(false);
+    }
+
+    element = x;
+  }
+
+  if (x->should_profile()) {
+    profile_element_type(element, md, (ciArrayLoadData*)data);
+  }
 }
 
 
@@ -2433,7 +2947,7 @@ ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md
   }
 
   ciKlass* exact_signature_k = nullptr;
-  if (do_update) {
+  if (do_update && signature_at_call_k != nullptr) {
     // Is the type from the signature exact (the only one possible)?
     exact_signature_k = signature_at_call_k->exact_klass();
     if (exact_signature_k == nullptr) {
@@ -2465,6 +2979,21 @@ ciKlass* LIRGenerator::profile_type(ciMethodData* md, int md_base_offset, int md
     do_update = exact_klass == nullptr || ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
   }
 
+  if (exact_klass != nullptr && exact_klass->is_obj_array_klass()) {
+    ciArrayKlass* exact_array_klass = exact_klass->as_array_klass();
+    if (exact_array_klass->is_refined()) {
+      do_update = ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
+    } else if (exact_klass->can_be_inline_array_klass()) {
+      // Inline type arrays can have additional properties. Load the klass unless
+      // the C1 type already carries refined array properties.
+      exact_klass = nullptr;
+      do_update = true;
+    } else {
+      // For a direct pointer comparison, we need the refined array klass pointer
+      exact_klass = ciObjArrayKlass::make(exact_array_klass->element_klass());
+      do_update = ciTypeEntries::valid_ciklass(profiled_k) != exact_klass;
+    }
+  }
   if (!do_null && !do_update) {
     return result;
   }
@@ -2518,11 +3047,56 @@ void LIRGenerator::profile_parameters(Base* x) {
   }
 }
 
+void LIRGenerator::profile_flags(ciMethodData* md, ciProfileData* data, int flag, LIR_Condition condition) {
+  assert(md != nullptr && data != nullptr, "should have been initialized");
+  LIR_Opr mdp = new_register(T_METADATA);
+  __ metadata2reg(md->constant_encoding(), mdp);
+  LIR_Address* addr = new LIR_Address(mdp, md->byte_offset_of_slot(data, DataLayout::flags_offset()), T_BYTE);
+  LIR_Opr flags = new_register(T_INT);
+  __ move(addr, flags);
+  LIR_Opr update;
+  if (condition != lir_cond_always) {
+    update = new_register(T_INT);
+    __ cmove(condition, LIR_OprFact::intConst(0), LIR_OprFact::intConst(flag), update, T_INT);
+  } else {
+    update = LIR_OprFact::intConst(flag);
+  }
+  __ logical_or(flags, update, flags);
+  __ store(flags, addr);
+}
+
+void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* data) {
+  assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
+  LabelObj* L_end = new LabelObj();
+  LIR_Opr tmp = new_register(T_METADATA);
+  __ check_null_free_array(array.result(), tmp);
+#ifdef RISCV
+  // tmp is used to hold the result of null free array check on riscv
+  // See LIR_Assembler::emit_opNullFreeArrayCheck
+  __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
+#endif
+  profile_flags(md, data, ArrayStoreData::null_free_array_byte_constant(), lir_cond_equal);
+}
+
+template <class ArrayData> void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store) {
+  assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
+  LIR_Opr mdp = LIR_OprFact::illegalOpr;
+  profile_type(md, md->byte_offset_of_slot(load_store, ArrayData::array_offset()), 0,
+               load_store->array()->type(), x->array(), mdp, true, nullptr, nullptr);
+}
+
+void LIRGenerator::profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_data) {
+  assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
+  assert(md != nullptr && load_data != nullptr, "should have been initialized");
+  LIR_Opr mdp = LIR_OprFact::illegalOpr;
+  profile_type(md, md->byte_offset_of_slot(load_data, ArrayLoadData::element_offset()), 0,
+               load_data->element()->type(), element, mdp, false, nullptr, nullptr);
+}
+
 void LIRGenerator::do_Base(Base* x) {
   __ std_entry(LIR_OprFact::illegalOpr);
   // Emit moves from physical registers / stack slots to virtual registers
   CallingConvention* args = compilation()->frame_map()->incoming_arguments();
-  IRScope* irScope = compilation()->hir()->top_scope();
   int java_index = 0;
   for (int i = 0; i < args->length(); i++) {
     LIR_Opr src = args->at(i);
@@ -2557,6 +3131,12 @@ void LIRGenerator::do_Base(Base* x) {
     _instruction_for_operand.at_put_grow(dest->vreg_number(), local, nullptr);
 #endif
     java_index += type2size[t];
+  }
+
+  // Check if we need a membar at the beginning of the java.lang.Object
+  // constructor to satisfy the memory model for strict fields.
+  if (Arguments::is_valhalla_enabled() && method()->intrinsic_id() == vmIntrinsics::_Object_init) {
+    __ membar_storestore();
   }
 
   if (compilation()->env()->dtrace_method_probes()) {
@@ -2600,6 +3180,14 @@ void LIRGenerator::do_Base(Base* x) {
     CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), nullptr, false);
     increment_invocation_counter(info);
   }
+  if (method()->has_scalarized_args()) {
+    // Check if deoptimization was triggered (i.e. orig_pc was set) while buffering scalarized inline type arguments
+    // in the entry point (see comments in frame::deoptimize). If so, deoptimize only now that we have the right state.
+    CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, 0), nullptr, false);
+    CodeStub* deopt_stub = new DeoptimizeStub(info, Deoptimization::Reason_none, Deoptimization::Action_none);
+    __ append(new LIR_Op0(lir_check_orig_pc));
+    __ branch(lir_cond_notEqual, deopt_stub);
+  }
 
   // all blocks with a successor must end with an unconditional jump
   // to the successor even if they are consecutive
@@ -2615,6 +3203,19 @@ void LIRGenerator::do_OsrEntry(OsrEntry* x) {
   __ move(LIR_Assembler::osrBufferPointer(), result);
 }
 
+void LIRGenerator::invoke_load_one_argument(LIRItem* param, LIR_Opr loc) {
+  if (loc->is_register()) {
+    param->load_item_force(loc);
+  } else {
+    LIR_Address* addr = loc->as_address_ptr();
+    param->load_for_store(addr->type());
+    if (addr->type() == T_OBJECT) {
+      __ move_wide(param->result(), addr);
+    } else {
+      __ move(param->result(), addr);
+    }
+  }
+}
 
 void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR_OprList* arg_list) {
   assert(args->length() == arg_list->length(),
@@ -2622,16 +3223,7 @@ void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR
   for (int i = x->has_receiver() ? 1 : 0; i < args->length(); i++) {
     LIRItem* param = args->at(i);
     LIR_Opr loc = arg_list->at(i);
-    if (loc->is_register()) {
-      param->load_item_force(loc);
-    } else {
-      LIR_Address* addr = loc->as_address_ptr();
-      param->load_for_store(addr->type());
-      if (addr->type() == T_OBJECT) {
-        __ move_wide(param->result(), addr);
-      } else
-        __ move(param->result(), addr);
-    }
+    invoke_load_one_argument(param, loc);
   }
 
   if (x->has_receiver()) {
@@ -2778,9 +3370,10 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   LIRItem left(x->x(), this);
   LIRItem right(x->y(), this);
   left.load_item();
-  if (can_inline_as_constant(right.value())) {
+  if (can_inline_as_constant(right.value()) && !x->substitutability_check()) {
     right.dont_load_item();
   } else {
+    // substitutability_check() needs to use right as a base register.
     right.load_item();
   }
 
@@ -2788,17 +3381,70 @@ void LIRGenerator::do_IfOp(IfOp* x) {
   LIRItem f_val(x->fval(), this);
   t_val.dont_load_item();
   f_val.dont_load_item();
-  LIR_Opr reg = rlock_result(x);
 
-  __ cmp(lir_cond(x->cond()), left.result(), right.result());
-  __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
+  if (x->substitutability_check()) {
+    substitutability_check(x, left, right, t_val, f_val);
+  } else {
+    LIR_Opr reg = rlock_result(x);
+    __ cmp(lir_cond(x->cond()), left.result(), right.result());
+    __ cmove(lir_cond(x->cond()), t_val.result(), f_val.result(), reg, as_BasicType(x->x()->type()));
+  }
+}
+
+void LIRGenerator::substitutability_check(IfOp* x, LIRItem& left, LIRItem& right, LIRItem& t_val, LIRItem& f_val) {
+  assert(x->cond() == If::eql || x->cond() == If::neq, "must be");
+  bool is_acmpeq = (x->cond() == If::eql);
+  LIR_Opr equal_result     = is_acmpeq ? t_val.result() : f_val.result();
+  LIR_Opr not_equal_result = is_acmpeq ? f_val.result() : t_val.result();
+  LIR_Opr result = rlock_result(x);
+  CodeEmitInfo* info = state_for(x, x->state_before());
+
+  substitutability_check_common(x->x(), x->y(), left, right, equal_result, not_equal_result, result, info);
+}
+
+void LIRGenerator::substitutability_check(If* x, LIRItem& left, LIRItem& right) {
+  LIR_Opr equal_result     = LIR_OprFact::intConst(1);
+  LIR_Opr not_equal_result = LIR_OprFact::intConst(0);
+  LIR_Opr result = new_register(T_INT);
+  CodeEmitInfo* info = state_for(x, x->state_before());
+
+  substitutability_check_common(x->x(), x->y(), left, right, equal_result, not_equal_result, result, info);
+
+  assert(x->cond() == If::eql || x->cond() == If::neq, "must be");
+  __ cmp(lir_cond(x->cond()), result, equal_result);
+}
+
+void LIRGenerator::substitutability_check_common(Value left_val, Value right_val, LIRItem& left, LIRItem& right,
+                                                 LIR_Opr equal_result, LIR_Opr not_equal_result, LIR_Opr result,
+                                                 CodeEmitInfo* info) {
+  if (left.result() == right.result()) {
+    __ move(equal_result, result);
+    return;
+  }
+
+  LIR_Opr tmp1 = LIR_OprFact::illegalOpr;
+  LIR_Opr tmp2 = LIR_OprFact::illegalOpr;
+
+  ciKlass* left_klass = left_val->as_loaded_klass_or_null();
+  ciKlass* right_klass = right_val->as_loaded_klass_or_null();
+  if (left_klass != nullptr && left_klass->is_inlinetype() && left_klass == right_klass) {
+    // No need to load klass -- the operands are statically known to be the same inline klass.
+  } else {
+    BasicType t_klass = UseCompressedOops ? T_INT : T_METADATA;
+    tmp1 = new_register(t_klass);
+    tmp2 = new_register(t_klass);
+  }
+
+  CodeStub* slow_path = new SubstitutabilityCheckStub(left.result(), right.result(), info);
+  __ substitutability_check(result, left.result(), right.result(), equal_result, not_equal_result,
+                            left_klass, right_klass, tmp1, tmp2, info, slow_path);
 }
 
 void LIRGenerator::do_RuntimeCall(address routine, Intrinsic* x) {
   assert(x->number_of_arguments() == 0, "wrong type");
   // Enforce computation of _reserved_argument_area_size which is required on some platforms.
   BasicTypeList signature;
-  CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+  frame_map()->c_calling_convention(&signature);
   LIR_Opr reg = result_register_for(x->type());
   __ call_runtime_leaf(routine, getThreadTemp(),
                        reg, new LIR_OprList());
@@ -3066,7 +3712,7 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
   ciProfileData* data = md->bci_to_data(bci);
   if (data != nullptr) {
     assert(data->is_CallTypeData() || data->is_VirtualCallTypeData(), "wrong profile data type");
-    ciReturnTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
+    ciSingleTypeEntry* ret = data->is_CallTypeData() ? ((ciCallTypeData*)data)->ret() : ((ciVirtualCallTypeData*)data)->ret();
     LIR_Opr mdp = LIR_OprFact::illegalOpr;
 
     bool ignored_will_link;
@@ -3084,6 +3730,52 @@ void LIRGenerator::do_ProfileReturnType(ProfileReturnType* x) {
     if (exact != nullptr) {
       md->set_return_type(bci, exact);
     }
+  }
+}
+
+bool LIRGenerator::profile_inline_klass(ciMethodData* md, ciProfileData* data, Value value, int flag) {
+  ciKlass* klass = value->as_loaded_klass_or_null();
+  if (klass != nullptr) {
+    if (klass->is_inlinetype()) {
+      profile_flags(md, data, flag, lir_cond_always);
+    } else if (klass->can_be_inline_klass()) {
+      return false;
+    }
+  } else {
+    return false;
+  }
+  return true;
+}
+
+void LIRGenerator::do_ProfileACmpTypes(ProfileACmpTypes* x) {
+  ciMethod* method = x->method();
+  assert(method != nullptr, "method should be set if branch is profiled");
+  ciMethodData* md = method->method_data_or_null();
+  assert(md != nullptr, "Sanity");
+  ciProfileData* data = md->bci_to_data(x->bci());
+  assert(data != nullptr, "must have profiling data");
+  assert(data->is_ACmpData(), "need BranchData for two-way branches");
+  ciACmpData* acmp = (ciACmpData*)data;
+  LIR_Opr mdp = LIR_OprFact::illegalOpr;
+  profile_type(md, md->byte_offset_of_slot(acmp, ACmpData::left_offset()), 0,
+               acmp->left()->type(), x->left(), mdp, !x->left_maybe_null(), nullptr, nullptr);
+  int flags_offset = md->byte_offset_of_slot(data, DataLayout::flags_offset());
+  if (!profile_inline_klass(md, acmp, x->left(), ACmpData::left_inline_type_byte_constant())) {
+    LIR_Opr mdp = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), mdp);
+    LIRItem value(x->left(), this);
+    value.load_item();
+    __ profile_inline_type(new LIR_Address(mdp, flags_offset, T_INT), value.result(), ACmpData::left_inline_type_byte_constant(), new_register(T_INT), !x->left_maybe_null());
+  }
+  profile_type(md, md->byte_offset_of_slot(acmp, ACmpData::left_offset()),
+               in_bytes(ACmpData::right_offset()) - in_bytes(ACmpData::left_offset()),
+               acmp->right()->type(), x->right(), mdp, !x->right_maybe_null(), nullptr, nullptr);
+  if (!profile_inline_klass(md, acmp, x->right(), ACmpData::right_inline_type_byte_constant())) {
+    LIR_Opr mdp = new_register(T_METADATA);
+    __ metadata2reg(md->constant_encoding(), mdp);
+    LIRItem value(x->right(), this);
+    value.load_item();
+    __ profile_inline_type(new LIR_Address(mdp, flags_offset, T_INT), value.result(), ACmpData::right_inline_type_byte_constant(), new_register(T_INT), !x->right_maybe_null());
   }
 }
 

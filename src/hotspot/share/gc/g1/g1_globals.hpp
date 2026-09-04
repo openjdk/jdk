@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,15 +100,27 @@
                                                                             \
   product(bool, G1UseAdaptiveIHOP, true,                                    \
           "Adaptively adjust the initiating heap occupancy from the "       \
-          "initial value of InitiatingHeapOccupancyPercent. The policy "    \
-          "attempts to start marking in time based on application "         \
-          "behavior.")                                                      \
+          "initial value of G1IHOP. The policy attempts to start marking "  \
+          "in time based on application behavior.")                         \
                                                                             \
   product(size_t, G1AdaptiveIHOPNumInitialSamples, 3, EXPERIMENTAL,         \
           "How many completed time periods from concurrent start to first " \
           "mixed gc are required to use the input values for prediction "   \
           "of the optimal occupancy to start marking.")                     \
           range(1, max_intx)                                                \
+                                                                            \
+  product(uint, G1IHOP, 45,                                                 \
+          "The Initiating Heap Occupancy Percentage (IHOP) for the "        \
+          "concurrent cycle. G1IHOP sets the percentage of the current "    \
+          "Java heap capacity occupied by the old generation at which G1 "  \
+          "starts this process. If G1UseAdaptiveIHOP is enabled, this "     \
+          "value is used as the initial threshold and may be adjusted "     \
+          "ergonomically by G1. "                                           \
+          "A value of 0 will result in as frequent as possible concurrent " \
+          "cycles. A value of 100 disables concurrent cycles. "             \
+          "Fragmentation waste in the old generation is not considered "    \
+          "free space in this calculation.")                                \
+          range(0, 100)                                                     \
                                                                             \
   product(uint, G1ConfidencePercent, 50,                                    \
           "Confidence level for MMU/pause predictions. A higher value "     \
@@ -171,6 +183,10 @@
           "When shrinking, maximum % of free space to free for a single "   \
           "shrink attempt.")                                                \
           range(0, 100)                                                     \
+                                                                            \
+  develop(uint, G1UncommitInitialDelay, 100,                                \
+          "Delay in milliseconds until regions just made eligible for "     \
+          "uncommit are actually uncommitted.")                             \
                                                                             \
   product(uint, G1CPUUsageDeviationPercent, 25, DIAGNOSTIC,                 \
           "The acceptable deviation (in percent) from the target GC CPU "   \
@@ -300,23 +316,23 @@
           "Chunk size used for rebuilding the remembered set.")             \
           range(4 * K, 32 * M)                                              \
                                                                             \
-  product(uint, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,         \
+  product(uint, G1OldCSetRegionThresholdPercent, 10, EXPERIMENTAL,          \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
                                                                             \
-  product(uint, G1OldCSetGroupSize, 5, EXPERIMENTAL,                        \
-          "The maximum number of old CSet regions in a collection group. "  \
-          "All regions in a group will be evacuated in the same GC pause."  \
-          "The first group calculated after marking from marking "          \
-          "candidates may exceed this limit as it is calculated based on "  \
+  product(uint, G1OldCardSetGroupSize, 5, EXPERIMENTAL,                     \
+          "The maximum number of old regions in a card set group. "         \
+          "All regions in a group will be evacuated in the same GC pause. " \
+          "The first group calculated in the concurrent cycle "             \
+          "may exceed this limit as it is calculated based on "             \
           "G1MixedGCCountTarget.")                                          \
           range(1, 256)                                                     \
                                                                             \
   product(bool, G1VerifyHeapRegionCodeRoots, false, DIAGNOSTIC,             \
           "Verify the code root lists attached to each heap region.")       \
                                                                             \
-  develop(bool, G1VerifyBitmaps, false,                                     \
+  product(bool, G1VerifyBitmaps, false, DIAGNOSTIC,                         \
           "Verifies the consistency of the marking bitmaps")                \
                                                                             \
   product(uintx, G1PeriodicGCInterval, 0, MANAGEABLE,                       \
@@ -365,17 +381,19 @@
           "Threshold for the number of cards when reporting remembered set "\
           "card cost related prediction samples. A sample must involve "    \
           "the same or more than that number of cards to be used.")         \
+          range(1, UINT_MAX)                                                \
                                                                             \
   product(uint, G1NumCodeRootsCostSampleThreshold, 100, DIAGNOSTIC,         \
           "Threshold for the number of code roots when reporting code root "\
           "scan cost related prediction samples. A sample must involve "    \
           "the same or more than this number of code roots to be used.")    \
+          range(1, UINT_MAX)                                                \
                                                                             \
   develop(bool, G1ForceOptionalEvacuation, false,                           \
           "Force optional evacuation for all GCs where there are old gen "  \
           "collection set candidates."                                      \
-          "Also schedule all available optional groups for evacuation "     \
-          "regardless of timing.")                                          \
+          "Also schedule all available optional card set groups for "       \
+          "evacuation regardless of timing.")                               \
                                                                             \
   GC_G1_EVACUATION_FAILURE_FLAGS(develop,                                   \
                     develop_pd,                                             \

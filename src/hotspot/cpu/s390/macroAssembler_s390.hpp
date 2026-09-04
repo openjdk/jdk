@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
- * Copyright (c) 2024 IBM Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,10 @@
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
+
+class ciInlineKlass;
+class SigEntry;
+class VMRegPair;
 
 #define MODERN_IFUN(name)  ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
 #define CLASSIC_IFUN(name) ((void (MacroAssembler::*)(Register, int64_t, Register, Register))&MacroAssembler::name)
@@ -525,12 +529,13 @@ class MacroAssembler: public Assembler {
     Register        last_java_sp,     // To set up last_Java_frame in stubs; use noreg otherwise.
     address         entry_point,      // The entry point.
     bool            allow_relocation, // Flag to request generation of relocatable code.
-    bool            check_exception); // Flag which indicates if exception should be checked.
+    bool            check_exception,  // Flag which indicates if exception should be checked.
+    Label           *last_java_pc);
 
   // Call into the VM.
   // Passes the thread pointer (in Z_ARG1) as a prepended argument.
   // Makes sure oop return values are visible to the GC.
-  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true);
+  void call_VM(Register oop_result, address entry_point, bool check_exceptions = true, Label* last_java_pc = nullptr);
   void call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
   void call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
@@ -549,6 +554,7 @@ class MacroAssembler: public Assembler {
   void call_VM(Register oop_result, Register last_java_sp, address entry_point,
                Register arg_1, Register arg_2, Register arg_3, bool check_exceptions = true);
 
+  void super_call_VM_leaf(address entry_point);
   void call_VM_leaf(address entry_point);
   void call_VM_leaf(address entry_point, Register arg_1);
   void call_VM_leaf(address entry_point, Register arg_1, Register arg_2);
@@ -574,6 +580,8 @@ class MacroAssembler: public Assembler {
 
   // Get the pc where the last call will return to. Returns _last_calls_return_pc.
   inline address last_calls_return_pc();
+
+  void post_call_nop();
 
   static int ic_check_size();
   int ic_check(int end_alignment);
@@ -805,14 +813,14 @@ class MacroAssembler: public Assembler {
   // Support for last Java frame (but use call_VM instead where possible).
  private:
   void set_last_Java_frame(Register last_Java_sp, Register last_Java_pc, bool allow_relocation);
-  void reset_last_Java_frame(bool allow_relocation);
-  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation);
+  void reset_last_Java_frame(bool check_last_java_sp, bool allow_relocation);
+  void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, bool allow_relocation, Label* last_java_pc = nullptr);
  public:
   inline void set_last_Java_frame(Register last_java_sp, Register last_Java_pc);
   inline void set_last_Java_frame_static(Register last_java_sp, Register last_Java_pc);
-  inline void reset_last_Java_frame(void);
-  inline void reset_last_Java_frame_static(void);
-  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1);
+  inline void reset_last_Java_frame(bool check_last_java_sp = true);
+  inline void reset_last_Java_frame_static(bool check_last_java_sp = true);
+  inline void set_top_ijava_frame_at_SP_as_last_Java_frame(Register sp, Register tmp1, Label* jpc = nullptr);
   inline void set_top_ijava_frame_at_SP_as_last_Java_frame_static(Register sp, Register tmp1);
 
   void set_thread_state(JavaThreadState new_state);
@@ -837,7 +845,19 @@ class MacroAssembler: public Assembler {
   static bool needs_explicit_null_check(intptr_t offset);  // Implemented in shared file ?!
   static bool uses_implicit_null_check(void* address);
 
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+
+  // Valhalla support for inline types
+  void test_field_is_null_free_inline_type(Register flags, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type);
+  void test_field_is_flat(Register flags, Label& is_flat);
+
   // Klass oop manipulations if compressed.
+  void load_metadata(Register dst, Register src);
   void encode_klass_not_null(Register dst, Register src = noreg);
   void decode_klass_not_null(Register dst, Register src);
   void decode_klass_not_null(Register dst);
@@ -851,6 +871,16 @@ class MacroAssembler: public Assembler {
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
   // Uses tmp1 and tmp2 as temporary registers.
   void cmp_klasses_from_objects(Register obj1, Register obj2, Register tmp1, Register tmp2);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays.
+  // temp_reg is clobbered; oop and temp_reg must be distinct.
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array);
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
 
   // This function calculates the size of the code generated by
   //   decode_klass_not_null(register dst)
@@ -875,6 +905,12 @@ class MacroAssembler: public Assembler {
                       const Address& addr, Register dst,
                       Register tmp1, Register tmp2, Label *is_null = nullptr);
 
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_addr(Register oop, Register data, Register inline_klass);
+
  public:
   // tmp1 and tmp2 are used with decorators ON_PHANTOM_OOP_REF or ON_WEAK_OOP_REF.
   void load_heap_oop(Register dest, const Address &a,
@@ -891,6 +927,7 @@ class MacroAssembler: public Assembler {
 
   void resolve_oop_handle(Register result, Register tmp1, Register tmp2);
   void load_method_holder(Register holder, Register method);
+  void load_method_holder_cld(Register result, Register method);
 
   //--------------------------
   //---  Operations on arrays.
@@ -898,6 +935,7 @@ class MacroAssembler: public Assembler {
   unsigned int Clear_Array(Register cnt_arg, Register base_pointer_arg, Register odd_tmp_reg);
   unsigned int Clear_Array_Const(long cnt, Register base);
   unsigned int Clear_Array_Const_Big(long cnt, Register base_pointer_arg, Register odd_tmp_reg);
+  void fill_words(Register base, Register cnt, Register value, Register tmp);
   unsigned int CopyRawMemory_AlignedDisjoint(Register src_reg, Register dst_reg,
                                              Register cnt_reg,
                                              Register tmp1_reg, Register tmp2_reg);
@@ -978,6 +1016,10 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(false, false, 8, mem_offset, mem_base, msg, id);
   }
   void asm_assert_frame_size(Register expected_size, Register tmp, const char* msg, int id);
+
+  // Load bad values into registers that are nonvolatile according to the ABI except Z_thread.
+  // This is done after vthread preemption and before vthread resume.
+  void clobber_nonvolatile_registers() NOT_DEBUG_RETURN;
 
   // Save and restore functions: Exclude Z_R0.
   void save_volatile_regs(   Register dst, int offset, bool include_fp, bool include_flags);
@@ -1109,8 +1151,16 @@ class MacroAssembler: public Assembler {
   void pop_count_int_with_ext3(Register dst, Register src);
   void pop_count_long_with_ext3(Register dst, Register src);
 
+  void push_cont_fastpath();
+  void pop_cont_fastpath();
+
   void load_on_condition_imm_32(Register dst, int64_t i2, branch_condition cc);
   void load_on_condition_imm_64(Register dst, int64_t i2, branch_condition cc);
+
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1);
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #ifdef ASSERT

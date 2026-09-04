@@ -22,24 +22,8 @@
  *
  */
 
-#include "gc/g1/g1BlockOffsetTable.inline.hpp"
-#include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
-#include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
-#include "memory/allocation.hpp"
-#include "memory/padded.inline.hpp"
-#include "oops/oop.inline.hpp"
-#include "runtime/globals_extension.hpp"
-#include "runtime/java.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "utilities/bitMap.inline.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/formatBuffer.hpp"
-#include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/powerOfTwo.hpp"
+#include "utilities/ostream.hpp"
 
 HeapWord* G1HeapRegionRemSet::_heap_base_address = nullptr;
 
@@ -51,52 +35,39 @@ void G1HeapRegionRemSet::initialize(MemRegion reserved) {
   _heap_base_address = reserved.start();
 }
 
-void G1HeapRegionRemSet::uninstall_cset_group() {
-  _cset_group = nullptr;
+void G1HeapRegionRemSet::uninstall_card_set_group() {
+  _card_set_group = nullptr;
 }
 
-G1HeapRegionRemSet::G1HeapRegionRemSet(G1HeapRegion* hr) :
+G1HeapRegionRemSet::G1HeapRegionRemSet() :
   _code_roots(),
-  _cset_group(nullptr),
-  _hr(hr),
+  _card_set_group(nullptr),
   _state(Untracked) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {
-  assert(!has_cset_group(), "Still assigned to a CSet group");
+  assert(!has_card_set_group(), "Still assigned to a card set group");
 }
 
-void G1HeapRegionRemSet::clear_fcc() {
-  G1FromCardCache::clear(_hr->hrm_index());
+void G1HeapRegionRemSet::clear() {
+  assert(card_set_is_empty(), "Card set must be empty");
+  _code_roots.clear();
+  set_state_untracked();
 }
 
-void G1HeapRegionRemSet::clear(bool only_cardset, bool keep_tracked) {
-  if (!only_cardset) {
-    _code_roots.clear();
-  }
-  clear_fcc();
-
-  if (has_cset_group()) {
-    card_set()->clear();
-    assert(card_set()->occupied() == 0, "Should be clear.");
-  }
-
-  if (!keep_tracked) {
-    set_state_untracked();
-  } else {
-    assert(is_tracked(), "must be");
-  }
+void G1HeapRegionRemSet::reset_code_root_table_scanner() {
+  _code_roots.reset_table_scanner();
 }
 
 void G1HeapRegionRemSet::reset_table_scanner() {
-  _code_roots.reset_table_scanner();
-  if (has_cset_group()) {
+  reset_code_root_table_scanner();
+  if (has_card_set_group()) {
     card_set()->reset_table_scanner();
   }
 }
 
 G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {
-  assert(has_cset_group(), "pre-condition");
-  return cset_group()->card_set_memory_stats();
+  assert(has_card_set_group(), "pre-condition");
+  return card_set_group()->card_set_memory_stats();
 }
 
 void G1HeapRegionRemSet::print_static_mem_size(outputStream* out) {
@@ -104,28 +75,18 @@ void G1HeapRegionRemSet::print_static_mem_size(outputStream* out) {
 }
 
 // Code roots support
-//
-// The code root set is protected by two separate locking schemes
-// When at safepoint the per-hrrs lock must be held during modifications
-// except when doing a full gc.
-// When not at safepoint the CodeCache_lock must be held during modifications.
 
 void G1HeapRegionRemSet::add_code_root(nmethod* nm) {
   assert(nm != nullptr, "sanity");
   _code_roots.add(nm);
 }
 
-void G1HeapRegionRemSet::remove_code_root(nmethod* nm) {
-  assert(nm != nullptr, "sanity");
-
-  _code_roots.remove(nm);
-
-  // Check that there were no duplicates
-  guarantee(!_code_roots.contains(nm), "duplicate entry found");
-}
-
 void G1HeapRegionRemSet::bulk_remove_code_roots() {
   _code_roots.bulk_remove();
+}
+
+void G1HeapRegionRemSet::prepare_for_adding_code_roots(size_t num_code_roots) {
+  _code_roots.prepare_for_adding_code_roots(num_code_roots);
 }
 
 void G1HeapRegionRemSet::code_roots_do(NMethodClosure* blk) const {

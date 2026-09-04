@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,9 @@
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/compilerDirectives.hpp"
+#include "compiler/stress.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/sharedRuntime.hpp"
 
 class CompilationFailureInfo;
 class CompilationResourceObj;
@@ -69,6 +71,7 @@ class Compilation: public StackObj {
   DirectiveSet*      _directive;
   ciEnv*             _env;
   CompileLog*        _log;
+  Stress             _stress;
   ciMethod*          _method;
   int                _osr_bci;
   IR*                _hir;
@@ -137,6 +140,7 @@ class Compilation: public StackObj {
   DirectiveSet* directive() const                { return _directive; }
   CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
+  Stress& stress()                               { return _stress; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }
   bool has_fpu_code() const                      { return _has_fpu_code; }
   bool has_unsafe_access() const                 { return _has_unsafe_access; }
@@ -252,11 +256,18 @@ class Compilation: public StackObj {
     return env()->comp_level() == CompLevel_full_profile &&
       C1UpdateMethodData && MethodData::profile_return();
   }
+  bool profile_array_accesses() {
+    return env()->comp_level() == CompLevel_full_profile &&
+      C1UpdateMethodData && MethodData::profile_array_accesses();
+  }
+  bool profile_acmp() {
+    return is_profiling() && profile_branches() && MethodData::profile_acmp();
+  }
 
   // will compilation make optimistic assumptions that might lead to
   // deoptimization and that the runtime will account for?
   bool is_optimistic() {
-    return CompilerConfig::is_c1_only_no_jvmci() && !is_profiling() &&
+    return CompilerConfig::is_c1_only() && !is_profiling() &&
       (RangeCheckElimination || UseLoopInvariantCodeMotion) &&
       method()->method_data()->trap_count(Deoptimization::Reason_none) == 0;
   }

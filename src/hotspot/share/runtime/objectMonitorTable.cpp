@@ -565,7 +565,9 @@ ObjectMonitorTable::Table* ObjectMonitorTable::grow_table(Table* curr) {
 }
 
 ObjectMonitor* ObjectMonitorTable::monitor_put_get(ObjectMonitor* monitor, oop obj) {
-  const intptr_t hash = obj->mark().hash();
+  const markWord mark = obj->mark();
+  assert(mark.has_hash(), "must have");
+  const intptr_t hash = mark.hash();
   Table* curr =  _curr.load_acquire();
 
   for (;;) {

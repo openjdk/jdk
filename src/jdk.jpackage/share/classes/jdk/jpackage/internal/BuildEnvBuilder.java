@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
  */
 package jdk.jpackage.internal;
 
-import static jdk.jpackage.internal.cli.StandardValidator.IS_DIRECTORY_EMPTY_OR_NON_EXISTENT_PREDICATE;
-
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Optional;
@@ -41,20 +39,11 @@ final class BuildEnvBuilder {
     }
 
     BuildEnv create() {
-        // The directory should be validated earlier with a proper error message.
-        // Here is only a sanity check.
-        if (!IS_DIRECTORY_EMPTY_OR_NON_EXISTENT_PREDICATE.test(root)) {
-            throw new UnsupportedOperationException(
-                    String.format("Root work directory [%s] should be empty or non existent", root));
-        }
-
-        return BuildEnv.create(root, Optional.ofNullable(resourceDir), verbose,
-                ResourceLocator.class, resolvedAppImageLayout());
-    }
-
-    BuildEnvBuilder verbose(boolean v) {
-        verbose = v;
-        return this;
+        return BuildEnv.create(
+                root,
+                Optional.ofNullable(resourceDir),
+                ResourceLocator.class,
+                resolvedAppImageLayout());
     }
 
     BuildEnvBuilder resourceDir(Path v) {
@@ -96,7 +85,6 @@ final class BuildEnvBuilder {
     private Path appImageDir;
     private AppImageLayout appImageLayout;
     private Path resourceDir;
-    private boolean verbose;
 
     private final Path root;
 }

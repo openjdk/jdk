@@ -22,13 +22,17 @@
  *
  */
 
+#include "ci/ciObjArrayKlass.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/convertnode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -37,6 +41,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/reverse_bits.hpp"
 
@@ -817,38 +822,36 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
     // Skip cases when input types are top or bottom.
     if ((t11 != Type::TOP) && (t11 != TypeInt::INT) &&
         (t12 != Type::TOP) && (t12 != TypeInt::INT)) {
-      const TypeInt *r0 = t11->is_int();
-      const TypeInt *r1 = t12->is_int();
-      jlong lo_r0 = r0->_lo;
-      jlong hi_r0 = r0->_hi;
-      jlong lo_r1 = r1->_lo;
-      jlong hi_r1 = r1->_hi;
+      const TypeInt *ti11 = t11->is_int();
+      const TypeInt *ti12 = t12->is_int();
+      jlong lo_ti11_range = ti11->_lo;
+      jlong hi_ti11_range = ti11->_hi;
+      jlong lo_ti12_range = ti12->_lo;
+      jlong hi_ti12_range = ti12->_hi;
       if (in1_op == Op_SubI) {
-        jlong tmp = hi_r1;
-        hi_r1 = -lo_r1;
-        lo_r1 = -tmp;
+        jlong tmp = hi_ti12_range;
+        hi_ti12_range = -lo_ti12_range;
+        lo_ti12_range = -tmp;
         // Note, for substructing [minint,x] type range
         // long arithmetic provides correct overflow answer.
         // The confusion come from the fact that in 32-bit
         // -minint == minint but in 64-bit -minint == maxint+1.
       }
-      jlong lo_long = lo_r0 + lo_r1;
-      jlong hi_long = hi_r0 + hi_r1;
-      int lo_tr1 = min_jint;
-      int hi_tr1 = (int)hi_long;
-      int lo_tr2 = (int)lo_long;
-      int hi_tr2 = max_jint;
-      bool underflow = lo_long != (jlong)lo_tr2;
-      bool overflow  = hi_long != (jlong)hi_tr1;
+      jlong lo_sum_range = lo_ti11_range + lo_ti12_range;
+      jlong hi_sum_range = hi_ti11_range + hi_ti12_range;
+      int hi_wrapped_range = (int)hi_sum_range;
+      int lo_wrapped_range = (int)lo_sum_range;
+      bool underflow = lo_sum_range != (jlong)lo_wrapped_range;
+      bool overflow  = hi_sum_range != (jlong)hi_wrapped_range;
       // Use sub(t1, t2) when there is no overflow (one type range)
       // or when both overflow and underflow (too complex).
-      if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
+      if ((underflow != overflow) && (hi_wrapped_range < lo_wrapped_range)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
-        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
-        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
-        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
-        const TypeInt* cmp1 = sub(tr1, t2)->is_int();
-        const TypeInt* cmp2 = sub(tr2, t2)->is_int();
+        int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
+        const TypeInt* wrapped_range1 = TypeInt::make(min_jint, hi_wrapped_range, w);
+        const TypeInt* wrapped_range2 = TypeInt::make(lo_wrapped_range, max_jint, w);
+        const TypeInt* cmp1 = sub(wrapped_range1, t2)->is_int();
+        const TypeInt* cmp2 = sub(wrapped_range2, t2)->is_int();
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
@@ -889,7 +892,32 @@ Node *CmpINode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   return nullptr;                  // No change
 }
 
-Node *CmpLNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
+//------------------------------Ideal------------------------------------------
+Node* CmpLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  // Optimize expressions like
+  //   CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
+  // that are used by acmp to implement a "both operands are null" check.
+  // See also the corresponding code in CmpPNode::Ideal.
+  if (can_reshape && in(1)->Opcode() == Op_OrL &&
+      in(2)->bottom_type()->is_zero_type()) {
+    for (int i = 1; i <= 2; ++i) {
+      Node* orIn = in(1)->in(i);
+      if (orIn->Opcode() == Op_CastP2X) {
+        Node* castIn = orIn->in(1);
+        if (castIn->is_InlineType()) {
+          // Replace the CastP2X by the null marker
+          InlineTypeNode* vt = castIn->as_InlineType();
+          Node* nm = phase->transform(new ConvI2LNode(vt->get_null_marker()));
+          phase->is_IterGVN()->replace_input_of(in(1), i, nm);
+          return this;
+        } else if (!phase->type(castIn)->maybe_null()) {
+          // Never null. Replace the CastP2X by constant 1L.
+          phase->is_IterGVN()->replace_input_of(in(1), i, phase->longcon(1));
+          return this;
+        }
+      }
+    }
+  }
   const TypeLong *t2 = phase->type(in(2))->isa_long();
   if (Opcode() == Op_CmpL && in(1)->Opcode() == Op_ConvI2L && t2 && t2->is_con()) {
     const jlong con = t2->get_con();
@@ -997,7 +1025,22 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
                (k0 && !k0->maybe_java_subtype_of(k1))) {
       unrelated_classes = xklass0;
     }
-
+    if (!unrelated_classes) {
+      // Handle inline type arrays
+      if ((r0->is_flat_in_array() && r1->is_not_flat_in_array()) ||
+          (r1->is_flat_in_array() && r0->is_not_flat_in_array())) {
+        // One type is in flat arrays but the other type is not. Must be unrelated.
+        unrelated_classes = true;
+      } else if ((r0->is_not_flat() && r1->is_flat()) ||
+                 (r1->is_not_flat() && r0->is_flat())) {
+        // One type is a non-flat array and the other type is a flat array. Must be unrelated.
+        unrelated_classes = true;
+      } else if ((r0->is_not_null_free() && r1->is_null_free()) ||
+                 (r1->is_not_null_free() && r0->is_null_free())) {
+        // One type is a nullable array and the other type is a null-free array. Must be unrelated.
+        unrelated_classes = true;
+      }
+    }
     if (unrelated_classes) {
       // The oops classes are known to be unrelated. If the joined PTRs of
       // two oops is not Null and not Bottom, then we are sure that one
@@ -1024,13 +1067,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
     return TypeInt::CC;
 }
 
-static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
-  // Return the klass node for (indirect load from OopHandle)
-  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  //   or null if not matching.
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    n = bs->step_over_gc_barrier(n);
-
+static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
   if (n->Opcode() != Op_LoadP) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
@@ -1046,12 +1083,13 @@ static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n) {
   if (k == nullptr)  return nullptr;
   const TypeKlassPtr* tkp = phase->type(k)->isa_klassptr();
   if (!tkp || off != in_bytes(Klass::java_mirror_offset())) return nullptr;
+  might_be_an_array |= tkp->isa_aryklassptr() || tkp->is_instklassptr()->might_be_an_array();
 
   // We've found the klass node of a Java mirror load.
   return k;
 }
 
-static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
+static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
   // for ConP(Foo.class) return ConP(Foo.klass)
   // otherwise return null
   if (!n->is_Con()) return nullptr;
@@ -1071,8 +1109,18 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
   }
 
   // return the ConP(Foo.klass)
-  assert(mirror_type->is_klass(), "mirror_type should represent a Klass*");
-  return phase->makecon(TypeKlassPtr::make(mirror_type->as_klass(), Type::trust_interfaces));
+  ciKlass* mirror_klass = mirror_type->as_klass();
+
+  if (mirror_klass->is_array_klass() && !mirror_klass->is_type_array_klass()) {
+    if (!mirror_klass->can_be_inline_array_klass()) {
+      // Special case for non-value arrays: They only have one (default) refined class, use it
+      ciArrayKlass* refined_mirror_klass = ciObjArrayKlass::make(mirror_klass->as_array_klass()->element_klass(), true);
+      return phase->makecon(TypeAryKlassPtr::make(refined_mirror_klass, Type::trust_interfaces));
+    }
+    might_be_an_array |= true;
+  }
+
+  return phase->makecon(TypeKlassPtr::make(mirror_klass, Type::trust_interfaces));
 }
 
 //------------------------------Ideal------------------------------------------
@@ -1082,7 +1130,34 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n) {
 // super-type array vs a known klass with no subtypes.  This amounts to
 // checking to see an unknown klass subtypes a known klass with no subtypes;
 // this only happens on an exact match.  We can shorten this test by 1 load.
-Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
+Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  Node* uncast_in1 = in(1)->uncast();
+  Node* uncast_in2 = in(2)->uncast();
+  if (uncast_in1->is_InlineType() && phase->type(uncast_in2)->is_zero_type()) {
+    // Null checking a scalarized but nullable inline type. Check the null marker
+    // input instead of the oop input to avoid keeping buffer allocations alive.
+    return new CmpINode(uncast_in1->as_InlineType()->get_null_marker(), phase->intcon(0));
+  }
+  if (uncast_in1->is_InlineType() || uncast_in2->is_InlineType()) {
+    // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
+    // For non-null operands it cannot reliably be true, since their buffer oops are not
+    // guaranteed to be identical. Therefore, the comparison can only be true when both
+    // operands are null. Convert expressions like this to a "both operands are null" check:
+    //   CmpL(OrL(CastP2X(..), CastP2X(..)), 0L)
+    // CmpLNode::Ideal might optimize this further to avoid keeping buffer allocations alive.
+    Node* input[2];
+    for (int i = 1; i <= 2; ++i) {
+      Node* uncast_in = in(i)->uncast();
+      if (uncast_in->is_InlineType()) {
+        input[i-1] = phase->transform(new ConvI2LNode(uncast_in->as_InlineType()->get_null_marker()));
+      } else {
+        input[i-1] = phase->transform(new CastP2XNode(nullptr, uncast_in));
+      }
+    }
+    Node* orL = phase->transform(new OrXNode(input[0], input[1]));
+    return new CmpXNode(orL, phase->MakeConX(0));
+  }
+
   // Normalize comparisons between Java mirrors into comparisons of the low-
   // level klass, where a dependent load could be shortened.
   //
@@ -1096,9 +1171,16 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
   //   }
   // a CmpPNode could be shared between if_acmpne and checkcast
   {
-    Node* k1 = isa_java_mirror_load(phase, in(1));
-    Node* k2 = isa_java_mirror_load(phase, in(2));
-    Node* conk2 = isa_const_java_mirror(phase, in(2));
+    bool might_be_an_array1 = false;
+    bool might_be_an_array2 = false;
+    Node* k1 = isa_java_mirror_load(phase, in(1), might_be_an_array1);
+    Node* k2 = isa_java_mirror_load(phase, in(2), might_be_an_array2);
+    Node* conk2 = isa_const_java_mirror(phase, in(2), might_be_an_array2);
+    if (might_be_an_array1 && might_be_an_array2) {
+      // Don't optimize if both sides might be an array because arrays with
+      // the same Java mirror can have different refined array klasses.
+      k1 = k2 = nullptr;
+    }
 
     if (k1 && (k2 || conk2)) {
       Node* lhs = k1;
@@ -1174,6 +1256,19 @@ Node *CmpPNode::Ideal( PhaseGVN *phase, bool can_reshape ) {
     // Add a dependency if there is a chance that a subclass will be added later.
     if (!ik->is_final()) {
       phase->C->dependencies()->assert_leaf_type(ik);
+    }
+  }
+
+  // Do not fold the subtype check to an array klass pointer comparison for
+  // value class arrays because they can have multiple refined array klasses.
+  superklass = t2->exact_klass();
+  assert(!superklass->is_flat_array_klass(), "Unexpected flat array klass");
+  if (superklass->is_obj_array_klass()) {
+    if (superklass->as_array_klass()->element_klass()->is_inlinetype() && !superklass->as_array_klass()->is_refined()) {
+      return nullptr;
+    } else {
+      // Special case for non-value arrays: They only have one (default) refined class, use it
+      set_req_X(2, phase->makecon(t2->is_aryklassptr()->cast_to_refined_array_klass_ptr()), phase);
     }
   }
 
@@ -1315,6 +1410,43 @@ Node *CmpDNode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;                  // No change
 }
 
+//=============================================================================
+//------------------------------Value------------------------------------------
+const Type* FlatArrayCheckNode::Value(PhaseGVN* phase) const {
+  bool all_not_flat = true;
+  for (uint i = ArrayOrKlass; i < req(); ++i) {
+    const Type* t = phase->type(in(i));
+    if (t == Type::TOP) {
+      return Type::TOP;
+    }
+    if (t->is_ptr()->is_flat()) {
+      // One of the input arrays is flat, check always passes
+      return TypeInt::CC_EQ;
+    } else if (!t->is_ptr()->is_not_flat()) {
+      // One of the input arrays might be flat
+      all_not_flat = false;
+    }
+  }
+  if (all_not_flat) {
+    // None of the input arrays can be flat, check always fails
+    return TypeInt::CC_GT;
+  }
+  return TypeInt::CC;
+}
+
+//------------------------------Ideal------------------------------------------
+Node* FlatArrayCheckNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  bool changed = false;
+  // Remove inputs that are known to be non-flat
+  for (uint i = ArrayOrKlass; i < req(); ++i) {
+    const Type* t = phase->type(in(i));
+    if (t->isa_ptr() && t->is_ptr()->is_not_flat()) {
+      del_req(i--);
+      changed = true;
+    }
+  }
+  return changed ? this : nullptr;
+}
 
 //=============================================================================
 //------------------------------cc2logical-------------------------------------
@@ -1496,8 +1628,8 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node *cmp = in(1);
   if( !cmp->is_Sub() ) return nullptr;
   int cop = cmp->Opcode();
-  if( cop == Op_FastLock || cop == Op_FastUnlock ||
-      cmp->is_SubTypeCheck() || cop == Op_VectorTest ) {
+  if (cop == Op_FastLock || cop == Op_FastUnlock || cop == Op_FlatArrayCheck ||
+      cmp->is_SubTypeCheck() || cop == Op_VectorTest) {
     return nullptr;
   }
   Node *cmp1 = cmp->in(1);
@@ -1921,6 +2053,31 @@ bool BoolNode::is_counted_loop_exit_test() {
   return false;
 }
 
+template<typename IntegerType>
+static const IntegerType* integral_abs_value(const IntegerType* t) {
+  typedef typename IntegerType::NativeUType NativeUType;
+
+  // Find the absolute value of a type, resulting in a range that fits inside the unsigned range [0, signed_max+1].
+  // The possible values of a TypeInteger is described with the following range in the signed domain:
+  // smin----------lo=======uhi--------0--------ulo===========hi----------smax
+
+  // To find the absolute value of the range, we find the closer (min) value of uhi and ulo to 0, and the further (max)
+  // value of lo and hi from 0. In the unsigned domain, the resulting range looks like this:
+  // 0-----------min(|ulo|,|uhi|)================max(|lo|,|hi|)-----------umax
+
+  // When the input range's hi and lo are both positive or negative, lo == ulo and hi == uhi:
+  // smin------------------------------0-------lo===========hi------------smax (Positive)
+  // smin--------lo===========hi-------0----------------------------------smax (Negative)
+
+  // For these ranges, the result in the unsigned domain is simply [min(|lo|, |hi|), max(|lo|, |hi|)]:
+  // 0-----------min(|lo|,|hi|)==================max(|lo|,|hi|)-----------umax
+
+  NativeUType umin = MIN2<NativeUType>(g_uabs(t->_ulo), g_uabs(t->_uhi));
+  NativeUType umax = MAX2<NativeUType>(g_uabs(t->_lo), g_uabs(t->_hi));
+
+  return IntegerType::make_unsigned(umin, umax, t->_widen);
+}
+
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* AbsNode::Value(PhaseGVN* phase) const {
@@ -1930,17 +2087,13 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
   switch (t1->base()) {
   case Type::Int: {
     const TypeInt* ti = t1->is_int();
-    if (ti->is_con()) {
-      return TypeInt::make(g_uabs(ti->get_con()));
-    }
-    break;
+
+    return integral_abs_value(ti);
   }
   case Type::Long: {
     const TypeLong* tl = t1->is_long();
-    if (tl->is_con()) {
-      return TypeLong::make(g_uabs(tl->get_con()));
-    }
-    break;
+
+    return integral_abs_value(tl);
   }
   case Type::FloatCon:
     return TypeF::make(abs(t1->getf()));
@@ -1957,8 +2110,9 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
 Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
-  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
-      phase->type(in1)->higher_equal(TypeLong::POS)) {
+  const Type* in_type = phase->type(in1);
+  if ((in_type->isa_int() && in_type->is_int()->_lo >= 0) ||
+      (in_type->isa_long() && in_type->is_long()->_lo >= 0)) {
     return in1;
   }
   // Convert "abs(abs(x))" into "abs(x)"

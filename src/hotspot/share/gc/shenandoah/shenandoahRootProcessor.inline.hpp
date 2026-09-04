@@ -46,7 +46,7 @@ ShenandoahVMWeakRoots<CONCURRENT>::ShenandoahVMWeakRoots(ShenandoahPhaseTimings:
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMWeakRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(cl);
 }
 
@@ -54,7 +54,7 @@ template <bool CONCURRENT>
 template <typename IsAlive, typename KeepAlive>
 void ShenandoahVMWeakRoots<CONCURRENT>::weak_oops_do(IsAlive* is_alive, KeepAlive* keep_alive, uint worker_id) {
   ShenandoahCleanUpdateWeakOopsClosure<CONCURRENT, IsAlive, KeepAlive> cl(is_alive, keep_alive);
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeakRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMWeaks, worker_id);
   _weak_roots.oops_do(&cl);
 }
 
@@ -71,7 +71,7 @@ ShenandoahVMRoots<CONCURRENT>::ShenandoahVMRoots(ShenandoahPhaseTimings::Phase p
 template <bool CONCURRENT>
 template <typename T>
 void ShenandoahVMRoots<CONCURRENT>::oops_do(T* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::VMStrongs, worker_id);
   _strong_roots.oops_do(cl);
 }
 
@@ -104,12 +104,12 @@ template <bool CONCURRENT>
 void ShenandoahClassLoaderDataRoots<CONCURRENT>::cld_do_impl(CldDo f, CLDClosure* clds, uint worker_id) {
   if (CONCURRENT) {
     if (_semaphore.try_acquire()) {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
       f(clds);
       _semaphore.claim_all();
     }
   } else {
-    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CLDGRoots, worker_id);
+    ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Classes, worker_id);
     f(clds);
   }
 }
@@ -163,7 +163,7 @@ public:
 
       // Update region liveness data
       ShenandoahHeapRegion* region = heap->heap_region_containing(invisible_root);
-      if (region->is_regular() || region->is_regular_pinned()) {
+      if (region->is_regular_or_regular_pinned()) {
         assert(!ShenandoahHeapRegion::requires_humongous(invisible_root_word_size), "Must not be humongous.");
         region->increase_live_data_alloc_words(invisible_root_word_size);
       } else if (region->is_humongous_start()) {

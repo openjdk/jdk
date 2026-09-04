@@ -223,6 +223,7 @@ public class PackagingPipelineTest {
                     .runtimeDirectory("runtime")
                     .appModsDirectory("lib")
                     .contentDirectory("lib")
+                    .resourcesDirectory("lib")
                     .desktopIntegrationDirectory("lib")
                     .create();
         } else {
@@ -618,6 +619,7 @@ public class PackagingPipelineTest {
                 "copyright",
                 List.of(),
                 List.of(),
+                List.of(),
                 appImageLayout,
                 runtimeBuilder,
                 List.of(),
@@ -668,7 +670,7 @@ public class PackagingPipelineTest {
     }
 
     private static BuildEnv dummyBuildEnv() {
-        return BuildEnv.create(Path.of("foo"), Optional.empty(), false, PackagingPipeline.class, RuntimeLayout.DEFAULT);
+        return BuildEnv.create(Path.of("foo"), Optional.empty(), PackagingPipeline.class, RuntimeLayout.DEFAULT);
     }
 
     private static PackagingPipeline.Builder buildPipeline() {
@@ -854,6 +856,7 @@ public class PackagingPipelineTest {
             .runtimeDirectory("runtime")
             .appModsDirectory("")
             .contentDirectory("")
+            .resourcesDirectory("")
             .desktopIntegrationDirectory("")
             .create();
 
@@ -863,6 +866,7 @@ public class PackagingPipelineTest {
             .runtimeDirectory("qqq/runtime")
             .appModsDirectory("")
             .contentDirectory("")
+            .resourcesDirectory("")
             .desktopIntegrationDirectory("")
             .create();
 

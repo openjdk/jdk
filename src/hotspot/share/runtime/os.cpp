@@ -1994,6 +1994,20 @@ static void shuffle_fisher_yates(T* arr, unsigned num, FastRandom& frand) {
   }
 }
 
+#ifndef S390
+// Default implementation: page table never expands.
+uintptr_t os::vm_page_table_expansion_point() {
+  return align_down(UINTPTR_MAX, os::vm_allocation_granularity());
+}
+#else
+uintptr_t os::vm_page_table_expansion_point() {
+  // On s390x, page table will dynamically expand based on user demand
+  // (eg mmap probing with high addresses). First expansion happens
+  // at 2^42 (4TB).
+  return nth_bit<uintptr_t>(42);
+}
+#endif
+
 // Helper for os::attempt_reserve_memory_between
 // Given an array of things, do a hemisphere split such that the resulting
 // order is: [first, last, first + 1, last - 1, ...]
@@ -2121,7 +2135,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // goal without. In that case, we optimize probing by sorting the attach
       // points: We attempt outermost points first, then work ourselves up to
       // the middle. That reduces address space fragmentation. We also alternate
-      // hemispheres, which increases the chance of successfull mappings if the
+      // hemispheres, which increases the chance of successful mappings if the
       // previous mapping had been blocked by large maps.
       hemi_split(points, num_attempts);
     }
@@ -2372,8 +2386,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag,
-                            bool read_only, bool allow_exec) {
+                     char *addr, size_t bytes, bool read_only,
+                     MemTag mem_tag, bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
@@ -2397,14 +2411,14 @@ void os::realign_memory(char *addr, size_t bytes, size_t alignment_hint) {
 }
 
 char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size,
-                                 char* addr, bool executable) {
+                                 char* addr, MemTag mem_tag, bool executable) {
 
   assert(is_aligned(addr, alignment), "Unaligned request address");
 
   char* result = pd_reserve_memory_special(size, alignment, page_size, addr, executable);
   if (result != nullptr) {
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, mtNone);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, size, CALLER_PC, mem_tag);
     log_debug(os, map)("Reserved and committed " RANGEFMT, RANGEFMTARGS(result, size));
   } else {
     log_info(os, map)("Reserve and commit failed (%zu bytes)", size);

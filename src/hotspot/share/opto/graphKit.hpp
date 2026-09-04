@@ -33,6 +33,7 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/divnode.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
@@ -66,6 +67,9 @@ class GraphKit : public Phase {
   int               _bci;       // JVM Bytecode Pointer
   ciMethod*         _method;    // JVM Current Method
   BarrierSetC2*     _barrier_set;
+#ifdef ASSERT
+  uint              _worklist_size;
+#endif
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!
@@ -78,7 +82,10 @@ class GraphKit : public Phase {
 
  public:
   GraphKit();                   // empty constructor
-  GraphKit(JVMState* jvms);     // the JVM state on which to operate
+  GraphKit(JVMState* jvms, PhaseGVN* gvn = nullptr);     // the JVM state on which to operate
+
+  // Create a GraphKit from a debug state, useful for various kinds of macro expansion
+  GraphKit(const SafePointNode* sft, PhaseIterGVN& igvn);
 
 #ifdef ASSERT
   ~GraphKit() {
@@ -94,7 +101,7 @@ class GraphKit : public Phase {
   PhaseGVN&     gvn()               const { return _gvn; }
   void*         barrier_set_state() const { return C->barrier_set_state(); }
 
-  void record_for_igvn(Node* n) const { C->record_for_igvn(n); }  // delegate to Compile
+  void record_for_igvn(Node* n) const { _gvn.record_for_igvn(n); }
   void remove_for_igvn(Node* n) const { C->remove_for_igvn(n); }
 
   // Handy well-known nodes:
@@ -338,6 +345,7 @@ class GraphKit : public Phase {
   Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new DivINode(ctl, l, r));  }
 
   Node* AndI(Node* l, Node* r)                { return _gvn.transform(new AndINode(l, r));       }
+  Node* AndL(Node* l, Node* r)                { return _gvn.transform(new AndLNode(l, r));       }
   Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new OrINode(l, r));        }
   Node* XorI(Node* l, Node* r)                { return _gvn.transform(new XorINode(l, r));       }
 
@@ -345,13 +353,20 @@ class GraphKit : public Phase {
   Node* MinI(Node* l, Node* r)                { return _gvn.transform(new MinINode(l, r));       }
 
   Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new LShiftINode(l, r));    }
+  Node* LShiftL(Node* l, Node* r)             { return _gvn.transform(new LShiftLNode(l, r));    }
   Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new RShiftINode(l, r));    }
+  Node* RShiftL(Node* l, Node* r)             { return _gvn.transform(new RShiftLNode(l, r));    }
   Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new URShiftINode(l, r));   }
+  Node* URShiftL(Node* l, Node* r)            { return _gvn.transform(new URShiftLNode(l, r));   }
+  Node* URShiftX(Node* l, Node* r)            { return _gvn.transform(new URShiftXNode(l, r));   }
 
   Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new CmpINode(l, r));       }
   Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new CmpLNode(l, r));       }
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
+  Node* BoolCmpI(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpI(l, r), relop); }
+  Node* BoolCmpL(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpL(l, r), relop); }
+  Node* BoolCmpP(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpP(l, r), relop); }
 
   Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
@@ -379,12 +394,12 @@ class GraphKit : public Phase {
   Node* null_check_common(Node* value, BasicType type,
                           bool assert_null = false,
                           Node* *null_control = nullptr,
-                          bool speculative = false);
+                          bool speculative = false,
+                          bool null_marker_check = false);
   Node* null_check(Node* value, BasicType type = T_OBJECT) {
     return null_check_common(value, type, false, nullptr, !_gvn.type(value)->speculative_maybe_null());
   }
   Node* null_check_receiver() {
-    assert(argument(0)->bottom_type()->isa_ptr(), "must be");
     return null_check(argument(0));
   }
   Node* zero_check_int(Node* value) {
@@ -459,7 +474,7 @@ class GraphKit : public Phase {
   // Replace all occurrences of one node by another.
   void replace_in_map(Node* old, Node* neww);
 
-  Node* maybe_narrow_object_type(Node* obj, ciKlass* type);
+  Node* maybe_narrow_object_type(Node* obj, ciKlass* type, bool maybe_larval);
 
   void  push(Node* n)     { map_not_null();        _map->set_stack(_map->_jvms,   _sp++        , n); }
   Node* pop()             { map_not_null(); return _map->stack(    _map->_jvms, --_sp             ); }
@@ -500,7 +515,7 @@ class GraphKit : public Phase {
     int n_size = type2size[n_type];
     if      (n_size == 1)  return pop();
     else if (n_size == 2)  return pop_pair();
-    else                   return nullptr;
+    else                   return C->top();
   }
 
   Node* control()               const { return map_not_null()->control(); }
@@ -586,14 +601,17 @@ class GraphKit : public Phase {
                         Node* val,
                         const Type* val_type,
                         BasicType bt,
-                        DecoratorSet decorators);
+                        DecoratorSet decorators,
+                        bool safe_for_replace = true,
+                        const InlineTypeNode* vt = nullptr);
 
   Node* access_load_at(Node* obj,   // containing obj
                        Node* adr,   // actual address to load val at
                        const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
-                       DecoratorSet decorators);
+                       DecoratorSet decorators,
+                       Node* ctl = nullptr);
 
   Node* access_load(Node* adr,   // actual address to load val at
                     const Type* val_type,
@@ -646,6 +664,8 @@ class GraphKit : public Phase {
                               const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
                               Node* ctrl = nullptr);
+  Node* cast_to_flat_array(Node* array, ciInlineKlass* elem_vk);
+  Node* cast_to_flat_array_exact(Node* array, ciInlineKlass* elem_vk, bool is_null_free, bool is_atomic);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
@@ -685,7 +705,7 @@ class GraphKit : public Phase {
 
   // Fill in argument edges for the call from argument(0), argument(1), ...
   // (The next step is to call set_edges_for_java_call.)
-  void  set_arguments_for_java_call(CallJavaNode* call);
+  void set_arguments_for_java_call(CallJavaNode* call);
 
   // Fill in non-argument edges for the call.
   // Transform the call, and update the basics: control, i_o, memory.
@@ -760,7 +780,7 @@ class GraphKit : public Phase {
   }
 
   bool too_many_traps_or_recompiles(Deoptimization::DeoptReason reason) {
-      return C->too_many_traps_or_recompiles(method(), bci(), reason);
+    return C->too_many_traps_or_recompiles(method(), bci(), reason);
   }
 
   // Returns the object (if any) which was created the moment before.
@@ -819,8 +839,18 @@ class GraphKit : public Phase {
 
   // Generate a check-cast idiom.  Used by both the check-cast bytecode
   // and the array-store bytecode
-  Node* gen_checkcast( Node *subobj, Node* superkls,
-                       Node* *failure_control = nullptr );
+  Node* gen_checkcast(Node *subobj, Node* superkls, Node** failure_control = nullptr,
+                      SafePointNode** new_cast_failure_map = nullptr, bool null_free = false,
+                      bool maybe_larval = false);
+
+  // Inline types
+  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq);
+  Node* inline_type_test(Node* obj, bool is_inline = true);
+  Node* flat_array_test(Node* array_or_klass, bool flat = true);
+  Node* null_free_array_test(Node* array, bool null_free = true);
+  Node* null_free_atomic_array_test(Node* array, ciInlineKlass* vk);
+  Node* atomic_layout_array_test_and_get_layout_kind(Node* array, RegionNode* atomic_region);
+  Node* inline_array_null_guard(Node* ary, Node* val, int nargs);
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
 
@@ -829,6 +859,7 @@ class GraphKit : public Phase {
   // (Caller is responsible for doing replace_in_map.)
   Node* type_check_receiver(Node* receiver, ciKlass* klass, float prob,
                             Node* *casted_receiver);
+  Node* type_check(Node* recv_klass, const TypeKlassPtr* tklass, float prob);
 
   // Inexact type check used for predicted calls.
   Node* subtype_check_receiver(Node* receiver, ciKlass* klass,
@@ -842,10 +873,12 @@ class GraphKit : public Phase {
   Node* new_instance(Node* klass_node,
                      Node* slow_test = nullptr,
                      Node* *return_size_val = nullptr,
-                     bool deoptimize_on_exception = false);
+                     bool deoptimize_on_exception = false,
+                     InlineTypeNode* inline_type_node = nullptr);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
                   Node* *return_size_val = nullptr,
-                  bool deoptimize_on_exception = false);
+                  bool deoptimize_on_exception = false,
+                  Node* init_val = nullptr);
 
   // java.lang.String helpers
   Node* load_String_length(Node* str, bool set_ctrl);
@@ -853,7 +886,8 @@ class GraphKit : public Phase {
   Node* load_String_coder(Node* str, bool set_ctrl);
   void store_String_value(Node* str, Node* value);
   void store_String_coder(Node* str, Node* value);
-  Node* capture_memory(const TypePtr* src_type, const TypePtr* dst_type);
+  Node* capture_memory(const TypePtr*& combined_type, const TypePtr* src_type, const TypePtr* dst_type);
+  void memory_effect(Node* res_mem, const TypePtr* src_type, const TypePtr* dst_type);
   Node* compress_string(Node* src, const TypeAryPtr* src_type, Node* dst, Node* count);
   void inflate_string(Node* src, Node* dst, const TypeAryPtr* dst_type, Node* count);
   void inflate_string_slow(Node* src, Node* dst, Node* start, Node* count);
@@ -879,6 +913,7 @@ class GraphKit : public Phase {
   void add_parse_predicate(Deoptimization::DeoptReason reason, int nargs);
 
   Node* make_constant_from_field(ciField* field, Node* obj);
+  Node* load_mirror_from_klass(Node* klass);
 
   // Vector API support (implemented in vectorIntrinsics.cpp)
   Node* box_vector(Node* in, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool deoptimize_on_exception = false);

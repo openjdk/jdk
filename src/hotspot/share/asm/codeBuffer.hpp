@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,11 +28,11 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
 
@@ -53,6 +53,9 @@ class CodeOffsets: public StackObj {
 public:
   enum Entries { Entry,
                  Verified_Entry,
+                 Inline_Entry,
+                 Verified_Inline_Entry,
+                 Verified_Inline_Entry_RO,
                  Frame_Complete, // Offset in the code where the frame setup is (for forte stackwalks) is complete
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
@@ -63,15 +66,20 @@ public:
   // special value to note codeBlobs where profile (forte) stack walking is
   // always dangerous and suspect.
 
-  enum { frame_never_safe = -1 };
+  static const int frame_never_safe = -1;
+  static const int no_such_entry_point = -1;
 
 private:
   int _values[max_Entries];
+  void check(int e) const { assert(0 <= e && e < max_Entries, "must be"); }
 
 public:
   CodeOffsets() {
     _values[Entry         ] = 0;
     _values[Verified_Entry] = 0;
+    _values[Inline_Entry  ] = 0;
+    _values[Verified_Inline_Entry   ] = no_such_entry_point;
+    _values[Verified_Inline_Entry_RO] = no_such_entry_point;
     _values[Frame_Complete] = frame_never_safe;
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
@@ -79,8 +87,8 @@ public:
     _values[UnwindHandler ] = -1;
   }
 
-  int value(Entries e) { return _values[e]; }
-  void set_value(Entries e, int val) { _values[e] = val; }
+  int value(Entries e) const { check(e); return _values[e]; }
+  void set_value(Entries e, int val) { check(e); _values[e] = val; }
 };
 
 // This class represents a stream of code and associated relocations.
@@ -538,7 +546,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
-  typedef LinkedListImpl<int> Offsets;
+  typedef GrowableArrayCHeap<int, mtCompiler> Offsets;
   typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:
@@ -561,11 +569,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* _oop_recorder;
 
-  OopRecorder  _default_oop_recorder;  // override with initialize_oop_recorder
+  OopRecorder  _default_oop_recorder; // override with initialize_oop_recorder
   Arena*       _overflow_arena;
 
-  address      _last_insn;      // used to merge consecutive memory barriers, loads or stores.
-  address      _last_label;     // record last bind label address, it's also the start of current bb.
+  address      _last_label;           // record last bind label address, it's also the start of current bb.
+  address      _last_merge_candidate; // used to merge consecutive memory barriers, loads or stores.
 
   SharedStubToInterpRequests* _shared_stub_to_interp_requests; // used to collect requests for shared iterpreter stubs
   SharedTrampolineRequests*   _shared_trampoline_requests;     // used to collect requests for shared trampolines
@@ -591,11 +599,11 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     _total_size      = 0;
     _oop_recorder    = nullptr;
     _overflow_arena  = nullptr;
-    _last_insn       = nullptr;
     _last_label      = nullptr;
-    _finalize_stubs  = false;
+    _last_merge_candidate = nullptr;
     _shared_stub_to_interp_requests = nullptr;
     _shared_trampoline_requests = nullptr;
+    _finalize_stubs  = false;
 
     _consts.initialize_outer(this, SECT_CONSTS);
     _insts.initialize_outer(this,  SECT_INSTS);
@@ -812,9 +820,9 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
   OopRecorder* oop_recorder() const { return _oop_recorder; }
 
-  address last_insn() const { return _last_insn; }
-  void set_last_insn(address a) { _last_insn = a; }
-  void clear_last_insn() { set_last_insn(nullptr); }
+  address last_merge_candidate() const { return _last_merge_candidate; }
+  void set_last_merge_candidate(address a) { _last_merge_candidate = a; }
+  void clear_last_merge_candidate() { set_last_merge_candidate(nullptr); }
 
   address last_label() const { return _last_label; }
   void set_last_label(address a) { _last_label = a; }

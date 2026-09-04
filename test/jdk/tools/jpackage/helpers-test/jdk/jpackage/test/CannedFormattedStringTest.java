@@ -25,6 +25,7 @@ package jdk.jpackage.test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import java.text.MessageFormat;
 import java.util.List;
@@ -81,6 +82,27 @@ class CannedFormattedStringTest {
 
         assertEquals("Hello Duke! Bye Duke", a.getValue());
         assertEquals("Hello Java! Bye Java", b.getValue());
+    }
+
+    @Test
+    void test_createFromMessageFormat() {
+        var a = CannedFormattedString.createFromMessageFormat("Hello {0}!", "Duke");
+        var b = CannedFormattedString.createFromMessageFormat("Hello {0}!", "Duke");
+        var c = CannedFormattedString.createFromMessageFormat("Bye {0}!", "Duke");
+
+        assertEquals(a, b);
+        assertEquals(a.getValue(), b.getValue());
+        assertNotEquals(a, c);
+
+        assertEquals("Hello Duke!", a.getValue());
+        assertEquals("Bye Duke!", c.getValue());
+
+        assertEquals("Repeated message: Hello Duke! Hello Duke!", a.addPrefix("Repeated message: {0} {0}").getValue());
+
+        assertEquals("No formatting", CannedFormattedString.createFromMessageFormat("No formatting").getValue());
+
+        assertThrowsExactly(IllegalArgumentException.class,
+                CannedFormattedString.createFromMessageFormat("No formatting", "foo")::getValue);
     }
 
     enum Formatter implements BiFunction<String, Object[], String> {

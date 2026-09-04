@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessBoolean
  */
 
@@ -44,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
     static final boolean static_final_v = true;
 
-    static boolean static_v;
+    static boolean static_v = true;
 
-    final boolean final_v = true;
+    final boolean final_v;
 
     boolean v;
 
@@ -59,6 +61,12 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessBoolean() {
+        final_v = true;
+        v = true;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -286,10 +294,30 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
             boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, false);
             assertEquals(true, o, "getAndSet boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(false, x, "getAndSet boolean value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
+            boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, false);
+            assertEquals(true, o, "getAndSetAcquire boolean");
+            boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(false, x, "getAndSetAcquire boolean value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, true);
+
+            boolean o = (boolean) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, false);
+            assertEquals(true, o, "getAndSetRelease boolean");
+            boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(false, x, "getAndSetRelease boolean value");
         }
 
 
@@ -552,7 +580,7 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(false, false);
             assertEquals(success, false, "failing weakCompareAndSet boolean");
             boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(true, x, "failing weakCompareAndSetRe boolean value");
+            assertEquals(true, x, "failing weakCompareAndSet boolean value");
         }
 
         // Compare set and get
@@ -565,7 +593,6 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             assertEquals(false, x, "getAndSet boolean value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(true);
 
@@ -575,7 +602,6 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             assertEquals(false, x, "getAndSetAcquire boolean value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(true);
 
@@ -825,10 +851,10 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, true, false);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire boolean");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, true, false);
+                assertEquals(success, false, "failing weakCompareAndSetRelease boolean");
                 boolean x = (boolean) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(false, x, "failing weakCompareAndSetAcquire boolean value");
+                assertEquals(false, x, "failing weakCompareAndSetRelease boolean value");
             }
 
             {

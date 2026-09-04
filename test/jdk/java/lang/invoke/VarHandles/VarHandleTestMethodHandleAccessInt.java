@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessInt
  */
 
@@ -44,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
     static final int static_final_v = 0x01234567;
 
-    static int static_v;
+    static int static_v = 0x01234567;
 
-    final int final_v = 0x01234567;
+    final int final_v;
 
     int v;
 
@@ -59,6 +61,12 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessInt() {
+        final_v = 0x01234567;
+        v = 0x01234567;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -286,10 +294,30 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x01234567);
+
             int o = (int) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, 0x89ABCDEF);
             assertEquals(0x01234567, o, "getAndSet int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals(0x89ABCDEF, x, "getAndSet int value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x01234567);
+
+            int o = (int) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, 0x89ABCDEF);
+            assertEquals(0x01234567, o, "getAndSetAcquire int");
+            int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(0x89ABCDEF, x, "getAndSetAcquire int value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, 0x01234567);
+
+            int o = (int) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, 0x89ABCDEF);
+            assertEquals(0x01234567, o, "getAndSetRelease int");
+            int x = (int) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals(0x89ABCDEF, x, "getAndSetRelease int value");
         }
 
         // get and add, add and get
@@ -574,7 +602,7 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact(0x89ABCDEF, 0xCAFEBABE);
             assertEquals(success, false, "failing weakCompareAndSet int");
             int x = (int) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals(0x01234567, x, "failing weakCompareAndSetRe int value");
+            assertEquals(0x01234567, x, "failing weakCompareAndSet int value");
         }
 
         // Compare set and get
@@ -587,7 +615,6 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             assertEquals(0x89ABCDEF, x, "getAndSet int value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(0x01234567);
 
@@ -597,7 +624,6 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             assertEquals(0x89ABCDEF, x, "getAndSetAcquire int value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact(0x01234567);
 
@@ -869,10 +895,10 @@ public class VarHandleTestMethodHandleAccessInt extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, 0x01234567, 0xCAFEBABE);
-                assertEquals(success, false, "failing weakCompareAndSetAcquire int");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, 0x01234567, 0xCAFEBABE);
+                assertEquals(success, false, "failing weakCompareAndSetRelease int");
                 int x = (int) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals(0x89ABCDEF, x, "failing weakCompareAndSetAcquire int value");
+                assertEquals(0x89ABCDEF, x, "failing weakCompareAndSetRelease int value");
             }
 
             {

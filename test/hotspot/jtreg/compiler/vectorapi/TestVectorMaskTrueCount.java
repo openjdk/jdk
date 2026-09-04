@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +47,7 @@ public class TestVectorMaskTrueCount {
     private static final VectorSpecies<Double> SPECIES_D = DoubleVector.SPECIES_128;
     private static final VectorSpecies<Integer> SPECIES_I = IntVector.SPECIES_128;
     private static final int LENGTH = 1024;
-    private static final Random RD = new Random();
+    private static final Random RD = Utils.getRandomInstance();
     private static boolean[] ba;
     private static boolean[] bb;
 

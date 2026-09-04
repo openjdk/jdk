@@ -1244,6 +1244,21 @@ public final class TKit {
         return System.getProperty(getConfigPropertyName(propertyName));
     }
 
+    static Optional<Boolean> getConfigBooleanProperty(String propertyName) {
+        return Optional.ofNullable(getConfigProperty(propertyName))
+                .map(v -> {
+                    if (v.equalsIgnoreCase("true")) {
+                        return true;
+                    } else if (v.equalsIgnoreCase("false")) {
+                        return false;
+                    } else {
+                        throw new IllegalArgumentException(String.format(
+                                "Invalid value of property %s: %s. Expected: true or false",
+                                getConfigPropertyName(propertyName), v));
+                    }
+                });
+    }
+
     static String getConfigPropertyName(String propertyName) {
         return "jpackage.test." + propertyName;
     }
@@ -1269,10 +1284,6 @@ public final class TKit {
 
     private static TestInstance currentTest() {
         return state().currentTest;
-    }
-
-    static boolean verboseJPackage() {
-        return state().verboseJPackage;
     }
 
     static boolean verboseTestSetup() {
@@ -1317,7 +1328,6 @@ public final class TKit {
                 Map<Object, Object> properties,
                 boolean trace,
                 boolean traceAsserts,
-                boolean verboseJPackage,
                 boolean verboseTestSetup) {
 
             Objects.requireNonNull(os);
@@ -1334,7 +1344,6 @@ public final class TKit {
             this.trace = trace;
             this.traceAsserts = traceAsserts;
 
-            this.verboseJPackage = verboseJPackage;
             this.verboseTestSetup = verboseTestSetup;
         }
 
@@ -1379,12 +1388,10 @@ public final class TKit {
                 if (logOptions == null) {
                     trace = true;
                     traceAsserts = true;
-                    verboseJPackage = true;
                     verboseTestSetup = true;
                 } else if (logOptions.contains("all")) {
                     trace = false;
                     traceAsserts = false;
-                    verboseJPackage = false;
                     verboseTestSetup = false;
                 } else {
                     Predicate<Set<String>> isNonOf = options -> {
@@ -1393,7 +1400,6 @@ public final class TKit {
 
                     trace = isNonOf.test(Set.of("trace", "t"));
                     traceAsserts = isNonOf.test(Set.of("assert", "a"));
-                    verboseJPackage = isNonOf.test(Set.of("jpackage", "jp"));
                     verboseTestSetup = isNonOf.test(Set.of("init", "i"));
                 }
 
@@ -1413,7 +1419,6 @@ public final class TKit {
                 trace = state.trace;
                 traceAsserts = state.traceAsserts;
 
-                verboseJPackage = state.verboseJPackage;
                 verboseTestSetup = state.verboseTestSetup;
 
                 return this;
@@ -1462,7 +1467,6 @@ public final class TKit {
                         mutable ? new HashMap<>(properties) : Map.copyOf(properties),
                         trace,
                         traceAsserts,
-                        verboseJPackage,
                         verboseTestSetup);
             }
 
@@ -1475,7 +1479,6 @@ public final class TKit {
             private boolean trace;
             private boolean traceAsserts;
 
-            private boolean verboseJPackage;
             private boolean verboseTestSetup;
 
             private boolean mutable = true;
@@ -1492,7 +1495,6 @@ public final class TKit {
         private final boolean trace;
         private final boolean traceAsserts;
 
-        private final boolean verboseJPackage;
         private final boolean verboseTestSetup;
     }
 }

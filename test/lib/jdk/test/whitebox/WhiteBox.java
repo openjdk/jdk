@@ -159,6 +159,20 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native Object[] getObjectsViaKlassOopMaps0(Object thing);
+  public Object[] getObjectsViaKlassOopMaps(Object thing) {
+    Objects.requireNonNull(thing);
+    return getObjectsViaKlassOopMaps0(thing);
+  }
+
+  private native Object[] getObjectsViaOopIterator0(Object thing);
+  public Object[] getObjectsViaOopIterator(Object thing) {
+    Objects.requireNonNull(thing);
+    return getObjectsViaOopIterator0(thing);
+  }
+
+  public native Object[] getObjectsViaFrameOopIterator(int depth);
+
   private native int getFieldEntriesLength0(Class<?> aClass);
   public         int getFieldEntriesLength(Class<?> aClass) {
     Objects.requireNonNull(aClass);
@@ -207,6 +221,11 @@ public class WhiteBox {
     Objects.requireNonNull(methodPattern);
     return printMethods0(classNamePattern, methodPattern, flags);
   }
+
+  public native int getMarkWordOffset();
+  public native long getInlineTypePattern();
+  public native long getNullFreeArrayBitInPlace();
+  public native long getFlatArrayBitInPlace();
 
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
@@ -336,10 +355,7 @@ public class WhiteBox {
 
   // Compiler
 
-  // Determines if the libgraal shared library file is present.
-  public native boolean hasLibgraal();
-  public native boolean isC2OrJVMCIIncluded();
-  public native boolean isJVMCISupportedByGC();
+  public native boolean isC2Included();
 
   public native int     matchesMethod(Executable method, String pattern);
   public native int     matchesInline(Executable method, String pattern);
@@ -564,7 +580,6 @@ public class WhiteBox {
   // Don't use these methods directly
   // Use jdk.test.whitebox.gc.GC class instead.
   public native boolean isGCSupported(int name);
-  public native boolean isGCSupportedByJVMCICompiler(int name);
   public native boolean isGCSelected(int name);
   public native boolean isGCSelectedErgonomically();
 
@@ -737,10 +752,13 @@ public class WhiteBox {
   public native Long    getSizeTVMFlag(String name);
   public native String  getStringVMFlag(String name);
   public native Double  getDoubleVMFlag(String name);
-  private final List<Function<String,Object>> flagsGetters = Arrays.asList(
-    this::getBooleanVMFlag, this::getIntVMFlag, this::getUintVMFlag,
-    this::getIntxVMFlag, this::getUintxVMFlag, this::getUint64VMFlag,
-    this::getSizeTVMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+  private final List<Function<String,Object>> flagsGetters;
+  {
+      flagsGetters = Arrays.asList(
+          this::getBooleanVMFlag, this::getIntVMFlag, this::getUintVMFlag,
+          this::getIntxVMFlag, this::getUintxVMFlag, this::getUint64VMFlag,
+          this::getSizeTVMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+  }
 
   public Object getVMFlag(String name) {
     return flagsGetters.stream()

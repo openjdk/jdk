@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
-#include "oops/markWord.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -38,6 +37,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threadIdentifier.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 inline int64_t ObjectMonitor::owner_id_from(JavaThread* thread) {
@@ -57,40 +57,6 @@ inline bool ObjectMonitor::is_entered(JavaThread* current) const {
     return has_owner(current);
   }
   return false;
-}
-
-inline uintptr_t ObjectMonitor::metadata() const {
-  return AtomicAccess::load(&_metadata);
-}
-
-inline void ObjectMonitor::set_metadata(uintptr_t value) {
-  AtomicAccess::store(&_metadata, value);
-}
-
-inline volatile uintptr_t* ObjectMonitor::metadata_addr() {
-  STATIC_ASSERT(std::is_standard_layout<ObjectMonitor>::value);
-  STATIC_ASSERT(offsetof(ObjectMonitor, _metadata) == 0);
-  return &_metadata;
-}
-
-inline markWord ObjectMonitor::header() const {
-  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
-  return markWord(metadata());
-}
-
-inline void ObjectMonitor::set_header(markWord hdr) {
-  assert(!UseObjectMonitorTable, "Locking with OM table does not use header");
-  set_metadata(hdr.value());
-}
-
-inline intptr_t ObjectMonitor::hash() const {
-  assert(UseObjectMonitorTable, "Only used when locking with OM table");
-  return metadata();
-}
-
-inline void ObjectMonitor::set_hash(intptr_t hash) {
-  assert(UseObjectMonitorTable, "Only used when locking with OM table");
-  set_metadata(hash);
 }
 
 inline int ObjectMonitor::waiters() const {

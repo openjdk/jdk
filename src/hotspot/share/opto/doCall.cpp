@@ -25,10 +25,12 @@
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciSymbols.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logMessage.hpp"
@@ -38,6 +40,7 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -46,6 +49,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -166,6 +170,21 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
+        if (IncrementalInlineVector && allow_inline) {
+          // Try to incrementally inline fallback implementation if intrinsification attempt fails.
+          CallGenerator* fallback_cg;
+          {
+            InlinePrinterSuspendScope guard(C->inline_printer());
+            fallback_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms,
+                                         true /*allow_inline*/, prof_factor,
+                                         speculative_receiver_type, false /*allow_intrinsics*/);
+          }
+          if (fallback_cg != nullptr && fallback_cg->is_parse()) {
+            return CallGenerator::for_vector_late_inline(callee, cg, fallback_cg);
+          }
+          // Fallback not inlineable by regular heuristics; fall through.
+        }
+        // Don't try to inline fallback implementation.
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -415,6 +434,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   }
 }
 
+// After Compile::over_inlining_cutoff, should we decline inlining the callee, or should we try
+// inlining again later
+bool Compile::should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller) {
+  if (!IncrementalInline) {
+    return false;
+  }
+
+  if (DelayAfterInliningCutoff) {
+    return true;
+  } else if (callee->force_inline() || caller->is_compiled_lambda_form()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // Return true for methods that shouldn't be inlined early so that
 // they are easier to analyze and optimize as intrinsics.
 bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms) {
@@ -551,6 +586,7 @@ void Parse::do_call() {
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
     C->set_max_node_limit(3*MaxNodeLimit);
+    C->set_node_count_inlining_cutoff(LiveNodeCountInliningCutoff);
   }
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
@@ -615,7 +651,7 @@ void Parse::do_call() {
 
   // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
   ciKlass* receiver_constraint = nullptr;
-  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
+  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_constructor()) {
     ciInstanceKlass* calling_klass = method()->holder();
     ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
@@ -630,9 +666,14 @@ void Parse::do_call() {
     Node* receiver_node = stack(sp() - nargs);
     Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = nullptr;
-    Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
+    SafePointNode* new_cast_failure_map = nullptr;
+    Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl, &new_cast_failure_map);
     if (bad_type_ctrl != nullptr) {
       PreserveJVMState pjvms(this);
+      if (new_cast_failure_map != nullptr) {
+        // The current map on the success path could have been modified. Use the dedicated failure path map.
+        set_map(new_cast_failure_map);
+      }
       set_control(bad_type_ctrl);
       uncommon_trap(Deoptimization::Reason_class_check,
                     Deoptimization::Action_none);
@@ -657,6 +698,10 @@ void Parse::do_call() {
   // This call checks with CHA, the interpreter profile, intrinsics table, etc.
   // It decides whether inlining is desirable or not.
   CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type);
+  if (failing()) {
+    return;
+  }
+  assert(cg != nullptr, "must find a CallGenerator for callee %s", callee->name()->as_utf8());
 
   // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
   orig_callee = callee = nullptr;
@@ -743,7 +788,7 @@ void Parse::do_call() {
         BasicType rt = rtype->basic_type();
         BasicType ct = ctype->basic_type();
         if (ct == T_VOID) {
-          // It's OK for a method  to return a value that is discarded.
+          // It's OK for a method to return a value that is discarded.
           // The discarding does not require any special action from the caller.
           // The Java code knows this, at VerifyType.isNullConversion.
           pop_node(rt);  // whatever it was, pop it
@@ -800,6 +845,28 @@ void Parse::do_call() {
     BasicType ct = ctype->basic_type();
     if (is_reference_type(ct)) {
       record_profiled_return_for_speculation();
+    }
+
+    if (!rtype->is_void()) {
+      Node* retnode = peek();
+      const Type* rettype = gvn().type(retnode);
+      if (!cg->method()->return_value_is_larval() && !retnode->is_InlineType() && rettype->is_inlinetypeptr()) {
+        retnode = InlineTypeNode::make_from_oop(this, retnode, rettype->inline_klass());
+        dec_sp(1);
+        push(retnode);
+      }
+    }
+
+    if (cg->method()->receiver_maybe_larval() && receiver != nullptr &&
+        !receiver->is_InlineType() && gvn().type(receiver)->is_inlinetypeptr()) {
+      InlineTypeNode* non_larval = InlineTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->inline_klass());
+      // Relinquish the oop input, we will delay the allocation to the point it is needed, see the
+      // comments in InlineTypeNode::Ideal for more details
+      non_larval = non_larval->clone_if_required(&gvn(), nullptr);
+      non_larval->set_oop(gvn(), null());
+      non_larval->set_is_buffered(gvn(), false);
+      non_larval = gvn().transform(non_larval)->as_InlineType();
+      map()->replace_edge(receiver, non_larval);
     }
   }
 

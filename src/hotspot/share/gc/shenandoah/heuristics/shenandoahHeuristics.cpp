@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2018, 2020, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2018, 2026, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,14 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
+#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "runtime/globals_extension.hpp"
@@ -60,7 +64,6 @@ ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
   _last_cycle_end(0),
   _gc_times_learned(0),
   _gc_time_penalties(0),
-  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
   _metaspace_oom()
 {
   size_t num_regions = ShenandoahHeap::heap()->num_regions();
@@ -98,12 +101,11 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
   size_t free_regions = 0;
 
   for (size_t i = 0; i < num_regions; i++) {
-    ShenandoahHeapRegion* region = heap->get_region(i);
-
-    if (!_space_info->contains(region)) {
+    if (!_space_info->contains(heap->region_affiliation(i))) {
       continue;
     }
 
+    ShenandoahHeapRegion* region = heap->get_region(i);
     size_t garbage = region->garbage();
     total_garbage += garbage;
 
@@ -150,7 +152,10 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
 
   if (immediate_percent <= ShenandoahImmediateThreshold) {
     choose_collection_set_from_regiondata(collection_set, candidates, cand_idx, immediate_garbage + free);
+  } else {
+    prepare_for_abbreviated_cycle();
   }
+
   collection_set->summarize(total_garbage, immediate_garbage, immediate_regions);
   ShenandoahTracer::report_evacuation_info(collection_set, free_regions, immediate_regions, immediate_garbage);
 }
@@ -174,11 +179,17 @@ void ShenandoahHeuristics::record_cycle_start() {
 
 void ShenandoahHeuristics::record_cycle_end() {
   _last_cycle_end = os::elapsedTime();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->mode()->is_generational()) {
+    const size_t available = _space_info->soft_mutator_available();
+    heap->alloc_rate().update_minimum_sample_size(available);
+  }
 }
 
 bool ShenandoahHeuristics::should_start_gc() {
   if (_start_gc_is_pending) {
-    log_trigger("GC start is already pending");
+    log_info(gc, ergo)("GC start is already pending");
     return true;
   }
   // Perform GC to cleanup metaspace
@@ -192,8 +203,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_trigger("Time since last GC (%.0f ms) is larger than guaranteed interval (%zu ms)",
-                   last_time_ms, _guaranteed_gc_interval);
+      log_trigger("Guaranteed Interval. %.0f ms since last GC, above %zu ms guaranteed interval",
+                  last_time_ms, _guaranteed_gc_interval);
       accept_trigger();
       return true;
     }
@@ -247,13 +258,20 @@ void ShenandoahHeuristics::log_trigger(const char* fmt, ...) {
 }
 
 void ShenandoahHeuristics::record_success_concurrent() {
-  _gc_cycle_time_history->add(elapsed_cycle_time());
   _gc_times_learned++;
 
   adjust_penalty(Concurrent_Adjust);
 }
 
-void ShenandoahHeuristics::record_degenerated() {
+void ShenandoahHeuristics::record_degenerated(bool is_generational_global) {
+
+  if (!is_generational_global) {
+    // We don't penalize generational GC heuristics for global GC because heuristics predict based on assumption of young GC.
+    _most_recent_declined_trigger_count = _declined_trigger_count;
+    _declined_trigger_count = 0;
+  } else {
+    _most_recent_declined_trigger_count = _declined_trigger_count = 0;
+  }
   adjust_penalty(Degenerated_Penalty);
 }
 
@@ -266,9 +284,7 @@ void ShenandoahHeuristics::record_allocation_failure_gc() {
 }
 
 void ShenandoahHeuristics::record_requested_gc() {
-  // Assume users call System.gc() when external state changes significantly,
-  // which forces us to re-learn the GC timings and allocation rates.
-  _gc_times_learned = 0;
+  // Do nothing.
 }
 
 bool ShenandoahHeuristics::can_unload_classes() {

@@ -26,6 +26,7 @@
 #include "cds/dynamicArchive.hpp"
 #include "ci/ciEnv.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/javaThreadStatus.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -103,10 +104,6 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/spinYield.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciEnv.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -271,102 +268,6 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 // ======= JavaThread ========
 
-#if INCLUDE_JVMCI
-
-jlong* JavaThread::_jvmci_old_thread_counters;
-
-static bool jvmci_counters_include(JavaThread* thread) {
-  return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
-}
-
-void JavaThread::collect_counters(jlong* array, int length) {
-  assert(length == JVMCICounterSize, "wrong value");
-  for (int i = 0; i < length; i++) {
-    array[i] = _jvmci_old_thread_counters[i];
-  }
-  for (JavaThread* tp : ThreadsListHandle()) {
-    if (jvmci_counters_include(tp)) {
-      for (int i = 0; i < length; i++) {
-        array[i] += tp->_jvmci_counters[i];
-      }
-    }
-  }
-}
-
-// Attempt to enlarge the array for per thread counters.
-static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
-  jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
-  if (new_counters == nullptr) {
-    return nullptr;
-  }
-  if (old_counters == nullptr) {
-    old_counters = new_counters;
-    memset(old_counters, 0, sizeof(jlong) * new_size);
-  } else {
-    for (int i = 0; i < MIN2((int) current_size, new_size); i++) {
-      new_counters[i] = old_counters[i];
-    }
-    if (new_size > current_size) {
-      memset(new_counters + current_size, 0, sizeof(jlong) * (new_size - current_size));
-    }
-    FREE_C_HEAP_ARRAY(old_counters);
-  }
-  return new_counters;
-}
-
-// Attempt to enlarge the array for per thread counters.
-bool JavaThread::resize_counters(int current_size, int new_size) {
-  jlong* new_counters = resize_counters_array(_jvmci_counters, current_size, new_size);
-  if (new_counters == nullptr) {
-    return false;
-  } else {
-    _jvmci_counters = new_counters;
-    return true;
-  }
-}
-
-class VM_JVMCIResizeCounters : public VM_Operation {
- private:
-  int _new_size;
-  bool _failed;
-
- public:
-  VM_JVMCIResizeCounters(int new_size) : _new_size(new_size), _failed(false) { }
-  VMOp_Type type()                  const        { return VMOp_JVMCIResizeCounters; }
-  bool allow_nested_vm_operations() const        { return true; }
-  void doit() {
-    // Resize the old thread counters array
-    jlong* new_counters = resize_counters_array(JavaThread::_jvmci_old_thread_counters, JVMCICounterSize, _new_size);
-    if (new_counters == nullptr) {
-      _failed = true;
-      return;
-    } else {
-      JavaThread::_jvmci_old_thread_counters = new_counters;
-    }
-
-    // Now resize each threads array
-    for (JavaThread* tp : ThreadsListHandle()) {
-      if (!tp->resize_counters(JVMCICounterSize, _new_size)) {
-        _failed = true;
-        break;
-      }
-    }
-    if (!_failed) {
-      JVMCICounterSize = _new_size;
-    }
-  }
-
-  bool failed() { return _failed; }
-};
-
-bool JavaThread::resize_all_jvmci_counters(int new_size) {
-  VM_JVMCIResizeCounters op(new_size);
-  VMThread::execute(&op);
-  return !op.failed();
-}
-
-#endif // INCLUDE_JVMCI
-
 #ifdef ASSERT
 // Checks safepoint allowed and clears unhandled oops at potential safepoints.
 void JavaThread::check_possible_safepoint() {
@@ -389,8 +290,15 @@ void JavaThread::check_for_valid_safepoint_state() {
   // are held.
   check_possible_safepoint();
 
-  if (thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
+  switch (thread_state()) {
+  case _thread_in_vm:
+    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier (checked above).
+    if (handle_area()->no_handle_mark_active()) {
+      fatal("LEAF method calling lock?");
+    }
+    break;
+  default:
+    fatal("illegal thread state %d, LEAF method calling lock?", thread_state());
   }
 
   if (GCALotAtAllSafepoints) {
@@ -426,6 +334,8 @@ JavaThread::JavaThread(MemTag mem_tag) :
 
   _suspend_flags(0),
 
+  _at_no_async_entry_count(0),
+
   _thread_state(_thread_new),
   _saved_exception_pc(nullptr),
 #ifdef ASSERT
@@ -450,25 +360,13 @@ JavaThread::JavaThread(MemTag mem_tag) :
 #endif
   _jni_attach_state(_not_attaching_via_jni),
   _is_in_internal_oome_mark(false),
-#if INCLUDE_JVMCI
-  _pending_deoptimization(-1),
-  _pending_monitorenter(false),
-  _pending_transfer_to_interpreter(false),
-  _pending_failed_speculation(0),
-  _jvmci{nullptr},
-  _libjvmci_runtime(nullptr),
-  _jvmci_counters(nullptr),
-  _jvmci_reserved0(0),
-  _jvmci_reserved1(0),
-  _jvmci_reserved_oop0(nullptr),
-  _live_nmethod(nullptr),
-#endif // INCLUDE_JVMCI
 
   _exception_oop(oop()),
   _exception_pc(nullptr),
   _exception_handler_pc(nullptr),
 
   _jni_active_critical(0),
+  _jni_deferred_suspension_count(0),
   _pending_jni_exception_check_fn(nullptr),
   _depth_first_number(0),
 
@@ -523,13 +421,6 @@ JavaThread::JavaThread(MemTag mem_tag) :
   _lock_stack(this),
   _om_cache(this) {
   set_jni_functions(jni_functions());
-
-#if INCLUDE_JVMCI
-  assert(_jvmci._implicit_exception_pc == nullptr, "must be");
-  if (JVMCICounterSize > 0) {
-    resize_counters(0, (int) JVMCICounterSize);
-  }
-#endif // INCLUDE_JVMCI
 
   // Setup safepoint state info for this thread
   ThreadSafepointState::create(this);
@@ -701,11 +592,6 @@ JavaThread::~JavaThread() {
   ThreadSafepointState::destroy(this);
   if (_thread_stat != nullptr) delete _thread_stat;
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(_jvmci_counters);
-  }
-#endif // INCLUDE_JVMCI
 }
 
 
@@ -977,16 +863,6 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
     _timer_exit_phase4.start();
   }
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    if (jvmci_counters_include(this)) {
-      for (int i = 0; i < JVMCICounterSize; i++) {
-        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
-      }
-    }
-  }
-#endif // INCLUDE_JVMCI
-
   // Remove from list of active threads list, and notify VM thread if we are the last non-daemon thread.
   // We call BarrierSet::barrier_set()->on_thread_detach() here so no touching of oops after this point.
   Threads::remove(this, daemon);
@@ -1105,6 +981,9 @@ void JavaThread::handle_async_exception(oop java_throwable) {
 }
 
 void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
+  DEBUG_ONLY(Thread* current = Thread::current();)
+  assert(is_handshake_safe_for(current), "must be");
+
   // Do not throw asynchronous exceptions against the compiler thread
   // or if the thread is already exiting.
   if (!can_call_java() || is_exiting()) {
@@ -1128,28 +1007,6 @@ void JavaThread::install_async_exception(AsyncExceptionHandshakeClosure* aehc) {
     // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
     this->interrupt();
   }
-}
-
-class InstallAsyncExceptionHandshakeClosure : public HandshakeClosure {
-  AsyncExceptionHandshakeClosure* _aehc;
-public:
-  InstallAsyncExceptionHandshakeClosure(AsyncExceptionHandshakeClosure* aehc) :
-    HandshakeClosure("InstallAsyncException"), _aehc(aehc) {}
-  ~InstallAsyncExceptionHandshakeClosure() {
-    // If InstallAsyncExceptionHandshakeClosure was never executed we need to clean up _aehc.
-    delete _aehc;
-  }
-  void do_thread(Thread* thr) {
-    JavaThread* target = JavaThread::cast(thr);
-    target->install_async_exception(_aehc);
-    _aehc = nullptr;
-  }
-};
-
-void JavaThread::send_async_exception(JavaThread* target, oop java_throwable) {
-  OopHandle e(Universe::vm_global(), java_throwable);
-  InstallAsyncExceptionHandshakeClosure iaeh(new AsyncExceptionHandshakeClosure(e));
-  Handshake::execute(&iaeh, target);
 }
 
 bool JavaThread::is_in_vthread_transition() const {
@@ -1246,28 +1103,6 @@ void JavaThread::verify_not_published() {
 }
 #endif
 
-// Slow path when the native==>Java barriers detect a safepoint/handshake is
-// pending, when _suspend_flags is non-zero or when we need to process a stack
-// watermark. Also check for pending async exceptions (except unsafe access error).
-// Note only the native==>Java barriers can call this function when thread state
-// is _thread_in_native_trans.
-void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_native_trans, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  thread->set_thread_state(_thread_in_vm);
-
-  // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
-
-  // After returning from native, it could be that the stack frames are not
-  // yet safe to use. We catch such situations in the subsequent stack watermark
-  // barrier, which will trap unsafe stack frames.
-  StackWatermarkSet::before_unwind(thread);
-}
-
 #ifndef PRODUCT
 // Deoptimization
 // Function for testing deoptimization
@@ -1275,6 +1110,10 @@ void JavaThread::deoptimize() {
   StackFrameStream fst(this, false /* update */, true /* process_frames */);
   bool deopt = false;           // Dump stack only if a deopt actually happens.
   bool only_at = strlen(DeoptimizeOnlyAt) > 0;
+
+  LogMessage(deoptimization) msg;
+  NonInterleavingLogStream ls(LogLevel::Trace, msg);
+
   // Iterate over all frames in the thread and deoptimize
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->can_be_deoptimized()) {
@@ -1303,19 +1142,20 @@ void JavaThread::deoptimize() {
         }
       }
 
-      if (DebugDeoptimization && !deopt) {
+      if (!deopt && ls.is_enabled()) {
         deopt = true; // One-time only print before deopt
-        tty->print_cr("[BEFORE Deoptimization]");
-        trace_frames();
-        trace_stack();
+        ls.print_cr("[BEFORE Deoptimization]");
+        trace_frames_on(&ls);
+        trace_stack_on(&ls);
       }
       Deoptimization::deoptimize(this, *fst.current());
     }
   }
 
-  if (DebugDeoptimization && deopt) {
-    tty->print_cr("[AFTER Deoptimization]");
-    trace_frames();
+
+  if (deopt && ls.is_enabled()) {
+    ls.print_cr("[AFTER Deoptimization]");
+    trace_frames_on(&ls);
   }
 }
 
@@ -1399,13 +1239,6 @@ void JavaThread::oops_do_no_frames(OopClosure* f, NMethodClosure* cf) {
   // around using this function
   f->do_oop((oop*) &_vm_result_oop);
   f->do_oop((oop*) &_exception_oop);
-#if INCLUDE_JVMCI
-  f->do_oop((oop*) &_jvmci_reserved_oop0);
-
-  if (_live_nmethod != nullptr && cf != nullptr) {
-    cf->do_nmethod(_live_nmethod);
-  }
-#endif
 
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->oops_do(f, cf);
@@ -1459,12 +1292,6 @@ void JavaThread::nmethods_do(NMethodClosure* cf) {
   if (jvmti_thread_state() != nullptr) {
     jvmti_thread_state()->nmethods_do(cf);
   }
-
-#if INCLUDE_JVMCI
-  if (_live_nmethod != nullptr) {
-    cf->do_nmethod(_live_nmethod);
-  }
-#endif
 }
 
 void JavaThread::metadata_do(MetadataClosure* f) {
@@ -1491,15 +1318,10 @@ static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
-  case _thread_new_trans:         return "_thread_new_trans";
   case _thread_in_native:         return "_thread_in_native";
-  case _thread_in_native_trans:   return "_thread_in_native_trans";
   case _thread_in_vm:             return "_thread_in_vm";
-  case _thread_in_vm_trans:       return "_thread_in_vm_trans";
   case _thread_in_Java:           return "_thread_in_Java";
-  case _thread_in_Java_trans:     return "_thread_in_Java_trans";
   case _thread_blocked:           return "_thread_blocked";
-  case _thread_blocked_trans:     return "_thread_blocked_trans";
   default:                        return "unknown thread state";
   }
 }
@@ -1894,13 +1716,12 @@ void JavaThread::popframe_free_preserved_args() {
 
 #ifndef PRODUCT
 
-void JavaThread::trace_frames() {
-  tty->print_cr("[Describe stack]");
+void JavaThread::trace_frames_on(outputStream* st) {
+  st->print_cr("[Describe stack]");
   int frame_no = 1;
   for (StackFrameStream fst(this, true /* update */, true /* process_frames */); !fst.is_done(); fst.next()) {
-    tty->print("  %d. ", frame_no++);
-    fst.current()->print_value_on(tty);
-    tty->cr();
+    st->print("  %d. ", frame_no++);
+    fst.current()->print_value_on(st);
   }
 }
 
@@ -1947,24 +1768,24 @@ void JavaThread::print_frame_layout(int depth, bool validate_only) {
 }
 #endif
 
-void JavaThread::trace_stack_from(vframe* start_vf) {
+void JavaThread::trace_stack_from(outputStream* st, vframe* start_vf) {
   ResourceMark rm;
   int vframe_no = 1;
   for (vframe* f = start_vf; f; f = f->sender()) {
     if (f->is_java_frame()) {
-      javaVFrame::cast(f)->print_activation(vframe_no++);
+      javaVFrame::cast(f)->print_activation(st, vframe_no++);
     } else {
-      f->print();
+      f->print(st);
     }
     if (vframe_no > StackPrintLimit) {
-      tty->print_cr("...<more frames>...");
+      st->print_cr("...<more frames>...");
       return;
     }
   }
 }
 
 
-void JavaThread::trace_stack() {
+void JavaThread::trace_stack_on(outputStream* st) {
   if (!has_last_Java_frame()) return;
   Thread* current_thread = Thread::current();
   ResourceMark rm(current_thread);
@@ -1973,7 +1794,7 @@ void JavaThread::trace_stack() {
                       RegisterMap::UpdateMap::include,
                       RegisterMap::ProcessFrames::include,
                       RegisterMap::WalkContinuation::skip);
-  trace_stack_from(last_java_vframe(&reg_map));
+  trace_stack_from(st, last_java_vframe(&reg_map));
 }
 
 
