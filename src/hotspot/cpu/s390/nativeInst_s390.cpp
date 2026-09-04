@@ -634,6 +634,26 @@ void NativeGeneralJump::replace_mt_safe(address instr_addr, address code_buffer)
 void NativeDeoptInstruction::verify() {
 }
 
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  uint32_t data = ((uint32_t)oopmap_slot << 24) | (uint32_t)cb_offset;
+  assert(data != 0, "must be");
+  // Write the 4-byte payload into the imm32 field of the CLFI instruction
+  // (bytes 2..5). s390 is big-endian so a direct 32-bit write is correct.
+  *(uint32_t*) addr_at(displacement_offset) = data;
+  ICache::invalidate_range(addr_at(0), instruction_size);
+
+  int32_t oopmap_slot_dec, cb_offset_dec;
+  assert(check(), "pcn not recognized after patch");
+  assert(decode(oopmap_slot_dec, cb_offset_dec), "encoding failed");
+  assert(oopmap_slot == oopmap_slot_dec, "oopmap slot encoding is wrong");
+  assert(cb_offset   == cb_offset_dec,   "cb offset encoding is wrong");
+
+  return true; // successfully encoded
+}
+
 void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
