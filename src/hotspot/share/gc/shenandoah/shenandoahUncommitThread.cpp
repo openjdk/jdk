@@ -91,7 +91,7 @@ int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate&
   return 0;
 }
 
-bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_until)  {
+bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_until) {
   _candidates_count = 0;
 
   if (!_heap->is_idle() || !is_uncommit_allowed()) {
@@ -122,7 +122,7 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
       // Coarsen that time to about 100ms window. Within that window, uncommit from higher
       // indexes, to allow allocation path to take earlier regions first. The windows themselves
       // have higher priority the earlier the empty time was.
-      candidate._priority = (int64_t)r->index() - (int64_t)r->empty_time() * 100 * _heap->num_regions();
+      candidate._priority = (int64_t)r->index() - (int64_t)r->empty_time() * 10 * _heap->num_regions();
     }
   }
 

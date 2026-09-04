@@ -69,10 +69,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Stall uncommit thread to allow allocator progress
   bool check_uncommit_or_delay();
 
-  // Iterate over and uncommit eligible regions until committed heap falls below
-  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
-  // it was last made empty is before `shrink_delay` seconds since jvm start.
-  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
+  // Iterate over and uncommit eligible regions
   void do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed);
 
   static int compare_uncommit_priority(Candidate& a, Candidate& b);
