@@ -5196,8 +5196,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
             (use->in(MemNode::Memory) == n)) {
           // They overwrite memory edge corresponding to destination array,
           memnode_worklist.push(use);
-        } else if (!(op == Op_CmpP || op == Op_Conv2B ||
-              op == Op_CastP2X || op == Op_FastLock ||
+        } else if (!(op == Op_CmpP || op == Op_Conv2B || op == Op_CastP2X ||
               use->is_memory_access_intrinsic() ||
               op == Op_SubTypeCheck || op == Op_InlineType || op == Op_FlatArrayCheck ||
               op == Op_ReinterpretS2HF ||

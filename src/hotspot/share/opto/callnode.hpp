@@ -54,7 +54,6 @@ class       AllocateArrayNode;
 class     AbstractLockNode;
 class       LockNode;
 class       UnlockNode;
-class FastLockNode;
 
 //------------------------------StartNode--------------------------------------
 // The method start node
@@ -402,11 +401,11 @@ public:
     verify_input(jvms, arg_idx);
     return in(jvms->argoff() + idx);
   }
-  Node* monitor_box(const JVMState* jvms, uint idx) const {
+  BoxLockNode* monitor_box(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
     uint mon_box_idx = jvms->monitor_box_offset(idx);
     assert(jvms->is_monitor_box(mon_box_idx), "not a monitor box offset");
-    return in(mon_box_idx);
+    return in(mon_box_idx)->as_BoxLock();
   }
   Node* monitor_obj(const JVMState* jvms, uint idx) const {
     assert(verify_jvms(jvms), "jvms must match");
@@ -432,10 +431,10 @@ public:
   }
   void grow_stack(JVMState* jvms, uint grow_by);
   // Handle monitor stack
-  void push_monitor( const FastLockNode *lock );
-  void pop_monitor ();
-  Node *peek_monitor_box() const;
-  Node *peek_monitor_obj() const;
+  void push_monitor(BoxLockNode* box, Node* obj);
+  void pop_monitor();
+  BoxLockNode* peek_monitor_box() const;
+  Node*        peek_monitor_obj() const;
   // Peek Operand Stacks, JVMS 2.6.2
   Node* peek_operand(uint off = 0) const;
 
@@ -1307,10 +1306,9 @@ public:
 #endif
   }
   virtual int Opcode() const = 0;
-  Node *   obj_node() const       {return in(TypeFunc::Parms + 0); }
-  Node *   box_node() const       {return in(TypeFunc::Parms + 1); }
-  Node *   fastlock_node() const  {return in(TypeFunc::Parms + 2); }
-  void     set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
+  Node*   obj_node() const       { return in(TypeFunc::Parms + 0); }
+  Node*   box_node() const       { return in(TypeFunc::Parms + 1); }
+  void    set_box_node(Node* box) { set_req(TypeFunc::Parms + 1, box); }
 
   const Type *sub(const Type *t1, const Type *t2) const { return TypeInt::CC;}
 
@@ -1347,10 +1345,9 @@ public:
 // High-level lock operation
 //
 // This is a subclass of CallNode because it is a macro node which gets expanded
-// into a code sequence containing a call.  This node takes 3 "parameters":
-//    0  -  object to lock
-//    1 -   a BoxLockNode
-//    2 -   a FastLockNode
+// into a code sequence containing a call.  This node takes two "parameters":
+//    0 - object to lock
+//    1 - a BoxLockNode
 //
 class LockNode : public AbstractLockNode {
   static const TypeFunc* _lock_type_Type;
@@ -1363,12 +1360,12 @@ public:
 
   static void initialize_lock_Type() {
     assert(_lock_type_Type == nullptr, "should be called once");
-    // create input type (domain)
-    const Type **fields = TypeTuple::fields(3);
+    int argcnt = 2;
+
+    const Type** fields = TypeTuple::fields(argcnt);
     fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;  // Object to be Locked
     fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;    // Address of stack location for lock
-    fields[TypeFunc::Parms+2] = TypeInt::BOOL;         // FastLock
-    const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3,fields);
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
 
     // create result type (range)
     fields = TypeTuple::fields(0);
