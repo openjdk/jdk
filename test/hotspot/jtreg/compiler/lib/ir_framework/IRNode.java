@@ -533,6 +533,11 @@ public class IRNode {
         callOfNodes(irNodePlaceholder, "CallLeafNoFP", calleeRegex);
     }
 
+    public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
     static {
         beforeMatchingNameRegex(CAST_II, "CastII");
