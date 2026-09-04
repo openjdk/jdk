@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -257,6 +257,9 @@ public final class SegmentBulkOperations {
         final boolean srcAndDstBytesDiffer = srcBytes != dstBytes;
 
         if (length == 0) {
+            // No memory access occurs below, so the segments' states must be checked explicitly.
+            src.sessionImpl().checkValidState();
+            dst.sessionImpl().checkValidState();
             return srcAndDstBytesDiffer ? 0 : -1;
         } else if (length < NATIVE_THRESHOLD_MISMATCH) {
             return mismatch(src, srcFromOffset, dst, dstFromOffset, 0, (int) length, srcAndDstBytesDiffer);
