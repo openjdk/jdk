@@ -156,18 +156,27 @@ public class TestStressArrayCopy {
             "compiler.arraycopy.stress.StressObjectArrayCopy",
         };
 
+        System.out.println("Total configs: " + configs.size());
+        System.out.println("Total classNames: " + classNames.length);
+        System.out.println("Total processes to launch: " + (configs.size() * classNames.length));
+        System.out.println("MAX_PARALLELISM: " + MAX_PARALLELISM);
+
         ArrayList<Fork> forks = new ArrayList<>();
         int jobs = 0;
+        final long REPORT_INTERVAL_MS = 30_000;
+        long lastReport = 0;
 
         for (List<String> c : configs) {
             for (String className : classNames) {
                 // Start a new job
                 {
+                    long startTime = System.currentTimeMillis();
                     ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(mix(c, "-Xmx256m", className));
                     Process p = pb.start();
                     OutputAnalyzer oa = new OutputAnalyzer(p);
-                    forks.add(new Fork(p, oa));
+                    forks.add(new Fork(p, oa, className, c, startTime));
                     jobs++;
+                    System.out.println("Started: " + className + " config: " + c);
                 }
 
                 // Wait for the completion of other jobs
@@ -176,9 +185,22 @@ public class TestStressArrayCopy {
                     if (f != null) {
                         OutputAnalyzer oa = f.oa();
                         oa.shouldHaveExitValue(0);
+                        long elapsed = (System.currentTimeMillis() - f.startTime()) / 1000;
+                        System.out.println("Finished: " + f.className() + " config: " + f.config() + " in " + elapsed + "s");
                         forks.remove(f);
                         jobs--;
                     } else {
+                        long now = System.currentTimeMillis();
+                        if (now - lastReport >= REPORT_INTERVAL_MS) {
+                            lastReport = now;
+                            System.out.println("Still waiting for " + jobs + " processes to complete:");
+                            for (Fork f2 : forks) {
+                                if (f2.p().isAlive()) {
+                                    long elapsed = (now - f2.startTime()) / 1000;
+                                    System.out.println("  Still running: " + f2.className() + " config: " + f2.config() + " elapsed: " + elapsed + "s");
+                                }
+                            }
+                        }
                         // Nothing is done, wait a little.
                         Thread.sleep(200);
                     }
@@ -190,6 +212,8 @@ public class TestStressArrayCopy {
         for (Fork f : forks) {
             OutputAnalyzer oa = f.oa();
             oa.shouldHaveExitValue(0);
+            long elapsed = (System.currentTimeMillis() - f.startTime()) / 1000;
+            System.out.println("Finished: " + f.className() + " config: " + f.config() + " in " + elapsed + "s");
         }
     }
 
@@ -202,6 +226,6 @@ public class TestStressArrayCopy {
         return null;
     }
 
-    private static record Fork(Process p, OutputAnalyzer oa) {};
+    private static record Fork(Process p, OutputAnalyzer oa, String className, List<String> config, long startTime) {};
 
 }
