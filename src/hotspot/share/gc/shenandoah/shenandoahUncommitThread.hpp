@@ -53,19 +53,19 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   Monitor _uncommit_lock;
 
   // Plan work, fill out candidate regions. True if there is work.
-  bool plan_work(double shrink_before, size_t shrink_until);
+  bool plan_work(double shrink_delay, size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
-  void uncommit(double shrink_before, size_t shrink_until);
+  void uncommit(double shrink_delay, size_t shrink_until);
 
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
   // Iterate over and uncommit eligible regions until committed heap falls below
   // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
-  // it was last made empty is before `shrink_before` seconds since jvm start.
+  // it was last made empty is before `shrink_delay` seconds since jvm start.
   // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
-  size_t do_uncommit_work(double shrink_before, size_t shrink_until);
+  size_t do_uncommit_work(double shrink_delay, size_t shrink_until);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
