@@ -24,11 +24,11 @@
 
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciSymbol.hpp"
 #include "ci/ciSymbols.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -222,16 +222,16 @@ ciField::ciField(fieldDescriptor *fd) :
          "bootstrap classes must not create & cache unshared fields");
 }
 
-// Special copy constructor used to flatten inline type fields by
-// copying the fields of the inline type to a new holder klass.
+// Special copy constructor used to flatten value type fields by
+// copying the fields of the value type to a new holder klass.
 ciField::ciField(ciField* declared_field, ciField* subfield) {
-  assert(subfield->holder()->is_inlinetype() || subfield->holder()->is_abstract(), "should only be used for inline type field flattening");
+  assert(subfield->holder()->is_value_klass() || subfield->holder()->is_abstract(), "should only be used for value type field flattening");
   assert(!subfield->is_flat(), "subfield must not be flat");
   assert(declared_field->is_flat(), "declared field must be flat");
 
   _flags = declared_field->flags();
   _holder = declared_field->holder();
-  _offset = declared_field->offset_in_bytes() + (subfield->offset_in_bytes() - declared_field->type()->as_inline_klass()->payload_offset());
+  _offset = declared_field->offset_in_bytes() + (subfield->offset_in_bytes() - declared_field->type()->as_value_klass()->payload_offset());
 
   ResourceMark rm;
   char buffer[256];
@@ -299,8 +299,8 @@ static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in inline type buffers
-  if (holder->is_inlinetype())
+  // Trust final fields in value type buffers
+  if (holder->is_value_klass())
     return true;
   // Trust final fields in records
   if (holder->is_record())
@@ -316,9 +316,9 @@ void ciField::initialize_from(fieldDescriptor* fd) {
   assert(field_holder != nullptr, "null field_holder");
   _holder = CURRENT_ENV->get_instance_klass(field_holder);
   _is_flat = fd->is_flat();
-  _is_null_free = fd->is_null_free_inline_type();
+  _is_null_free = fd->is_null_free_value_type();
   if (fd->has_null_marker()) {
-    InlineLayoutInfo* li = field_holder->inline_layout_info_adr(fd->index());
+    ValueFieldLayoutInfo* li = field_holder->value_field_layout_info_adr(fd->index());
     _null_marker_offset = li->null_marker_offset();
   } else {
     _null_marker_offset = -1;
@@ -420,7 +420,7 @@ ciType* ciField::compute_type_impl() {
 
 bool ciField::is_atomic() {
   assert(is_flat(), "should not ask this property for non-flat field %s.%s", holder()->name()->as_utf8(), name()->as_utf8());
-  return LayoutKindHelper::is_atomic_flat(_layout_kind) && !type()->as_inline_klass()->is_naturally_atomic(is_null_free());
+  return LayoutKindHelper::is_atomic_flat(_layout_kind) && !type()->as_value_klass()->is_naturally_atomic(is_null_free());
 }
 
 // ------------------------------------------------------------------
@@ -510,7 +510,7 @@ bool ciField::is_autobox_cache() {
 
 bool ciField::empty_null_free_initialized_value_field(bool method_is_safe) {
   ciType* field_type = type();
-  return is_null_free() && field_type->is_inlinetype() && field_type->as_inline_klass()->is_empty() &&
+  return is_null_free() && field_type->is_value_klass() && field_type->as_value_klass()->is_empty() &&
          (method_is_safe || is_flat());
 }
 

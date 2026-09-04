@@ -40,13 +40,13 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/unsafe.hpp"
@@ -223,7 +223,7 @@ public:
   ATTRIBUTE_NO_UBSAN
   void put(T x) {
     GuardUnsafeAccess guard(_thread);
-    assert(_obj == nullptr || !_obj->is_inline_type(), "receiver cannot be an instance of a value class because they are immutable");
+    assert(_obj == nullptr || !_obj->is_value_type(), "receiver cannot be an instance of a value class because they are immutable");
     *addr() = normalize(x);
   }
 
@@ -240,7 +240,7 @@ public:
   }
 };
 
-static void log_unsafe_value_access(oop p, jlong offset, InlineKlass* vk) {
+static void log_unsafe_value_access(oop p, jlong offset, ValueKlass* vk) {
   Klass* k = p->klass();
   if (log_is_enabled(Trace, valuetypes)) {
     ResourceMark rm;
@@ -278,13 +278,13 @@ UNSAFE_ENTRY(void, Unsafe_PutReference(JNIEnv *env, jobject unsafe, jobject obj,
   oop x = JNIHandles::resolve(x_h);
   oop p = JNIHandles::resolve(obj);
   assert_field_offset_sane(p, offset);
-  assert(!p->is_inline_type(), "receiver cannot be an instance of a value class because they are immutable");
+  assert(!p->is_value_type(), "receiver cannot be an instance of a value class because they are immutable");
   HeapAccess<ON_UNKNOWN_OOP_REF>::oop_store_at(p, offset, x);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jlong, Unsafe_ValueHeaderSize(JNIEnv *env, jobject unsafe, jclass c)) {
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(c));
-  InlineKlass* vk = InlineKlass::cast(k);
+  ValueKlass* vk = ValueKlass::cast(k);
   return vk->payload_offset();
 } UNSAFE_END
 
@@ -336,7 +336,7 @@ UNSAFE_ENTRY(jint, Unsafe_FieldLayout(JNIEnv *env, jobject unsafe, jobject field
   } else {
     InstanceKlass* ik = InstanceKlass::cast(k);
     if (ik->field_is_flat(slot)) {
-      return (jint)ik->inline_layout_info(slot).kind();
+      return (jint)ik->value_field_layout_info(slot).kind();
     } else {
       return (jint)LayoutKind::REFERENCE;
     }
@@ -359,7 +359,7 @@ UNSAFE_ENTRY(jarray, Unsafe_NewSpecialArray(JNIEnv *env, jobject unsafe, jclass 
   if (lk <= LayoutKind::REFERENCE || lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT || lk >= LayoutKind::UNKNOWN) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Invalid layout kind");
   }
-  InlineKlass* vk = InlineKlass::cast(klass);
+  ValueKlass* vk = ValueKlass::cast(klass);
   // WARNING: test below will need modifications when flat layouts supported for fields
   // but not for arrays are introduce (NULLABLE_NON_ATOMIC_FLAT for instance)
   if (!UseArrayFlattening || !vk->is_layout_supported(lk)) {
@@ -378,7 +378,7 @@ UNSAFE_ENTRY(jobject, Unsafe_GetFlatValue(JNIEnv *env, jobject unsafe, jobject o
     THROW_NULL(vmSymbols::java_lang_NullPointerException());
   }
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc));
-  InlineKlass* vk = InlineKlass::cast(k);
+  ValueKlass* vk = ValueKlass::cast(k);
   log_unsafe_value_access(base, offset, vk);
   LayoutKind lk = (LayoutKind)layoutKind;
   FlatValuePayload payload = FlatValuePayload::construct_from_parts(base, offset, vk, lk);
@@ -394,11 +394,11 @@ UNSAFE_ENTRY(void, Unsafe_PutFlatValue(JNIEnv *env, jobject unsafe, jobject obj,
     THROW(vmSymbols::java_lang_NullPointerException());
   }
 
-  InlineKlass* vk = InlineKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc)));
+  ValueKlass* vk = ValueKlass::cast(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(vc)));
   log_unsafe_value_access(base, offset, vk);
   LayoutKind lk = (LayoutKind)layoutKind;
   FlatValuePayload payload = FlatValuePayload::construct_from_parts(base, offset, vk, lk);
-  payload.write(inlineOop(JNIHandles::resolve(value)), CHECK);
+  payload.write(valueOop(JNIHandles::resolve(value)), CHECK);
 } UNSAFE_END
 
 UNSAFE_ENTRY(jobject, Unsafe_GetReferenceVolatile(JNIEnv *env, jobject unsafe, jobject obj, jlong offset)) {
@@ -842,10 +842,10 @@ UNSAFE_ENTRY(jarray, Unsafe_GetFieldMap0(JNIEnv* env, jobject unsafe, jclass cla
   oop mirror = JNIHandles::resolve_non_null(clazz);
   Klass* k = java_lang_Class::as_Klass(mirror);
 
-  if (!k->is_inline_klass()) {
+  if (!k->is_value_klass()) {
     THROW_MSG_NULL(vmSymbols::java_lang_IllegalArgumentException(), "Argument is not a concrete value class");
   }
-  InlineKlass* vk = InlineKlass::cast(k);
+  ValueKlass* vk = ValueKlass::cast(k);
   oop map = mirror->obj_field(vk->acmp_maps_offset());
   return (jarray) JNIHandles::make_local(THREAD, map);
 } UNSAFE_END

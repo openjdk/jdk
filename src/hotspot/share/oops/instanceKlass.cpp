@@ -65,7 +65,6 @@
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -79,6 +78,7 @@
 #include "oops/recordComponent.hpp"
 #include "oops/refArrayKlass.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -156,16 +156,16 @@
 
 #endif //  ndef DTRACE_ENABLED
 
-void InlineLayoutInfo::metaspace_pointers_do(MetaspaceClosure* it) {
-  log_trace(cds)("Iter(InlineFieldInfo): %p", this);
+void ValueFieldLayoutInfo::metaspace_pointers_do(MetaspaceClosure* it) {
+  log_trace(cds)("Iter(ValueFieldLayoutInfo): %p", this);
   it->push(&_klass);
 }
 
-void InlineLayoutInfo::print() const {
+void ValueFieldLayoutInfo::print() const {
   print_on(tty);
 }
 
-void InlineLayoutInfo::print_on(outputStream* st) const {
+void ValueFieldLayoutInfo::print_on(outputStream* st) const {
   st->print_cr("_klass: " PTR_FORMAT, p2i(_klass));
   if (_klass != nullptr) {
     StreamIndentor si(st);
@@ -197,7 +197,7 @@ bool InstanceKlass::is_naturally_atomic(bool null_free) const {
     return _misc_flags.is_naturally_atomic();
   } else {
     // Requires a null-marker, can't have any other fields
-    return InlineKlass::cast(this)->is_empty_inline_type();
+    return ValueKlass::cast(this)->is_empty_value_type();
   }
 }
 
@@ -223,8 +223,8 @@ static inline bool is_class_loader(const Symbol* class_name,
   return false;
 }
 
-bool InstanceKlass::field_is_null_free_inline_type(int index) const {
-  return field(index).field_flags().is_null_free_inline_type();
+bool InstanceKlass::field_is_null_free_value_type(int index) const {
+  return field(index).field_flags().is_null_free_value_type();
 }
 
 bool InstanceKlass::is_class_in_loadable_descriptors_attribute(Symbol* name) const {
@@ -524,7 +524,7 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
                                        parser.itable_size(),
                                        nonstatic_oop_map_size(parser.total_oop_map_count()),
                                        parser.is_interface(),
-                                       parser.is_inline_type());
+                                       parser.is_concrete_value_class());
 
   const Symbol* const class_name = parser.class_name();
   assert(class_name != nullptr, "invariant");
@@ -546,9 +546,9 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& par
   } else if (is_class_loader(class_name, parser)) {
     // class loader - java.lang.ClassLoader
     ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
-  } else if (parser.is_inline_type()) {
-    // inline type
-    ik = new (loader_data, size, THREAD) InlineKlass(parser);
+  } else if (parser.is_concrete_value_class()) {
+    // value type
+    ik = new (loader_data, size, THREAD) ValueKlass(parser);
   } else {
     // normal
     ik = new (loader_data, size, THREAD) InstanceKlass(parser);
@@ -606,10 +606,10 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, mark
   _reference_type(reference_type),
   _acmp_maps_offset(0),
   _init_thread(nullptr),
-  _inline_layout_info_array(nullptr),
+  _value_field_layout_info_array(nullptr),
   _loadable_descriptors(nullptr),
   _acmp_maps_array(nullptr),
-  _adr_inline_klass_members(nullptr)
+  _adr_value_klass_members(nullptr)
 {
   set_vtable_length(parser.vtable_size());
   set_access_flags(parser.access_flags());
@@ -774,10 +774,10 @@ void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
   }
   set_fields_status(nullptr);
 
-  if (inline_layout_info_array() != nullptr) {
-    MetadataFactory::free_array<InlineLayoutInfo>(loader_data, inline_layout_info_array());
+  if (value_field_layout_info_array() != nullptr) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(loader_data, value_field_layout_info_array());
   }
-  set_inline_layout_info_array(nullptr);
+  set_value_field_layout_info_array(nullptr);
 
   // If a method from a redefined class is using this constant pool, don't
   // delete it, yet.  The new class's previous version will point to this.
@@ -873,13 +873,13 @@ int InstanceKlass::size(int vtable_length,
                         int itable_length,
                         int nonstatic_oop_map_size,
                         bool is_interface,
-                        bool is_inline_type) {
+                        bool is_concrete_value_class) {
   return align_metadata_size(header_size() +
          vtable_length +
          itable_length +
          nonstatic_oop_map_size +
          (is_interface ? (int)sizeof(Klass*) / wordSize : 0) +
-         (is_inline_type ? (int)sizeof(InlineKlass::Members) / wordSize : 0));
+         (is_concrete_value_class ? (int)sizeof(ValueKlass::Members) / wordSize : 0));
 }
 
 int InstanceKlass::size() const {
@@ -887,7 +887,7 @@ int InstanceKlass::size() const {
               itable_length(),
               nonstatic_oop_map_size(),
               is_interface(),
-              is_inline_klass());
+              is_value_klass());
 }
 
 klassItable InstanceKlass::itable() const {
@@ -1100,7 +1100,7 @@ static void load_classes_from_loadable_descriptors_attribute(InstanceKlass *ik, 
         log_info(class, preload)("Preloading of class %s during linking of class %s "
                                  "(cause: LoadableDescriptors attribute) succeeded",
                                  class_name->as_C_string(), ik->name()->as_C_string());
-        if (!klass->is_inline_klass()) {
+        if (!klass->is_value_klass()) {
           // Non value classes are allowed by the current spec, but it could be an indication
           // of an issue so let's log a warning
           log_info(class, preload)("Preloading of class %s during linking of class %s "
@@ -1188,7 +1188,7 @@ bool InstanceKlass::link_class_impl(TRAPS) {
 
   if (Arguments::is_valhalla_enabled()) {
     // Aggressively preloading all classes from the LoadableDescriptors attribute
-    // so inline classes can be scalarized in the calling conventions computed below
+    // so value classes can be scalarized in the calling conventions computed below
     load_classes_from_loadable_descriptors_attribute(this, THREAD);
     assert(!HAS_PENDING_EXCEPTION, "Shouldn't have pending exceptions from call above");
   }
@@ -1523,8 +1523,8 @@ void InstanceKlass::initialize_impl(TRAPS) {
   NoPreemptMark npm(THREAD);
 
   // Pre-allocating an all-zero value to be used to reset nullable flat storages
-  if (is_inline_klass()) {
-      InlineKlass* vk = InlineKlass::cast(this);
+  if (is_value_klass()) {
+      ValueKlass* vk = ValueKlass::cast(this);
       if (vk->supports_nullable_layouts()) {
         oop val = vk->allocate_instance(THREAD);
         if (HAS_PENDING_EXCEPTION) {
@@ -2235,8 +2235,8 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 }
 
 bool InstanceKlass::contains_field_offset(int offset) {
-  if (this->is_inline_klass()) {
-    InlineKlass* vk = InlineKlass::cast(this);
+  if (this->is_value_klass()) {
+    ValueKlass* vk = ValueKlass::cast(this);
     return offset >= vk->payload_offset() && offset < (vk->payload_offset() + vk->payload_size_in_bytes());
   } else {
     fieldDescriptor fd;
@@ -2277,7 +2277,7 @@ bool InstanceKlass::find_local_flat_field_containing_offset(int offset, fieldDes
     }
 
     const int offset_in_flat_field = offset - fs.offset();
-    const InlineLayoutInfo layout_info = inline_layout_info(fs.index());
+    const ValueFieldLayoutInfo layout_info = value_field_layout_info(fs.index());
     const int field_size = layout_info.klass()->layout_size_in_bytes(layout_info.kind());
 
     assert(LayoutKindHelper::is_flat(layout_info.kind()), "Must be flat");
@@ -3083,7 +3083,7 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_loadable_descriptors);
   it->push(&_acmp_maps_array, MetaspaceClosure::_writable);
   it->push(&_record_components);
-  it->push(&_inline_layout_info_array, MetaspaceClosure::_writable);
+  it->push(&_value_field_layout_info_array, MetaspaceClosure::_writable);
 
   if (CDSConfig::is_dumping_full_module_graph() && !defined_by_other_loaders()) {
     it->push(&_package_entry);
@@ -3211,8 +3211,8 @@ void InstanceKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handl
   set_package(loader_data, pkg_entry, CHECK);
   Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
 
-  if (is_inline_klass()) {
-    InlineKlass::cast(this)->initialize_calling_convention(CHECK);
+  if (is_value_klass()) {
+    ValueKlass::cast(this)->initialize_calling_convention(CHECK);
   }
 
   Array<Method*>* methods = this->methods();
@@ -3452,7 +3452,7 @@ void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_
 u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
 void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
 
-bool InstanceKlass::supports_inline_types() const {
+bool InstanceKlass::supports_value_types() const {
   return major_version() >= Verifier::VALUE_TYPES_MAJOR_VERSION && minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION;
 }
 

@@ -27,10 +27,10 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -45,7 +45,7 @@ Symbol* fieldDescriptor::generic_signature() const {
 
 bool fieldDescriptor::is_trusted_final() const {
   InstanceKlass* ik = field_holder();
-  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->is_inline_klass()
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->is_value_klass()
                         || (ik->is_abstract() && !ik->is_identity_class() && !ik->is_interface()));
 }
 
@@ -191,24 +191,24 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
       break;
     case T_ARRAY:
     case T_OBJECT:
-      if (is_flat()) { // only some inline types can be flat
+      if (is_flat()) { // only some value types can be flat
         bool is_null = false;
-        InlineKlass* vk = InlineKlass::cast(field_holder()->get_inline_type_field_klass(index()));
+        ValueKlass* vk = ValueKlass::cast(field_holder()->get_value_type_field_klass(index()));
         int field_offset = offset() - vk->payload_offset();
         int nm_offset = 0;
 
-        if (!is_null_free_inline_type()) {
+        if (!is_null_free_value_type()) {
           assert(has_null_marker(), "should have null marker");
-          InlineLayoutInfo* li = field_holder()->inline_layout_info_adr(index());
+          ValueFieldLayoutInfo* li = field_holder()->value_field_layout_info_adr(index());
           nm_offset = li->null_marker_offset();
-          st->print("Flat inline type field '%s':", vk->name()->as_C_string());
+          st->print("Flat value type field '%s':", vk->name()->as_C_string());
           if (obj->byte_field_acquire(nm_offset) == 0) {
             st->print(" null");
             is_null = true;
           }
           st->cr();
         } else {
-          st->print_cr("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+          st->print_cr("Flat value null-free type field '%s':", vk->name()->as_C_string());
         }
 
         // Print fields of flat field (recursively) is not null
@@ -227,7 +227,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
         }
         return; // Do not print underlying representation
       }
-      // Not flat inline type field, fall through
+      // Not flat value type field, fall through
       if (obj->obj_field(offset()) != nullptr) {
         obj->obj_field(offset())->print_value_on(st);
       } else {

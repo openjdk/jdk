@@ -76,8 +76,8 @@ public:
 
   virtual ciKlass* exact_klass();
 
-  virtual bool can_be_inline_array_klass() {
-    return element_klass()->can_be_inline_klass();
+  virtual bool can_be_value_array_klass() {
+    return element_klass()->can_be_value_klass();
   }
 };
 

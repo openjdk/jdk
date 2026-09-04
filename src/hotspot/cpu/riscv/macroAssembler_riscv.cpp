@@ -27,7 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
@@ -3626,9 +3626,9 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   movptr(dst, Address((address)obj, rspec));
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     slli(index, index, log2i_exact(size)); // Scale index by power of 2
@@ -3636,28 +3636,28 @@ void MacroAssembler::inline_layout_info(Register holder_klass, Register index, R
     mv(layout_info, size);
     mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
   }
-  ld(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ld(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   add(layout_info, layout_info, index);
   la(layout_info, Address(layout_info));
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register inline_layout_info) {
+                                     Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ld(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  lwu(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ld(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  lwu(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
   assert_different_registers(data, t0);
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? t0 : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     add(data, data, offset);
   } else {
@@ -3751,14 +3751,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  bnez(temp_reg, is_null_free_inline_type);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  bnez(temp_reg, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  beqz(temp_reg, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  beqz(temp_reg, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
@@ -3766,24 +3766,24 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
   bnez(temp_reg, is_flat);
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, t1);
-  mv(t1, markWord::inline_type_pattern_mask);
+  mv(t1, markWord::value_type_pattern_mask);
   andr(markword, markword, t1);
-  mv(t1, markWord::inline_type_pattern);
-  beq(markword, t1, is_inline_type);
+  mv(t1, markWord::value_type_pattern);
+  beq(markword, t1, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   assert_different_registers(tmp, t0);
   if (can_be_null) {
-    beqz(object, not_inline_type);
+    beqz(object, not_value_type);
   }
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   ld(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
-  mv(t0, is_inline_type_mask);
+  mv(t0, is_value_type_mask);
   andr(tmp, tmp, t0);
-  bne(tmp, t0, not_inline_type);
+  bne(tmp, t0, not_value_type);
 }
 
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
@@ -5507,26 +5507,26 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   return false;
 }
 
-// Read all fields from an inline type oop and store the values in registers/stack slots
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                                          RegState reg_state[]) {
+// Read all fields from a value type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                         VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                         RegState reg_state[]) {
 
   Unimplemented();
   return false;
 }
 
-// Pack fields back into an inline type oop
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
-                                        RegState reg_state[], Register val_array) {
+// Pack fields back into a value type oop
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                       VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                       RegState reg_state[], Register val_array) {
   Unimplemented();
   return false;
 }
 
-// Calculate the extra stack space required for packing or unpacking inline
+// Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   Unimplemented();
   return false;
 }
@@ -7134,8 +7134,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
-    // Mask inline_type bit such that we go to the slow path if object is an inline type
-    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+    // Mask value_type bit such that we go to the slow path if object is a value type
+    andi(mark, mark, ~((int) markWord::value_type_bit_in_place));
   }
 
   xori(t, mark, markWord::lock_neutral_value);

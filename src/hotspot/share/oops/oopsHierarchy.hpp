@@ -42,7 +42,7 @@ typedef void* OopOrNarrowOopStar;
 
 typedef class oopDesc*                    oop;
 typedef class   instanceOopDesc*            instanceOop;
-typedef class     inlineOopDesc*              inlineOop;
+typedef class     valueOopDesc*               valueOop;
 typedef class     stackChunkOopDesc*          stackChunkOop;
 typedef class   arrayOopDesc*               arrayOop;
 typedef class     objArrayOopDesc*            objArrayOop;
@@ -166,7 +166,7 @@ struct PrimitiveConversions::Translate<oop> : public std::true_type {
 #define DEF_OOP(type) DEF_OOP_IMPL(type##Oop, type##OopDesc, oop)
 
 DEF_OOP(instance);
-DEF_OOP_BASE(inline, instance);
+DEF_OOP_BASE(value, instance);
 DEF_OOP_BASE(stackChunk, instance);
 DEF_OOP(array);
 DEF_OOP_BASE(objArray, array);
@@ -206,7 +206,7 @@ class   ConstantPool;
 
 class Klass;
 class   InstanceKlass;
-class     InlineKlass;
+class     ValueKlass;
 class     InstanceMirrorKlass;
 class     InstanceClassLoaderKlass;
 class     InstanceRefKlass;

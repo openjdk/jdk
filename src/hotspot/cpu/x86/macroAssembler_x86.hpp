@@ -34,7 +34,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
 
-class ciInlineKlass;
+class ciValueKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -98,13 +98,13 @@ class MacroAssembler: public Assembler {
   static bool uses_implicit_null_check(void* address);
 
   // markWord tests, kills markWord reg
-  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
 
-  // inlineKlass queries, kills temp_reg
-  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+  // ValueKlass queries, kills temp_reg
+  void test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null = true);
 
-  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
-  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free);
   void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
 
   // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
@@ -392,11 +392,11 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
 
-  // inline type data payload offsets...
-  void payload_offset(Register inline_klass, Register offset);
-  void payload_addr(Register oop, Register data, Register inline_klass);
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_addr(Register oop, Register data, Register value_klass);
 
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
@@ -554,7 +554,7 @@ public:
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
 
-  void inline_layout_info(Register klass, Register index, Register layout_info);
+  void value_field_layout_info(Register klass, Register index, Register layout_info);
 
   void population_count(Register dst, Register src, Register scratch1, Register scratch2);
 
@@ -1965,7 +1965,7 @@ public:
 
 
  public:
-  // Inline type specific methods
+  // Value type specific methods
   #include "asm/macroAssembler_common.hpp"
 
   // Clear or fill 'cnt' qwords starting at 'base'. If 'requires_word_fill' is

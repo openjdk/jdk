@@ -316,9 +316,9 @@ static uintx _no_progress_cnt = 0;
 static bool _no_progress_skip_increment = false;
 
 // These checks are required for wait, notify and exit to avoid inflating the monitor to
-// find out this inline type object cannot be locked.
+// find out this value type object cannot be locked.
 #define CHECK_THROW_NOSYNC_IMSE(obj)  \
-  if ((obj)->mark().is_inline_type()) {  \
+  if ((obj)->mark().is_value_type()) {  \
     /*
      * A value object can never be synchronized upon. The error message we use
      * here is (accurate and) consistent with the one we use for identity objects
@@ -328,7 +328,7 @@ static bool _no_progress_skip_increment = false;
   }
 
 #define CHECK_THROW_NOSYNC_IMSE_0(obj)  \
-  if ((obj)->mark().is_inline_type()) {  \
+  if ((obj)->mark().is_value_type()) {  \
     /*
      * A value object can never be synchronized upon. The error message we use
      * here is (accurate and) consistent with the one we use for identity objects
@@ -363,7 +363,7 @@ bool ObjectSynchronizer::quick_notify(oopDesc* obj, JavaThread* current, bool al
   assert(current->thread_state() == _thread_in_Java, "invariant");
   NoSafepointVerifier nsv;
   if (obj == nullptr) return false;  // slow-path for invalid obj
-  assert(!obj->klass()->is_inline_klass(), "monitor op on inline type");
+  assert(!obj->klass()->is_value_klass(), "monitor op on value type");
   const markWord mark = obj->mark();
 
   if (mark.is_fast_locked() && current->lock_stack().contains(cast_to_oop(obj))) {
@@ -460,7 +460,7 @@ void ObjectSynchronizer::jni_enter(Handle obj, JavaThread* current) {
     handle_sync_on_value_based_class(obj, current);
   }
 
-  if (obj->klass()->is_inline_klass()) {
+  if (obj->klass()->is_value_klass()) {
     ResourceMark rm(THREAD);
     stringStream ss;
     ss.print("Cannot synchronize on an instance of value class %s",
@@ -677,7 +677,7 @@ intptr_t ObjectSynchronizer::get_next_hash(Thread* current, oop obj) {
 
 bool ObjectSynchronizer::current_thread_holds_lock(JavaThread* current,
                                                    Handle h_obj) {
-  if (h_obj->mark().is_inline_type()) {
+  if (h_obj->mark().is_value_type()) {
     return false;
   }
   assert(current == JavaThread::current(), "Can only be called on current thread");

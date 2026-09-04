@@ -24,11 +24,11 @@
 
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "crc32c.h"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -2405,34 +2405,34 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
-  andptr(markword, markWord::inline_type_pattern_mask);
-  cmpptr(markword, markWord::inline_type_pattern);
-  jcc(Assembler::equal, is_inline_type);
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
+  andptr(markword, markWord::value_type_pattern_mask);
+  cmpptr(markword, markWord::value_type_pattern);
+  jcc(Assembler::equal, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   if (can_be_null) {
     testptr(object, object);
-    jcc(Assembler::zero, not_inline_type);
+    jcc(Assembler::zero, not_value_type);
   }
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   movptr(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
-  andptr(tmp, is_inline_type_mask);
-  cmpptr(tmp, is_inline_type_mask);
-  jcc(Assembler::notEqual, not_inline_type);
+  andptr(tmp, is_value_type_mask);
+  cmpptr(tmp, is_value_type_mask);
+  jcc(Assembler::notEqual, not_value_type);
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
   movl(temp_reg, flags);
-  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
-  jcc(Assembler::notEqual, is_null_free_inline_type);
+  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
+  jcc(Assembler::notEqual, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
   movl(temp_reg, flags);
-  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
-  jcc(Assembler::equal, not_null_free_inline_type);
+  testl(temp_reg, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
+  jcc(Assembler::equal, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
@@ -3811,26 +3811,26 @@ void MacroAssembler::zero_memory(Register address, Register length_in_bytes, int
   bind(done);
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
-  movptr(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
+  movptr(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
 #ifdef ASSERT
   {
     Label done;
     cmpptr(layout_info, 0);
     jcc(Assembler::notEqual, done);
-    stop("inline_layout_info_array is null");
+    stop("value_field_layout_info_array is null");
     bind(done);
   }
 #endif
 
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     shll(index, log2i_exact(size)); // Scale index by power of 2
   } else {
     imull(index, index, size); // Scale the index to be the entry index * array_element_size
   }
-  lea(layout_info, Address(layout_info, index, Address::times_1, Array<InlineLayoutInfo>::base_offset_in_bytes()));
+  lea(layout_info, Address(layout_info, index, Address::times_1, Array<ValueFieldLayoutInfo>::base_offset_in_bytes()));
 }
 
 // Look up the method for a megamorphic invokeinterface call.
@@ -5639,20 +5639,20 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators, Ad
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register inline_layout_info) {
+                                     Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  movptr(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  movl(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  movptr(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  movl(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_addr(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_addr(Register oop, Register data, Register value_klass) {
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? rscratch1 : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     addptr(data, offset);
   } else {
@@ -6022,13 +6022,13 @@ void MacroAssembler::reinit_heapbase() {
   }
 }
 
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
-  assert(InlineTypeReturnedAsFields, "Inline types should never be returned as fields");
-  // An inline type might be returned. If fields are in registers we
-  // need to allocate an inline type instance and initialize it with
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
+  assert(ValueTypeReturnedAsFields, "Value types should never be returned as fields");
+  // A value type might be returned. If fields are in registers we
+  // need to allocate a value type instance and initialize it with
   // the value of the fields.
   Label skip;
-  // We only need a new buffered inline type if a new one is not returned
+  // We only need a new buffered value type if a new one is not returned
   testptr(rax, 1);
   jcc(Assembler::zero, skip);
   int call_offset = -1;
@@ -6037,20 +6037,20 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
   // e.g. object size is always not zero, sometimes it's constant; storing klass ptr after
   // allocating is not necessary if vk != nullptr, etc.
   Label slow_case;
-  // 1. Try to allocate a new buffered inline instance either from TLAB or eden space
+  // 1. Try to allocate a new buffered value instance either from TLAB or eden space
   mov(rscratch1, rax); // save rax for slow_case since *_allocate may corrupt it when allocation failed
   if (vk != nullptr) {
     // Called from C1, where the return type is statically known.
-    movptr(rbx, (intptr_t)vk->get_InlineKlass());
+    movptr(rbx, (intptr_t)vk->get_ValueKlass());
     jint lh = vk->layout_helper();
-    assert(lh != Klass::_lh_neutral_value, "inline class in return type must have been resolved");
+    assert(lh != Klass::_lh_neutral_value, "value class in return type must have been resolved");
     if (UseTLAB && !Klass::layout_helper_needs_slow_path(lh)) {
       tlab_allocate(rax, noreg, lh, r13, r14, slow_case);
     } else {
       jmp(slow_case);
     }
   } else {
-    // Call from interpreter. RAX contains ((the InlineKlass* of the return type) | 0x01)
+    // Call from interpreter. RAX contains ((the ValueKlass* of the return type) | 0x01)
     mov(rbx, rax);
     andptr(rbx, -2);
     if (UseTLAB) {
@@ -6063,7 +6063,7 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
     }
   }
   if (UseTLAB) {
-    // 2. Initialize buffered inline instance header
+    // 2. Initialize buffered value instance header
     Register buffer_obj = rax;
     Register klass = rbx;
     if (UseCompactObjectHeaders) {
@@ -6071,7 +6071,7 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
       movptr(mark_word, Address(klass, Klass::prototype_header_offset()));
       movptr(Address(buffer_obj, oopDesc::mark_offset_in_bytes()), mark_word);
     } else {
-      movptr(Address(buffer_obj, oopDesc::mark_offset_in_bytes()), (intptr_t)markWord::inline_type_prototype().value());
+      movptr(Address(buffer_obj, oopDesc::mark_offset_in_bytes()), (intptr_t)markWord::value_type_prototype().value());
       xorl(r13, r13);
       store_klass_gap(buffer_obj, r13);
       if (vk == nullptr) {
@@ -6081,27 +6081,27 @@ int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from
       store_klass(buffer_obj, klass, rscratch1);
       klass = r13;
     }
-    // 3. Initialize its fields with an inline class specific handler
+    // 3. Initialize its fields with a value class specific handler
     if (vk != nullptr) {
       call(RuntimeAddress(vk->pack_handler())); // no need for call info as this will not safepoint.
     } else {
-      movptr(rbx, Address(klass, InlineKlass::adr_members_offset()));
-      movptr(rbx, Address(rbx, InlineKlass::pack_handler_offset()));
+      movptr(rbx, Address(klass, ValueKlass::adr_members_offset()));
+      movptr(rbx, Address(rbx, ValueKlass::pack_handler_offset()));
       call(rbx);
     }
     jmp(skip);
   }
   bind(slow_case);
-  // We failed to allocate a new inline type, fall back to a runtime
+  // We failed to allocate a new value type, fall back to a runtime
   // call. Some oop field may be live in some registers but we can't
   // tell. That runtime call will take care of preserving them
   // across a GC if there's one.
   mov(rax, rscratch1);
 
   if (from_interpreter) {
-    super_call_VM_leaf(SharedRuntime::store_inline_type_fields_to_buf_entry());
+    super_call_VM_leaf(SharedRuntime::store_value_type_fields_to_buf_entry());
   } else {
-    call(RuntimeAddress(SharedRuntime::store_inline_type_fields_to_buf_entry()));
+    call(RuntimeAddress(SharedRuntime::store_value_type_fields_to_buf_entry()));
     call_offset = offset();
   }
 
@@ -6171,9 +6171,9 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   return true;
 }
 
-// Calculate the extra stack space required for packing or unpacking inline
+// Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer (see MacroAssembler::remove_frame).
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   int sp_inc = args_on_stack * VMRegImpl::stack_slot_size;
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
@@ -6189,10 +6189,10 @@ int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
   return sp_inc + wordSize; // account for rbp space
 }
 
-// Read all fields from an inline type buffer and store the field values in registers/stack slots.
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                                          RegState reg_state[]) {
+// Read all fields from a value type buffer and store the field values in registers/stack slots.
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                         VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                         RegState reg_state[]) {
   assert(sig->at(sig_index)._bt == T_VOID, "should be at end delimiter");
   assert(from->is_valid(), "source must be valid");
   bool progress = false;
@@ -6205,7 +6205,7 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
   Register tmp1 = r10;
   Register tmp2 = r13;
   Register fromReg = noreg;
-  ScalarizedInlineArgsStream stream(sig, sig_index, to, to_count, to_index, true);
+  ScalarizedValueArgsStream stream(sig, sig_index, to, to_count, to_index, true);
   bool done = true;
   bool mark_done = true;
   VMReg toReg;
@@ -6245,7 +6245,7 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
         fromReg = tmp1;
       }
       if (null_check) {
-        // Nullable inline type argument, emit null check
+        // Nullable value type argument, emit null check
         testptr(fromReg, fromReg);
         jcc(Assembler::zero, L_null);
       }
@@ -6327,9 +6327,9 @@ bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, in
   return done;
 }
 
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
-                                        RegState reg_state[], Register val_array) {
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                       VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                       RegState reg_state[], Register val_array) {
   assert(sig->at(sig_index)._bt == T_METADATA, "should be at delimiter");
   assert(to->is_valid(), "destination must be valid");
 
@@ -6356,7 +6356,7 @@ bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int&
     val_obj = val_obj_tmp;
   }
 
-  ScalarizedInlineArgsStream stream(sig, sig_index, from, from_count, from_index);
+  ScalarizedValueArgsStream stream(sig, sig_index, from, from_count, from_index);
   VMReg fromReg;
   BasicType bt;
   Label L_null;
@@ -6366,7 +6366,7 @@ bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int&
 
     int off = sig->at(stream.sig_index())._offset;
     if (off == -1) {
-      // Nullable inline type argument, emit null check
+      // Nullable value type argument, emit null check
       Label L_notNull;
       if (fromReg->is_stack()) {
         int ld_off = fromReg->reg2stack() * VMRegImpl::stack_slot_size + wordSize;
@@ -10624,8 +10624,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register reg_r
   andptr(tmp, ~(int32_t)markWord::lock_neutral_value);
   orptr(reg_rax, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
-    // Mask inline_type bit such that we go to the slow path if object is an inline type
-    andptr(reg_rax, ~((int) markWord::inline_type_bit_in_place));
+    // Mask value_type bit such that we go to the slow path if object is a value type
+    andptr(reg_rax, ~((int) markWord::value_type_bit_in_place));
   }
 
   lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));

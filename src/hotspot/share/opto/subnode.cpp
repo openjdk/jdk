@@ -32,7 +32,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -41,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/reverse_bits.hpp"
@@ -904,9 +904,9 @@ Node* CmpLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       Node* orIn = in(1)->in(i);
       if (orIn->Opcode() == Op_CastP2X) {
         Node* castIn = orIn->in(1);
-        if (castIn->is_InlineType()) {
+        if (castIn->is_ValueType()) {
           // Replace the CastP2X by the null marker
-          InlineTypeNode* vt = castIn->as_InlineType();
+          ValueTypeNode* vt = castIn->as_ValueType();
           Node* nm = phase->transform(new ConvI2LNode(vt->get_null_marker()));
           phase->is_IterGVN()->replace_input_of(in(1), i, nm);
           return this;
@@ -1026,7 +1026,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
       unrelated_classes = xklass0;
     }
     if (!unrelated_classes) {
-      // Handle inline type arrays
+      // Handle value type arrays
       if ((r0->is_flat_in_array() && r1->is_not_flat_in_array()) ||
           (r1->is_flat_in_array() && r0->is_not_flat_in_array())) {
         // One type is in flat arrays but the other type is not. Must be unrelated.
@@ -1112,7 +1112,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_
   ciKlass* mirror_klass = mirror_type->as_klass();
 
   if (mirror_klass->is_array_klass() && !mirror_klass->is_type_array_klass()) {
-    if (!mirror_klass->can_be_inline_array_klass()) {
+    if (!mirror_klass->can_be_value_array_klass()) {
       // Special case for non-value arrays: They only have one (default) refined class, use it
       ciArrayKlass* refined_mirror_klass = ciObjArrayKlass::make(mirror_klass->as_array_klass()->element_klass(), true);
       return phase->makecon(TypeAryKlassPtr::make(refined_mirror_klass, Type::trust_interfaces));
@@ -1133,12 +1133,12 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_
 Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
-  if (uncast_in1->is_InlineType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable inline type. Check the null marker
+  if (uncast_in1->is_ValueType() && phase->type(uncast_in2)->is_zero_type()) {
+    // Null checking a scalarized but nullable value type. Check the null marker
     // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_InlineType()->get_null_marker(), phase->intcon(0));
+    return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
   }
-  if (uncast_in1->is_InlineType() || uncast_in2->is_InlineType()) {
+  if (uncast_in1->is_ValueType() || uncast_in2->is_ValueType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
     // For non-null operands it cannot reliably be true, since their buffer oops are not
     // guaranteed to be identical. Therefore, the comparison can only be true when both
@@ -1148,8 +1148,8 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* input[2];
     for (int i = 1; i <= 2; ++i) {
       Node* uncast_in = in(i)->uncast();
-      if (uncast_in->is_InlineType()) {
-        input[i-1] = phase->transform(new ConvI2LNode(uncast_in->as_InlineType()->get_null_marker()));
+      if (uncast_in->is_ValueType()) {
+        input[i-1] = phase->transform(new ConvI2LNode(uncast_in->as_ValueType()->get_null_marker()));
       } else {
         input[i-1] = phase->transform(new CastP2XNode(nullptr, uncast_in));
       }
@@ -1264,7 +1264,7 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   superklass = t2->exact_klass();
   assert(!superklass->is_flat_array_klass(), "Unexpected flat array klass");
   if (superklass->is_obj_array_klass()) {
-    if (superklass->as_array_klass()->element_klass()->is_inlinetype() && !superklass->as_array_klass()->is_refined()) {
+    if (superklass->as_array_klass()->element_klass()->is_value_klass() && !superklass->as_array_klass()->is_refined()) {
       return nullptr;
     } else {
       // Special case for non-value arrays: They only have one (default) refined class, use it

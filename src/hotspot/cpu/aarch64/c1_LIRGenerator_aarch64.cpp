@@ -32,9 +32,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -326,7 +326,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   }
 
   CodeStub* throw_ie_stub =
-      x->maybe_inlinetype() ?
+      x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
       nullptr;
 
@@ -1137,7 +1137,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-               !x->is_unresolved() && x->klass()->is_inlinetype(),
+               !x->is_unresolved() && x->klass()->is_value_klass(),
                FrameMap::r10_oop_opr,
                FrameMap::r11_oop_opr,
                FrameMap::r4_oop_opr,

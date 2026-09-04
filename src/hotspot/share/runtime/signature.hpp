@@ -426,7 +426,7 @@ class NativeSignatureIterator: public SignatureIterator {
   bool      is_static() const          { return method()->is_static(); }
   virtual void pass_int()              = 0;
   virtual void pass_long()             = 0;
-  virtual void pass_object()           = 0;  // objects, arrays, inlines
+  virtual void pass_object()           = 0;  // objects, arrays, values
   virtual void pass_float()            = 0;
   virtual void pass_byte()             { pass_int(); };
   virtual void pass_short()            { pass_int(); };
@@ -567,7 +567,7 @@ class SignatureStream : public StackObj {
   // free-standing lookups (bring your own CL/PD pair)
   enum FailureMode { ReturnNull, NCDFError, CachedOrNull };
   Klass* as_klass(Handle class_loader, FailureMode failure_mode, TRAPS);
-  InlineKlass* as_inline_klass(InstanceKlass* holder);
+  ValueKlass* as_value_klass(InstanceKlass* holder);
   oop as_java_mirror(Handle class_loader, FailureMode failure_mode, TRAPS);
 };
 
@@ -576,8 +576,8 @@ class SigEntryFilter;
 typedef GrowableArrayFilterIterator<SigEntry, SigEntryFilter> ExtendedSignature;
 
 // Used for adapter generation. One SigEntry is used per element of
-// the signature of the method. Inline type arguments are treated
-// specially. See comment for InlineKlass::collect_fields().
+// the signature of the method. Value type arguments are treated
+// specially. See comment for ValueKlass::collect_fields().
 class SigEntry {
  public:
   BasicType _bt;      // Basic type of the argument

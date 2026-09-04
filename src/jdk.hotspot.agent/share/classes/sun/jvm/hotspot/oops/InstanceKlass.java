@@ -53,7 +53,7 @@ public class InstanceKlass extends Klass {
   static int FIELD_FLAG_IS_GENERIC;
   static int FIELD_FLAG_IS_STABLE;
   static int FIELD_FLAG_IS_CONTENDED;
-  static int FIELD_FLAG_IS_NULL_FREE_INLINE;
+  static int FIELD_FLAG_IS_NULL_FREE_VALUE;
   static int FIELD_FLAG_IS_FLAT;
   static int FIELD_FLAG_IS_NULL_MARKER;
 
@@ -76,7 +76,7 @@ public class InstanceKlass extends Klass {
   public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
   public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
 
-  public boolean supportsInlineTypes() {
+  public boolean supportsValueTypes() {
       return majorVersion() >= VALUE_TYPES_MAJOR_VERSION && minorVersion() == JAVA_PREVIEW_MINOR_VERSION;
   }
 
@@ -113,7 +113,7 @@ public class InstanceKlass extends Klass {
     FIELD_FLAG_IS_GENERIC          = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_generic");
     FIELD_FLAG_IS_STABLE           = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_stable");
     FIELD_FLAG_IS_CONTENDED        = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_contended");
-    FIELD_FLAG_IS_NULL_FREE_INLINE = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_free_inline_type");
+    FIELD_FLAG_IS_NULL_FREE_VALUE  = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_free_value_type");
     FIELD_FLAG_IS_FLAT             = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_flat");
     FIELD_FLAG_IS_NULL_MARKER      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_marker");
 

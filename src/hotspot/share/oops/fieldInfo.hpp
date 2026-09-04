@@ -73,7 +73,7 @@ class FieldInfo {
     // flags should come earlier than less frequent ones, because
     // earlier ones compress better.
     enum FieldFlagBitPosition {
-      _ff_null_free_inline_type,  // field's type is an inline type and the field is null free
+      _ff_null_free_value_type,  // field's type is a value type and the field is null free
       _ff_flat,         // field is a flat field, optional section includes a layout kind
       _ff_null_marker,  // field has a null marker, optional section includes the null marker offset
       _ff_initialized,  // has ConstantValue initializer attribute
@@ -113,7 +113,7 @@ class FieldInfo {
     }
 
     bool is_initialized() const     { return test_flag(_ff_initialized); }
-    bool is_null_free_inline_type() const { return test_flag(_ff_null_free_inline_type); }
+    bool is_null_free_value_type() const { return test_flag(_ff_null_free_value_type); }
     bool is_flat() const            { return test_flag(_ff_flat); }
     bool is_injected() const        { return test_flag(_ff_injected); }
     bool is_generic() const         { return test_flag(_ff_generic); }
@@ -122,7 +122,7 @@ class FieldInfo {
     bool has_null_marker() const    { return test_flag(_ff_null_marker); }
 
     void update_initialized(bool z) { update_flag(_ff_initialized, z); }
-    void update_null_free_inline_type(bool z) { update_flag(_ff_null_free_inline_type, z); }
+    void update_null_free_value_type(bool z) { update_flag(_ff_null_free_value_type, z); }
     void update_flat(bool z)        { update_flag(_ff_flat, z); }
     void update_injected(bool z)    { update_flag(_ff_injected, z); }
     void update_generic(bool z)     { update_flag(_ff_generic, z); }

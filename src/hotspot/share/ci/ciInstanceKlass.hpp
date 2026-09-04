@@ -300,7 +300,7 @@ public:
     return (impl != this ? impl : nullptr);
   }
 
-  virtual bool can_be_inline_klass(bool is_exact = false);
+  virtual bool can_be_value_klass(bool is_exact = false);
 
   // Is the defining class loader of this class the default loader?
   bool uses_default_loader() const;

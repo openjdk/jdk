@@ -302,7 +302,7 @@ public:
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseIntPolyIntrinsics) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
-  do_var(bool,  InlineTypeReturnedAsFields) \
+  do_var(bool,  ValueTypeReturnedAsFields) \
   do_var(bool,  VMContinuations) \
   do_var(bool,  VerifyOops) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \

@@ -33,9 +33,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArrayKlass.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -387,7 +387,7 @@ int LIR_Assembler::emit_deopt_handler() {
 void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == x10, "word returns are in x10");
 
-  assert(!InlineTypeReturnedAsFields, "unimplemented");
+  assert(!ValueTypeReturnedAsFields, "unimplemented");
 
   // Pop the stack before the safepoint code
   __ remove_frame(initial_frame_size_in_bytes());
@@ -402,7 +402,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
   __ ret();
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
   Unimplemented();
   return 0;
 }
@@ -1287,25 +1287,25 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   ciKlass* left_klass = op->left_klass();
   ciKlass* right_klass = op->right_klass();
 
-  // (2) Inline type check -- if either of the operands is not a inline type,
+  // (2) Value type check -- if either of the operands is not a value type,
   //     they are not substitutable. We do this only if we are not sure that the
-  //     operands are inline type
+  //     operands are value type
   if ((left_klass == nullptr || right_klass == nullptr) ||// The klass is still unloaded, or came from a Phi node.
-      !left_klass->is_inlinetype() || !right_klass->is_inlinetype()) {
+      !left_klass->is_value_klass() || !right_klass->is_value_klass()) {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    __ mv(tmp1, markWord::inline_type_pattern);
+    __ mv(tmp1, markWord::value_type_pattern);
     __ ld(tmp2, Address(left, oopDesc::mark_offset_in_bytes()));
     __ andr(tmp1, tmp1, tmp2);
     __ ld(tmp2, Address(right, oopDesc::mark_offset_in_bytes()));
     __ andr(tmp1, tmp1, tmp2);
-    __ mv(tmp2, (u1)markWord::inline_type_pattern);
+    __ mv(tmp2, (u1)markWord::value_type_pattern);
     __ bne(tmp1, tmp2, L_oops_not_equal);
   }
 
   // (3) Same klass check: if the operands are of different klasses, they are not substitutable.
-  if (left_klass != nullptr && left_klass->is_inlinetype() && left_klass == right_klass) {
-    // No need to load klass -- the operands are statically known to be the same inline klass.
+  if (left_klass != nullptr && left_klass->is_value_klass() && left_klass == right_klass) {
+    // No need to load klass -- the operands are statically known to be the same value klass.
     __ j(*op->stub()->entry());
   } else {
     Register left_klass_op = op->tmp1()->as_register();
@@ -1337,7 +1337,7 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   __ bind(L_end);
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   bool not_null = op->not_null();
@@ -1345,12 +1345,12 @@ void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
 
   assert_different_registers(tmp, t0, t1);
 
-  Label not_inline_type;
+  Label not_value_type;
   if (!not_null) {
-    __ beqz(obj, not_inline_type);
+    __ beqz(obj, not_value_type);
   }
 
-  __ test_oop_is_not_inline_type(obj, tmp, not_inline_type);
+  __ test_oop_is_not_value_type(obj, tmp, not_value_type);
 
   Address mdo_addr = as_Address(op->mdp()->as_address_ptr(), t1);
   __ lbu(tmp, mdo_addr);
@@ -1358,7 +1358,7 @@ void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
   __ orr(tmp, tmp, t0);
   __ sb(tmp, mdo_addr);
 
-  __ bind(not_inline_type);
+  __ bind(not_value_type);
 }
 
 void LIR_Assembler::check_orig_pc() {

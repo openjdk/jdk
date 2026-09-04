@@ -40,12 +40,12 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -850,22 +850,22 @@ void Parse::do_call() {
     if (!rtype->is_void()) {
       Node* retnode = peek();
       const Type* rettype = gvn().type(retnode);
-      if (!cg->method()->return_value_is_larval() && !retnode->is_InlineType() && rettype->is_inlinetypeptr()) {
-        retnode = InlineTypeNode::make_from_oop(this, retnode, rettype->inline_klass());
+      if (!cg->method()->return_value_is_larval() && !retnode->is_ValueType() && rettype->is_valueklassptr()) {
+        retnode = ValueTypeNode::make_from_oop(this, retnode, rettype->value_klass());
         dec_sp(1);
         push(retnode);
       }
     }
 
     if (cg->method()->receiver_maybe_larval() && receiver != nullptr &&
-        !receiver->is_InlineType() && gvn().type(receiver)->is_inlinetypeptr()) {
-      InlineTypeNode* non_larval = InlineTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->inline_klass());
+        !receiver->is_ValueType() && gvn().type(receiver)->is_valueklassptr()) {
+      ValueTypeNode* non_larval = ValueTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->value_klass());
       // Relinquish the oop input, we will delay the allocation to the point it is needed, see the
-      // comments in InlineTypeNode::Ideal for more details
+      // comments in ValueTypeNode::Ideal for more details
       non_larval = non_larval->clone_if_required(&gvn(), nullptr);
       non_larval->set_oop(gvn(), null());
       non_larval->set_is_buffered(gvn(), false);
-      non_larval = gvn().transform(non_larval)->as_InlineType();
+      non_larval = gvn().transform(non_larval)->as_ValueType();
       map()->replace_edge(receiver, non_larval);
     }
   }

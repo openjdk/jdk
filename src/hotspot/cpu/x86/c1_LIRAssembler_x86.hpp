@@ -51,7 +51,7 @@
     _deopt_handler_size = 7
   };
 
-  void arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
+  void arraycopy_valuetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
   void move(LIR_Opr src, LIR_Opr dst);
 
 public:

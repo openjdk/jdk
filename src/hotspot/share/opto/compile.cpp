@@ -25,8 +25,8 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciFlatArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/exceptionHandlerTable.hpp"
@@ -63,7 +63,6 @@
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -86,6 +85,7 @@
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
@@ -417,8 +417,8 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
-  if (dead->is_InlineType()) {
-    remove_inline_type(dead);
+  if (dead->is_ValueType()) {
+    remove_value_type(dead);
   }
   if (dead->is_LoadFlat() || dead->is_StoreFlat()) {
     remove_flat_access(dead);
@@ -481,7 +481,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_reachability_fences, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
-  remove_useless_nodes(_inline_type_nodes,  useful); // remove useless inline type nodes
+  remove_useless_nodes(_value_type_nodes,  useful);  // remove useless value type nodes
   remove_useless_nodes(_flat_access_nodes, useful);  // remove useless flat access nodes
 #ifdef ASSERT
   if (_modified_nodes != nullptr) {
@@ -677,7 +677,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_inline_type(false),
+      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -696,7 +696,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-      _inline_type_nodes (comp_arena(), 8, 0, nullptr),
+      _value_type_nodes (comp_arena(), 8, 0, nullptr),
       _flat_access_nodes(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
@@ -987,7 +987,7 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_inline_type(false),
+      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
@@ -1779,7 +1779,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       int field_offset = flat->is_aryptr()->field_offset().get();
       if (flat->is_flat() &&
           field_offset != Type::OffsetBot) {
-        ciInlineKlass* vk = elemtype->inline_klass();
+        ciValueKlass* vk = elemtype->value_klass();
         field_offset += vk->payload_offset();
         field = vk->get_field_by_offset(field_offset, false);
       }
@@ -1819,9 +1819,9 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         // static field
         ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
         field = k->get_field_by_offset(tinst->offset(), true);
-      } else if (tinst->is_inlinetypeptr()) {
-        // Inline type field
-        ciInlineKlass* vk = tinst->inline_klass();
+      } else if (tinst->is_valueklassptr()) {
+        // Value type field
+        ciValueKlass* vk = tinst->value_klass();
         field = vk->get_field_by_offset(tinst->offset(), false);
       } else {
         ciInstanceKlass *k = tinst->instance_klass();
@@ -1978,19 +1978,19 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::add_inline_type(Node* n) {
-  assert(n->is_InlineType(), "unexpected node");
-  _inline_type_nodes.push(n);
+void Compile::add_value_type(Node* n) {
+  assert(n->is_ValueType(), "unexpected node");
+  _value_type_nodes.push(n);
 }
 
-void Compile::remove_inline_type(Node* n) {
-  assert(n->is_InlineType(), "unexpected node");
-  if (_inline_type_nodes.contains(n)) {
-    _inline_type_nodes.remove(n);
+void Compile::remove_value_type(Node* n) {
+  assert(n->is_ValueType(), "unexpected node");
+  if (_value_type_nodes.contains(n)) {
+    _value_type_nodes.remove(n);
   }
 }
 
-// Does the return value keep otherwise useless inline type allocations alive?
+// Does the return value keep otherwise useless value type allocations alive?
 static bool return_val_keeps_allocations_alive(Node* ret_val) {
   ResourceMark rm;
   Unique_Node_List wq;
@@ -2001,7 +2001,7 @@ static bool return_val_keeps_allocations_alive(Node* ret_val) {
     if (n->outcnt() > 1) {
       // Some other use for the allocation
       return false;
-    } else if (n->is_InlineType()) {
+    } else if (n->is_ValueType()) {
       wq.push(n->in(1));
     } else if (n->is_Phi()) {
       for (uint j = 1; j < n->req(); j++) {
@@ -2029,7 +2029,7 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
       Node* u = n->fast_out(j);
       if (u->is_Phi()) {
         wq.push(u);
-      } else if (u->is_InlineType() && u->as_InlineType()->get_oop() == n) {
+      } else if (u->is_ValueType() && u->as_ValueType()->get_oop() == n) {
         wq.push(u);
       } else if (u->is_CallJava()) {
         CallJavaNode* call = u->as_CallJava();
@@ -2078,9 +2078,9 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
   return true;
 }
 
-void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
+void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
   // Make sure that the return value does not keep an otherwise unused allocation alive
-  if (tf()->returns_inline_type_as_fields()) {
+  if (tf()->returns_value_type_as_fields()) {
     Node* ret = nullptr;
     for (uint i = 1; i < root()->req(); i++) {
       Node* in = root()->in(i);
@@ -2093,7 +2093,7 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
       Node* ret_val = ret->in(TypeFunc::Parms);
       if (igvn.type(ret_val)->isa_oopptr() &&
           return_val_keeps_allocations_alive(ret_val)) {
-        igvn.replace_input_of(ret, TypeFunc::Parms, InlineTypeNode::tagged_klass(igvn.type(ret_val)->inline_klass(), igvn));
+        igvn.replace_input_of(ret, TypeFunc::Parms, ValueTypeNode::tagged_klass(igvn.type(ret_val)->value_klass(), igvn));
         assert(ret_val->outcnt() == 0, "should be dead now");
         igvn.remove_dead_node(ret_val, PhaseIterGVN::NodeOrigin::Graph);
       }
@@ -2108,23 +2108,23 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
       Node* result_cast = allocate->result_cast();
       if (result_cast != nullptr) {
         const Type* result_type = igvn.type(result_cast);
-        if (result_type->is_inlinetypeptr()) {
+        if (result_type->is_valueklassptr()) {
           clear_argument_if_only_used_as_buffer_at_calls(result_cast, igvn);
         }
       }
     }
   }
 
-  if (_inline_type_nodes.length() == 0) {
+  if (_value_type_nodes.length() == 0) {
     // keep the graph canonical
     igvn.optimize();
     return;
   }
-  // Scalarize inline types in safepoint debug info.
+  // Scalarize value types in safepoint debug info.
   // Delay this until all inlining is over to avoid getting inconsistent debug info.
   set_scalarize_in_safepoints(true);
-  for (int i = _inline_type_nodes.length()-1; i >= 0; i--) {
-    InlineTypeNode* vt = _inline_type_nodes.at(i)->as_InlineType();
+  for (int i = _value_type_nodes.length()-1; i >= 0; i--) {
+    ValueTypeNode* vt = _value_type_nodes.at(i)->as_ValueType();
     if (!vt->make_scalar_in_safepoints(&igvn)) {
       record_failure("out of nodes during scalarization");
       return;
@@ -2132,9 +2132,9 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
     igvn.record_for_igvn(vt);
   }
   if (remove) {
-    // Remove inline type nodes by replacing them with their oop input
-    while (_inline_type_nodes.length() > 0) {
-      InlineTypeNode* vt = _inline_type_nodes.pop()->as_InlineType();
+    // Remove value type nodes by replacing them with their oop input
+    while (_value_type_nodes.length() > 0) {
+      ValueTypeNode* vt = _value_type_nodes.pop()->as_ValueType();
       if (vt->outcnt() == 0) {
         igvn.remove_dead_node(vt, PhaseIterGVN::NodeOrigin::Graph);
         continue;
@@ -2143,7 +2143,7 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
         DEBUG_ONLY(bool must_be_buffered = false);
         Node* u = vt->out(i);
         // Check if any users are blackholes. If so, rewrite them to use either the
-        // allocated buffer, or individual components, instead of the inline type node
+        // allocated buffer, or individual components, instead of the value type node
         // that goes away.
         if (u->is_Blackhole()) {
           BlackholeNode* bh = u->as_Blackhole();
@@ -2168,9 +2168,9 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
           igvn.record_for_igvn(bh);
         }
 #ifdef ASSERT
-        // Verify that inline type is buffered when replacing by oop
-        else if (u->is_InlineType()) {
-          // InlineType uses don't need buffering because they are about to be replaced as well
+        // Verify that value type is buffered when replacing by oop
+        else if (u->is_ValueType()) {
+          // ValueType uses don't need buffering because they are about to be replaced as well
         } else {
           must_be_buffered = true;
         }
@@ -2411,7 +2411,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           assert(klass_type->klass_is_exact(), "must be an exact klass");
           ciArrayKlass* klass = klass_type->exact_klass()->as_array_klass();
           assert(klass->is_flat_array_klass(), "must be a flat array");
-          ciInlineKlass* elem_klass = klass->element_klass()->as_inline_klass();
+          ciValueKlass* elem_klass = klass->element_klass()->as_value_klass();
           const TypeAryPtr* oop_type = klass_type->as_exact_instance_type()->is_aryptr();
           assert(oop_type->klass_is_exact(), "must be an exact klass");
 
@@ -3134,8 +3134,8 @@ void Compile::Optimize() {
   // safepoints
   remove_root_to_sfpts_edges(igvn);
 
-  // Process inline type nodes now that all inlining is over
-  process_inline_types(igvn);
+  // Process value type nodes now that all inlining is over
+  process_value_types(igvn);
   if (failing()) {
     return;
   }
@@ -3322,9 +3322,9 @@ void Compile::Optimize() {
   }
   assert(_late_inlines.length() == 0, "late inline queue must be drained");
 
-  // Process inline types before macro expansion. Otherwise, we will not be able to
+  // Process value types before macro expansion. Otherwise, we will not be able to
   // remove unused allocations because it cannot match the expanded allocation.
-  process_inline_types(igvn);
+  process_value_types(igvn);
   if (failing()) {
     return;
   }
@@ -3358,9 +3358,9 @@ void Compile::Optimize() {
     print_method(PHASE_AFTER_MACRO_EXPANSION, 2);
   }
 
-  // Process inline type nodes again and remove them. From here
+  // Process value type nodes again and remove them. From here
   // on we don't need to keep track of field values anymore.
-  process_inline_types(igvn, /* remove= */ true);
+  process_value_types(igvn, /* remove= */ true);
   if (failing()) {
     return;
   }
@@ -4704,9 +4704,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 #ifdef ASSERT
-  case Op_InlineType: {
+  case Op_ValueType: {
     n->dump(-1);
-    assert(false, "inline type node was not removed");
+    assert(false, "value type node was not removed");
     break;
   }
   case Op_ConNKlass: {
@@ -5165,7 +5165,7 @@ void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique
       } else if (in == nullptr) {
         assert(i == 0 || i >= n->req() ||
                n->is_Region() || n->is_Phi() || n->is_ArrayCopy() ||
-               (n->is_Allocate() && i >= AllocateNode::InlineType) ||
+               (n->is_Allocate() && i >= AllocateNode::ValueType) ||
                (n->is_Unlock() && i == (n->req() - 1)) ||
                (n->is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
               "only region, phi, arraycopy, allocate, unlock or membar nodes have null data edges");
@@ -5320,10 +5320,10 @@ Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* su
     int ignored;
     superelem = superk->is_aryklassptr()->base_element_type(ignored);
 
-    // Do not fold the subtype check to an array klass pointer comparison for null-able inline type arrays
+    // Do not fold the subtype check to an array klass pointer comparison for null-able value type arrays
     // because null-free [LMyValue <: null-able [LMyValue but the klasses are different. Perform a full test.
     if (!superk->is_aryklassptr()->is_null_free() && superk->is_aryklassptr()->elem()->isa_instklassptr() &&
-        superk->is_aryklassptr()->elem()->is_instklassptr()->instance_klass()->is_inlinetype()) {
+        superk->is_aryklassptr()->elem()->is_instklassptr()->instance_klass()->is_value_klass()) {
       return SSC_full_test;
     }
   }
