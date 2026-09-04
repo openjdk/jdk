@@ -7863,7 +7863,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     return start;
   }
-  
+
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
