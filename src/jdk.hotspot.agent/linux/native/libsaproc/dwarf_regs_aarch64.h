@@ -66,7 +66,40 @@
   DWARF_REG(FP,  29) \
   DWARF_REG(LR,  30) \
   DWARF_REG(SP,  31) \
-  DWARF_REG(PC,  32)
+  DWARF_REG(PC,  32) \
+                     \
+  DWARF_REG(V0,  64) \
+  DWARF_REG(V1,  65) \
+  DWARF_REG(V2,  66) \
+  DWARF_REG(V3,  67) \
+  DWARF_REG(V4,  68) \
+  DWARF_REG(V5,  69) \
+  DWARF_REG(V6,  70) \
+  DWARF_REG(V7,  71) \
+  DWARF_REG(V8,  72) \
+  DWARF_REG(V9,  73) \
+  DWARF_REG(V10, 74) \
+  DWARF_REG(V11, 75) \
+  DWARF_REG(V12, 76) \
+  DWARF_REG(V13, 77) \
+  DWARF_REG(V14, 78) \
+  DWARF_REG(V15, 79) \
+  DWARF_REG(V16, 80) \
+  DWARF_REG(V17, 81) \
+  DWARF_REG(V18, 82) \
+  DWARF_REG(V19, 83) \
+  DWARF_REG(V20, 84) \
+  DWARF_REG(V21, 85) \
+  DWARF_REG(V22, 86) \
+  DWARF_REG(V23, 87) \
+  DWARF_REG(V24, 88) \
+  DWARF_REG(V25, 89) \
+  DWARF_REG(V26, 90) \
+  DWARF_REG(V27, 91) \
+  DWARF_REG(V28, 92) \
+  DWARF_REG(V29, 93) \
+  DWARF_REG(V30, 94) \
+  DWARF_REG(V31, 95)
 
 // RA_SIGN_STATE might be needed in future to handle PAC.
 #define DWARF_PSEUDO_REGLIST
