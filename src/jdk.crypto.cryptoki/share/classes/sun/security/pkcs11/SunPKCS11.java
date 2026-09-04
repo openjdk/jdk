@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, IBM Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1031,6 +1032,10 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
             m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
+        d(KG, "SunTlsExtendedMasterSecret",
+                "sun.security.pkcs11.P11TlsExtendedMasterSecretGenerator",
+                m(CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE,
+                        CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH));
         d(KG, "SunTlsKeyMaterial",
                     "sun.security.pkcs11.P11TlsKeyMaterialGenerator",
                 m(CKM_SSL3_KEY_AND_MAC_DERIVE, CKM_TLS_KEY_AND_MAC_DERIVE));
@@ -1408,6 +1413,7 @@ public final class SunPKCS11 extends AuthProvider {
                 PKCS11Exception, NoSuchAlgorithmException {
             String algorithm = getAlgorithm();
             String type = getType();
+
             if (type == MD) {
                 return new P11Digest(token, algorithm, mechanism);
             } else if (type == CIP) {
@@ -1455,6 +1461,9 @@ public final class SunPKCS11 extends AuthProvider {
                         || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
+                } else if (algorithm == "SunTlsExtendedMasterSecret") {
+                    return new P11TlsExtendedMasterSecretGenerator(
+                            token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsKeyMaterial"
                         || algorithm == "SunTls12KeyMaterial") {
                     return new P11TlsKeyMaterialGenerator(
