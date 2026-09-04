@@ -249,7 +249,7 @@ class VM_Version : public Abstract_VM_Version {
   /* Zbb Basic bit-manipulation */                                                                        \
   decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
   /* Zbc Carry-less multiplication */                                                                     \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
   /* Bitmanip instructions for Cryptography */                                                            \
   decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
   /* Zbs Single-bit instructions */                                                                       \

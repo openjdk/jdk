@@ -939,8 +939,32 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return nullptr;
+  assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  const Register crc = c_rarg0;
+  const Register buf = c_rarg1;
+  const Register len = c_rarg2;
+  const Register off = c_rarg3;
+
+  // Arguments are reversed on the Java expression stack.
+  __ lwu(len, Address(esp));                 // end
+  __ lwu(off, Address(esp, wordSize));       // offset
+  __ sub(len, len, off);                     // end - offset
+  __ ld(buf, Address(esp, 2 * wordSize));    // byte[] | direct buffer address
+  __ add(buf, buf, off);
+
+  if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+    __ lwu(crc, Address(esp, 4 * wordSize));
+  } else {
+    __ addi(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ lwu(crc, Address(esp, 3 * wordSize));
+  }
+
+  __ andi(sp, x19_sender_sp, -16);  // Restore caller's SP.
+  __ far_jump(RuntimeAddress(StubRoutines::updateBytesCRC32C()));
+
+  return entry;
 }
 
 // Not supported
