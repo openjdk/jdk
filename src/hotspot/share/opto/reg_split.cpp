@@ -912,6 +912,12 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         JVMState* jvms = n->jvms();
         uint oopoff = jvms ? jvms->oopoff() : cnt;
         uint old_last = cnt - 1;
+
+        MachNode *addp_mach = n->is_Mach() ? n->as_Mach() : nullptr;
+        bool is_addp = (addp_mach && addp_mach->ideal_Opcode() == Op_AddP);
+        Node* addp_base_original_def = nullptr;
+        Node* addp_base_remat_def = nullptr;
+
         for( inpidx = 1; inpidx < cnt; inpidx++ ) {
           // Derived/base pairs may be added to our inputs during this loop.
           // If inpidx > old_last, then one of these new inputs is being
@@ -948,10 +954,23 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // Rematerializable?  Then clone def at use site instead
             // of store/load
             if( def->rematerialize() ) {
-              int old_size = b->number_of_nodes();
-              def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
-              if( !def ) return 0; // Bail out
-              insidx += b->number_of_nodes()-old_size;
+              Node* original_def = def;
+              bool reuse_addp_base_remat = is_addp &&
+                                           inpidx == AddPNode::Address &&
+                                           addp_base_original_def != nullptr &&
+                                           addp_base_original_def == original_def;
+              if (reuse_addp_base_remat) {
+                def = addp_base_remat_def;
+              } else {
+                int old_size = b->number_of_nodes();
+                def = split_Rematerialize( def, b, insidx, maxlrg, splits, slidx, lrg2reach, Reachblock, true );
+                if( !def ) return 0; // Bail out
+                insidx += b->number_of_nodes()-old_size;
+                if (is_addp && inpidx == AddPNode::Base) {
+                  addp_base_original_def = original_def;
+                  addp_base_remat_def = def;
+                }
+              }
             }
 
             MachNode *mach = n->is_Mach() ? n->as_Mach() : nullptr;
