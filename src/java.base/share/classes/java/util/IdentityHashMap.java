@@ -52,8 +52,8 @@ import jdk.internal.access.SharedSecrets;
  *      <div class="preview-comment">
  *          When preview features are enabled, keys and values may be
  *          {@linkplain java.util.Objects#hasIdentity value objects}.
- *          Two value object keys are {@code ==} if they are instances
- *          of the same class and the values of their instance fields are the same.
+ *          Two value object keys are {@code ==} if and only if they are
+ *          {@linkplain Object##Indistinguishability indistinguishable}.
  *      </div>
  * </div>
  *

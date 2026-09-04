@@ -45,7 +45,8 @@ import java.util.function.Consumer;
  *
  * <div class="preview-block">
  *      <div class="preview-comment">
- *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
+ *          Only {@linkplain java.util.Objects#hasIdentity identity objects}
+ *          and {@code null} may be used as
  *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
  *          method, and all methods that associate a value with a key, throw {@link
  *          IdentityException} if the key is a value object.
@@ -567,7 +568,7 @@ public class WeakHashMap<@jdk.internal.RequiresIdentity K,V>
      *
      * @apiNote If the specified map contains keys that are
      * {@linkplain java.util.Objects#hasIdentity value objects},
-     * an {@linkplain IdentityException} is thrown when the first value object
+     * an {@link IdentityException} is thrown when the first value object
      * key is encountered. Zero or more mappings may have already been copied to
      * this map.
      *
