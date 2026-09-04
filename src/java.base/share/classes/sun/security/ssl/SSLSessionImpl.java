@@ -115,6 +115,11 @@ final class SSLSessionImpl extends ExtendedSSLSession {
     private int                 negotiatedMaxFragLen = -1;
     private int                 maximumPacketSize;
 
+    private static final boolean tlsUniqueChannelBindingEnabled = Utilities.getBooleanProperty(
+            "sun.security.ssl.enableTlsUniqueChannelBinding", false);
+    private volatile byte[] clientFinishedVerifyData;
+    private volatile byte[] serverFinishedVerifyData;
+
     private final Queue<SSLSessionImpl> childSessions =
                                         new ConcurrentLinkedQueue<>();
 
@@ -1685,9 +1690,59 @@ final class SSLSessionImpl extends ExtendedSSLSession {
         return (byte[])exportKeyingMaterial(null, label, context, length);
     }
 
-    /** Returns a string representation of this SSL session */
+    void setClientFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
+        this.clientFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
+    void setServerFinishedVerifyData(byte[] verifyData) {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return;
+        }
+        this.serverFinishedVerifyData = (verifyData != null)
+                ? verifyData.clone()
+                : null;
+    }
+
     @Override
-    public String toString() {
-        return "Session(" + creationTime + "|" + getCipherSuite() + ")";
+    public byte[] getTlsUniqueClientFirstFinishedVerifyData() {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return null;
+        }
+
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return null;
+        }
+        if (!useExtendedMasterSecret) {
+            return null;
+        }
+
+        return (clientFinishedVerifyData != null)
+                ? clientFinishedVerifyData.clone()
+                : null;
+    }
+
+    @Override
+    public byte[] getTlsUniqueFirstFinishedVerifyData() {
+        if (!tlsUniqueChannelBindingEnabled) {
+            return null;
+        }
+
+        if (protocolVersion.useTLS13PlusSpec()) {
+            return null;
+        }
+        if (!useExtendedMasterSecret) {
+            return null;
+        }
+
+        byte[] result = (serverFinishedVerifyData != null
+                && clientFinishedVerifyData == null)
+                        ? serverFinishedVerifyData
+                        : clientFinishedVerifyData;
+        return (result != null) ? result.clone() : null;
     }
 }
