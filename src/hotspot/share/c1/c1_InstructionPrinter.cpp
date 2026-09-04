@@ -27,7 +27,6 @@
 #include "ci/ciArray.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObject.hpp"
-#include "ci/ciValueKlass.hpp"
 #include "classfile/vmSymbols.hpp"
 
 
