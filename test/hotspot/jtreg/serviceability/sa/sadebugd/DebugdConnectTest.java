@@ -65,14 +65,15 @@ public class DebugdConnectTest {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        return out;
+        return new OutputAnalyzer(out.getStdout(),
+                out.getStderrNoDeprecatedWarnings(), out.getExitValue());
     }
 
     private static void runJSTACK(String serverID) throws IOException, InterruptedException {
         OutputAnalyzer out = runJHSDB("jstack", serverID);
 
         out.shouldContain("LingeredApp");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -80,7 +81,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jmap", serverID);
 
         out.shouldContain("JVM version is");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -88,7 +89,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jinfo", serverID);
 
         out.shouldContain("Java System Properties:");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
@@ -96,7 +97,7 @@ public class DebugdConnectTest {
         OutputAnalyzer out = runJHSDB("jsnap", serverID);
 
         out.shouldContain("java.vm.name=");
-        out.stderrShouldBeEmptyIgnoreDeprecatedWarnings();
+        out.stderrShouldBeEmptyIgnoreVMWarnings();
         out.shouldHaveExitValue(0);
     }
 
