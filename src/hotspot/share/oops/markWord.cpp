@@ -39,19 +39,19 @@ void markWord::print_on(outputStream* st) const {
   st->print(" mark(");
   if (has_monitor()) {         // last bits = 10
     st->print("has_monitor");
-  } else if (is_unlocked()) {  // last bits = 01
-    st->print("is_unlocked");
+  } else if (is_lock_neutral()) {  // last bits = 01
+    st->print("is_lock_neutral");
   } else {                     // last bits = 00
     assert(is_fast_locked(), "should be");
-    st->print("is_locked");
+    st->print("is_fast_locked");
   }
   if (is_inline_type()) {
     st->print(" inline_type");
   }
-  if (has_no_hash()) {
-    st->print(" no_hash");
-  } else {
+  if (has_hash()) {
     st->print(" hash=" INTPTR_FORMAT, hash());
+  } else {
+    st->print(" no_hash");
   }
 #ifdef _LP64 // 64 bit encodings have array information
   // flat or null-free do not imply each other

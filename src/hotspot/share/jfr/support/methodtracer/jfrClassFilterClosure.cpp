@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,31 +81,50 @@ int JfrFilterClassClosure::number_of_classes() const {
   return _classes_to_modify->number_of_entries();
 }
 
-void JfrFilterClassClosure::iterate_all_classes(GrowableArray<JfrInstrumentedClass>* instrumented_klasses) {
+void JfrFilterClassClosure::add(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert(ik != nullptr, "invariant");
+  assert(ik->is_loader_alive(), "invariant");
+  assert(JfrTraceId::has_sticky_bit(ik), "invariant");
+  const traceid klass_id = JfrTraceId::load_raw(ik);
+  assert(!_classes_to_modify->contains(klass_id), "invariant");
+  jclass mirror = mirror_as_local_jni_handle(ik, _thread);
+  _classes_to_modify->put(klass_id, mirror);
+}
+
+bool JfrFilterClassClosure::do_entry(const traceid& id, const InstanceKlass*& ik) {
+  if (JfrKlassUnloading::is_unloaded(id, true)) {
+    // Returning true removes the unloaded entry from the placeholder table.
+    return true;
+  }
+  assert(!ik->is_loaded(), "invariant");
+  add(ik);
+  return false;
+}
+
+void JfrFilterClassClosure::iterate_all_classes(GrowableArray<JfrInstrumentedClass>* instrumented_klasses, JfrPlaceholderTable* table) {
   assert(instrumented_klasses != nullptr, "invariant");
+  assert(table != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
 
   // First we process the instrumented_klasses list. The fact that a klass is on that list implies
   // it matched _some_ previous filter, but we don't know which one. The nice thing is we don't need to know,
   // because a klass has the STICKY_BIT set for those methods that matched _some_ previous filter.
-  // We, therefore, put these klasses directly into the classes_to_modify set. We also need to do this
-  // because some klasses on the instrumented_klasses list may not have reached the point of add_to_hierarchy yet.
-  // For those klasses, the ClassLoaderDataGraph iterator would not deliver them on iteration.
-
+  // We, therefore, put these klasses directly into the classes_to_modify set.
   if (instrumented_klasses->is_nonempty()) {
     for (int i = 0; i < instrumented_klasses->length(); ++i) {
       if (JfrKlassUnloading::is_unloaded(instrumented_klasses->at(i).trace_id())) {
         continue;
       }
-      const InstanceKlass* const ik = instrumented_klasses->at(i).instance_klass();
-      assert(ik != nullptr, "invariant");
-      assert(ik->is_loader_alive(), "invariant");
-      assert(JfrTraceId::has_sticky_bit(ik), "invariant");
-      const traceid klass_id = JfrTraceId::load_raw(ik);
-      assert(!_classes_to_modify->contains(klass_id), "invariant");
-      jclass mirror = mirror_as_local_jni_handle(ik, _thread);
-      _classes_to_modify->put(klass_id, mirror);
+      add(instrumented_klasses->at(i).instance_klass());
     }
   }
+  // We do the same also for the placeholder table because the classes contained
+  // have not reached the add_to_hierarchy point yet; the ClassLoaderDataGraph iterator
+  // would not deliver them on iteration.
+  if (table->number_of_entries() > 0) {
+    table->unlink(this);
+  }
+
   ClassLoaderDataGraph::loaded_classes_do_keepalive(this);
 }

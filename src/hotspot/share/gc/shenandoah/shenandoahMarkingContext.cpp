@@ -41,8 +41,12 @@ bool ShenandoahMarkingContext::is_bitmap_clear() const {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   size_t num_regions = heap->num_regions();
   for (size_t idx = 0; idx < num_regions; idx++) {
+    if (heap->is_region_free(idx)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = heap->get_region(idx);
-    if (r->is_affiliated() && heap->is_bitmap_slice_committed(r)
+    if (heap->is_bitmap_slice_committed(r)
         && !is_bitmap_range_within_region_clear(r->bottom(), r->end())) {
       return false;
     }

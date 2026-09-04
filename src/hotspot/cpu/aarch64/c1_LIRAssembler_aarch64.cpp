@@ -1569,13 +1569,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ ldr(tmp, Address(op->array()->as_register(), oopDesc::mark_offset_in_bytes()));
-  __ tst(tmp, markWord::unlocked_value);
-  __ br(Assembler::NE, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ tst(tmp, markWord::null_free_array_bit_in_place);
 }
 
