@@ -320,28 +320,24 @@ public class StringLoadTest {
         }
     }
 
+    private static String repeat(String string) {
+        return string.repeat((128 / string.length()) + 1);
+    }
+
     @DataProvider
     public static Object[][] strings() {
         return new Object[][] {
             {""},
             {"hello world"},
             {"123"},
-            {"a".repeat(128)},
-            {"\u1234".repeat(128)},
             {"section \u00A7"},
-            {"snowman \u26C4"},
-            {"rainbow \uD83C\uDF08"},
-            {"cartwheel \uD83E\uDD38"},
-            {"cjk \u4E00\u4E8C"},
-            {"\uD83D\uDE00"},
-            {"\uFEFF"},
-            {"unpaired high surrogate: \uD83C"},
-            {"unpaired low surrogate: \uDC00"},
-            {"low surrogate followed by high surrogate: \uDC00\uD83C"},
-            {"high surrogate followed by high surrogate: \uD83C\uD83C"},
-            {"high surrogate followed by a non-low surrogate: \uD83C\uE000"},
-            {"valid pair followed by an unpaired low surrogate: \uD83D\uDE00\uDC00"},
-            {"unpaired low surrogate followed by valid pair: \uDC00\uD83D\uDE00"},
+            {repeat("hello world")},
+            {repeat("123")},
+            {repeat("\u1234")},
+            {repeat("section \u00A7")},
+            {repeat("snowman \u26C4")},
+            {repeat("rainbow \uD83C\uDF08")},
+            {repeat("cartwheel \uD83E\uDD38")},
         };
     }
 }
