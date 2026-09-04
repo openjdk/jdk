@@ -1336,19 +1336,20 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
     return;
   }
 
-
-  if (n->metadata() == 0) {
-    out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor must "
-                  "have non-null _metadata (header/hash) field.", p2i(n));
-    *error_cnt_p = *error_cnt_p + 1;
-  }
-
   const oop obj = n->object_peek();
   if (obj == nullptr) {
     return;
   }
 
   const markWord mark = obj->mark();
+  if (!mark.has_hash()) {
+    out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
+                  "object must have a non-zero hash code: obj="
+                  INTPTR_FORMAT ", mark=" INTPTR_FORMAT,
+                  p2i(n), p2i(obj), mark.value());
+    *error_cnt_p = *error_cnt_p + 1;
+  }
+
   ObjectMonitor* const obj_mon = read_monitor(obj);
   if (n != obj_mon) {
     out->print_cr("ERROR: monitor=" INTPTR_FORMAT ": in-use monitor's "
@@ -1359,17 +1360,17 @@ void ObjectSynchronizer::chk_in_use_entry(ObjectMonitor* n, outputStream* out,
   }
 }
 
-// Log details about ObjectMonitors on the in_use_list. The 'BHL'
+// Log details about ObjectMonitors on the in_use_list. The 'BL'
 // flags indicate why the entry is in-use, 'object' and 'object type'
 // indicate the associated object and its type.
 void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_all) {
   if (_in_use_list.count() > 0) {
     stringStream ss;
     out->print_cr("In-use monitor info%s:", log_all ? "" : " (eliding idle monitors)");
-    out->print_cr("(B -> is_busy, H -> has hash code, L -> lock status)");
+    out->print_cr("(B -> is_busy, L -> lock status)");
     out->print_cr("%18s  %s  %18s  %18s",
-                  "monitor", "BHL", "object", "object type");
-    out->print_cr("==================  ===  ==================  ==================");
+                  "monitor", "BL", "object", "object type");
+    out->print_cr("==================  ==  ==================  ==================");
 
     auto is_interesting = [&](ObjectMonitor* monitor) {
       return log_all || monitor->has_owner() || monitor->is_busy();
@@ -1378,10 +1379,9 @@ void ObjectSynchronizer::log_in_use_monitor_details(outputStream* out, bool log_
     monitors_iterate([&](ObjectMonitor* monitor) {
       if (is_interesting(monitor)) {
         const oop obj = monitor->object_peek();
-        const intptr_t hash = monitor->hash();
         ResourceMark rm;
-        out->print(INTPTR_FORMAT "  %d%d%d  " INTPTR_FORMAT "  %s", p2i(monitor),
-                   monitor->is_busy(), hash != 0, monitor->has_owner(),
+        out->print(INTPTR_FORMAT "  %d%d  " INTPTR_FORMAT "  %s", p2i(monitor),
+                   monitor->is_busy(), monitor->has_owner(),
                    p2i(obj), obj == nullptr ? "" : obj->klass()->external_name());
         if (monitor->is_busy()) {
           out->print(" (%s)", monitor->is_busy_to_string(&ss));
@@ -1459,13 +1459,9 @@ ObjectMonitor* ObjectSynchronizer::get_or_insert_monitor(oop object, JavaThread*
   return monitor;
 }
 
-// Add the hashcode to the monitor to match the object and put it in the hashtable.
+// Add the monitor to the ObjectMonitorTable.
 ObjectMonitor* ObjectSynchronizer::add_monitor(ObjectMonitor* monitor, oop obj) {
   assert(obj == monitor->object(), "must be");
-
-  intptr_t hash = obj->mark().hash();
-  assert(hash != 0, "must be set when claiming the object monitor");
-  monitor->set_hash(hash);
 
   return ObjectMonitorTable::monitor_put_get(monitor, obj);
 }

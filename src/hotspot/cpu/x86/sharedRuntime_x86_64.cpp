@@ -4028,6 +4028,13 @@ RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  StubId id = StubId::shared_jfr_write_checkpoint_id;
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   enum layout {
     rbp_off,
     rbpH_off,
@@ -4036,7 +4043,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
     framesize // inclusive of return address
   };
 
-  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer code(name, 1024 + (UseAPX ? 1024 : 0), 64);
   MacroAssembler* masm = new MacroAssembler(&code);
   address start = __ pc();
@@ -4068,11 +4075,20 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps,
                                   false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+
   return stub;
 }
 
 // For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  StubId id = StubId::shared_jfr_return_lease_id;
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   enum layout {
     rbp_off,
     rbpH_off,
@@ -4081,7 +4097,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
     framesize // inclusive of return address
   };
 
-  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer code(name, 1024, 64);
   MacroAssembler* masm = new MacroAssembler(&code);
   address start = __ pc();
@@ -4110,6 +4126,8 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps,
                                   false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+
   return stub;
 }
 

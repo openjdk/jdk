@@ -624,28 +624,32 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
-  const TypeInt *r0 = t0->is_int(); // Handy access
-  const TypeInt *r1 = t1->is_int();
-  int lo = java_add(r0->_lo, r1->_lo);
-  int hi = java_add(r0->_hi, r1->_hi);
-  if( !(r0->is_con() && r1->is_con()) ) {
-    // Not both constants, compute approximate result
-    if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
-      lo = min_jint; hi = max_jint; // Underflow on the low side
-    }
-    if( (~(r0->_hi | r1->_hi)) < 0 && hi < 0 ) {
-      lo = min_jint; hi = max_jint; // Overflow on the high side
-    }
-    if( lo > hi ) {               // Handle overflow
-      lo = min_jint; hi = max_jint;
-    }
-  } else {
-    // both constants, compute precise result using 'lo' and 'hi'
-    // Semantics define overflow and underflow for integer addition
-    // as expected.  In particular: 0x80000000 + 0x80000000 --> 0x0
+const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
+  const TypeInt* range0 = t0->is_int();
+  const TypeInt* range1 = t1->is_int();
+
+  jlong lo_sum = (jlong)range0->_lo + (jlong)range1->_lo;
+  jlong hi_sum = (jlong)range0->_hi + (jlong)range1->_hi;
+
+  const jlong jint_wrap_offset = (jlong)max_juint + 1;
+
+  if (hi_sum < min_jint) {
+    // The entire range underflows.
+    lo_sum += jint_wrap_offset;
+    hi_sum += jint_wrap_offset;
+  } else if (lo_sum > max_jint) {
+    // The entire range overflows.
+    lo_sum -= jint_wrap_offset;
+    hi_sum -= jint_wrap_offset;
+  } else if (lo_sum < min_jint || hi_sum > max_jint) {
+    // The range crosses one or both jint boundaries.
+    lo_sum = min_jint;
+    hi_sum = max_jint;
   }
-  return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
+
+  return TypeInt::make(checked_cast<jint>(lo_sum),
+                       checked_cast<jint>(hi_sum),
+                       MAX2(range0->_widen, range1->_widen));
 }
 
 

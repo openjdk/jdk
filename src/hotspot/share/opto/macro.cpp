@@ -464,8 +464,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         values.at_put(j, mem);
       } else if (val->is_Store()) {
         Node* n = val->in(MemNode::ValueIn);
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
           n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
@@ -650,8 +648,6 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
       return value_from_alloc(ft, adr_t, alloc);
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      n = bs->step_over_gc_barrier(n);
       return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
@@ -805,7 +801,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   }
 
   while (can_eliminate && worklist.size() > 0) {
-    BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
     res = worklist.pop();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax); j < jmax && can_eliminate; j++) {
       Node* use = res->fast_out(j);
@@ -827,7 +822,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             NOT_PRODUCT(fail_eliminate = "Mismatched access");
             can_eliminate = false;
           }
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -3284,8 +3279,7 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
-               n->Opcode() == Op_MinL      ||
-               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
+               n->Opcode() == Op_MinL,
                "unknown node type in macro list");
       }
       if (C->failing()) {
