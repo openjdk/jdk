@@ -169,7 +169,7 @@ class JavaCallArguments : public StackObj {
     assert(_value_state[0] == value_state_handle,
            "first argument must be an oop");
     assert(_value[0] != 0, "receiver must be not-null");
-    return Handle((oop*)_value[0], false);
+    return Handle::make((oop*)_value[0]);
   }
 
   void set_receiver(Handle h) {
