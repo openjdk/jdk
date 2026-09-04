@@ -2065,15 +2065,17 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       default:
         ShouldNotReachHere();
     }
+    if (kit.stopped()) {
+      break;
+    }
     if (argi > 0) {
-      bool prev_stopped = kit.stopped();
       // Check that the sum won't overflow the destination byte array.
       IfNode* iff = kit.create_and_map_if(kit.control(),
                                           __ Bool(_gvn->transform(new CmpUNode(length, __ RShiftI(__ intcon(max_jint), coder))), BoolTest::gt),
                                           PROB_MIN, COUNT_UNKNOWN);
       kit.set_control(__ IfFalse(iff));
       overflow->set_req(argi, __ IfTrue(iff));
-      if (!prev_stopped && kit.stopped()) {
+      if (kit.stopped()) {
         // There could be downstream users in either a later call to replace_string_concat
         // or late inlines that expect a live result. This is an edge case:
         // having a statically known overflowing concat, where we would throw an OOM error at runtime if it is reached,

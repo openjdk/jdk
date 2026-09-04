@@ -494,7 +494,7 @@
           "instructions.")                                                  \
                                                                             \
   develop(bool, StressRecompilation, false,                                 \
-          "Recompile each compiled method while successively disabling "    \
+          "Recompile each compiled method while progressively disabling "   \
           "selected optimizations.")                                        \
                                                                             \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
