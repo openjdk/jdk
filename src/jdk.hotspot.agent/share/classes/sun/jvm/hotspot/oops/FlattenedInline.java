@@ -1,0 +1,85 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+package sun.jvm.hotspot.oops;
+
+import java.io.PrintStream;
+
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.oops.ObjectHeap;
+import sun.jvm.hotspot.utilities.Assert;
+
+
+/**
+ * FlattenedInline represents a flattened object in HotSpot.
+ * Note that there is no corresponding class in HotSpot. This class is used
+ * in SA to handle a flattened object in same way as an oop.
+ */
+public class FlattenedInline extends Inline {
+
+    private final InlineKlass klass;
+
+    FlattenedInline(Address payload, ObjectHeap heap, InlineKlass klass) {
+        if (Assert.ASSERTS_ENABLED) {
+            Assert.that(klass != null, "klass should not be null");
+        }
+        // Create oop handle for holder object that contains the flattened
+        // field payload.
+        OopHandle handle = payload.addOffsetToAsOopHandle(- klass.payloadOffset());
+
+        super(handle, heap);
+        this.klass = klass;
+    }
+
+    @Override
+    public Mark getMark() {
+        throw new UnsupportedOperationException("Flattened object does not have mark word");
+    }
+
+    @Override
+    public Klass getKlass() {
+        return klass;
+    }
+
+    @Override
+    public long identityHash() {
+        throw new UnsupportedOperationException("Flattened object does not support identity hash");
+    }
+
+    @Override
+    public long slowIdentityHash() {
+        throw new UnsupportedOperationException("Flattened object does not support identity hash");
+    }
+
+    @Override
+    public void iterateFields(OopVisitor visitor, boolean doVMFields) {
+        klass.iterateNonStaticFields(visitor, this);
+    }
+
+    @Override
+    public void printValueOn(PrintStream tty) {
+        tty.print("Inlined object (flattened)");
+    }
+}

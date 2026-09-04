@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +22,32 @@
  * questions.
  *
  */
-
 package sun.jvm.hotspot.oops;
 
-import sun.jvm.hotspot.debugger.*;
+import java.io.PrintStream;
 
-// The class for an oop field simply provides access to the value.
-public class NarrowOopField extends OopField {
-  public NarrowOopField(FieldIdentifier id, long offset, boolean isVMField) {
-    super(id, offset, isVMField);
-  }
+import sun.jvm.hotspot.debugger.OopHandle;
+import sun.jvm.hotspot.oops.ObjectHeap;
 
-  public NarrowOopField(sun.jvm.hotspot.types.OopField vmField, long startOffset) {
-    super(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
-  }
 
-  public NarrowOopField(InstanceKlass holder, int fieldArrayIndex) {
-    super(holder, fieldArrayIndex);
-  }
+/**
+ * Inline represents "inlineOop" in HotSpot in SA.
+ * See FlattenedInline for flattened object.
+ */
+public class Inline extends Instance {
 
-  /** Debugging support */
-  public OopHandle getValueAsOopHandle(Oop obj) {
-    return obj.getHandle().getCompOopHandleAt(getOffset());
-  }
+    Inline(OopHandle handle, ObjectHeap heap) {
+        super(handle, heap);
+    }
 
-  public void setValue(Oop obj) throws MutationException {
-    // Fix this: setOopAt is missing in Address
-  }
+    @Override
+    public boolean isInline() {
+        return true;
+    }
+
+    @Override
+    public void printValueOn(PrintStream tty) {
+        tty.print("Inlined object");
+    }
+
 }

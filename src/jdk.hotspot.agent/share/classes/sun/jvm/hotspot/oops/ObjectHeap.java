@@ -183,6 +183,7 @@ public class ObjectHeap {
       if (klass instanceof FlatArrayKlass) return new FlatArray(handle, this);
       if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
       if (klass instanceof InstanceKlass) return new Instance(handle, this);
+      if (klass instanceof InlineKlass)   return new Inline(handle, this);
     }
 
     if (DEBUG) {
@@ -191,6 +192,17 @@ public class ObjectHeap {
     }
 
     throw new UnknownOopException(handle.toString());
+  }
+
+  // This method is used to instantiate a holder object that contains
+  // the flattened field payload.
+  public Oop newOop(Address payload, InlineKlass klass) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(payload != null, "payload should not be null");
+    }
+    return klass.isPayloadMarkedAsNull(payload)
+               ? null
+               : new FlattenedInline(payload, this, klass);
   }
 
   // Print all objects in the object heap
