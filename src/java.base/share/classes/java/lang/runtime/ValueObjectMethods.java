@@ -131,7 +131,8 @@ final class ValueObjectMethods {
         Class<?> type = obj.getClass();
         final Unsafe U = UNSAFE;
         int[] map = U.getFieldMap(type);
-        int result = System.identityHashCode(type);
+        int typeHash = System.identityHashCode(type);
+        int result = typeHash;
         int nbNonRef = map[0];
         for (int i = 0; i < nbNonRef; i++) {
             int offset = map[i * 2 + 1];
@@ -169,6 +170,9 @@ final class ValueObjectMethods {
             Object oa = U.getReference(obj, offset);
             result = 31 * result + System.identityHashCode(oa);
         }
-        return result;
+        // Use an alternative non-zero value when the computed hash is zero,
+        // to enable caching. The identity hash of the value class distinguishes
+        // different value classes and is easy for the compiler to fetch.
+        return (result & 0x7fffffff) == 0 ? typeHash : result;
     }
 }
