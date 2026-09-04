@@ -31,20 +31,20 @@
 
 class SelectAllocationFailureRegionClosure : public G1HeapRegionClosure {
   CHeapBitMap& _allocation_failure_regions;
-  size_t _allocation_failure_regions_num;
+  size_t _num_allocation_failure_regions;
 
 public:
   SelectAllocationFailureRegionClosure(CHeapBitMap& allocation_failure_regions, size_t num_cset_regions) :
     _allocation_failure_regions(allocation_failure_regions),
-    _allocation_failure_regions_num(num_cset_regions * G1GCAllocationFailureALotCSetPercent / 100) { }
+    _num_allocation_failure_regions(num_cset_regions * G1GCAllocationFailureALotCSetPercent / 100) { }
 
   bool do_heap_region(G1HeapRegion* r) override {
     assert(r->in_collection_set(), "must be");
-    if (_allocation_failure_regions_num > 0) {
+    if (_num_allocation_failure_regions > 0) {
       _allocation_failure_regions.set_bit(r->hrm_index());
-      --_allocation_failure_regions_num;
+      --_num_allocation_failure_regions;
     }
-    return _allocation_failure_regions_num == 0;
+    return _num_allocation_failure_regions == 0;
   }
 };
 

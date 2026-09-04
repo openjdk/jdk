@@ -508,16 +508,16 @@ uint G1Policy::calculate_desired_num_eden_regions_before_young_only(double base_
 uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
                                                                uint min_num_eden_regions,
                                                                uint max_num_eden_regions) const {
-  uint min_marking_candidates = MIN2(calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length()),
-                                     candidates()->from_marking_groups().num_regions());
+  uint min_num_marking_candidate_regions = MIN2(calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length()),
+                                                candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
-  uint selected_candidates = 0;
+  uint num_selected_candidate_regions = 0;
   for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
-    if (selected_candidates >= min_marking_candidates) {
+    if (num_selected_candidate_regions >= min_num_marking_candidate_regions) {
       break;
     }
     predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
-    selected_candidates += gr->length();
+    num_selected_candidate_regions += gr->length();
   }
 
   return calculate_desired_num_eden_regions_before_young_only(predicted_region_evac_time_ms,
