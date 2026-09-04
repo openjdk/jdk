@@ -964,6 +964,59 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Test.B2 _", "Test.C _", "Test.A2 _");
     }
 
+    @Test
+    public void testInaccessiblePermittedTypeDiamondSelectorSubtype(Path base) throws Exception {
+        //diamond hierarchy, pick the accessible type that is the closest to the inaccessible type:
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I permits P1, P2, Other { }
+                   sealed interface P1 extends I {}
+                   private sealed interface P1Inaccessible1 extends P1 {}
+                   private sealed interface P1Inaccessible2 extends P1Inaccessible1 {}
+                   private sealed interface P1Inaccessible3 extends P1Inaccessible2 {}
+                   sealed interface P2 extends I {}
+                   private sealed interface P2Inaccessible1 extends P2 {}
+                   private static final class P12Common implements P1Inaccessible3, P2Inaccessible1 {}
+                   public static final class Other implements I { }
+               }
+               public class Test {
+                   private void t(Lib.I i) {
+                       switch (i) {
+                           case Lib.Other _ -> {}
+//                         //Lib.P12Common missing, but cannot be used here
+                       }
+                   }
+                              }
+               """,
+               "Lib.P2 _");
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I permits P1, P2, Other { }
+                   sealed interface P1 extends I {}
+                   private sealed interface P1Inaccessible1 extends P1 {}
+                   private sealed interface P1Inaccessible2 extends P1Inaccessible1 {}
+                   private sealed interface P1Inaccessible3 extends P1Inaccessible2 {}
+                   sealed interface P2 extends I {}
+                   private sealed interface P2Inaccessible1 extends P2 {}
+                   private static final class P12Common implements P2Inaccessible1, P1Inaccessible1 {}
+                   public static final class Other implements I { }
+               }
+               public class Test {
+                   private void t(Lib.I i) {
+                       switch (i) {
+                           case Lib.Other _ -> {}
+//                         //Lib.P12Common missing, but cannot be used here
+                       }
+                   }
+                              }
+               """,
+               "Lib.P2 _");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");

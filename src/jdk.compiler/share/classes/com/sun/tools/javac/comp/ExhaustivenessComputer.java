@@ -885,7 +885,8 @@ public class ExhaustivenessComputer {
             missingPatterns = generalizeInaccessibleTypes(selectorType, missingPatterns);
             return missingPatterns;
         } catch (TooManyChecksException ex) {
-            return ex.missingPatterns != null ? ex.missingPatterns : Set.of();
+            return ex.missingPatterns != null ? generalizeInaccessibleTypes(selectorType, ex.missingPatterns)
+                                              : Set.of();
         } finally {
             baseChecks = NO_BASE_CHECKS_COUNTING;
         }
@@ -946,20 +947,22 @@ public class ExhaustivenessComputer {
 
     private Type generalizeInaccessibleTypes(Type targetType,
                                              Type generalized) {
-        boolean cont = true;
-        while (cont && !isAccessible(generalized.tsym)) {
-            cont = false;
+        ListBuffer<Type> todo = new ListBuffer<>();
 
-            for (Type generalizedSuper : types.directSupertypes(generalized)) {
+        todo.add(generalized);
+
+        while (todo.nonEmpty() && !isAccessible(todo.first().tsym)) {
+            Type current = todo.poll();
+
+            for (Type generalizedSuper : types.directSupertypes(current)) {
                 if (types.asSuper(generalizedSuper, targetType.tsym) != null) {
                     generalized = generalizedSuper;
-                    cont = true;
-                    break;
+                    todo.add(generalizedSuper);
                 }
             }
         }
 
-        return generalized;
+        return todo.nonEmpty() ? todo.first() : generalized;
     }
 
     private boolean isAccessible(Symbol candidate) {
