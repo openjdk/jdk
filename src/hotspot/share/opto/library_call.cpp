@@ -5668,6 +5668,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(1, IfTrue(iff_is_empty_object));
             unmasked_result->init_req(1, result_empty);
 
+            // There is a segment (case 2. or 3.)
             set_control(IfFalse(iff_is_empty_object));
 
             Node* obj_payload_addr = basic_plus_adr(obj, ConvI2L(offset));
@@ -5696,9 +5697,27 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_region->init_req(3, IfTrue(iff_is_long_payload));
             unmasked_result->init_req(3, result_long);
 
-            Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
-            result_reg->init_req(_inline_fast_path, _gvn.transform(unmasked_region));
-            result_val->init_req(_inline_fast_path, fast_path_result);
+            set_control(_gvn.transform(unmasked_region));
+            Node* hash_mask_con = intcon(markWord::hash_mask);
+            Node* masked_result = AndI(_gvn.transform(unmasked_result), hash_mask_con);
+
+            // Now, we have computed the hash. But we don't want it to be 0. If it is, let's just take the hash of the Class,
+            // and since this Class is an identity object, it must be non-zero. Let's do a little diamond since it's easy enough
+            // and cmove experimentally failed to be as efficient.
+            RegionNode* avoid_zero_hash_region = new RegionNode(3);
+            Node* actual_result_for_real = new PhiNode(avoid_zero_hash_region, TypeInt::INT);
+
+            Node* bol_hash_would_be_zero = BoolCmpI(masked_result, BoolTest::eq, zerocon(T_INT));
+            IfNode* iff_hash_would_be_zero = create_and_map_if(control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
+            avoid_zero_hash_region->init_req(1, IfTrue(iff_hash_would_be_zero));
+            Node* class_hashcode_masked = AndI(result_empty, hash_mask_con);
+            actual_result_for_real->init_req(1, class_hashcode_masked);
+
+            avoid_zero_hash_region->init_req(2, IfFalse(iff_hash_would_be_zero));
+            actual_result_for_real->init_req(2, masked_result);
+
+            result_reg->init_req(_inline_fast_path, _gvn.transform(avoid_zero_hash_region));
+            result_val->init_req(_inline_fast_path, _gvn.transform(actual_result_for_real));
           }
         }
       }

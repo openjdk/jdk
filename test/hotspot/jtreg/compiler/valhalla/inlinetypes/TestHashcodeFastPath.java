@@ -716,4 +716,76 @@ public class TestHashcodeFastPath {
     int h_with_oop2(WithOop a) {
         return System.identityHashCode(a);
     }
+
+    static value class Predictable {
+        int i;
+        Predictable(int i) { this.i = i; }
+        @DontCompile
+        public static Predictable makeWouldHaveZeroHash() {
+            return new Predictable(Integer.MIN_VALUE - System.identityHashCode(Predictable.class) * 31);
+        }
+        @DontCompile
+        public static Predictable makeWouldHaveZeroHash2() {
+            return new Predictable(- System.identityHashCode(Predictable.class) * 31);
+        }
+    }
+
+    // Statically expanded
+    @Test
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE}, applyIf = {"DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, failOn = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, URSHIFT_L}, applyIf = {"DisableIntrinsic", "_identityHashCode"})
+    int h_predictable(Predictable a) {
+        return System.identityHashCode(a);
+    }
+
+    // Get hashcode fast path, repeated for another @Run
+    @Test
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_PATH_U, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {URSHIFT_L, CACHE_AND_FAST_PATH_U, RSHIFT_L, FAST_PATH_S, STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", ""})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "false", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.AFTER_PARSING}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    @IR(phase = {CompilePhase.PRINT_IDEAL}, counts = {STATIC_CALL_OF_METHOD, IDENTITY_HASHCODE, "1"}, failOn = {URSHIFT_L, RSHIFT_L}, applyIfAnd = {"UseHashcodeFastPath", "true", "DisableIntrinsic", "_identityHashCode"})
+    int h_object2(Object a) {
+        return System.identityHashCode(a);
+    }
+
+    @Run(test = {
+            "h_predictable",
+            "h_object2",
+    })
+    public void run_non_zero_hashcode() {
+        {
+            // Unmasked hash == 0x80_00_00_00 => real (masked) hash = 0
+            Predictable would_have_zero_hashcode1 = Predictable.makeWouldHaveZeroHash();
+            Predictable would_have_zero_hashcode2 = Predictable.makeWouldHaveZeroHash();
+            Predictable would_have_zero_hashcode3 = Predictable.makeWouldHaveZeroHash();
+            // The hash should not be 0
+            Asserts.assertNE(h(would_have_zero_hashcode1), 0);
+            // The hash should be the one of the class
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h(Predictable.class));
+            // Checks that fast path handles zero hash correctly
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h_object2(would_have_zero_hashcode2));
+            // Checks that static expansion handles zero hash correctly
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h_predictable(would_have_zero_hashcode3));
+        }
+        {
+            // Unmasked hash == 0x00_00_00_00 => real (masked) hash = 0
+            Predictable would_have_zero_hashcode1 = Predictable.makeWouldHaveZeroHash2();
+            Predictable would_have_zero_hashcode2 = Predictable.makeWouldHaveZeroHash2();
+            Predictable would_have_zero_hashcode3 = Predictable.makeWouldHaveZeroHash2();
+            // The hash should not be 0
+            Asserts.assertNE(h(would_have_zero_hashcode1), 0);
+            // The hash should be the one of the class
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h(Predictable.class));
+            // Checks that fast path handles zero hash correctly
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h_object2(would_have_zero_hashcode2));
+            // Checks that static expansion handles zero hash correctly
+            Asserts.assertEQ(h(would_have_zero_hashcode1), h_predictable(would_have_zero_hashcode3));
+        }
+    }
 }

@@ -1088,7 +1088,8 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
   };
 
   Node* const thirty_one = kit->intcon(31);
-  Node* result = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* klass_hash_con = kit->intcon(checked_cast<jint>(klass_hash));
+  Node* result = klass_hash_con;
   for (int i = 0; i < number_of_nonoop_entries; i++) {
     AcmpMapSegment segment = vk->get_nonoop_segment_of_acmp_map(i);
     int offset = segment._offset;
@@ -1121,9 +1122,17 @@ Node* InlineTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t
       offset++;
     }
   }
-  result = kit->AndI(result, kit->intcon(markWord::hash_mask));
+  Node* hash_mask_con = kit->intcon(markWord::hash_mask);
+  result = kit->AndI(result, hash_mask_con);
 
-  region->add_req(kit->control());
+  Node* bol_hash_would_be_zero = kit->BoolCmpI(result, BoolTest::eq, kit->zerocon(T_INT));
+  IfNode* iff_hash_would_be_zero = kit->create_and_map_if(kit->control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
+
+  region->add_req(kit->IfTrue(iff_hash_would_be_zero));
+  Node* class_hashcode_masked = kit->AndI(klass_hash_con, hash_mask_con);
+  phi_result->add_req(class_hashcode_masked);
+
+  region->add_req(kit->IfFalse(iff_hash_would_be_zero));
   phi_result->add_req(result);
 
   kit->set_control(region);
