@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -449,9 +450,14 @@ public class GenModuleInfoSource {
                     String lookAhead = lookAhead(parser);
                     if (lookAhead.equals(statement.qualifier)) {
                         parser.nextToken(); // skip qualifier
+                        Set<String> targets = new HashSet<>();
                         while ((lookAhead = parser.peekToken()) != null) {
                             // add target name
                             name = nextIdentifier(parser);
+                            if (!targets.add(name)) {
+                                throw parser.newError("duplicate target " + name +
+                                    " in " + keyword + " " + statement.name);
+                            }
                             statement.addTarget(name);
                             lookAhead = lookAhead(parser);
                             if (lookAhead.equals(",") || lookAhead.equals(";")) {
