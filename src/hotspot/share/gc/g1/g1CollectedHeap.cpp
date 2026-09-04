@@ -1321,7 +1321,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungId),
+  _young_regions_card_set_group(card_set_config(), &_card_set_freelist_pool, G1CardSetGroup::YoungId),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -3176,16 +3176,16 @@ G1HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size, G1HeapRegio
     if (type.is_survivor()) {
       new_alloc_region->set_survivor();
       _survivor.add(new_alloc_region);
-      // The remembered set/group cardset for this region will be installed at the
+      // The card set group for this region will be installed at the
       // end of GC. Cannot do that right now because we still need the current young
-      // gen cardset group.
+      // gen card set group.
       // However, register with the attribute table to collect remembered set entries
-      // immediately as it is the only source for determining the need for remembered
+      // immediately as it is the definitive source for determining the need for remembered
       // set tracking during GC.
       register_new_survivor_region_with_region_attr(new_alloc_region);
     } else {
       new_alloc_region->set_old();
-      // Update remembered set/cardset.
+      // Update remembered set state.
       _policy->remset_tracker()->update_at_allocate(new_alloc_region);
       // Synchronize with region attribute table.
       update_region_attr(new_alloc_region);
