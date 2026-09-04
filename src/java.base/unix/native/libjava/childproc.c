@@ -106,10 +106,12 @@ markCloseOnExec(int fd)
     return 0;
 }
 
-#if !defined(_AIX)
-  /* The /proc file system on AIX does not contain open system files
-   * like /dev/random. Therefore we use a different approach and do
-   * not need isAsciiDigit() or FD_DIR */
+/* The /proc file system on AIX does not contain open system files
+ * like /dev/random, and on the BSDs other than macOS /dev/fd does not
+ * describe this process (see markDescriptorsCloseOnExec below). Neither
+ * needs isAsciiDigit() or FD_DIR. */
+#if !defined(_AIX) && !(defined(_ALLBSD_SOURCE) && !defined(__APPLE__))
+  #define USE_FD_DIR
 static int
 isAsciiDigit(char c)
 {
@@ -136,6 +138,24 @@ markDescriptorsCloseOnExec(void)
      */
     if (fcntl(FAIL_FILENO + 1, F_CLOSEM, 0) == -1 ||
         (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF)) {
+        return -1;
+    }
+#elif !defined(USE_FD_DIR)
+    /* On the BSDs other than macOS, /dev/fd does not describe this process
+     * unless fdescfs is mounted over it, which no default install does.
+     * FreeBSD and DragonFly leave only the 0, 1 and 2 that devfs provides,
+     * so a walk of the directory finds nothing at or above fd_from and
+     * reports success having marked nothing; every descriptor the parent
+     * holds then survives the exec, and a child that inherits the write end
+     * of another child's pipe keeps the reader of that pipe waiting for an
+     * EOF that never comes. NetBSD and OpenBSD instead have a fixed 0..63 of
+     * device nodes there, so the walk fails on the first one that is not
+     * open. Close in bulk, as AIX does, keeping the fail pipe open until the
+     * exec. closefrom(2) returns void on FreeBSD, so its result is not
+     * checked; it cannot fail for a descriptor this low.
+     */
+    closefrom(FAIL_FILENO + 1);
+    if (markCloseOnExec(FAIL_FILENO) == -1 && errno != EBADF) {
         return -1;
     }
 #else
