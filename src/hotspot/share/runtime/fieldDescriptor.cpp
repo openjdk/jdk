@@ -208,7 +208,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
           }
           st->cr();
         } else {
-          st->print_cr("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+          st->print_cr("Flat value null-free type field '%s':", vk->name()->as_C_string());
         }
 
         // Print fields of flat field (recursively) is not null

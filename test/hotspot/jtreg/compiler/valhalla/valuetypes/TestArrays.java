@@ -2171,10 +2171,10 @@ public class TestArrays {
 
     // Same as test85 but with value class array
     @Test
-    @IR(applyIf = {"ValueTypeReturnedAsFields", "true"},
+    @IR(applyIf = {"ValueTypePassFieldsAsArgs", "true"},
         failOn = {ALLOC_ARRAY, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE},
         counts = {INLINE_ARRAY_NULL_GUARD, "= 2", ALLOC, "= 1"})
-    @IR(applyIf = {"ValueTypeReturnedAsFields", "false"},
+    @IR(applyIf = {"ValueTypePassFieldsAsArgs", "false"},
         failOn = {ALLOC, ALLOC_ARRAY, LOAD_UNKNOWN_VALUE, STORE_UNKNOWN_VALUE},
         counts = {INLINE_ARRAY_NULL_GUARD, "= 2"})
     public void test87(MyValue1[] array, MyValue1 o, boolean b) {

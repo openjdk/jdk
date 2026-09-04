@@ -1119,7 +1119,7 @@ bool SystemDictionary::preload_from_required_value_field(InstanceKlass* ik, Hand
                              name->as_C_string(), ik->name()->as_C_string());
   }
 
-  InstanceKlass* k = ik->get_value_type_field_klass(field_index);
+  InstanceKlass* k = ik->get_value_type_field_klass_or_null(field_index);
   bool check = check_shared_class_dependency(ik, k, class_loader, false, THREAD);
   if (!check) {
     const bool has_pending_exception = HAS_PENDING_EXCEPTION;
@@ -1161,7 +1161,7 @@ void SystemDictionary::try_preload_from_loadable_descriptors(InstanceKlass* ik, 
   log_info(class, preload)("Preloading of class %s during loading of shared class %s. "
                            "Cause: field type in LoadableDescriptors attribute",
                            name->as_C_string(), ik->name()->as_C_string());
-  InstanceKlass* k = ik->get_value_type_field_klass(field_index);
+  InstanceKlass* k = ik->get_value_type_field_klass_or_null(field_index);
   if (k == nullptr) {
     SystemDictionary::resolve_with_circularity_detection(ik->name(), name, class_loader, false, THREAD);
     if (HAS_PENDING_EXCEPTION) {

@@ -1488,7 +1488,7 @@
   /************************/                                              \
                                                                           \
   declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
-  declare_constant(Klass::KlassKind::InlineKlassKind)                     \
+  declare_constant(Klass::KlassKind::ValueKlassKind)                      \
   declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
   declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
   declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \

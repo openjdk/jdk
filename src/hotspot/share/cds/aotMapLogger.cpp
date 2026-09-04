@@ -632,7 +632,7 @@ public:
     return FakeOop(_iter, _iter->obj_at(addr));
   }
 
-  FakeOop read_inline_oop_at(address value_addr, Klass* k) {
+  FakeOop read_value_oop_at(address value_addr, Klass* k) {
     OopData data = {
       value_addr,                                         // _buffered_addr, address of the flat value shifted by the payload offset
       requested_addr() + (value_addr - buffered_addr()),  // _requested_addr
@@ -713,7 +713,7 @@ public:
   FakeOop element_at(int i) {
     ValueKlass* elem_k = ((FlatArrayKlass*)real_klass())->element_klass();
     address value_addr = (address)raw_flatArrayOop()->value_at_addr(i, real_klass()->layout_helper()) - elem_k->payload_offset();
-    return read_inline_oop_at(value_addr, elem_k);
+    return read_value_oop_at(value_addr, elem_k);
   }
 
   int element_offset_at(int i) {
@@ -890,12 +890,12 @@ public:
             is_null = vk->is_payload_marked_as_null(_fake_oop.buffered_addr() + fd->offset());
             _st->print("Flat value type field '%s':", vk->name()->as_C_string());
           } else {
-            _st->print("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+            _st->print("Flat value null-free type field '%s':", vk->name()->as_C_string());
           }
           // Print fields of flat field (recursively)
           if (!is_null) {
             _st->cr();
-            FakeOop obj = _fake_oop.read_inline_oop_at(field_addr, vk);
+            FakeOop obj = _fake_oop.read_value_oop_at(field_addr, vk);
             ArchivedFieldPrinter print_field(obj, _st, _indent + 1, _base_offset + field_offset);
             vk->do_nonstatic_fields(&print_field);
           } else {
@@ -1067,7 +1067,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
         is_null = elem_k->is_payload_marked_as_null(elm.buffered_addr() + elem_k->payload_offset());
         st->print(" - Flat value type element '%s':", elem_k->name()->as_C_string());
       } else {
-        st->print(" - Flat inline null-free type element '%s':", elem_k->name()->as_C_string());
+        st->print(" - Flat value null-free type element '%s':", elem_k->name()->as_C_string());
       }
       st->print(" - Index %3d offset %3d: ", i, off);
 

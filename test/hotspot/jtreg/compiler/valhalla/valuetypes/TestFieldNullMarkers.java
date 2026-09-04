@@ -243,7 +243,7 @@ import jdk.test.lib.helpers.StrictInit;
  *                               -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               -XX:+ValueTypePassFieldsAsArgs -XX:+ValueTypeReturnedAsFields
+ *                               -XX:+ValueTypeReturnedAsFields -XX:+ValueTypePassFieldsAsArgs
  *                               compiler.valhalla.valuetypes.TestFieldNullMarkers
  */
 
@@ -264,7 +264,7 @@ import jdk.test.lib.helpers.StrictInit;
  *                               -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               -XX:-ValueTypePassFieldsAsArgs -XX:-ValueTypeReturnedAsFields
+ *                               -XX:-ValueTypeReturnedAsFields -XX:-ValueTypePassFieldsAsArgs
  *                               compiler.valhalla.valuetypes.TestFieldNullMarkers
  */
 
@@ -285,7 +285,7 @@ import jdk.test.lib.helpers.StrictInit;
  *                               -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               -XX:+ValueTypePassFieldsAsArgs -XX:-ValueTypeReturnedAsFields
+ *                               -XX:+ValueTypeReturnedAsFields -XX:-ValueTypePassFieldsAsArgs
  *                               compiler.valhalla.valuetypes.TestFieldNullMarkers
  */
 
@@ -306,7 +306,7 @@ import jdk.test.lib.helpers.StrictInit;
  *                               -XX:+UnlockDiagnosticVMOptions
  *                               -XX:+UnlockExperimentalVMOptions
  *                               -XX:+UseNullableAtomicValueFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullFreeNonAtomicValueFlattening
- *                               -XX:-ValueTypePassFieldsAsArgs -XX:+ValueTypeReturnedAsFields
+ *                               -XX:-ValueTypeReturnedAsFields -XX:+ValueTypePassFieldsAsArgs
  *                               compiler.valhalla.valuetypes.TestFieldNullMarkers
  */
 

@@ -155,7 +155,7 @@ public class ObjectMethods {
             throw new RuntimeException("monitorenter did not fail");
         }
         // synchronized method modifiers tested by "BadValueTypes" CFP tests
-        // jni monitor ops tested by "InlineWithJni"
+        // jni monitor ops tested by "ValueWithJni"
     }
 
     // Check we haven't broken the mismatched monitor block check...
