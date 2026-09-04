@@ -1023,9 +1023,6 @@ public:
   INSN(smc, 0b000, 0, 0b11);
   INSN(brk, 0b001, 0, 0b00);
   INSN(hlt, 0b010, 0, 0b00);
-  INSN(dcps1, 0b101, 0, 0b01);
-  INSN(dcps2, 0b101, 0, 0b10);
-  INSN(dcps3, 0b101, 0, 0b11);
 
 #undef INSN
 
