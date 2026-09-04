@@ -225,7 +225,7 @@ void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
   assert(Thread::current() == t, "invariant");
   assert(!tl->is_dead(), "invariant");
   assert(tl->shelved_buffer() == nullptr, "invariant");
-  AtomicAccess::release_store(&tl->_dead, true);
+  AtomicAccess::store(&tl->_dead, true);
   tl->release(t);
 }
 
