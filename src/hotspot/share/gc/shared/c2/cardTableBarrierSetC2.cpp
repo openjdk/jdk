@@ -235,11 +235,14 @@ bool CardTableBarrierSetC2::use_ReduceInitialCardMarks() {
 }
 
 void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
+  assert(is_gc_barrier(node), "trying eliminate a subgraph that's not a barrier");
   assert(node->Opcode() == Op_CastP2X, "ConvP2XNode required");
   for (DUIterator_Last imin, i = node->last_outs(imin); i >= imin; --i) {
     Node* shift = node->last_out(i);
+    assert(shift->Opcode() == Op_URShiftX, "unexpected node");
     for (DUIterator_Last jmin, j = shift->last_outs(jmin); j >= jmin; --j) {
       Node* addp = shift->last_out(j);
+      assert(addp->is_AddP(), "unexpected node");
       for (DUIterator_Last kmin, k = addp->last_outs(kmin); k >= kmin; --k) {
         Node* mem = addp->last_out(k);
         if (UseCondCardMark && mem->is_Load()) {
@@ -254,6 +257,39 @@ void CardTableBarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node)
       }
     }
   }
+}
+
+bool CardTableBarrierSetC2::is_gc_barrier(Node* node) const {
+  if (node->Opcode() != Op_CastP2X) {
+    return false;
+  }
+  //  for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
+  //    Node* y = x->fast_out(i);
+  for (DUIterator_Fast imax, i = node->fast_outs(imax); i < imax; i++) {
+    Node* shift = node->fast_out(i);
+    if (shift->Opcode() != Op_URShiftX) {
+      return false;
+    }
+    for (DUIterator_Fast jmax, j = shift->fast_outs(jmax); j < jmax; j++) {
+      Node* addp = shift->fast_out(j);
+      if (!addp->is_AddP()) {
+        return false;
+      }
+      for (DUIterator_Fast kmax, k = addp->fast_outs(kmax); k < kmax; k++) {
+        Node* mem = addp->fast_out(k);
+        if (UseCondCardMark && mem->is_Load()) {
+          if (mem->Opcode() != Op_LoadB) {
+            return false;
+          }
+          continue;
+        }
+        if (!mem->is_Store()) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
 }
 
 bool CardTableBarrierSetC2::array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const {

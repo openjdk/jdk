@@ -328,6 +328,9 @@ public:
 
   // Support for macro expanded GC barriers
   virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const { }
+  virtual bool is_gc_barrier(Node* node) const {
+    return false;
+  }
   virtual void eliminate_gc_barrier_data(Node* node) const { }
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.

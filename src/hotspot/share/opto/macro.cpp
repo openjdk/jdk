@@ -800,6 +800,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     }
   }
 
+  bool safepoint_uses_inline_type = false;
   while (can_eliminate && worklist.size() > 0) {
     res = worklist.pop();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax); j < jmax && can_eliminate; j++) {
@@ -871,9 +872,15 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                 break;
               }
             }
+          } else if (u->is_SafePoint()) {
+            safepoint_uses_inline_type = true;
+            worklist.push(use);
+            // ShouldNotReachHere();
+            // DEBUG_ONLY(disq_node = u;)
+            // NOT_PRODUCT(fail_eliminate = "InlineType use at safepoint";)
+            // can_eliminate = false;
           } else {
-            // Add other uses to the worklist to process individually
-            worklist.push(u);
+            worklist.push(use);
           }
         }
       } else if (use->Opcode() == Op_StoreX && use->in(MemNode::Address) == res) {
@@ -886,7 +893,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                   use->Opcode() == Op_MemBarRelease ||
                   (UseStoreStoreForCtor && use->Opcode() == Op_MemBarStoreStore))) {
         // Nothing to do
-      } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
+      } else if (use->Opcode() != Op_CastP2X || !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier(use)) { // CastP2X is used by card mark
         if (use->is_Phi()) {
           if (use->outcnt() == 1 && use->unique_out()->Opcode() == Op_Return) {
             NOT_PRODUCT(fail_eliminate = "Object is return value";)
@@ -903,11 +910,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
         }
         can_eliminate = false;
-      } else {
-        assert(use->Opcode() == Op_CastP2X, "should be");
-        assert(!use->has_out_with(Op_OrL), "should have been removed because oop is never null");
       }
     }
+  }
+  if (can_eliminate && safepoint_uses_inline_type && alloc->_is_scalar_replaceable) {
+    // ShouldNotReachHere();
+    tty->print_cr("XXXX");
   }
 
 #ifndef PRODUCT
@@ -1412,7 +1420,7 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool inline_
         // Process users
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
           Node* u = use->fast_out(k);
-          if (!u->is_InlineType() && !u->is_StoreFlat()) {
+          if (!u->is_InlineType() && !u->is_SafePoint()) {
             worklist.push(u);
           }
         }
