@@ -1318,9 +1318,6 @@ class methodHandle;
                                      "Ljava/lang/Object;"                                                                                      \
                                      "J"                                                                                                       \
                                      "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
-                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
-                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
-                                     "Ljdk/internal/vm/vector/VectorSupport$Vector;"                                                           \
                                      "Ljdk/internal/vm/vector/VectorSupport$VectorMask;"                                                       \
                                      "Ljava/lang/Object;"                                                                                      \
                                      "I[II"                                                                                                    \
