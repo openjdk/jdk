@@ -27,10 +27,14 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -3397,7 +3401,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         Objects.requireNonNull(charset);
         offset = checkFromIndexSize(offset, species.length(), string.length());
         if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
         byte coder = LANG_ACCESS.stringCoder(string);
         MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
@@ -3441,7 +3445,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         Objects.requireNonNull(charset);
         Objects.requireNonNull(m);
         if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
         byte coder = LANG_ACCESS.stringCoder(string);
         MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
