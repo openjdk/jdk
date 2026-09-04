@@ -89,7 +89,7 @@ void ShenandoahSTWMark::mark() {
   start_mark();
 
   uint nworkers = heap->workers()->active_workers();
-  task_queues()->reserve(nworkers);
+  task_queues()->rebalance(nworkers);
 
   TASKQUEUE_STATS_ONLY(task_queues()->reset_taskqueue_stats());
 

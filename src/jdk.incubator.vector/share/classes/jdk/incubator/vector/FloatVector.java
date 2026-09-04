@@ -1865,6 +1865,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1913,6 +1914,7 @@ public abstract sealed class FloatVector extends AbstractVector<Float>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));

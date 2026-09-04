@@ -1747,6 +1747,15 @@ const char* InstanceKlass::format_strict_static_message(Symbol* field_name, cons
   return ss.as_string();
 }
 
+bool InstanceKlass::has_strict_instance_fields_in_hierarchy() const {
+  for (const InstanceKlass* ik = this; ik != nullptr; ik = ik->java_super()) {
+    if (ik->has_strict_instance_fields()) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Update hierarchy. This is done before the new klass has been added to the SystemDictionary. The Compile_lock
 // is grabbed, to ensure that the compiler is not using the class hierarchy.
 void InstanceKlass::add_to_hierarchy(JavaThread* current) {

@@ -1381,8 +1381,8 @@ void GraphBuilder::if_node(Value x, If::Condition cond, Value y, ValueStack* sta
       if (left_klass == nullptr || right_klass == nullptr) {
         // The klass is still unloaded, or came from a Phi node. Go slow case;
         subst_check = true;
-      } else if (left_klass->can_be_inline_klass() || right_klass->can_be_inline_klass()) {
-        // Either operand may be a value object, but we're not sure. Go slow case;
+      } else if (left_klass->can_be_inline_klass() && right_klass->can_be_inline_klass()) {
+        // Both operands may be a value object, but we're not sure. Go slow case;
         subst_check = true;
       } else {
         // No need to do substitutability check

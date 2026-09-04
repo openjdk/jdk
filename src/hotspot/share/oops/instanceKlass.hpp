@@ -894,6 +894,11 @@ public:
   const char* format_strict_static_message(Symbol* field_name, const char* doing_what = nullptr);
   void throw_strict_static_exception(Symbol* field_name, const char* when, TRAPS);
 
+  // strict instance fields
+  bool has_strict_instance_fields() const     { return _misc_flags.has_strict_instance_fields(); }
+  void set_has_strict_instance_fields(bool b) { _misc_flags.set_has_strict_instance_fields(b); }
+  bool has_strict_instance_fields_in_hierarchy() const;
+
   // generics support
   Symbol* generic_signature() const;
   u2 generic_signature_index() const;

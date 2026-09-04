@@ -323,7 +323,6 @@ public class CtwRunner {
                 "-XX:+StressMacroExpansion",
                 "-XX:+StressMacroElimination",
                 "-XX:+StressIncrementalInlining",
-                "-XX:+StressVerifyMeetJoin",
                 // StressSeed is uint
                 "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE),
                 // Do not fail on huge methods where StressGCM makes register

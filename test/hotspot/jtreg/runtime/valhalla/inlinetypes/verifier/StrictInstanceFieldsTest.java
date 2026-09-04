@@ -34,6 +34,11 @@
  *          ControlFlowAlias.jasm
  *          TryCatchChildBad.jasm
  *          UninitThisOnStack.jasm
+ *          EarlyLarvalNoUninitThis.jasm
+ *          EarlyLarvalFrameOrdering.jasm
+ *          LateOrdinaryStrictFrame.jasm
+ *          NoUnsetFieldsSuper.jasm
+ *          StrictFieldNoEarlyLarval.jasm
  *          NestedEarlyLarval.jcod
  *          EndsInEarlyLarval.jcod
  *          EarlyLarvalNotSubset.jcod
@@ -43,7 +48,7 @@
  *             StrictInstanceFieldsTest
  *             Child ControlFlowChild TryCatchChild AssignedInConditionalChild
  *             SwitchCaseChild NestedConstructorChild FinalChild
- * @run main/othervm -Xlog:verification StrictInstanceFieldsTest
+ * @run main/othervm -Xlog:verification -Xverify:all StrictInstanceFieldsTest
  */
 
 import java.util.Arrays;
@@ -110,30 +115,39 @@ public class StrictInstanceFieldsTest {
         UninitThisOnStack c6 = new UninitThisOnStack();
         System.out.println(c6);
 
+        EarlyLarvalFrameOrdering c7 = new EarlyLarvalFrameOrdering();
+        System.out.println(c7);
+
+        NoUnsetFieldsSuper c8 = new NoUnsetFieldsSuper();
+        System.out.println(c8);
+
         // --------------
         // NEGATIVE TESTS
         // --------------
 
         // Field not initialized before super call
-        negativeTest(BadChild.class, "All strict final fields must be initialized before super()");
+        negativeTest(BadChild.class, "All strict fields must be initialized before super()");
 
         // Field not initialized before super call
-        negativeTest(BadChild1.class, "All strict final fields must be initialized before super()");
+        negativeTest(BadChild1.class, "All strict fields must be initialized before super()");
 
         // Attempt to assign a strict field not present in the original set of unset fields
-        negativeTest(StrictFieldNotSubset.class, "Initializing unknown strict field");
+        negativeTest(StrictFieldNotSubset.class, "Bad <init> method call");
 
         // Constructor with control flow but field is not initialized
         negativeTest(ControlFlowChildBad.class, "Inconsistent stackmap frames at branch target", true, false);
 
         // Constructor with control flow but field is not initialized and stackmap is malformed
-        negativeTest(ControlFlowAlias.class, "All strict final fields must be initialized before super()", false);
+        negativeTest(ControlFlowAlias.class, "All strict fields must be initialized before super()", false);
 
         // Constructor with try-catch but field is not initialized
         negativeTest(TryCatchChildBad.class, "Inconsistent stackmap frames at branch target");
 
         // Early_Larval frame contains another early_larval instead of a base frame
         negativeTest(NestedEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
+
+        // Frame nested inside early_larval does not have uninitializedThis flag
+        negativeTest(EarlyLarvalNoUninitThis.class, "Cannot have uninitialized strict fields without an uninitializedThis");
 
         // Stack map table ends in early_larval frame without base frame
         negativeTest(EndsInEarlyLarval.class, "Early larval frame must be followed by a base frame", true, false);
@@ -143,6 +157,10 @@ public class StrictInstanceFieldsTest {
 
         // Early_larval frame includes a constant pool index that doesn't point to a NameAndType
         negativeTest(InvalidIndexInEarlyLarval.class, "Invalid constant pool index in early larval frame", true, false);
+
+        negativeTest(LateOrdinaryStrictFrame.class, "Inconsistent stackmap frames at branch target");
+
+        negativeTest(StrictFieldNoEarlyLarval.class, "Constructor must call super() or this() before return");
 
         System.out.println("Passed");
     }

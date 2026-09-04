@@ -437,7 +437,7 @@ size_t AOTMappedHeapWriter::filler_array_byte_size(int length) {
 
 int AOTMappedHeapWriter::filler_array_length(size_t fill_bytes) {
   assert(is_object_aligned(fill_bytes), "must be");
-  size_t elemSize = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t elemSize = heapOopSize;
 
   int initial_length = to_array_length(fill_bytes / elemSize);
   for (int length = initial_length; length >= 0; length --) {
@@ -786,7 +786,7 @@ static void log_bitmap_usage(const char* which, BitMap* bitmap, size_t total_bit
 // Update all oop fields embedded in the buffered objects
 void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
                                                       AOTMappedHeapInfo* heap_info) {
-  size_t oopmap_unit = (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop));
+  size_t oopmap_unit = heapOopSize;
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size   / oopmap_unit);
 
@@ -813,7 +813,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
     address buffered_obj = offset_to_buffered_address<address>(seg_offset);
     int length = _heap_root_segments.size_in_elems(seg_idx);
 
-    size_t elem_size = UseCompressedOops ? sizeof(narrowOop) : sizeof(oop);
+    size_t elem_size = heapOopSize;
 
     for (int i = 0; i < length; i++) {
       // There is no source object; these are native oops - load, translate and
@@ -833,7 +833,7 @@ void AOTMappedHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClass
   compute_ptrmap(heap_info);
 
   size_t total_bytes = (size_t)_buffer->length();
-  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / (UseCompressedOops ? sizeof(narrowOop) : sizeof(oop)));
+  log_bitmap_usage("oopmap", heap_info->oopmap(), total_bytes / heapOopSize);
   log_bitmap_usage("ptrmap", heap_info->ptrmap(), total_bytes / sizeof(address));
 }
 

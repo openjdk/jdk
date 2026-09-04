@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,21 @@
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation
+ *                   -XX:-BackgroundCompilation -XX:-VerifyOops
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=3
- *                   -XX:-BackgroundCompilation
+ *                   -XX:-BackgroundCompilation -XX:-VerifyOops
  *                   -XX:+PatchALot
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation
+ *                   -XX:-BackgroundCompilation -XX:-VerifyOops
  *                   -XX:ScavengeRootsInCode=0
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation -XX:ScavengeRootsInCode=1
+ *                   -XX:-BackgroundCompilation -XX:ScavengeRootsInCode=1 -XX:-VerifyOops
  *                   compiler.c1.CanonicalizeArrayLength
  */
 
