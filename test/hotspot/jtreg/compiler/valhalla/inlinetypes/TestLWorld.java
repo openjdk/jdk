@@ -206,6 +206,8 @@ public class TestLWorld {
     private static final MyValue1 testValue1 = MyValue1.createWithFieldsInline(rI, rL);
     @NullRestricted
     private static final MyValue2 testValue2 = MyValue2.createWithFieldsInline(rI, rD);
+    @NullRestricted
+    private static final MyValue3 testValue3 = MyValue3.create();
 
     protected long hash() {
         return testValue1.hash();
@@ -789,6 +791,13 @@ public class TestLWorld {
         }
     }
 
+    private static final MyValue3[] testValue3Array = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 3, MyValue3.DEFAULT);
+    static {
+        for (int i = 0; i < 3; ++i) {
+            testValue3Array[i] = testValue3;
+        }
+    }
+
     private static final NonValueClass[] testNonValueArray = new NonValueClass[42];
 
     // Test load from (flattened) inline type array disguised as object array
@@ -1315,6 +1324,9 @@ public class TestLWorld {
         case 6:
             result = testValue1Array2;
             break;
+        case 7:
+            result = testValue3Array;
+            break;
         }
         result[i1] = result[i2];
         result[i2] = o;
@@ -1354,6 +1366,8 @@ public class TestLWorld {
         }
         result = test38(null, testValue1Array, index, index, 6);
         Asserts.assertEQ(testValue1, ((MyValue1[][])result)[index][index]);
+        result = test38(null, testValue3, index, index, 7);
+        Asserts.assertEQ(testValue3, result[index]);
     }
 
     @ForceInline

@@ -4876,15 +4876,29 @@ const TypeAryPtr* TypeAryPtr::cast_to_null_free(bool null_free) const {
   }
   assert(!null_free || !is_not_null_free(), "inconsistency");
   const Type* elem = this->elem();
+  bool xk = klass_is_exact();
+  if (elem->make_oopptr()->klass_is_exact() && is_atomic() && null_free) {
+    // The ary type is exact if the element type is exact, null free and if we know whether it's atomic or not. In the
+    // the current implementation we only track if an array is known atomic but not if it's known not atomic.
+    xk = true;
+  }
   const Type* new_elem = elem->make_ptr();
   if (null_free) {
     new_elem = new_elem->join_speculative(TypePtr::NOTNULL);
   } else {
     new_elem = new_elem->meet_speculative(TypePtr::NULL_PTR);
   }
+  const TypePtr* speculative = _speculative;
+  if (speculative != nullptr && speculative->isa_aryptr()) {
+    if (null_free && speculative->is_aryptr()->is_not_null_free()) {
+      speculative = nullptr;
+    } else {
+      speculative = speculative->is_aryptr()->cast_to_null_free(null_free);
+    }
+  }
   new_elem = elem->isa_narrowoop() ? new_elem->make_narrowoop() : new_elem;
   const TypeAry* new_ary = TypeAry::make(new_elem, size(), is_stable(), is_flat(), is_not_flat(), null_free, is_not_null_free(), is_atomic());
-  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), klass_is_exact(), _offset, _field_offset, _instance_id, _speculative, _inline_depth, _is_autobox_cache);
+  const TypeAryPtr* res = make(ptr(), const_oop(), new_ary, klass(), xk, _offset, _field_offset, _instance_id, speculative, _inline_depth, _is_autobox_cache);
   if (res->speculative() == res->remove_speculative()) {
     return res->remove_speculative();
   }

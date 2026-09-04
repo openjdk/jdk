@@ -181,11 +181,9 @@ Node* Parse::array_store_check(const Type*& elemtype) {
       reason = Deoptimization::Reason_class_check;
       if (!too_many_traps(reason)) {
         ciKlass* array_type = nullptr;
-        ciKlass* element_type = nullptr;
-        ProfilePtrKind element_ptr = ProfileMaybeNull;
         bool flat_array = true;
         bool null_free_array = true;
-        method()->array_access_profiled_type(bci(), array_type, element_type, element_ptr, flat_array, null_free_array);
+        method()->array_access_profiled_array_type(bci(), array_type, flat_array, null_free_array);
         if (array_type != nullptr) {
           extak = TypeKlassPtr::make(array_type)->is_aryklassptr();
         }
@@ -260,10 +258,11 @@ Node* Parse::array_store_check(const Type*& elemtype) {
   }
 #ifdef ASSERT
   if (!StressReflectiveCode && array_klass->is_Con() != a_e_klass->is_Con()) {
-    // When the element type is exact, the array type also needs to be exact. There is one exception, though:
+    // When the element type is exact, the array type also needs to be exact. There is 2 exceptions, though:
     // Nullable arrays are not exact because the null-free array is a subtype while the element type being a
     // concrete value class (i.e. final) is always exact.
-    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_inlinetypeptr() && !null_free,
+    // If we don't know if an array is atomic of not, then a null free array is not exact.
+    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_inlinetypeptr() && (!null_free || !arytype->is_atomic()),
            "a constant element type either matches a constant array type or a non-constant nullable value class array");
   }
 

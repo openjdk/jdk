@@ -1613,9 +1613,9 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Address mdo_addr,
   bind(do_nothing);
 }
 
-template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Register array,
-                                                                              Register tmp1,
-                                                                              Register tmp2) {
+void InterpreterMacroAssembler::profile_array_type(Register array,
+                                                   Register tmp1,
+                                                   Register tmp2) {
   if (ProfileInterpreter) {
     Label profile_continue;
     assert_different_registers(array, tmp1, tmp2);
@@ -1623,28 +1623,55 @@ template <class ArrayData> void InterpreterMacroAssembler::profile_array_type(Re
     // If no method data exists, go to profile_continue.
     test_method_data_pointer(tmp1, profile_continue);
 
-    profile_obj_type(array, Address(tmp1, in_bytes(ArrayData::array_offset())), tmp2);
+    profile_obj_type(array, Address(tmp1, in_bytes(ArrayStoreData::array_offset())), tmp2);
 
     Label not_flat;
     test_non_flat_array_oop(array, tmp2, not_flat);
-    set_mdp_flag_at(tmp1, ArrayData::flat_array_byte_constant());
+    set_mdp_flag_at(tmp1, ArrayStoreData::flat_array_byte_constant());
     bind(not_flat);
 
     Label not_null_free;
     test_non_null_free_array_oop(array, tmp2, not_null_free);
-    set_mdp_flag_at(tmp1, ArrayData::null_free_array_byte_constant());
+    set_mdp_flag_at(tmp1, ArrayStoreData::null_free_array_byte_constant());
     bind(not_null_free);
 
     bind(profile_continue);
   }
 }
 
-template void InterpreterMacroAssembler::profile_array_type<ArrayLoadData>(Register array,
-                                                                           Register tmp1,
-                                                                           Register tmp2);
-template void InterpreterMacroAssembler::profile_array_type<ArrayStoreData>(Register array,
-                                                                            Register tmp1,
-                                                                            Register tmp2);
+void InterpreterMacroAssembler::profile_multiple_array_types(Register array,
+                                                             Register tmp1,
+                                                             Register tmp2) {
+  if (ProfileInterpreter) {
+    Label profile_continue;
+    assert_different_registers(array, tmp1, tmp2);
+
+    // If no method data exists, go to profile_continue.
+    test_method_data_pointer(tmp1, profile_continue);
+
+    Label not_flat;
+    test_non_flat_array_oop(array, tmp2, not_flat);
+
+    load_klass(tmp2, array);
+    profile_array_type_at_load(tmp2, tmp1, 0, array);
+
+    z_bru(profile_continue);
+    bind(not_flat);
+
+    Label not_null_free;
+    test_non_null_free_array_oop(array, tmp2, not_null_free);
+
+    add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_null_free_count_offset())), DataLayout::counter_increment, tmp2);
+
+    z_bru(profile_continue);
+
+    bind(not_null_free);
+
+    add2mem_64(Address(tmp1, in_bytes(ArrayLoadData::not_flat_nullable_count_offset())), DataLayout::counter_increment, tmp2);
+
+    bind(profile_continue);
+  }
+}
 
 void InterpreterMacroAssembler::profile_element_type(Register element,
                                                      Register tmp1,

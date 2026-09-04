@@ -1984,7 +1984,7 @@ void LIRGenerator::do_StoreIndexed(StoreIndexed* x) {
       profile_array_type(x, md, store_data);
       assert(store_data->is_ArrayStoreData(), "incorrect profiling entry");
       if (x->array()->maybe_null_free_array()) {
-        profile_null_free_array(array, md, data);
+        profile_null_free_array(array, md, store_data);
       }
     }
   }
@@ -2380,7 +2380,7 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
       data = md->bci_to_data(bci);
       assert(data != nullptr && data->is_ArrayLoadData(), "incorrect profiling entry");
       ciArrayLoadData* load_data = (ciArrayLoadData*)data;
-      profile_array_type(x, md, load_data);
+      profile_multiple_array_types(x, array, md, load_data);
     }
   }
 
@@ -2435,10 +2435,6 @@ void LIRGenerator::do_LoadIndexed(LoadIndexed* x) {
   } else {
     LIR_Opr result = rlock_result(x, x->elt_type());
     LoadFlattenedArrayStub* slow_path = nullptr;
-
-    if (x->should_profile() && x->array()->maybe_null_free_array()) {
-      profile_null_free_array(array, md, data);
-    }
 
     if (x->elt_type() == T_OBJECT && x->array()->maybe_flat_array()) {
       assert(x->delayed() == nullptr, "Delayed LoadIndexed only apply to loaded_flat_arrays");
@@ -3065,9 +3061,8 @@ void LIRGenerator::profile_flags(ciMethodData* md, ciProfileData* data, int flag
   __ store(flags, addr);
 }
 
-void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* data) {
+template <class ArrayData> void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ArrayData* data) {
   assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
-  LabelObj* L_end = new LabelObj();
   LIR_Opr tmp = new_register(T_METADATA);
   __ check_null_free_array(array.result(), tmp);
 #ifdef RISCV
@@ -3075,14 +3070,20 @@ void LIRGenerator::profile_null_free_array(LIRItem array, ciMethodData* md, ciPr
   // See LIR_Assembler::emit_opNullFreeArrayCheck
   __ cmp(lir_cond_equal, tmp, LIR_OprFact::metadataConst(nullptr));
 #endif
-  profile_flags(md, data, ArrayStoreData::null_free_array_byte_constant(), lir_cond_equal);
+  profile_flags(md, data, ArrayData::null_free_array_byte_constant(), lir_cond_equal);
 }
 
-template <class ArrayData> void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store) {
+void LIRGenerator::profile_array_type(AccessIndexed* x, ciMethodData*& md, ciArrayStoreData* store) {
   assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
   LIR_Opr mdp = LIR_OprFact::illegalOpr;
-  profile_type(md, md->byte_offset_of_slot(load_store, ArrayData::array_offset()), 0,
-               load_store->array()->type(), x->array(), mdp, true, nullptr, nullptr);
+  profile_type(md, md->byte_offset_of_slot(store, ArrayStoreData::array_offset()), 0,
+               store->array()->type(), x->array(), mdp, true, nullptr, nullptr);
+}
+
+void LIRGenerator::profile_multiple_array_types(AccessIndexed* x, LIRItem array, ciMethodData* md, ciArrayLoadData* load) {
+  assert(compilation()->profile_array_accesses(), "array access profiling is disabled");
+
+  __ profile_multiple_array_types(md, load, array.result(), new_pointer_register(), new_pointer_register());
 }
 
 void LIRGenerator::profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_data) {

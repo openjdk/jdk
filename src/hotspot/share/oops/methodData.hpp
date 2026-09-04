@@ -311,6 +311,7 @@ class ProfileData : public ResourceObj {
   friend class TypeEntries;
   friend class SingleTypeEntry;
   friend class TypeStackSlotEntries;
+  friend class MegamorphicTypeData;
 private:
   enum {
     tab_width_one = 16,
@@ -1160,42 +1161,62 @@ public:
 //
 // Updated by platform-specific code, for example MacroAssembler::profile_receiver_type.
 //
-class ReceiverTypeData : public CounterData {
+
+class MegamorphicTypeData {
   friend class VMStructs;
 protected:
   enum {
-    receiver0_offset = counter_cell_count,
+    receiver0_offset,
     count0_offset,
     receiver_type_row_cell_count = (count0_offset + 1) - receiver0_offset
   };
 
+  ProfileData* _pd;
+  const int _base_off;
+  const int _type_width;
+
+  void set_uint_at(int index, uint value) {
+    _pd->set_uint_at(index, value);
+  }
+  uint uint_at(int index) const {
+    return _pd->uint_at(index);
+  }
+
+protected:
+
+  void set_intptr_at(int index, intptr_t value) {
+    _pd->set_intptr_at(index, value);
+  }
+
+  intptr_t intptr_at(int index) const {
+    return _pd->intptr_at(index);
+  }
+
 public:
-  ReceiverTypeData(DataLayout* layout) : CounterData(layout) {
-    assert(layout->tag() == DataLayout::receiver_type_data_tag ||
-           layout->tag() == DataLayout::virtual_call_data_tag ||
-           layout->tag() == DataLayout::virtual_call_type_data_tag ||
-           layout->tag() == DataLayout::array_store_data_tag, "wrong type");
-  }
 
-  virtual bool is_ReceiverTypeData() const { return true; }
+  MegamorphicTypeData(ProfileData* pd, int base_off, int type_width)
+  : _pd(pd), _base_off(base_off), _type_width(type_width) {}
 
-  static int static_cell_count() {
-    return counter_cell_count + (uint) TypeProfileWidth * receiver_type_row_cell_count;
+  static int static_cell_count(int type_width) {
+    return type_width * receiver_type_row_cell_count;
   }
-
-  virtual int cell_count() const {
-    return static_cell_count();
+  int cell_count() const {
+    return _type_width * receiver_type_row_cell_count;
   }
-
-  // Direct accessors
-  static uint row_limit() {
-    return (uint) TypeProfileWidth;
+  uint row_limit() const {
+    return (uint)_type_width;
   }
-  static int receiver_cell_index(uint row) {
-    return receiver0_offset + row * receiver_type_row_cell_count;
+  static int static_receiver_cell_index(int base, uint row) {
+    return base + receiver0_offset + row * receiver_type_row_cell_count;
   }
-  static int receiver_count_cell_index(uint row) {
-    return count0_offset + row * receiver_type_row_cell_count;
+  static int static_receiver_count_cell_index(int base, uint row) {
+    return base + count0_offset + row * receiver_type_row_cell_count;
+  }
+  int receiver_cell_index(uint row) const {
+    return static_receiver_cell_index(_base_off, row);
+  }
+  int receiver_count_cell_index(uint row) const {
+    return static_receiver_count_cell_index(_base_off, row);
   }
 
   Klass* receiver(uint row) const {
@@ -1223,6 +1244,91 @@ public:
 
   void clear_row(uint row) {
     assert(row < row_limit(), "oob");
+    set_receiver(row, nullptr);
+    set_receiver_count(row, 0);
+  }
+
+  // Code generation support
+  static ByteSize receiver_offset(int base, uint row) {
+    return ProfileData::cell_offset(static_receiver_cell_index(base, row));
+  }
+  static ByteSize receiver_count_offset(int base, uint row) {
+    return ProfileData::cell_offset(static_receiver_count_cell_index(base, row));
+  }
+
+  // GC support
+  void clean_weak_klass_links(bool always_clean);
+
+  // CDS support
+  void metaspace_pointers_do(MetaspaceClosure* it);
+
+  int entries() const;
+  int count() const;
+  void print_receiver_data_on(outputStream* st, int total) const;
+};
+
+class ReceiverTypeData : public CounterData {
+  friend class VMStructs;
+  friend class JVMCIVMStructs;
+protected:
+
+  MegamorphicTypeData _megamorphic_type_data;
+
+public:
+  ReceiverTypeData(DataLayout* layout) : CounterData(layout),
+                                         _megamorphic_type_data(this, base_of_megamorphic_type_data(), TypeProfileWidth) {
+    assert(layout->tag() == DataLayout::receiver_type_data_tag ||
+           layout->tag() == DataLayout::virtual_call_data_tag ||
+           layout->tag() == DataLayout::virtual_call_type_data_tag ||
+           layout->tag() == DataLayout::array_store_data_tag ||
+           layout->tag() == DataLayout::array_load_data_tag, "wrong type");
+  }
+
+  static int base_of_megamorphic_type_data() {
+    return counter_cell_count;
+  }
+
+  const MegamorphicTypeData* megamorphic_type_data() const {
+    return &_megamorphic_type_data;
+  }
+  virtual bool is_ReceiverTypeData() const { return true; }
+
+  static int static_cell_count() {
+    return counter_cell_count + MegamorphicTypeData::static_cell_count(TypeProfileWidth);
+  }
+
+  virtual int cell_count() const {
+    return static_cell_count();
+  }
+
+  // Direct accessors
+  static uint row_limit() {
+    return (uint) TypeProfileWidth;
+  }
+  int receiver_cell_index(uint row) const {
+    return _megamorphic_type_data.receiver_cell_index(row);
+  }
+  int receiver_count_cell_index(uint row) const {
+    return _megamorphic_type_data.receiver_count_cell_index(row);
+  }
+
+  Klass* receiver(uint row) const {
+    return _megamorphic_type_data.receiver(row);
+  }
+
+  void set_receiver(uint row, Klass* k) {
+    _megamorphic_type_data.set_receiver(row, k);
+  }
+
+  uint receiver_count(uint row) const {
+    return _megamorphic_type_data.receiver_count(row);
+  }
+
+  void set_receiver_count(uint row, uint count) {
+    _megamorphic_type_data.set_receiver_count(row, count);
+  }
+
+  void clear_row(uint row) {
     // Clear total count - indicator of polymorphic call site.
     // The site may look like as monomorphic after that but
     // it allow to have more accurate profiling information because
@@ -1240,16 +1346,15 @@ public:
     // We do sorting a profiling info (ciCallProfile) for compilation.
     //
     set_count(0);
-    set_receiver(row, nullptr);
-    set_receiver_count(row, 0);
+    _megamorphic_type_data.clear_row(row);
   }
 
   // Code generation support
   static ByteSize receiver_offset(uint row) {
-    return cell_offset(receiver_cell_index(row));
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(base_of_megamorphic_type_data(), row));
   }
   static ByteSize receiver_count_offset(uint row) {
-    return cell_offset(receiver_count_cell_index(row));
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(base_of_megamorphic_type_data(), row));
   }
   static ByteSize receiver_type_data_size() {
     return cell_offset(static_cell_count());
@@ -1976,74 +2081,177 @@ public:
   virtual void print_data_on(outputStream* st, const char* extra = nullptr) const;
 };
 
-class ArrayLoadData : public BitData {
+// Profile:
+// - element type
+// - if the array is flat:
+//   - a few types for the array (up to 2 by default)
+//   - if all entries are used, one the following counters is incremented:
+//     - nullable counter
+//     - null free/atomic counter
+//     - null free/not atomic counter
+//  - if the array is not flat, one the following counters is incremented:
+//    - not flat/null free counter
+//    - not flat/nullable counter
+class ArrayLoadData : public ProfileData {
 private:
   enum {
-    flat_array_flag = BitData::last_bit_data_flag,
-    null_free_array_flag = flat_array_flag + 1,
+    not_flat_null_free_count_off_in_extra_cells,
+    not_flat_nullable_count_off_in_extra_cells,
+    flat_nullable_count_off_in_extra_cells,
+    flat_nullfree_atomic_count_off_in_extra_cells,
+    flat_nullfree_not_atomic_count_off_in_extra_cells,
+    extra_cells_count
   };
 
-  SingleTypeEntry _array;
   SingleTypeEntry _element;
+  MegamorphicTypeData _megamorphic_type_data;
+
+  static int extra_cells_off() {
+    return SingleTypeEntry::static_cell_count() + MegamorphicTypeData::static_cell_count(TypeProfileWidth);
+  }
+
+  static int not_flat_null_free_count_off() {
+    return extra_cells_off() + not_flat_null_free_count_off_in_extra_cells;
+  }
+
+  static int not_flat_nullable_count_off() {
+    return extra_cells_off() + not_flat_nullable_count_off_in_extra_cells;
+  }
+
+  static int flat_nullable_count_off() {
+    return extra_cells_off() + flat_nullable_count_off_in_extra_cells;
+  }
+
+  static int flat_nullfree_atomic_count_off() {
+    return extra_cells_off() + flat_nullfree_atomic_count_off_in_extra_cells;
+  }
+
+  static int flat_nullfree_not_atomic_count_off() {
+    return extra_cells_off() + flat_nullfree_not_atomic_count_off_in_extra_cells;
+  }
 
 public:
   ArrayLoadData(DataLayout* layout) :
-    BitData(layout),
-    _array(0),
-    _element(SingleTypeEntry::static_cell_count()) {
+    ProfileData(layout),
+    _element(0),
+    _megamorphic_type_data(this, base_of_megamorphic_type_data(), TypeProfileWidth) {
     assert(layout->tag() == DataLayout::array_load_data_tag, "wrong type");
-    _array.set_profile_data(this);
     _element.set_profile_data(this);
   }
 
-  const SingleTypeEntry* array() const {
-    return &_array;
+  static int base_of_megamorphic_type_data() {
+    return SingleTypeEntry::static_cell_count();
   }
 
   const SingleTypeEntry* element() const {
     return &_element;
   }
 
+  const MegamorphicTypeData* megamorphic_type_data() const {
+    return &_megamorphic_type_data;
+  }
+
   virtual bool is_ArrayLoadData() const { return true; }
 
   static int static_cell_count() {
-    return SingleTypeEntry::static_cell_count() * 2;
+    return extra_cells_off() + extra_cells_count;
   }
 
   virtual int cell_count() const {
     return static_cell_count();
   }
 
-  void set_flat_array() { set_flag_at(flat_array_flag); }
-  bool flat_array() const { return flag_at(flat_array_flag); }
+  int not_flat_count() const {
+    return saturated_add(not_flat_null_free_count(), not_flat_nullable_count());
+  }
 
-  void set_null_free_array() { set_flag_at(null_free_array_flag); }
-  bool null_free_array() const { return flag_at(null_free_array_flag); }
+  int flat_count() const {
+    return saturated_add(saturated_add(flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count()), flat_nullable_count());
+  }
+
+  int nullable_count() const {
+    return saturated_add(flat_nullable_count(), not_flat_nullable_count());
+  }
+
+  int null_free_count() const {
+    return saturated_add(saturated_add(flat_nullfree_atomic_count(), flat_nullfree_not_atomic_count()), not_flat_null_free_count());
+  }
+
+  int not_flat_null_free_count() const {
+    return uint_at(not_flat_null_free_count_off());
+  }
+
+  int not_flat_nullable_count() const {
+    return uint_at(not_flat_nullable_count_off());
+  }
+
+  int flat_nullable_count() const {
+    return uint_at(flat_nullable_count_off());
+  }
+
+  int flat_nullfree_atomic_count() const {
+    return uint_at(flat_nullfree_atomic_count_off());
+  }
+
+  int flat_nullfree_not_atomic_count() const {
+    return uint_at(flat_nullfree_not_atomic_count_off());
+  }
+
+  void set_flat_nullable_count(uint count) {
+    set_uint_at(flat_nullable_count_off(), count);
+  }
+
+  void set_flat_nullfree_atomic_count(uint count) {
+    set_uint_at(flat_nullfree_atomic_count_off(), count);
+  }
+
+  void set_flat_nullfree_not_atomic_count(uint count) {
+    set_uint_at(flat_nullfree_not_atomic_count_off(), count);
+  }
+
+  static uint row_limit() {
+    return (uint) TypeProfileWidth;
+  }
 
   // Code generation support
-  static int flat_array_byte_constant() {
-    return flag_number_to_constant(flat_array_flag);
-  }
-
-  static int null_free_array_byte_constant() {
-    return flag_number_to_constant(null_free_array_flag);
-  }
-
-  static ByteSize array_offset() {
+  static ByteSize element_offset() {
     return cell_offset(0);
   }
 
-  static ByteSize element_offset() {
-    return cell_offset(SingleTypeEntry::static_cell_count());
+  static ByteSize not_flat_null_free_count_offset() {
+    return cell_offset(not_flat_null_free_count_off());
+  }
+
+  static ByteSize not_flat_nullable_count_offset() {
+    return cell_offset(not_flat_nullable_count_off());
+  }
+
+  static ByteSize flat_nullable_count_offset() {
+    return cell_offset(flat_nullable_count_off());
+  }
+
+  static ByteSize flat_nullfree_atomic_count_offset() {
+    return cell_offset(flat_nullfree_atomic_count_off());
+  }
+
+  static ByteSize flat_nullfree_not_atomic_count_offset() {
+    return cell_offset(flat_nullfree_not_atomic_count_off());
+  }
+
+  static ByteSize receiver_offset(uint row) {
+    return cell_offset(MegamorphicTypeData::static_receiver_cell_index(base_of_megamorphic_type_data(), row));
+  }
+  static ByteSize receiver_count_offset(uint row) {
+    return cell_offset(MegamorphicTypeData::static_receiver_count_cell_index(base_of_megamorphic_type_data(), row));
   }
 
   virtual void clean_weak_klass_links(bool always_clean) {
-    _array.clean_weak_klass_links(always_clean);
+    _megamorphic_type_data.clean_weak_klass_links(always_clean);
     _element.clean_weak_klass_links(always_clean);
   }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* it) {
-    _array.metaspace_pointers_do(it);
+    _megamorphic_type_data.metaspace_pointers_do(it);
     _element.metaspace_pointers_do(it);
   }
 

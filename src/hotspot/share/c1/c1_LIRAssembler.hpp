@@ -209,6 +209,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void emit_profile_call(LIR_OpProfileCall* op);
   void emit_profile_type(LIR_OpProfileType* op);
   void emit_profile_inline_type(LIR_OpProfileInlineType* op);
+  void emit_profile_multiple_array_types(LIR_OpProfileMultipleArrayTypes* op);
   void emit_std_entries();
   void emit_std_entry(CodeOffsets::Entries entry, const CompiledEntrySignature* ces);
   void add_scalarized_debug_info(int call_offset);
