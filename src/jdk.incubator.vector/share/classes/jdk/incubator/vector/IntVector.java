@@ -49,7 +49,7 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code int} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract sealed class IntVector extends AbstractVector<Integer>
+public abstract sealed /*value*/ class IntVector extends AbstractVector<Integer>
          permits IntVector64, IntVector128, IntVector256, IntVector512, IntVectorMax {
 
     IntVector(int[] vec) {

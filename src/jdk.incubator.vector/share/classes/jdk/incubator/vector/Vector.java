@@ -1953,7 +1953,7 @@ import java.util.Arrays;
  * @sealedGraph
  */
 @SuppressWarnings("exports")
-public abstract sealed class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> permits AbstractVector {
+public abstract sealed /*value*/ class Vector<E> extends jdk.internal.vm.vector.VectorSupport.Vector<E> permits AbstractVector {
 
     // This type is sealed within its package.
     // Users cannot roll their own vector types.
