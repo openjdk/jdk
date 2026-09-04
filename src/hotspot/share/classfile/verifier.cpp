@@ -636,10 +636,9 @@ TypeOrigin ClassVerifier::ref_ctx(const char* sig) {
   return TypeOrigin::implicit(vt);
 }
 
-static bool supports_strict_fields(InstanceKlass* klass) {
+bool Verifier::supports_strict_fields(InstanceKlass* klass) {
   int ver = klass->major_version();
-  return ver > Verifier::VALUE_TYPES_MAJOR_VERSION ||
-         (ver == Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
+  return (ver >= Verifier::VALUE_TYPES_MAJOR_VERSION && klass->minor_version() == Verifier::JAVA_PREVIEW_MINOR_VERSION);
 }
 
 void ClassVerifier::verify_class(TRAPS) {
@@ -733,17 +732,16 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   assert(SignatureVerifier::is_valid_method_signature(m->signature()),
          "Invalid method signature");
 
-  // Collect the initial strict instance fields
-  StackMapFrame::AssertUnsetFieldTable* strict_fields = new StackMapFrame::AssertUnsetFieldTable();
+  // Collect the initial strict instance fields if there are any
+  AssertUnsetFieldTable* strict_fields = nullptr;
   if (m->is_object_constructor()) {
     for (AllFieldStream fs(m->method_holder()); !fs.done(); fs.next()) {
       if (fs.access_flags().is_strict() && !fs.access_flags().is_static()) {
-        NameAndSig new_field(fs.name(), fs.signature());
-        if (IgnoreAssertUnsetFields) {
-          strict_fields->put(new_field, true);
-        } else {
-          strict_fields->put(new_field, false);
+        if (strict_fields == nullptr) {
+          strict_fields = new AssertUnsetFieldTable();
         }
+        NameAndSig new_field(fs.name(), fs.signature());
+        strict_fields->put(new_field, true);
       }
     }
   }
@@ -752,7 +750,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   // the "current frame" will modify this table when a putfield is encountered during verification.
   // When parsing the StackMapTable attribute, the reader will allocate new tables for frames if
   // they are EARLY_LARVAL, otherwise this read-only initial set will be shared.
-  StackMapFrame::AssertUnsetFieldTable* read_only_strict_fields = StackMapFrame::copy_unset_fields(strict_fields);
+  AssertUnsetFieldTable* read_only_strict_fields = StackMapFrame::copy_unset_fields(strict_fields);
 
   // Initial stack map frame: offset is 0, stack is initially empty.
   StackMapFrame current_frame(max_locals, max_stack, strict_fields, this);
@@ -2420,15 +2418,10 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
           stack_object_type = current_type();
 
           if (fd.access_flags().is_strict()) {
-            if (!current_frame->satisfy_unset_field(fd.name(), fd.signature())) {
-              log_info(verification)("Attempting to initialize field not found in initial strict instance fields: %s%s",
-                                     fd.name()->as_C_string(), fd.signature()->as_C_string());
-              verify_error(ErrorContext::bad_strict_fields(bci, current_frame),
-                           "Initializing unknown strict field: %s:%s", fd.name()->as_C_string(), fd.signature()->as_C_string());
-            }
+            current_frame->satisfy_unset_field(fd.name(), fd.signature());
           }
         }
-      } else if (supports_strict_fields(_klass)) {
+      } else if (Verifier::supports_strict_fields(_klass)) {
         // `strict` fields are not writable, but only local fields produce verification errors
         if (is_local_field && fd.access_flags().is_strict() && fd.access_flags().is_final()) {
           verify_error(ErrorContext::bad_code(bci),
@@ -2533,6 +2526,14 @@ void ClassVerifier::verify_invoke_init(
       verify_exception_handler_targets(bci, true, current_frame,
                                        stackmap_table, CHECK_VERIFY(this));
     } // in_try_block
+
+    // At this point, all unset fields were satisfied, a delegated constructor handled
+    // the strict fields and initialization, or a VerifyError was recorded earlier.
+    // In the case of a delegated constructor, it could have handled the strict
+    // fields successfully but the current frame still may have unsatisfied debts so
+    // the unset fields list should be cleared.
+    // Exception handling is now complete so it is safe to null out the unset fields.
+    current_frame->set_assert_unset_fields(nullptr);
 
     current_frame->initialize_object(type, current_type());
     *this_uninit = true;

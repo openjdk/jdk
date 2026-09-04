@@ -104,7 +104,7 @@ class InlineTypeNode;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
-class VerifyMeetResult;
+class VerifyMeetJoinResult;
 
 enum LoopOptsMode {
   LoopOptsDefault,
@@ -493,6 +493,7 @@ private:
   GrowableArray<CallGenerator*> _boxing_late_inlines; // same but for boxing operations
 
   GrowableArray<CallGenerator*> _vector_reboxing_late_inlines; // same but for vector reboxing operations
+  GrowableArray<CallGenerator*> _vector_late_inlines; // inline fallback implementation for failed intrinsics
 
   int                           _late_inlines_pos;    // Where in the queue should the next late inlining candidate go (emulate depth first inlining)
   bool                          _has_mh_late_inlines; // Can there still be a method handle late inlining pending?
@@ -521,6 +522,12 @@ private:
   InlinePrinter _inline_printer;
 
 public:
+
+  void add_vector_late_inline(CallGenerator* cg) {
+    _vector_late_inlines.push(cg);
+  }
+  void process_vector_late_inlines();
+
   void* barrier_set_state() const { return _barrier_set_state; }
 
   InlinePrinter* inline_printer() { return &_inline_printer; }
@@ -1392,7 +1399,7 @@ public:
   bool needs_clinit_barrier(ciInstanceKlass* ik, ciMethod* accessing_method);
 
 #ifdef ASSERT
-  VerifyMeetResult* _type_verify;
+  VerifyMeetJoinResult* _type_verify;
   void set_exception_backedge() { _exception_backedge = true; }
   bool has_exception_backedge() const { return _exception_backedge; }
 #endif

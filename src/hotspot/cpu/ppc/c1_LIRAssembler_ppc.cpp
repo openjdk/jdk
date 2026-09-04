@@ -2250,7 +2250,7 @@ void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
 
 void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   LP64_ONLY( __ extsw(op->len()->as_register(), op->len()->as_register()); )
-  if (UseSlowPath ||
+  if (UseSlowPath || op->always_slow_path() ||
       (!UseFastNewObjectArray && (is_reference_type(op->type()))) ||
       (!UseFastNewTypeArray   && (!is_reference_type(op->type())))) {
     __ b(*op->stub()->entry());
@@ -2415,12 +2415,16 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     CodeStub* stub = op->stub();
     // Check if it needs to be profiled.
     ciMethodData* md = nullptr;
+    Register mdo = noreg;
     ciProfileData* data = nullptr;
     int mdo_offset_bias = 0;
     if (should_profile) {
       ciMethod* method = op->profiled_method();
       assert(method != nullptr, "Should have method");
       setup_md_access(method, op->profiled_bci(), md, data, mdo_offset_bias);
+      mdo = k_RInfo;
+      metadata2reg(md->constant_encoding(), mdo);
+      __ add_const_optimized(mdo, mdo, mdo_offset_bias, R0);
     }
 
     Label done;
@@ -2428,26 +2432,26 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     if (op->need_null_check()) {
       if (should_profile) {
         Label not_null;
-        Register mdo      = k_RInfo;
         Register data_val = Rtmp1;
-        metadata2reg(md->constant_encoding(), mdo);
-        __ add_const_optimized(mdo, mdo, mdo_offset_bias, R0);
         __ cmpdi(CR0, value, 0);
         __ bne(CR0, not_null);
+        // Object is null, update mdo and exit
         __ lbz(data_val, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias, mdo);
         __ ori(data_val, data_val, BitData::null_seen_byte_constant());
         __ stb(data_val, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias, mdo);
         __ b(done);
         __ bind(not_null);
-
-        Register recv = klass_RInfo;
-        __ load_klass(recv, value);
-        type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
       } else {
         __ cmpdi(CR0, value, 0);
         __ beq(CR0, done);
       }
     }
+    if (should_profile) {
+      Register recv = klass_RInfo;
+      __ load_klass(recv, value);
+      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
+    }
+
     if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
       explicit_null_check(array, op->info_for_exception());
     } else {
@@ -3127,13 +3131,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ ld(tmp, oopDesc::mark_offset_in_bytes(), op->array()->as_register());
-  __ andi_(R0, tmp, markWord::unlocked_value);
-  __ bne(CR0, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ andi(R0, tmp, markWord::null_free_array_bit_in_place);
   __ cmpwi(BOOL_RESULT, R0, 0);
 }
@@ -3180,13 +3179,9 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   } else {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    if (left == right) { // same operand, so clearly the same klasses, let's save the check
-      __ b(*op->stub()->entry());  //  -> do slow check
-    } else {
-      __ cmp_klasses_from_objects(CR0, left, right, tmp1, tmp2);
-      __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal),
-                          *op->stub()->entry()); // same klass -> do slow check
-    }
+    __ cmp_klasses_from_objects(CR0, left, right, tmp1, tmp2);
+    __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal),
+                        *op->stub()->entry()); // same klass -> do slow check
     // fall through to L_oops_not_equal
   }
 

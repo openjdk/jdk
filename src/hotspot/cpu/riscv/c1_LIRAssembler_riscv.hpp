@@ -69,7 +69,7 @@ private:
     _call_stub_size = 11 * MacroAssembler::instruction_size +
                       1 * MacroAssembler::instruction_size + wordSize,
     // See emit_exception_handler for detail
-    _exception_handler_size = DEBUG_ONLY(256) NOT_DEBUG(32), // or smaller
+    _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175), // or smaller
     // See emit_deopt_handler for detail
     // far_call (2) + j (1)
     _deopt_handler_size = 1 * MacroAssembler::instruction_size +
@@ -94,7 +94,7 @@ private:
   void typecheck_helper_slowcheck(ciKlass* k, Register obj, Register Rtmp1,
                                   Register k_RInfo, Register klass_RInfo,
                                   Label* failure_target, Label* success_target);
-  void profile_object(ciMethodData* md, ciProfileData* data, Register obj,
+  void profile_object(LIR_OpTypeCheck* op, ciMethodData* md, ciProfileData* data, Register obj,
                       Register k_RInfo, Register klass_RInfo, Label* obj_is_null);
   void typecheck_loaded(LIR_OpTypeCheck* op, ciKlass* k, Register k_RInfo);
 

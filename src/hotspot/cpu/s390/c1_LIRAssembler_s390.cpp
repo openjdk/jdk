@@ -2510,10 +2510,14 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   }
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+  Register mdo = noreg;
+  if (op->should_profile()) {
+    mdo = klass_RInfo;
+    metadata2reg(md->constant_encoding(), mdo);
+  }
+
   if (op->need_null_check()) {
     if (op->should_profile()) {
-      Register mdo = klass_RInfo;
-      metadata2reg(md->constant_encoding(), mdo);
       NearLabel not_null;
       __ compareU64_and_branch(obj, (intptr_t) 0, Assembler::bcondNotEqual, not_null);
       // Object is null; update MDO and exit.
@@ -2522,13 +2526,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ or2mem_8(data_addr, header_bits);
       __ branch_optimized(Assembler::bcondAlways, *obj_is_null);
       __ bind(not_null);
-
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj);
-      type_profile_helper(mdo, md, data, recv, Rtmp1);
     } else {
       __ compareU64_and_branch(obj, (intptr_t) 0, Assembler::bcondEqual, *obj_is_null);
     }
+  }
+
+  if (op->should_profile()) {
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj);
+    type_profile_helper(mdo, md, data, recv, Rtmp1);
   }
 
   Label *failure_target = failure;
@@ -3109,13 +3115,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ z_lg(tmp, oopDesc::mark_offset_in_bytes(), op->array()->as_register());
-  __ z_tmll(tmp, markWord::unlocked_value);
-  __ z_brnaz(test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ z_tmll(tmp, markWord::null_free_array_bit_in_place);
 }
 

@@ -129,7 +129,7 @@ public class Oop {
   /** Identity hash in the target VM */
   public long identityHash() {
     Mark mark = getMark();
-    if (mark.isUnlocked() && (!mark.hasNoHash())) {
+    if (mark.isNeutral() && (!mark.hasNoHash())) {
       return (int) mark.hash();
     } else if (mark.isMarked()) {
       return (int) mark.hash();

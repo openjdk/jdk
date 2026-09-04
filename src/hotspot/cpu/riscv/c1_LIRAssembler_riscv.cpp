@@ -36,6 +36,7 @@
 #include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "nativeInst_riscv.hpp"
@@ -43,6 +44,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/threadIdentifier.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_riscv.inline.hpp"
 
@@ -441,6 +443,19 @@ void LIR_Assembler::const2reg(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_cod
 
     case T_LONG:
       assert(patch_code == lir_patch_none, "no patching handled here");
+#if INCLUDE_CDS
+      if (AOTCodeCache::is_on_for_dump()) {
+        address b = c->as_pointer();
+        if (b == (address)ThreadIdentifier::unsafe_offset()) {
+          __ la(dest->as_register_lo(), ExternalAddress(b));
+          break;
+        }
+        if (AOTRuntimeConstants::contains(b)) {
+          __ load_aotrc_address(dest->as_register_lo(), b);
+          break;
+        }
+      }
+#endif
       __ mv(dest->as_register_lo(), (intptr_t)c->as_jlong());
       break;
 
@@ -1125,19 +1140,23 @@ void LIR_Assembler::typecheck_helper_slowcheck(ciKlass *k, Register obj, Registe
   }
 }
 
-void LIR_Assembler::profile_object(ciMethodData* md, ciProfileData* data, Register obj,
+void LIR_Assembler::profile_object(LIR_OpTypeCheck* op, ciMethodData* md, ciProfileData* data, Register obj,
                                    Register k_RInfo, Register klass_RInfo, Label* obj_is_null) {
+  assert (op->should_profile(), "tried to profile though we should not");
+
   Register mdo = klass_RInfo;
   __ mov_metadata(mdo, md->constant_encoding());
-  Label not_null;
-  __ bnez(obj, not_null);
-  // Object is null, update MDO and exit
-  Address data_addr = __ form_address(t1, mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
-  __ lbu(t0, data_addr);
-  __ ori(t0, t0, BitData::null_seen_byte_constant());
-  __ sb(t0, data_addr);
-  __ j(*obj_is_null);
-  __ bind(not_null);
+  if (op->need_null_check()) {
+    Label not_null;
+    __ bnez(obj, not_null);
+    // Object is null, update MDO and exit
+    Address data_addr = __ form_address(t1, mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
+    __ lbu(t0, data_addr);
+    __ ori(t0, t0, BitData::null_seen_byte_constant());
+    __ sb(t0, data_addr);
+    __ j(*obj_is_null);
+    __ bind(not_null);
+  }
 
   Register recv = k_RInfo;
   __ load_klass(recv, obj);
@@ -1181,12 +1200,10 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
-  if (op->need_null_check()) {
-    if (should_profile) {
-      profile_object(md, data, obj, k_RInfo, klass_RInfo, obj_is_null);
-    } else {
-      __ beqz(obj, *obj_is_null);
-    }
+  if (should_profile) {
+    profile_object(op, md, data, obj, k_RInfo, klass_RInfo, obj_is_null);
+  } else if (op->need_null_check()) {
+    __ beqz(obj, *obj_is_null);
   }
 
   typecheck_loaded(op, k, k_RInfo);
@@ -1247,13 +1264,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ ld(tmp, Address(op->array()->as_register(), oopDesc::mark_offset_in_bytes()));
-  __ test_bit(t0, tmp, exact_log2(markWord::unlocked_value));
-  __ bnez(t0, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ test_bit(tmp, tmp, exact_log2(markWord::null_free_array_bit_in_place));
 }
 
@@ -2215,7 +2227,7 @@ void LIR_Assembler::typecheck_lir_store(LIR_OpTypeCheck* op, bool should_profile
   Label* failure_target = stub->entry();
 
   if (should_profile) {
-    profile_object(md, data, value, k_RInfo, klass_RInfo, &done);
+    profile_object(op, md, data, value, k_RInfo, klass_RInfo, &done);
   } else {
     __ beqz(value, done);
   }
