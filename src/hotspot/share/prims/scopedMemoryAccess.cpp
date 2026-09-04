@@ -270,7 +270,6 @@ public:
 
     OopFinder finder(JNIHandles::resolve(_session));
     NMethodOopFinder nmof(&finder);
-    // TODO figure out if derived oops need some handling
     the_frame.oops_do(&finder, &nmof, register_map);
     return finder._found;
   }
