@@ -1525,6 +1525,17 @@ AlignmentSolution* AlignmentSolver::solve() const {
   const int C_pre =  iv_scale() * _pre_stride;
   const int C_main = iv_scale() * _main_stride;
 
+  // iv_scale and both strides are powers of two, checked above, so each
+  // product is a power of two -- or 0, when the exponents add up to 32 or
+  // more and the int overflows.  A C_pre of 0 is not small, it is larger
+  // than any int, but EQ4 reads it as smaller than aw and then divides by
+  // it: abs(C_pre) is the divisor AlignmentSolution::mod() hands to idiv,
+  // and the process dies with SIGFPE in AlignmentSolver::solve().  There is
+  // nothing to align in that case, so say so and stop.
+  if (C_pre == 0 || C_main == 0) {
+    return new EmptyAlignmentSolution("iv_scale times stride overflows an int");
+  }
+
   DEBUG_ONLY( trace_reshaped_form(C_const, C_const_init, C_invar, C_init, C_pre, C_main); )
 
   // We must find a pre_iter, such that adr is aw aligned: adr % aw = 0. Note, that we are defining the
