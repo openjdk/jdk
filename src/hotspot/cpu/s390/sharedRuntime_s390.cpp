@@ -775,9 +775,6 @@ void SharedRuntime::restore_native_result(MacroAssembler *masm,
 int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
                                            VMRegPair *regs,
                                            int total_args_passed) {
-  if (UseArrayFlattening) {
-    fatal("implement function SharedRuntime::java_calling_convention");
-  }
   // c2c calling conventions for compiled-compiled calls.
 
   // An int/float occupies 1 slot here.
@@ -1394,9 +1391,6 @@ static void gen_special_dispatch(MacroAssembler *masm,
                                  vmIntrinsics::ID special_dispatch,
                                  const BasicType *sig_bt,
                                  const VMRegPair *regs) {
-  if (UseArrayFlattening) {
-    __ stop("implement function gen_special_dispatch");
-  }
   verify_oop_args(masm, total_args_passed, sig_bt, regs);
 
   // Now write the args into the outgoing interpreter space.

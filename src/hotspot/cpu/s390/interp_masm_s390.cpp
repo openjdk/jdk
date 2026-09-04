@@ -1087,10 +1087,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
 
-  if (UseArrayFlattening) {
-    stop("implement function InterpreterMacroAssembler::remove_activation #2");
-  }
-
   if (StackReservedPages > 0) {
     BLOCK_COMMENT("reserved_stack_check:");
     // Test if reserved zone needs to be enabled.
@@ -1119,7 +1115,31 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   }
 
   if (state == atos && InlineTypeReturnedAsFields) {
-    stop("implement function InterpreterMacroAssembler::remove_activation");
+    untested("remove_activation: InlineTypeReturnedAsFields");
+    NearLabel skip, not_null;
+    z_ltgr(Z_tos, Z_tos);
+    z_brne(not_null);
+    // Returned value is null: zero all return registers since they may hold oop fields.
+    z_lghi(Z_ARG2, 0);
+    z_lghi(Z_ARG3, 0);
+    z_lghi(Z_ARG4, 0);
+    z_lghi(Z_ARG5, 0);
+    z_brul(skip);
+    bind(not_null);
+
+    // Check if we are returning a non-null inline type and load its fields into registers.
+    test_oop_is_not_inline_type(Z_tos, Z_R1_scratch, skip, /* can_be_null= */ false);
+
+    // Load fields from a buffered value with an inline class specific handler.
+    load_klass(Z_R1_scratch, Z_tos);
+    z_lg(Z_R1_scratch, Address(Z_R1_scratch, InlineKlass::adr_members_offset()));
+    z_lg(Z_R1_scratch, Address(Z_R1_scratch, InlineKlass::unpack_handler_offset()));
+    // Unpack handler can be null if inline type is not scalarizable in returns.
+    z_ltgr(Z_R1_scratch, Z_R1_scratch);
+    z_bre(skip);
+    z_basr(Z_R14, Z_R1_scratch);
+
+    bind(skip);
   }
 
   verify_oop(Z_tos, state);

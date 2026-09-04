@@ -5363,9 +5363,9 @@ instruct castN2X(iRegL dst, iRegN src) %{
 // Cast Integer to Narrow Pointer for inline types.
 instruct castI2N(iRegN dst, iRegI src) %{
   match(Set dst (CastI2N src));
-  size(2); // LR is 2 bytes
-  format %{ "LR      $dst,$src\t # CastI2N" %}
-  ins_encode %{ __ lr_if_needed($dst$$Register, $src$$Register); %}
+  size(4); // LLGFR is 4 bytes
+  format %{ "LLGFR      $dst,$src\t # CastI2N" %}
+  ins_encode %{ __ z_llgfr($dst$$Register, $src$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 
