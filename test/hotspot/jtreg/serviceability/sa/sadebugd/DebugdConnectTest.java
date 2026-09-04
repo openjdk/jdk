@@ -65,7 +65,8 @@ public class DebugdConnectTest {
         System.out.println(out.getStdout());
         System.err.println(out.getStderr());
 
-        return out;
+        return new OutputAnalyzer(out.getStdout(),
+                out.getStderrNoDeprecatedWarnings(), out.getExitValue());
     }
 
     private static void runJSTACK(String serverID) throws IOException, InterruptedException {
