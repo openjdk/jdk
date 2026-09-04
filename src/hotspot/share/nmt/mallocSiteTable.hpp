@@ -172,6 +172,10 @@ class MallocSiteTable : AllStatic {
 
   static void print_tuning_statistics(outputStream* st);
 
+  static size_t entry_count() {
+    return _entry_count.load_relaxed();
+  }
+
  private:
   static MallocSiteHashtableEntry* new_entry(const NativeCallStack& key, MemTag mem_tag);
 

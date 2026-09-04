@@ -32,9 +32,6 @@
 #include "nmt/nmtHashTable.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "runtime/mutex.hpp"
-#include "utilities/linkedlist.hpp"
-
-typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
 
 /*
  * Baseline a memory snapshot
@@ -49,10 +46,12 @@ class MemBaseline {
   };
 
   enum SortingOrder {
+    by_address,       // by memory address
     by_size,          // by memory size
     by_site,          // by call site where the memory is allocated from
     by_site_and_tag,  // by call site and memory tag
-    invalid
+    _count,
+    invalid = _count
   };
 
  private:
@@ -67,7 +66,8 @@ class MemBaseline {
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite>                  _malloc_sites;
+  MallocSite* _malloc_sites;
+  int         _malloc_sites_length;
 
   // All virtual memory allocations
   RegionsTree* _vma_allocations;
@@ -86,6 +86,7 @@ class MemBaseline {
   // create a memory baseline
   MemBaseline():
     _instance_class_count(0), _array_class_count(0), _thread_count(0),
+    _malloc_sites(nullptr), _malloc_sites_length(0),
     _vma_allocations(nullptr),
     _virtual_memory_sites(nullptr), _virtual_memory_sites_length(0),
     _malloc_sites_order(invalid),
@@ -113,8 +114,11 @@ class MemBaseline {
     return _metaspace_stats;
   }
 
-  MallocSiteIterator malloc_sites(SortingOrder order);
+  void sort_malloc_sites(SortingOrder order);
   void sort_virtual_memory_sites(SortingOrder order);
+
+  MallocSite* malloc_sites() { return _malloc_sites; }
+  int malloc_sites_length()  { return _malloc_sites_length; }
 
   VirtualMemoryAllocationSite* virtual_memory_sites()        { return _virtual_memory_sites; }
   int                          virtual_memory_sites_length() { return _virtual_memory_sites_length; }
@@ -194,7 +198,10 @@ class MemBaseline {
     _array_class_count = 0;
     _thread_count = 0;
 
-    _malloc_sites.clear();
+    os::free(_malloc_sites);
+    _malloc_sites_length = 0;
+    _malloc_sites = nullptr;
+    _malloc_sites_order = invalid;
     os::free(_virtual_memory_sites);
     _virtual_memory_sites_length = 0;
     _virtual_memory_sites = nullptr;
@@ -212,19 +219,6 @@ class MemBaseline {
 
   // Aggregate virtual memory allocation by allocation sites
   bool aggregate_virtual_memory_allocation_sites();
-
-  // Sorting allocation sites in different orders
-  // Sort allocation sites in size order
-  void malloc_sites_to_size_order();
-  // Sort allocation sites in call site address order
-  void malloc_sites_to_allocation_site_order();
-  // Sort allocation sites in call site address and memory tag order
-  void malloc_sites_to_allocation_site_and_tag_order();
-
-  // Sort allocation sites in reserved size order
-  void virtual_memory_sites_to_size_order();
-  // Sort allocation sites in call site address order
-  void virtual_memory_sites_to_reservation_site_order();
 };
 
 #endif // SHARE_NMT_MEMBASELINE_HPP
