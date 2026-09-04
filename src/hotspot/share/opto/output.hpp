@@ -93,6 +93,8 @@ private:
   int                    _orig_pc_slot_offset_in_bytes;
 
   ConstantTable          _constant_table;        // The constant table for this compilation unit.
+  // Size of each jump-table entry when use_compressed_jump_table is true.
+  uint                   _compressed_jump_table_entry_size;
 
   BufferSizingData       _buf_sizes;
   Block*                 _block;
@@ -120,6 +122,11 @@ public:
 
   // Constant table
   ConstantTable& constant_table() { return _constant_table; }
+
+  uint jump_table_entry_size() const;
+  void set_jump_table_entry_size(uint size);
+  void emit_compressed_jump_table(C2_MacroAssembler* masm, MachConstantNode* n,
+                                  GrowableArray<Label*> labels) const;
 
   // Code stubs list
   void add_stub(C2CodeStub* stub) { _stub_list.add_stub(stub); }

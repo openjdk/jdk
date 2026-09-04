@@ -226,6 +226,7 @@ PhaseOutput::PhaseOutput()
     _node_bundling_limit(0),
     _node_bundling_base(nullptr),
     _orig_pc_slot_offset_in_bytes(0),
+    _compressed_jump_table_entry_size(sizeof(uint32_t)),
     _buf_sizes(),
     _block(nullptr),
     _index(0) {
@@ -249,6 +250,83 @@ void PhaseOutput::perform_mach_node_analysis() {
   pd_perform_mach_node_analysis();
 
   C->print_method(CompilerPhaseType::PHASE_MACH_ANALYSIS, 3);
+}
+
+uint PhaseOutput::jump_table_entry_size() const {
+  assert(Matcher::use_compressed_jump_table, "Unsupported case");
+
+  return _compressed_jump_table_entry_size;
+}
+
+void PhaseOutput::set_jump_table_entry_size(uint size) {
+  assert(Matcher::use_compressed_jump_table, "Unsupported case");
+
+  assert(size == 2 || size == 4, "bad jt entry size");
+  _compressed_jump_table_entry_size = size;
+}
+
+void PhaseOutput::emit_compressed_jump_table(C2_MacroAssembler* masm, MachConstantNode* n,
+                                             GrowableArray<Label*> labels) const {
+  assert(Matcher::use_compressed_jump_table, "Unsupported case");
+
+  // If called from Compile::scratch_emit_size do nothing.
+  if (Compile::current()->output()->in_scratch_emit_size()) return;
+
+  assert(labels.is_nonempty(), "must be");
+  assert((uint) labels.length() == n->outcnt(),
+         "must be equal: %d == %d", labels.length(), n->outcnt());
+
+  assert(jump_table_entry_size() == 2 || jump_table_entry_size() == 4,
+         "unexpected jump table entry size");
+
+  const int instr_unit_size = Pipeline::instr_unit_size();
+  uint table_size = n->outcnt() * jump_table_entry_size();
+  uint aligned_table_size = align_up(table_size, instr_unit_size);
+  if (masm->code()->insts()->maybe_expand_to_ensure_remaining(aligned_table_size) &&
+      masm->code()->blob() == nullptr) {
+    Compile::current()->record_failure("CodeCache is full");
+    return;
+  }
+
+  address jump_table_addr = masm->pc();
+
+  LabelPatchKind patch_kind = LabelPatchKind(exact_log2(jump_table_entry_size()));
+  assert(patch_kind == LPK_COMPRESSED_OFFSET_16 ||
+         patch_kind == LPK_COMPRESSED_OFFSET_32,
+         "unexpected patch kind for compressed jump table entry size: %d", (int)patch_kind);
+  for (uint i = 0; i < n->outcnt(); i++) {
+    address slot_addr = masm->pc();
+    uintptr_t slot_offset = slot_addr - jump_table_addr;
+
+    if (jump_table_entry_size() == 2) {
+      // A 16-bit entry is selected only when the total code size is within
+      // max_jshort * instr_unit_size. Since the jump table is part of the
+      // code, slot_offset >> patch_kind is guaranteed to fit in uint16_t.
+      assert((slot_offset >> patch_kind) <= 0xffff, "jump table offset too large for 16-bit entry");
+      masm->code()->insts()->emit_int16(
+        jt_cast<uint16_t>(slot_offset >> patch_kind));
+    } else {
+      assert(jump_table_entry_size() == 4, "unexpected jump table entry size");
+      masm->code()->insts()->emit_int32(
+        jt_cast<uint32_t>(slot_offset >> patch_kind));
+    }
+
+    int instr_unit_size_log = exact_log2(instr_unit_size);
+    address target_addr = masm->code()->insts()->target(*labels.at(i), slot_addr, patch_kind,
+                                                        instr_unit_size_log);
+
+    if (labels.at(i)->is_bound()) {
+      intptr_t offset = target_addr - jump_table_addr;
+      assert((offset % instr_unit_size) == 0, "misaligned target");
+      offset >>= instr_unit_size_log;
+      CodeBuffer::set_jump_table_entry(jump_table_entry_size(), slot_addr, offset);
+    } else {
+      assert(target_addr == slot_addr, "Deferred patching");
+    }
+  }
+  if (table_size != aligned_table_size) {
+    masm->code()->insts()->emit_int16(0);
+  }
 }
 
 // Convert Nodes to instruction bits and pass off to the VM
@@ -336,6 +414,18 @@ void PhaseOutput::Output() {
   uint* blk_starts = NEW_RESOURCE_ARRAY(uint, C->cfg()->number_of_blocks() + 1);
   blk_starts[0] = 0;
   shorten_branches(blk_starts);
+  // If use_compressed_jump_table is enabled, refine the jump-table entry size
+  // after shorten_branches(), when an upper bound for the final code size is
+  // available.
+  //
+  // The initial estimate uses conservative 4-byte inline jump-table entries.
+  // Once the code size estimate is known, switch to 2-byte entries if they can
+  // represent every offset within the code section.
+  const int instr_unit_size = Pipeline::instr_unit_size();
+  if (Matcher::use_compressed_jump_table && !Force32BitJumpTable &&
+      _buf_sizes._code <= max_jshort * instr_unit_size) {
+    set_jump_table_entry_size(sizeof(uint16_t));
+  }
 
   if (!C->is_osr_compilation() && C->has_scalarized_args()) {
     // Compute the offsets of the entry points required by the inline type calling convention
