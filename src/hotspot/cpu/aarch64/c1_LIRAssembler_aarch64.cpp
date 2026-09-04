@@ -486,7 +486,7 @@ void LIR_Assembler::return_op(LIR_Opr result, C1SafepointPollStub* code_stub) {
       // Check if we are returning a non-null value type and load its fields into registers
       __ test_oop_is_not_value_type(r0, rscratch2, skip, /* can_be_null= */ false);
 
-      // Load fields from a buffered value with an value class specific handler
+      // Load fields from a buffered value with a value class specific handler
       __ load_klass(rscratch1 /*dst*/, r0 /*src*/, rscratch2 /*tmp*/);
       __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
       __ ldr(rscratch1, Address(rscratch1, ValueKlass::unpack_handler_offset()));
