@@ -35,9 +35,8 @@
   void element_compare(Register r1, Register r2,
                        Register result, Register cnt,
                        Register tmp1, Register tmp2,
-                       VectorRegister vr1, VectorRegister vr2,
-                       VectorRegister vrs,
-                       bool is_latin, Label& DONE, Assembler::LMUL lmul);
+                       bool is_latin, Label& DONE,
+                       bool use_vcpop = false);
 
   void string_compare_long_same_encoding(Register result, Register str1, Register str2,
                                   const bool isLL, Register cnt1, Register cnt2,
