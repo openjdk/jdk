@@ -84,7 +84,13 @@ void ShenandoahUncommitThread::run_service() {
 }
 
 static int compare_by_empty_time_asc(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b) {
-  return a->empty_time() > b->empty_time();
+  if (a->empty_time() > b->empty_time()) {
+    return +1;
+  } else if (a->empty_time() < b->empty_time()) {
+    return -1;
+  } else {
+    return 0;
+  }
 }
 
 bool ShenandoahUncommitThread::plan_work(double shrink_before, size_t shrink_until)  {
