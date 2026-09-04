@@ -27,10 +27,14 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
+import jdk.internal.access.JavaLangAccess;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
@@ -3355,6 +3359,107 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         // FIXME: optimize
         ShortSpecies vsp = (ShortSpecies) species;
         return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
+    }
+
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
+
+    /**
+     * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as 16-bit
+     * code units in the specified {@link Charset}}
+     *
+     * @param string the string
+     * @param charset the charset representing the 16-bit character encoding
+     * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
+     * @see ShortVector#fromString(VectorSpecies, String, Charset, int)
+     * @since 28
+     */
+    @ForceInline
+    public static boolean compatibleWith(String string, Charset charset) {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        return charset == StandardCharsets.UTF_16;
+    }
+
+    /**
+     * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
+     *
+     * @param species species of the desired vector
+     * @param string the string to load from
+     * @param charset the 16-bit charset
+     * @param offset the character index in the string to load from
+     * @throws IllegalArgumentException if the string and charset are not
+     *         {@linkplain #compatibleWith(String, Charset) compatible}
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
+     * @throws NullPointerException if {@code species}, {@code string}, or {@code charset} is {@code null}
+     * @see #compatibleWith(String, Charset)
+     * @since 28
+     */
+    @ForceInline
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset) {
+        Objects.requireNonNull(species);
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        offset = checkFromIndexSize(offset, species.length(), string.length());
+        if (!compatibleWith(string, charset)) {
+            throw new IllegalArgumentException("String is not compatible with: " + charset);
+        }
+        byte coder = LANG_ACCESS.stringCoder(string);
+        MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
+        if (coder == 0) {
+            VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
+            ByteVector byteVector;
+            if (VectorIntrinsics.indexInRange(offset, byteSpecies.vectorByteSize(), string.length())) {
+                byteVector = ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder());
+            } else {
+                VectorMask<Byte> byteMask = byteSpecies.indexInRange(0, species.length());
+                byteVector = ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder(), byteMask);
+            }
+            return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
+        } else {
+            return fromMemorySegment(species, segment, (long) offset << 1, ByteOrder.nativeOrder());
+        }
+    }
+
+    /**
+     * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
+     *
+     * @param species species of the desired vector
+     * @param string the string to load from
+     * @param charset the 16-bit charset
+     * @param offset the character index in the string to load from
+     * @param m the mask controlling lane selection
+     * @throws IllegalArgumentException if the string and charset are not
+     *         {@linkplain #compatibleWith(String, Charset) compatible}
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
+     *         for any lane {@code N} in the vector where the mask is set
+     * @throws NullPointerException if {@code species}, {@code string}, {@code charset}, or {@code m} is {@code null}
+     * @see #compatibleWith(String, Charset)
+     * @since 28
+     */
+    @ForceInline
+    public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset, VectorMask<Short> m) {
+        Objects.requireNonNull(species);
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        Objects.requireNonNull(m);
+        if (!compatibleWith(string, charset)) {
+            throw new IllegalArgumentException("String is not compatible with: " + charset);
+        }
+        byte coder = LANG_ACCESS.stringCoder(string);
+        MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
+        if (coder == 0) {
+            VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
+            VectorMask<Byte> byteMask = VectorMask.fromLong(byteSpecies, m.toLong());
+            ByteVector byteVector =
+                    ByteVector.fromMemorySegment(byteSpecies, segment, offset, ByteOrder.nativeOrder(), byteMask);
+            return (ShortVector) byteVector.convertShape(ZERO_EXTEND_B2S, species, 0);
+        } else {
+            return fromMemorySegment(species, segment, (long) offset << 1, ByteOrder.nativeOrder(), m);
+        }
     }
 
 

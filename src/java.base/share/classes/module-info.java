@@ -168,7 +168,8 @@ module java.base {
         jdk.management,
         jdk.net,
         jdk.sctp,
-        jdk.crypto.cryptoki;
+        jdk.crypto.cryptoki,
+        jdk.incubator.vector;
     exports jdk.internal.classfile.components to
         jdk.jfr;
     exports jdk.internal.foreign to

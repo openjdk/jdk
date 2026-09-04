@@ -2224,6 +2224,10 @@ public final class System {
                 return str.coder();
             }
 
+            public MemorySegment asReadOnlyMemorySegment(String str) {
+                return MemorySegment.ofArray(str.value()).asReadOnly();
+            }
+
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
                 return String.join(prefix, suffix, delimiter, elements, size);
             }
