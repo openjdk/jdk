@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahUncommitThread.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/events.hpp"
 #include "utilities/quickSort.hpp"
@@ -41,10 +42,6 @@ ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
 
   // Allow uncommits. This is managed by the control thread during a GC.
   _uncommit_allowed.set();
-}
-
-ShenandoahUncommitThread::~ShenandoahUncommitThread() {
-  FREE_C_HEAP_ARRAY(_candidate_regions);
 }
 
 void ShenandoahUncommitThread::run_service() {
@@ -210,7 +207,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
 
 size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until) {
   size_t count = 0;
-  for (int i = 0; i < _candidate_regions_count; i++) {
+  for (size_t i = 0; i < _candidate_regions_count; i++) {
     ShenandoahHeapRegion* r = _candidate_regions[i];
     double shrink_before = os::elapsedTime() + shrink_delay;
 

@@ -35,7 +35,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
   // Candidate regions
   ShenandoahHeapRegion** _candidate_regions;
-  int _candidate_regions_count;
+  size_t _candidate_regions_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -61,6 +61,9 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
+  // Stall uncommit thread to allow allocator progress
+  bool check_uncommit_or_delay();
+
   // Iterate over and uncommit eligible regions until committed heap falls below
   // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
   // it was last made empty is before `shrink_delay` seconds since jvm start.
@@ -69,7 +72,6 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
-  ~ShenandoahUncommitThread();
 
   // Periodically check for regions to uncommit
   void run_service() override;
@@ -79,9 +81,6 @@ public:
 
   // Wake up this thread and try to uncommit for min heap size
   void notify_explicit_gc_requested();
-
-  // Stall uncommit thread to allow allocator progress
-  bool check_uncommit_or_delay();
 
   // Wait for uncommit operations to stop, returns immediately if uncommit thread is idle
   void forbid_uncommit();
