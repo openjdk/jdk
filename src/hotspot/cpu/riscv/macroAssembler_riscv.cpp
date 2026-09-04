@@ -2927,7 +2927,6 @@ void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
         Register byte_table, Register clmul_table,
         Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
   assert_different_registers(crc, buf, len, byte_table, clmul_table, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
-  assert(UseZbc, "CRC32C intrinsic requires Zbc");
 
   zext(crc, crc, 32);
 

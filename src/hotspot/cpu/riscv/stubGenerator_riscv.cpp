@@ -7827,7 +7827,7 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
-  address generate_updateBytesCRC32C(){
+  address generate_updateBytesCRC32C() {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
     StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
     int entry_count = StubInfo::entry_count(stub_id);
@@ -7863,6 +7863,7 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     return start;
   }
+  
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
