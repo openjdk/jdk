@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
+#ifndef SHARE_GC_G1_G1FROMCARDCACHE_INLINE_HPP
+#define SHARE_GC_G1_G1FROMCARDCACHE_INLINE_HPP
 
-/*
- * @test
- * @modules java.base/jdk.internal.misc:+open
- *
- * @summary converted from VM Testbase metaspace/gc/firstGC_99m.
- * VM Testbase keywords: [nonconcurrent, quarantine]
- * VM Testbase comments: 8208250
- *
- * @library /vmTestbase /test/lib
- * @run main/othervm
- *      -Xms200m
- *      -Xlog:gc+heap=trace,gc:gc.log
- *      -XX:MetaspaceSize=99m
- *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:+UnlockDiagnosticVMOptions
- *      -XX:-VerifyBeforeExit
- *      -XX:-UseCompressedOops
- *      metaspace.gc.FirstGCTest
- */
+#include "gc/g1/g1FromCardCache.hpp"
 
+bool G1FromCardCache::contains_or_add(uintptr_t from_card, uint cset_group_id) {
+  if (_from_card != from_card) {
+    _from_card = from_card;
+    _num_cset_groups = 0;
+  }
+
+  for (uint i = 0; i < _num_cset_groups; i++) {
+    if (_cset_group_ids[i] == cset_group_id) {
+      return true;
+    }
+  }
+
+  assert(_num_cset_groups < MaxGroupsPerCard, "from_card has too many destination cset groups");
+
+  _cset_group_ids[_num_cset_groups++] = cset_group_id;
+  return false;
+}
+
+#endif // SHARE_GC_G1_G1FROMCARDCACHE_INLINE_HPP

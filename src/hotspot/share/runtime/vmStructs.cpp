@@ -223,6 +223,7 @@
   nonstatic_field(InstanceKlass,               _adr_inline_klass_members,                     address)                               \
   nonstatic_field(InlineKlass::Members,        _payload_offset,                               int)                                   \
   nonstatic_field(InlineKlass::Members,        _null_marker_offset,                           int)                                   \
+  nonstatic_field(Klass,                       _kind,                                         const Klass::KlassKind)                \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -1195,6 +1196,7 @@
    declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(InstanceKlass::ClassState)                        \
+   declare_integer_type(Klass::KlassKind)                                 \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
@@ -1485,6 +1487,22 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
+                                                                          \
+  /************************/                                              \
+  /* Klass KlassKind enum */                                              \
+  /************************/                                              \
+                                                                          \
+  declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
+  declare_constant(Klass::KlassKind::InlineKlassKind)                     \
+  declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
+  declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
+  declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \
+  declare_constant(Klass::KlassKind::InstanceStackChunkKlassKind)         \
+  declare_constant(Klass::KlassKind::TypeArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::ObjArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::RefArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::FlatArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::UnknownKlassKind)                    \
                                                                           \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
@@ -1820,8 +1838,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \

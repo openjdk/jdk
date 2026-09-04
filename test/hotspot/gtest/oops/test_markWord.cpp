@@ -91,13 +91,13 @@ TEST_VM(markWord, printing) {
   // Thread tries to lock it.
   {
     ObjectLocker ol(h_obj, THREAD);
-    assert_mark_word_print_pattern(h_obj, "is_locked");
+    assert_mark_word_print_pattern(h_obj, "is_fast_locked");
   }
-  assert_mark_word_print_pattern(h_obj, "is_unlocked no_hash");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral no_hash");
 
   // Hash the object then print it.
   intx hash = h_obj->identity_hash();
-  assert_mark_word_print_pattern(h_obj, "is_unlocked hash=0x");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral hash=0x");
 
   // Wait gets the lock inflated.
   {
@@ -114,19 +114,19 @@ TEST_VM(markWord, printing) {
   }
 }
 
-static void assert_unlocked_state(markWord mark) {
+static void assert_lock_neutral_state(markWord mark) {
   EXPECT_FALSE(mark.is_fast_locked());
   EXPECT_FALSE(mark.has_monitor());
-  EXPECT_FALSE(mark.is_locked());
-  EXPECT_TRUE(mark.is_unlocked());
+  EXPECT_FALSE(mark.is_marked());
+  EXPECT_TRUE(mark.is_lock_neutral());
 }
 
 static void assert_copy_set_hash(markWord mark) {
   const intptr_t hash = 4711;
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   markWord copy = mark.copy_set_hash(hash);
   EXPECT_EQ(hash, copy.hash());
-  EXPECT_FALSE(copy.has_no_hash());
+  EXPECT_TRUE(copy.has_hash());
 }
 
 static void assert_type(markWord mark) {
@@ -136,12 +136,11 @@ static void assert_type(markWord mark) {
 
 TEST_VM(markWord, prototype) {
   markWord mark = markWord::prototype();
-  assert_unlocked_state(mark);
-  EXPECT_TRUE(mark.is_neutral());
+  assert_lock_neutral_state(mark);
 
   assert_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -156,13 +155,12 @@ static void assert_inline_type(markWord mark) {
 
 TEST_VM(markWord, inline_type_prototype) {
   markWord mark = markWord::inline_type_prototype();
-  assert_unlocked_state(mark);
-  // Don't call mark.is_neutral() on value class instances
+  assert_lock_neutral_state(mark);
   assert_test_pattern(&mark, " inline_type");
 
   assert_inline_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 }
 
@@ -175,13 +173,12 @@ static void assert_flat_array_type(markWord mark) {
 
 TEST_VM(markWord, null_free_flat_array_prototype) {
   markWord mark = markWord::flat_array_prototype(true /* null_free */);
-  assert_unlocked_state(mark);
-  EXPECT_TRUE(mark.is_neutral());
+  assert_lock_neutral_state(mark);
 
   assert_flat_array_type(mark);
   EXPECT_TRUE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -193,13 +190,12 @@ TEST_VM(markWord, null_free_flat_array_prototype) {
 
 TEST_VM(markWord, nullable_flat_array_prototype) {
   markWord mark = markWord::flat_array_prototype(false /* null_free */);
-  assert_unlocked_state(mark);
-  EXPECT_TRUE(mark.is_neutral());
+  assert_lock_neutral_state(mark);
 
   assert_flat_array_type(mark);
   EXPECT_FALSE(mark.is_null_free_array());
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
@@ -217,12 +213,11 @@ static void assert_null_free_array_type(markWord mark) {
 
 TEST_VM(markWord, null_free_array_prototype) {
   markWord mark = markWord::null_free_array_prototype();
-  assert_unlocked_state(mark);
-  EXPECT_TRUE(mark.is_neutral());
+  assert_lock_neutral_state(mark);
 
   assert_null_free_array_type(mark);
 
-  EXPECT_TRUE(mark.has_no_hash());
+  EXPECT_FALSE(mark.has_hash());
   EXPECT_FALSE(mark.is_marked());
 
   assert_copy_set_hash(mark);
