@@ -2415,12 +2415,16 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     CodeStub* stub = op->stub();
     // Check if it needs to be profiled.
     ciMethodData* md = nullptr;
+    Register mdo = noreg;
     ciProfileData* data = nullptr;
     int mdo_offset_bias = 0;
     if (should_profile) {
       ciMethod* method = op->profiled_method();
       assert(method != nullptr, "Should have method");
       setup_md_access(method, op->profiled_bci(), md, data, mdo_offset_bias);
+      mdo = k_RInfo;
+      metadata2reg(md->constant_encoding(), mdo);
+      __ add_const_optimized(mdo, mdo, mdo_offset_bias, R0);
     }
 
     Label done;
@@ -2428,26 +2432,26 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     if (op->need_null_check()) {
       if (should_profile) {
         Label not_null;
-        Register mdo      = k_RInfo;
         Register data_val = Rtmp1;
-        metadata2reg(md->constant_encoding(), mdo);
-        __ add_const_optimized(mdo, mdo, mdo_offset_bias, R0);
         __ cmpdi(CR0, value, 0);
         __ bne(CR0, not_null);
+        // Object is null, update mdo and exit
         __ lbz(data_val, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias, mdo);
         __ ori(data_val, data_val, BitData::null_seen_byte_constant());
         __ stb(data_val, md->byte_offset_of_slot(data, DataLayout::flags_offset()) - mdo_offset_bias, mdo);
         __ b(done);
         __ bind(not_null);
-
-        Register recv = klass_RInfo;
-        __ load_klass(recv, value);
-        type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
       } else {
         __ cmpdi(CR0, value, 0);
         __ beq(CR0, done);
       }
     }
+    if (should_profile) {
+      Register recv = klass_RInfo;
+      __ load_klass(recv, value);
+      type_profile_helper(mdo, mdo_offset_bias, md, data, recv, Rtmp1); // kills recv
+    }
+
     if (!os::zero_page_read_protected() || !ImplicitNullChecks) {
       explicit_null_check(array, op->info_for_exception());
     } else {
