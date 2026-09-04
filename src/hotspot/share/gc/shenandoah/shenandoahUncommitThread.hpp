@@ -33,9 +33,14 @@ class ShenandoahHeapRegion;
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
 
+  struct Candidate {
+    ShenandoahHeapRegion* _region;
+    uint64_t _priority;
+  };
+
   // Candidate regions
-  ShenandoahHeapRegion** _candidate_regions;
-  size_t _candidate_regions_count;
+  Candidate* _candidates;
+  size_t _candidates_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -69,6 +74,8 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // it was last made empty is before `shrink_delay` seconds since jvm start.
   // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
   size_t do_uncommit_work(double shrink_delay, size_t shrink_until);
+
+  static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);

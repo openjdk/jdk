@@ -34,8 +34,8 @@
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
-  _candidate_regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC);
-  _candidate_regions_count = 0;
+  _candidates = NEW_C_HEAP_ARRAY(Candidate, _heap->num_regions(), mtGC);
+  _candidates_count = 0;
 
   set_name("ShenUncommit");
   create_and_start();
@@ -81,31 +81,18 @@ void ShenandoahUncommitThread::run_service() {
   }
 }
 
-static int compare_uncommit_priority(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b) {
-  // Sort by time first, ascending. Empty time precision is in seconds, so we expect
-  // most regions freed in the same cycle to have adjacent, if not same empty time.
-  if (a->empty_time() > b->empty_time()) {
+int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate& b) {
+  if (a._priority < b._priority) {
     return +1;
   }
-  if (a->empty_time() < b->empty_time()) {
+  if (a._priority > b._priority) {
     return -1;
   }
-
-  // Within one "free epoch", sort by index, descending. This allows allocation path
-  // that allocates from the beginning, to have higher chance to take the region for allocation
-  // without uncommit trip.
-  if (a->index() > b->index()) {
-    return -1;
-  }
-  if (a->index() < b->index()) {
-    return +1;
-  }
-
   return 0;
 }
 
 bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_until)  {
-  _candidate_regions_count = 0;
+  _candidates_count = 0;
 
   if (!_heap->is_idle() || !is_uncommit_allowed()) {
     // Uncommits are not welcome.
@@ -128,18 +115,23 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_empty_committed()) {
       has_work |= (r->empty_time() < shrink_before);
-      _candidate_regions[_candidate_regions_count++] = r;
+      Candidate& candidate = _candidates[_candidates_count++];
+      candidate._region = r;
+
+      // The regions that were freed in the same cycle would have roughly the same empty time.
+      // Coarsen that time to about 100ms window. Within that window, uncommit from higher
+      // indexes, to allow allocation path to take earlier regions first.
+      candidate._priority = (uint64_t)(r->empty_time() * 100) * _heap->num_regions() + r->index();
     }
   }
 
-  if (!has_work) {
+  if (has_work) {
+    QuickSort::sort(_candidates, _candidates_count, compare_uncommit_priority);
+    return true;
+  } else {
     // No regions that match our target at all.
     return false;
   }
-
-  // Sort candidates by earliest empty time.
-  QuickSort::sort(_candidate_regions, _candidate_regions_count, compare_uncommit_priority);
-  return true;
 }
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
@@ -207,8 +199,8 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
 
 size_t ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until) {
   size_t count = 0;
-  for (size_t i = 0; i < _candidate_regions_count; i++) {
-    ShenandoahHeapRegion* r = _candidate_regions[i];
+  for (size_t i = 0; i < _candidates_count; i++) {
+    ShenandoahHeapRegion* r = _candidates[i]._region;
     double shrink_before = os::elapsedTime() + shrink_delay;
 
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {

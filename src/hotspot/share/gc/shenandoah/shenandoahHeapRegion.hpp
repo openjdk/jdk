@@ -246,7 +246,7 @@ private:
 
   // Rarely updated fields
   HeapWord* _new_top;
-  uint32_t _empty_time;
+  double _empty_time;
 
   HeapWord* _top_before_promoted;
   HeapWord* _top_at_evac_start;
@@ -294,7 +294,7 @@ public:
   // Return adjusted max heap size
   static size_t setup_sizes(size_t max_heap_size);
 
-  uint32_t empty_time() {
+  double empty_time() {
     return _empty_time;
   }
 
