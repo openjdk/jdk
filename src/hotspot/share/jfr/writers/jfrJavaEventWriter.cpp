@@ -101,7 +101,7 @@ static bool setup_event_writer_offsets(TRAPS) {
   assert(valid_offset != invalid_offset, "invariant");
 
   const char pin_name[] = "pinVirtualThread";
-  Symbol* const pin_sym = SymbolTable::new_symbol(valid_name);
+  Symbol* const pin_sym = SymbolTable::new_symbol(pin_name);
   assert(pin_sym != nullptr, "invariant");
   assert(invalid_offset == pin_offset, "invariant");
   JfrJavaSupport::compute_field_offset(pin_offset, klass, pin_sym, vmSymbols::bool_signature());
