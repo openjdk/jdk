@@ -162,7 +162,10 @@ class MaxConnectionsPropertyTest {
             throws IOException {
         socket.connect(serverAddress);
         var socketOutput = socket.getOutputStream();
-        socketOutput.write("GET %s HTTP/1.1\r\n\r\n".formatted(requestTarget).getBytes(US_ASCII));
+        socketOutput.write(
+                "GET %s HTTP/1.1\r\nHost: localhost\r\n\r\n"
+                        .formatted(requestTarget)
+                        .getBytes(US_ASCII));
         socketOutput.flush();
     }
 

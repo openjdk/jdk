@@ -136,26 +136,33 @@ class MaxReqTimePropertyTest {
                         // first socket state change, e.g., write/close by the
                         // client.
                         false,
-                        p + "GET / HTTP/1.1\r\n\r\n"
+                        p + "GET / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
+                                "\r\n"
                 },
                 {
                         "pause in the middle of the request line", true,
-                        "GET " + p + "/ HTTP/1.1\r\n\r\n"
+                        "GET " + p + "/ HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
+                                "\r\n"
                 },
                 {
                         "pause right after the request line", true,
-                        "GET / HTTP/1.1\r\n" + p + "\r\n"
+                        "GET / HTTP/1.1\r\n" + p +
+                                "Host: localhost\r\n" +
+                                "\r\n"
                 },
                 {
                         "pause at a header field", true,
                         "GET / HTTP/1.1\r\n" +
-                                "w: x\r\n" +
-                                p + "y: z\r\n" +
+                                "Host: localhost\r\n" +
+                                p + "x: y\r\n" +
                                 "\r\n"
                 },
                 {
                         "pause at the beginning of the fixed body", true,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Content-Length: 1\r\n" +
                                 "\r\n" +
                                 p + "x"
@@ -163,6 +170,7 @@ class MaxReqTimePropertyTest {
                 {
                         "pause in the middle of the fixed body", true,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Content-Length: 2\r\n" +
                                 "\r\n" +
                                 "x" + p + "y"
@@ -175,6 +183,7 @@ class MaxReqTimePropertyTest {
                         // delivered, server marks the request processed.
                         false,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Content-Length: 1\r\n" +
                                 "\r\n" +
                                 "x" + p
@@ -182,6 +191,7 @@ class MaxReqTimePropertyTest {
                 {
                         "pause at the chunked body header line", true,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Transfer-Encoding: chunked\r\n" +
                                 "\r\n" +
                                 p + "3\r\n" +
@@ -191,6 +201,7 @@ class MaxReqTimePropertyTest {
                 {
                         "pause at the chunked body data line", true,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Transfer-Encoding: chunked\r\n" +
                                 "\r\n" +
                                 "3\r\n" +
@@ -204,6 +215,7 @@ class MaxReqTimePropertyTest {
                         // server marks the request processed.
                         false,
                         "POST / HTTP/1.1\r\n" +
+                                "Host: localhost\r\n" +
                                 "Transfer-Encoding: chunked\r\n" +
                                 "\r\n" +
                                 "3\r\n" +

@@ -186,7 +186,10 @@ class IdleIntervalPropertyTest {
             Socket clientSocket, String requestTarget)
             throws IOException {
         var socketOutput = clientSocket.getOutputStream();
-        socketOutput.write("GET %s HTTP/1.1\r\n\r\n".formatted(requestTarget).getBytes(US_ASCII));
+        socketOutput.write(
+                "GET %s HTTP/1.1\r\nHost: localhost\r\n\r\n"
+                        .formatted(requestTarget)
+                        .getBytes(US_ASCII));
         socketOutput.flush();
         var inputStream = clientSocket.getInputStream();
         assertEquals("HTTP/1.1 204 No Content", readUntilCrLf(inputStream));

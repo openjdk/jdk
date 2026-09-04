@@ -210,7 +210,10 @@ class MaxIdleConnectionsPropertyTest {
         private synchronized void writeRequest() throws IOException {
             assertFalse(stopped);
             var socketOutput = socket.getOutputStream();
-            socketOutput.write("GET %s HTTP/1.1\r\n\r\n".formatted(target).getBytes(US_ASCII));
+            socketOutput.write(
+                    "GET %s HTTP/1.1\r\nHost: localhost\r\n\r\n"
+                            .formatted(target)
+                            .getBytes(US_ASCII));
             socketOutput.flush();
         }
 

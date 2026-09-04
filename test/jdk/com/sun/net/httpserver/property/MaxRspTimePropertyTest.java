@@ -133,7 +133,7 @@ class MaxRspTimePropertyTest {
             // Send the request
             LOGGER.info("Sending request");
             var socketOutput = clientSocket.getOutputStream();
-            socketOutput.write("GET / HTTP/1.1\r\n\r\n".getBytes(CHARSET));
+            socketOutput.write("GET / HTTP/1.1\r\nHost: localhost\r\n\r\n".getBytes(CHARSET));
             socketOutput.flush();
 
             // Read the response status line

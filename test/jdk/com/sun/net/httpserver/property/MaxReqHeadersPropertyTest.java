@@ -162,18 +162,18 @@ class MaxReqHeadersPropertyTest {
 
         args.add(Arguments.of(
                 "at limit", true,
-                // k1:v1, k2:v2, ..., kM:vM
-                createRequestHeaderLines(M, null)));
+                // Host:localhost, k2:v2, ..., kM:vM
+                createRequestHeaderLines(M, 0, null)));
 
         args.add(Arguments.of(
                 "off limit by 1", false,
-                // k1:v1, k2:v2, k3:v3, ..., k{M+1}:v{M+1}
-                createRequestHeaderLines(M + 1, null)));
+                // Host:localhost, k2:v2, k3:v3, ..., k{M+1}:v{M+1}
+                createRequestHeaderLines(M + 1, 0, null)));
 
         args.add(Arguments.of(
                 "at limit with duplicates (stressing order-sensitivity for duplicates)", true,
-                // k:w, k:x, k:y, k:z, k5:v5, k6:v6, ..., k{M+3}:v{M+3}
-                createRequestHeaderLines(M + 3, lines -> {
+                // k:w, k:x, k:y, k:z, Host:localhost, k6:v6, k7:v7, ..., k{M+3}:v{M+3}
+                createRequestHeaderLines(M + 3, 4, lines -> {
                     lines.set(0, "k: w");
                     lines.set(1, "k: x");
                     lines.set(2, "k: y");
@@ -182,38 +182,38 @@ class MaxReqHeadersPropertyTest {
 
         args.add(Arguments.of(
                 "off limit with duplicates (stressing order-sensitivity for duplicates)", false,
-                // k:x, k2:v2, k3:v3, ..., kM:vM, k:y
-                createRequestHeaderLines(M + 1, lines -> {
+                // k:x, Host:localhost, k3:v3, k4:v4, ..., kM:vM, k:y
+                createRequestHeaderLines(M + 1, 1, lines -> {
                     lines.set(0, "k: x");
                     lines.set(M, "k: y");
                 })));
 
         args.add(Arguments.of(
                 "at limit with multi-line value", true,
-                // k:x\r\n\ty, k2:v2, k3:v3, ..., kM:vM
-                createRequestHeaderLines(M, lines -> {
+                // k:x\r\n\ty, Host:localhost, k3:v3, k4:v4, ..., kM:vM
+                createRequestHeaderLines(M, 1, lines -> {
                     lines.set(0, "k: x\r\n\ty");
                 })));
 
         args.add(Arguments.of(
                 "at limit with duplicates and multi-line values", true,
-                // k:w\r\n\tx, k:y\r\n\tz, k3:v3, k4:v4, ..., kM:vM
-                createRequestHeaderLines(M, lines -> {
+                // k:w\r\n\tx, k:y\r\n\tz, Host:localhost, k4:v4, k5:v5, ..., kM:vM
+                createRequestHeaderLines(M, 2, lines -> {
                     lines.set(0, "k: w\r\n\tx");
                     lines.set(1, "k: y\r\n\tz");
                 })));
 
         args.add(Arguments.of(
                 "at limit with multi-line value containing colon", true,
-                // k:x\r\n\ty:Y, k2:v2, k3:v3, ..., kM:vM
-                createRequestHeaderLines(M, lines -> {
+                // k:x\r\n\ty:Y, Host:localhost, k3:v3, k4:v4, ..., kM:vM
+                createRequestHeaderLines(M, 1, lines -> {
                     lines.set(0, "k: x\r\n\ty: Y");
                 })));
 
         args.add(Arguments.of(
                 "at limit with duplicates and multi-line values containing colon", true,
-                // k:w\r\n\tx: X, k:y\r\n\tz: Z, k3:v3, k4:v4, ..., kM:vM
-                createRequestHeaderLines(M, lines -> {
+                // k:w\r\n\tx: X, k:y\r\n\tz: Z, Host:localhost, k4:v4, k5:v5, ..., kM:vM
+                createRequestHeaderLines(M, 2, lines -> {
                     lines.set(0, "k: w\r\n\tx: X");
                     lines.set(1, "k: y\r\n\tz: Z");
                 })));
@@ -222,12 +222,13 @@ class MaxReqHeadersPropertyTest {
 
     }
 
-    private static List<String> createRequestHeaderLines(int length, Consumer<List<String>> consumer) {
+    private static List<String> createRequestHeaderLines(int length, int hostHeaderIndex, Consumer<List<String>> consumer) {
         var lines = IntStream
                 .range(1, length + 1)
                 .mapToObj(requestHeaderIndex ->
                         "k%02X: v%02X".formatted(requestHeaderIndex, requestHeaderIndex))
                 .collect(Collectors.toList());
+        lines.set(hostHeaderIndex, "Host: localhost");
         if (consumer != null) {
             consumer.accept(lines);
         }

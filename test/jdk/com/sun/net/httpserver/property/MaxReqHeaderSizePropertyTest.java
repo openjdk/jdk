@@ -79,6 +79,14 @@ class MaxReqHeaderSizePropertyTest {
      */
     private static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
 
+    /**
+     * The offset {@code HttpServer} uses for each header entry while checking
+     * {@code maxReqHeaderSize}.
+     */
+    private static final int OFFSET = 32
+            // First letter of the header is inadvertently charged twice
+            + 1;
+
     static {
         boolean enableLogging = System.getProperty("test.enableLogging") != null;
         if (enableLogging) {
@@ -136,22 +144,20 @@ class MaxReqHeaderSizePropertyTest {
 
         args.add(Arguments.of(
                 "at limit", true,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32;
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET;
                     lines.add("k:" + "v".repeat(valueLength));
                 })));
 
         var S = " ";
         args.add(Arguments.of(
                 "at limit with extra whitespace before the key", true,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32;
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET;
                     lines.add(S + "k:" + "v".repeat(valueLength));
                 })));
 
@@ -159,11 +165,10 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace after the key",
                 // No whitespace is allowed between the field name and colon (RFC 9112)
                 false,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32;
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET;
                     lines.add("k" + S + ":" + "v".repeat(valueLength));
                 })));
 
@@ -171,11 +176,10 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace before the value",
                 // Leading whitespace is taken into account while calculating the "size" of the value.
                 false,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32;
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET;
                     lines.add("k" + ":" + S + "v".repeat(valueLength));
                 })));
 
@@ -183,32 +187,29 @@ class MaxReqHeaderSizePropertyTest {
                 "at limit with extra whitespace after the value",
                 // Trailing whitespace is taken into account while calculating the "size" of the value.
                 false,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32;
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET;
                     lines.add("k" + ":" + "v".repeat(valueLength) + S);
                 })));
 
         args.add(Arguments.of(
                 "off limit due to excessive key", false,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int keyLength = 100
-                            - 1     // "v" (value)
-                            - 2     // CRLF
-                            - 32
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int keyLength = 50
+                            - 2     // ":v" (value)
+                            - OFFSET
                             + 1;    // excess
                     lines.add("x".repeat(keyLength) + ":v");
                 })));
 
         args.add(Arguments.of(
                 "off limit due to excessive value", false,
-                createRequestHeaderLinesLeavingRoomFor100MoreCharacters(lines -> {
-                    int valueLength = 100
-                            - 1     // "k" (key)
-                            - 2     // CRLF
-                            - 32
+                createRequestHeaderLinesLeavingRoomFor50MoreCharacters(lines -> {
+                    int valueLength = 50
+                            - 2     // "k:" (key)
+                            - OFFSET
                             + 1;    // excess
                     lines.add("k:" + "v".repeat(valueLength));
                 })));
@@ -217,17 +218,22 @@ class MaxReqHeaderSizePropertyTest {
 
     }
 
-    private static List<String> createRequestHeaderLinesLeavingRoomFor100MoreCharacters(
+    private static List<String> createRequestHeaderLinesLeavingRoomFor50MoreCharacters(
             Consumer<List<String>> consumer) {
         var lines = new ArrayList<String>();
-        int valueLength = MAX_REQUEST_HEADER_SIZE
+        var hostHeader = "host:localhost";
+        lines.add(hostHeader);
+        int paddingHeaderValueLength = MAX_REQUEST_HEADER_SIZE
                 // Request line + 32
                 - REQUEST_LINE.length() - 32
-                // "a" + CRLF + 32 (for this header)
-                - 1 - 2 - 32
-                // 100 (for `consumer` to inject)
-                - 100;
-        lines.add("a:" + "b".repeat(valueLength));
+                // Host header + OFFSET
+                - hostHeader.length() - OFFSET
+                // "a:" + OFFSET (for the padding header)
+                - 2 - OFFSET
+                // 50 (for `consumer` to inject)
+                - 50;
+        var paddingHeader = "a:" + "b".repeat(paddingHeaderValueLength);
+        lines.add(paddingHeader);
         consumer.accept(lines);
         return lines;
     }
