@@ -105,34 +105,54 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, t0, slow);
 
   __ srli(roffset, c_rarg2, jfieldIDWorkaround::offset_shift); // offset
+  __ add(roffset, robj, roffset);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();   // Used by the segfault handler
-  __ add(roffset, robj, roffset);
 
-  switch (type) {
-    case T_BOOLEAN: __ lbu(result, Address(roffset, 0)); break;
-    case T_BYTE:    __ lb(result, Address(roffset, 0)); break;
-    case T_CHAR:    __ lhu(result, Address(roffset, 0)); break;
-    case T_SHORT:   __ lh(result, Address(roffset, 0)); break;
-    case T_INT:     __ lw(result, Address(roffset, 0)); break;
-    case T_LONG:    __ ld(result, Address(roffset, 0)); break;
-    case T_FLOAT: {
-      __ flw(f28, Address(roffset, 0)); // f28 as temporaries
-      __ fmv_x_w(result, f28); // f{31--0}-->x
-      break;
+  if (UseZalasr) {
+    switch (type) {
+      case T_BOOLEAN:
+        __ lb_aq(result, roffset);
+        __ zext(result, result, 8);
+        break;
+      case T_BYTE:   __ lb_aq(result, roffset); break;
+      case T_CHAR:
+        __ lh_aq(result, roffset);
+        __ zext(result, result, 16);
+        break;
+      case T_SHORT:  __ lh_aq(result, roffset); break;
+      case T_FLOAT:  // fall through
+      case T_INT:    __ lw_aq(result, roffset); break;
+      case T_DOUBLE: // fall through
+      case T_LONG:   __ ld_aq(result, roffset); break;
+      default:       ShouldNotReachHere();
     }
-    case T_DOUBLE: {
-      __ fld(f28, Address(roffset, 0)); // f28 as temporaries
-      __ fmv_x_d(result, f28); // d{63--0}-->x
-      break;
+  } else {
+    switch (type) {
+      case T_BOOLEAN: __ lbu(result, Address(roffset, 0)); break;
+      case T_BYTE:    __ lb(result, Address(roffset, 0)); break;
+      case T_CHAR:    __ lhu(result, Address(roffset, 0)); break;
+      case T_SHORT:   __ lh(result, Address(roffset, 0)); break;
+      case T_INT:     __ lw(result, Address(roffset, 0)); break;
+      case T_LONG:    __ ld(result, Address(roffset, 0)); break;
+      case T_FLOAT: {
+        __ flw(f28, Address(roffset, 0)); // f28 as temporaries
+        __ fmv_x_w(result, f28); // f{31--0}-->x
+        break;
+      }
+      case T_DOUBLE: {
+        __ fld(f28, Address(roffset, 0)); // f28 as temporaries
+        __ fmv_x_d(result, f28); // d{63--0}-->x
+        break;
+      }
+      default:        ShouldNotReachHere();
     }
-    default:        ShouldNotReachHere();
+
+    // Using acquire: Order JVMTI check and load of result wrt. succeeding
+    // check (LoadStore for volatile field).
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   }
-
-  // Using acquire: Order JVMTI check and load of result wrt. succeeding check
-  // (LoadStore for volatile field).
-  __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
 
   __ lw(t0, Address(rcounter_addr));
   __ bne(rcounter, t0, slow);

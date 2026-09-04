@@ -1800,8 +1800,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Now set thread in native
   __ mv(t1, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   // Clobbers t1
   __ rt_call(native_func);
@@ -1818,8 +1818,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // change thread state
   __ mv(t1, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {

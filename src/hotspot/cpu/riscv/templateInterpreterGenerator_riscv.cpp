@@ -1181,8 +1181,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Change state to native
   __ mv(t1, _thread_in_native);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   __ push_cont_fastpath();
 
@@ -1210,8 +1210,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // change thread state
   __ mv(t1, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
+  __ la(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw_release(t1, t0);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {

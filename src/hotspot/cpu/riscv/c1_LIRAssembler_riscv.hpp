@@ -43,6 +43,9 @@ private:
 
   Address as_Address(LIR_Address* addr, Register tmp);
 
+  // Read a volatile field with a Zalasr load-acquire (UseZalasr only).
+  void load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
   // bailout case the pointer won't be to unique storage.
