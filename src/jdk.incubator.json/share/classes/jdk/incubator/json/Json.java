@@ -34,7 +34,8 @@ import jdk.incubator.json.impl.JsonGenerator;
  *
  * <p>
  * {@link #parse(String)} and {@link #parse(char[])} produce a {@code JsonValue}
- * by parsing data adhering to the JSON syntax defined in RFC 8259.
+ * by parsing data adhering to the JSON syntax defined in
+ * <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259</a>.
  * {@snippet lang = java:
  * JsonValue root = Json.parse(jsonText);
  * }

@@ -122,8 +122,8 @@
  * a corresponding Java value. Each conversion method requires a particular JSON type:
  * <ul>
  *     <li>{@link JsonValue#asString() asString()} converts a {@code JsonString} instance into a Java
- *     {@code String} with RFC 8259 JSON escape sequences translated to their
- *     corresponding characters.</li>
+ *     {@code String} with <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259</a>
+ *     JSON escape sequences translated to their corresponding characters.</li>
  *     <li>{@link JsonValue#asInt() asInt()} converts a {@code JsonNumber} instance to a Java
  *     {@code int} if its numeric value can be represented exactly.</li>
  *     <li>{@link JsonValue#asLong() asLong()} converts a {@code JsonNumber} instance to a Java
@@ -157,7 +157,7 @@
  * Generating JSON text is performed with either {@link
  * JsonValue#toString()} or {@link Json#toDisplayString(JsonValue, String)}.
  * These methods produce String representations of a {@code JsonValue} that adhere
- * to the JSON grammar defined in RFC 8259.
+ * to the JSON grammar defined in <a href="https://www.rfc-editor.org/rfc/rfc8259">RFC 8259</a>.
  * {@code JsonValue.toString()} produces compact JSON text which does not
  * include JSON insignificant whitespace, preferable for network transmission
  * or storage. For example:
