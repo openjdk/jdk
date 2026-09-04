@@ -641,7 +641,7 @@ public final class StandardOption {
                     .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
                     .converterExceptionFormatString("error.path-parameter-ioexception")
                     // Add empty mutator to OptionSpecMapperOptionScope to make
-                    // mapped option spec have `RootedPath[]` type.
+                    // mapped option spec have `ExplodedPath` type.
                     // Otherwise, it will have `Path` type.
                     .mutate(createOptionSpecBuilderMutator((b, context) -> {
                     }));

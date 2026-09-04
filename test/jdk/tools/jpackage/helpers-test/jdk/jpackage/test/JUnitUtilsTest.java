@@ -216,7 +216,7 @@ class JUnitUtilsTest {
         "IllegalArgumentException,true",
         "RuntimeException,true",
         "Exception,true",
-        "IOException,false,false",
+        "IOException,false",
         "NullPointerException,false",
     })
     void test_ExceptionPattern_isInstanceOf(ExceptionPatternTypeMode mode, boolean match) {

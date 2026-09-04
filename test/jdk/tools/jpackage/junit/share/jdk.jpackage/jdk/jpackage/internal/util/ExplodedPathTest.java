@@ -84,7 +84,7 @@ class ExplodedPathTest {
 
         initTestWorkload(workdir);
 
-        var exp = ExplodedPath.of(workdir);
+        var exp = deepestFirstExplodedPath(workdir);
 
         assertEquals(workdir, exp.root());
         assertEquals(Set.of(
@@ -119,7 +119,7 @@ class ExplodedPathTest {
 
         var dstDir = workdir.resolve("dst");
 
-        var src = ExplodedPath.of(workdir);
+        var src = deepestFirstExplodedPath(workdir);
 
         copy(List.of(copySpec(src, dstDir)));
 
@@ -131,7 +131,7 @@ class ExplodedPathTest {
 
         initTestWorkload(workdir);
 
-        var src = ExplodedPath.of(workdir);
+        var src = deepestFirstExplodedPath(workdir);
 
         var dstDir = workdir.resolve("dst");
         initTestFile(dstDir.resolve("a/bar"));
@@ -145,10 +145,10 @@ class ExplodedPathTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = ':', value = {
-        "true:,",
-        "false:,",
-        "true:REPLACE_EXISTING",
-        "false:REPLACE_EXISTING",
+            "true:,",
+            "false:,",
+            "true:REPLACE_EXISTING,",
+            "false:REPLACE_EXISTING,",
     })
     void test_copy_with_multiple_src_file_overlap(
             boolean directOrder,
@@ -160,11 +160,11 @@ class ExplodedPathTest {
 
         var dstDir = workdir.resolve("dst");
 
-        var src = ExplodedPath.of(workdir.resolve("1"));
+        var src = deepestFirstExplodedPath(workdir.resolve("1"));
 
         var specs = List.of(
                 copySpec(src, dstDir),
-                copySpec(ExplodedPath.of(workdir.resolve("2")), dstDir)
+                copySpec(deepestFirstExplodedPath(workdir.resolve("2")), dstDir)
         );
 
         copy(directOrder ? specs : specs.reversed(), copyOptions);
@@ -179,10 +179,10 @@ class ExplodedPathTest {
 
     @ParameterizedTest
     @CsvSource(delimiter = ':', value = {
-        "true:,",
-        "false:,",
-        "true:REPLACE_EXISTING",
-        "false:REPLACE_EXISTING",
+            "true:,",
+            "false:,",
+            "true:REPLACE_EXISTING,",
+            "false:REPLACE_EXISTING,",
     })
     void test_copy_with_multiple_src_directory_overlap(
             boolean directOrder,
@@ -196,11 +196,11 @@ class ExplodedPathTest {
 
         var dstDir = workdir.resolve("dst");
 
-        var src = ExplodedPath.of(workdir.resolve("1"));
+        var src = deepestFirstExplodedPath(workdir.resolve("1"));
 
         var specs = List.of(
                 copySpec(src, dstDir),
-                copySpec(ExplodedPath.of(workdir.resolve("2")), dstDir)
+                copySpec(deepestFirstExplodedPath(workdir.resolve("2")), dstDir)
         );
 
         copy(directOrder ? specs : specs.reversed(), copyOptions);
@@ -222,7 +222,7 @@ class ExplodedPathTest {
             @TempDir Path workdir) throws IOException {
 
         initTestWorkload(workdir);
-        final var src = ExplodedPath.of(workdir);
+        final var src = deepestFirstExplodedPath(workdir);
         final var dstContent = SetBuilder.build(toUniquePaths(src));
 
         final var dstDir = workdir.resolve("dst");
@@ -297,7 +297,79 @@ class ExplodedPathTest {
                 copy(List.of(copySpec(src, dstDir)), StandardCopyOption.REPLACE_EXISTING);
             });
         }
+    }
 
+    @ParameterizedTest
+    @CsvSource(delimiter = ':', value = {
+            "true:,",
+            "false:,",
+            "true:REPLACE_EXISTING,",
+            "false:REPLACE_EXISTING,",
+    })
+    void test_copy_with_nested_destination_blocked(
+            boolean directOrder,
+            @ConvertWith(ArrayConverter.class) StandardCopyOption copyOptions[],
+            @TempDir Path workdir) throws IOException {
+
+        var appFile = workdir.resolve("foo/app");
+        initTestFile(appFile);
+
+        var inputDir = workdir.resolve("input");
+        initTestFile(inputDir.resolve("child.jar"));
+
+        var dstDir = workdir.resolve("dst/lib");
+
+        var specs = List.of(
+                // Creates dst/lib/app as a file.
+                copySpec(deepestFirstExplodedPath(appFile).getParent(), dstDir),
+
+                // Creates dst/lib/app directory.
+                copySpec(deepestFirstExplodedPath(inputDir), dstDir.resolve("app"))
+        );
+
+        copy(directOrder ? specs : specs.reversed(), copyOptions);
+
+        if (directOrder) {
+            assertContentCopied(Set.of(appFile, appFile.getParent()), dstDir);
+        } else {
+            assertEquals(
+                    Set.of(Path.of(""), Path.of("app"), Path.of("app/child.jar")),
+                    ExplodedPath.of(dstDir).children().stream().map(Node::path).collect(Collectors.toSet()));
+            assertContentCopied(Set.of(inputDir, inputDir.resolve("child.jar")), dstDir.resolve("app"));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = ':', value = {
+            "true:,",
+            "false:,",
+            "true:REPLACE_EXISTING,",
+            "false:REPLACE_EXISTING,",
+    })
+    void test_copy_with_nested_destination_merge(
+            boolean directOrder,
+            @ConvertWith(ArrayConverter.class) StandardCopyOption copyOptions[],
+            @TempDir Path workdir) throws IOException {
+
+        var parentResources = workdir.resolve("parent/Resources");
+        initTestFile(parentResources.resolve("parent.txt"));
+
+        var nestedResources = workdir.resolve("nested");
+        initTestFile(nestedResources.resolve("nested.txt"));
+
+        var dstContents = workdir.resolve("dst/Contents");
+
+        var specs = List.of(
+                copySpec(deepestFirstExplodedPath(parentResources).getParent(), dstContents),
+                copySpec(deepestFirstExplodedPath(nestedResources), dstContents.resolve("Resources"))
+        );
+
+        copy(directOrder ? specs : specs.reversed(), copyOptions);
+
+        assertContentCopied(Set.of(
+                parentResources,
+                parentResources.resolve("parent.txt"),
+                nestedResources.resolve("nested.txt")), dstContents.resolve("Resources"));
     }
 
     enum ExistingPathOverlap {
@@ -356,18 +428,25 @@ class ExplodedPathTest {
 
     private static void assertContentCopied(Set<Path> sources, Path dstDir) throws IOException {
 
-        var dst = ExplodedPath.of(dstDir);
+        var dst = new ExplodedPath(dstDir, new ArrayList<>(ExplodedPath.of(dstDir).children()));
 
         assertEquals(sources.size(), dst.children().size());
 
         UnaryOperator<Path> srcToDst = path -> {
-            return dstDir.resolve(dst.children().stream()
-                    .map(Node::path)
-                    .filter(v -> {
-                        return path.endsWith(v) || v.equals(Path.of(""));
+            var child = dst.children().stream()
+                    .filter(n -> {
+                        return path.endsWith(n.path()) || n.path().equals(Path.of(""));
                     })
-                    .sorted(Comparator.comparing(Path::getNameCount).reversed())
-                    .findFirst().orElseThrow());
+                    .sorted(Comparator.comparingInt((Node n) -> {
+                        return pathDepth(n.path());
+                    }).thenComparing((_, _) -> {
+                        throw new AssertionError();
+                    }).reversed())
+                    .findFirst().orElseThrow();
+
+            assertTrue(dst.children().remove(child));
+
+            return dstDir.resolve(child.path());
         };
 
         for (var srcPath : sources) {
@@ -378,6 +457,8 @@ class ExplodedPathTest {
                 assertFileCopied(srcPath, dstPath);
             }
         }
+
+        assertTrue(dst.children().isEmpty());
     }
 
     private static Set<Path> toUniquePaths(ExplodedPath exp) {
@@ -385,5 +466,28 @@ class ExplodedPathTest {
                 .map(Node::path)
                 .map(exp.root()::resolve)
                 .collect(Collectors.toMap(x -> x, x -> x)).keySet();
+    }
+
+    /**
+     * Returns an {@code ExplodedPath} instance whose children are ordered in reverse
+     * order for use with {@link ExplodedPath#copy(List, java.nio.file.CopyOption...)}.
+     *
+     * @param root the root path
+     * @throws IOException if an I/O error occurs
+     */
+    private static ExplodedPath deepestFirstExplodedPath(Path root) throws IOException {
+        return new ExplodedPath(
+                root,
+                ExplodedPath.of(root).children().stream()
+                        .sorted(Comparator.comparingInt((Node n) -> {
+                            return pathDepth(n.path());
+                        }).thenComparing((Node n) -> {
+                            return n.path().toString();
+                        }).reversed())
+                        .collect(Collectors.toUnmodifiableList()));
+    }
+
+    private static int pathDepth(Path path) {
+        return path.equals(Path.of("")) ? 0 : path.getNameCount();
     }
 }

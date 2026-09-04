@@ -37,6 +37,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -44,7 +45,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 /**
  * Exploded directory.
@@ -93,7 +93,7 @@ public record ExplodedPath(Path root, Collection<Node> children) {
 
     private Stream<CopyPathSpec> copyPathSpecs(Path dest) {
         Objects.requireNonNull(dest);
-        return children.stream().map(child -> {
+        return children.stream().sorted(Comparator.comparing(Node::path)).map(child -> {
             return new CopyPathSpec(root, child, dest);
         });
     }
@@ -110,7 +110,7 @@ public record ExplodedPath(Path root, Collection<Node> children) {
         return new CopySpec(source, dest);
     }
 
-    public static void copy(Iterable<CopySpec> specs, CopyOption...options) throws IOException {
+    public static void copy(List<CopySpec> specs, CopyOption...options) throws IOException {
         Objects.requireNonNull(specs);
 
         var marks = new HashMap<Path, PathMark>();
@@ -151,7 +151,7 @@ public record ExplodedPath(Path root, Collection<Node> children) {
         };
 
         try {
-            StreamSupport.stream(specs.spliterator(), false).flatMap(CopySpec::copyPathSpecs).forEach(spec -> {
+            specs.stream().flatMap(CopySpec::copyPathSpecs).forEach(spec -> {
 
                 final var dstPathMark = marks.get(spec.resolvedDstPath());
 
@@ -192,11 +192,17 @@ public record ExplodedPath(Path root, Collection<Node> children) {
         }
     }
 
-    private static List<Path> ancestorPaths(Path path) {
+    private static Collection<Path> ancestorPaths(Path path) {
         var ancestors = new ArrayList<Path>();
+
+        if (!EMPTY_PATH.equals(path)) {
+            ancestors.add(EMPTY_PATH);
+        }
+
         while ((path = path.getParent()) != null) {
             ancestors.add(path);
         }
+
         return ancestors;
     }
 
@@ -229,4 +235,5 @@ public record ExplodedPath(Path root, Collection<Node> children) {
         }
     }
 
+    private static final Path EMPTY_PATH = Path.of("");
 }
