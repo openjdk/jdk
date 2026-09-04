@@ -114,7 +114,7 @@ MICROBENCHMARK_JAVA_FLAGS := \
 
 MICROBENCHMARK_DISABLED_WARNINGS := restricted this-escape processing \
     rawtypes removal cast serial preview unchecked deprecation \
-    dangling-doc-comments
+    dangling-doc-comments suppression
 
 # Build microbenchmark suite for the current JDK
 $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK_PREVIEW, \
