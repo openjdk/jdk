@@ -56,26 +56,30 @@ void ShenandoahUncommitThread::run_service() {
   // ShenandoahUncommitDelay is in millis, but shrink_period is in seconds.
   const int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
-  bool timed_out = false;
+
   while (!should_terminate()) {
+    {
+      MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+      locker.wait(poll_interval);
+    }
+
+    if (_uncommit_allowed.is_unset()) {
+      // Wake up for disallowing commits or terminating.
+      // Do not consume anything, just circle back.
+      continue;
+    }
+
     bool soft_max_changed = _soft_max_changed.try_unset();
     bool explicit_gc_requested = _explicit_gc_requested.try_unset();
 
-    if (soft_max_changed || explicit_gc_requested || timed_out) {
-      size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
-      double shrink_delay = (soft_max_changed || explicit_gc_requested) ? 0 : normal_shrink_delay;
+    // Explicit GC tries to uncommit everything down to min capacity.
+    // Soft max change tries to uncommit everything down to target capacity.
+    // Periodic uncommit tries to uncommit suitable regions down to min capacity.
+    size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
+    double shrink_delay = (soft_max_changed || explicit_gc_requested) ? 0 : normal_shrink_delay;
 
-      // Explicit GC tries to uncommit everything down to min capacity.
-      // Soft max change tries to uncommit everything down to target capacity.
-      // Periodic uncommit tries to uncommit suitable regions down to min capacity.
-      if (plan_work(shrink_delay, shrink_until)) {
-        uncommit(shrink_delay, shrink_until);
-      }
-    }
-
-    if (!should_terminate()) {
-      MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-      timed_out = locker.wait(poll_interval);
+    if (plan_work(shrink_delay, shrink_until)) {
+      uncommit(shrink_delay, shrink_until);
     }
   }
 }
