@@ -62,7 +62,6 @@ public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
             throws PKCS11Exception {
         super();
         this.token = token;
-        this.algorithm = algorithm;
         this.mechanism = mechanism;
     }
 
