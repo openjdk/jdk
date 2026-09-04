@@ -136,6 +136,13 @@ public class OomDebugTest extends TestScaffold {
         this.testMethod = args[1];
     }
 
+    void forceCollection() {
+        // Need to force unreferenced ObjectReferences to be collected so the ObjectID
+        // can be released on the debuggee side, allowing any hard reference to be
+        // released and the object collected.
+        System.gc();
+    }
+
     @Override
     protected void runTests() throws Exception {
         try {
@@ -193,6 +200,7 @@ public class OomDebugTest extends TestScaffold {
             ClassType clsType = (ClassType)field.type();
             Method constructor = getConstructorForClass(clsType);
             for (int i = 0; i < 15; i++) {
+                forceCollection();
                 @SuppressWarnings({ "rawtypes", "unchecked" })
                 ObjectReference objRef = clsType.newInstance(mainThread,
                                                              constructor,
@@ -220,6 +228,7 @@ public class OomDebugTest extends TestScaffold {
             ArrayType arrType = (ArrayType)field.type();
 
             for (int i = 0; i < 15; i++) {
+                forceCollection();
                 ArrayReference byteArrayVal = arrType.newInstance(3000000);
                 if (byteArrayVal.isCollected()) {
                     System.out.println("DEBUG: Object got GC'ed before we can use it. NO-OP.");
@@ -240,6 +249,7 @@ public class OomDebugTest extends TestScaffold {
         System.out.println("DEBUG: ------------> Running test3");
         try {
             for (int i = 0; i < 15; i++) {
+                forceCollection();
                 invoke("testPrimitiveArrRetval",
                        "()[B",
                        Collections.EMPTY_LIST,
@@ -258,6 +268,7 @@ public class OomDebugTest extends TestScaffold {
         System.out.println("DEBUG: ------------> Running test4");
         try {
             for (int i = 0; i < 15; i++) {
+                forceCollection();
                 invoke("testFooClsRetval",
                        "()LOomDebugTestTarget$FooCls;",
                        Collections.EMPTY_LIST,
@@ -276,6 +287,7 @@ public class OomDebugTest extends TestScaffold {
         System.out.println("DEBUG: ------------> Running test5");
         try {
             ClassType type = (ClassType)thisObject.type();
+            forceCollection();
             for (int i = 0; i < 15; i++) {
                 type.newInstance(mainThread,
                                  findMethod(targetClass, "<init>", "()V"),
