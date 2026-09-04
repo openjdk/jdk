@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -225,7 +225,7 @@ void JfrThreadLocal::release(JfrThreadLocal* tl, Thread* t) {
   assert(Thread::current() == t, "invariant");
   assert(!tl->is_dead(), "invariant");
   assert(tl->shelved_buffer() == nullptr, "invariant");
-  tl->_dead = true;
+  AtomicAccess::release_store(&tl->_dead, true);
   tl->release(t);
 }
 

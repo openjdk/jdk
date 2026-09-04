@@ -341,7 +341,7 @@ class JfrThreadLocal {
   }
 
   bool is_dead() const {
-    return _dead;
+    return AtomicAccess::load_acquire(&_dead);
   }
 
   bool in_sampling_critical_section() const {
