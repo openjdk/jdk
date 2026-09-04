@@ -3497,7 +3497,9 @@ public:
   INSN(sve_eor,   0b00000100, 0b011001000); // vector eor
   INSN(sve_eorv,  0b00000100, 0b011001001); // bitwise xor reduction to scalar
   INSN(sve_lsl,   0b00000100, 0b010011100); // vector logical shift left
+  INSN(sve_lslr,  0b00000100, 0b010111100); // vector reversed logical shift left
   INSN(sve_lsr,   0b00000100, 0b010001100); // vector logical shift right
+  INSN(sve_lsrr,  0b00000100, 0b010101100); // vector reversed logical shift right
   INSN(sve_mul,   0b00000100, 0b010000000); // vector mul
   INSN(sve_neg,   0b00000100, 0b010111101); // vector neg, unary
   INSN(sve_not,   0b00000100, 0b011110101); // bitwise invert vector, unary
