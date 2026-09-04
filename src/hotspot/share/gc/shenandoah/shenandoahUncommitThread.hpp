@@ -28,9 +28,19 @@
 #include "gc/shared/concurrentGCThread.hpp"
 
 class ShenandoahHeap;
+class ShenandoahHeapRegion;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
+
+  struct Candidate {
+    ShenandoahHeapRegion* _region;
+    int64_t _priority;
+  };
+
+  // Candidate regions
+  Candidate* _candidates;
+  size_t _candidates_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -47,24 +57,22 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
-  // True if there are regions to uncommit and uncommits are allowed
-  bool should_uncommit(double shrink_before, size_t shrink_until) const;
-
-  // True if there are regions that have been empty for longer than ShenandoahUncommitDelay and the committed
-  // memory is higher than soft max capacity or minimum capacity
-  bool has_work(double shrink_before, size_t shrink_until) const;
+  // Plan work, fill out candidate regions. True if there is work.
+  bool plan_work(double shrink_delay, size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
-  void uncommit(double shrink_before, size_t shrink_until);
+  void uncommit(double shrink_delay, size_t shrink_until);
 
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
-  // Iterate over and uncommit eligible regions until committed heap falls below
-  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
-  // it was last made empty is before `shrink_before` seconds since jvm start.
-  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
-  size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
+  // Stall uncommit thread to allow allocator progress
+  bool check_uncommit_or_delay();
+
+  // Iterate over and uncommit eligible regions
+  void do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed);
+
+  static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
