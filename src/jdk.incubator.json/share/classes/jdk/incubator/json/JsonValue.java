@@ -53,11 +53,11 @@ import java.util.Optional;
 public sealed interface JsonValue permits JsonString, JsonNumber, JsonObject, JsonArray, JsonBoolean, JsonNull {
 
     /**
-     * {@return a JSON syntax conformant String representation of this {@code JsonValue}}
+     * {@return a String representation of this {@code JsonValue} that conforms to JSON syntax}
      *
      * The returned string represents the same JSON value as this object and
-     * does not contain insignificant whitespace or line separators. The returned
-     * String is not a canonical representation of the JSON value. If this {@code JsonValue}
+     * does not contain insignificant whitespace or line separators. The returned String
+     * may or may not be a canonical representation of the JSON value. If this {@code JsonValue}
      * was obtained via one of the parsing methods on the {@link Json} class, the
      * returned String is not necessarily an exact lexical match of the JSON text that
      * was parsed. Subinterfaces may specify stronger preservation behavior for their
