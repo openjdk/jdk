@@ -23,6 +23,7 @@
 
 // key: compiler.err.not.exhaustive.details
 // key: compiler.misc.enum.constant.pattern
+// key: compiler.misc.missing.cases
 
 class NotExhaustiveDetails {
     int t(I i) {
