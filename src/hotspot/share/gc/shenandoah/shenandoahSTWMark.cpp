@@ -74,7 +74,7 @@ void ShenandoahSTWMark::mark() {
 
   // Arm all nmethods. Even though this is STW mark, some marking code
   // piggybacks on nmethod barriers for special instances.
-  ShenandoahCodeRoots::arm_nmethods();
+  CodeCache::arm_all_nmethods();
 
   // Weak reference processing
   ShenandoahReferenceProcessor* rp = _generation->ref_processor();
@@ -114,9 +114,6 @@ void ShenandoahSTWMark::mark() {
 
   _generation->set_mark_complete();
   end_mark();
-
-  // Mark is finished, can disarm the nmethods now.
-  ShenandoahCodeRoots::disarm_nmethods();
 
   assert(task_queues()->is_empty(), "Should be empty");
   TASKQUEUE_STATS_ONLY(task_queues()->print_and_reset_taskqueue_stats(""));

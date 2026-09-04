@@ -128,6 +128,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   _generation->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
+
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
     heap->propagate_gc_state_to_all_threads();

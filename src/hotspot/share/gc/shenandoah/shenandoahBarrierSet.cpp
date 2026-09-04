@@ -179,6 +179,9 @@ void ShenandoahBarrierSet::on_thread_detach(Thread *thread) {
     } else if (_heap->is_concurrent_weak_root_in_progress() && _heap->is_evacuation_in_progress()) {
       ShenandoahContextEvacuateUpdateRootsClosure oops;
       StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
+    } else {
+      ShenandoahNoOpClosure oops;
+      StackWatermarkSet::finish_processing(JavaThread::cast(thread), &oops, StackWatermarkKind::gc);
     }
 
     _heap->flush_region_pin_cache(JavaThread::cast(thread));

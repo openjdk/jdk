@@ -301,10 +301,6 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      // Disarm nmethods that armed in concurrent cycle.
-      // In above case, update roots should disarm them
-      ShenandoahCodeRoots::disarm_nmethods();
-
       op_cleanup_complete();
 
       if (heap->mode()->is_generational()) {
@@ -317,6 +313,9 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   DEBUG_ONLY(heap->assert_no_self_forwards());
+
+  // Leaving degenerated GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);
