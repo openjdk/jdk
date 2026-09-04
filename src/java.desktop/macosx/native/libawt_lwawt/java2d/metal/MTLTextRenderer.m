@@ -184,10 +184,12 @@ MTLTR_ConvertLCDDataToBGRA(GlyphInfo *ginfo, unsigned char *imageData,
         unsigned char *dst = imageData + row * ginfo->width * 4;
 
         for (int col = 0; col < ginfo->width; col++) {
-            dst[col * 4] = src[col * 3];
-            dst[col * 4 + 1] = src[col * 3 + 1];
-            dst[col * 4 + 2] = src[col * 3 + 2];
-            dst[col * 4 + 3] = 0xFF;
+            int srcIndex = col * 3;
+            int dstIndex = col * 4;
+            dst[dstIndex] = src[srcIndex];
+            dst[dstIndex + 1] = src[srcIndex + 1];
+            dst[dstIndex + 2] = src[srcIndex + 2];
+            dst[dstIndex + 3] = 0xFF;
         }
     }
 }
