@@ -235,7 +235,7 @@ void ShenandoahUncommitThread::stop_service() {
 
 bool ShenandoahUncommitThread::check_uncommit_or_delay() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-  locker.wait(5);
+  locker.wait(10);
   return _uncommit_allowed.is_set();
 }
 
