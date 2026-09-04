@@ -511,14 +511,6 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
       return false;
     }
     break;
-  // CRC32C intrinsics require Zbc. The template interpreter, C1, and C2
-  // share the stub and gate availability on UseCRC32CIntrinsics.
-  case vmIntrinsics::_updateBytesCRC32C:
-  case vmIntrinsics::_updateDirectByteBufferCRC32C:
-    if (!UseCRC32CIntrinsics) {
-      return false;
-    }
-    break;
   default:
     break;
   }
