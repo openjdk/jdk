@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,9 @@ enum X509Authentication implements SSLAuthentication {
     // Require EC public key
     EC          ("EC",          "EC"),
     // Edwards-Curve key
-    EDDSA       ("EdDSA",       "EdDSA");
+    EDDSA       ("EdDSA",       "EdDSA"),
+    // Require ML-DSA public key
+    MLDSA       ("ML-DSA",      "ML-DSA");
 
     final String keyAlgorithm;
     final String[] keyTypes;
@@ -362,6 +364,19 @@ enum X509Authentication implements SSLAuthentication {
             }
 
             PublicKey serverPublicKey = serverCerts[0].getPublicKey();
+            if (!shc.negotiatedProtocol.useTLS13PlusSpec() &&
+                    ("ML-DSA".equalsIgnoreCase(
+                    serverPrivateKey.getAlgorithm())
+                    || "ML-DSA".equalsIgnoreCase(
+                    serverPublicKey.getAlgorithm()))) {
+                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
+                    SSLLogger.fine(serverAlias +
+                            " ML-DSA certificates are not supported for " +
+                            shc.negotiatedProtocol.name);
+                }
+                continue;
+            }
+
             if ((!serverPrivateKey.getAlgorithm().equals(keyType))
                     || (!serverPublicKey.getAlgorithm().equals(keyType))) {
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
