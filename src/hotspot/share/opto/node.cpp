@@ -1255,6 +1255,11 @@ bool Node::has_special_unique_user() const {
   }
 };
 
+bool Node::should_process_when_disconnect_output(Node* output) const {
+  return (is_Phi() && as_Phi()->is_dead_phi()) ||
+         output->is_data_proj_of_pure_function(this);
+}
+
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
 Node* Node::find_exact_control(Node* ctrl) {
@@ -1487,7 +1492,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
-          } else if (dead->is_data_proj_of_pure_function(n)) {
+          } else if (n->should_process_when_disconnect_output(dead)) {
             igvn->_worklist.push(n);
           }
         }

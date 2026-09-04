@@ -38,6 +38,7 @@
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
@@ -2132,6 +2133,34 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
     }
   }
   return false; // The phi is not reachable from its inputs
+}
+
+// A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
+// remove it normally because a Phi can be a transitive output of itself.
+bool PhiNode::is_dead_phi() {
+  // Early return before we create the worklist
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    if (!fast_out(i)->is_Phi()) {
+      return false;
+    }
+  }
+
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(this);
+  for (uint wl_idx = 0; wl_idx < worklist.size(); wl_idx++) {
+    Node* n = worklist.at(wl_idx);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_Phi()) {
+        worklist.push(out);
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return true;
 }
 
 // Is this Phi's region or some inputs to the region enqueued for IGVN
