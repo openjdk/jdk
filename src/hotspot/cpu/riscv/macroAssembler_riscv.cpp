@@ -6833,34 +6833,19 @@ void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
     mv(dst, zr);
     return;
   }
-  Label done;
-  Register left = src1;
-  Register right = src2;
-  if (dst == src1) {
-    assert_different_registers(dst, src2, tmp);
-    mv(tmp, src1);
-    left = tmp;
-  } else if (dst == src2) {
-    assert_different_registers(dst, src1, tmp);
-    mv(tmp, src2);
-    right = tmp;
-  }
 
-  // installs 1 if gt else 0
+  // dst = (src1 > src2) - (src1 < src2)
+  assert_different_registers(tmp, dst);
+  assert_different_registers(tmp, src1, src2);
+
   if (is_signed) {
-    slt(dst, right, left);
+    slt(tmp, src2, src1);
+    slt(dst, src1, src2);
   } else {
-    sltu(dst, right, left);
+    sltu(tmp, src2, src1);
+    sltu(dst, src1, src2);
   }
-  bnez(dst, done);
-  if (is_signed) {
-    slt(dst, left, right);
-  } else {
-    sltu(dst, left, right);
-  }
-  // dst = -1 if lt; else if eq , dst = 0
-  neg(dst, dst);
-  bind(done);
+  sub(dst, tmp, dst);
 }
 
 void MacroAssembler::cmp_l2i(Register dst, Register src1, Register src2, Register tmp)
