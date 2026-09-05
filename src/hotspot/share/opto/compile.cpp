@@ -3295,6 +3295,7 @@ void Compile::Optimize() {
 
   // Once loop optimizations are over, it is safe to get rid of all reachability fence nodes and
   // migrate reachability edges to safepoints.
+  DEBUG_ONLY(if (_reachability_fences.length() > 0) { verify_reachability_fences(); })
   if (OptimizeReachabilityFences && _reachability_fences.length() > 0) {
     TracePhase tp1(_t_idealLoop);
     TracePhase tp2(_t_reachability);
