@@ -832,6 +832,18 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             can_eliminate = false;
           }
         }
+      } else if (use->is_ArrayCopy() && !use->in(ArrayCopyNode::Src)->is_top() &&
+                 use->in(ArrayCopyNode::Src)->get_ptr_type()->is_atomic() &&
+                 use->in(ArrayCopyNode::Src)->get_ptr_type()->is_flat() &&
+                 !use->in(ArrayCopyNode::Src)
+                      ->get_ptr_type()
+                      ->isa_aryptr()
+                      ->elem()
+                      ->inline_klass()
+                      ->is_naturally_atomic(
+                          use->in(ArrayCopyNode::Src)->get_ptr_type()->is_null_free())) {
+        NOT_PRODUCT(fail_eliminate = "Array element requires atomicity");
+        can_eliminate = false;
       } else if (use->is_ArrayCopy() &&
                  (use->as_ArrayCopy()->is_clonebasic() ||
                   use->as_ArrayCopy()->is_arraycopy_validated() ||
