@@ -707,6 +707,7 @@ public class Flow {
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
                 }
+                scan(c.guard);
                 scanStats(c.stats);
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -752,6 +753,7 @@ public class Flow {
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
                 }
+                scan(c.guard);
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
                     if (c.caseKind == JCCase.RULE) {
@@ -1225,6 +1227,7 @@ public class Flow {
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 scan(c.labels);
+                scan(c.guard);
                 scan(c.stats);
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {
