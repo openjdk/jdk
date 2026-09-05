@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,30 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @see X509ExtendedKeyManager
      */
     public abstract String[] getPeerSupportedSignatureAlgorithms();
+
+    /**
+     * Returns the key exchange named group name negotiated for this session.
+     * <p>
+     * The standard named groups are defined in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#named-groups">
+     * Named Groups</a> section of the Java Security Standard Algorithm Names
+     * Specification. Other named groups supported by the provider can also be
+     * returned.
+     *
+     * @implSpec The default implementation throws
+     *           {@code UnsupportedOperationException}
+     * @return The negotiated key exchange named group name, or {@code null}
+     *         if no named group was negotiated or the handshake has not
+     *         completed
+     * @throws UnsupportedOperationException if the underlying provider does
+     *         not implement the operation
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
+     * @since 28
+     */
+    public String getNegotiatedNamedGroup() {
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
+    }
 
     /**
      * Obtains a {@link List} containing all {@link SNIServerName}s
