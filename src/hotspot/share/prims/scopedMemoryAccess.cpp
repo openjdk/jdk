@@ -213,40 +213,43 @@ public:
                                RegisterMap::ProcessFrames::include,
                                RegisterMap::WalkContinuation::skip);
       frame last_frame = get_last_frame(jt, &register_map);
-      if (last_frame.is_compiled_frame() && last_frame.can_be_deoptimized()) {
-        // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
-        // moving code around/hoisting checks, we may be in a situation like this:
-        //
-        // liveness check (from @Scoped method)
-        // for (...) {
-        //    for (...) { // strip-mining inner loop
-        //        memory access (from @Scoped method)
-        //    }
-        //    safepoint <-- STOPPED HERE
-        // }
-        //
-        // The safepoint at which we're stopped may be in between the liveness check
-        // and actual memory access, but is itself 'outside' of @Scoped code
-        //
-        // However, we're not sure whether we are in this exact situation, and
-        // we're also not sure whether a memory access will actually occur after
-        // this safepoint. So, we can not just install an async exception here
-        //
-        // Instead, we mark the frame for deoptimization (which happens just before
-        // execution in this frame continues) to get back to code like this:
-        //
-        // for (...) {
-        //     call to ScopedMemoryAccess
-        //     safepoint <-- STOPPED HERE
-        // }
-        //
-        // This means that we will re-do the liveness check before attempting
-        // another memory access. If the scope has been closed at that point,
-        // the target thread will see it and throw an exception.
-
+      if (last_frame.is_compiled_frame()) {
         nmethod* code = last_frame.cb()->as_nmethod();
-        if (code->has_scoped_access() && is_session_live(last_frame, &register_map)) {
-          Deoptimization::deoptimize(jt, last_frame);
+        if (last_frame.can_be_deoptimized()) {
+          // We are not at a safepoint that is 'in' an @Scoped method, but due to the compiler
+          // moving code around/hoisting checks, we may be in a situation like this:
+          //
+          // liveness check (from @Scoped method)
+          // for (...) {
+          //    for (...) { // strip-mining inner loop
+          //        memory access (from @Scoped method)
+          //    }
+          //    safepoint <-- STOPPED HERE
+          // }
+          //
+          // The safepoint at which we're stopped may be in between the liveness check
+          // and actual memory access, but is itself 'outside' of @Scoped code
+          //
+          // However, we're not sure whether we are in this exact situation, and
+          // we're also not sure whether a memory access will actually occur after
+          // this safepoint. So, we can not just install an async exception here
+          //
+          // Instead, we mark the frame for deoptimization (which happens just before
+          // execution in this frame continues) to get back to code like this:
+          //
+          // for (...) {
+          //     call to ScopedMemoryAccess
+          //     safepoint <-- STOPPED HERE
+          // }
+          //
+          // This means that we will re-do the liveness check before attempting
+          // another memory access. If the scope has been closed at that point,
+          // the target thread will see it and throw an exception.
+          if (code->has_scoped_access() && is_session_live(last_frame, &register_map)) {
+            Deoptimization::deoptimize(jt, last_frame);
+          }
+        } else {
+          assert(!code->has_scoped_access(), "Scoped access in non-deoptimizable frame!");
         }
       }
     }
