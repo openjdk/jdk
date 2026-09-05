@@ -1219,6 +1219,10 @@ void os::print_memory_info(outputStream* st) {
   // Print segments allocated with os::reserve_memory.
   st->print_cr("internal virtual memory regions used by vm:");
   vmembk_print_on(st);
+
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
 }
 
 // Get a string for the cpuinfo that is a summary of the cpu type
@@ -1987,13 +1991,19 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return addr;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
   // On AIX, we need to make sure we don't block the sbrk. However, this is
   // done at actual reservation time, where we honor a "no-mmap" area following
   // the break. See MaxExpectedDataSegmentSize. So we can return a very low
   // address here.
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
+}
+
+uintptr_t os::vm_max_address() {
+  // On 64-bit AIX, we have 60 user-addressable address bits
+  // (1ExiB) unshared with kernel.
+  return right_n_bits<uintptr_t>(60);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

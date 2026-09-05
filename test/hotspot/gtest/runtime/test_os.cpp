@@ -32,6 +32,7 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/powerOfTwo.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
 #ifdef _WIN32
@@ -1123,13 +1124,32 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
 }
 
 TEST_VM(os, vm_min_address) {
-  size_t s = os::vm_min_address();
+  uintptr_t s = os::vm_min_address();
+  ASSERT_TRUE(is_aligned(s, os::vm_allocation_granularity()));
   ASSERT_GE(s, M);
   // Test upper limit. On Linux, its adjustable, so we just test for absurd values to prevent errors
   // with high vm.mmap_min_addr settings.
 #if defined(_LP64)
   ASSERT_LE(s, NOT_LINUX(G * 4) LINUX_ONLY(G * 1024));
 #endif
+}
+
+TEST_VM(os, vm_max_address) {
+  const uintptr_t s = os::vm_max_address();
+#ifdef S390
+  ASSERT_EQ(s, 0UL);
+  return;
+#endif
+  ASSERT_GT(s, 0UL) << s;
+#if defined(_LP64)
+  ASSERT_TRUE(is_power_of_2(s)) << s;
+  int bits = exact_log2(s);
+  // Minimum and maximum values expected (none of our 64-bit
+  // platforms has a smaller or larger address space than that).
+  constexpr uintptr_t min = 256 * G;
+  constexpr uintptr_t max = AIX_ONLY(Exbi) NOT_AIX(64 * Pebi);
+#endif
+  STATIC_ASSERT(Exbi == nth_bit<uint64_t>(60));
 }
 
 #if !defined(_WINDOWS) && !defined(_AIX)
