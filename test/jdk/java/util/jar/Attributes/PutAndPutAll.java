@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,31 +25,27 @@
    @bug 4165833 4167600
    @summary Test if put and putAll will test for illegal
             arguments.
-   */
+   @run junit PutAndPutAll
+  */
 
+
+import org.junit.jupiter.api.Test;
 
 import java.util.jar.Attributes;
 import java.util.HashMap;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 public class PutAndPutAll {
-    public static void main(String[] args) throws Exception {
+
+    @Test
+    void classCastTest() {
         Attributes at = new Attributes();
-        try{
-            at.put("this is not an Attributes.Name", "value");
-            throw new Exception("put should check for non Attributes.Name names");
-        } catch (ClassCastException e) {
-        }
-
-        try{
-            at.put(new Attributes.Name("name"), new Integer(0));
-            throw new Exception("put should check for non String values");
-        } catch (ClassCastException e) {
-        }
-
-        try {
-            at.putAll(new HashMap());
-            throw new Exception("putAll should check for non Attributes maps");
-        } catch (ClassCastException e) {
-        }
+        assertThrows(ClassCastException.class,
+                () -> at.put("this is not an Attributes.Name", "value"), "put should check for non Attributes.Name names");
+        assertThrows(ClassCastException.class,
+                () -> at.put(new Attributes.Name("name"), new Integer(0)), "put should check for non String values");
+        assertThrows(ClassCastException.class,
+                () -> at.putAll(new HashMap()), "putAll should check for non Attributes maps");
     }
 }

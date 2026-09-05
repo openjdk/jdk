@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -746,15 +746,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                             new Consumer<>() {
                                 @Override
                                 public void accept(CodeBuilder cob) {
-                                    cob.aload(0); // this
-
                                     final List<Var> ctorArgs = AFTER_THIS.fromTypes(superCtorType.parameterList());
-                                    for (Var ca : ctorArgs) {
-                                        ca.emitLoadInstruction(cob);
-                                    }
-
-                                    // super(ca...)
-                                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
 
                                     // store down fields
                                     Var lastFV = AFTER_THIS.lastOf(ctorArgs);
@@ -766,6 +758,12 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
                                         cob.putfield(classDesc, f.name, f.desc);
                                     }
 
+                                    // super(ca...)
+                                    cob.aload(0); // this
+                                    for (Var ca : ctorArgs) {
+                                        ca.emitLoadInstruction(cob);
+                                    }
+                                    cob.invokespecial(superClassDesc, INIT_NAME, methodDesc(superCtorType));
                                     cob.return_();
                                 }
                             });

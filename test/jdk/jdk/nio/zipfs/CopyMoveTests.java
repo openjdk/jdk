@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,32 @@
  *
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * @test
  * @bug 8231766
  * @summary Test Files::copy and Files::move with Zip FS
  * @modules jdk.zipfs
- * @run testng/othervm CopyMoveTests
+ * @run junit/othervm CopyMoveTests
  */
 public class CopyMoveTests {
     // Enable debugging output
@@ -58,33 +61,31 @@ public class CopyMoveTests {
     private static final SecureRandom random = new SecureRandom();
 
     /*
-     * DataProvider used to verify that a FileAlreadyExistsException is
+     * MethodSource used to verify that a FileAlreadyExistsException is
      * thrown with copying a file without the REPLACE_EXISTING option
      */
-    @DataProvider(name = "zipfsMap")
-    private Object[][] zipfsMap() {
-        return new Object[][]{
-                {Map.of("create", "true"), ZipEntry.DEFLATED},
-                {Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED},
-                {Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED}
-        };
+    private static Stream<Arguments> zipfsMap() {
+        return Stream.of(
+                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED)
+        );
     }
 
     /*
-     * DataProvider used to verify that an entry may be copied or moved within
+     * MethodSource used to verify that an entry may be copied or moved within
      * a Zip file system with the correct compression method
      */
-    @DataProvider(name = "copyMoveMap")
-    private Object[][] copyMoveMap() {
-        return new Object[][]{
-                {Map.of("create", "true"), ZipEntry.DEFLATED, ZipEntry.STORED},
-                {Map.of("create", "true", "noCompression", "true"),
-                        ZipEntry.STORED, ZipEntry.DEFLATED},
-                {Map.of("create", "true", "noCompression", "false"),
-                        ZipEntry.DEFLATED, ZipEntry.STORED}
-        };
+    private static Stream<Arguments> copyMoveMap() {
+        return Stream.of(
+                Arguments.of(Map.of("create", "true"), ZipEntry.DEFLATED, ZipEntry.STORED),
+                Arguments.of(Map.of("create", "true", "noCompression", "true"),
+                        ZipEntry.STORED, ZipEntry.DEFLATED),
+                Arguments.of(Map.of("create", "true", "noCompression", "false"),
+                        ZipEntry.DEFLATED, ZipEntry.STORED)
+        );
     }
 
     /**
@@ -96,7 +97,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when copying the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void copyTest(Map<String, String> createMap, int compression,
                          int expectedCompression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, ZIP_FILE_VALUE);
@@ -127,7 +129,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when copying the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void copyZipToZipTest(Map<String, String> createMap, int compression,
                             int expectedCompression) throws Exception {
         Entry e0 = Entry.of("Entry-0", compression, ZIP_FILE_VALUE);
@@ -163,7 +166,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when copying the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void copyFromOsTest(Map<String, String> createMap, int compression,
                            int expectedCompression) throws Exception {
 
@@ -196,7 +200,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when moving the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void CopyFromZipTest(Map<String, String> createMap, int compression,
                                 int expectedCompression) throws Exception {
 
@@ -217,7 +222,7 @@ public class CopyMoveTests {
         verify(zipFile, e0, e1);
         // Check to see if the file exists and the bytes match
         assertTrue(Files.isRegularFile(osFile));
-        assertEquals(Files.readAllBytes(osFile), e0.bytes);
+        assertArrayEquals(e0.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(osFile);
     }
@@ -231,7 +236,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when moving the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void moveTest(Map<String, String> createMap, int compression,
                          int expectedCompression) throws Exception {
 
@@ -261,7 +267,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when moving the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void moveZipToZipTest(Map<String, String> createMap, int compression,
                             int expectedCompression) throws Exception {
 
@@ -299,7 +306,8 @@ public class CopyMoveTests {
      * @param expectedCompression The compression to be used when moving the entry
      * @throws Exception If an error occurs
      */
-    @Test(dataProvider = "copyMoveMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("copyMoveMap")
     public void moveFromZipTest(Map<String, String> createMap, int compression,
                             int expectedCompression) throws Exception {
 
@@ -320,7 +328,7 @@ public class CopyMoveTests {
         verify(zipFile, e1);
         // Check to see if the file exists and the bytes match
         assertTrue(Files.isRegularFile(osFile));
-        assertEquals(Files.readAllBytes(osFile), e0.bytes);
+        assertArrayEquals(e0.bytes, Files.readAllBytes(osFile));
         Files.deleteIfExists(zipFile);
         Files.deleteIfExists(osFile);
     }
@@ -332,7 +340,8 @@ public class CopyMoveTests {
      * @param createMap Properties used for creating the ZIP Filesystem
      * @throws Exception if an error occurs
      */
-    @Test(dataProvider = "zipfsMap", enabled = true)
+    @ParameterizedTest
+    @MethodSource("zipfsMap")
     public void testFAEWithCopy(Map<String, String> createMap,
                                 int compression) throws Exception {
         if (DEBUG) {
@@ -444,17 +453,17 @@ public class CopyMoveTests {
         // check entries with zip API
         try (ZipFile zf = new ZipFile(zipfile.toFile())) {
             // check entry count
-            assertEquals(entries.length, zf.size());
+            assertEquals(zf.size(), entries.length);
 
             // check compression method and content of each entry
             for (Entry e : entries) {
                 ZipEntry ze = zf.getEntry(e.name);
                 //System.out.printf("Name: %s, method: %s, Expected Method: %s%n", e.name, ze.getMethod(), e.method);
                 assertNotNull(ze);
-                assertEquals(e.method, ze.getMethod());
+                assertEquals(ze.getMethod(), e.method);
                 try (InputStream in = zf.getInputStream(ze)) {
                     byte[] bytes = in.readAllBytes();
-                    assertTrue(Arrays.equals(bytes, e.bytes));
+                    assertArrayEquals(bytes, e.bytes);
                 }
             }
         }
@@ -465,13 +474,13 @@ public class CopyMoveTests {
             Path top = fs.getPath("/");
             long count = Files.find(top, Integer.MAX_VALUE,
                     (path, attrs) -> attrs.isRegularFile()).count();
-            assertEquals(entries.length, count);
+            assertEquals(count, entries.length);
 
             // check content of each entry
             for (Entry e : entries) {
                 Path file = fs.getPath(e.name);
                 byte[] bytes = Files.readAllBytes(file);
-                assertTrue(Arrays.equals(bytes, e.bytes));
+                assertArrayEquals(bytes, e.bytes);
             }
         }
     }

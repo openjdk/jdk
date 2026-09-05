@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,15 @@
  */
 
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "runtime/safepoint.hpp"
+
+static bool region_occupancy_low_enough_for_evac(size_t live_bytes) {
+  size_t mixed_gc_live_threshold_bytes = G1HeapRegion::GrainBytes * (size_t)G1MixedGCLiveThresholdPercent / 100;
+  return live_bytes < mixed_gc_live_threshold_bytes;
+}
 
 void G1RemSetTrackingPolicy::update_at_allocate(G1HeapRegion* r) {
   assert(r->is_young() || r->is_humongous() || r->is_old(),
@@ -75,7 +79,8 @@ bool G1RemSetTrackingPolicy::update_old_before_rebuild(G1HeapRegion* r) {
 
   bool selected_for_rebuild = false;
 
-  if (G1CollectionSetChooser::region_occupancy_low_enough_for_evac(r->live_bytes()) &&
+  if (region_occupancy_low_enough_for_evac(r->live_bytes()) &&
+      !G1CollectedHeap::heap()->is_old_gc_alloc_region(r) &&
       !r->rem_set()->is_tracked()) {
     r->rem_set()->set_state_updating();
     selected_for_rebuild = true;
@@ -97,20 +102,26 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
+      G1CardSetGroup* group = r->rem_set()->card_set_group();
+
+      assert(group != nullptr, "humongous start must have a card set group");
+      assert(group->length() == 1, "humongous group must have only one region");
+
+      group->clear_card_set();
       g1h->humongous_obj_regions_iterate(r,
                                          [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
-                                           r->rem_set()->clear(true /* only_cardset */);
+                                           r->rem_set()->set_state_untracked();
                                          });
     }
 
     size_t remset_bytes = r->rem_set()->mem_size();
     size_t occupied = 0;
-    // per region cardset details only valid if group contains a single region.
-    if (r->rem_set()->has_cset_group() &&
-        r->rem_set()->cset_group()->length() == 1 ) {
-        G1CardSet *card_set = r->rem_set()->cset_group()->card_set();
+    // Per-region card set group statistics are only valid if group contains a single region.
+    if (r->rem_set()->has_card_set_group() &&
+        r->rem_set()->card_set_group()->length() == 1 ) {
+        G1CardSet *card_set = r->rem_set()->card_set_group()->card_set();
         remset_bytes += card_set->mem_size();
         occupied = card_set->occupied();
     }

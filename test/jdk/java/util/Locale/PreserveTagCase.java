@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ public class PreserveTagCase {
      */
     @ParameterizedTest
     @MethodSource("filterProvider")
-    public static void testFilterTags(String ranges, List<String> tags,
+    public void testFilterTags(String ranges, List<String> tags,
                                   List<String> expected, FilteringMode mode) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> actual = Locale.filterTags(priorityList, tags, mode);
@@ -67,7 +67,7 @@ public class PreserveTagCase {
      */
     @ParameterizedTest
     @MethodSource("lookupProvider")
-    public static void testLookupTag(String ranges, List<String> tags,
+    public void testLookupTag(String ranges, List<String> tags,
                                   String expected) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         String actual = Locale.lookupTag(priorityList, tags);

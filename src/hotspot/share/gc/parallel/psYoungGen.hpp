@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,13 +28,30 @@
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "gc/parallel/spaceCounters.hpp"
+#include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 
 class ReservedSpace;
 
 class PSYoungGen : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class ParallelScavengeHeap;
+
+ public:
+  // Young generation sizing state from the latest sizing pass. It records how
+  // the desired eden/survivor sizes relate to the young-gen size bounds.
+  // Consumers such as the tenuring-threshold heuristic can use this as sizing
+  // feedback.
+  enum class SizingState : int {
+    // Desired young-gen size means "eden + 2 * survivor".
+    // Its relation to max_gen_size is:
+    // exactly equal.
+    balanced = 0,
+    // greater than.
+    constrained,
+    // less than.
+    surplus
+  };
 
  private:
   MemRegion       _reserved;
@@ -49,11 +66,14 @@ class PSYoungGen : public CHeapObj<mtGC> {
   const size_t _min_gen_size;
   const size_t _max_gen_size;
 
+  // Current young-gen sizing state, updated by compute_desired_sizes().
+  SizingState _sizing_state;
+
   // Performance counters
   GenerationCounters*   _gen_counters;
-  SpaceCounters*        _eden_counters;
-  SpaceCounters*        _from_counters;
-  SpaceCounters*        _to_counters;
+  HSpaceCounters*       _eden_counters;
+  HSpaceCounters*       _from_counters;
+  HSpaceCounters*       _to_counters;
 
   // Initialize the space boundaries
   void compute_initial_space_boundaries();
@@ -126,8 +146,10 @@ class PSYoungGen : public CHeapObj<mtGC> {
   size_t min_gen_size() const { return _min_gen_size; }
   size_t max_gen_size() const { return _max_gen_size; }
 
+  SizingState sizing_state() const { return _sizing_state; }
+
   // Allocation
-  HeapWord* allocate(size_t word_size) {
+  HeapWord* cas_allocate(size_t word_size) {
     HeapWord* result = eden_space()->cas_allocate(word_size);
     return result;
   }

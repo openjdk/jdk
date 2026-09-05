@@ -210,6 +210,7 @@ private:
 
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
+  void inline_classes_do(void f(InlineKlass*));
   void methods_do(void f(Method*));
   void modules_do(void f(ModuleEntry*));
   void packages_do(void f(PackageEntry*));
@@ -242,7 +243,7 @@ private:
   void verify_not_claimed(int claim) NOT_DEBUG_RETURN;
   bool claimed() const { return _claim != 0; }
   bool claimed(int claim) const { return (_claim & claim) == claim; }
-  bool try_claim(int claim);
+  inline bool try_claim(int claim);
 
   // Computes if the CLD is alive or not. This is safe to call in concurrent
   // contexts.
@@ -305,7 +306,8 @@ private:
 
   void initialize_holder(Handle holder);
 
-  void oops_do(OopClosure* f, int claim_value, bool clear_modified_oops = false);
+  inline void oops_do(OopClosure* f, int claim_value, bool clear_modified_oops = false);
+  void oops_do_slow(OopClosure* f, bool clear_modified_oops);
 
   void classes_do(KlassClosure* klass_closure);
   Klass* klasses() { return _klasses; }

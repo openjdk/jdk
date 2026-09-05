@@ -38,14 +38,11 @@ public class MatchableMatcher {
         this.matchables = matchables;
     }
 
-    public List<MatchResult> match() {
+    public SubResults match() {
         List<MatchResult> results = new ArrayList<>();
         for (Matchable matchable : matchables) {
-            MatchResult matchResult = matchable.match();
-            if (matchResult.fail()) {
-                results.add(matchResult);
-            }
+            results.add(matchable.match());
         }
-        return results;
+        return new SubResults(results);
     }
 }

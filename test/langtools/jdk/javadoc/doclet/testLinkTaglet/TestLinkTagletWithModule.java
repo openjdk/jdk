@@ -107,20 +107,15 @@ public class TestLinkTagletWithModule extends JavadocTester {
                     <div class="block"><a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a>
                     <a href="../../../../../out1/m1/module-summary.html" class="external-link"><code>m1</code></a>
                     <a href="../../../../../out1/m1/com/m1/lib/package-summary.html" class="external-link"><code>package link</code></a>
-                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html" title="class or interface in com.m1.lib"\
-                     class="external-link"><code>Lib</code></a>
-                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
-                     interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a>
-                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" title="class or\
-                     interface in com.m1.lib" class="external-link"><code>Lib.method(String)</code></a>
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html" title="class in com.m1.lib" class="external-link"><code>Lib</code></a>
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" class="external-link"><code>Lib.method(String)</code></a>
+                    <a href="../../../../../out1/m1/com/m1/lib/Lib.html#method(java.lang.String)" class="external-link"><code>Lib.method(String)</code></a>
                     <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
                     <a href="../../../../../out1/m2/module-summary.html" class="external-link">m2</a>
                     <a href="../../../../../out1/m2/com/m2/lib/package-summary.html" class="external-link">m2/com.m2.lib</a>
-                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html" title="class or interface in com.m2.lib" class="external-link">Lib</a>
-                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
-                     interface in com.m2.lib" class="external-link">class link</a>
-                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" title="class or\
-                     interface in com.m2.lib" class="external-link">Lib.method(String)</a></div>
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html" title="class in com.m2.lib" class="external-link">Lib</a>
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" class="external-link">class link</a>
+                    <a href="../../../../../out1/m2/com/m2/lib/Lib.html#method(java.lang.String)" class="external-link">Lib.method(String)</a></div>
                     """);
     }
 
@@ -164,9 +159,9 @@ public class TestLinkTagletWithModule extends JavadocTester {
                     <div class="block"><a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>package link</code></a>
                     <a href="../../../../out1/com.ex1/module-summary.html" class="external-link"><code>module link</code></a>
                     <a href="../../../../out1/com.ex1/com/ex1/package-summary.html" class="external-link"><code>com.ex1/com.ex1</code></a>
-                    <a href="../../../../out1/com.ex1/com/ex1/A.html" title="class or interface in com.ex1" class="external-link"><code>class link</code></a>
-                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
-                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" title="class or interface in com.ex1" class="external-link"><code>A.m()</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html" title="class in com.ex1" class="external-link"><code>class link</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" class="external-link"><code>A.m()</code></a>
+                    <a href="../../../../out1/com.ex1/com/ex1/A.html#m()" class="external-link"><code>A.m()</code></a>
                     <a href="package-summary.html"><code>com.ex2</code></a>
                     <a href="../../module-summary.html"><code>com.ex2</code></a></div>
                     """);

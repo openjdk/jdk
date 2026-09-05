@@ -152,6 +152,9 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
 }
 #endif
 
+template<>
+struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
+
 template<size_t byte_size>
 template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
@@ -164,6 +167,7 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
 #endif
 
   STATIC_ASSERT(byte_size == sizeof(T));
+  STATIC_ASSERT(byte_size == 4 || byte_size == 8);
 
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;

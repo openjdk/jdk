@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,16 +209,64 @@ inline void JfrTraceId::clear_sticky_bit(const Method* method) {
   assert(!JfrTraceId::has_sticky_bit(method), "invariant");
 }
 
-inline bool JfrTraceId::has_timing_bit(const InstanceKlass* scratch_klass) {
-  assert(scratch_klass != nullptr, "invariant");
-  return HAS_TIMING_BIT(scratch_klass);
+inline bool JfrTraceId::has_timing_bit(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  return HAS_TIMING_BIT(ik);
 }
 
-inline void JfrTraceId::set_timing_bit(const InstanceKlass* scratch_klass) {
-  assert(scratch_klass != nullptr, "invariant");
-  assert(!has_timing_bit(scratch_klass), "invariant");
-  SET_TIMING_BIT(scratch_klass);
-  assert(has_timing_bit(scratch_klass), "invariant");
+inline void JfrTraceId::set_timing_bit(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(!has_timing_bit(ik), "invariant");
+  SET_TIMING_BIT(ik);
+  assert(has_timing_bit(ik), "invariant");
+}
+
+inline void JfrTraceId::clear_timing_bit(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(has_timing_bit(ik), "invariant");
+  CLEAR_TIMING_BIT(ik);
+  assert(!has_timing_bit(ik), "invariant");
+}
+
+inline bool JfrTraceId::has_preload_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  return HAS_PRELOAD_TAG_BIT_STICKY(k);
+}
+
+inline void JfrTraceId::set_preload_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(!has_preload_sticky_bit(k), "invariant");
+  SET_PRELOAD_TAG_BIT_STICKY(k);
+  assert(has_preload_sticky_bit(k), "invariant");
+}
+
+inline void JfrTraceId::clear_preload_sticky_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(has_preload_sticky_bit(k), "invariant");
+  CLEAR_PRELOAD_TAG_BIT_STICKY(k);
+  assert(!has_preload_sticky_bit(k), "invariant");
+}
+
+inline bool JfrTraceId::has_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  return HAS_PRELOAD_TAG_BIT_BOOTLOADER(k);
+}
+
+inline void JfrTraceId::set_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(!has_preload_bootloader_bit(k), "invariant");
+  SET_PRELOAD_TAG_BIT_BOOTLOADER(k);
+  assert(has_preload_bootloader_bit(k), "invariant");
+}
+
+inline void JfrTraceId::clear_preload_bootloader_bit(const Klass* k) {
+  assert(k != nullptr, "invariant");
+  assert(has_preload_bootloader_bit(k), "invariant");
+  CLEAR_PRELOAD_TAG_BIT_BOOTLOADER(k);
+  assert(!has_preload_bootloader_bit(k), "invariant");
 }
 
 #endif // SHARE_JFR_RECORDER_CHECKPOINT_TYPES_TRACEID_JFRTRACEID_INLINE_HPP

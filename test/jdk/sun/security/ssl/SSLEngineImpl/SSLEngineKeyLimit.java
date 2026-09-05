@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,6 @@ import java.util.Arrays;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.Utils;
 
 public class SSLEngineKeyLimit extends SSLContextTemplate {
 
@@ -78,7 +77,7 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
     static boolean readdone = false;
 
     // Turn on debugging
-    static boolean debug = false;
+    static boolean debug = Boolean.getBoolean("test.debug");
 
     SSLEngineKeyLimit() {
         buf = ByteBuffer.allocate(dataLen*4);
@@ -112,16 +111,14 @@ public class SSLEngineKeyLimit extends SSLContextTemplate {
             System.setProperty("test.java.opts", System.getProperty("test.java.opts") +
                     " -Dtest.src=" + System.getProperty("test.src") +
                             " -Dtest.jdk=" + System.getProperty("test.jdk") +
-                            " -Djavax.net.debug=ssl,handshake" +
+                            " -Djavax.net.debug=ssl" +
                             " -Djava.security.properties=" + f.getName());
 
             System.out.println("test.java.opts: " +
                     System.getProperty("test.java.opts"));
 
             ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    Utils.addTestJavaOpts("SSLEngineKeyLimit", "p", args[1],
-                            args[2]));
-
+                    "SSLEngineKeyLimit", "p", args[1], args[2]);
             OutputAnalyzer output = ProcessTools.executeProcess(pb);
             try {
                 output.shouldContain(String.format(

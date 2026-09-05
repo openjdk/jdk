@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,6 +271,16 @@ class VM_PrintCompileQueue: public VM_Operation {
  public:
   VM_PrintCompileQueue(outputStream* st) : _out(st) {}
   VMOp_Type type() const { return VMOp_PrintCompileQueue; }
+  void doit();
+};
+
+class VM_ClassPrintLayout: public VM_Operation {
+ private:
+  outputStream* _out;
+  char* _class_name;
+ public:
+  VM_ClassPrintLayout(outputStream* st, char* class_name): _out(st), _class_name(class_name) {}
+  VMOp_Type type() const { return VMOp_ClassPrintLayout; }
   void doit();
 };
 

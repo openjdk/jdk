@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET AOT_JDK, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET JCOV_SCALES AOT_JDK, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
@@ -93,6 +93,9 @@ JTREG_FAILURE_HANDLER := $(JTREG_FAILURE_HANDLER_DIR)/jtregFailureHandler.jar
 JTREG_TEST_THREAD_FACTORY_DIR := $(TEST_IMAGE_DIR)/jtreg_test_thread_factory
 JTREG_TEST_THREAD_FACTORY_JAR := $(JTREG_TEST_THREAD_FACTORY_DIR)/jtregTestThreadFactory.jar
 
+JTREG_VALUE_CLASS_PLUGIN_DIR := $(TEST_IMAGE_DIR)/jtreg_value_class_plugin
+JTREG_VALUE_CLASS_PLUGIN_JAR := $(JTREG_VALUE_CLASS_PLUGIN_DIR)/valueClassPlugin.jar
+
 JTREG_FAILURE_HANDLER_TIMEOUT ?= 0
 
 ifneq ($(wildcard $(JTREG_FAILURE_HANDLER)), )
@@ -118,8 +121,20 @@ ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_SUPPORT_DIR := $(TEST_SUPPORT_DIR)/jcov-support
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
   JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
+  JCOV_TESTLIST := $(JCOV_OUTPUT_DIR)/testlist.txt
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
+  JCOV_GRABBER_OPTIONS ?=
+  JCOV_REPGEN_OPTIONS ?=
+  TEST_OPTS_JCOV_SCALES ?= false
   JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
+
+  ifeq ($(TEST_OPTS_JCOV_SCALES), true)
+    JCOV_GRABBER_OPTIONS += -scale -mergebyname -outTestList $(JCOV_TESTLIST)
+    TEST_JOBS := 1
+    JTREG_TEST_MODE := othervm
+    JTREG_VM_OPTIONS += -Djcov.extension=com.sun.tdk.jcov.runtime.TestNameDecorator
+    JCOV_REPGEN_OPTIONS += -tests $(JCOV_TESTLIST)
+  endif
 
   # Replace our normal test JDK with the JCov image.
   JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
@@ -206,7 +221,7 @@ $(eval $(call ParseKeywordVariable, JTREG, \
     SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR FAILURE_HANDLER_TIMEOUT \
         TEST_MODE ASSERT VERBOSE RETAIN TEST_THREAD_FACTORY JVMTI_STRESS_AGENT \
         MAX_MEM RUN_PROBLEM_LISTS RETRY_COUNT REPEAT_COUNT MAX_OUTPUT REPORT \
-        AOT_JDK MANUAL $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
+        AOT_JDK MANUAL VALUE_CLASS_PLUGIN $(CUSTOM_JTREG_SINGLE_KEYWORDS), \
     STRING_KEYWORDS := OPTIONS JAVA_OPTIONS VM_OPTIONS KEYWORDS \
         EXTRA_PROBLEM_LISTS LAUNCHER_OPTIONS \
         $(CUSTOM_JTREG_STRING_KEYWORDS), \
@@ -873,7 +888,21 @@ define SetupRunJtregTestBody
     $1_JTREG_BASIC_OPTIONS += -testThreadFactoryPath:$$(JTREG_TEST_THREAD_FACTORY_JAR)
     $1_JTREG_BASIC_OPTIONS += -testThreadFactory:$$(JTREG_TEST_THREAD_FACTORY)
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
-	$$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-$$(JTREG_TEST_THREAD_FACTORY).txt) \
+    ))
+  endif
+
+  ifneq ($$(JTREG_VALUE_CLASS_PLUGIN), )
+    ifneq ($$(wildcard $$(JTREG_VALUE_CLASS_PLUGIN_JAR)), )
+      $1_JTREG_BASIC_OPTIONS += -cpa:$$(JTREG_VALUE_CLASS_PLUGIN_JAR)
+    endif
+    $1_JTREG_BASIC_OPTIONS += -vmoption:--enable-preview
+    $1_JTREG_BASIC_OPTIONS += -javacoption:-XDaccessInternalAPI
+    $1_JTREG_BASIC_OPTIONS += -javacoption:--source -javacoption:$(VERSION_FEATURE)
+    $1_JTREG_BASIC_OPTIONS += -javacoption:--enable-preview
+    $1_JTREG_BASIC_OPTIONS += -javacoption:-Xplugin:ValueClassPlugin
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-ValueClass.txt) \
     ))
   endif
 
@@ -881,8 +910,8 @@ define SetupRunJtregTestBody
     AGENT := $$(LIBRARY_PREFIX)JvmtiStressAgent$$(SHARED_LIBRARY_SUFFIX)=$$(JTREG_JVMTI_STRESS_AGENT)
     $1_JTREG_BASIC_OPTIONS += -javaoption:'-agentpath:$(TEST_IMAGE_DIR)/hotspot/jtreg/native/$$(AGENT)'
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
-	    $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
-        ))
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-jvmti-stress-agent.txt) \
+    ))
   endif
 
 
@@ -972,7 +1001,6 @@ define SetupRunJtregTestBody
     JTREG_AUTO_PROBLEM_LISTS += ProblemList-enable-preview.txt
   endif
 
-
   ifneq ($$(JTREG_EXTRA_PROBLEM_LISTS), )
     # Accept both absolute paths as well as relative to the current test root.
     $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
@@ -1016,6 +1044,9 @@ define SetupRunJtregTestBody
         VM_OPTIONS := $$(JTREG_ALL_OPTIONS) ))
     $$(call LogWarn, AOT_JDK_CACHE=$$($1_AOT_JDK_CACHE))
     $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:AOTCache="$$($1_AOT_JDK_CACHE)"
+    $1_JTREG_BASIC_OPTIONS += $$(addprefix $$(JTREG_PROBLEM_LIST_PREFIX), $$(wildcard \
+        $$(addprefix $$($1_TEST_ROOT)/, ProblemList-AotJdk.txt) \
+    ))
   endif
 
 
@@ -1035,9 +1066,11 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -timeoutFactor:$$(JTREG_TIMEOUT_FACTOR)
 
   clean-outputdirs-$1:
-	$$(call LogWarn, Clean up dirs for $1)
-	$$(RM) -r $$($1_TEST_SUPPORT_DIR)
-	$$(RM) -r $$($1_TEST_RESULTS_DIR)
+        ifeq ($(JTREG_STATUS),)
+	  $$(call LogWarn, Clean up dirs for $1)
+	  $$(RM) -r $$($1_TEST_SUPPORT_DIR)
+	  $$(RM) -r $$($1_TEST_RESULTS_DIR)
+        endif
 
   $1_COMMAND_LINE := \
       $$(JTREG_JAVA) $$($1_JTREG_LAUNCHER_OPTIONS) \
@@ -1092,7 +1125,7 @@ define SetupRunJtregTestBody
 	$$(call MakeDir, $$($1_TEST_RESULTS_DIR) $$($1_TEST_SUPPORT_DIR) \
 	    $$($1_TEST_TMP_DIR))
 	$$(call ExecuteWithLog, $$($1_TEST_SUPPORT_DIR)/jtreg, \
-            $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
+	    $$(COV_ENVIRONMENT) $$($1_COMMAND_LINE) \
 	)
 
   $1_RESULT_FILE := $$($1_TEST_RESULTS_DIR)/text/stats.txt
@@ -1102,11 +1135,11 @@ define SetupRunJtregTestBody
 	$$(call LogWarn, Test report is stored in $$(strip \
 	    $$(subst $$(TOPDIR)/, , $$($1_TEST_RESULTS_DIR))))
 
-	# Read jtreg documentation to learn on the test stats categories:
-	# https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
-	# In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
-	# At the same time these tests contribute to "passed:" tests.
-	# In here we don't want that and so we substract number of "skipped:" from "passed:".
+        # Read jtreg documentation to learn on the test stats categories:
+        # https://github.com/openjdk/jtreg/blob/master/src/share/doc/javatest/regtest/faq.md#what-do-all-those-numbers-in-the-test-results-line-mean
+        # In jtreg, "skipped:" category accounts for tests that threw jtreg.SkippedException at runtime.
+        # At the same time these tests contribute to "passed:" tests.
+        # In here we don't want that and so we substract number of "skipped:" from "passed:".
 
 	$$(if $$(wildcard $$($1_RESULT_FILE)), \
 	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := $$(shell $$(AWK) '{ gsub(/[,;]/, ""); \
@@ -1157,6 +1190,7 @@ define SetupRunJtregTestBody
 	      $$(EXPR) $$($1_PASSED) + $$($1_FAILED) + $$($1_ERROR) + $$($1_SKIPPED))) \
 	, \
 	  $$(eval $1_PASSED_AND_RUNTIME_SKIPPED := 0) \
+	  $$(eval $1_PASSED := 0) \
 	  $$(eval $1_RUNTIME_SKIPPED := 0) \
 	  $$(eval $1_SKIPPED := 0) \
 	  $$(eval $1_FAILED := 0) \
@@ -1392,6 +1426,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	fi
 	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
+	    $(JCOV_GRABBER_OPTIONS) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
   jcov-start-grabber: jcov-do-start-grabber
@@ -1419,6 +1454,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
+	    $(JCOV_REPGEN_OPTIONS) \
 	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE))
 
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \

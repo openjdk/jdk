@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/os.inline.hpp"
@@ -55,7 +55,7 @@ MutableNUMASpace::MutableNUMASpace(size_t page_size) : MutableSpace(page_size) {
     lgrp_spaces()->append(new LGRPSpace(lgrp_ids[i], page_size));
   }
 
-  FREE_C_HEAP_ARRAY(uint, lgrp_ids);
+  FREE_C_HEAP_ARRAY(lgrp_ids);
 }
 
 MutableNUMASpace::~MutableNUMASpace() {
@@ -154,7 +154,7 @@ void MutableNUMASpace::bias_region(MemRegion mr, uint lgrp_id) {
   // First we tell the OS which page size we want in the given range. The underlying
   // large page can be broken down if we require small pages.
   os::realign_memory((char*) mr.start(), mr.byte_size(), page_size());
-  // Then we uncommit the pages in the range.
+  // Then we disclaim the pages in the range so they can be faulted in again.
   os::disclaim_memory((char*) mr.start(), mr.byte_size());
   // And make them local/first-touch biased.
   os::numa_make_local((char*)mr.start(), mr.byte_size(), checked_cast<int>(lgrp_id));
@@ -489,7 +489,7 @@ HeapWord* MutableNUMASpace::cas_allocate(size_t size) {
   if (p != nullptr) {
     HeapWord* cur_top, *cur_chunk_top = p + size;
     while ((cur_top = top()) < cur_chunk_top) { // Keep _top updated.
-      if (AtomicAccess::cmpxchg(top_addr(), cur_top, cur_chunk_top) == cur_top) {
+      if (top_addr()->compare_set(cur_top, cur_chunk_top)) {
         break;
       }
     }

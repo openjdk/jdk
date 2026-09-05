@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,8 +185,8 @@ public interface SecureDirectoryStream<T>
     /**
      * Move a file from this directory to another directory.
      *
-     * <p> This method works in a similar manner to {@link Files#move move}
-     * method when the {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} option
+     * <p> This method works in a similar manner to {@link Files#move Files.move}
+     * when the {@link StandardCopyOption#ATOMIC_MOVE ATOMIC_MOVE} option
      * is specified. That is, this method moves a file as an atomic file system
      * operation. If the {@code srcpath} parameter is an {@link Path#isAbsolute
      * absolute} path then it locates the source file. If the parameter is a
@@ -194,14 +194,15 @@ public interface SecureDirectoryStream<T>
      * the {@code targetpath} parameter is absolute then it locates the target
      * file (the {@code targetdir} parameter is ignored). If the parameter is
      * a relative path it is located relative to the open directory identified
-     * by the {@code targetdir} parameter. In all cases, if the target file
-     * exists then it is implementation specific if it is replaced or this
-     * method fails.
+     * by the {@code targetdir} parameter, unless {@code targetdir} is
+     * {@code null}, in which case it is located relative to the current
+     * working directory. In all cases, if the target file exists then it is
+     * implementation specific if it is replaced or this method fails.
      *
      * @param   srcpath
      *          the name of the file to move
      * @param   targetdir
-     *          the destination directory
+     *          the destination directory; can be {@code null}
      * @param   targetpath
      *          the name to give the file in the destination directory
      *

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Test ServiceLoader with two iterators, interleaving their use
  *   to test that they don't interfere with each other
- * @run testng TwoIterators
+ * @run junit TwoIterators
  */
 
 import java.nio.file.Files;
@@ -35,9 +35,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TwoIterators {
 
@@ -48,18 +48,17 @@ public class TwoIterators {
     public static class S1 implements S { }
     public static class S2 implements S { }
 
-    private ClassLoader testClassLoader;
+    private static ClassLoader testClassLoader;
 
     // creates the services configuration file and sets the ClassLoader
-    @BeforeClass
-    void setup() throws Exception {
+    @BeforeAll
+    static void setup() throws Exception {
         String classes = System.getProperty("test.classes");
         Path dir = Paths.get(classes, "META-INF", "services");
         Files.createDirectories(dir);
         Path config = dir.resolve(S.class.getName());
         Files.write(config, Arrays.asList(S1.class.getName(), S2.class.getName()));
-
-        this.testClassLoader = TwoIterators.class.getClassLoader();
+        testClassLoader = TwoIterators.class.getClassLoader();
     }
 
     @Test

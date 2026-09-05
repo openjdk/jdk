@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialization methods
  * @library /test/lib
- * @run testng ProhibitedMethods
+ * @run junit ProhibitedMethods
  */
 
 import java.io.ByteArrayInputStream;
@@ -49,24 +49,28 @@ import java.math.BigDecimal;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.lib.ByteCodeLoader;
-import org.testng.Assert;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
 import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_String;
 import static java.lang.constant.ConstantDescs.CD_void;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.expectThrows;
-import static org.testng.Assert.fail;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Checks that the various prohibited Serialization magic methods, and
  * Externalizable methods, are not invoked ( effectively ignored ) for
  * record objects.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class ProhibitedMethods {
 
     public interface ThrowingExternalizable extends Externalizable {
@@ -100,7 +104,7 @@ public class ProhibitedMethods {
      *           fail("readObjectNoData should not be invoked");          }
      *   }
      */
-    @BeforeTest
+    @BeforeAll
     public void setup() {
         {
             byte[] byteCode = InMemoryJavaCompiler.compile("Foo",
@@ -165,7 +169,6 @@ public class ProhibitedMethods {
         }
     }
 
-    @DataProvider(name = "recordInstances")
     public Object[][] recordInstances() {
         return new Object[][] {
             new Object[] { newFoo()                                           },
@@ -177,7 +180,8 @@ public class ProhibitedMethods {
         };
     }
 
-    @Test(dataProvider = "recordInstances")
+    @ParameterizedTest
+    @MethodSource("recordInstances")
     public void roundTrip(Object objToSerialize) throws Exception {
         out.println("\n---");
         out.println("serializing : " + objToSerialize);
@@ -245,8 +249,8 @@ public class ProhibitedMethods {
         return cf.transformClass(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
             clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
                 cob.loadConstant(name + " should not be invoked");
-                cob.invokestatic(Assert.class.describeConstable().orElseThrow(), "fail",
-                        MethodTypeDesc.of(CD_void, CD_String));
+                cob.invokestatic(Assertions.class.describeConstable().orElseThrow(), "fail",
+                        MethodTypeDesc.of(CD_Object, CD_String));
                 cob.return_();
             });
         }));
@@ -266,37 +270,37 @@ public class ProhibitedMethods {
                 Method m = obj.getClass().getDeclaredMethod("writeObject", ObjectOutputStream.class);
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () ->
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () ->
                         m.invoke(obj, new ObjectOutputStream(OutputStream.nullOutputStream())));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "writeObject should not be invoked");
+                assertEquals("writeObject should not be invoked", assertionError.getMessage());
             }
             {   // readObject
                 Method m = obj.getClass().getDeclaredMethod("readObject", ObjectInputStream.class);
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () ->
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () ->
                         m.invoke(obj, new ObjectInputStream() {
                         }));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "readObject should not be invoked");
+                assertEquals("readObject should not be invoked", assertionError.getMessage());
             }
             {   // readObjectNoData
                 Method m = obj.getClass().getDeclaredMethod("readObjectNoData");
                 assertTrue((m.getModifiers() & Modifier.PRIVATE) != 0);
                 m.setAccessible(true);
-                ReflectiveOperationException t = expectThrows(ROE, () -> m.invoke(obj));
+                ReflectiveOperationException t = Assertions.assertThrows(ROE, () -> m.invoke(obj));
                 Throwable assertionError = t.getCause();
                 out.println("caught expected AssertionError: " + assertionError);
                 assertTrue(assertionError instanceof AssertionError,
                            "Expected AssertionError, got:" + assertionError);
-                assertEquals(assertionError.getMessage(), "readObjectNoData should not be invoked");
+                assertEquals("readObjectNoData should not be invoked", assertionError.getMessage());
             }
         }
     }

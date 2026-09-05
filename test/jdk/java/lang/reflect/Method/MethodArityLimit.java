@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,16 @@
 /*
  * @test
  * @bug 8271820
- * @run testng/othervm MethodArityLimit
+ * @run junit/othervm MethodArityLimit
  * @summary Method exceeds the method handle arity limit (255).
  */
 
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MethodArityLimit {
     @Test
@@ -74,12 +72,10 @@ public class MethodArityLimit {
                 106L, 107L, 108L, 109L, 110L, 111L, 112L, 113L, 114L, 115L, 116L, 117L,
                 118L, 119L, 120L, 121L, 122L, 123L, 124L, 125L, 126L, 127);
 
-        assertEquals(resultViaMethod, 127);
+        assertEquals(127, resultViaMethod);
 
-        try {
-            MethodHandle mh = MethodHandles.lookup().unreflect(m);
-            fail("should fail in creating the method handle");
-        } catch (IllegalArgumentException e) {}
+        var lookup = MethodHandles.lookup();
+        assertThrows(IllegalArgumentException.class, () -> lookup.unreflect(m));
     }
 
     public static long f(long a0, long a1, long a2, long a3, long a4, long a5,

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -619,6 +619,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     default  : ShouldNotReachHere();
   }
 
+  if (state == atos && InlineTypeReturnedAsFields) {
+    __ unimplemented("return entry InlineTypeReturnedAsFields");
+    //__ store_inline_type_fields_to_buf(nullptr, true);
+  }
+
   __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);
 
   // Compiled code destroys templateTableBase, reload.
@@ -1157,7 +1162,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ flush();
+  __ invalidate_icache();
 
   return entry;
 }
@@ -1174,7 +1179,7 @@ address TemplateInterpreterGenerator::generate_Float_floatToFloat16_entry() {
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ flush();
+  __ invalidate_icache();
 
   return entry;
 }
@@ -1195,7 +1200,7 @@ address TemplateInterpreterGenerator::generate_Float_float16ToFloat_entry() {
   __ resize_frame_absolute(R21_sender_SP, R11_scratch1, R0);
   __ blr();
 
-  __ flush();
+  __ invalidate_icache();
 
   return entry;
 }
@@ -1479,21 +1484,10 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // In order for GC to work, don't clear the last_Java_sp until after
   // blocking.
 
-  //=============================================================================
-  // Switch thread to "native transition" state before reading the
-  // synchronization state. This additional state is necessary
-  // because reading and testing the synchronization state is not
-  // atomic w.r.t. GC, as this scenario demonstrates: Java thread A,
-  // in _thread_in_native state, loads _not_synchronized and is
-  // preempted. VM thread changes sync state to synchronizing and
-  // suspends threads for GC. Thread A is resumed to finish this
-  // native method, but doesn't block here since it didn't see any
-  // synchronization in progress, and escapes.
-
   // We use release_store_fence to update values like the thread state, where
   // we don't want the current thread to continue until all our prior memory
   // accesses (including the new thread state) are visible to other threads.
-  __ li(R0/*thread_state*/, _thread_in_native_trans);
+  __ li(R0/*thread_state*/, _thread_in_Java);
   __ release();
   __ stw(R0/*thread_state*/, thread_(thread_state));
   if (!UseSystemMemoryBarrier) {
@@ -1501,13 +1495,8 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 
   // Now before we return to java we must look for a current safepoint
-  // (a new safepoint can not start since we entered native_trans).
-  // We must check here because a current safepoint could be modifying
-  // the callers registers right this moment.
-
-  // Acquire isn't strictly necessary here because of the fence, but
-  // sync_state is declared to be volatile, so we do it anyway
-  // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
+  // (a new safepoint can not start since we entered _thread_in_vm).
+  // We must check here because a current safepoint could be in progress.
 
   Label do_safepoint, sync_check_done;
   // No synchronization in progress nor yet synchronized.
@@ -1520,20 +1509,19 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ beq(CR1, sync_check_done);
 
   __ bind(do_safepoint);
-  __ isync();
   // Block. We do the call directly and leave the current
   // last_Java_frame setup undisturbed. We must save any possible
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
-  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+  __ call_c(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
   __ bind(sync_check_done);
 
   //=============================================================================
   // <<<<<< Back in Interpreter Frame >>>>>
 
-  // We are in thread_in_native_trans here and back in the normal
+  // We are in _thread_in_vm here and back in the normal
   // interpreter frame. We don't have to do anything special about
   // safepoints and we can switch to Java mode anytime we are ready.
 
@@ -1547,14 +1535,6 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // On PPC64, we have stored the result directly after the native call.
 
   //=============================================================================
-  // Back in Java
-
-  // We use release_store_fence to update values like the thread state, where
-  // we don't want the current thread to continue until all our prior memory
-  // accesses (including the new thread state) are visible to other threads.
-  __ li(R0/*thread_state*/, _thread_in_Java);
-  __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-  __ stw(R0/*thread_state*/, thread_(thread_state));
 
   if (support_vthread_preemption) {
     // Check preemption for Object.wait()
@@ -1711,7 +1691,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
 // Generic interpreted method entry to (asm) interpreter.
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   bool inc_counter = UseCompiler || CountCompiledCalls;
   address entry = __ pc();
   // Generate the code to allocate the interpreter stack frame.
@@ -1792,6 +1772,7 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   if (synchronized) {
     lock_method(R3_ARG1, R4_ARG2, R5_ARG3);
   }
+
 #ifdef ASSERT
   else {
     Label Lok;
@@ -1801,6 +1782,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ bind(Lok);
   }
 #endif // ASSERT
+
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore);
+  }
 
   // --------------------------------------------------------------------------
   // JVMTI support

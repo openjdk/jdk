@@ -25,36 +25,49 @@
  * @test
  * @bug     8368729
  * @summary Tests that passing invalid values to Kernel constructor
- *          throws only IllegalArgumentException
+ *          throws only IllegalArgumentException or NullPointerException
  */
 
 import java.awt.image.Kernel;
 
 public class KernelInitialisationTest {
-    private static void expectIllegalArgumentException(Runnable code) {
+
+    private static void test(int width, int height, float[] data,
+                             Class<?> expected)
+    {
+        System.out.printf("Testing for width: %d, height: %d, data: %s%n",
+                          width, height, data == null ? "null" : "not null");
+        Class<?> actual = null;
         try {
-            code.run();
-            throw new RuntimeException("Expected IllegalArgumentException" +
-                " but no exception was thrown");
-        } catch (IllegalArgumentException e) {
-            // we expect IllegalArgumentException
+            new Kernel(width, height, data);
+        } catch (Exception e) {
+            actual = e.getClass();
+        }
+        if (actual != expected) {
+            System.err.println("Expected: " + expected);
+            System.err.println("Actual: " + actual);
+            throw new RuntimeException("Test failed");
         }
     }
 
-    private static void testKernel(int width, int height, float[] data) {
-        System.out.println("Testing for width: " + width + ", height: "
-            + height + ", data: " + (data == null ? "null" : "not null"));
-        expectIllegalArgumentException(() -> new Kernel(width, height, data));
+    private static void testIAE(int width, int height, int len) {
+        test(width, height, new float[len], IllegalArgumentException.class);
+    }
+
+    private static void testNPE(int width, int height) {
+        test(width, height, null, NullPointerException.class);
     }
 
     public static void main(String[] args) {
-        testKernel(-1, 1, new float[100]);
-        testKernel(1, -1, new float[100]);
-        testKernel(-1, -1, new float[100]);
-        testKernel(1, 1, null);
-
-        int width = 50;
-        int height = Integer.MAX_VALUE;
-        testKernel(width, height, new float[100]);
+        int[][] sizes = {{-1, 1}, {1, -1}, {-1, -1}, {50, Integer.MAX_VALUE}};
+        int[] lens = {1, 100};
+        for (int[] kernelSize : sizes) {
+            for (int len : lens) {
+                testIAE(kernelSize[0], kernelSize[1], len);
+            }
+            testNPE(kernelSize[0], kernelSize[1]);
+        }
+        testNPE(10, 10);     // NPE on valid width and height
+        testIAE(10, 10, 10); // IAE on valid width and height but small data
     }
 }

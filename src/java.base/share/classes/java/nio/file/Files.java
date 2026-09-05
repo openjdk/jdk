@@ -203,7 +203,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      * @throws  IOException
@@ -340,7 +340,7 @@ public final class Files {
      *          if an unsupported open option is specified or the array contains
      *          attributes that cannot be set atomically when creating the file
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing <i>(optional specific
      *          exception)</i>
@@ -377,7 +377,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported open option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          and the file is being opened for writing <i>(optional specific
      *          exception)</i>
@@ -575,10 +575,11 @@ public final class Files {
         Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE);
 
     /**
-     * Creates a new and empty file, failing if the file already exists. The
-     * check for the existence of the file and the creation of the new file if
-     * it does not exist are a single operation that is atomic with respect to
-     * all other filesystem activities that might affect the directory.
+     * Creates a new and empty file, failing if {@code path} locates an existing
+     * file. The check for the existence of the file and the creation of the new
+     * file if it does not exist are a single operation that is atomic with
+     * respect to all other filesystem activities that might affect the
+     * directory.
      *
      * <p> The {@code attrs} parameter is optional {@link FileAttribute
      * file-attributes} to set atomically when creating the file. Each attribute
@@ -598,7 +599,7 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the file
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists
+     *          if {@code path} locates an existing file
      *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
@@ -611,7 +612,8 @@ public final class Files {
     }
 
     /**
-     * Creates a new directory. The check for the existence of the file and the
+     * Creates a new directory, failing if {@code dir} locates an existing
+     * file. The check for the existence of the file and the
      * creation of the directory if it does not exist are a single operation
      * that is atomic with respect to all other filesystem activities that might
      * affect the directory. The {@link #createDirectories createDirectories}
@@ -636,8 +638,8 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the directory
      * @throws  FileAlreadyExistsException
-     *          if a directory could not otherwise be created because a file of
-     *          that name already exists <i>(optional specific exception)</i>
+     *          if {@code dir} locates an existing file
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs or the parent directory does not exist
      */
@@ -676,8 +678,8 @@ public final class Files {
      *          if the array contains an attribute that cannot be set atomically
      *          when creating the directory
      * @throws  FileAlreadyExistsException
-     *          if {@code dir} exists but is not a directory <i>(optional specific
-     *          exception)</i>
+     *          if {@code dir} locates an existing file that is not a directory
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      */
@@ -930,7 +932,8 @@ public final class Files {
     }
 
     /**
-     * Creates a symbolic link to a target <i>(optional operation)</i>.
+     * Creates a symbolic link to a target, failing if {@code link} locates an
+     * existing file <i>(optional operation)</i>.
      *
      * <p> The {@code target} parameter is the target of the link. It may be an
      * {@link Path#isAbsolute absolute} or relative path and may not exist. When
@@ -964,8 +967,8 @@ public final class Files {
      *          array contains an attribute that cannot be set atomically when
      *          creating the symbolic link
      * @throws  FileAlreadyExistsException
-     *          if a file with the name already exists <i>(optional specific
-     *          exception)</i>
+     *          if {@code link} locates an existing file
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      */
@@ -978,7 +981,8 @@ public final class Files {
     }
 
     /**
-     * Creates a new link (directory entry) for an existing file <i>(optional
+     * Creates a new link (directory entry) for an existing file,
+     * failing if {@code link} locates an existing file <i>(optional
      * operation)</i>.
      *
      * <p> The {@code link} parameter locates the directory entry to create.
@@ -1007,8 +1011,8 @@ public final class Files {
      *          if the implementation does not support adding an existing file
      *          to a directory
      * @throws  FileAlreadyExistsException
-     *          if the entry could not otherwise be created because a file of
-     *          that name already exists <i>(optional specific exception)</i>
+     *          if {@code link} locates an existing file
+     *          <i>(optional specific exception)</i>
      * @throws  IOException
      *          if an I/O error occurs
      */
@@ -2711,7 +2715,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      *
@@ -2754,7 +2758,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      *
@@ -3161,7 +3165,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      */
@@ -3222,7 +3226,7 @@ public final class Files {
      * @throws  UnsupportedOperationException
      *          if an unsupported option is specified
      * @throws  FileAlreadyExistsException
-     *          If a file of that name already exists and the {@link
+     *          If the path locates an existing file and the {@link
      *          StandardOpenOption#CREATE_NEW CREATE_NEW} option is specified
      *          <i>(optional specific exception)</i>
      */

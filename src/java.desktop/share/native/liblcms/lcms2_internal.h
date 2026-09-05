@@ -30,7 +30,7 @@
 
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2024 Marti Maria Saguer
+//  Copyright (c) 1998-2026 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -887,6 +887,7 @@ int                  _cmsSearchTag(_cmsICCPROFILE* Icc, cmsTagSignature sig, cms
 cmsTagTypeHandler*   _cmsGetTagTypeHandler(cmsContext ContextID, cmsTagTypeSignature sig);
 cmsTagTypeSignature  _cmsGetTagTrueType(cmsHPROFILE hProfile, cmsTagSignature sig);
 cmsTagDescriptor*    _cmsGetTagDescriptor(cmsContext ContextID, cmsTagSignature sig);
+cmsBool              _cmsAvoidTypeCheckOnTags(cmsContext ContextID);
 
 // Error logging ---------------------------------------------------------------------------------------------------------
 

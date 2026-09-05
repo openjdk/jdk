@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/cardTable.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 
 class MutableSpace;
 class ObjectStartArray;
@@ -37,7 +38,7 @@ class PSCardTable: public CardTable {
   static constexpr size_t num_cards_in_stripe = 128;
   static_assert(num_cards_in_stripe >= 1, "progress");
 
-  volatile int _preprocessing_active_workers;
+  Atomic<int> _preprocessing_active_workers;
 
   bool is_dirty(CardValue* card) {
     return !is_clean(card);

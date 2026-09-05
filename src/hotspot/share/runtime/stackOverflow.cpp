@@ -116,13 +116,8 @@ void StackOverflow::remove_stack_guard_pages() {
   size_t len = stack_guard_zone_size();
 
   if (os::must_commit_stack_guard_pages()) {
-    if (os::remove_stack_guard_pages((char *) low_addr, len)) {
-      _stack_guard_state = stack_guard_unused;
-    } else {
-      log_warning(os, thread)("Attempt to deallocate stack guard pages failed ("
-        PTR_FORMAT "-" PTR_FORMAT ").", p2i(low_addr), p2i(low_addr + len));
-      return;
-    }
+    os::remove_stack_guard_pages((char *) low_addr, len);
+    _stack_guard_state = stack_guard_unused;
   } else {
     if (_stack_guard_state == stack_guard_unused) return;
     if (os::unguard_memory((char *) low_addr, len)) {

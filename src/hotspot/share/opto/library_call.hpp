@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "opto/castnode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/movenode.hpp"
 
@@ -108,13 +109,21 @@ class LibraryCallKit : public GraphKit {
 
   void push_result() {
     // Push the result onto the stack.
-    if (!stopped() && result() != nullptr) {
-      if (result()->is_top()) {
+    Node* res = result();
+    if (!stopped() && res != nullptr) {
+      if (res->is_top()) {
         assert(false, "Can't determine return value.");
         C->record_method_not_compilable("Can't determine return value.");
       }
-      BasicType bt = result()->bottom_type()->basic_type();
-      push_node(bt, result());
+      BasicType bt = res->bottom_type()->basic_type();
+      if (C->inlining_incrementally() && res->is_InlineType()) {
+        // The caller expects an oop when incrementally inlining an intrinsic that returns an
+        // inline type. Make sure the call is re-executed if the allocation triggers a deoptimization.
+        PreserveReexecuteState preexecs(this);
+        jvms()->set_should_reexecute(true);
+        res = res->as_InlineType()->buffer(this);
+      }
+      push_node(bt, res);
     }
   }
 
@@ -129,42 +138,23 @@ class LibraryCallKit : public GraphKit {
 
   virtual int reexecute_sp() { return _reexecute_sp; }
 
-  /* When an intrinsic makes changes before bailing out, it's necessary to restore the graph
-   * as it was. See JDK-8359344 for what can happen wrong. It's also not always possible to
-   * bailout before making changes because the bailing out decision might depend on new nodes
-   * (their types, for instance).
-   *
-   * So, if an intrinsic might cause this situation, one must start by saving the state in a
-   * SavedState by constructing it, and the state will be restored on destruction. If the
-   * intrinsic is not bailing out, one need to call discard to prevent restoring the old state.
-   */
-  class SavedState {
-    LibraryCallKit* _kit;
-    uint _sp;
-    JVMState* _jvms;
-    SafePointNode* _map;
-    Unique_Node_List _ctrl_succ;
-    bool _discarded;
-
-  public:
-    SavedState(LibraryCallKit*);
-    ~SavedState();
-    void discard();
-  };
-
   // Helper functions to inline natives
+  RegionNode* create_bailout();
+  bool check_bailout(RegionNode* bailout);
   Node* generate_guard(Node* test, RegionNode* region, float true_prob);
   Node* generate_slow_guard(Node* test, RegionNode* region);
   Node* generate_fair_guard(Node* test, RegionNode* region);
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
-                                Node* *pos_index = nullptr);
+                                Node** pos_index = nullptr,
+                                bool with_opaque = false);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
-                             RegionNode* region);
+                             RegionNode* region,
+                             bool with_opaque = false);
   void  generate_string_range_check(Node* array, Node* offset,
                                     Node* length, bool char_count,
-                                    bool halt_on_oob = false);
+                                    RegionNode* region);
   Node* current_thread_helper(Node* &tls_output, ByteSize handle_offset,
                               bool is_immutable);
   Node* generate_current_thread(Node* &tls_output);
@@ -187,27 +177,42 @@ class LibraryCallKit : public GraphKit {
                                          region, null_path,
                                          offset);
   }
+  Node* load_default_refined_array_klass(Node* klass_node, bool type_array_guard = true);
+  Node* load_non_refined_array_klass(Node* klass_node);
+
   Node* generate_klass_flags_guard(Node* kls, int modifier_mask, int modifier_bits, RegionNode* region,
                                    ByteSize offset, const Type* type, BasicType bt);
   Node* generate_misc_flags_guard(Node* kls,
                                   int modifier_mask, int modifier_bits,
                                   RegionNode* region);
   Node* generate_interface_guard(Node* kls, RegionNode* region);
+
+  enum ArrayKind {
+    AnyArray,
+    NonArray,
+    RefArray,
+    NonRefArray,
+    TypeArray
+  };
+
   Node* generate_hidden_class_guard(Node* kls, RegionNode* region);
+
   Node* generate_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, false, false, obj);
+    return generate_array_guard_common(kls, region, AnyArray, obj);
   }
   Node* generate_non_array_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, false, true, obj);
+    return generate_array_guard_common(kls, region, NonArray, obj);
   }
-  Node* generate_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, true, false, obj);
+  Node* generate_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, RefArray, obj);
   }
-  Node* generate_non_objArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
-    return generate_array_guard_common(kls, region, true, true, obj);
+  Node* generate_non_refArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, NonRefArray, obj);
   }
-  Node* generate_array_guard_common(Node* kls, RegionNode* region,
-                                    bool obj_array, bool not_array, Node** obj = nullptr);
+  Node* generate_typeArray_guard(Node* kls, RegionNode* region, Node** obj = nullptr) {
+    return generate_array_guard_common(kls, region, TypeArray, obj);
+  }
+  Node* generate_array_guard_common(Node* kls, RegionNode* region, ArrayKind kind, Node** obj = nullptr);
   Node* generate_virtual_guard(Node* obj_klass, RegionNode* slow_region);
   CallJavaNode* generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null);
   CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {
@@ -256,9 +261,13 @@ class LibraryCallKit : public GraphKit {
   typedef enum { Relaxed, Opaque, Volatile, Acquire, Release } AccessKind;
   DecoratorSet mo_decorator_for_access_kind(AccessKind kind);
   bool inline_unsafe_access(bool is_store, BasicType type, AccessKind kind, bool is_unaligned);
+  bool inline_unsafe_flat_access(bool is_store, AccessKind kind);
   static bool klass_needs_init_guard(Node* kls);
   bool inline_unsafe_allocate();
   bool inline_unsafe_newArray(bool uninitialized);
+  bool inline_newArray(bool null_free, bool atomic);
+  typedef enum { IsFlat, IsNullRestricted, IsAtomic } ArrayPropertiesCheck;
+  bool inline_getArrayProperties(ArrayPropertiesCheck check);
   bool inline_unsafe_writeback0();
   bool inline_unsafe_writebackSync0(bool is_pre);
   bool inline_unsafe_copyMemory();
@@ -275,9 +284,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_Continuation_pinning(bool unpin);
 
   bool inline_native_time_funcs(address method, const char* funcName);
+
+  bool inline_native_vthread_start_transition(address funcAddr, const char* funcName, bool is_final_transition);
+  bool inline_native_vthread_end_transition(address funcAddr, const char* funcName, bool is_first_transition);
+
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
-  bool inline_native_notify_jvmti_hide();
   bool inline_native_notify_jvmti_sync();
 #endif
 
@@ -286,18 +297,26 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getEventWriter();
   bool inline_native_jvm_commit();
   void extend_setCurrentThread(Node* jt, Node* thread);
+  bool inline_native_try_update_epoch();
 #endif
   bool inline_native_Class_query(vmIntrinsics::ID id);
+  bool inline_primitive_Class_conversion(vmIntrinsics::ID id);
   bool inline_native_subtype_check();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
+  void bail_out_from_array_copyOf(RegionNode* bailout_region);
+  static bool should_bail_out_on_non_ref_arrays(const TypeAryPtr* src_type, const TypeKlassPtr* dest_klass_type);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
   bool inline_preconditions_checkIndex(BasicType bt);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
   // Helper function for inlining native object hash method
+  Node* get_hashcode_from_header(Node* header, RegionNode* unset_region);
   bool inline_native_hashcode(bool is_virtual, bool is_static);
+public:
+  static IfNode* hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call);
+private:
   bool inline_native_getClass();
 
   // Helper functions for inlining arraycopy
@@ -317,6 +336,10 @@ class LibraryCallKit : public GraphKit {
   typedef enum { LS_get_add, LS_get_set, LS_cmp_swap, LS_cmp_swap_weak, LS_cmp_exchange } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind, AccessKind access_kind);
   bool inline_unsafe_fence(vmIntrinsics::ID id);
+  bool inline_arrayInstanceBaseOffset();
+  bool inline_arrayInstanceIndexScale();
+  bool inline_arrayLayout();
+  bool inline_getFieldMap();
   bool inline_onspinwait();
   bool inline_fp_conversions(vmIntrinsics::ID id);
   bool inline_fp_range_check(vmIntrinsics::ID id);
@@ -329,6 +352,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_divmod_methods(vmIntrinsics::ID id);
   bool inline_reference_get0();
   bool inline_reference_refersTo0(bool is_phantom);
+  bool inline_reference_reachabilityFence();
   bool inline_reference_clear0(bool is_phantom);
   bool inline_Class_cast();
   bool inline_aescrypt_Block(vmIntrinsics::ID id);
@@ -338,7 +362,7 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* inline_electronicCodeBook_AESCrypt_predicate(bool decrypting);
   Node* inline_counterMode_AESCrypt_predicate();
-  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
+  Node* get_key_start_from_aescrypt_object(Node* aescrypt_object, bool is_decrypt);
   bool inline_ghash_processBlocks();
   bool inline_chacha20Block();
   bool inline_kyberNtt();
@@ -358,8 +382,10 @@ class LibraryCallKit : public GraphKit {
   bool inline_poly1305_processBlocks();
   bool inline_intpoly_montgomeryMult_P256();
   bool inline_intpoly_assign();
+  bool inline_intpoly_mult_25519();
+  bool inline_intpoly_square_25519();
   bool inline_digestBase_implCompress(vmIntrinsics::ID id);
-  bool inline_double_keccak();
+  bool inline_keccak(vmIntrinsics::ID id);
   bool inline_digestBase_implCompressMB(int predicate);
   bool inline_digestBase_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass,
                                         BasicType elem_type, address stubAddr, const char *stubName,

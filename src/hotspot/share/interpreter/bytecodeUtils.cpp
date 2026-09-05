@@ -28,6 +28,9 @@
 #include "gc/shared/gcLocker.hpp"
 #include "interpreter/bytecodeUtils.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/constantPool.inline.hpp"
+#include "oops/resolvedFieldEntry.hpp"
+#include "runtime/fieldDescriptor.hpp"
 #include "runtime/safepointVerifiers.hpp"
 #include "runtime/signature.hpp"
 #include "utilities/events.hpp"
@@ -300,6 +303,22 @@ static void print_field_and_class(outputStream *os, Method* method, int cp_index
 static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code bc) {
   Symbol* name = method->constants()->name_ref_at(cp_index, bc);
   return name->as_C_string();
+}
+
+static bool might_be_null_restricted_field(Method* method, address code_base, int bci) {
+  ConstantPool* cp = method->constants();
+  int cp_index = Bytes::get_native_u2(code_base + bci + 1);
+  ResolvedFieldEntry* field = cp->resolved_field_entry_at(cp_index);
+  const Bytecodes::Code bc = Bytecodes::_putfield;
+  bool is_resolved = field->is_resolved(bc);
+
+  if (is_resolved) {
+    return field->is_null_free_inline_type();
+  } else {
+    // This is rare. The compiler might not have resolved the field or the klass
+    // in the interpreter first. Just say it might be null restricted because we don't know.
+    return true;
+  }
 }
 
 static void print_local_var(outputStream *os, unsigned int bci, Method* method, int slot, bool is_parameter) {
@@ -1110,6 +1129,8 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_athrow:
     case Bytecodes::_monitorenter:
     case Bytecodes::_monitorexit:
+    case Bytecodes::_checkcast:
+    case Bytecodes::_putstatic:
       return 0;
     case Bytecodes::_iaload:
     case Bytecodes::_faload:
@@ -1169,8 +1190,22 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
 }
 
 bool ExceptionMessageBuilder::print_NPE_cause(outputStream* os, int bci, int slot) {
+
+  address code_base = _method->constMethod()->code_base();
+  Bytecodes::Code code = Bytecodes::java_code_at(_method, code_base + bci);
+
   if (print_NPE_cause0(os, bci, slot, _max_cause_detail, false, " because \"")) {
-    os->print("\" is null");
+    if (code == Bytecodes::_aastore) {
+      os->print("\" is null or is a null-free array and there's an attempt to store null in it");
+    } else if (code == Bytecodes::_putfield && might_be_null_restricted_field(_method, code_base, bci)) {
+      int cp_index = Bytes::get_native_u2(code_base + bci + 1);
+      os->print("\" is null or \"%s\" is a null restricted field and there's an attempt to store null in it",
+                get_field_name(_method, cp_index, code));
+    } else if (code == Bytecodes::_putstatic) {
+      os->print("\" cannot be stored into a null restricted field");
+    } else {
+      os->print("\" is null");
+    }
     return true;
   }
   return false;
@@ -1421,6 +1456,7 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {
+    case Bytecodes::_putstatic:
         int cp_index = Bytes::get_native_u2(code_base + pos);
         os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
@@ -1431,6 +1467,11 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
         os->print("Cannot invoke \"");
         print_method_name(os, _method, cp_index, code);
         os->print("\"");
+      } break;
+    case Bytecodes::_checkcast: {
+        int cp_index = Bytes::get_Java_u2(code_base + pos);
+        ConstantPool* cp = _method->constants();
+        os->print("Cannot cast to null-free type \"%s\"", cp->klass_at_noresolve(cp_index)->as_C_string());
       } break;
 
     default:

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@ package jdk.jpackage.internal.cli;
 
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static jdk.jpackage.internal.cli.TestUtils.assertExceptionListEquals;
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryNotEmptyException;
@@ -53,18 +56,26 @@ import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.ConvertedOptionsBuilder;
 import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.OptionsBuilder;
 import jdk.jpackage.internal.cli.StandardOption.LauncherProperty;
+import jdk.jpackage.internal.model.AppImageBundleType;
+import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
+import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.util.StringBundle;
 import jdk.jpackage.test.Comm;
 import jdk.jpackage.test.JUnitAdapter;
+import jdk.jpackage.test.JUnitUtils;
 import jdk.jpackage.test.TKit;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -109,7 +120,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ICON.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(name));
+        var result = spec.convert(spec.name(), StringToken.of(name));
 
         assertEquals(Path.of(name), result.orElseThrow());
     }
@@ -119,7 +130,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ICON.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(workDir.toString()));
+        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
@@ -133,7 +144,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(StandardOption.ICON.getSpec());
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(workDir.toString()));
+        var result = spec.convert(spec.name(), StringToken.of(workDir.toString()));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
@@ -148,7 +159,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var tempRoot = workDir.resolve(dir);
 
-        var value = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString())).orElseThrow();
+        var value = spec.convert(spec.name(), StringToken.of(tempRoot.toString())).orElseThrow();
 
         assertEquals(tempRoot, value);
     }
@@ -163,16 +174,25 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         Files.writeString(tempRoot, "foo");
 
         var ex = assertThrowsExactly(JPackageException.class,
-                spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
-        assertEquals(I18N.format("ERR_BuildRootInvalid", tempRoot), ex.getMessage());
+                spec.convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
+        assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(NotDirectoryException.class, ex.getCause().getClass());
 
         tempRoot = workDir;
 
         ex = assertThrowsExactly(JPackageException.class,
-                spec.converter().orElseThrow().convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
-        assertEquals(I18N.format("ERR_BuildRootInvalid", tempRoot), ex.getMessage());
+                spec.convert(spec.name(), StringToken.of(tempRoot.toString()))::orElseThrow);
+        assertEquals(I18N.format("error.parameter-not-empty-directory", tempRoot, "--temp"), ex.getMessage());
         assertEquals(DirectoryNotEmptyException.class, ex.getCause().getClass());
+    }
+
+    @ParameterizedTest
+    @EnumSource(names = {"WINDOWS", "LINUX", "MACOS"})
+    public void test_TYPE_valid(OperatingSystem appImageOS) {
+
+        var spec = new StandardOptionContext(appImageOS).mapOptionSpec(StandardOption.TYPE.getSpec());
+
+        test_TYPE_valid(spec, appImageOS);
     }
 
     @Test
@@ -180,11 +200,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.TYPE.getSpec();
 
-        Stream.of(StandardBundlingOperation.values()).forEach(bundlingOperation -> {
-            var pkgTypeStr = bundlingOperation.packageTypeValue();
-            var pkgType = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(pkgTypeStr)).orElseThrow();
-            assertSame(bundlingOperation.packageType(), pkgType);
-        });
+        test_TYPE_valid(spec, OperatingSystem.current());
     }
 
     @ParameterizedTest
@@ -193,11 +209,209 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.TYPE.getSpec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(name));
+        var result = spec.convert(spec.name(), StringToken.of(name));
 
         var ex = assertThrows(JPackageException.class, result::orElseThrow);
 
         assertEquals(I18N.format("ERR_InvalidInstallerType", name), ex.getMessage());
+    }
+
+    private static Stream<Arguments> pathOptionsValid() {
+        return Stream.of(
+            Arguments.of(StandardOption.APP_CONTENT, ","),
+            Arguments.of(StandardOption.APP_RESOURCES, File.pathSeparator)
+        );
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "app-content,COMMA",
+        "app-resources,PATH_SEPARATOR",
+    })
+    public void test_AppContent_valid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<List<Collection<RootedPath>>> option,
+            Delimiter delimiter, @TempDir Path workDir) throws IOException {
+
+        var spec = option.getSpec();
+
+        var contentDir = workDir.resolve("a");
+        var emptyDir = contentDir.resolve("b/empty-dir");
+        var file = contentDir.resolve("file.txt");
+
+        Files.createDirectories(emptyDir);
+        Files.createDirectories(file.getParent());
+        Files.createFile(file);
+
+        Object convertedValue = spec.convert(
+                spec.name(),
+                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(delimiter.value)))
+        ).orElseThrow();
+
+        var paths = option.getFrom(Options.of(Map.of(option, convertedValue)));
+        var sortedPathList = paths.stream().flatMap(Collection::stream).map(RootedPath::branch).sorted().toList();
+
+        var expectedPathList = Stream.of(
+                "a",
+                "a/b",
+                "a/b/empty-dir",
+                "a/file.txt",
+                "file.txt"
+        ).map(Path::of).sorted().toList();
+
+        assertEquals(expectedPathList, sortedPathList);
+    }
+
+    enum Delimiter {
+        COMMA(","),
+        PATH_SEPARATOR(File.pathSeparator),
+        ;
+
+        Delimiter(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        private final String value;
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "app-content",
+        "app-resources",
+    })
+    public void test_AppContent_invalid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<?> option,
+            @TempDir Path workDir) throws IOException {
+        var spec = option.getSpec();
+
+        var token = StringToken.of(workDir.resolve("nonexistent").toString());
+        var result = spec.convert(spec.name(), token);
+
+        assertExceptionListEquals(Stream.of(
+                "error.parameter-not-directory",
+                "error.parameter-not-file"
+        ).map(key -> {
+            return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
+        }).toList(), result.errors());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        ".",
+        "a-b.c",
+        "A",
+        "com.acme.Foo"
+    })
+    void test_MAC_BUNDLE_IDENTIFIER_valid(String id) {
+
+        var spec = StandardOption.MAC_BUNDLE_IDENTIFIER.getSpec();
+
+        var result = spec.convert(spec.name(), StringToken.of(id)).orElseThrow();
+
+        assertEquals(result, id);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "",
+        ",",
+        "Hello!"
+    })
+    void test_MAC_BUNDLE_IDENTIFIER_invalid(String id) {
+
+        var spec = StandardOption.MAC_BUNDLE_IDENTIFIER.getSpec();
+
+        var result = spec.convert(spec.name(), StringToken.of(id));
+
+        var ex = assertThrows(ConfigException.class, result::orElseThrow);
+
+        assertEquals(I18N.format("error.parameter-not-mac-bundle-identifier", id, spec.name().formatForCommandLine()), ex.getMessage());
+        assertEquals(I18N.format("error.parameter-not-mac-bundle-identifier.advice"), ex.getAdvice());
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_pathOptionMutator(OptionMutatorTest.TestType type) {
+        new OptionMutatorTest<>(StandardOption.pathOptionMutator(), StandardValueConverter.pathConv())
+                .validValue("file.txt")
+                .invalidValue("\0")
+                .cmdlineErrorFormatKeys("error.parameter-not-path")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-path")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_existingPathOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) {
+        new OptionMutatorTest<>(StandardOption.existingPathOptionMutator(), StandardValueConverter.pathConv())
+                .validValue(workDir.toString())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory", "error.parameter-not-file")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory", "error.properties-parameter-not-file")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_directoryOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) {
+        new OptionMutatorTest<>(StandardOption.directoryOptionMutator(), StandardValueConverter.pathConv())
+                .validValue(workDir.toString())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory")
+                .test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_fileOptionMutator(OptionMutatorTest.TestType type, @TempDir Path workDir) throws IOException {
+        var test = new OptionMutatorTest<>(StandardOption.fileOptionMutator(), StandardValueConverter.pathConv())
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-file")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-file");
+
+        switch (type) {
+            case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                var file = workDir.resolve("file.txt");
+                Files.createFile(file);
+                test.validValue(file.toString());
+            }
+            default -> {}
+        }
+
+        test.test(OptionSpecBuilder.create(Path.class), type);
+    }
+
+    @ParameterizedTest
+    @EnumSource(OptionMutatorTest.TestType.class)
+    public void test_explodedPathOptionMapper(OptionMutatorTest.TestType type, @TempDir Path workDir) throws IOException {
+
+        var explodePath = StandardValueConverter.explodedPathConverter().withPathFileName().create();
+
+        ValueConverter<String, RootedPath[]> conv = ValueConverter.create(str -> {
+            var path = StandardValueConverter.pathConv().convert(str);
+            return explodePath.convert(path);
+        }, RootedPath[].class);
+
+        var test = new OptionMutatorTest<>(_ -> {}, conv)
+                .invalidValue(workDir.resolve("nonexistent").toString())
+                .cmdlineErrorFormatKeys("error.parameter-not-directory")
+                .propertyFileErrorFormatKeys("error.properties-parameter-not-directory");
+
+        switch (type) {
+            case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                var dir = workDir.resolve("dir");
+                Files.createDirectories(dir);
+                for (var file : List.of("foo.txt", "bar.txt")) {
+                    Files.createFile(workDir.resolve(file));
+                }
+                test.validValue(dir.toString());
+            }
+            default -> {}
+        }
+
+        test.test(OptionSpecBuilder.create(Path.class)
+                .mutate(StandardOption.directoryOptionMutator())
+                .map(StandardOption.explodedPathOptionMapper(explodePath)), type);
     }
 
     @Test
@@ -212,6 +426,13 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         // Expect the option is not found.
         assertFalse(option.containsIn(empty));
+    }
+
+    @Test
+    public void test_booleanOptionMutator_in_property_file() {
+        new OptionMutatorTest<>(StandardOption.booleanOptionMutator(), StandardValueConverter.booleanConv())
+                .validValue(Boolean.TRUE.toString())
+                .test(OptionSpecBuilder.create(Boolean.class), OptionMutatorTest.TestType.TEST_PROPERTY_FILE_VALID);
     }
 
     @ParameterizedTest
@@ -296,7 +517,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var spec = StandardOption.ARGUMENTS.getOption().spec();
 
-        var result = spec.converter().orElseThrow().convert(spec.name(), StringToken.of(value));
+        var result = spec.convert(spec.name(), StringToken.of(value));
 
         assertEquals(expectedTokens, List.of(result.map(String[].class::cast).orElseThrow()));
     }
@@ -336,15 +557,145 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(expectedOptionTable, optionTable);
     }
 
+    private void test_TYPE_valid(OptionSpec<BundleType> spec, OperatingSystem appImageOS) {
+        Stream.of(StandardBundlingOperation.values()).filter(bundlingOperation -> {
+            // Skip app image bundle type if it is from another platform.
+            return !(bundlingOperation.bundleType() instanceof AppImageBundleType)
+                    || (bundlingOperation.os() == appImageOS);
+        }).forEach(bundlingOperation -> {
+            var bundleTypeStr = bundlingOperation.bundleTypeValue();
+            var bundleType = spec.convert(spec.name(), StringToken.of(bundleTypeStr)).orElseThrow();
+            assertSame(bundlingOperation.bundleType(), bundleType);
+        });
+    }
+
     private static Collection<Arguments> test_ARGUMENTS() {
         return List.of(
                 Arguments.of("abc", List.of("abc")),
                 Arguments.of("a b c", List.of("a", "b", "c")),
                 Arguments.of("a=10 -Dorg.acme.name='John Smith' c=\\\"foo\\\"", List.of("a=10", "-Dorg.acme.name=John Smith", "c=\"foo\"")),
+                Arguments.of("  foo \"a b c\" v=' John Smith ' 'H e ll o' ", List.of("foo", "a b c", "v= John Smith ", "H e ll o")),
                 Arguments.of("\"\"", List.of("")),
                 Arguments.of(" ", List.of()),
-                Arguments.of("", List.of())
+                Arguments.of("   ", List.of()),
+                Arguments.of(" foo  ", List.of("foo")),
+                Arguments.of("", List.of()),
+                Arguments.of("'fo\"o'\\ buzz \"b a r\"", List.of("fo\"o\\ buzz", "b a r")),
+                Arguments.of("a\\ 'b\"c'\\ d", List.of("a\\ b\"c\\ d")),
+                Arguments.of("\"a 'bc' d\"", List.of("a 'bc' d")),
+                Arguments.of("\'a 'bc' d\'", List.of("a bc d")),
+                Arguments.of("\"a \\'bc\\' d\"", List.of("a 'bc' d")),
+                Arguments.of("\'a \\'bc\\' d\'", List.of("a 'bc' d")),
+                Arguments.of("'a b c' 'd e f'", List.of("a b c", "d e f")),
+                Arguments.of("'a b c' \"'d e f'  h", List.of("a b c", "'d e f'  h")),
+                Arguments.of("'a b c' \"'d e f' \t  ", List.of("a b c", "'d e f'")),
+                Arguments.of(" a='' '' \t '\\'\\'' \"\" \"\\\"\\\"\" ", List.of("a=", "", "\'\'", "", "\"\"")),
+                Arguments.of("' \'foo '", List.of(" foo", "")),
+                Arguments.of("' \'foo ' bar", List.of(" foo", " bar")),
+                Arguments.of("' \'foo\\ '", List.of(" foo\\ ")),
+                Arguments.of("'fo\"o buzz \"b a r\"", List.of("fo\"o buzz \"b a r\"")),
+                Arguments.of("'", List.of("")),
+                Arguments.of("' f g  ", List.of(" f g")),
+                Arguments.of("' f g", List.of(" f g")),
+                Arguments.of("'\\'", List.of("'")),
+                Arguments.of("'\\'  ", List.of("'")),
+                Arguments.of("'\\' a ", List.of("' a")),
+                Arguments.of("\"" + "\\\"".repeat(10000) + "A", List.of("\"".repeat(10000) + "A"))
         );
+    }
+
+
+    static final class OptionMutatorTest<T> {
+
+        enum TestType {
+            TEST_CMDLINE_VALID,
+            TEST_PROPERTY_FILE_VALID,
+            TEST_CMDLINE_INVALID,
+            TEST_PROPERTY_FILE_INVALID;
+        }
+
+        OptionMutatorTest(Consumer<OptionSpecBuilder<T>> testee, ValueConverter<String, T> conv) {
+            this.testee = Objects.requireNonNull(testee);
+            this.conv = Objects.requireNonNull(conv);
+        }
+
+        void test(OptionSpecBuilder<T> specBuilder, TestType type) {
+            var srcSpec = specBuilder.name("foo").mutate(testee).createOptionSpec();
+            OptionSpec<T> spec;
+
+            var propertyFile = Path.of("foo.properties");
+
+            switch (type) {
+                case TEST_PROPERTY_FILE_VALID, TEST_PROPERTY_FILE_INVALID -> {
+                    spec = new StandardOptionContext().forFile(propertyFile).mapOptionSpec(srcSpec);
+                }
+                default -> {
+                    spec = srcSpec;
+                }
+            }
+
+            StringToken token;
+            switch (type) {
+                case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                    token = StringToken.of(Objects.requireNonNull(validValue));
+                }
+                default -> {
+                    token = StringToken.of(Objects.requireNonNull(invalidValue));
+                }
+            }
+
+            var result = spec.convert(spec.name(), token);
+
+            switch (type) {
+                case TEST_CMDLINE_VALID, TEST_PROPERTY_FILE_VALID -> {
+                    var expected = toFunction(conv::convert).apply(token.value());
+                    var actual = result.orElseThrow();
+
+                    if (spec.valueType().isArray()) {
+                        JUnitUtils.assertArrayEquals(expected, actual);
+                    } else {
+                        assertEquals(expected, actual);
+                    }
+                }
+                case TEST_CMDLINE_INVALID -> {
+                    assertExceptionListEquals(cmdlineErrorFormatKeys.stream().map(key -> {
+                        return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
+                    }).map(JUnitUtils::removeExceptionCause).toList(), result.errors().stream().map(JUnitUtils::removeExceptionCause).toList());
+                }
+                case TEST_PROPERTY_FILE_INVALID -> {
+                    assertExceptionListEquals(propertyFileErrorFormatKeys.stream().map(key -> {
+                        return new JPackageException(I18N.format(key, token.value(), spec.name().name(), propertyFile));
+                    }).map(JUnitUtils::removeExceptionCause).toList(), result.errors().stream().map(JUnitUtils::removeExceptionCause).toList());
+                }
+            }
+        }
+
+        OptionMutatorTest<T> validValue(String v) {
+            validValue = v;
+            return this;
+        }
+
+        OptionMutatorTest<T> invalidValue(String v) {
+            invalidValue = v;
+            return this;
+        }
+
+        OptionMutatorTest<T> cmdlineErrorFormatKeys(String... v) {
+            cmdlineErrorFormatKeys = List.of(v);
+            return this;
+        }
+
+        OptionMutatorTest<T> propertyFileErrorFormatKeys(String... v) {
+            propertyFileErrorFormatKeys = List.of(v);
+            return this;
+        }
+
+        private final Consumer<OptionSpecBuilder<T>> testee;
+        private final ValueConverter<String, T> conv;
+        private List<String> cmdlineErrorFormatKeys;
+        private List<String> propertyFileErrorFormatKeys;
+        private String validValue;
+        private String invalidValue;
     }
 
 
@@ -417,8 +768,8 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 buildAddLauncherTest().expect("foo", "some.properties"),
                 buildAddLauncherTest().expect("foo", "a/b/some.properties").expect("bar", "="),
                 buildAddLauncherTest().expect("a", "a.properties").expect("a", "b.properties"),
-                buildAddLauncherTest().optionValue("some").expectErrors(I18N.format("ERR_NoAddLauncherName")),
-                buildAddLauncherTest().optionValue("").expectErrors(I18N.format("ERR_NoAddLauncherName")),
+                buildAddLauncherTest().optionValue("some").expectErrors(I18N.format("error.parameter-add-launcher-malformed", "some", "--add-launcher")),
+                buildAddLauncherTest().optionValue("").expectErrors(I18N.format("error.parameter-add-launcher-malformed", "", "--add-launcher")),
                 buildAddLauncherTest().optionValue("=").expectErrors(I18N.format("ERR_InvalidSLName", "")),
                 buildAddLauncherTest().optionValue("a=").expectErrors(I18N.format("error.parameter-add-launcher-not-file", "", "a")),
                 buildAddLauncherTest().optionValue("=a").expectErrors(I18N.format("ERR_InvalidSLName", "")),
@@ -481,7 +832,8 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                                 return List.of(I18N.format("error.properties-parameter-not-launcher-shortcut-dir",
                                         optionValue, option.getSpec().name().name(), DUMMY_PROPERTY_FILE));
                             } else {
-                                return List.of(I18N.format("error.invalid-option-value", optionValue, option.getSpec().name().formatForCommandLine()));
+                                return List.of(I18N.format("error.parameter-not-launcher-shortcut-dir",
+                                        optionValue, option.getSpec().name().formatForCommandLine()));
                             }
                         }), propertyFile, Optional.ofNullable(optionValue));
             }
@@ -631,6 +983,30 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Set.copyOf(StandardBundlingOperation.CREATE_BUNDLE), "bundle",
                 Set.of(StandardBundlingOperation.values()), "all"
         );
+    }
+
+    static final class OptionValueConverter extends SimpleArgumentConverter {
+
+        @Override
+        protected Object convert(Object source, Class<?> targetType) {
+            if (!OptionValue.class.isAssignableFrom(targetType)) {
+                throw new IllegalArgumentException();
+            }
+
+            if (source == null) {
+                return null;
+            }
+
+            if (source instanceof String optionName) {
+                return Utils.getOptionsWithSpecs(StandardOption.class).filter(op -> {
+                    return op.getOption().spec().names().contains(OptionName.of(optionName));
+                }).findFirst().orElseThrow(() -> {
+                    throw new IllegalArgumentException("Failed to find standard option with the name=[" + optionName + "]");
+                });
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     private static final Path GOLDEN_JPACKAGE_OPTIONS_MD = TKit.TEST_SRC_ROOT.resolve(

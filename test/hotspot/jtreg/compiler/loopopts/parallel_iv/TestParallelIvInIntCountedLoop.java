@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Red Hat and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@ import java.util.Random;
 /**
  * @test
  * @bug 8328528
+ * @key randomness
  * @summary test the long typed parallel iv replacing transformation for int counted loop
  * @library /test/lib /
  * @requires vm.compiler2.enabled
@@ -48,7 +50,10 @@ public class TestParallelIvInIntCountedLoop {
         TestFramework.runWithFlags(
                 "-XX:+IgnoreUnrecognizedVMOptions", // StressLongCountedLoop is only available in debug builds
                 "-XX:StressLongCountedLoop=0", // Don't convert int counted loops to long ones
-                "-XX:PerMethodTrapLimit=100" // allow slow-path loop limit checks
+                // Allow slow-path loop limit checks
+                "-XX:PerMethodTrapLimit=100",
+                "-XX:+UseLoopLimitCheckPredicate",
+                "-XX:+UseParsePredicates"
         );
     }
 

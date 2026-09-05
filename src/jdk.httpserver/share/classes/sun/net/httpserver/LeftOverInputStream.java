@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,47 +45,47 @@ abstract class LeftOverInputStream extends FilterInputStream {
     final ServerImpl server;
     protected boolean closed = false;
     protected boolean eof = false;
-    byte[] one = new byte [1];
+    byte[] one = new byte[1];
     private static final int MAX_SKIP_BUFFER_SIZE = 2048;
 
-    public LeftOverInputStream (ExchangeImpl t, InputStream src) {
-        super (src);
+    public LeftOverInputStream(ExchangeImpl t, InputStream src) {
+        super(src);
         this.t = t;
         this.server = t.getServerImpl();
     }
     /**
      * if bytes are left over buffered on *the UNDERLYING* stream
      */
-    public boolean isDataBuffered () throws IOException {
+    public boolean isDataBuffered() throws IOException {
         assert eof;
         return super.available() > 0;
     }
 
-    public void close () throws IOException {
+    public void close() throws IOException {
         if (closed) {
             return;
         }
         closed = true;
         if (!eof) {
-            eof = drain (ServerConfig.getDrainAmount());
+            eof = drain(ServerConfig.getDrainAmount());
         }
     }
 
-    public boolean isClosed () {
+    public boolean isClosed() {
         return closed;
     }
 
-    public boolean isEOF () {
+    public boolean isEOF() {
         return eof;
     }
 
-    protected abstract int readImpl (byte[]b, int off, int len) throws IOException;
+    protected abstract int readImpl(byte[] b, int off, int len) throws IOException;
 
-    public synchronized int read () throws IOException {
+    public synchronized int read() throws IOException {
         if (closed) {
-            throw new IOException ("Stream is closed");
+            throw new IOException("Stream is closed");
         }
-        int c = readImpl (one, 0, 1);
+        int c = readImpl(one, 0, 1);
         if (c == -1 || c == 0) {
             return c;
         } else {
@@ -93,11 +93,11 @@ abstract class LeftOverInputStream extends FilterInputStream {
         }
     }
 
-    public synchronized int read (byte[]b, int off, int len) throws IOException {
+    public synchronized int read(byte[] b, int off, int len) throws IOException {
         if (closed) {
-            throw new IOException ("Stream is closed");
+            throw new IOException("Stream is closed");
         }
-        return readImpl (b, off, len);
+        return readImpl(b, off, len);
     }
 
     @Override
@@ -132,7 +132,7 @@ abstract class LeftOverInputStream extends FilterInputStream {
      * is at eof (ie. all bytes were read) or false if not
      * (still bytes to be read)
      */
-    public boolean drain (long l) throws IOException {
+    public boolean drain(long l) throws IOException {
         while (l > 0) {
             long skip = skip(l);
             if (skip <= 0) break; // might return 0 if isFinishing or EOF

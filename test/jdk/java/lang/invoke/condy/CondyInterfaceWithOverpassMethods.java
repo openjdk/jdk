@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,20 +27,20 @@
  * @summary Test for an interface using condy with default overpass methods
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run testng CondyInterfaceWithOverpassMethods
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyInterfaceWithOverpassMethods
+ * @run junit CondyInterfaceWithOverpassMethods
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyInterfaceWithOverpassMethods
  */
 
 import java.lang.classfile.ClassFile;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
-@Test
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 public class CondyInterfaceWithOverpassMethods {
     interface A {
         int a();
@@ -52,14 +52,14 @@ public class CondyInterfaceWithOverpassMethods {
 
 
     // Generated class with methods containing condy ldc
-    Class<?> gc;
+    static Class<?> gc;
 
     public static Object bsm(MethodHandles.Lookup l, String name, Class<?> type) {
         return name;
     }
 
-    @BeforeClass
-    public void generateClass() throws Exception {
+    @BeforeAll
+    public static void generateClass() throws Exception {
 //        interface B extends A {
 //            // Overpass for method A.a
 //

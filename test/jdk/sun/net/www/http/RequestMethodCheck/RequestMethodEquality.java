@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,17 +30,16 @@
  * @modules java.base/sun.net.www.http
  *          java.base/sun.net.www.protocol.http
  * @build java.base/sun.net.www.http.HttpClientAccess
- * @run testng/othervm RequestMethodEquality
+ * @run junit/othervm ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-import org.testng.Assert;
-import org.testng.annotations.AfterTest;
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import sun.net.www.http.HttpClient;
 import sun.net.www.http.HttpClientAccess;
 import sun.net.www.http.KeepAliveCache;
@@ -52,21 +51,23 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
 public class RequestMethodEquality {
     private static final String TEST_CONTEXT = "/reqmethodtest";
-    private HttpServer server;
-    private CustomHandler handler;
-    private HttpClientAccess httpClientAccess;
+    private static HttpServer server;
+    private static CustomHandler handler;
+    private static HttpClientAccess httpClientAccess;
 
-    @BeforeTest
-    public void setup() throws Exception {
+    @BeforeAll
+    public static void setup() throws Exception {
         handler = new CustomHandler();
         server = createServer(handler);
         httpClientAccess = new HttpClientAccess();
     }
 
-    @AfterTest
-    public void tearDown() throws Exception {
+    @AfterAll
+    public static void tearDown() throws Exception {
         if (server != null) {
             server.stop(0);
         }
@@ -111,7 +112,7 @@ public class RequestMethodEquality {
 
             // If both connectTimeout values are equal, it means the test retrieved the same broken
             // HttpClient from the cache and is trying to re-use it.
-            Assert.assertNotEquals(originalConnectTimeout, cachedConnectTimeout, "Both connectTimeout values are equal.\nThis means the test is reusing a broken HttpClient rather than creating a new one.");
+            assertNotEquals(originalConnectTimeout, cachedConnectTimeout, "Both connectTimeout values are equal.\nThis means the test is reusing a broken HttpClient rather than creating a new one.");
         } finally {
             if (conn != null) {
                 conn.disconnect();

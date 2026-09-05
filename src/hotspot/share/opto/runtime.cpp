@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/nmethod.hpp"
@@ -44,10 +45,14 @@
 #include "logging/logStream.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/flatArrayOop.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valuePayload.inline.hpp"
 #include "opto/ad.hpp"
 #include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
@@ -66,6 +71,7 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -92,12 +98,9 @@
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DEFINE(name, f, t, r) \
   address OptoRuntime:: C2_STUB_FIELD_NAME(name) = nullptr;
-#define C2_JVMTI_STUB_FIELD_DEFINE(name) \
-  address OptoRuntime:: STUB_FIELD_NAME(name) = nullptr;
-C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE, C2_JVMTI_STUB_FIELD_DEFINE)
+C2_STUBS_DO(C2_BLOB_FIELD_DEFINE, C2_STUB_FIELD_DEFINE)
 #undef C2_BLOB_FIELD_DEFINE
 #undef C2_STUB_FIELD_DEFINE
-#undef C2_JVMTI_STUB_FIELD_DEFINE
 
 // This should be called in an assertion at the start of OptoRuntime routines
 // which are entered from compiled code (all of them)
@@ -153,24 +156,11 @@ static bool check_compiled_frame(JavaThread* thread) {
                   pass_retpc);                                        \
   if (C2_STUB_FIELD_NAME(name) == nullptr) { return false; }          \
 
-#define C2_JVMTI_STUB_C_FUNC(name) CAST_FROM_FN_PTR(address, SharedRuntime::name)
-
-#define GEN_C2_JVMTI_STUB(name)                                       \
-  STUB_FIELD_NAME(name) =                                             \
-    generate_stub(env,                                                \
-                  notify_jvmti_vthread_Type,                          \
-                  C2_JVMTI_STUB_C_FUNC(name),                         \
-                  C2_STUB_NAME(name),                                 \
-                  C2_STUB_ID(name),                                   \
-                  0,                                                  \
-                  true,                                               \
-                  false);                                             \
-  if (STUB_FIELD_NAME(name) == nullptr) { return false; }             \
-
 bool OptoRuntime::generate(ciEnv* env) {
 
-  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB, GEN_C2_JVMTI_STUB)
-
+  C2_STUBS_DO(GEN_C2_BLOB, GEN_C2_STUB)
+  // disallow any further c2 stub generation
+  AOTCodeCache::set_c2_stubs_complete();
   return true;
 }
 
@@ -182,12 +172,11 @@ bool OptoRuntime::generate(ciEnv* env) {
 #undef C2_STUB_NAME
 #undef GEN_C2_STUB
 
-#undef C2_JVMTI_STUB_C_FUNC
-#undef GEN_C2_JVMTI_STUB
 // #undef gen
 
 const TypeFunc* OptoRuntime::_new_instance_Type                   = nullptr;
 const TypeFunc* OptoRuntime::_new_array_Type                      = nullptr;
+const TypeFunc* OptoRuntime::_new_array_nozero_Type               = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray2_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray3_Type                = nullptr;
 const TypeFunc* OptoRuntime::_multianewarray4_Type                = nullptr;
@@ -225,6 +214,7 @@ const TypeFunc* OptoRuntime::_digestBase_implCompress_without_sha3_Type   = null
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_with_sha3_Type    = nullptr;
 const TypeFunc* OptoRuntime::_digestBase_implCompressMB_without_sha3_Type = nullptr;
 const TypeFunc* OptoRuntime::_double_keccak_Type                  = nullptr;
+const TypeFunc* OptoRuntime::_quad_keccak_Type                    = nullptr;
 const TypeFunc* OptoRuntime::_multiplyToLen_Type                  = nullptr;
 const TypeFunc* OptoRuntime::_montgomeryMultiply_Type             = nullptr;
 const TypeFunc* OptoRuntime::_montgomerySquare_Type               = nullptr;
@@ -252,17 +242,17 @@ const TypeFunc* OptoRuntime::_string_IndexOf_Type                 = nullptr;
 const TypeFunc* OptoRuntime::_poly1305_processBlocks_Type         = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_montgomeryMult_P256_Type    = nullptr;
 const TypeFunc* OptoRuntime::_intpoly_assign_Type                 = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_mult_25519_Type             = nullptr;
+const TypeFunc* OptoRuntime::_intpoly_square_25519_Type           = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32_Type               = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesCRC32C_Type              = nullptr;
 const TypeFunc* OptoRuntime::_updateBytesAdler32_Type             = nullptr;
 const TypeFunc* OptoRuntime::_osr_end_Type                        = nullptr;
 const TypeFunc* OptoRuntime::_register_finalizer_Type             = nullptr;
+const TypeFunc* OptoRuntime::_vthread_transition_Type             = nullptr;
 #if INCLUDE_JFR
 const TypeFunc* OptoRuntime::_class_id_load_barrier_Type          = nullptr;
 #endif // INCLUDE_JFR
-#if INCLUDE_JVMTI
-const TypeFunc* OptoRuntime::_notify_jvmti_vthread_Type           = nullptr;
-#endif // INCLUDE_JVMTI
 const TypeFunc* OptoRuntime::_dtrace_method_entry_exit_Type       = nullptr;
 const TypeFunc* OptoRuntime::_dtrace_object_alloc_Type            = nullptr;
 
@@ -274,11 +264,10 @@ address OptoRuntime::generate_stub(ciEnv* env,
                                    bool return_pc) {
 
   // Matching the default directive, we currently have no method to match.
-  DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
-  CompilationMemoryStatisticMark cmsm(directive);
+  CompilerDirectiveMatcher default_directive(CompileBroker::compiler(CompLevel_full_optimization));
+  CompilationMemoryStatisticMark cmsm(default_directive.directive_set());
   ResourceMark rm;
-  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, directive);
-  DirectivesStack::release(directive);
+  Compile C(env, gen, C_function, name, stub_id, is_fancy_jump, pass_tls, return_pc, default_directive.directive_set());
   return  C.stub_entry_point();
 }
 
@@ -356,7 +345,7 @@ JRT_END
 
 
 // array allocation
-JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaThread* current))
+JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, oopDesc* init_val, JavaThread* current))
   JRT_BLOCK;
 #ifndef PRODUCT
   SharedRuntime::_new_array_ctr++;            // new array requires GC
@@ -365,6 +354,7 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
 
   // Scavenge and allocate an instance.
   oop result;
+  Handle h_init_val(current, init_val); // keep the init_val object alive
 
   if (array_type->is_typeArray_klass()) {
     // The oopFactory likes to work with the element type.
@@ -372,12 +362,19 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::new_array_C(Klass* array_type, int len, JavaT
     BasicType elem_type = TypeArrayKlass::cast(array_type)->element_type();
     result = oopFactory::new_typeArray(elem_type, len, THREAD);
   } else {
-    // Although the oopFactory likes to work with the elem_type,
-    // the compiler prefers the array_type, since it must already have
-    // that latter value in hand for the fast path.
     Handle holder(current, array_type->klass_holder()); // keep the array klass alive
-    Klass* elem_type = ObjArrayKlass::cast(array_type)->element_klass();
-    result = oopFactory::new_objArray(elem_type, len, THREAD);
+    result = ObjArrayKlass::cast(array_type)->allocate_instance(len, THREAD);
+    assert(HAS_PENDING_EXCEPTION || result->klass() == array_type, "array klass must be preserved");
+    if (!HAS_PENDING_EXCEPTION && array_type->is_null_free_array_klass() && !h_init_val.is_null()) {
+      // Null-free arrays need to be initialized
+#ifdef ASSERT
+      ObjArrayKlass* result_oak = ObjArrayKlass::cast(result->klass());
+      assert(result_oak->is_null_free_array_klass(), "Sanity check");
+#endif
+      for (int i = 0; i < len; i++) {
+        ((objArrayOop)result)->obj_at_put(i, h_init_val());
+      }
+    }
   }
 
   // Pass oops back through thread local storage.  Our apparent type to Java
@@ -572,6 +569,26 @@ JRT_BLOCK_ENTRY(void, OptoRuntime::monitor_notifyAll_C(oopDesc* obj, JavaThread*
   JRT_BLOCK_END;
 JRT_END
 
+JRT_ENTRY(void, OptoRuntime::vthread_end_first_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  MountUnmountDisabler::end_transition(current, vt, true /*is_mount*/, true /*is_thread_start*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_start_final_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
+  MountUnmountDisabler::start_transition(current, vt, false /*is_mount */, true /*is_thread_end*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_start_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  java_lang_Thread::set_is_in_vthread_transition(vt, false);
+  current->set_is_in_vthread_transition(false);
+  MountUnmountDisabler::start_transition(current, vt, is_mount, false /*is_thread_end*/);
+JRT_END
+
+JRT_ENTRY(void, OptoRuntime::vthread_end_transition_C(oopDesc* vt, jboolean is_mount, JavaThread* current))
+  MountUnmountDisabler::end_transition(current, vt, is_mount, false /*is_thread_start*/);
+JRT_END
+
 static const TypeFunc* make_new_instance_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(1);
@@ -587,8 +604,7 @@ static const TypeFunc* make_new_instance_Type() {
   return TypeFunc::make(domain, range);
 }
 
-#if INCLUDE_JVMTI
-static const TypeFunc* make_notify_jvmti_vthread_Type() {
+static const TypeFunc* make_vthread_transition_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL; // VirtualThread oop
@@ -602,7 +618,6 @@ static const TypeFunc* make_notify_jvmti_vthread_Type() {
 
   return TypeFunc::make(domain,range);
 }
-#endif
 
 static const TypeFunc* make_athrow_Type() {
   // create input type (domain)
@@ -619,6 +634,23 @@ static const TypeFunc* make_athrow_Type() {
 }
 
 static const TypeFunc* make_new_array_Type() {
+  // create input type (domain)
+  const Type **fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
+  fields[TypeFunc::Parms+1] = TypeInt::INT;       // array size
+  fields[TypeFunc::Parms+2] = TypeInstPtr::NOTNULL;       // init value
+  const TypeTuple *domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeRawPtr::NOTNULL; // Returned oop
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_new_array_nozero_Type() {
   // create input type (domain)
   const Type **fields = TypeTuple::fields(2);
   fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;   // element klass
@@ -694,7 +726,7 @@ static const TypeFunc* make_complete_monitor_enter_Type() {
 
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-  return TypeFunc::make(domain,range);
+  return TypeFunc::make(domain, range);
 }
 
 //-----------------------------------------------------------------------------
@@ -1222,6 +1254,26 @@ static const TypeFunc* make_double_keccak_Type() {
     return TypeFunc::make(domain, range);
 }
 
+static const TypeFunc* make_quad_keccak_Type() {
+    int argcnt = 4;
+
+    const Type** fields = TypeTuple::fields(argcnt);
+    int argp = TypeFunc::Parms;
+    fields[argp++] = TypePtr::NOTNULL;      // status0
+    fields[argp++] = TypePtr::NOTNULL;      // status1
+    fields[argp++] = TypePtr::NOTNULL;      // status2
+    fields[argp++] = TypePtr::NOTNULL;      // status3
+
+    assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+    const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+    // result type needed
+    fields = TypeTuple::fields(1);
+    fields[TypeFunc::Parms + 0] = TypeInt::INT;
+    const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+    return TypeFunc::make(domain, range);
+}
+
 static const TypeFunc* make_multiplyToLen_Type() {
   // create input type (domain)
   int num_args      = 5;
@@ -1486,7 +1538,6 @@ static const TypeFunc* make_kyberAddPoly_2_Type() {
     return TypeFunc::make(domain, range);
 }
 
-
 // Kyber add 3 polynomials function
 static const TypeFunc* make_kyberAddPoly_3_Type() {
     int argcnt = 4;
@@ -1507,7 +1558,6 @@ static const TypeFunc* make_kyberAddPoly_3_Type() {
     const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
     return TypeFunc::make(domain, range);
 }
-
 
 // Kyber XOF output parsing into polynomial coefficients candidates
 // or decompress(12,...) function
@@ -1766,6 +1816,41 @@ static const TypeFunc* make_intpoly_assign_Type() {
   return TypeFunc::make(domain, range);
 }
 
+static const TypeFunc* make_intpoly_mult_25519_Type() {
+  int argcnt = 3;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // b array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+static const TypeFunc* make_intpoly_square_25519_Type() {
+  int argcnt = 2;
+
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // a array
+  fields[argp++] = TypePtr::NOTNULL;    // r(esult) array
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = nullptr; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
 //------------- Interpreter state for on stack replacement
 static const TypeFunc* make_osr_end_Type() {
   // create input type (domain)
@@ -1866,6 +1951,8 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* c
   // The stack watermark barrier takes care of detecting that and ensuring the frame
   // has updated oops.
   StackWatermarkSet::after_unwind(current);
+
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
 
   // Do not confuse exception_oop with pending_exception. The exception_oop
   // is only used to pass arguments into the method. Not for general
@@ -2128,7 +2215,7 @@ static const TypeFunc* make_register_finalizer_Type() {
 
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-  return TypeFunc::make(domain,range);
+  return TypeFunc::make(domain, range);
 }
 
 #if INCLUDE_JFR
@@ -2160,7 +2247,7 @@ static const TypeFunc* make_dtrace_method_entry_exit_Type() {
 
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-  return TypeFunc::make(domain,range);
+  return TypeFunc::make(domain, range);
 }
 
 static const TypeFunc* make_dtrace_object_alloc_Type() {
@@ -2176,7 +2263,7 @@ static const TypeFunc* make_dtrace_object_alloc_Type() {
 
   const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0,fields);
 
-  return TypeFunc::make(domain,range);
+  return TypeFunc::make(domain, range);
 }
 
 JRT_ENTRY_NO_ASYNC(void, OptoRuntime::register_finalizer_C(oopDesc* obj, JavaThread* current))
@@ -2267,6 +2354,7 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
 void OptoRuntime::initialize_types() {
   _new_instance_Type                  = make_new_instance_Type();
   _new_array_Type                     = make_new_array_Type();
+  _new_array_nozero_Type              = make_new_array_nozero_Type();
   _multianewarray2_Type               = multianewarray_Type(2);
   _multianewarray3_Type               = multianewarray_Type(3);
   _multianewarray4_Type               = multianewarray_Type(4);
@@ -2304,6 +2392,7 @@ void OptoRuntime::initialize_types() {
   _digestBase_implCompressMB_with_sha3_Type    = make_digestBase_implCompressMB_Type(/* is_sha3= */ true);
   _digestBase_implCompressMB_without_sha3_Type = make_digestBase_implCompressMB_Type(/* is_sha3= */ false);
   _double_keccak_Type                 = make_double_keccak_Type();
+  _quad_keccak_Type                   = make_quad_keccak_Type();
   _multiplyToLen_Type                 = make_multiplyToLen_Type();
   _montgomeryMultiply_Type            = make_montgomeryMultiply_Type();
   _montgomerySquare_Type              = make_montgomerySquare_Type();
@@ -2331,17 +2420,17 @@ void OptoRuntime::initialize_types() {
   _poly1305_processBlocks_Type        = make_poly1305_processBlocks_Type();
   _intpoly_montgomeryMult_P256_Type   = make_intpoly_montgomeryMult_P256_Type();
   _intpoly_assign_Type                = make_intpoly_assign_Type();
+  _intpoly_mult_25519_Type            = make_intpoly_mult_25519_Type();
+  _intpoly_square_25519_Type          = make_intpoly_square_25519_Type();
   _updateBytesCRC32_Type              = make_updateBytesCRC32_Type();
   _updateBytesCRC32C_Type             = make_updateBytesCRC32C_Type();
   _updateBytesAdler32_Type            = make_updateBytesAdler32_Type();
   _osr_end_Type                       = make_osr_end_Type();
   _register_finalizer_Type            = make_register_finalizer_Type();
+  _vthread_transition_Type            = make_vthread_transition_Type();
   JFR_ONLY(
     _class_id_load_barrier_Type       = make_class_id_load_barrier_Type();
   )
-#if INCLUDE_JVMTI
-  _notify_jvmti_vthread_Type          = make_notify_jvmti_vthread_Type();
-#endif // INCLUDE_JVMTI
   _dtrace_method_entry_exit_Type      = make_dtrace_method_entry_exit_Type();
   _dtrace_object_alloc_Type           = make_dtrace_object_alloc_Type();
 }
@@ -2366,4 +2455,109 @@ static void trace_exception(outputStream* st, oop exception_oop, address excepti
   tempst.print("]");
 
   st->print_raw_cr(tempst.freeze());
+}
+
+const TypeFunc *OptoRuntime::store_inline_type_fields_Type() {
+  // create input type (domain)
+  uint total = SharedRuntime::java_return_convention_max_int + SharedRuntime::java_return_convention_max_float*2;
+  const Type **fields = TypeTuple::fields(total);
+  // We don't know the number of returned values and their
+  // types. Assume all registers available to the return convention
+  // are used.
+  fields[TypeFunc::Parms] = TypePtr::BOTTOM;
+  uint i = 1;
+  for (; i < SharedRuntime::java_return_convention_max_int; i++) {
+    fields[TypeFunc::Parms+i] = TypeInt::INT;
+  }
+  for (; i < total; i+=2) {
+    fields[TypeFunc::Parms+i] = Type::DOUBLE;
+    fields[TypeFunc::Parms+i+1] = Type::HALF;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + total, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::BOTTOM;
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1,fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+const TypeFunc *OptoRuntime::pack_inline_type_Type() {
+  // create input type (domain)
+  uint total = 1 + SharedRuntime::java_return_convention_max_int + SharedRuntime::java_return_convention_max_float*2;
+  const Type **fields = TypeTuple::fields(total);
+  // We don't know the number of returned values and their
+  // types. Assume all registers available to the return convention
+  // are used.
+  fields[TypeFunc::Parms] = TypeRawPtr::BOTTOM;
+  fields[TypeFunc::Parms+1] = TypeRawPtr::BOTTOM;
+  uint i = 2;
+  for (; i < SharedRuntime::java_return_convention_max_int+1; i++) {
+    fields[TypeFunc::Parms+i] = TypeInt::INT;
+  }
+  for (; i < total; i+=2) {
+    fields[TypeFunc::Parms+i] = Type::DOUBLE;
+    fields[TypeFunc::Parms+i+1] = Type::HALF;
+  }
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + total, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInstPtr::NOTNULL;
+
+  const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+1,fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+JRT_BLOCK_ENTRY(void, OptoRuntime::load_unknown_inline_C(flatArrayOopDesc* array, int index, JavaThread* current))
+  JRT_BLOCK;
+  oop buffer = array->obj_at(index, THREAD);
+  deoptimize_caller_frame(current, HAS_PENDING_EXCEPTION);
+  current->set_vm_result_oop(buffer);
+  JRT_BLOCK_END;
+JRT_END
+
+const TypeFunc* OptoRuntime::load_unknown_inline_Type() {
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms] = TypeOopPtr::NOTNULL;
+  fields[TypeFunc::Parms+1] = TypeInt::POS;
+
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+2, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms] = TypeInstPtr::BOTTOM;
+
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+
+  return TypeFunc::make(domain, range);
+}
+
+JRT_BLOCK_ENTRY(void, OptoRuntime::store_unknown_inline_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current))
+  JRT_BLOCK;
+  array->obj_at_put(index, buffer, THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+      fatal("This entry must be changed to be a non-leaf entry because writing to a flat array can now throw an exception");
+  }
+  JRT_BLOCK_END;
+JRT_END
+
+const TypeFunc* OptoRuntime::store_unknown_inline_Type() {
+  // create input type (domain)
+  const Type** fields = TypeTuple::fields(3);
+  fields[TypeFunc::Parms] = TypeInstPtr::NOTNULL;
+  fields[TypeFunc::Parms+1] = TypeOopPtr::NOTNULL;
+  fields[TypeFunc::Parms+2] = TypeInt::POS;
+
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+3, fields);
+
+  // create result type (range)
+  fields = TypeTuple::fields(0);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+
+  return TypeFunc::make(domain, range);
 }

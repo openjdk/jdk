@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,7 +264,7 @@ public class OptionsProcessorTest {
     @Test
     public void testMultipleCommandLineStructureAnalyzerErrors() {
         build().createAppImageByDefault().expectValidationErrors(
-                new JPackageException(I18N.format("ERR_BothMainJarAndModule")),
+                new JPackageException(I18N.format("ERR_MutuallyExclusiveOptions", "-m", "--main-jar")),
                 new JPackageException(I18N.format("ERR_MissingArgument2", "--runtime-image", "--module-path")),
                 new JPackageException(I18N.format("error.no-input-parameter"))
         ).validationErrorsOrdered(false).create("-m", "com.foo", "--main-jar", "main.jar").validate();
@@ -664,7 +664,7 @@ public class OptionsProcessorTest {
 
             var optionsBuilder = Utils.buildParser(os, bundlingEnv).create().apply(stringArgs).orElseThrow();
 
-            var op = new OptionsProcessor(optionsBuilder, bundlingEnv);
+            var op = new OptionsProcessor(optionsBuilder, OperatingSystem.current(), bundlingEnv);
 
             Collection<Map<String, Object>> errors;
             if (expectedValidationErrorsOrdered) {

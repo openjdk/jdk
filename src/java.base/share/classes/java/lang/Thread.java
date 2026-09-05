@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Objects;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.locks.LockSupport;
+import jdk.internal.foreign.ConfinedSegmentPool;
 import jdk.internal.event.ThreadSleepEvent;
 import jdk.internal.misc.TerminatingThreadLocal;
 import jdk.internal.misc.Unsafe;
@@ -277,7 +278,8 @@ public class Thread implements Runnable {
     private volatile ClassLoader contextClassLoader;
 
     // Additional fields for platform threads.
-    // All fields, except task and terminatingThreadLocals, are accessed directly by the VM.
+    // All fields, except task, terminatingThreadLocals, and confinedMemoryPools,
+    // are accessed directly by the VM.
     private static class FieldHolder {
         final ThreadGroup group;
         final Runnable task;
@@ -286,8 +288,17 @@ public class Thread implements Runnable {
         volatile boolean daemon;
         volatile int threadStatus;
 
+        // Used by NativeThread for signalling
+        @Stable long nativeThreadID;
+
         // This map is maintained by the ThreadLocal class
         ThreadLocal.ThreadLocalMap terminatingThreadLocals;
+
+        /**
+         * Lazily initialized cache storage managed by {@link ConfinedSegmentPool}.
+         * Access is confined to this platform thread, directly or as a carrier.
+         */
+        long[] confinedMemoryPools;
 
         FieldHolder(ThreadGroup group,
                     Runnable task,
@@ -310,6 +321,14 @@ public class Thread implements Runnable {
 
     void setTerminatingThreadLocals(ThreadLocal.ThreadLocalMap map) {
         holder.terminatingThreadLocals = map;
+    }
+
+    long nativeThreadID() {
+        return holder.nativeThreadID;
+    }
+
+    void setNativeThreadID(long id) {
+        holder.nativeThreadID = id;
     }
 
     /*
@@ -355,6 +374,23 @@ public class Thread implements Runnable {
 
     static void setScopedValueBindings(Object bindings) {
         currentThread().scopedValueBindings = bindings;
+    }
+
+    long[] confinedMemoryPools() {
+        return holder.confinedMemoryPools;
+    }
+
+    void setConfinedMemoryPools(long[] confinedMemoryPools) {
+        holder.confinedMemoryPools = confinedMemoryPools;
+    }
+
+    long[] getOrCreateConfinedMemoryPools(int poolSlots) {
+        long[] confinedMemoryPools = holder.confinedMemoryPools;
+        if (confinedMemoryPools == null) {
+            confinedMemoryPools = new long[poolSlots];
+            setConfinedMemoryPools(confinedMemoryPools);
+        }
+        return confinedMemoryPools;
     }
 
     /**
@@ -1560,13 +1596,26 @@ public class Thread implements Runnable {
             }
         }
 
-        try {
-            if (terminatingThreadLocals() != null) {
+        if (terminatingThreadLocals() != null) {
+            try {
                 TerminatingThreadLocal.threadTerminated();
-            }
-        } finally {
-            clearReferences();
+            } catch (Throwable _) { }
+            setTerminatingThreadLocals(null);
         }
+
+        // Must run after terminating-thread-local callbacks, as these callbacks
+        // may use confined arenas and return pools to this thread's cache.
+        // ConfinedSegmentPool.threadTerminated must remain leaf cleanup: it
+        // must not invoke user code or access/register thread-local variables.
+        long[] confinedMemoryPools = confinedMemoryPools();
+        if (confinedMemoryPools != null) {
+            try {
+                ConfinedSegmentPool.threadTerminated(confinedMemoryPools);
+            } catch (Throwable _) { }
+            setConfinedMemoryPools(null);
+        }
+
+        clearReferences();
     }
 
     /**
@@ -1870,8 +1919,8 @@ public class Thread implements Runnable {
      * been {@link #start() started}.
      *
      * @implNote
-     * For platform threads, the implementation uses a loop of {@code this.wait}
-     * calls conditioned on {@code this.isAlive}. As a thread terminates the
+     * This implementation uses a loop of {@code this.wait} calls
+     * conditioned on {@code this.isAlive}. As a thread terminates the
      * {@code this.notifyAll} method is invoked. It is recommended that
      * applications not use {@code wait}, {@code notify}, or
      * {@code notifyAll} on {@code Thread} instances.
@@ -1890,13 +1939,12 @@ public class Thread implements Runnable {
     public final void join(long millis) throws InterruptedException {
         if (millis < 0)
             throw new IllegalArgumentException("timeout value is negative");
-
-        if (this instanceof VirtualThread vthread) {
-            if (isAlive()) {
-                long nanos = MILLISECONDS.toNanos(millis);
-                vthread.joinNanos(nanos);
-            }
+        if (!isAlive())
             return;
+
+        // ensure there is a notifyAll to wake up waiters when this thread terminates
+        if (this instanceof VirtualThread vthread) {
+            vthread.beforeJoin();
         }
 
         synchronized (this) {
@@ -1925,8 +1973,8 @@ public class Thread implements Runnable {
      * been {@link #start() started}.
      *
      * @implNote
-     * For platform threads, the implementation uses a loop of {@code this.wait}
-     * calls conditioned on {@code this.isAlive}. As a thread terminates the
+     * This implementation uses a loop of {@code this.wait} calls
+     * conditioned on {@code this.isAlive}. As a thread terminates the
      * {@code this.notifyAll} method is invoked. It is recommended that
      * applications not use {@code wait}, {@code notify}, or
      * {@code notifyAll} on {@code Thread} instances.
@@ -1953,16 +2001,6 @@ public class Thread implements Runnable {
 
         if (nanos < 0 || nanos > 999999) {
             throw new IllegalArgumentException("nanosecond timeout value out of range");
-        }
-
-        if (this instanceof VirtualThread vthread) {
-            if (isAlive()) {
-                // convert arguments to a total in nanoseconds
-                long totalNanos = MILLISECONDS.toNanos(millis);
-                totalNanos += Math.min(Long.MAX_VALUE - totalNanos, nanos);
-                vthread.joinNanos(totalNanos);
-            }
-            return;
         }
 
         if (nanos > 0 && millis < Long.MAX_VALUE) {
@@ -2023,10 +2061,6 @@ public class Thread implements Runnable {
             return true;
         if (nanos <= 0)
             return false;
-
-        if (this instanceof VirtualThread vthread) {
-            return vthread.joinNanos(nanos);
-        }
 
         // convert to milliseconds
         long millis = MILLISECONDS.convert(nanos, NANOSECONDS);
@@ -2208,40 +2242,23 @@ public class Thread implements Runnable {
      * @since 1.5
      */
     public StackTraceElement[] getStackTrace() {
-        if (this != Thread.currentThread()) {
+        if (Thread.currentThread() != this) {
             // optimization so we do not call into the vm for threads that
             // have not yet started or have terminated
             if (!isAlive()) {
                 return EMPTY_STACK_TRACE;
             }
-            StackTraceElement[] stackTrace = asyncGetStackTrace();
-            return (stackTrace != null) ? stackTrace : EMPTY_STACK_TRACE;
+            StackTraceElement[] stackTrace = getStackTrace0();
+            if (stackTrace != null) {
+                return StackTraceElement.finishInit(stackTrace);
+            }
+            return EMPTY_STACK_TRACE;
         } else {
             return (new Exception()).getStackTrace();
         }
     }
 
-    /**
-     * Returns an array of stack trace elements representing the stack dump of
-     * this thread. Returns null if the stack trace cannot be obtained. In
-     * the default implementation, null is returned if the thread is a virtual
-     * thread that is not mounted or the thread is a platform thread that has
-     * terminated.
-     */
-    StackTraceElement[] asyncGetStackTrace() {
-        Object stackTrace = getStackTrace0();
-        if (stackTrace == null) {
-            return null;
-        }
-        StackTraceElement[] stes = (StackTraceElement[]) stackTrace;
-        if (stes.length == 0) {
-            return null;
-        } else {
-            return StackTraceElement.of(stes);
-        }
-    }
-
-    private native Object getStackTrace0();
+    private native StackTraceElement[] getStackTrace0();
 
     /**
      * Returns a map of stack traces for all live platform threads. The map

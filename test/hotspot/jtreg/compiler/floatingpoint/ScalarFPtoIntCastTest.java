@@ -90,7 +90,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2int() {
         for (int i = 0; i < COUNT; i++) {
@@ -106,7 +106,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2L, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_F2L_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_F2L_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2long() {
         for (int i = 0; i < COUNT; i++) {
@@ -122,7 +122,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2short() {
         for (int i = 0; i < COUNT; i++) {
@@ -138,7 +138,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_F2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_F2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void float2byte() {
         for (int i = 0; i < COUNT; i++) {
@@ -154,7 +154,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2int() {
         for (int i = 0; i < COUNT; i++) {
@@ -170,7 +170,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2L, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_D2L_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_D2L_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2long() {
         for (int i = 0; i < COUNT; i++) {
@@ -186,7 +186,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2short() {
         for (int i = 0; i < COUNT; i++) {
@@ -202,7 +202,7 @@ public class ScalarFPtoIntCastTest {
     @IR(counts = {IRNode.X86_SCONV_D2I, "> 0"},
         applyIfPlatform = {"x64", "true"},
         applyIfCPUFeature = {"avx10_2", "false"})
-    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10, "> 0"},
+    @IR(counts = {IRNode.X86_SCONV_D2I_AVX10_2, "> 0"},
         applyIfCPUFeature = {"avx10_2", "true"})
     public void double2byte() {
         for (int i = 0; i < COUNT; i++) {

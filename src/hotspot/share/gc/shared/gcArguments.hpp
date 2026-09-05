@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -40,11 +40,16 @@ protected:
   virtual void initialize_heap_flags_and_sizes();
   virtual void initialize_size_info();
 
+  size_t limit_heap_by_allocatable_memory(size_t size);
+
   DEBUG_ONLY(void assert_flags();)
   DEBUG_ONLY(void assert_size_info();)
 
 public:
+  virtual void set_heap_size();
   virtual void initialize();
+
+  // Return the (conservative) maximum heap alignment
   virtual size_t conservative_max_heap_alignment() = 0;
 
   // Used by heap size heuristics to determine max
@@ -59,8 +64,6 @@ public:
   }
 
   void initialize_heap_sizes();
-
-  static size_t compute_heap_alignment();
 };
 
 #endif // SHARE_GC_SHARED_GCARGUMENTS_HPP

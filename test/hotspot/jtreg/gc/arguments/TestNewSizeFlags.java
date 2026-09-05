@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -286,6 +286,20 @@ public class TestNewSizeFlags {
             if (YOUNG_GC_TYPE == GCTypes.YoungGCType.G1) {
                 return new MemoryUsage(edenUsageInit + survivorUsageInit, 0,
                         edenUsageCommited + survivorUsageCommited, Long.MAX_VALUE);
+            } else if (YOUNG_GC_TYPE == GCTypes.YoungGCType.DefNew) {
+                // Eden might grow to be almost the entire young generation,
+                // so it is approximated as the size for the entire young
+                // generation.
+                long youngGenUsageMax = edenUsage.getMax();
+
+                long combinedSurvivorUsageMax = 2 * survivorUsage.getMax();
+                if (combinedSurvivorUsageMax > youngGenUsageMax) {
+                  throw new RuntimeException("Unexpectedly large survivorUsage combined maximum value: " + combinedSurvivorUsageMax);
+                }
+
+                return new MemoryUsage(edenUsageInit + survivorUsageInit * 2, 0,
+                        edenUsageCommited + survivorUsageCommited * 2,
+                        youngGenUsageMax);
             } else {
                 return new MemoryUsage(edenUsageInit + survivorUsageInit * 2, 0,
                         edenUsageCommited + survivorUsageCommited * 2,

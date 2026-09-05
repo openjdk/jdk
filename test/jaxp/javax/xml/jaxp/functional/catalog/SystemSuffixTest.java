@@ -23,32 +23,34 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.catalogResolver;
-import static catalog.ResolutionChecker.checkNoMatch;
-import static catalog.ResolutionChecker.checkSysIdResolution;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.CatalogException;
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static catalog.ResolutionChecker.checkNoMatch;
+import static catalog.ResolutionChecker.checkSysIdResolution;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.SystemSuffixTest
+ * @run junit/othervm catalog.SystemSuffixTest
  * @summary Get matched URIs from systemSuffix entries.
  */
 public class SystemSuffixTest {
 
-    @Test(dataProvider = "systemId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnMatch")
     public void testMatch(String systemId, String matchedUri) {
         checkSysIdResolution(createResolver(), systemId, matchedUri);
     }
 
-    @DataProvider(name = "systemId-matchedUri")
-    public Object[][] dataOnMatch() {
+    public static Object[][] dataOnMatch() {
         return new Object[][] {
                 // The matched URI of the specified system id is defined in a
                 // systemIdSuffix entry. The match is an absolute path.
@@ -83,12 +85,12 @@ public class SystemSuffixTest {
     /*
      * If no match is found, a CatalogException should be thrown.
      */
-    @Test(expectedExceptions = CatalogException.class)
+    @Test
     public void testNoMatch() {
-        checkNoMatch(createResolver());
+        assertThrows(CatalogException.class, () -> checkNoMatch(createResolver()));
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver("systemSuffix.xml");
     }
 }

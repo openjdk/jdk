@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,46 +24,16 @@
 
 
 #include "gc/g1/g1ParallelCleaning.hpp"
-#include "runtime/atomicAccess.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#endif
-
-#if INCLUDE_JVMCI
-JVMCICleaningTask::JVMCICleaningTask() :
-  _cleaning_claimed(false) {
-}
-
-bool JVMCICleaningTask::claim_cleaning_task() {
-  if (AtomicAccess::load(&_cleaning_claimed)) {
-    return false;
-  }
-
-  return !AtomicAccess::cmpxchg(&_cleaning_claimed, false, true);
-}
-
-void JVMCICleaningTask::work(bool unloading_occurred) {
-  // One worker will clean JVMCI metadata handles.
-  if (unloading_occurred && EnableJVMCI && claim_cleaning_task()) {
-    JVMCI::do_unloading(unloading_occurred);
-  }
-}
-#endif // INCLUDE_JVMCI
 
 G1ParallelCleaningTask::G1ParallelCleaningTask(bool unloading_occurred) :
   WorkerTask("G1 Parallel Cleaning"),
   _unloading_occurred(unloading_occurred),
   _code_cache_task(unloading_occurred),
-  JVMCI_ONLY(_jvmci_cleaning_task() COMMA)
   _klass_cleaning_task() {
 }
 
 // The parallel work done by all worker threads.
 void G1ParallelCleaningTask::work(uint worker_id) {
-  // Clean JVMCI metadata handles.
-  // Execute this task first because it is serial task.
-  JVMCI_ONLY(_jvmci_cleaning_task.work(_unloading_occurred);)
-
   // Do first pass of code cache cleaning.
   _code_cache_task.work(worker_id);
 

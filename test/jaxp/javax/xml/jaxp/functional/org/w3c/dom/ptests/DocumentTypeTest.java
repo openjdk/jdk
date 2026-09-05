@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,18 @@
 
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.NamedNodeMap;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOM;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.DocumentTypeTest
+ * @run junit/othervm org.w3c.dom.ptests.DocumentTypeTest
  * @summary Test DocumentType
  */
 public class DocumentTypeTest {
@@ -48,10 +48,10 @@ public class DocumentTypeTest {
         NamedNodeMap namedNodeMap = documentType.getEntities();
         // should return both external and internal. Parameter entities are not
         // contained. Duplicates are discarded.
-        assertEquals(namedNodeMap.getLength(), 3);
-        assertEquals(namedNodeMap.item(0).getNodeName(), "author");
-        assertEquals(namedNodeMap.item(1).getNodeName(), "test");
-        assertEquals(namedNodeMap.item(2).getNodeName(), "writer");
+        assertEquals(3, namedNodeMap.getLength());
+        assertEquals("author", namedNodeMap.item(0).getNodeName());
+        assertEquals("test", namedNodeMap.item(1).getNodeName());
+        assertEquals("writer", namedNodeMap.item(2).getNodeName());
     }
 
     /*
@@ -61,12 +61,11 @@ public class DocumentTypeTest {
     public void testGetNotations() throws Exception {
         DocumentType documentType = createDOM("DocumentType03.xml").getDoctype();
         NamedNodeMap nm = documentType.getNotations();
-        assertEquals(nm.getLength(), 2); // should return 2 because the notation
-                                         // name is repeated and
-                                         // it considers only the first
-                                         // occurence
-        assertEquals(nm.item(0).getNodeName(), "gs");
-        assertEquals(nm.item(1).getNodeName(), "name");
+        // should return 2 because the notation name is repeated,
+        // and it considers only the first occurrence
+        assertEquals(2, nm.getLength());
+        assertEquals("gs", nm.item(0).getNodeName());
+        assertEquals("name", nm.item(1).getNodeName());
     }
 
     /*
@@ -75,7 +74,7 @@ public class DocumentTypeTest {
     @Test
     public void testGetName() throws Exception {
         DocumentType documentType = createDOM("DocumentType03.xml").getDoctype();
-        assertEquals(documentType.getName(), "note");
+        assertEquals("note", documentType.getName());
     }
 
     /*
@@ -84,8 +83,8 @@ public class DocumentTypeTest {
     @Test
     public void testGetSystemId() throws Exception {
         DocumentType documentType = createDOM("DocumentType05.xml").getDoctype();
-        assertEquals(documentType.getSystemId(), "DocumentBuilderImpl02.dtd");
-        Assert.assertNull(documentType.getPublicId());
+        assertEquals("DocumentBuilderImpl02.dtd", documentType.getSystemId());
+        assertNull(documentType.getPublicId());
     }
 
 }

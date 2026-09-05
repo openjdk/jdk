@@ -32,16 +32,8 @@ import jdk.jpackage.internal.model.JPackageException;
 
 final class StandardOptionValueExceptionFactory {
 
-    static OptionValueExceptionFactory<JPackageException> forMessageWithOptionValue(Path propertyFile) {
-        return forMessageWithOptionValue(appendPath(propertyFile)).printOptionPrefix(false).create();
-    }
-
     static OptionValueExceptionFactory<JPackageException> forMessageWithOptionValueAndName(Path propertyFile) {
         return forMessageWithOptionValueAndName(appendPath(propertyFile)).printOptionPrefix(false).create();
-    }
-
-    static OptionValueExceptionFactory<JPackageException> forFixedMessage(Path propertyFile) {
-        return forFixedMessage(appendPath(propertyFile)).printOptionPrefix(false).create();
     }
 
     private StandardOptionValueExceptionFactory() {
@@ -63,16 +55,8 @@ final class StandardOptionValueExceptionFactory {
                 .formatArgumentsTransformer(mapper.apply(StandardArgumentsMapper.VALUE_AND_NAME));
     }
 
-    private static OptionValueExceptionFactory.Builder<JPackageException> forFixedMessage(UnaryOperator<ArgumentsMapper> mapper) {
-        return OptionValueExceptionFactory.build(JPackageException::new)
-                .formatArgumentsTransformer(mapper.apply(StandardArgumentsMapper.NONE));
-    }
-
     static final OptionValueExceptionFactory<JPackageException> ERROR_WITH_VALUE =
             forMessageWithOptionValue(UnaryOperator.identity()).create();
-
-    static final OptionValueExceptionFactory<JPackageException> ERROR_WITHOUT_CONTEXT =
-            forFixedMessage(UnaryOperator.identity()).create();
 
     static final OptionValueExceptionFactory<JPackageException> ERROR_WITH_VALUE_AND_OPTION_NAME =
             forMessageWithOptionValueAndName(UnaryOperator.identity()).create();

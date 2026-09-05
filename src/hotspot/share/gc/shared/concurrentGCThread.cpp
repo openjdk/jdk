@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "gc/shared/concurrentGCThread.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/init.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -33,9 +33,8 @@ ConcurrentGCThread::ConcurrentGCThread() :
     _should_terminate(false),
     _has_terminated(false) {}
 
-void ConcurrentGCThread::create_and_start(ThreadPriority prio) {
+void ConcurrentGCThread::create_and_start() {
   if (os::create_thread(this, os::gc_thread)) {
-    os::set_priority(this, prio);
     os::start_thread(this);
   }
 }
@@ -48,7 +47,7 @@ void ConcurrentGCThread::run() {
 
   // Signal thread has terminated
   MonitorLocker ml(Terminator_lock);
-  AtomicAccess::release_store(&_has_terminated, true);
+  _has_terminated.release_store(true);
   ml.notify_all();
 }
 
@@ -57,21 +56,21 @@ void ConcurrentGCThread::stop() {
   assert(!has_terminated(), "Invalid state");
 
   // Signal thread to terminate
-  AtomicAccess::release_store_fence(&_should_terminate, true);
+  _should_terminate.release_store_fence(true);
 
   stop_service();
 
   // Wait for thread to terminate
   MonitorLocker ml(Terminator_lock);
-  while (!_has_terminated) {
+  while (!_has_terminated.load_relaxed()) {
     ml.wait();
   }
 }
 
 bool ConcurrentGCThread::should_terminate() const {
-  return AtomicAccess::load_acquire(&_should_terminate);
+  return _should_terminate.load_acquire();
 }
 
 bool ConcurrentGCThread::has_terminated() const {
-  return AtomicAccess::load_acquire(&_has_terminated);
+  return _has_terminated.load_acquire();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.test.lib.Utils;
 /*
  * @test
  * @bug 8291336
+ * @key randomness
  * @summary Test that transformation of multiply-by-2 is appropriately turned into additions.
  * @library /test/lib /
  * @requires vm.compiler2.enabled

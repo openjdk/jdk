@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,16 @@
  */
 package javax.xml.xpath.ptests;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
+import java.nio.file.Path;
 
 /**
  * This is the Base test class provide basic support for XPath functional test
  */
 public class XPathTestConst {
+    private static final Path SRC_ROOT = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
     /**
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(XPathTestConst.class,
-            ".." + FILE_SEP + "xmlfiles");
+    public static final Path XML_DIR = SRC_ROOT.resolveSibling("xmlfiles");
 }

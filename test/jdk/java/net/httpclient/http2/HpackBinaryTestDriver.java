@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,6 @@
  * @compile/module=java.net.http jdk/internal/net/http/hpack/SpecHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/TestHelper.java
  * @compile/module=java.net.http jdk/internal/net/http/hpack/BuffersTestingKit.java
- * @run testng/othervm/timeout=240 java.net.http/jdk.internal.net.http.hpack.BinaryPrimitivesTest
+ * @run junit/othervm/timeout=240 java.net.http/jdk.internal.net.http.hpack.BinaryPrimitivesTest
  */
 public class HpackBinaryTestDriver { }

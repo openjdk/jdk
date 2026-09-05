@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.StringTokenizer;
 
-import sun.awt.AppContext;
 import sun.swing.SwingAccessor;
 
 /**
@@ -79,11 +78,6 @@ public class AWTKeyStroke implements Serializable {
      * constant.
      */
     private static VKCollection vks;
-
-    //A key for the collection of AWTKeyStrokes within AppContext.
-    private static Object APP_CONTEXT_CACHE_KEY = new Object();
-    //A key within the cache
-    private static AWTKeyStroke APP_CONTEXT_KEYSTROKE_KEY = new AWTKeyStroke();
 
     /**
      * @serial The character value for a keyboard key.
@@ -181,21 +175,19 @@ public class AWTKeyStroke implements Serializable {
     protected static void registerSubclass(Class<?> subclass) {
     }
 
+    private static Map<AWTKeyStroke, AWTKeyStroke> cache;
+    private static AWTKeyStroke cacheKey;
+
     private static synchronized AWTKeyStroke getCachedStroke
         (char keyChar, int keyCode, int modifiers, boolean onKeyRelease)
     {
-        @SuppressWarnings("unchecked")
-        Map<AWTKeyStroke, AWTKeyStroke> cache = (Map)AppContext.getAppContext().get(APP_CONTEXT_CACHE_KEY);
-        AWTKeyStroke cacheKey = (AWTKeyStroke)AppContext.getAppContext().get(APP_CONTEXT_KEYSTROKE_KEY);
 
         if (cache == null) {
             cache = new HashMap<>();
-            AppContext.getAppContext().put(APP_CONTEXT_CACHE_KEY, cache);
         }
 
         if (cacheKey == null) {
             cacheKey = SwingAccessor.getKeyStrokeAccessor().create();
-            AppContext.getAppContext().put(APP_CONTEXT_KEYSTROKE_KEY, cacheKey);
         }
 
         cacheKey.keyChar = keyChar;
@@ -203,11 +195,16 @@ public class AWTKeyStroke implements Serializable {
         cacheKey.modifiers = mapNewModifiers(mapOldModifiers(modifiers));
         cacheKey.onKeyRelease = onKeyRelease;
 
+        /* If there's no hit on the cache, then store this instance in the cache
+         * and null out the var so it isn't over-written.
+         * But if there's a hit, store it in cacheKey so it can be re-used
+         * next time this method is called.
+         */
         AWTKeyStroke stroke = cache.get(cacheKey);
         if (stroke == null) {
             stroke = cacheKey;
             cache.put(stroke, stroke);
-            AppContext.getAppContext().remove(APP_CONTEXT_KEYSTROKE_KEY);
+            cacheKey = null;
         }
         return stroke;
     }

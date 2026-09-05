@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,10 +113,14 @@ public class StableRefArrayTest {
 
     @Test
     @IR(counts = { IRNode.LOAD, ">0" })
-    @IR(failOn = { IRNode.MEMBAR })
+    @IR(applyIf = {"enable-valhalla", "false"}, failOn = { IRNode.MEMBAR })
+    // We have barriers with valhalla from the atomic expansion of the LoadFlatNode
+    // Indeed, since the array element is not initialized, it is not known to be constant yet,
+    // and so, the LoadFlat cannot be expanded non-atomically. We need barriers to synchronize
+    // the LoadFlat and potential updates to field of the flatten array element.
+    @IR(applyIfAnd = {"UseArrayFlattening", "true", "enable-valhalla", "true"}, counts = { IRNode.MEMBAR, "> 0" })
     static int testPartialFold() {
         // Access should not be folded.
-        // No barriers expected for plain fields.
         Integer[] is = INIT_EMPTY_CARRIER.field;
         if (is != null) {
             Integer i = is[0];

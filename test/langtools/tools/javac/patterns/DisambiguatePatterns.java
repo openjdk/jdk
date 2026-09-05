@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,6 +113,26 @@ public class DisambiguatePatterns {
                                  ExpressionType.PATTERN);
         test.disambiguationTest("R(int x) when (x > 0)",
                                  ExpressionType.PATTERN);
+        test.disambiguationTest("java.util.List<?>[] p",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("java.util.List<?>[][] p",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("a<b<c>>[] d",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("java.util.List<?>[] p when true",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("java.util.List<?> @Ann [] p",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("a<b<c>> @Ann [] d",
+                                 ExpressionType.PATTERN);
+        test.disambiguationTest("(java.util.List<?>[]) o",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("String[].class",
+                                 ExpressionType.EXPRESSION);
+        test.disambiguationTest("new int[1][]",
+                                ExpressionType.EXPRESSION);
+        test.disambiguationTest("new java.util.List<?>[1][]",
+                                ExpressionType.EXPRESSION);
     }
 
     private final ParserFactory factory;

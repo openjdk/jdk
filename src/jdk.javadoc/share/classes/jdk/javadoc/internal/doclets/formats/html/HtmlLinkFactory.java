@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,7 +305,7 @@ public class HtmlLinkFactory {
         } else {
             Content crossLink = m_writer.getCrossClassLink(
                 typeElement, linkInfo.getFragment(),
-                label, linkInfo.getStyle(), true);
+                label, linkInfo.getTitle(), linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
                 addSuperscript(link, flags, null, typeElement, previewTarget, restrictedTarget);
@@ -361,7 +361,7 @@ public class HtmlLinkFactory {
         if (fileName != null) {
             return m_writer.links.createLink(fileName.fragment(id.name()), label);
         } else if (typeElement != null) {
-            return (m_writer.getCrossClassLink(typeElement, id.name(), label, null, false));
+            return (m_writer.getCrossClassLink(typeElement, id.name(), label, null, null, false));
         } else {
             return label;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,21 +59,20 @@
  */
 package test.java.time;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneId;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Test ZonedDateTime.
  *
  * @bug 8211990
  */
-@Test
 public class TestZonedDateTime extends AbstractTest {
 
     @Test
@@ -89,6 +88,6 @@ public class TestZonedDateTime extends AbstractTest {
         ZonedDateTime end = ZonedDateTime.of(LocalDateTime.MAX, sanJose);
         ZonedDateTime start = end.withZoneSameLocal(tokyo);
 
-        assertEquals(Duration.between(start, end), Duration.ofHours(17));
+        assertEquals(Duration.ofHours(17), Duration.between(start, end));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("p/MyClass.html", true,
                 """
-                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class i\
                     n lib" class="external-link">LibClass</a>""");
     }
 
@@ -129,7 +129,7 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("my.module/p/MyClass.html", true,
                 """
-                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class i\
                     n lib" class="external-link">LibClass</a>""");
     }
 
@@ -154,7 +154,7 @@ public class TestLinkOptionWithAutomaticModule extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("my.module/p/MyClass.html", true,
                 """
-                    extends <a href="http://myWebsite/lib/LibClass.html" title="class or interface i\
+                    extends <a href="http://myWebsite/lib/LibClass.html" title="class i\
                     n lib" class="external-link">LibClass</a>""");
     }
 }

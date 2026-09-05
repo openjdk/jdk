@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -653,7 +653,7 @@ private:
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx) const;
 
-  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def) const;
+  bool is_velt_basic_type_compatible_use_def(Node* use, Node* def, const uint pack_size) const;
 
   bool do_vtransform() const;
 };

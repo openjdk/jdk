@@ -1,5 +1,6 @@
 /*
  * Copyright 2014 Google, Inc.  All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +25,26 @@
 /* @test
  * @bug 8062194
  * @summary Ensure Attribute iteration order is the insertion order.
+ * @run junit IterationOrder
  */
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class IterationOrder {
-    static void checkOrder(Attributes.Name k0, String v0,
+
+    @ParameterizedTest
+    @MethodSource
+    void checkOrderTest(Attributes.Name k0, String v0,
                            Attributes.Name k1, String v1,
                            Attributes.Name k2, String v2) {
         Attributes x = new Attributes();
@@ -48,7 +60,7 @@ public class IterationOrder {
               && entries[1].getValue() == v1
               && entries[2].getKey() == k2
               && entries[2].getValue() == v2)) {
-            throw new AssertionError(Arrays.toString(entries));
+            fail(Arrays.toString(entries));
         }
 
         Object[] keys = x.keySet().toArray();
@@ -56,19 +68,21 @@ public class IterationOrder {
               && keys[0] == k0
               && keys[1] == k1
               && keys[2] == k2)) {
-             throw new AssertionError(Arrays.toString(keys));
+             fail(Arrays.toString(keys));
         }
     }
 
-    public static void main(String[] args) throws Exception {
+    static Stream<Arguments> checkOrderTest() {
         Attributes.Name k0 = Name.MANIFEST_VERSION;
         Attributes.Name k1 = Name.MAIN_CLASS;
         Attributes.Name k2 = Name.SEALED;
         String v0 = "42.0";
         String v1 = "com.google.Hello";
         String v2 = "yes";
-        checkOrder(k0, v0, k1, v1, k2, v2);
-        checkOrder(k1, v1, k0, v0, k2, v2);
-        checkOrder(k2, v2, k1, v1, k0, v0);
+        return Stream.of(
+                Arguments.of(k0, v0, k1, v1, k2, v2),
+                Arguments.of(k1, v1, k0, v0, k2, v2),
+                Arguments.of(k2, v2, k1, v1, k0, v0)
+        );
     }
 }

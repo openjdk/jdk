@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import jdk.test.lib.thread.TestThreadFactory;
 import nsk.share.jdi.Binder;
 import nsk.share.jdi.Debugee;
 import vm.mlvm.share.Env;
@@ -437,10 +438,22 @@ public abstract class JDIBreakpointTest extends MlvmTest {
         for (StackFrame f : frames) {
             Location l = f.location();
 
+            String sourcePath;
+            try {
+                sourcePath = l.sourcePath();
+            } catch (AbsentInformationException aie) {
+               // Test Thread Factory support has generated methods in MainWrapper class.
+               if (TestThreadFactory.isTestThreadFactorySet()) {
+                   sourcePath = "unknown";
+               } else {
+                   throw aie;
+               }
+            }
+
             buf.append(String.format("#%-4d", frameNum))
                .append(l.method())
                .append("\n        source: ")
-               .append(l.sourcePath())
+               .append(sourcePath)
                .append(":")
                .append(l.lineNumber())
                .append("; bci=")

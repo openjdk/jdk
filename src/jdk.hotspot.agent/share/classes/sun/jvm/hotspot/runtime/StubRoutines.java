@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import sun.jvm.hotspot.utilities.Observer;
 
 public class StubRoutines {
   private static AddressField callStubReturnAddressField;
+  private static AddressField contReturnBarrierField;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -46,6 +47,7 @@ public class StubRoutines {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("StubRoutines");
     callStubReturnAddressField = type.getAddressField("_call_stub_return_address");
+    contReturnBarrierField = type.getAddressField("_cont_returnBarrier");
   }
 
   public StubRoutines() {
@@ -59,4 +61,9 @@ public class StubRoutines {
       return (addr.equals(returnPC));
     }
   }
+
+  public Address contReturnBarrier() {
+    return contReturnBarrierField.getValue();
+  }
+
 }

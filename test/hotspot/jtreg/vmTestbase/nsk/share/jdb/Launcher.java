@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,6 @@ public class Launcher extends DebugeeBinder {
 
     /** Pattern for message of jdb has started. */
     protected static String JDB_STARTED = "Initializing jdb";
-
-    /**
-     * Get version string.
-     */
-    public static String getVersion () {
-        return "@(#)Launcher.java %I% %E%";
-    }
 
     // -------------------------------------------------- //
 

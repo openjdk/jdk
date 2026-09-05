@@ -194,7 +194,7 @@ public final class SegmentBulkOperations {
     @ForceInline
     public static int contentHash(AbstractMemorySegmentImpl segment, long fromOffset, long toOffset) {
         final long length = toOffset - fromOffset;
-        segment.checkBounds(fromOffset, length);
+        segment.checkSliceBounds(fromOffset, length);
         if (length == 0) {
             // The state has to be checked explicitly for zero-length segments
             segment.scope.checkValidState();
@@ -273,10 +273,7 @@ public final class SegmentBulkOperations {
             if (i >= 0) {
                 return i;
             }
-            final long remaining = ~i;
-            assert remaining < 8 : "remaining greater than 7: " + remaining;
-            i = length - remaining;
-            return mismatch(src, srcFromOffset + i, dst, dstFromOffset + i, i, (int) remaining, srcAndDstBytesDiffer);
+            return srcAndDstBytesDiffer ? length : -1L;
         }
     }
 
@@ -356,7 +353,7 @@ public final class SegmentBulkOperations {
         long remaining = length;
         int i, size;
         boolean lastSubRange = false;
-        while (remaining > 7 && !lastSubRange) {
+        while (!lastSubRange) {
             if (remaining > Integer.MAX_VALUE) {
                 size = Integer.MAX_VALUE;
             } else {
@@ -370,11 +367,10 @@ public final class SegmentBulkOperations {
             if (i >= 0)
                 return off + i;
 
-            i = size - ~i;
-            off += i;
-            remaining -= i;
+            off += size;
+            remaining -= size;
         }
-        return ~remaining;
+        return -1L;
     }
 
     static final String PROPERTY_PATH = "java.lang.foreign.native.threshold.power.";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.net.http.HttpClient;
 import java.net.http.HttpResponse;
-import org.testng.annotations.Test;
 import jdk.internal.net.http.websocket.RawChannel;
 import static java.lang.System.out;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.net.http.HttpResponse.BodyHandlers.discarding;
+
+import org.junit.jupiter.api.Test;
 
 /**
  * Whitebox test of selector mechanics. Currently only a simple test
@@ -44,7 +45,6 @@ import static java.net.http.HttpResponse.BodyHandlers.discarding;
  * write event occurs first, followed by the read event and then no
  * further events occur despite the conditions actually still existing.
  */
-@Test
 public class SelectorTest {
 
     AtomicInteger counter = new AtomicInteger();

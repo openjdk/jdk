@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,9 +56,11 @@ public:
   static void set_guard_value(nmethod* nm, int value);
 
   static void nmethod_patch_barriers(nmethod* nm);
+  static void nmethod_patch_barriers(nmethod* nm, ICacheInvalidationContext* icic);
 
   static void nmethod_oops_do(nmethod* nm, OopClosure* cl);
   static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl);
+  static void nmethod_oops_do_inner(nmethod* nm, OopClosure* cl, ICacheInvalidationContext* icic);
 
   static void nmethods_do_begin(bool secondary);
   static void nmethods_do_end(bool secondary);

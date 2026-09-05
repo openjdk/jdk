@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,6 @@
  */
 
 
-import org.testng.Assert;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -38,17 +35,26 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.function.BinaryOperator;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
 /* @test
  * @build SerialFilterFactoryTest
- * @run testng/othervm SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory
+ * @run junit/othervm SerialFilterFactoryTest
+ * @run junit/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$PropertyFilterFactory
  *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
- * @run testng/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory
+ * @run junit/othervm -Djdk.serialFilterFactory=SerialFilterFactoryTest$NotMyFilterFactory
  *                     -Djava.util.logging.config.file=${test.src}/logging.properties SerialFilterFactoryTest
  *
  * @summary Test Context-specific Deserialization Filters
  */
-@Test
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class SerialFilterFactoryTest {
 
     // A stream with just the header, enough to create a OIS
@@ -70,7 +76,7 @@ public class SerialFilterFactoryTest {
             ois.writeObject(new Dummy("Here"));
             return boas.toByteArray();
         } catch (IOException ioe) {
-            Assert.fail("unexpected IOE", ioe);
+            Assertions.fail("unexpected IOE", ioe);
         }
         throw new RuntimeException("should not reach here");
     }
@@ -109,7 +115,7 @@ public class SerialFilterFactoryTest {
         return !(ObjectInputFilter.Config.getSerialFilterFactory() instanceof NotMyFilterFactory);
     }
 
-    @DataProvider(name="FilterCases")
+    // Test cases for filter factory
     static Object[][] filterCases() {
         if (isValidFilterFactory()) {
             return new Object[][]{
@@ -124,9 +130,11 @@ public class SerialFilterFactoryTest {
     }
 
     // Setting the filter factory to null is not allowed.
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test
     void testNull() {
-        Config.setSerialFilterFactory(null);
+        Assertions.assertThrows(NullPointerException.class, () -> {
+            Config.setSerialFilterFactory(null);
+        });
     }
 
     /**
@@ -136,7 +144,6 @@ public class SerialFilterFactoryTest {
      * Try to set it again, the second should throw.
      */
     @Test
-    @SuppressWarnings("removal")
     void testSecondSetShouldThrow() {
         var currFF = Config.getSerialFilterFactory();
         if (currFF.getClass().getClassLoader() == null) {
@@ -145,14 +152,14 @@ public class SerialFilterFactoryTest {
                 Config.setSerialFilterFactory(contextFilterFactory);
                 currFF = contextFilterFactory;
             } catch (IllegalStateException ise) {
-                Assert.fail("First setSerialFilterFactory should not throw");
+                Assertions.fail("First setSerialFilterFactory should not throw");
             }
         }
         // Setting it again will throw
-        Assert.expectThrows(IllegalStateException.class,
+        Assertions.assertThrows(IllegalStateException.class,
                 () -> Config.setSerialFilterFactory(new MyFilterFactory("f11")));
         var resetFF = Config.getSerialFilterFactory();
-        Assert.assertEquals(resetFF, currFF, "Setting again should not change filter factory");
+        Assertions.assertEquals(currFF, resetFF, "Setting again should not change filter factory");
     }
 
     /**
@@ -167,8 +174,10 @@ public class SerialFilterFactoryTest {
      * @throws IOException if an I/O error occurs (should not occur)
      * @throws ClassNotFoundException for class not found (should not occur)
      */
-    @Test(dataProvider="FilterCases")
-    @SuppressWarnings("removal")
+    @ParameterizedTest
+    @EnabledIf("isValidFilterFactory")
+    @MethodSource("filterCases")
+    @Order(1)
     void testCase(MyFilterFactory dynFilterFactory, Validator dynFilter, Validator streamFilter)
                 throws IOException, ClassNotFoundException {
 
@@ -182,32 +191,32 @@ public class SerialFilterFactoryTest {
         InputStream is = new ByteArrayInputStream(simpleStream);
         ObjectInputStream ois = new ObjectInputStream(is);
 
-        Assert.assertNull(factory.current(), "initially current should be null");
-        Assert.assertEquals(factory.next(), configFilter, "initially next should be the configured filter");
+        Assertions.assertNull(factory.current(), "initially current should be null");
+        Assertions.assertEquals(configFilter, factory.next(), "initially next should be the configured filter");
         var currFilter = ois.getObjectInputFilter();
         if (currFilter != null && currFilter.getClass().getClassLoader() == null) {
             // Builtin loader;  defaults to configured filter
-            Assert.assertEquals(currFilter, configFilter, "getObjectInputFilter should be configured filter");
+            Assertions.assertEquals(configFilter, currFilter, "getObjectInputFilter should be configured filter");
         } else {
-            Assert.assertEquals(currFilter, configFilter, "getObjectInputFilter should be null");
+            Assertions.assertEquals(configFilter, currFilter, "getObjectInputFilter should be null");
         }
         if (streamFilter != null) {
             ois.setObjectInputFilter(streamFilter);
             // MyFilterFactory is called when the stream filter is changed; verify values passed it
-            Assert.assertEquals(factory.current(), currFilter, "when setObjectInputFilter, current should be current filter");
-            Assert.assertEquals(factory.next(), streamFilter, "next should be stream specific filter");
+            Assertions.assertEquals(currFilter, factory.current(), "when setObjectInputFilter, current should be current filter");
+            Assertions.assertEquals(streamFilter, factory.next(), "next should be stream specific filter");
 
             // Check the OIS filter after the factory has updated it.
             currFilter = ois.getObjectInputFilter();
-            Assert.assertEquals(currFilter, streamFilter, "getObjectInputFilter should be set");
+            Assertions.assertEquals(streamFilter, currFilter, "getObjectInputFilter should be set");
 
             // Verify that it can not be set again
-            Assert.assertThrows(IllegalStateException.class, () -> ois.setObjectInputFilter(streamFilter));
+            Assertions.assertThrows(IllegalStateException.class, () -> ois.setObjectInputFilter(streamFilter));
         }
         if (currFilter instanceof Validator validator) {
             validator.reset();
             Object o = ois.readObject();       // Invoke only for the side effect of calling the Filter
-            Assert.assertEquals(validator.count, 1, "Wrong number of calls to the stream filter");
+            Assertions.assertEquals(1, validator.count, "Wrong number of calls to the stream filter");
         } else {
             Object o = ois.readObject();       // Invoke only for the side effect of calling the filter
         }
@@ -217,18 +226,19 @@ public class SerialFilterFactoryTest {
     @Test
     void testPropertyFilterFactory() {
         if (jdkSerialFilterFactoryProp != null) {
-            Assert.assertEquals(jdkSerialFilterFactory.getClass().getName(), jdkSerialFilterFactoryProp,
+            Assertions.assertEquals(jdkSerialFilterFactoryProp, jdkSerialFilterFactory.getClass().getName(),
                     "jdk.serialFilterFactory property classname mismatch");
         }
     }
 
     // Test that setting the filter factory after any deserialization (any testCase)
     // throws IllegalStateException with the specific message
-    @Test(dependsOnMethods="testCase")
+    @Test
+    @Order(99)
     void testSetFactoryAfterDeserialization() {
         BinaryOperator<ObjectInputFilter> factory = Config.getSerialFilterFactory();
-        IllegalStateException ise = Assert.expectThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
-        Assert.assertTrue(ise.getMessage().startsWith("Cannot replace filter factory: "));
+        IllegalStateException ise = Assertions.assertThrows(IllegalStateException.class, () -> Config.setSerialFilterFactory(factory));
+        Assertions.assertTrue(ise.getMessage().startsWith("Cannot replace filter factory: "));
     }
 
 
@@ -243,11 +253,11 @@ public class SerialFilterFactoryTest {
             // Try to set the filter to null
             ois.setObjectInputFilter(null);
             if (curr != null) {
-                Assert.fail("setting filter to null after a non-null filter should throw");
+                Assertions.fail("setting filter to null after a non-null filter should throw");
             }
         } catch (IllegalStateException ise) {
             if (curr == null) {
-                Assert.fail("setting filter to null after a null filter should not throw");
+                Assertions.fail("setting filter to null after a null filter should not throw");
             }
         }
     }

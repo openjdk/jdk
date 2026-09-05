@@ -25,7 +25,8 @@
  * @test
  * @summary Test running TraceTypeProfile enabled.
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+TraceTypeProfile compiler.arguments.TestTraceTypeProfile
+ *                   -XX:-DisplayVMOutput -XX:+TraceTypeProfile
+ *                   compiler.arguments.TestTraceTypeProfile
  */
 
 package compiler.arguments;

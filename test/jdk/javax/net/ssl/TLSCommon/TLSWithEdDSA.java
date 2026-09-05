@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,6 @@
 /*
  * SunJSSE does not support dynamic system properties, no way to re-use
  * system properties in samevm/agentvm mode.
- * For extra debugging output, add -Djavax.net.debug=ssl:handshake into the
- * run directive below.
  */
 
 /*
@@ -74,6 +72,18 @@ import javax.net.ssl.X509KeyManager;
 import jdk.test.lib.security.SecurityUtils;
 
 public class TLSWithEdDSA extends SSLSocketTemplate {
+
+    /*
+     * Enables the JSSE system debugging system property:
+     *
+     *     -Djavax.net.debug=ssl,handshake
+     *
+     * This gives a lot of low-level information about operations underway,
+     * including specific handshake messages, and might be best examined
+     * after gaining some familiarity with this application.
+     */
+    private static final boolean debug = false;
+
     private static final String PASSWD = "passphrase";
     private static final String DEF_TRUST_ANCHORS = "CA_DSA_1024:CA_DSA_2048:" +
             "CA_ECDSA_SECP256R1:CA_ECDSA_SECP384R1:CA_ECDSA_SECP521R1:" +
@@ -556,6 +566,10 @@ public class TLSWithEdDSA extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
+        if (debug) {
+            System.setProperty("javax.net.debug", "ssl,handshake");
+        }
+
         SecurityUtils.removeFromDisabledTlsAlgs("TLSv1.1", "TLSv1");
         certFac = CertificateFactory.getInstance("X.509");
         String testFormat;

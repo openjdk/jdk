@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 4260284 8219196 8223254
  * @summary Test if DataOutputStream will overcount written field.
  * @requires (sun.arch.data.model == "64" & os.maxMemory >= 4g)
- * @run testng/othervm -Xmx4g WriteUTF
+ * @run junit/othervm -Xmx4g WriteUTF
  */
 
 import java.io.ByteArrayOutputStream;
@@ -33,11 +33,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.UTFDataFormatException;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class WriteUTF {
     @Test
-    public static void overcountWrittenField() throws IOException {
+    public void overcountWrittenField() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
         dos.writeUTF("Hello, World!");  // 15
@@ -54,16 +56,16 @@ public class WriteUTF {
         dos.writeUTF(s);
     }
 
-    @Test(expectedExceptions = UTFDataFormatException.class)
+    @Test
     public void utfDataFormatException() throws IOException {
-        writeUTF(1 << 16);
+        assertThrows(UTFDataFormatException.class, () -> writeUTF(1 << 16));
     }
 
     // Without 8219196 fix, throws ArrayIndexOutOfBoundsException instead of
     // expected UTFDataFormatException. Requires 4GB of heap (-Xmx4g) to run
     // without throwing an OutOfMemoryError.
-    @Test(expectedExceptions = UTFDataFormatException.class)
+    @Test
     public void arrayIndexOutOfBoundsException() throws IOException {
-        writeUTF(Integer.MAX_VALUE / 3 + 1);
+        assertThrows(UTFDataFormatException.class, () -> writeUTF(Integer.MAX_VALUE / 3 + 1));
     }
 }

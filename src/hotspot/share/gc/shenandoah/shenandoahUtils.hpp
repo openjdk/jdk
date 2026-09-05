@@ -30,33 +30,42 @@
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/memoryService.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <cmath>
+#include <limits>
 
 class GCTimer;
 class ShenandoahGeneration;
 
-#define SHENANDOAH_RETURN_EVENT_MESSAGE(generation_type, prefix, postfix) \
+#define SHENANDOAH_EVENT_MESSAGE(loc, generation_type, prefix, postfix)   \
+  const char* loc;                                                        \
   switch (generation_type) {                                              \
     case NON_GEN:                                                         \
-      return prefix postfix;                                              \
+      loc = prefix postfix;                                               \
+      break;                                                              \
     case GLOBAL:                                                          \
-      return prefix " (Global)" postfix;                                  \
+      loc = prefix " (Global)" postfix;                                   \
+      break;                                                              \
     case YOUNG:                                                           \
-      return prefix " (Young)" postfix;                                   \
+      loc = prefix " (Young)" postfix;                                    \
+      break;                                                              \
     case OLD:                                                             \
-      return prefix " (Old)" postfix;                                     \
+      loc = prefix " (Old)" postfix;                                      \
+      break;                                                              \
     default:                                                              \
       ShouldNotReachHere();                                               \
-      return prefix " (Unknown)" postfix;                                 \
+      loc = prefix " (Unknown)" postfix;                                  \
   }                                                                       \
 
 class ShenandoahGCSession : public StackObj {
@@ -67,8 +76,11 @@ private:
   GCTracer* const _tracer;
 
   TraceMemoryManagerStats _trace_cycle;
+
+  static const char* cycle_end_message(ShenandoahGenerationType type);
 public:
-  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation);
+  ShenandoahGCSession(GCCause::Cause cause, ShenandoahGeneration* generation,
+                      bool is_degenerated = false, bool is_out_of_cycle = false);
   ~ShenandoahGCSession();
 };
 
@@ -96,7 +108,35 @@ public:
 };
 
 /*
- * ShenandoahPausePhase tracks a STW pause and emits Shenandoah timing and
+ * ShenandoahPauseSubphase tracks a STW pause and emits Shenandoah timing and
+ * a corresponding JFR event
+ */
+class ShenandoahPauseSubphase : public ShenandoahTimingsTracker {
+private:
+  GCTraceTimeWrapper<LogLevel::Info, LOG_TAGS(gc)> _tracer;
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahPauseSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage = false);
+  ~ShenandoahPauseSubphase();
+};
+
+/*
+ * ShenandoahConcurrentSubphase tracks a concurrent GC phase and emits Shenandoah timing and
+ * a corresponding JFR event
+ */
+class ShenandoahConcurrentSubphase : public ShenandoahTimingsTracker {
+private:
+  GCTraceTimeWrapper<LogLevel::Info, LOG_TAGS(gc, phases)> _tracer;
+  ConcurrentGCTimer* const _timer;
+
+public:
+  ShenandoahConcurrentSubphase(const char* title, ShenandoahPhaseTimings::Phase phase, bool log_heap_usage = false);
+  ~ShenandoahConcurrentSubphase();
+};
+
+/*
+ * ShenandoahPausePhase tracks a pause GC phase and emits Shenandoah timing and
  * a corresponding JFR event
  */
 class ShenandoahPausePhase : public ShenandoahTimingsTracker {
@@ -185,7 +225,7 @@ public:
            type == VM_Operation::VMOp_ShenandoahFinalMarkStartEvac ||
            type == VM_Operation::VMOp_ShenandoahInitUpdateRefs ||
            type == VM_Operation::VMOp_ShenandoahFinalUpdateRefs ||
-           type == VM_Operation::VMOp_ShenandoahFinalRoots ||
+           type == VM_Operation::VMOp_ShenandoahFinalVerify ||
            type == VM_Operation::VMOp_ShenandoahFullGC ||
            type == VM_Operation::VMOp_ShenandoahDegeneratedGC;
   }
@@ -218,30 +258,6 @@ public:
   ~ShenandoahParallelWorkerSession();
 };
 
-class ShenandoahSuspendibleThreadSetJoiner {
-private:
-  SuspendibleThreadSetJoiner _joiner;
-public:
-  ShenandoahSuspendibleThreadSetJoiner(bool active = true) : _joiner(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetJoiner() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-};
-
-class ShenandoahSuspendibleThreadSetLeaver {
-private:
-  SuspendibleThreadSetLeaver _leaver;
-public:
-  ShenandoahSuspendibleThreadSetLeaver(bool active = true) : _leaver(active) {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be left after evac scope");
-  }
-  ~ShenandoahSuspendibleThreadSetLeaver() {
-    assert(!ShenandoahThreadLocalData::is_evac_allowed(Thread::current()), "STS should be joined before evac scope");
-  }
-};
-
 // Regions cannot be uncommitted when concurrent reset is zeroing out the bitmaps.
 // This CADR class enforces this by forbidding region uncommits while it is in scope.
 class ShenandoahNoUncommitMark : public StackObj {
@@ -256,5 +272,46 @@ public:
   }
 };
 
+// Casting a double that cannot be represented as a size_t may result in undefined behavior.
+// This small function checks if the given double is representable in a size_t and returns
+// that representation if it is. Otherwise, if the double cannot be safely cast to a size_t
+// it returns zero.
+inline size_t shenandoah_safe_size_cast(const double d) {
+  static constexpr double size_max_as_double = static_cast<double>(std::numeric_limits<size_t>::max());
+  if (std::isnan(d) || d < 0 || d >= size_max_as_double) {
+    // NaN is unordered, all comparisons will be false.
+    // +Inf is always greater than, -Inf is always less than
+    return 0;
+  }
+  return static_cast<size_t>(d);
+}
+
+// Convert a possibly signed double into a smaller number with appropriate engineering units.
+struct ShenandoahSignedSize {
+  const double value;
+  const char* unit;
+
+  static ShenandoahSignedSize get(double v) {
+    if (!std::isfinite(v)) {
+      return { v, "B" };
+    }
+
+    const double magnitude = fabsd(v);
+
+    if (magnitude >= 100.0 * G) {
+      return { std::copysign(magnitude / G, v), "G" };
+    }
+
+    if (magnitude >= 100.0 * M) {
+      return { std::copysign(magnitude / M, v), "M" };
+    }
+
+    if (magnitude >= 100.0 * K) {
+      return { std::copysign(magnitude / K, v), "K" };
+    }
+
+    return { std::copysign(magnitude, v), "B" };
+  }
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHUTILS_HPP

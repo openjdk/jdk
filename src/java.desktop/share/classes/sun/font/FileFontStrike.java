@@ -39,7 +39,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import static sun.awt.SunHints.*;
 import sun.java2d.pipe.OutlineTextRenderer;
 
-
 public class FileFontStrike extends PhysicalStrike {
 
     /* fffe and ffff are values we specially interpret as meaning
@@ -929,11 +928,6 @@ public class FileFontStrike extends PhysicalStrike {
             gp.transform(AffineTransform.getTranslateInstance(x, y));
         }
         return gp;
-    }
-
-    GeneralPath getGlyphVectorOutline(int[] glyphs, float x, float y) {
-        return fileFont.getGlyphVectorOutline(pScalerContext,
-                                              glyphs, glyphs.length, x, y);
     }
 
     protected void adjustPoint(Point2D.Float pt) {

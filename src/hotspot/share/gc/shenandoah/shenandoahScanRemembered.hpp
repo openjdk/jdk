@@ -172,6 +172,7 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -233,11 +234,10 @@ public:
   inline bool is_write_card_dirty(size_t card_index) const;
   inline void mark_card_as_dirty(size_t card_index);
   inline void mark_range_as_dirty(size_t card_index, size_t num_cards);
-  inline void mark_card_as_clean(size_t card_index);
-  inline void mark_range_as_clean(size_t card_index, size_t num_cards);
   inline bool is_card_dirty(HeapWord* p) const;
   inline bool is_write_card_dirty(HeapWord* p) const;
-  inline void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   inline void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   inline void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
@@ -369,9 +369,7 @@ private:
   static const uint8_t FirstStartBits           = 0x7f;
 
   // Check that we have enough bits to store the largest possible offset into a card for an object start.
-  // The value for maximum card size is based on the constraints for GCCardSizeInBytes in gc_globals.hpp.
-  static const int MaxCardSize = NOT_LP64(512) LP64_ONLY(1024);
-  STATIC_ASSERT((MaxCardSize / HeapWordSize) - 1 <= FirstStartBits);
+  STATIC_ASSERT((MaxGCCardSizeInBytes / HeapWordSize) - 1 <= FirstStartBits);
 
   crossing_info* _object_starts;
 
@@ -415,7 +413,7 @@ public:
   }
 
   ~ShenandoahCardCluster() {
-    FREE_C_HEAP_ARRAY(crossing_info, _object_starts);
+    FREE_C_HEAP_ARRAY(_object_starts);
     _object_starts = nullptr;
   }
 
@@ -605,6 +603,9 @@ public:
   // as address.
   void register_object_without_lock(HeapWord* address);
 
+  // Dirty cards and register objects for the given range in memory.
+  void update_card_table(HeapWord* start, HeapWord* end);
+
   // During the reference updates phase of GC, we walk through each old-gen memory region that was
   // not part of the collection set and we invalidate all unmarked objects.  As part of this effort,
   // we coalesce neighboring dead objects in order to make future remembered set scanning more
@@ -750,7 +751,7 @@ public:
       for (uint i = 0; i < ParallelGCThreads; i++) {
         delete _card_stats[i];
       }
-      FREE_C_HEAP_ARRAY(HdrSeq*, _card_stats);
+      FREE_C_HEAP_ARRAY(_card_stats);
       _card_stats = nullptr;
     }
     assert(_card_stats == nullptr, "Error");
@@ -781,7 +782,8 @@ public:
   bool is_write_card_dirty(size_t card_index);
   bool is_card_dirty(HeapWord* p);
   bool is_write_card_dirty(HeapWord* p);
-  void mark_card_as_dirty(HeapWord* p);
+  inline void mark_card_as_dirty(HeapWord* p) const;
+
   void mark_range_as_dirty(HeapWord* p, size_t num_heap_words);
   void mark_range_as_clean(HeapWord* p, size_t num_heap_words);
 
@@ -814,6 +816,10 @@ public:
     } else {
       return nullptr;
     }
+  }
+
+  void update_card_table(HeapWord* start, HeapWord* end) const {
+    _scc->update_card_table(start, end);
   }
 
   // Return true iff this object is "properly" registered.
@@ -975,7 +981,7 @@ private:
   const size_t _total_chunks;
 
   shenandoah_padding(0);
-  volatile size_t _index;
+  Atomic<size_t> _index;
   shenandoah_padding(1);
 
   size_t _region_index[_maximum_groups];           // The region index for the first region spanned by this group

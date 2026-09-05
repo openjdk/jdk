@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,17 +45,18 @@ import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.stream.IntStream;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationException;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoExtensionsException;
 import jdk.jpackage.internal.FileAssociationGroup.FileAssociationNoMimesException;
 import jdk.jpackage.internal.cli.Options;
 import jdk.jpackage.internal.cli.StandardFaOption;
 import jdk.jpackage.internal.model.CustomLauncherIcon;
+import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.DefaultLauncherIcon;
 import jdk.jpackage.internal.model.FileAssociation;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.LauncherIcon;
+import jdk.jpackage.internal.util.RootedPath;
 
 final class LauncherFromOptions {
 
@@ -82,7 +83,7 @@ final class LauncherFromOptions {
     }
 
     Launcher create(Options options) {
-        final var builder = new LauncherBuilder().defaultIconResourceName(defaultIconResourceName());
+        final var builder = new LauncherBuilder();
 
         DESCRIPTION.ifPresentIn(options, builder::description);
         builder.icon(toLauncherIcon(ICON.findIn(options).orElse(null)));
@@ -92,7 +93,9 @@ final class LauncherFromOptions {
         if (PREDEFINED_APP_IMAGE.findIn(options).isEmpty()) {
             final var startupInfoBuilder = new LauncherStartupInfoBuilder();
 
-            INPUT.ifPresentIn(options, startupInfoBuilder::inputDir);
+            INPUT.findIn(options).flatMap(v -> {
+                return v.stream().findAny().map(RootedPath::root);
+            }).ifPresent(startupInfoBuilder::inputDir);
             ARGUMENTS.ifPresentIn(options, startupInfoBuilder::defaultParameters);
             JAVA_OPTIONS.ifPresentIn(options, startupInfoBuilder::javaOptions);
             MAIN_JAR.ifPresentIn(options, startupInfoBuilder::mainJar);
@@ -131,8 +134,7 @@ final class LauncherFromOptions {
                         .advice("error.no-content-types-for-file-association.advice", faID)
                         .create();
             } catch (FileAssociationNoExtensionsException ex) {
-                // TODO: Must do something about this condition!
-                throw new AssertionError();
+                throw new JPackageException(I18N.format("error.no-extensions-for-file-association", faID));
             } catch (FileAssociationException ex) {
                 // Should never happen
                 throw new UnsupportedOperationException(ex);
@@ -164,23 +166,6 @@ final class LauncherFromOptions {
             return null;
         } else {
             return CustomLauncherIcon.create(launcherIconPath);
-        }
-    }
-
-    private static String defaultIconResourceName() {
-        switch (OperatingSystem.current()) {
-            case WINDOWS -> {
-                return "JavaApp.ico";
-            }
-            case LINUX -> {
-                return "JavaApp.png";
-            }
-            case MACOS -> {
-                return "JavaApp.icns";
-            }
-            default -> {
-                throw new UnsupportedOperationException();
-            }
         }
     }
 

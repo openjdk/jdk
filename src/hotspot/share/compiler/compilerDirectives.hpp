@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@
     cflags(MemStat,                 uintx, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
+    cflags(PrintCompilation2,       bool, PrintCompilation2, PrintCompilation2) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
     cflags(BackgroundCompilation,   bool, BackgroundCompilation, BackgroundCompilation) \
@@ -105,23 +106,26 @@ class CompilerDirectives;
 class DirectiveSet;
 
 class DirectivesStack : AllStatic {
+  // To allow access to private methods
+  friend class CompilerDirectiveMatcher;
+  friend class DirectiveSetPtr;
 private:
   static CompilerDirectives* _top;
   static CompilerDirectives* _bottom;
   static int _depth;
 
   static void pop_inner(); // no lock version of pop
+  static DirectiveSet* getMatchingDirective(const methodHandle& mh, int comp_level);
+  static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
+  static void release(DirectiveSet* set);
+  static void release(CompilerDirectives* dir);
 public:
   static void init();
-  static DirectiveSet* getMatchingDirective(const methodHandle& mh, AbstractCompiler* comp);
-  static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop(int count);
   static bool check_capacity(int request_size, outputStream* st);
   static void clear();
   static void print(outputStream* st);
-  static void release(DirectiveSet* set);
-  static void release(CompilerDirectives* dir);
 };
 
 class DirectiveSet : public CHeapObj<mtCompiler> {
@@ -141,9 +145,10 @@ public:
   bool parse_and_add_inline(char* str, const char*& error_msg);
   void append_inline(InlineMatcher* m);
   bool should_inline(ciMethod* inlinee);
-  bool should_not_inline(ciMethod* inlinee);
+  bool should_not_inline(ciMethod* inlinee, int comp_level);
+  bool should_delay_inline(ciMethod* inlinee);
   void print_inline(outputStream* st);
-  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method);
+  DirectiveSet* compilecommand_compatibility_init(const methodHandle& method, int comp_level);
   bool is_exclusive_copy() { return _directive == nullptr; }
   bool matches_inline(const methodHandle& method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
@@ -282,7 +287,7 @@ class ControlIntrinsicValidator {
 
   ~ControlIntrinsicValidator() {
     if (_bad != nullptr) {
-      FREE_C_HEAP_ARRAY(char, _bad);
+      FREE_C_HEAP_ARRAY(_bad);
     }
   }
 
@@ -323,6 +328,42 @@ public:
 
   DirectiveSet* _c1_store;
   DirectiveSet* _c2_store;
+};
+
+// Helper class to get a matching CompilerDirective using RAII pattern.
+// CompileDirective ref count is decremented in the destructor.
+class CompilerDirectiveMatcher {
+private:
+  DirectiveSet* _match;
+
+  void release_match() {
+    if (_match != nullptr) {
+      DirectivesStack::release(_match);
+      _match = nullptr;
+    }
+  }
+
+public:
+  // Use this constructor to get default directive
+  CompilerDirectiveMatcher(AbstractCompiler* comp) {
+    _match = DirectivesStack::getDefaultDirective(comp);
+  }
+
+  CompilerDirectiveMatcher(const methodHandle& mh, int comp_level) {
+    _match = DirectivesStack::getMatchingDirective(mh, comp_level);
+  }
+
+  ~CompilerDirectiveMatcher() {
+    release_match();
+  }
+
+  DirectiveSet* directive_set() const { return _match; }
+
+  void transfer_from(CompilerDirectiveMatcher& src) {
+    release_match();
+    _match = src._match;
+    src._match = nullptr;
+  }
 };
 
 #endif // SHARE_COMPILER_COMPILERDIRECTIVES_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,9 +133,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
 
   const double _gc_pause_goal_sec; // Goal for maximum GC pause
 
-  // Flag indicating that the adaptive policy is ready to use
-  bool _young_gen_policy_is_ready;
-
   // Accessors
   double gc_pause_goal_sec() const { return _gc_pause_goal_sec; }
 
@@ -159,8 +156,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     assert(gc_percent >= 0, "inv");
     return gc_percent;
   }
-
-  bool young_gen_policy_is_ready() { return _young_gen_policy_is_ready; }
 
   size_t eden_increment(size_t cur_eden);
   size_t eden_increment(size_t cur_eden, uint percent_change);

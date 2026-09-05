@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8232673
  * @summary Test DatagramChannel socket adaptor connect method with illegal args
- * @run testng AdaptorConnect
+ * @run junit AdaptorConnect
  */
 
 import java.net.DatagramSocket;
@@ -34,10 +34,9 @@ import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 import static java.net.InetAddress.getLoopbackAddress;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
 public class AdaptorConnect {
 
     /**
@@ -59,6 +58,7 @@ public class AdaptorConnect {
     /**
      * Test connect method with an open socket.
      */
+    @Test
     public void testOpenSocket() throws Exception {
         try (DatagramChannel dc = DatagramChannel.open()) {
             DatagramSocket s = dc.socket();
@@ -66,42 +66,43 @@ public class AdaptorConnect {
             testConnectWithIllegalArguments(s);
 
             // should not be bound or connected
-            assertTrue(s.getLocalSocketAddress() == null);
-            assertTrue(s.getRemoteSocketAddress() == null);
+            assertNull(s.getLocalSocketAddress());
+            assertNull(s.getRemoteSocketAddress());
 
             // connect(SocketAddress)
             var remote1 = new InetSocketAddress(getLoopbackAddress(), 7001);
             s.connect(remote1);
-            assertEquals(s.getRemoteSocketAddress(), remote1);
+            assertEquals(remote1, s.getRemoteSocketAddress());
             testConnectWithIllegalArguments(s);
-            assertEquals(s.getRemoteSocketAddress(), remote1);
+            assertEquals(remote1, s.getRemoteSocketAddress());
 
             // connect(SocketAddress)
             var remote2 = new InetSocketAddress(getLoopbackAddress(), 7002);
             s.connect(remote2);
-            assertEquals(s.getRemoteSocketAddress(), remote2);
+            assertEquals(remote2, s.getRemoteSocketAddress());
             testConnectWithIllegalArguments(s);
-            assertEquals(s.getRemoteSocketAddress(), remote2);
+            assertEquals(remote2, s.getRemoteSocketAddress());
 
             // connect(InetAddress, int)
             var remote3 = new InetSocketAddress(getLoopbackAddress(), 7003);
             s.connect(remote3.getAddress(), remote3.getPort());
-            assertEquals(s.getRemoteSocketAddress(), remote3);
+            assertEquals(remote3, s.getRemoteSocketAddress());
             testConnectWithIllegalArguments(s);
-            assertEquals(s.getRemoteSocketAddress(), remote3);
+            assertEquals(remote3, s.getRemoteSocketAddress());
 
             // connect(InetAddress, int)
             var remote4 = new InetSocketAddress(getLoopbackAddress(), 7004);
             s.connect(remote4.getAddress(), remote4.getPort());
-            assertEquals(s.getRemoteSocketAddress(), remote4);
+            assertEquals(remote4, s.getRemoteSocketAddress());
             testConnectWithIllegalArguments(s);
-            assertEquals(s.getRemoteSocketAddress(), remote4);
+            assertEquals(remote4, s.getRemoteSocketAddress());
         }
     }
 
     /**
      * Test connect method with a closed socket.
      */
+    @Test
     public void testClosedSocket() throws Exception {
         DatagramChannel dc = DatagramChannel.open();
         DatagramSocket s = dc.socket();

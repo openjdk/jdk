@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@ package gc.arguments;
 /*
  * @test TestObjectTenuringFlags
  * @bug 6521376
- * @requires vm.gc.Parallel
+ * @requires vm.gc.Parallel & vm.opt.NeverTenure == null & vm.opt.AlwaysTenure == null
+ *           & vm.opt.MaxTenuringThreshold == null & vm.opt.InitialTenuringThreshold == null
  * @summary Tests argument processing for NeverTenure, AlwaysTenure,
  * and MaxTenuringThreshold
  * @library /test/lib
@@ -161,7 +162,7 @@ public class TestObjectTenuringFlags {
     }
     Collections.addAll(vmOpts, "-XX:+UseParallelGC", "-XX:+PrintFlagsFinal", "-version");
 
-    OutputAnalyzer output = GCArguments.executeLimitedTestJava(vmOpts);
+    OutputAnalyzer output = GCArguments.executeTestJava(vmOpts);
 
     if (shouldFail) {
       output.shouldHaveExitValue(1);

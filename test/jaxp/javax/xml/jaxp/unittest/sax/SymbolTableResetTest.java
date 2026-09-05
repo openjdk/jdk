@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,20 +23,23 @@
 
 package sax;
 
-import java.io.StringReader;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /*
  * @test
  * @bug 8173390 8176168
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=false sax.SymbolTableResetTest
- * @run testng/othervm -Djdk.xml.resetSymbolTable=true sax.SymbolTableResetTest
+ * @run junit/othervm -Djdk.xml.resetSymbolTable=false sax.SymbolTableResetTest
+ * @run junit/othervm -Djdk.xml.resetSymbolTable=true sax.SymbolTableResetTest
  * @summary Test that SAXParser reallocates symbol table during
  *          subsequent parse operations
  */
@@ -115,9 +118,9 @@ public class SymbolTableResetTest {
 
         // Check symbol table references after two subsequent parse operations
         if (resetExpected) {
-            Assert.assertNotSame(symTable1, symTable2, "Symbol table references");
+            assertNotSame(symTable1, symTable2, "Symbol table references");
         } else {
-            Assert.assertSame(symTable1, symTable2, "Symbol table references");
+            assertSame(symTable1, symTable2, "Symbol table references");
         }
     }
 

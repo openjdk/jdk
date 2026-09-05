@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 G1FullGCMarkTask::G1FullGCMarkTask(G1FullCollector* collector) :
     G1FullGCTask("G1 Parallel Marking Task", collector),
     _root_processor(G1CollectedHeap::heap(), collector->workers()),
-    _terminator(collector->workers(), collector->array_queue_set()) {
+    _terminator(collector->workers(), collector->marking_task_queues()) {
 }
 
 void G1FullGCMarkTask::work(uint worker_id) {
@@ -54,10 +54,9 @@ void G1FullGCMarkTask::work(uint worker_id) {
   }
 
   // Mark stack is populated, now process and drain it.
-  marker->complete_marking(collector()->oop_queue_set(), collector()->array_queue_set(), &_terminator);
+  marker->complete_marking(collector()->marking_task_queues(), &_terminator);
 
   // This is the point where the entire marking should have completed.
-  assert(marker->oop_stack()->is_empty(), "Marking should have completed");
-  assert(marker->objarray_stack()->is_empty(), "Array marking should have completed");
+  assert(marker->task_queue()->is_empty(), "Marking should have completed");
   log_task("Marking task", worker_id, start);
 }

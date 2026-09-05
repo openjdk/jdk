@@ -1297,7 +1297,7 @@ public class ForkJoinPool extends AbstractExecutorService
                     unlockPhase();
                 if (room < 0)
                     throw new RejectedExecutionException("Queue capacity exceeded");
-                if ((room == 0 || a[m & (s - pk)] == null) &&
+                if ((room == 0 || U.getReferenceAcquire(a, slotOffset(m & (s - pk))) == null) &&
                     pool != null)
                     pool.signalWork();   // may have appeared empty
             }
@@ -3310,11 +3310,14 @@ public class ForkJoinPool extends AbstractExecutorService
      * @since 19
      */
     public int setParallelism(int size) {
+        int prevSize;
         if (size < 1 || size > MAX_CAP)
             throw new IllegalArgumentException();
         if ((config & PRESET_SIZE) != 0)
             throw new UnsupportedOperationException("Cannot override System property");
-        return getAndSetParallelism(size);
+        if ((prevSize = getAndSetParallelism(size)) < size)
+            signalWork(); // trigger worker activation
+        return prevSize;
     }
 
     /**

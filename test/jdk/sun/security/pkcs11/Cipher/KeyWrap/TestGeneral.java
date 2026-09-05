@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,30 @@
  * @library /test/lib ../..
  * @run main/othervm TestGeneral
  */
+import jtreg.SkippedException;
+
 import java.nio.ByteBuffer;
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.Provider;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
-import java.security.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.util.List;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/TestGeneral.java
 public class TestGeneral extends PKCS11Test {
 
     private static final byte[] DATA_32 =
-            Arrays.copyOf("1234567890123456789012345678901234".getBytes(), 32);
+            Arrays.copyOf("1234567890123456789012345678901234".getBytes(),
+                    32);
     private static final SecretKey KEY =
             new SecretKeySpec(DATA_32, 0, 16, "AES");
     private static final int KW_IV_LEN = 8;
@@ -49,7 +61,8 @@ public class TestGeneral extends PKCS11Test {
     private static final int MAX_KWP_PAD_LEN = 7; // 0-7
 
     public static void testEnc(Cipher c, byte[] in, int startLen, int inc,
-            IvParameterSpec[] ivs, int maxPadLen) throws Exception {
+                               IvParameterSpec[] ivs, int maxPadLen)
+            throws Exception {
 
         System.out.println("testEnc, input len=" + startLen + " w/ inc=" +
                 inc);
@@ -96,7 +109,7 @@ public class TestGeneral extends PKCS11Test {
     }
 
     public static void testKAT(Cipher c, String keyStr, String inStr,
-            String expectedStr) throws Exception {
+                               String expectedStr) throws Exception {
 
         System.out.println("testKAT, input len: " + inStr.length()/2);
 
@@ -245,15 +258,21 @@ public class TestGeneral extends PKCS11Test {
         SecretKey aes256 = new SecretKeySpec(DATA_32, "AES");
         SecretKey any256 = new SecretKeySpec(DATA_32, "ANY");
         PrivateKey priv = KeyPairGenerator.getInstance
-                ("RSA", System.getProperty("test.provider.name","SunRsaSign"))
+                ("RSA",
+                        System.getProperty(
+                                "test.provider.name",
+                                "SunRsaSign"))
                 .generateKeyPair().getPrivate();
 
         String[] algos = {
             "AES/KW/PKCS5Padding", "AES/KW/NoPadding", "AES/KWP/NoPadding"
         };
+
+        final List<String> skippedList  = new ArrayList<>();
+
         for (String a : algos) {
             if (p.getService("Cipher", a) == null) {
-                System.out.println("Skip, due to no support:  " + a);
+                skippedList.add(a);
                 continue;
             }
 
@@ -329,6 +348,12 @@ public class TestGeneral extends PKCS11Test {
             testWrap(c, keys, ivs, padLen);
             testIv(c, ivLen, allowCustomIv);
         }
-        System.out.println("All Tests Passed");
+
+        if (!skippedList.isEmpty()) {
+            throw new SkippedException("One or more tests skipped " +
+                                       "due to no support " + skippedList);
+        } else {
+            System.out.println("All Tests Passed");
+        }
     }
 }

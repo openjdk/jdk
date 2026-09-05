@@ -121,7 +121,8 @@ public class MetricsTesterCgroupV2 implements CgroupMetricsTester {
     private long getLongValueEntryFromFile(String file, String metric) {
         Path filePath = Paths.get(UNIFIED.getPath(), file);
         try {
-            String strVal = Files.lines(filePath).filter(l -> l.startsWith(metric)).collect(Collectors.joining());
+            String strVal = Files.lines(filePath)
+                                 .filter(l -> l.matches("^" + metric + "\\s+.*")).collect(Collectors.joining());
             if (strVal.isEmpty()) {
                 // sometimes the match for the metric does not exist, e.g. cpu.stat's nr_periods iff the controller
                 // is not enabled

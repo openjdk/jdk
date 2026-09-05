@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,19 +115,17 @@ class OptoRuntime : public AllStatic {
 #define C2_STUB_FIELD_NAME(name) _ ## name ## _Java
 #define C2_STUB_FIELD_DECLARE(name, f, t, r) \
   static address     C2_STUB_FIELD_NAME(name) ;
-#define C2_JVMTI_STUB_FIELD_DECLARE(name) \
-  static address     STUB_FIELD_NAME(name);
 
-  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE, C2_JVMTI_STUB_FIELD_DECLARE)
+  C2_STUBS_DO(C2_BLOB_FIELD_DECLARE, C2_STUB_FIELD_DECLARE)
 
 #undef C2_BLOB_FIELD_DECLARE
 #undef C2_STUB_FIELD_NAME
 #undef C2_STUB_FIELD_DECLARE
-#undef C2_JVMTI_STUB_FIELD_DECLARE
 
   // static TypeFunc* data members
   static const TypeFunc* _new_instance_Type;
   static const TypeFunc* _new_array_Type;
+  static const TypeFunc* _new_array_nozero_Type;
   static const TypeFunc* _multianewarray2_Type;
   static const TypeFunc* _multianewarray3_Type;
   static const TypeFunc* _multianewarray4_Type;
@@ -165,6 +163,7 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _digestBase_implCompressMB_with_sha3_Type;
   static const TypeFunc* _digestBase_implCompressMB_without_sha3_Type;
   static const TypeFunc* _double_keccak_Type;
+  static const TypeFunc* _quad_keccak_Type;
   static const TypeFunc* _multiplyToLen_Type;
   static const TypeFunc* _montgomeryMultiply_Type;
   static const TypeFunc* _montgomerySquare_Type;
@@ -192,17 +191,17 @@ class OptoRuntime : public AllStatic {
   static const TypeFunc* _poly1305_processBlocks_Type;
   static const TypeFunc* _intpoly_montgomeryMult_P256_Type;
   static const TypeFunc* _intpoly_assign_Type;
+  static const TypeFunc* _intpoly_mult_25519_Type;
+  static const TypeFunc* _intpoly_square_25519_Type;
   static const TypeFunc* _updateBytesCRC32_Type;
   static const TypeFunc* _updateBytesCRC32C_Type;
   static const TypeFunc* _updateBytesAdler32_Type;
   static const TypeFunc* _osr_end_Type;
   static const TypeFunc* _register_finalizer_Type;
+  static const TypeFunc* _vthread_transition_Type;
 #if INCLUDE_JFR
   static const TypeFunc* _class_id_load_barrier_Type;
 #endif // INCLUDE_JFR
-#if INCLUDE_JVMTI
-  static const TypeFunc* _notify_jvmti_vthread_Type;
-#endif // INCLUDE_JVMTI
   static const TypeFunc* _dtrace_method_entry_exit_Type;
   static const TypeFunc* _dtrace_object_alloc_Type;
 
@@ -217,7 +216,7 @@ class OptoRuntime : public AllStatic {
   static void new_instance_C(Klass* instance_klass, JavaThread* current);
 
   // Allocate storage for a objArray or typeArray
-  static void new_array_C(Klass* array_klass, int len, JavaThread* current);
+  static void new_array_C(Klass* array_klass, int len, oopDesc* init_val, JavaThread* current);
   static void new_array_nozero_C(Klass* array_klass, int len, JavaThread* current);
 
   // Allocate storage for a multi-dimensional arrays
@@ -238,6 +237,11 @@ class OptoRuntime : public AllStatic {
 public:
   static void monitor_notify_C(oopDesc* obj, JavaThread* current);
   static void monitor_notifyAll_C(oopDesc* obj, JavaThread* current);
+
+  static void vthread_end_first_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_start_final_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_start_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
+  static void vthread_end_transition_C(oopDesc* vt, jboolean hide, JavaThread* current);
 
 private:
 
@@ -261,6 +265,8 @@ private:
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
  public:
+  static void load_unknown_inline_C(flatArrayOopDesc* array, int index, JavaThread* current);
+  static void store_unknown_inline_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current);
 
   static bool is_callee_saved_register(MachRegisterNumbers reg);
 
@@ -293,12 +299,13 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
-#if INCLUDE_JVMTI
-  static address notify_jvmti_vthread_start()            { return _notify_jvmti_vthread_start; }
-  static address notify_jvmti_vthread_end()              { return _notify_jvmti_vthread_end; }
-  static address notify_jvmti_vthread_mount()            { return _notify_jvmti_vthread_mount; }
-  static address notify_jvmti_vthread_unmount()          { return _notify_jvmti_vthread_unmount; }
-#endif
+  static address load_unknown_inline_Java()              { return _load_unknown_inline_Java; }
+  static address store_unknown_inline_Java()             { return _store_unknown_inline_Java; }
+
+  static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
+  static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
+  static address vthread_start_transition_Java()         { return _vthread_start_transition_Java; }
+  static address vthread_end_transition_Java()           { return _vthread_end_transition_Java; }
 
   static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
   static ExceptionBlob*    exception_blob()                      { return _exception_blob; }
@@ -325,7 +332,8 @@ private:
   }
 
   static inline const TypeFunc* new_array_nozero_Type() {
-    return new_array_Type();
+    assert(_new_array_nozero_Type != nullptr, "should be initialized");
+    return _new_array_nozero_Type;
   }
 
   static const TypeFunc* multianewarray_Type(int ndim); // multianewarray
@@ -538,6 +546,11 @@ private:
     return _double_keccak_Type;
   }
 
+  static inline const TypeFunc* quad_keccak_Type() {
+    assert(_quad_keccak_Type != nullptr, "should be initialized");
+    return _quad_keccak_Type;
+  }
+
   static inline const TypeFunc* multiplyToLen_Type() {
     assert(_multiplyToLen_Type != nullptr, "should be initialized");
     return _multiplyToLen_Type;
@@ -682,6 +695,18 @@ private:
     return _intpoly_assign_Type;
   }
 
+  // IntegerPolynomial25519 multiply function
+  static inline const TypeFunc* intpoly_mult_25519_Type() {
+    assert(_intpoly_mult_25519_Type != nullptr, "should be initialized");
+    return _intpoly_mult_25519_Type;
+  }
+
+  // IntegerPolynomial25519 square function
+  static inline const TypeFunc* intpoly_square_25519_Type() {
+    assert(_intpoly_square_25519_Type != nullptr, "should be initialized");
+    return _intpoly_square_25519_Type;
+  }
+
   /**
    * int updateBytesCRC32(int crc, byte* b, int len)
    */
@@ -718,6 +743,27 @@ private:
     return _register_finalizer_Type;
   }
 
+  static inline const TypeFunc* vthread_transition_Type() {
+    assert(_vthread_transition_Type != nullptr, "should be initialized");
+    return _vthread_transition_Type;
+  }
+
+  static inline const TypeFunc* vthread_end_first_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_start_final_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_start_transition_Type() {
+    return vthread_transition_Type();
+  }
+
+  static inline const TypeFunc* vthread_end_transition_Type() {
+    return vthread_transition_Type();
+  }
+
 #if INCLUDE_JFR
   static inline const TypeFunc* class_id_load_barrier_Type() {
     assert(_class_id_load_barrier_Type != nullptr, "should be initialized");
@@ -725,12 +771,11 @@ private:
   }
 #endif // INCLUDE_JFR
 
-#if INCLUDE_JVMTI
-  static inline const TypeFunc* notify_jvmti_vthread_Type() {
-    assert(_notify_jvmti_vthread_Type != nullptr, "should be initialized");
-    return _notify_jvmti_vthread_Type;
-  }
-#endif
+  static const TypeFunc* load_unknown_inline_Type();
+  static const TypeFunc* store_unknown_inline_Type();
+
+  static const TypeFunc* store_inline_type_fields_Type();
+  static const TypeFunc* pack_inline_type_Type();
 
   // Dtrace support. entry and exit probes have the same signature
   static inline const TypeFunc* dtrace_method_entry_exit_Type() {

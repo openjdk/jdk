@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,14 +28,16 @@
  * @library /test/lib ../..
  * @run main/othervm XMLEncKAT
  */
+import jtreg.SkippedException;
+
 import java.util.Base64;
 import java.security.Key;
-import java.security.AlgorithmParameters;
 import java.security.Provider;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
 
 // adapted from com/sun/crypto/provider/Cipher/KeyWrap/XMLEncKAT.java
 public class XMLEncKAT extends PKCS11Test {
@@ -105,7 +107,9 @@ public class XMLEncKAT extends PKCS11Test {
         // first test UNWRAP with known values
         for (int i = 0; i < base64Wrapped.length; i++) {
             byte[] wrappedKey = base64D.decode(base64Wrapped[i]);
-            key[i] = c.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
+            key[i] = c.unwrap(wrappedKey,
+                    "AES",
+                    Cipher.SECRET_KEY);
             if (c.getIV() != null) {
                 params[i] = new IvParameterSpec(c.getIV());
             }
@@ -131,8 +135,7 @@ public class XMLEncKAT extends PKCS11Test {
         String wrapAlg = "AESWrap";
 
         if (p.getService("Cipher", wrapAlg) == null) {
-            System.out.println("Skip, due to no support:  " + wrapAlg);
-            return;
+            throw new SkippedException("No support " + wrapAlg);
         }
 
         String keyAlg = "AES";

@@ -438,7 +438,10 @@ class TemplateAssertionPredicate : public Predicate {
   TemplateAssertionPredicate clone(Node* new_control, CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   TemplateAssertionPredicate clone_and_replace_opaque_input(Node* new_control, Node* new_opaque_input,
                                                             CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
+  TemplateAssertionPredicate clone_and_replace_init(Node* new_control, Node* new_input,
+                                                    CountedLoopNode* new_loop_node, PhaseIdealLoop* phase) const;
   void replace_opaque_stride_input(Node* new_stride, PhaseIterGVN& igvn) const;
+  void replace_opaque_init_node(Node* new_init, PhaseIterGVN& igvn) const;
   InitializedAssertionPredicate initialize(PhaseIdealLoop* phase) const;
   void rewire_loop_data_dependencies(IfTrueNode* target_predicate, const NodeInLoopBody& data_in_loop_body,
                                      const PhaseIdealLoop* phase) const;
@@ -813,22 +816,40 @@ class PredicateIterator : public StackObj {
   // Returns the entry to the earliest predicate.
   Node* for_each(PredicateVisitor& predicate_visitor) const {
     Node* current_node = _start_node;
-    PredicateBlockIterator loop_limit_check_predicate_iterator(current_node, Deoptimization::Reason_loop_limit_check);
-    current_node = loop_limit_check_predicate_iterator.for_each(predicate_visitor);
-    if (UseAutoVectorizationPredicate) {
-      PredicateBlockIterator auto_vectorization_check_iterator(current_node, Deoptimization::Reason_auto_vectorization_check);
-      current_node = auto_vectorization_check_iterator.for_each(predicate_visitor);
+    if (!UseParsePredicates) {
+      // We cannot do nothing when UseParsePredicates is not set: We could still have Assertion Predicates from Range
+      // Check Elimination even without Parse Predicates. We have one "generic" block, but we use
+      // Reason_loop_limit_check (could also use another predicate related reason) to not confuse the iteration logic
+      // with non-predicate deoptimization reasons.
+      return apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
     }
+
+    if (UseLoopLimitCheckPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_loop_limit_check);
+    }
+
+    if (UseAutoVectorizationPredicate) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_auto_vectorization_check);
+    }
+
     if (UseLoopPredicate) {
       if (UseProfiledLoopPredicate) {
-        PredicateBlockIterator profiled_loop_predicate_iterator(current_node, Deoptimization::Reason_profile_predicate);
-        current_node = profiled_loop_predicate_iterator.for_each(predicate_visitor);
+        current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_profile_predicate);
       }
-      PredicateBlockIterator loop_predicate_iterator(current_node, Deoptimization::Reason_predicate);
-      current_node = loop_predicate_iterator.for_each(predicate_visitor);
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_predicate);
     }
-    PredicateBlockIterator short_running_loop_predicate_iterator(current_node, Deoptimization::Reason_short_running_long_loop);
-    return short_running_loop_predicate_iterator.for_each(predicate_visitor);
+
+    if (ShortRunningLongLoop) {
+      current_node = apply_for(predicate_visitor, current_node, Deoptimization::Reason_short_running_long_loop);
+    }
+    return current_node;
+  }
+
+ private:
+  [[nodiscard]] static Node* apply_for(PredicateVisitor& predicate_visitor, Node* current_node,
+                                       Deoptimization::DeoptReason reason) {
+    PredicateBlockIterator predicate_block_iterator(current_node, reason);
+    return predicate_block_iterator.for_each(predicate_visitor);
   }
 };
 
@@ -1228,6 +1249,7 @@ public:
   }
 
   void clone_template_assertion_predicate(const TemplateAssertionPredicate& template_assertion_predicate);
+  void clone_template_assertion_predicate_and_replace_init(const TemplateAssertionPredicate& template_assertion_predicate, Node* new_init);
 };
 
 // Visitor to clone Parse and Template Assertion Predicates from a loop to its unswitched true and false path loop.
@@ -1298,6 +1320,22 @@ class UpdateStrideForAssertionPredicates : public PredicateVisitor {
 
   void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
   void visit(const InitializedAssertionPredicate& initialized_assertion_predicate) override;
+};
+
+// This visitor replaces the OpaqueLoopInitNode for an Assertion Predicate with the expression passed as input.
+class UpdateInitForTemplateAssertionPredicates : public PredicateVisitor {
+  Node* const _new_init;
+  PhaseIdealLoop* const _phase;
+
+public:
+  UpdateInitForTemplateAssertionPredicates(Node* const new_init, PhaseIdealLoop* phase)
+      : _new_init(new_init),
+        _phase(phase) {}
+  NONCOPYABLE(UpdateInitForTemplateAssertionPredicates);
+
+  using PredicateVisitor::visit;
+
+  void visit(const TemplateAssertionPredicate& template_assertion_predicate) override;
 };
 
 // Eliminate all useless Parse and Template Assertion Predicates. They become useless when they can no longer be found

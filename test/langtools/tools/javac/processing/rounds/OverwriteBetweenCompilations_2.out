@@ -53,5 +53,3 @@ public abstract class GeneratedClass<E extends java.lang.Number> extends java.ut
 
   public void test(long a);
 }
-- compiler.note.deprecated.filename: OverwriteBetweenCompilationsSource.java
-- compiler.note.deprecated.recompile

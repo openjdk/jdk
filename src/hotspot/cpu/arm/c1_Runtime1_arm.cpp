@@ -715,6 +715,10 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
     default:
       {
         __ set_info("unimplemented entry", dont_gc_arguments);
+        // This stub would fail at runtime. But asserts during stub generation
+        // would assert things about oop maps. Pretend we have one.
+        oop_maps = new OopMapSet();
+        oop_maps->add_gc_map(__ offset(), generate_oop_map(sasm));
         STOP("unimplemented entry");
       }
       break;

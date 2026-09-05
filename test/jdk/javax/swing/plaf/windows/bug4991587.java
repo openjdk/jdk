@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4991587
+ * @bug 4991587 8359433
  * @requires (os.family == "windows")
  * @summary Tests that disabled JButton text is positioned properly in Windows L&F
  * @modules java.desktop/com.sun.java.swing.plaf.windows

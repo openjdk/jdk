@@ -33,6 +33,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import jdk.jpackage.test.AdditionalLauncher;
+import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.ConfigurationTarget;
@@ -108,7 +109,7 @@ public class ServiceTest {
     }
 
     @Test
-    public void test() throws Throwable {
+    public void test() {
         var pkg = createPackageTest().addHelloAppInitializer("com.foo.ServiceTest");
         LauncherAsServiceVerifier.build().setExpectedValue("A1").applyTo(pkg);
         createTestInitializer().applyTo(pkg);
@@ -116,7 +117,7 @@ public class ServiceTest {
     }
 
     @Test
-    public void testUpdate() throws Throwable {
+    public void testUpdate() {
         var testInitializer = createTestInitializer().setUpgradeCode(
                 "4050AD4D-D6CC-452A-9CB0-58E5FA8C410F");
 
@@ -155,14 +156,21 @@ public class ServiceTest {
     }
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public void testAddL(boolean mainLauncherAsService) {
+    @Parameter(value = {"true", "false"})
+    @Parameter(value = {"false", "false"})
+    @Parameter(value = {"true", "true"}, ifOS = OperatingSystem.MACOS)
+    @Parameter(value = {"false", "true"}, ifOS = OperatingSystem.MACOS)
+    public void testAddL(boolean mainLauncherAsService, boolean isMacAppStore) {
 
         final var uniqueOutputFile = uniqueOutputFile();
 
         createPackageTest()
                 .addHelloAppInitializer("com.buz.AddLaunchersServiceTest")
+                .addInitializer(cmd -> {
+                    if (isMacAppStore) {
+                        cmd.addArgument("--mac-app-store");
+                    }
+                })
                 .mutate(test -> {
                     if (mainLauncherAsService) {
                         LauncherAsServiceVerifier.build()
@@ -199,9 +207,11 @@ public class ServiceTest {
         }
 
     @Test
-    @Parameter("true")
-    @Parameter("false")
-    public void testAddLFromAppImage(boolean mainLauncherAsService) {
+    @Parameter(value = {"true", "false"})
+    @Parameter(value = {"false", "false"})
+    @Parameter(value = {"true", "true"}, ifOS = OperatingSystem.MACOS)
+    @Parameter(value = {"false", "true"}, ifOS = OperatingSystem.MACOS)
+    public void testAddLFromAppImage(boolean mainLauncherAsService, boolean isMacAppStore) {
 
         var uniqueOutputFile = uniqueOutputFile();
 
@@ -211,6 +221,10 @@ public class ServiceTest {
             // Ensure launchers are executable because the output bundle will be installed
             // and we want to verify launchers are automatically started by the installer.
             appImageCmd.addInitializer(JPackageCommand::ignoreFakeRuntime);
+        }
+
+        if (isMacAppStore) {
+            appImageCmd.cmd().orElseThrow().addArgument("--mac-app-store");
         }
 
         if (mainLauncherAsService) {

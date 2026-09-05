@@ -28,7 +28,6 @@
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/reservedSpace.hpp"
-#include "nmt/memTracker.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -46,8 +45,6 @@ G1RegionToSpaceMapper::G1RegionToSpaceMapper(ReservedSpace rs,
   _memory_tag(mem_tag) {
   guarantee(is_power_of_2(page_size), "must be");
   guarantee(is_power_of_2(region_granularity), "must be");
-
-  MemTracker::record_virtual_memory_tag(rs, mem_tag);
 }
 
 // Used to manually signal a mapper to handle a set of regions as committed.

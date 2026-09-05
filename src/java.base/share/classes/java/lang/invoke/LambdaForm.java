@@ -268,10 +268,14 @@ class LambdaForm {
         DIRECT_NEW_INVOKE_SPECIAL("DMH.newInvokeSpecial", "newInvokeSpecial"),
         DIRECT_INVOKE_INTERFACE("DMH.invokeInterface", "invokeInterface"),
         DIRECT_INVOKE_STATIC_INIT("DMH.invokeStaticInit", "invokeStaticInit"),
+        // Start field forms
+        // IJFDL, instance/static differ in method type, can share form
+        // init form only applicable to static
         FIELD_ACCESS("fieldAccess"),
         FIELD_ACCESS_INIT("fieldAccessInit"),
         VOLATILE_FIELD_ACCESS("volatileFieldAccess"),
         VOLATILE_FIELD_ACCESS_INIT("volatileFieldAccessInit"),
+        // BCSZ need own forms to avoid clashing with basic type I, +-init/volatile
         FIELD_ACCESS_B("fieldAccessB"),
         FIELD_ACCESS_INIT_B("fieldAccessInitB"),
         VOLATILE_FIELD_ACCESS_B("volatileFieldAccessB"),
@@ -288,10 +292,30 @@ class LambdaForm {
         FIELD_ACCESS_INIT_Z("fieldAccessInitZ"),
         VOLATILE_FIELD_ACCESS_Z("volatileFieldAccessZ"),
         VOLATILE_FIELD_ACCESS_INIT_Z("volatileFieldAccessInitZ"),
+        // cast, nr, flat need their own forms to avoid clashing with L
         FIELD_ACCESS_CAST("fieldAccessCast"),
         FIELD_ACCESS_INIT_CAST("fieldAccessInitCast"),
         VOLATILE_FIELD_ACCESS_CAST("volatileFieldAccessCast"),
         VOLATILE_FIELD_ACCESS_INIT_CAST("volatileFieldAccessInitCast"),
+        // null-check and put reference, +-cast, +-init/volatile
+        // non-cast forms serve bytecode emulation purpose, which always enforces null checks
+        PUT_NULL_RESTRICTED_REFERENCE("putNullRestrictedReference"),
+        PUT_NULL_RESTRICTED_REFERENCE_INIT("putNullRestrictedReferenceInit"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE("volatilePutNullRestrictedReference"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_INIT("volatilePutNullRestrictedReferenceInit"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST("putNullRestrictedReferenceCast"),
+        PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("putNullRestrictedReferenceInitCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST("volatilePutNullRestrictedReferenceCast"),
+        VOLATILE_PUT_NULL_RESTRICTED_REFERENCE_CAST_INIT("volatilePutNullRestrictedReferenceCastInit"),
+        // flat implies cast, +-init/volatile
+        FIELD_ACCESS_FLAT("fieldAccessFlat"),
+        FIELD_ACCESS_INIT_FLAT("fieldAccessInitFlat"),
+        VOLATILE_FIELD_ACCESS_FLAT("volatileFieldAccessFlat"),
+        VOLATILE_FIELD_ACCESS_INIT_FLAT("volatileFieldAccessInitFlat"),
+        // write guard NR flat, implies cast; +-volatile; no init forms - no flat in static fields yet
+        PUT_NULL_RESTRICTED_FLAT_VALUE("putNullRestrictedFlatValue"),
+        VOLATILE_PUT_NULL_RESTRICTED_FLAT_VALUE("volatilePutNullRestrictedFlatValue"),
+        // End fields
         TRY_FINALLY("tryFinally"),
         TABLE_SWITCH("tableSwitch"),
         COLLECTOR("collector"),

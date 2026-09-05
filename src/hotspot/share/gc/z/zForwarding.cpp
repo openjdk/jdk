@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "gc/z/zStat.hpp"
 #include "gc/z/zUtils.inline.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/align.hpp"
 
 //
@@ -50,7 +49,7 @@
 //
 
 bool ZForwarding::claim() {
-  return AtomicAccess::cmpxchg(&_claimed, false, true) == false;
+  return _claimed.compare_set(false, true);
 }
 
 void ZForwarding::in_place_relocation_start(zoffset relocated_watermark) {
@@ -60,7 +59,7 @@ void ZForwarding::in_place_relocation_start(zoffset relocated_watermark) {
 
   // Support for ZHeap::is_in checks of from-space objects
   // in a page that is in-place relocating
-  AtomicAccess::store(&_in_place_thread, Thread::current());
+  _in_place_thread.store_relaxed(Thread::current());
   _in_place_top_at_start = _page->top();
 }
 
@@ -76,17 +75,17 @@ void ZForwarding::in_place_relocation_finish() {
   }
 
   // Disable relaxed ZHeap::is_in checks
-  AtomicAccess::store(&_in_place_thread, (Thread*)nullptr);
+  _in_place_thread.store_relaxed(nullptr);
 }
 
 bool ZForwarding::in_place_relocation_is_below_top_at_start(zoffset offset) const {
   // Only the relocating thread is allowed to know about the old relocation top.
-  return AtomicAccess::load(&_in_place_thread) == Thread::current() && offset < _in_place_top_at_start;
+  return _in_place_thread.load_relaxed() == Thread::current() && offset < _in_place_top_at_start;
 }
 
 bool ZForwarding::retain_page(ZRelocateQueue* queue) {
   for (;;) {
-    const int32_t ref_count = AtomicAccess::load_acquire(&_ref_count);
+    const int32_t ref_count = _ref_count.load_acquire();
 
     if (ref_count == 0) {
       // Released
@@ -101,7 +100,7 @@ bool ZForwarding::retain_page(ZRelocateQueue* queue) {
       return false;
     }
 
-    if (AtomicAccess::cmpxchg(&_ref_count, ref_count, ref_count + 1) == ref_count) {
+    if (_ref_count.compare_set(ref_count, ref_count + 1)) {
       // Retained
       return true;
     }
@@ -110,11 +109,11 @@ bool ZForwarding::retain_page(ZRelocateQueue* queue) {
 
 void ZForwarding::in_place_relocation_claim_page() {
   for (;;) {
-    const int32_t ref_count = AtomicAccess::load(&_ref_count);
+    const int32_t ref_count = _ref_count.load_relaxed();
     assert(ref_count > 0, "Invalid state");
 
     // Invert reference count
-    if (AtomicAccess::cmpxchg(&_ref_count, ref_count, -ref_count) != ref_count) {
+    if (!_ref_count.compare_set(ref_count, -ref_count)) {
       continue;
     }
 
@@ -122,7 +121,7 @@ void ZForwarding::in_place_relocation_claim_page() {
     // and we have now claimed the page. Otherwise we wait until it is claimed.
     if (ref_count != 1) {
       ZLocker<ZConditionLock> locker(&_ref_lock);
-      while (AtomicAccess::load_acquire(&_ref_count) != -1) {
+      while (_ref_count.load_acquire() != -1) {
         _ref_lock.wait();
       }
     }
@@ -134,12 +133,12 @@ void ZForwarding::in_place_relocation_claim_page() {
 
 void ZForwarding::release_page() {
   for (;;) {
-    const int32_t ref_count = AtomicAccess::load(&_ref_count);
+    const int32_t ref_count = _ref_count.load_relaxed();
     assert(ref_count != 0, "Invalid state");
 
     if (ref_count > 0) {
       // Decrement reference count
-      if (AtomicAccess::cmpxchg(&_ref_count, ref_count, ref_count - 1) != ref_count) {
+      if (!_ref_count.compare_set(ref_count, ref_count - 1)) {
         continue;
       }
 
@@ -152,7 +151,7 @@ void ZForwarding::release_page() {
       }
     } else {
       // Increment reference count
-      if (AtomicAccess::cmpxchg(&_ref_count, ref_count, ref_count + 1) != ref_count) {
+      if (!_ref_count.compare_set(ref_count, ref_count + 1)) {
         continue;
       }
 
@@ -171,9 +170,9 @@ void ZForwarding::release_page() {
 
 ZPage* ZForwarding::detach_page() {
   // Wait until released
-  if (AtomicAccess::load_acquire(&_ref_count) != 0) {
+  if (_ref_count.load_acquire() != 0) {
     ZLocker<ZConditionLock> locker(&_ref_lock);
-    while (AtomicAccess::load_acquire(&_ref_count) != 0) {
+    while (_ref_count.load_acquire() != 0) {
       _ref_lock.wait();
     }
   }
@@ -182,16 +181,16 @@ ZPage* ZForwarding::detach_page() {
 }
 
 ZPage* ZForwarding::page() {
-  assert(AtomicAccess::load(&_ref_count) != 0, "The page has been released/detached");
+  assert(_ref_count.load_relaxed() != 0, "The page has been released/detached");
   return _page;
 }
 
 void ZForwarding::mark_done() {
-  AtomicAccess::store(&_done, true);
+  _done.store_relaxed(true);
 }
 
 bool ZForwarding::is_done() const {
-  return AtomicAccess::load(&_done);
+  return _done.load_relaxed();
 }
 
 //
@@ -288,7 +287,7 @@ void ZForwarding::relocated_remembered_fields_publish() {
   // used to have remembered set entries. Now publish the fields to
   // the YC.
 
-  const ZPublishState res = AtomicAccess::cmpxchg(&_relocated_remembered_fields_state, ZPublishState::none, ZPublishState::published);
+  const ZPublishState res = _relocated_remembered_fields_state.compare_exchange(ZPublishState::none, ZPublishState::published);
 
   // none:      OK to publish
   // published: Not possible - this operation makes this transition
@@ -319,7 +318,7 @@ void ZForwarding::relocated_remembered_fields_notify_concurrent_scan_of() {
   // Invariant: The page is being retained
   assert(ZGeneration::young()->is_phase_mark(), "Only called when");
 
-  const ZPublishState res = AtomicAccess::cmpxchg(&_relocated_remembered_fields_state, ZPublishState::none, ZPublishState::reject);
+  const ZPublishState res = _relocated_remembered_fields_state.compare_exchange(ZPublishState::none, ZPublishState::reject);
 
   // none:      OC has not completed relocation
   // published: OC has completed and published all relocated remembered fields
@@ -340,7 +339,7 @@ void ZForwarding::relocated_remembered_fields_notify_concurrent_scan_of() {
     // OC relocation already collected and published fields
 
     // Still notify concurrent scanning and reject the collected data from the OC
-    const ZPublishState res2 = AtomicAccess::cmpxchg(&_relocated_remembered_fields_state, ZPublishState::published, ZPublishState::reject);
+    const ZPublishState res2 = _relocated_remembered_fields_state.compare_exchange(ZPublishState::published, ZPublishState::reject);
     assert(res2 == ZPublishState::published, "Should not fail");
 
     log_debug(gc, remset)("Forwarding remset eager and reject: " PTR_FORMAT " " PTR_FORMAT, untype(start()), untype(end()));
@@ -368,7 +367,7 @@ bool ZForwarding::relocated_remembered_fields_published_contains(volatile zpoint
 }
 
 void ZForwarding::verify() const {
-  guarantee(_ref_count != 0, "Invalid reference count");
+  guarantee(_ref_count.load_relaxed() != 0, "Invalid reference count");
   guarantee(_page != nullptr, "Invalid page");
 
   uint32_t live_objects = 0;

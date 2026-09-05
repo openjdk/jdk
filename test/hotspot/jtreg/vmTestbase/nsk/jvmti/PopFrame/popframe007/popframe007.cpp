@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jmethodID mid;
+static jclass testThreadClass = nullptr;
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thread, jmethodID method, jlocation location) {
@@ -166,6 +167,8 @@ Java_nsk_jvmti_PopFrame_popframe007_getReady(JNIEnv *env,
         return;
     }
 
+    testThreadClass = (jclass)env->NewGlobalRef(clazz);
+
     err = jvmti->SetBreakpoint(mid, 0);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetBreakpoint) unexpected error: %s (%d)\n",
@@ -191,7 +194,7 @@ Java_nsk_jvmti_PopFrame_popframe007_getRes(JNIEnv *env, jclass cls) {
 JNIEXPORT void JNICALL
 Java_nsk_jvmti_PopFrame_popframe007_B(JNIEnv *env, jclass cls) {
     if (mid != nullptr) {
-        env->CallStaticVoidMethod(cls, mid);
+        env->CallStaticVoidMethod(testThreadClass, mid);
     }
 }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGEAPPLAUNCHER, \
     SRC := applauncher, \
     EXTRA_SRC := common, \
     INCLUDE_FILES := $(JPACKAGEAPPLAUNCHER_INCLUDE_FILES), \
-    OPTIMIZATION := LOW, \
+    OPTIMIZATION := SIZE, \
     DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_LinuxPackage.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Log.cpp := unused-const-variable, \
@@ -91,7 +91,7 @@ ifeq ($(call isTargetOs, linux), true)
           common, \
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
       LINK_TYPE := C++, \
-      OPTIMIZATION := LOW, \
+      OPTIMIZATION := SIZE, \
       DISABLED_WARNINGS_gcc_Log.cpp := unused-const-variable, \
       DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \

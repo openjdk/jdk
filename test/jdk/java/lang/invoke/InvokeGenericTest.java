@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @summary unit tests for java.lang.invoke.MethodHandle.invoke
  * @compile InvokeGenericTest.java
- * @run testng/othervm test.java.lang.invoke.InvokeGenericTest
+ * @run junit/othervm test.java.lang.invoke.InvokeGenericTest
  */
 
 package test.java.lang.invoke;
@@ -34,9 +34,13 @@ import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
 import java.lang.reflect.*;
 import java.util.*;
-import org.testng.*;
-import static org.testng.AssertJUnit.*;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
  *
@@ -68,7 +72,7 @@ public class InvokeGenericTest {
     String testName;
     static int allPosTests, allNegTests;
     int posTests, negTests;
-    @AfterMethod
+    @AfterEach
     public void printCounts() {
         if (verbosity >= 2 && (posTests | negTests) != 0) {
             System.out.println();
@@ -92,14 +96,14 @@ public class InvokeGenericTest {
         testName = name;
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUpClass() throws Exception {
         calledLog.clear();
         calledLog.add(null);
         nextArgVal = INITIAL_ARG_VAL;
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDownClass() throws Exception {
         int posTests = allPosTests, negTests = allNegTests;
         if (verbosity >= 2 && (posTests | negTests) != 0) {
@@ -127,7 +131,7 @@ public class InvokeGenericTest {
         System.out.println("actual:     "+actual);
         System.out.println("ex. types:  "+getClasses(expected));
         System.out.println("act. types: "+getClasses(actual));
-        assertEquals("previous method call", expected, actual);
+        assertEquals(expected, actual, "previous method call");
     }
     static void printCalled(MethodHandle target, String name, Object... args) {
         if (verbosity >= 3)
@@ -389,8 +393,7 @@ public class InvokeGenericTest {
     }
     public void testWrongArgumentCount(List<Class<?>> expect, List<Class<?>> observe) throws Throwable {
         countTest(false);
-        if (expect.equals(observe))
-            assert(false);
+        assertNotEquals(expect, observe);
         MethodHandle target = callable(expect);
         Object[] args = zeroArgs(observe);
         Object junk;
@@ -473,28 +476,25 @@ public class InvokeGenericTest {
         mh = MethodHandles.filterReturnValue(mh, toString_MH);
         mh = mh.asType(type);
         Object res = null;
-        if (nargs == 2) {
-            res = mh.invoke((Object)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-            res = mh.invoke((String)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-            res = mh.invoke((Object)args[0], (String)args[1]);
-            assertEquals(expectString, res);
-            res = mh.invoke((String)args[0], (String)args[1]);
-            assertEquals(expectString, res);
-            res = mh.invoke((String)args[0], (CharSequence)args[1]);
-            assertEquals(expectString, res);
-            res = mh.invoke((CharSequence)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-            res = (String) mh.invoke((Object)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-            res = (String) mh.invoke((String)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-            res = (CharSequence) mh.invoke((String)args[0], (Object)args[1]);
-            assertEquals(expectString, res);
-        } else {
-            assert(false);  // write this code
-        }
+        assertEquals(2, nargs);
+        res = mh.invoke((Object)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
+        res = mh.invoke((String)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
+        res = mh.invoke((Object)args[0], (String)args[1]);
+        assertEquals(expectString, res);
+        res = mh.invoke((String)args[0], (String)args[1]);
+        assertEquals(expectString, res);
+        res = mh.invoke((String)args[0], (CharSequence)args[1]);
+        assertEquals(expectString, res);
+        res = mh.invoke((CharSequence)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
+        res = (String) mh.invoke((Object)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
+        res = (String) mh.invoke((String)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
+        res = (CharSequence) mh.invoke((String)args[0], (Object)args[1]);
+        assertEquals(expectString, res);
         //System.out.println(res);
     }
 

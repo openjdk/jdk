@@ -119,11 +119,11 @@ class TreeDissector {
     }
 
     int getStartPosition(Tree tree) {
-        return (int) getSourcePositions().getStartPosition(targetCompilationUnit, tree);
+        return (int) getSourcePositions().getStartPosition(tree);
     }
 
     int getEndPosition(Tree tree) {
-        return (int) getSourcePositions().getEndPosition(targetCompilationUnit, tree);
+        return (int) getSourcePositions().getEndPosition(tree);
     }
 
     Range treeToRange(Tree tree) {

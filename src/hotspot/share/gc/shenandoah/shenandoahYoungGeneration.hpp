@@ -59,7 +59,6 @@ public:
   bool contains(ShenandoahHeapRegion* region) const override;
   bool contains(oop obj) const override;
 
-  void reserve_task_queues(uint workers) override;
   void set_old_gen_task_queues(ShenandoahObjToScanQueueSet* old_gen_queues) {
     _old_gen_task_queues = old_gen_queues;
   }
@@ -69,11 +68,10 @@ public:
 
   // Returns true if the young generation is configured to enqueue old
   // oops for the old generation mark queues.
-  bool is_bootstrap_cycle() {
+  bool is_old_marking_active() const {
     return _old_gen_task_queues != nullptr;
   }
 
-  size_t bytes_allocated_since_gc_start() const override;
   size_t used() const override;
   size_t used_regions() const override;
   size_t used_regions_size() const override;
@@ -82,8 +80,10 @@ public:
   size_t get_affiliated_region_count() const override;
   size_t max_capacity() const override;
 
+  // Return sum of bytes available to mutator and to Collector, assuming heap lock is held.
+  size_t available_with_reserve() const;
   size_t available() const override;
-  size_t soft_available() const override;
+  size_t soft_mutator_available() const override;
 
   void prepare_gc() override;
 };

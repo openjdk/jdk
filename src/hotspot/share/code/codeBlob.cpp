@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
@@ -39,6 +40,7 @@
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaFrameAnchor.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -62,6 +64,7 @@ static_assert(!std::is_polymorphic<AdapterBlob>::value,        "no virtual metho
 static_assert(!std::is_polymorphic<VtableBlob>::value,         "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<MethodHandlesAdapterBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<RuntimeStub>::value,        "no virtual methods are allowed in code blobs");
+static_assert(!std::is_polymorphic<BufferedInlineTypeBlob>::value,   "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<DeoptimizationBlob>::value, "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<SafepointBlob>::value,      "no virtual methods are allowed in code blobs");
 static_assert(!std::is_polymorphic<UpcallStub>::value,         "no virtual methods are allowed in code blobs");
@@ -77,8 +80,10 @@ const BufferBlob::Vptr               BufferBlob::_vpntr;
 const RuntimeStub::Vptr              RuntimeStub::_vpntr;
 const SingletonBlob::Vptr            SingletonBlob::_vpntr;
 const DeoptimizationBlob::Vptr       DeoptimizationBlob::_vpntr;
+const SafepointBlob::Vptr            SafepointBlob::_vpntr;
 #ifdef COMPILER2
 const ExceptionBlob::Vptr            ExceptionBlob::_vpntr;
+const UncommonTrapBlob::Vptr         UncommonTrapBlob::_vpntr;
 #endif // COMPILER2
 const UpcallStub::Vptr               UpcallStub::_vpntr;
 
@@ -90,6 +95,7 @@ const CodeBlob::Vptr* CodeBlob::vptr(CodeBlobKind kind) {
       &AdapterBlob::_vpntr,
       &VtableBlob::_vpntr,
       &MethodHandlesAdapterBlob::_vpntr,
+      &BufferedInlineTypeBlob::_vpntr,
       &RuntimeStub::_vpntr,
       &DeoptimizationBlob::_vpntr,
       &SafepointBlob::_vpntr,
@@ -123,7 +129,7 @@ unsigned int CodeBlob::allocation_size(CodeBuffer* cb, int header_size) {
 }
 
 CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size,
-                   int16_t frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
+                   int frame_complete_offset, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments,
                    int mutable_data_size) :
   _oop_maps(nullptr), // will be set by set_oop_maps() call
   _name(name),
@@ -135,9 +141,9 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size
   _data_offset(_content_offset + align_up(cb->total_content_size(), oopSize)),
   _frame_size(frame_size),
   _mutable_data_size(mutable_data_size),
+  _frame_complete_offset(frame_complete_offset),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(frame_complete_offset),
   _kind(kind),
   _caller_must_gc_arguments(caller_must_gc_arguments)
 {
@@ -177,31 +183,15 @@ CodeBlob::CodeBlob(const char* name, CodeBlobKind kind, int size, uint16_t heade
   _data_offset(size),
   _frame_size(0),
   _mutable_data_size(0),
+  _frame_complete_offset(CodeOffsets::frame_never_safe),
   S390_ONLY(_ctable_offset(0) COMMA)
   _header_size(header_size),
-  _frame_complete_offset(CodeOffsets::frame_never_safe),
   _kind(kind),
   _caller_must_gc_arguments(false)
 {
   assert(is_aligned(size,            oopSize), "unaligned size");
   assert(is_aligned(header_size,     oopSize), "unaligned size");
   assert(_mutable_data == blob_end(), "sanity");
-}
-
-void CodeBlob::restore_mutable_data(address reloc_data) {
-  // Relocation data is now stored as part of the mutable data area; allocate it before copy relocations
-  if (_mutable_data_size > 0) {
-    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
-    if (_mutable_data == nullptr) {
-      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
-    }
-  } else {
-    _mutable_data = blob_end(); // default value
-  }
-  if (_relocation_size > 0) {
-    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
-    memcpy((address)relocation_begin(), reloc_data, relocation_size());
-  }
 }
 
 void CodeBlob::purge() {
@@ -240,6 +230,23 @@ void CodeBlob::print_code_on(outputStream* st) {
   Disassembler::decode(this, st);
 }
 
+#if INCLUDE_CDS
+void CodeBlob::restore_mutable_data(address reloc_data) {
+  // Relocation data is now stored as part of the mutable data area; allocate it before copy relocations
+  if (_mutable_data_size > 0) {
+    _mutable_data = (address)os::malloc(_mutable_data_size, mtCode);
+    if (_mutable_data == nullptr) {
+      vm_exit_out_of_memory(_mutable_data_size, OOM_MALLOC_ERROR, "codebuffer: no space for mutable data");
+    }
+  } else {
+    _mutable_data = blob_end(); // default value
+  }
+  if (_relocation_size > 0) {
+    assert(_mutable_data_size > 0, "relocation is part of mutable data section");
+    memcpy((address)relocation_begin(), reloc_data, relocation_size());
+  }
+}
+
 void CodeBlob::prepare_for_archiving_impl() {
   set_name(nullptr);
   _oop_maps = nullptr;
@@ -269,24 +276,15 @@ void CodeBlob::post_restore() {
   vptr(_kind)->post_restore(this);
 }
 
-CodeBlob* CodeBlob::restore(address code_cache_buffer,
-                            const char* name,
-                            address archived_reloc_data,
-                            ImmutableOopMapSet* archived_oop_maps)
+CodeBlob* CodeBlob::restore(address code_cache_buffer, AOTCodeReader* reader)
 {
   copy_to(code_cache_buffer);
   CodeBlob* code_blob = (CodeBlob*)code_cache_buffer;
-  code_blob->set_name(name);
-  code_blob->restore_mutable_data(archived_reloc_data);
-  code_blob->set_oop_maps(archived_oop_maps);
+  reader->restore(code_blob);
   return code_blob;
 }
 
-CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
-                           const char* name,
-                           address archived_reloc_data,
-                           ImmutableOopMapSet* archived_oop_maps
-                          )
+CodeBlob* CodeBlob::create(CodeBlob* archived_blob, AOTCodeReader* reader)
 {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
@@ -298,10 +296,7 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     address code_cache_buffer = (address)CodeCache::allocate(size, CodeBlobType::NonNMethod);
     if (code_cache_buffer != nullptr) {
-      blob = archived_blob->restore(code_cache_buffer,
-                                    name,
-                                    archived_reloc_data,
-                                    archived_oop_maps);
+      blob = archived_blob->restore(code_cache_buffer, reader);
       assert(blob != nullptr, "sanity check");
 
       // Flush the code block
@@ -315,6 +310,8 @@ CodeBlob* CodeBlob::create(CodeBlob* archived_blob,
   return blob;
 }
 
+#endif // INCLUDE_CDS
+
 //-----------------------------------------------------------------------------------------
 // Creates a RuntimeBlob from a CodeBuffer and copy code and relocation info.
 
@@ -324,18 +321,27 @@ RuntimeBlob::RuntimeBlob(
   CodeBuffer* cb,
   int         size,
   uint16_t    header_size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments)
   : CodeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments,
              align_up(cb->total_relocation_size(), oopSize))
 {
+  if (code_size() == 0) {
+    // Nothing to copy
+    return;
+  }
+
   cb->copy_code_and_locs_to(this);
+
+  // Flush generated code
+  ICache::invalidate_range(code_begin(), code_size());
 }
 
 void RuntimeBlob::free(RuntimeBlob* blob) {
   assert(blob != nullptr, "caller must check for nullptr");
+  MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
   blob->purge();
   {
@@ -353,9 +359,12 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
   if (stub != nullptr && (PrintStubCode ||
                        Forte::is_enabled() ||
                        JvmtiExport::should_post_dynamic_code_generated())) {
-    char stub_id[256];
-    assert(strlen(name1) + strlen(name2) < sizeof(stub_id), "");
-    jio_snprintf(stub_id, sizeof(stub_id), "%s%s", name1, name2);
+    ResourceMark rm;
+    const size_t name1_len = strlen(name1);
+    const size_t name2_len = strlen(name2);
+    const size_t stub_id_size = name1_len + name2_len + 1;
+    char* stub_id = NEW_RESOURCE_ARRAY(char, stub_id_size);
+    jio_snprintf(stub_id, stub_id_size, "%s%s", name1, name2);
     if (PrintStubCode) {
       ttyLocker ttyl;
       tty->print_cr("- - - [BEGIN] - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -");
@@ -389,7 +398,7 @@ void RuntimeBlob::trace_new_stub(RuntimeBlob* stub, const char* name1, const cha
 // Implementation of BufferBlob
 
 BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, int size, uint16_t header_size)
-: RuntimeBlob(name, kind, size, header_size)
+  : RuntimeBlob(name, kind, size, header_size)
 {}
 
 BufferBlob* BufferBlob::create(const char* name, uint buffer_size) {
@@ -425,7 +434,7 @@ BufferBlob* BufferBlob::create(const char* name, CodeBuffer* cb) {
   assert(name != nullptr, "must provide a name");
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size);
+    blob = new (size) BufferBlob(name, CodeBlobKind::Buffer, cb, size, sizeof(BufferBlob));
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -441,14 +450,18 @@ void BufferBlob::free(BufferBlob *blob) {
   RuntimeBlob::free(blob);
 }
 
+BufferBlob::BufferBlob(const char* name, CodeBlobKind kind, CodeBuffer* cb, int size, uint16_t header_size, int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments)
+  : RuntimeBlob(name, kind, cb, size, header_size, frame_complete, frame_size, oop_maps, caller_must_gc_arguments)
+{}
+
 
 //----------------------------------------------------------------------------------------------------
 // Implementation of AdapterBlob
 
-AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) :
-  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob)) {
-  assert(entry_offset[I2C] == 0, "sanity check");
+AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) :
+  BufferBlob("I2C/C2I adapters", CodeBlobKind::Adapter, cb, size, sizeof(AdapterBlob), frame_complete, frame_size, oop_maps, caller_must_gc_arguments) {
 #ifdef ASSERT
+  assert(entry_offset[I2C] == 0, "sanity check");
   for (int i = 1; i < AdapterBlob::ENTRY_COUNT; i++) {
     // The entry is within the adapter blob or unset.
     int offset = entry_offset[i];
@@ -458,12 +471,15 @@ AdapterBlob::AdapterBlob(int size, CodeBuffer* cb, int entry_offset[AdapterBlob:
   }
 #endif // ASSERT
   _c2i_offset = entry_offset[C2I];
+  _c2i_inline_offset = entry_offset[C2I_Inline];
+  _c2i_inline_ro_offset = entry_offset[C2I_Inline_RO];
   _c2i_unverified_offset = entry_offset[C2I_Unverified];
+  _c2i_unverified_inline_offset = entry_offset[C2I_Unverified_Inline];
   _c2i_no_clinit_check_offset = entry_offset[C2I_No_Clinit_Check];
   CodeCache::commit(this);
 }
 
-AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT]) {
+AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::ENTRY_COUNT], int frame_complete, int frame_size, OopMapSet* oop_maps, bool caller_must_gc_arguments) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
 
   CodeCache::gc_on_allocation();
@@ -472,7 +488,7 @@ AdapterBlob* AdapterBlob::create(CodeBuffer* cb, int entry_offset[AdapterBlob::E
   unsigned int size = CodeBlob::allocation_size(cb, sizeof(AdapterBlob));
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = new (size) AdapterBlob(size, cb, entry_offset);
+    blob = new (size) AdapterBlob(size, cb, entry_offset, frame_complete, frame_size, oop_maps, caller_must_gc_arguments);
   }
   // Track memory usage statistic after releasing CodeCache_lock
   MemoryService::track_code_cache_memory_usage();
@@ -520,6 +536,8 @@ VtableBlob* VtableBlob::create(const char* name, int buffer_size) {
       // eventually.
       return nullptr;
     }
+
+    MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
     blob = new (size) VtableBlob(name, size);
     CodeCache_lock->unlock();
   }
@@ -554,13 +572,38 @@ MethodHandlesAdapterBlob* MethodHandlesAdapterBlob::create(int buffer_size) {
 }
 
 //----------------------------------------------------------------------------------------------------
+// Implementation of BufferedInlineTypeBlob
+BufferedInlineTypeBlob::BufferedInlineTypeBlob(int size, CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) :
+  BufferBlob("buffered inline type", CodeBlobKind::BufferedInlineType, cb, size, sizeof(BufferedInlineTypeBlob)),
+  _pack_fields_off(pack_fields_off),
+  _pack_fields_jobject_off(pack_fields_jobject_off),
+  _unpack_fields_off(unpack_fields_off) {
+  CodeCache::commit(this);
+}
+
+BufferedInlineTypeBlob* BufferedInlineTypeBlob::create(CodeBuffer* cb, int pack_fields_off, int pack_fields_jobject_off, int unpack_fields_off) {
+  ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+
+  BufferedInlineTypeBlob* blob = nullptr;
+  unsigned int size = CodeBlob::allocation_size(cb, sizeof(BufferedInlineTypeBlob));
+  {
+    MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+    blob = new (size) BufferedInlineTypeBlob(size, cb, pack_fields_off, pack_fields_jobject_off, unpack_fields_off);
+  }
+  // Track memory usage statistic after releasing CodeCache_lock
+  MemoryService::track_code_cache_memory_usage();
+
+  return blob;
+}
+
+//----------------------------------------------------------------------------------------------------
 // Implementation of RuntimeStub
 
 RuntimeStub::RuntimeStub(
   const char* name,
   CodeBuffer* cb,
   int         size,
-  int16_t     frame_complete,
+  int         frame_complete,
   int         frame_size,
   OopMapSet*  oop_maps,
   bool        caller_must_gc_arguments
@@ -572,7 +615,7 @@ RuntimeStub::RuntimeStub(
 
 RuntimeStub* RuntimeStub::new_runtime_stub(const char* stub_name,
                                            CodeBuffer* cb,
-                                           int16_t frame_complete,
+                                           int frame_complete,
                                            int frame_size,
                                            OopMapSet* oop_maps,
                                            bool caller_must_gc_arguments,
@@ -622,8 +665,8 @@ DeoptimizationBlob::DeoptimizationBlob(
   int         unpack_with_reexecution_offset,
   int         frame_size
 )
-: SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
-                size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
+  : SingletonBlob("DeoptimizationBlob", CodeBlobKind::Deoptimization, cb,
+                  size, sizeof(DeoptimizationBlob), frame_size, oop_maps)
 {
   _unpack_offset           = unpack_offset;
   _unpack_with_exception   = unpack_with_exception_offset;
@@ -672,8 +715,8 @@ UncommonTrapBlob::UncommonTrapBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
-                size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
+  : SingletonBlob("UncommonTrapBlob", CodeBlobKind::UncommonTrap, cb,
+                  size, sizeof(UncommonTrapBlob), frame_size, oop_maps)
 {}
 
 
@@ -704,8 +747,8 @@ ExceptionBlob::ExceptionBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
-                size, sizeof(ExceptionBlob), frame_size, oop_maps)
+  : SingletonBlob("ExceptionBlob", CodeBlobKind::Exception, cb,
+                  size, sizeof(ExceptionBlob), frame_size, oop_maps)
 {}
 
 
@@ -738,8 +781,8 @@ SafepointBlob::SafepointBlob(
   OopMapSet*  oop_maps,
   int         frame_size
 )
-: SingletonBlob("SafepointBlob", CodeBlobKind::Safepoint, cb,
-                size, sizeof(SafepointBlob), frame_size, oop_maps)
+  : SingletonBlob(cb->name(), CodeBlobKind::Safepoint, cb,
+                  size, sizeof(SafepointBlob), frame_size, oop_maps)
 {}
 
 
@@ -756,7 +799,7 @@ SafepointBlob* SafepointBlob::create(
     blob = new (size) SafepointBlob(cb, size, oop_maps, frame_size);
   }
 
-  trace_new_stub(blob, "SafepointBlob");
+  trace_new_stub(blob, "SafepointBlob - ", blob->name());
 
   return blob;
 }
@@ -896,7 +939,7 @@ void CodeBlob::dump_for_addr(address addr, outputStream* st, bool verbose) const
     }
   }
   if (is_nmethod()) {
-    nmethod* nm = (nmethod*)this;
+    nmethod* nm = as_nmethod();
     ResourceMark rm;
     st->print(INTPTR_FORMAT " is at entry_point+%d in (nmethod*)" INTPTR_FORMAT,
               p2i(addr), (int)(addr - nm->entry_point()), p2i(nm));
@@ -932,7 +975,7 @@ void RuntimeStub::print_on_impl(outputStream* st) const {
   RuntimeBlob::print_on_impl(st);
   st->print("Runtime Stub (" INTPTR_FORMAT "): ", p2i(this));
   st->print_cr("%s", name());
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void RuntimeStub::print_value_on_impl(outputStream* st) const {
@@ -943,7 +986,7 @@ void SingletonBlob::print_on_impl(outputStream* st) const {
   ttyLocker ttyl;
   RuntimeBlob::print_on_impl(st);
   st->print_cr("%s", name());
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void SingletonBlob::print_value_on_impl(outputStream* st) const {
@@ -961,7 +1004,7 @@ void UpcallStub::print_on_impl(outputStream* st) const {
   oop recv = JNIHandles::resolve(_receiver);
   st->print("Receiver MH=");
   recv->print_on(st);
-  Disassembler::decode((RuntimeBlob*)this, st);
+  Disassembler::decode((CodeBlob*)this, st);
 }
 
 void UpcallStub::print_value_on_impl(outputStream* st) const {

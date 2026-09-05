@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4857717 8025633 8026567 8164407 8182765 8205593
+ * @bug 4857717 8025633 8026567 8164407 8182765 8205593 8369531
  * @summary Test to make sure that externally overridden and implemented methods
  * are documented properly.  The method should still include "implements" or
  * "overrides" documentation even though the method is external.
@@ -56,15 +56,17 @@ public class TestExternalOverriddenMethod extends JavadocTester {
                 """
                     <dt>Overrides:</dt>
                     <dd><code><a href=\"""" + uri + """
-                    /java/io/FilterReader.html#read--" title="class or interface in java.io" class="\
-                    external-link">read</a></code>&nbsp;in class&nbsp;<code><a href=\"""" + uri + """
-                    /java/io/FilterReader.html" title="class or interface in java.io" class="external-link">FilterReader</a></code></dd>""",
+                    /java/io/FilterReader.html#read--" class="external-link">read</a></code>&nbsp;in \
+                    class&nbsp;<code><a href=\"""" + uri + """
+                    /java/io/FilterReader.html" title="class in java.io" class="external-link">Filter\
+                    Reader</a></code></dd>""",
                 """
                     <dt>Specified by:</dt>
                     <dd><code><a href=\"""" + uri + """
-                    /java/io/DataInput.html#readInt--" title="class or interface in java.io" class="\
-                    external-link">readInt</a></code>&nbsp;in interface&nbsp;<code><a href=\"""" + uri + """
-                    /java/io/DataInput.html" title="class or interface in java.io" class="external-link">DataInput</a></code></dd>"""
+                    /java/io/DataInput.html#readInt--" class="external-link">readInt</a></code>&nbsp;\
+                    in interface&nbsp;<code><a href=\"""" + uri + """
+                    /java/io/DataInput.html" title="interface in java.io" class="external-link">DataI\
+                    nput</a></code></dd>"""
         );
     }
 }

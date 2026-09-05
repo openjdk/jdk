@@ -34,6 +34,7 @@
 #include "utilities/align.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/integerCast.hpp"
 
 #ifndef PRODUCT
   #define TRACE_BCEA(level, code)                                            \
@@ -188,14 +189,25 @@ void BCEscapeAnalyzer::set_global_escape(ArgumentMap vars, bool merge) {
 }
 
 void BCEscapeAnalyzer::set_modified(ArgumentMap vars, int offs, int size) {
-
   for (int i = 0; i < _arg_size; i++) {
     if (vars.contains(i)) {
       set_arg_modified(i, offs, size);
     }
   }
-  if (vars.contains_unknown())
+  if (vars.contains_unknown()) {
     _unknown_modified = true;
+  }
+}
+
+void BCEscapeAnalyzer::set_modified_any_offset(ArgumentMap vars) {
+  for (int i = 0; i < _arg_size; i++) {
+    if (vars.contains(i)) {
+      _arg_modified[i] = (uint)-1;
+    }
+  }
+  if (vars.contains_unknown()) {
+    _unknown_modified = true;
+  }
 }
 
 bool BCEscapeAnalyzer::is_recursive_call(ciMethod* callee) {
@@ -226,7 +238,7 @@ bool BCEscapeAnalyzer::is_arg_modified(int arg, int offset, int size_in_bytes) {
 
 void BCEscapeAnalyzer::set_arg_modified(int arg, int offset, int size_in_bytes) {
   if (offset == OFFSET_ANY) {
-    _arg_modified[arg] =  (uint) -1;
+    _arg_modified[arg] = (uint)-1;
     return;
   }
   assert(arg >= 0 && arg < _arg_size, "must be an argument.");
@@ -536,7 +548,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_INT]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_lastore:
@@ -546,7 +558,7 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         state.spop();
         ArgumentMap arr = state.apop();
         set_method_escape(arr);
-        set_modified(arr, OFFSET_ANY, type2size[T_LONG]*HeapWordSize);
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_aastore:
@@ -554,7 +566,8 @@ void BCEscapeAnalyzer::iterate_one_block(ciBlock *blk, StateInfo &state, Growabl
         set_global_escape(state.apop());
         state.spop();
         ArgumentMap arr = state.apop();
-        set_modified(arr, OFFSET_ANY, type2size[T_OBJECT]*HeapWordSize);
+        // If the array is a flat array, a larger part of it is modified than the size of a reference.
+        set_modified_any_offset(arr);
         break;
       }
       case Bytecodes::_pop:
@@ -1077,17 +1090,32 @@ void BCEscapeAnalyzer::merge_block_states(StateInfo *blockstates, ciBlock *dest,
   }
 }
 
+bool BCEscapeAnalyzer::datasize_overflow(uint numblocks, uint stkSize, uint numLocals, size_t& datasize) {
+  uint64_t datacount64 = (uint64_t)(numblocks + 1) * (stkSize + numLocals);
+  if (datacount64 > SIZE_MAX / sizeof(ArgumentMap)) {
+    return true;
+  }
+  datasize = integer_cast_permit_tautology<size_t>(datacount64 * sizeof(ArgumentMap));
+  return false;
+}
+
 void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
-  int numblocks = _methodBlocks->num_blocks();
-  int stkSize   = _method->max_stack();
-  int numLocals = _method->max_locals();
+  uint numblocks = _methodBlocks->num_blocks();
+  uint stkSize   = _method->max_stack();
+  uint numLocals = _method->max_locals();
   StateInfo state;
 
-  int datacount = (numblocks + 1) * (stkSize + numLocals);
-  int datasize = datacount * sizeof(ArgumentMap);
+  size_t datasize;
+  if (datasize_overflow(numblocks, stkSize, numLocals, datasize)) {
+    _conservative = true;
+    return;
+  }
+  size_t datacount = datasize / sizeof(ArgumentMap);
   StateInfo *blockstates = (StateInfo *) arena->Amalloc(numblocks * sizeof(StateInfo));
   ArgumentMap *statedata  = (ArgumentMap *) arena->Amalloc(datasize);
-  for (int i = 0; i < datacount; i++) ::new ((void*)&statedata[i]) ArgumentMap();
+  for (size_t i = 0; i < datacount; i++) {
+    ::new ((void*)&statedata[i]) ArgumentMap();
+  }
   ArgumentMap *dp = statedata;
   state._vars = dp;
   dp += numLocals;
@@ -1095,7 +1123,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
   dp += stkSize;
   state._initialized = false;
   state._max_stack = stkSize;
-  for (int i = 0; i < numblocks; i++) {
+  for (uint i = 0; i < numblocks; i++) {
     blockstates[i]._vars = dp;
     dp += numLocals;
     blockstates[i]._stack = dp;
@@ -1142,7 +1170,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
     if (blk->is_handler() || blk->is_ret_target()) {
       // for an exception handler or a target of a ret instruction, we assume the worst case,
       // that any variable could contain any argument
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = allVars;
       }
       if (blk->is_handler()) {
@@ -1155,7 +1183,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
         state._stack[i] = allVars;
       }
     } else {
-      for (int i = 0; i < numLocals; i++) {
+      for (uint i = 0; i < numLocals; i++) {
         state._vars[i] = blkState->_vars[i];
       }
       for (int i = 0; i < blkState->_stack_height; i++) {
@@ -1170,7 +1198,7 @@ void BCEscapeAnalyzer::iterate_blocks(Arena *arena) {
       DEBUG_ONLY(int handler_count = 0;)
       int blk_start = blk->start_bci();
       int blk_end = blk->limit_bci();
-      for (int i = 0; i < numblocks; i++) {
+      for (uint i = 0; i < numblocks; i++) {
         ciBlock *b = _methodBlocks->block(i);
         if (b->is_handler()) {
           int ex_start = b->ex_start_bci();

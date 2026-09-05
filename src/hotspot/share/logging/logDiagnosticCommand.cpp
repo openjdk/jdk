@@ -46,7 +46,7 @@ LogDiagnosticCommand::LogDiagnosticCommand(outputStream* output, bool heap_alloc
 
 void LogDiagnosticCommand::registerCommand() {
   uint32_t full_visibility = DCmd_Source_Internal | DCmd_Source_AttachAPI | DCmd_Source_MBean;
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<LogDiagnosticCommand>(full_visibility));
 }
 
 void LogDiagnosticCommand::execute(DCmdSource source, TRAPS) {

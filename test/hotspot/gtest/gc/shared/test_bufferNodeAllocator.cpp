@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "gc/shared/bufferNode.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/semaphore.inline.hpp"
 #include "runtime/thread.hpp"
@@ -116,16 +116,16 @@ public:
 class BufferNode::TestSupport::AllocatorThread : public JavaTestThread {
   BufferNode::Allocator* _allocator;
   CompletedList* _cbl;
-  volatile size_t* _total_allocations;
-  volatile bool* _continue_running;
+  Atomic<size_t>* _total_allocations;
+  Atomic<bool>* _continue_running;
   size_t _allocations;
 
 public:
   AllocatorThread(Semaphore* post,
                   BufferNode::Allocator* allocator,
                   CompletedList* cbl,
-                  volatile size_t* total_allocations,
-                  volatile bool* continue_running) :
+                  Atomic<size_t>* total_allocations,
+                  Atomic<bool>* continue_running) :
     JavaTestThread(post),
     _allocator(allocator),
     _cbl(cbl),
@@ -135,14 +135,14 @@ public:
   {}
 
   virtual void main_run() {
-    while (AtomicAccess::load_acquire(_continue_running)) {
+    while (_continue_running->load_acquire()) {
       BufferNode* node = _allocator->allocate();
       _cbl->push(node);
       ++_allocations;
       ThreadBlockInVM tbiv(this); // Safepoint check.
     }
     tty->print_cr("allocations: %zu", _allocations);
-    AtomicAccess::add(_total_allocations, _allocations);
+    _total_allocations->add_then_fetch(_allocations);
   }
 };
 
@@ -151,13 +151,13 @@ public:
 class BufferNode::TestSupport::ProcessorThread : public JavaTestThread {
   BufferNode::Allocator* _allocator;
   CompletedList* _cbl;
-  volatile bool* _continue_running;
+  Atomic<bool>* _continue_running;
 
 public:
   ProcessorThread(Semaphore* post,
                   BufferNode::Allocator* allocator,
                   CompletedList* cbl,
-                  volatile bool* continue_running) :
+                  Atomic<bool>* continue_running) :
     JavaTestThread(post),
     _allocator(allocator),
     _cbl(cbl),
@@ -172,7 +172,7 @@ public:
         _allocator->release(node);
       } else if (shutdown_requested) {
         return;
-      } else if (!AtomicAccess::load_acquire(_continue_running)) {
+      } else if (!_continue_running->load_acquire()) {
         // To avoid a race that could leave buffers in the list after this
         // thread has shut down, continue processing until the list is empty
         // *after* the shut down request has been received.
@@ -193,9 +193,9 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
   constexpr uint milliseconds_to_run = 1000;
 
   Semaphore post;
-  volatile size_t total_allocations = 0;
-  volatile bool allocator_running = true;
-  volatile bool processor_running = true;
+  Atomic<size_t> total_allocations{0};
+  Atomic<bool> allocator_running{true};
+  Atomic<bool> processor_running{true};
 
   ProcessorThread* proc_threads[num_processor_threads] = {};
   for (uint i = 0; i < num_processor_threads; ++i) {
@@ -222,18 +222,18 @@ static void run_test(BufferNode::Allocator* allocator, CompletedList* cbl) {
     ThreadInVMfromNative invm(this_thread);
     this_thread->sleep(milliseconds_to_run);
   }
-  AtomicAccess::release_store(&allocator_running, false);
+  allocator_running.release_store(false);
   for (uint i = 0; i < num_allocator_threads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
-  AtomicAccess::release_store(&processor_running, false);
+  processor_running.release_store(false);
   for (uint i = 0; i < num_processor_threads; ++i) {
     ThreadInVMfromNative invm(this_thread);
     post.wait_with_safepoint_check(this_thread);
   }
   ASSERT_TRUE(BufferNode::TestSupport::try_transfer_pending(allocator));
-  tty->print_cr("total allocations: %zu", total_allocations);
+  tty->print_cr("total allocations: %zu", total_allocations.load_relaxed());
   tty->print_cr("allocator free count: %zu", allocator->free_count());
 }
 

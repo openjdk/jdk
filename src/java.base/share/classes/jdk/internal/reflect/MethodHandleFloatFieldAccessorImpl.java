@@ -86,7 +86,7 @@ class MethodHandleFloatFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 return (float) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -183,7 +183,7 @@ class MethodHandleFloatFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 setter.invokeExact(obj, f);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

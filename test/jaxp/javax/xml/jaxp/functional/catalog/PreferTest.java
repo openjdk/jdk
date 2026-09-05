@@ -23,19 +23,19 @@
 
 package catalog;
 
-import static catalog.CatalogTestUtils.catalogResolver;
-import static catalog.ResolutionChecker.checkExtIdResolution;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import javax.xml.catalog.CatalogResolver;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import static catalog.CatalogTestUtils.catalogResolver;
+import static catalog.ResolutionChecker.checkExtIdResolution;
 
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.PreferTest
+ * @run junit/othervm catalog.PreferTest
  * @summary Get matched URIs from system and public family entries, which
  *          specify the prefer attribute. It tests how does the prefer attribute
  *          affect the resolution procedure. The test rule is based on OASIS
@@ -43,14 +43,14 @@ import org.testng.annotations.Test;
  */
 public class PreferTest {
 
-    @Test(dataProvider = "publicId-systemId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("data")
     public void testPrefer(String publicId, String systemId,
             String expected) {
         checkExtIdResolution(createResolver(), publicId, systemId, expected);
     }
 
-    @DataProvider(name = "publicId-systemId-matchedUri")
-    public Object[][] data() {
+    public static Object[][] data() {
         return new Object[][] {
                 // The prefer attribute is public. Both of the specified public
                 // id and system id have matches in the catalog file. But
@@ -85,7 +85,7 @@ public class PreferTest {
                         "http://local/base/dtd/docBobSys.dtd" } };
     }
 
-    private CatalogResolver createResolver() {
+    private static CatalogResolver createResolver() {
         return catalogResolver("prefer.xml");
     }
 }

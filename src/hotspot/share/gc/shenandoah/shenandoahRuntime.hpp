@@ -36,18 +36,23 @@ public:
   static void arraycopy_barrier_oop(oop* src, oop* dst, size_t length);
   static void arraycopy_barrier_narrow_oop(narrowOop* src, narrowOop* dst, size_t length);
 
-  static void write_barrier_pre(oopDesc* orig);
+  static void write_barrier_pre(oopDesc* obj);
+  static void write_barrier_pre_narrow(narrowOop obj);
 
   static oopDesc* load_reference_barrier_strong(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_strong_narrow(oopDesc* src, narrowOop* load_addr);
+  static narrowOop load_reference_barrier_strong_narrow_narrow(narrowOop src, narrowOop* load_addr);
 
   static oopDesc* load_reference_barrier_weak(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_weak_narrow(oopDesc* src, narrowOop* load_addr);
+  static narrowOop load_reference_barrier_weak_narrow_narrow(narrowOop src, narrowOop* load_addr);
 
   static oopDesc* load_reference_barrier_phantom(oopDesc* src, oop* load_addr);
   static oopDesc* load_reference_barrier_phantom_narrow(oopDesc* src, narrowOop* load_addr);
+  static narrowOop load_reference_barrier_phantom_narrow_narrow(narrowOop src, narrowOop* load_addr);
 
-  static void clone_barrier(oopDesc* src);
+  static void clone(oopDesc* src, oopDesc* dst, size_t size);
+  static address clone_addr() { return reinterpret_cast<address>(clone); }
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHRUNTIME_HPP

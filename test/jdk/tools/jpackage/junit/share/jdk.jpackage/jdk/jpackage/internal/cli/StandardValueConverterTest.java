@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class StandardValueConverterTest {
 
     @Test
-    public void test_identityConv() {
+    public void test_identityConv() throws Exception {
 
         final var testee = StandardValueConverter.identityConv();
 
@@ -58,7 +58,7 @@ public class StandardValueConverterTest {
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
-    public void test_pathConv(boolean positive) {
+    public void test_pathConv(boolean positive) throws Exception {
 
         final var testee = StandardValueConverter.pathConv();
 
@@ -72,14 +72,14 @@ public class StandardValueConverterTest {
 
     @ParameterizedTest
     @MethodSource
-    public void test_booleanConv(String value, Boolean expected) {
+    public void test_booleanConv(String value, Boolean expected) throws Exception {
 
         assertEquals(expected, StandardValueConverter.booleanConv().convert(value));
     }
 
     @ParameterizedTest
     @MethodSource
-    public void test_mainLauncherShortcutConv(String value, LauncherShortcut expected) {
+    public void test_mainLauncherShortcutConv(String value, LauncherShortcut expected) throws Exception {
 
         assertEquals(expected, StandardValueConverter.mainLauncherShortcutConv().convert(value));
     }
@@ -93,7 +93,7 @@ public class StandardValueConverterTest {
 
     @ParameterizedTest
     @MethodSource
-    public void test_addLauncherShortcutConv(String value, LauncherShortcut expected) {
+    public void test_addLauncherShortcutConv(String value, LauncherShortcut expected) throws Exception {
 
         assertEquals(expected, StandardValueConverter.addLauncherShortcutConv().convert(value));
     }

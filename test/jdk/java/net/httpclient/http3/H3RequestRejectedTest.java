@@ -72,12 +72,10 @@ class H3RequestRejectedTest {
     private static final String HANDLER_PATH = "/foo";
 
     private static HttpTestServer server;
-    private static SSLContext sslContext;
+    private static final SSLContext sslContext = SimpleSSLContext.findSSLContext();
 
     @BeforeAll
     static void beforeAll() throws Exception {
-        sslContext = new SimpleSSLContext().get();
-        assertNotNull(sslContext, "SSLContext could not be constructed");
         server = HttpTestServer.create(HTTP_3_URI_ONLY, sslContext);
         server.addHandler(new Handler(), HANDLER_PATH);
         server.start();

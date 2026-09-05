@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -61,6 +62,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/keepStackGCProcessed.hpp"
+#include "runtime/mountUnmountDisabler.hpp"
 #include "runtime/objectMonitor.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/osThread.hpp"
@@ -70,6 +72,7 @@
 #include "runtime/threadSMR.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vm_version.hpp"
+#include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef JVMTI_TRACE
@@ -412,7 +415,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded into running VM.
       // There is a performance impact when VTMS transitions are enabled.
-      if (!JvmtiVTMSTransitionDisabler::VTMS_notify_jvmti_events()) {
+      if (!MountUnmountDisabler::notify_jvmti_events()) {
         JvmtiEnvBase::enable_virtual_threads_notify_jvmti();
       }
     }
@@ -426,7 +429,7 @@ JvmtiExport::get_jvmti_interface(JavaVM *jvm, void **penv, jint version) {
     if (Continuations::enabled()) {
       // Virtual threads support for agents loaded at startup.
       // There is a performance impact when VTMS transitions are enabled.
-      JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(true);
+      MountUnmountDisabler::set_notify_jvmti_events(true, true /*is_onload*/);
     }
     return JNI_OK;
 
@@ -647,22 +650,27 @@ JvmtiExport::decode_version_values(jint version, int * major, int * minor,
 }
 
 void JvmtiExport::enter_primordial_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter primordial phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_PRIMORDIAL);
 }
 
 void JvmtiExport::enter_early_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter early start phase");
   set_early_vmstart_recorded(true);
 }
 
 void JvmtiExport::enter_start_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter start phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_START);
 }
 
 void JvmtiExport::enter_onload_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter onload phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_ONLOAD);
 }
 
 void JvmtiExport::enter_live_phase() {
+  Events::log(Thread::current_or_null(), "JVMTI - enter live phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_LIVE);
 }
 
@@ -812,6 +820,7 @@ void JvmtiExport::post_vm_death() {
     }
   }
 
+  Events::log(Thread::current_or_null(), "JVMTI - enter dead phase");
   JvmtiEnvBase::set_phase(JVMTI_PHASE_DEAD);
 }
 
@@ -1129,7 +1138,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
    jlong    _size;
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
-     _jobj = (jobject)to_jobject(obj);
+     _jobj = obj->is_inline() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
      _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
@@ -1152,7 +1161,7 @@ class JvmtiCompiledMethodLoadEventMark : public JvmtiMethodEventMark {
     JvmtiCodeBlobEvents::build_jvmti_addr_location_map(nm, &_map, &_map_length);
   }
   ~JvmtiCompiledMethodLoadEventMark() {
-     FREE_C_HEAP_ARRAY(jvmtiAddrLocationMap, _map);
+     FREE_C_HEAP_ARRAY(_map);
   }
 
   jint code_size() { return _code_size; }
@@ -1274,6 +1283,7 @@ bool              JvmtiExport::_can_post_frame_pop                        = fals
 bool              JvmtiExport::_can_pop_frame                             = false;
 bool              JvmtiExport::_can_force_early_return                    = false;
 bool              JvmtiExport::_can_support_virtual_threads               = false;
+bool              JvmtiExport::_can_support_value_objects                 = false;
 bool              JvmtiExport::_can_get_owned_monitor_info                = false;
 
 bool              JvmtiExport::_early_vmstart_recorded                    = false;
@@ -1352,6 +1362,26 @@ JvmtiThreadState* JvmtiExport::hide_single_stepping(JavaThread *thread) {
   } else {
     return nullptr;
   }
+}
+
+bool JvmtiExport::has_frame_pop_for_top_frame(JavaThread *current) {
+  assert(current == JavaThread::current(), "must be");
+  JvmtiThreadState *state = current->jvmti_thread_state();
+  if (state == nullptr || !state->is_enabled(JVMTI_EVENT_FRAME_POP)) {
+    return false;
+  }
+  if (state->frame_pop_cnt() == 0) {
+    return false;
+  }
+  JvmtiEnvThreadStateIterator it(state);
+  int top_frame_num = state->count_frames();
+  for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
+    if (ets->has_frame_pops() && ets->is_frame_pop(top_frame_num)) {
+      assert(ets->is_enabled(JVMTI_EVENT_FRAME_POP), "sanity check");
+      return true;
+    }
+  }
+  return false;
 }
 
 void JvmtiExport::post_class_load(JavaThread *thread, Klass* klass) {
@@ -1639,7 +1669,7 @@ void JvmtiExport::post_vthread_end(jobject vthread) {
         JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
         jvmtiEventVirtualThreadEnd callback = env->callbacks()->VirtualThreadEnd;
         if (callback != nullptr) {
-          (*callback)(env->jvmti_external(), jem.jni_env(), vthread);
+          (*callback)(env->jvmti_external(), jem.jni_env(), jem.jni_thread());
         }
       }
     }
@@ -1890,12 +1920,13 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
   }
   JvmtiThreadState* state; // should be initialized in vm state only
   JavaThread* current = thread; // for JRT_BLOCK
-  bool interp_only; // might be changed in JRT_BLOCK_END
+
   JRT_BLOCK
-    state = get_jvmti_thread_state(thread);
-    interp_only = state != nullptr && state->is_interp_only_mode();
-    if (interp_only) {
-      if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+    bool interp_only = thread->is_interp_only_mode();
+    // Avoid calls to get_jvmti_thread_state if is_interp_only_mode was not enabled.
+    state = interp_only ? get_jvmti_thread_state(thread) : thread->jvmti_thread_state();
+    if (state != nullptr) {
+      if (interp_only && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
         // Deferred saving Object result into value.
         if (is_reference_type(type)) {
           value.l = JNIHandles::make_local(thread, result());
@@ -1909,7 +1940,7 @@ void JvmtiExport::post_method_exit(JavaThread* thread, Method* method, frame cur
       post_method_exit_inner(thread, mh, state, false /* not exception exit */, current_frame, value);
     }
   JRT_BLOCK_END
-  if (interp_only) {
+  if (state != nullptr) {
     // The JRT_BLOCK_END can safepoint in ThreadInVMfromJava destructor. Now it is safe to allow
     // adding FramePop event requests as no safepoint can happen before removing activation.
     state->clr_top_frame_is_exiting();
@@ -1935,7 +1966,8 @@ void JvmtiExport::post_method_exit_inner(JavaThread* thread,
                                            (mh() == nullptr) ? "null" : mh()->klass_name()->as_C_string(),
                                            (mh() == nullptr) ? "null" : mh()->name()->as_C_string() ));
 
-  if (state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
+  // Need to check is_interp_only_mode to consistently post method exit event for all frames.
+  if (thread->is_interp_only_mode() && state->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
     JvmtiEnvThreadStateIterator it(state);
     for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
       if (ets->is_enabled(JVMTI_EVENT_METHOD_EXIT)) {
@@ -2146,21 +2178,14 @@ void JvmtiExport::notice_unwind_due_to_exception(JavaThread *thread, Method* met
 
   if (state->is_exception_detected()) {
 
+    // The cached cur_stack_depth might have changed from the operations of frame pop or method exit.
+    // We are not 100% sure the cached cur_stack_depth is still valid depth so invalidate it.
     state->invalidate_cur_stack_depth();
     if (!in_handler_frame) {
       // Not in exception handler.
-      if(state->is_interp_only_mode()) {
-        // method exit and frame pop events are posted only in interp mode.
-        // When these events are enabled code should be in running in interp mode.
-        jvalue no_value;
-        no_value.j = 0L;
-        JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
-        // The cached cur_stack_depth might have changed from the
-        // operations of frame pop or method exit. We are not 100% sure
-        // the cached cur_stack_depth is still valid depth so invalidate
-        // it.
-        state->invalidate_cur_stack_depth();
-      }
+      jvalue no_value;
+      no_value.j = 0L;
+      JvmtiExport::post_method_exit_inner(thread, mh, state, true, thread->last_frame(), no_value);
     } else {
       // In exception handler frame. Report exception catch.
       assert(location != nullptr, "must be a known location");
@@ -2246,6 +2271,8 @@ void JvmtiExport::post_field_access_by_jni(JavaThread *thread, oop obj,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
   javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+
   Method* method = jvf->method();
   address address = jvf->method()->code_base();
 
@@ -2344,6 +2371,8 @@ void JvmtiExport::post_field_modification_by_jni(JavaThread *thread, oop obj,
                       RegisterMap::ProcessFrames::skip,
                       RegisterMap::WalkContinuation::skip);
   javaVFrame *jvf = thread->last_java_vframe(&reg_map);
+  assert(jvf != nullptr, "last frame shouldn't be null");
+
   Method* method = jvf->method();
   address address = jvf->method()->code_base();
 
@@ -2924,13 +2953,13 @@ void JvmtiExport::vthread_post_monitor_waited(JavaThread *current, ObjectMonitor
   Handle vthread(current, current->vthread());
 
   // Finish the VTMS transition temporarily to post the event.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount((jthread)vthread.raw_value(), false);
+  MountUnmountDisabler::end_transition(current, vthread(), true /*is_mount*/, false /*is_thread_start*/);
 
   // Post event.
   JvmtiExport::post_monitor_waited(current, obj_mntr, timed_out);
 
   // Go back to VTMS transition state.
-  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount((jthread)vthread.raw_value(), true);
+  MountUnmountDisabler::start_transition(current, vthread(), false /*is_mount*/, false /*is_thread_start*/);
 }
 
 void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
@@ -2940,6 +2969,10 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_inline = object->is_inline();
+  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
   HandleMark hm(thread);
   Handle h(thread, object);
 
@@ -2947,10 +2980,11 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
                       JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
-    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC)) {
+    if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC) &&
+        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("[%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
-                                         object==nullptr? "null" : object->klass()->external_name()));
+                                         object->klass()->external_name()));
 
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
@@ -2977,19 +3011,24 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
+  const bool is_inline = object->is_inline();
+  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+    return;
+  }
 
   EVT_TRIG_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                  ("[%s] Trg sampled object alloc triggered",
                   JvmtiTrace::safe_get_thread_name(thread)));
   JvmtiEnvThreadStateIterator it(state);
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
-    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC)) {
+    JvmtiEnv *env = ets->get_env();
+    if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) &&
+        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                 ("[%s] Evt sampled object alloc sent %s",
                  JvmtiTrace::safe_get_thread_name(thread),
-                 object == nullptr ? "null" : object->klass()->external_name()));
+                 object->klass()->external_name()));
 
-      JvmtiEnv *env = ets->get_env();
       JvmtiObjectAllocEventMark jem(thread, h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventSampledObjectAlloc callback = env->callbacks()->SampledObjectAlloc;
@@ -3159,31 +3198,19 @@ void JvmtiObjectAllocEventCollector::record_allocation(oop obj) {
   _allocated->push(OopHandle(JvmtiExport::jvmti_oop_storage(), obj));
 }
 
-// Disable collection of VMObjectAlloc events
-NoJvmtiVMObjectAllocMark::NoJvmtiVMObjectAllocMark() : _collector(nullptr) {
-  // a no-op if VMObjectAlloc event is not enabled
-  if (!JvmtiExport::should_post_vm_object_alloc()) {
-    return;
-  }
+NoJvmtiEventsMark::NoJvmtiEventsMark() {
   Thread* thread = Thread::current_or_null();
   if (thread != nullptr && thread->is_Java_thread())  {
     JavaThread* current_thread = JavaThread::cast(thread);
-    JvmtiThreadState *state = current_thread->jvmti_thread_state();
-    if (state != nullptr) {
-      JvmtiVMObjectAllocEventCollector *collector;
-      collector = state->get_vm_object_alloc_event_collector();
-      if (collector != nullptr && collector->is_enabled()) {
-        _collector = collector;
-        _collector->set_enabled(false);
-      }
-    }
+    current_thread->disable_jvmti_events();
   }
 }
 
-// Re-Enable collection of VMObjectAlloc events (if previously enabled)
-NoJvmtiVMObjectAllocMark::~NoJvmtiVMObjectAllocMark() {
-  if (was_enabled()) {
-    _collector->set_enabled(true);
+NoJvmtiEventsMark::~NoJvmtiEventsMark() {
+  Thread* thread = Thread::current_or_null();
+  if (thread != nullptr && thread->is_Java_thread())  {
+    JavaThread* current_thread = JavaThread::cast(thread);
+    current_thread->enable_jvmti_events();
   }
 };
 

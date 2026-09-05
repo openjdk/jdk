@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import jdk.internal.misc.PreviewFeatures;
+
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.JDKToolLauncher;
@@ -46,6 +48,7 @@ import java.util.*;
  * @test
  * @library /test/lib
  * @requires vm.hasSA
+ * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @modules java.base/jdk.internal.misc
  *          jdk.hotspot.agent/sun.jvm.hotspot
@@ -67,7 +70,6 @@ public class TestInstanceKlassSize {
                                                 "java.util.ArrayList",
                                                 "java.lang.String",
                                                 "java.lang.Thread",
-                                                "java.lang.Byte"
                                              };
 
     private static void startMeWithArgs() throws Exception {
@@ -83,17 +85,21 @@ public class TestInstanceKlassSize {
         }
         try {
             // Run this app with the LingeredApp PID to get SA output from the LingeredApp
-            ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(
-                "--add-modules=jdk.hotspot.agent",
-                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED",
-                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED",
-                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED",
-                "--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED",
-                "-XX:+UnlockDiagnosticVMOptions",
-                "-XX:+WhiteBoxAPI",
-                "-Xbootclasspath/a:.",
-                "TestInstanceKlassSize",
-                Long.toString(app.getPid()));
+            List<String> args = new ArrayList<>();
+            if (PreviewFeatures.isEnabled()) {
+                args.add("--enable-preview");
+            }
+            args.add("--add-modules=jdk.hotspot.agent");
+            args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot=ALL-UNNAMED");
+            args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.utilities=ALL-UNNAMED");
+            args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.oops=ALL-UNNAMED");
+            args.add("--add-exports=jdk.hotspot.agent/sun.jvm.hotspot.debugger=ALL-UNNAMED");
+            args.add("-XX:+UnlockDiagnosticVMOptions");
+            args.add("-XX:+WhiteBoxAPI");
+            args.add("-Xbootclasspath/a:.");
+            args.add("TestInstanceKlassSize");
+            args.add(Long.toString(app.getPid()));
+            ProcessBuilder processBuilder = ProcessTools.createLimitedTestJavaProcessBuilder(args);
             SATestUtils.addPrivilegesIfNeeded(processBuilder);
             output = ProcessTools.executeProcess(processBuilder);
             System.out.println(output.getOutput());

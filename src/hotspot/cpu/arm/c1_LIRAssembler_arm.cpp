@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,14 +272,22 @@ int LIR_Assembler::emit_deopt_handler() {
 
   int offset = code_offset();
 
-  __ mov_relative_address(LR, __ pc());
-  __ push(LR); // stub expects LR to be saved
+  Label start;
+  __ bind(start);
+
   __ jump(SharedRuntime::deopt_blob()->unpack(), relocInfo::runtime_call_type, noreg);
 
+  int entry_offset = __ offset();
+  __ mov_relative_address(LR, __ pc());
+  __ push(LR); // stub expects LR to be saved
+  __ b(start);
+
   assert(code_offset() - offset <= deopt_handler_size(), "overflow");
+  assert(code_offset() - entry_offset >= NativePostCallNop::first_check_size,
+         "out of bounds read in post-call NOP check");
   __ end_a_stub();
 
-  return offset;
+  return entry_offset;
 }
 
 
@@ -2551,6 +2559,10 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
+void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+  Unimplemented();
+}
+
 void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst) {
   Address mon_addr = frame_map()->address_for_monitor_lock(monitor_no);
   __ add_slow(dst->as_pointer_register(), mon_addr.base(), mon_addr.disp());
@@ -2631,11 +2643,11 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     const Register src_hi = src->as_register_hi();
     assert(addr->index()->is_illegal() && addr->disp() == 0, "The address is simple already");
 
-    if (src_lo < src_hi) {
+    if (src_lo->encoding() < src_hi->encoding()) {
       null_check_offset = __ offset();
       __ stmia(addr->base()->as_register(), RegisterSet(src_lo) | RegisterSet(src_hi));
     } else {
-      assert(src_lo < Rtemp, "Rtemp is higher than any allocatable register");
+      assert(src_lo->encoding() < Rtemp->encoding(), "Rtemp is higher than any allocatable register");
       __ mov(Rtemp, src_hi);
       null_check_offset = __ offset();
       __ stmia(addr->base()->as_register(), RegisterSet(src_lo) | RegisterSet(Rtemp));
@@ -2648,10 +2660,10 @@ void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, 
     assert(addr->index()->is_illegal() && addr->disp() == 0, "The address is simple already");
 
     null_check_offset = __ offset();
-    if (dest_lo < dest_hi) {
+    if (dest_lo->encoding() < dest_hi->encoding()) {
       __ ldmia(addr->base()->as_register(), RegisterSet(dest_lo) | RegisterSet(dest_hi));
     } else {
-      assert(dest_lo < Rtemp, "Rtemp is higher than any allocatable register");
+      assert(dest_lo->encoding() < Rtemp->encoding(), "Rtemp is higher than any allocatable register");
       __ ldmia(addr->base()->as_register(), RegisterSet(dest_lo) | RegisterSet(Rtemp));
       __ mov(dest_hi, Rtemp);
     }
@@ -2848,6 +2860,32 @@ void LIR_Assembler::atomic_op(LIR_Code code, LIR_Opr src, LIR_Opr data, LIR_Opr 
   __ cbnz_32(Rtemp, retry);
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
 
+}
+
+// Valhalla support
+
+void LIR_Assembler::check_orig_pc() {
+  Unimplemented();
+}
+
+int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+  Unimplemented();
+  return 0;
+}
+
+void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
+}
+
+void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {
+  Unimplemented();
 }
 
 #undef __

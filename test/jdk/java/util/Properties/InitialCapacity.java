@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,22 @@
  */
 
 import java.util.Properties;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @bug 8189319
  * @summary Test that Properties(int initialCapacity) throws exceptions (or
             doesn't) as expected
- * @run testng InitialCapacity
+ * @run junit InitialCapacity
  */
 public class InitialCapacity {
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void negativeInitCap() { Properties p = new Properties(-1); }
+    @Test
+    public void negativeInitCap() { Assertions.assertThrows(IllegalArgumentException.class, () -> {
+        Properties p = new Properties(-1);
+        });
+}
 
     @Test
     public void positiveInitCap() { Properties p = new Properties(10); }

@@ -246,9 +246,9 @@ void MacroAssembler::atomic_cas64(Register memval_lo, Register memval_hi, Regist
     Label loop;
     assert_different_registers(memval_lo, memval_hi, result, oldval_lo,
                                oldval_hi, newval_lo, newval_hi, base);
-    assert(memval_hi == memval_lo + 1 && memval_lo < R9, "cmpxchg_long: illegal registers");
-    assert(oldval_hi == oldval_lo + 1 && oldval_lo < R9, "cmpxchg_long: illegal registers");
-    assert(newval_hi == newval_lo + 1 && newval_lo < R9, "cmpxchg_long: illegal registers");
+    assert(memval_hi == as_Register(memval_lo->encoding() + 1) && memval_lo->encoding() < R9->encoding(), "cmpxchg_long: illegal registers");
+    assert(oldval_hi == as_Register(oldval_lo->encoding() + 1) && oldval_lo->encoding() < R9->encoding(), "cmpxchg_long: illegal registers");
+    assert(newval_hi == as_Register(newval_lo->encoding() + 1) && newval_lo->encoding() < R9->encoding(), "cmpxchg_long: illegal registers");
     assert(result != R10, "cmpxchg_long: illegal registers");
     assert(base != R10, "cmpxchg_long: illegal registers");
 

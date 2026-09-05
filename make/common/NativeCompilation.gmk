@@ -98,6 +98,7 @@ include native/Paths.gmk
 #   SYSROOT_CFLAGS the compiler flags for using the specific sysroot
 #   SYSROOT_LDFLAGS the linker flags for using the specific sysroot
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
+#   LINK_TIME_OPTIMIZATION if set to true, enables link time optimization
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
 #   DISABLED_WARNINGS_<toolchain>_<OS> Disable the given warnings for the specified
 #       toolchain and target OS

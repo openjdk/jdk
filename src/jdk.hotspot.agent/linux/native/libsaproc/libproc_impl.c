@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,7 @@ static void destroy_lib_info(struct ps_prochandle* ph) {
      if (lib->symtab) {
         destroy_symtab(lib->symtab);
      }
-     free(lib->eh_frame.data);
+     free(lib->frame.data);
      free(lib);
      lib = next;
    }
@@ -182,14 +182,14 @@ static bool fill_addr_info(lib_info* lib) {
     return false;
   }
 
+  long page_size = sysconf(_SC_PAGE_SIZE);
   lib->end = (uintptr_t)-1L;
   lib->exec_start = (uintptr_t)-1L;
   lib->exec_end = (uintptr_t)-1L;
   for (ph = phbuf, cnt = 0; cnt < ehdr.e_phnum; cnt++, ph++) {
     if (ph->p_type == PT_LOAD) {
-      uintptr_t unaligned_start = lib->base + ph->p_vaddr;
-      uintptr_t aligned_start = align_down(unaligned_start, ph->p_align);
-      uintptr_t aligned_end = align_up(unaligned_start + ph->p_memsz, ph->p_align);
+      uintptr_t aligned_start = lib->base + align_down(ph->p_vaddr, ph->p_align);
+      uintptr_t aligned_end = aligned_start + align_up(ph->p_memsz, page_size);
       if ((lib->end == (uintptr_t)-1L) || (lib->end < aligned_end)) {
         lib->end = aligned_end;
       }
@@ -231,10 +231,9 @@ bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
 
   for (cnt = 0, sh = shbuf; cnt < ehdr.e_shnum; cnt++, sh++) {
     if (strcmp(".eh_frame", sh->sh_name + strtab) == 0) {
-      lib->eh_frame.library_base_addr = lib->base;
-      lib->eh_frame.v_addr = sh->sh_addr;
-      lib->eh_frame.data = read_section_data(lib->fd, &ehdr, sh);
-      lib->eh_frame.size = sh->sh_size;
+      lib->frame.v_addr = sh->sh_addr;
+      lib->frame.data = read_section_data(lib->fd, &ehdr, sh);
+      lib->frame.size = sh->sh_size;
       break;
     }
   }
@@ -242,7 +241,7 @@ bool read_eh_frame(struct ps_prochandle* ph, lib_info* lib) {
   free(strtab);
   free(shbuf);
   lseek(lib->fd, current_pos, SEEK_SET);
-  return lib->eh_frame.data != NULL;
+  return lib->frame.data != NULL;
 }
 
 lib_info* add_lib_info_fd(struct ps_prochandle* ph, const char* libname, int fd, uintptr_t base) {
@@ -477,6 +476,12 @@ struct lib_info *find_lib_by_address(struct ps_prochandle* ph, uintptr_t pc) {
   }
   return NULL;
 }
+
+#ifdef __aarch64__
+bool pac_enabled(struct ps_prochandle* ph) {
+  return ph->pac_enabled;
+}
+#endif
 
 //--------------------------------------------------------------------------
 // proc service functions

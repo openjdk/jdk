@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,6 +30,7 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 #include <ctype.h>
 
@@ -167,11 +168,6 @@ void VM_Version::common_initialize() {
       (unaligned_scalar.value() == MISALIGNED_SCALAR_FAST));
   }
 
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    FLAG_SET_DEFAULT(AlignVector,
-      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
-  }
-
 #ifdef __riscv_ztso
   // Hotspot is compiled with TSO support, it will only run on hardware which
   // supports Ztso
@@ -223,6 +219,15 @@ void VM_Version::common_initialize() {
     warning("CRC32C intrinsics are not available on this CPU.");
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
+
+  if (InlineTypePassFieldsAsArgs) {
+    warning("InlineTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  }
+  if (InlineTypeReturnedAsFields) {
+    warning("InlineTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  }
 }
 
 #ifdef COMPILER2
@@ -240,6 +245,11 @@ void VM_Version::c2_initialize() {
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    FLAG_SET_DEFAULT(AlignVector,
+      unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
   }
 
   // NOTE: Make sure codes dependent on UseRVV are put after MaxVectorSize initialize,
@@ -420,11 +430,6 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  // UseSHA
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
   // AES
   if (UseZvkn) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
@@ -433,6 +438,15 @@ void VM_Version::c2_initialize() {
     if (UseAESIntrinsics && !UseAES) {
       warning("UseAESIntrinsics enabled, but UseAES not, enabling");
       UseAES = true;
+    }
+
+    if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics) && UseZbb) {
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
+    }
+
+    if (UseAESCTRIntrinsics && !UseZbb) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZbb support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     }
   } else {
     if (UseAES) {
@@ -443,11 +457,26 @@ void VM_Version::c2_initialize() {
       warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    if (UseAESCTRIntrinsics) {
+      warning("Cannot enable UseAESCTRIntrinsics on cpu without UseZvkn support.");
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+    }
   }
 
-  if (UseAESCTRIntrinsics) {
-    warning("AES/CTR intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+  if (UseZvkg) {
+    if (FLAG_IS_DEFAULT(UseGHASHIntrinsics) && UseZvbb) {
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, true);
+    }
+
+    if (UseGHASHIntrinsics && !UseZvbb) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvbb support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
+  } else {
+    if (UseGHASHIntrinsics) {
+      warning("Cannot enable UseGHASHIntrinsics on cpu without UseZvkg support");
+      FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
+    }
   }
 }
 
@@ -480,4 +509,63 @@ bool VM_Version::is_intrinsic_supported(vmIntrinsicID id) {
     break;
   }
   return true;
+}
+
+int VM_Version::cpu_features_size() {
+  return sizeof(RVExtFeatures);
+}
+
+void VM_Version::store_cpu_features(void* buf) {
+  memcpy(buf, RVExtFeatures::current(), sizeof(RVExtFeatures));
+}
+
+bool VM_Version::verify_aot_code_cache_features(void* features_buffer) {
+  RVExtFeatures* features_to_test = (RVExtFeatures*)features_buffer;
+  return RVExtFeatures::current()->verify_aot_code_cache_features(features_to_test);
+}
+
+// Print one feature using the same spelling as features_string(): single letter
+// extensions appear as "rvc"/"rvv" and multi-character extensions with a lower
+// case leading character ("Zba" -> "zba"). Must stay in sync with the feature
+// string built in VM_Version::setup_cpu_available_features().
+void VM_Version::print_feature_name(stringStream& ss, RVFeatureValue* feature) {
+  const char* pretty = feature->pretty();
+  if (strlen(pretty) == 1) {
+    ss.print("rv%s", pretty);
+  } else {
+    ss.print("%c%s", (char)tolower(pretty[0]), &pretty[1]);
+  }
+}
+
+void VM_Version::insert_features_names(RVExtFeatures* features, stringStream& ss) {
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (features->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
+}
+
+void VM_Version::get_cpu_features_name(void* features_buffer, stringStream& ss) {
+  RVExtFeatures* features = (RVExtFeatures*)features_buffer;
+  insert_features_names(features, ss);
+}
+
+void VM_Version::get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss) {
+  RVExtFeatures* rv_ext_features_set1 = (RVExtFeatures*)features_set1;
+  RVExtFeatures* rv_ext_features_set2 = (RVExtFeatures*)features_set2;
+  const char* sep = "";
+  int i = 0;
+  while (i < RVExtFeatures::MAX_CPU_FEATURE_INDEX) {
+    if (rv_ext_features_set1->support_feature(i) && !rv_ext_features_set2->support_feature(i)) {
+      ss.print("%s", sep);
+      print_feature_name(ss, _feature_list[i]);
+      sep = ", ";
+    }
+    i += 1;
+  }
 }

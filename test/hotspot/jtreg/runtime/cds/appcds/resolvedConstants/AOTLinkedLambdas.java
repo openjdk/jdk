@@ -43,48 +43,43 @@ import java.util.function.Supplier;
 import static java.util.stream.Collectors.*;
 import jdk.test.lib.cds.CDSOptions;
 import jdk.test.lib.cds.CDSTestUtils;
+import jdk.test.lib.cds.SimpleCDSAppTester;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class AOTLinkedLambdas {
-    static final String classList = "AOTLinkedLambdas.classlist";
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = AOTLinkedLambdasApp.class.getName();
 
     public static void main(String[] args) throws Exception {
-        CDSTestUtils.dumpClassList(classList, "-cp", appJar, mainClass)
-            .assertNormalExit(output -> {
-                output.shouldContain("Hello AOTLinkedLambdasApp");
-            });
-
-        CDSOptions opts = (new CDSOptions())
-            .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
+        SimpleCDSAppTester t = SimpleCDSAppTester.of("AOTLinkedLambdas")
+            .classpath(appJar)
+            .addVmArgs("-esa", // see JDK-8340836
                        "-XX:+AOTClassLinking",
                        "-Xlog:aot+resolve=trace",
                        "-Xlog:aot+class=debug",
-                       "-Xlog:cds+class=debug",
-                       "-cp", appJar);
+                       "-Xlog:cds+class=debug")
+            .appCommandLine(mainClass)
+            .setTrainingChecker((OutputAnalyzer output) -> {
+                output.shouldContain("Hello AOTLinkedLambdasApp");
+            })
+            .setAssemblyChecker((OutputAnalyzer dumpOut) -> {
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IA");
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IB");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IC");
+                dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type ID2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IE2"); // unsupported = IE1
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IF2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IG2");
+                dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IH3"); // unsupported = IH1
+            })
+            .runAOTTrainingAndAssemblyWorkflow();
 
-        OutputAnalyzer dumpOut = CDSTestUtils.createArchiveAndCheck(opts);
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IA");
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type IB");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IC");
-        dumpOut.shouldContain("Can aot-resolve Lambda proxy of interface type ID2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IE2"); // unsupported = IE1
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IF2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IG2");
-        dumpOut.shouldContain("Cannot aot-resolve Lambda proxy of interface type IH3"); // unsupported = IH1
-
-        CDSOptions runOpts = (new CDSOptions())
-            .setUseVersion(false)
-            .addPrefix("-Xlog:cds",
-                       "-esa",         // see JDK-8340836
-                       "-cp", appJar)
-            .addSuffix(mainClass);
-
-        CDSTestUtils.run(runOpts)
-            .assertNormalExit("Hello AOTLinkedLambdasApp",
-                              "hello, world");
+        t.setProductionChecker((OutputAnalyzer out) -> {
+                out.shouldContain("Hello AOTLinkedLambdasApp");
+                out.shouldContain("hello, world");
+            })
+            .productionRun();
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,6 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.UIResource;
 import javax.swing.text.View;
 
-import sun.awt.AppContext;
 import sun.swing.SwingUtilities2;
 
 /**
@@ -88,7 +87,7 @@ public class BasicButtonUI extends ButtonUI{
 
     private static final String propertyPrefix = "Button" + ".";
 
-    private static final Object BASIC_BUTTON_UI_KEY = new Object();
+    private static final ComponentUI UI = new BasicButtonUI();
 
     private KeyListener keyListener = null;
 
@@ -107,14 +106,7 @@ public class BasicButtonUI extends ButtonUI{
      * @return an instance of {@code BasicButtonUI}
      */
     public static ComponentUI createUI(JComponent c) {
-        AppContext appContext = AppContext.getAppContext();
-        BasicButtonUI buttonUI =
-                (BasicButtonUI) appContext.get(BASIC_BUTTON_UI_KEY);
-        if (buttonUI == null) {
-            buttonUI = new BasicButtonUI();
-            appContext.put(BASIC_BUTTON_UI_KEY, buttonUI);
-        }
-        return buttonUI;
+        return UI;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,15 +21,16 @@
  * questions.
  */
 
-/* @test
-   @bug 8262731
-   @key headful printer
-   @summary Verify that "PrinterJob.print" throws the expected exception,
-            if "Printable.print" throws an exception.
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
-   @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT PE
-   @run main ExceptionFromPrintableIsIgnoredTest EDT RE
+/*
+ * @test
+ * @bug 8262731 8268675 8381208
+ * @key printer
+ * @summary Verify that "PrinterJob.print" throws the expected exception,
+ *          if "Printable.print" throws an exception.
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN PE
+ * @run main ExceptionFromPrintableIsIgnoredTest MAIN RE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT PE
+ * @run main ExceptionFromPrintableIsIgnoredTest EDT RE
  */
 
 import java.awt.Graphics;
@@ -37,7 +38,12 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+
+import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Destination;
 import javax.swing.SwingUtilities;
 
 public class ExceptionFromPrintableIsIgnoredTest {
@@ -46,7 +52,14 @@ public class ExceptionFromPrintableIsIgnoredTest {
 
     private volatile Throwable printError;
 
+    private volatile PrinterException thrownPE;
+    private volatile RuntimeException thrownRE;
+
     public static void main(String[] args) {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
+
         if (args.length < 2) {
             throw new RuntimeException("Two arguments are expected:"
                     + " test thread type and test exception type.");
@@ -57,20 +70,12 @@ public class ExceptionFromPrintableIsIgnoredTest {
             TestExceptionType.valueOf(args[1]));
     }
 
-    public ExceptionFromPrintableIsIgnoredTest(
+    private ExceptionFromPrintableIsIgnoredTest(
             final TestThreadType threadType,
             final TestExceptionType exceptionType) {
         System.out.println(String.format(
                 "Test started. threadType='%s', exceptionType='%s'",
                 threadType, exceptionType));
-
-        String osName = System.getProperty("os.name");
-        boolean isOSX = osName.toLowerCase().startsWith("mac");
-        if ((exceptionType == TestExceptionType.RE) && !isOSX) {
-            System.out.println(
-                "Currently this test scenario can be verified only on macOS.");
-            return;
-        }
 
         printError = null;
 
@@ -94,15 +99,28 @@ public class ExceptionFromPrintableIsIgnoredTest {
         } else if (!(printError instanceof PrinterException)) {
             throw new RuntimeException("Unexpected exception was thrown.");
         }
+
+        if (exceptionType == TestExceptionType.PE
+                && thrownPE != printError) {
+            throw new RuntimeException(
+                    "Expected the same instance of PrinterException");
+        }
+
+        if (exceptionType == TestExceptionType.RE
+                && thrownRE != printError.getCause()) {
+            throw new RuntimeException(
+                    "Expected the cause of PrinterException to be the thrown exception");
+        }
+
         System.out.println("Test passed.");
     }
 
     private void runTest(final TestExceptionType exceptionType) {
+        PrintRequestAttributeSet attrs = new HashPrintRequestAttributeSet();
+        final File file = new File("out.prn");
+        attrs.add(new Destination(file.toURI()));
+
         PrinterJob job = PrinterJob.getPrinterJob();
-        if (job.getPrintService() == null) {
-            System.out.println("No printers are available.");
-            return;
-        }
 
         job.setPrintable(new Printable() {
             @Override
@@ -112,10 +130,10 @@ public class ExceptionFromPrintableIsIgnoredTest {
                     return NO_SUCH_PAGE;
                 }
                 if (exceptionType == TestExceptionType.PE) {
-                    throw new PrinterException(
+                    throw thrownPE = new PrinterException(
                         "Exception from 'Printable.print'.");
                 } else if (exceptionType == TestExceptionType.RE) {
-                    throw new RuntimeException(
+                    throw thrownRE = new RuntimeException(
                         "Exception from 'Printable.print'.");
                 }
                 return PAGE_EXISTS;
@@ -123,12 +141,14 @@ public class ExceptionFromPrintableIsIgnoredTest {
         });
 
         try {
-            job.print();
+            job.print(attrs);
         } catch (Throwable t) {
             printError = t;
 
             System.out.println("'PrinterJob.print' threw the exception:");
             t.printStackTrace(System.out);
+        } finally {
+            file.delete();
         }
     }
 }

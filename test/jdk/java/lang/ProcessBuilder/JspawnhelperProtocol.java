@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class JspawnhelperProtocol {
@@ -55,7 +56,9 @@ public class JspawnhelperProtocol {
         System.out.println("Recursively executing 'JspawnhelperProtocol " + arg + "'");
         Process p = null;
         try {
-            p = Runtime.getRuntime().exec(CMD);
+            // Route any stdout from the child process - be it jspawnhelper error messages or the output of "/bin/pwd" -
+            // through to the parent process.
+            p = new ProcessBuilder(CMD).inheritIO().start();
         } catch (Exception e) {
             // Check that exception contains rich message on failure.
             e.printStackTrace(System.out);
@@ -70,12 +73,6 @@ public class JspawnhelperProtocol {
             System.exit(ERROR + 1);
         }
         if (p.exitValue() == 0) {
-            String pwd = p.inputReader().readLine();
-            String realPwd = Path.of("").toAbsolutePath().toString();
-            if (!realPwd.equals(pwd)) {
-                System.out.println("Child process returned '" + pwd + "' (expected '" + realPwd + "')");
-                System.exit(ERROR + 2);
-            }
             System.out.println("  Successfully executed '" + CMD[0] + "'");
             System.exit(0);
         } else {
@@ -89,7 +86,6 @@ public class JspawnhelperProtocol {
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
                                                               "JspawnhelperProtocol",
                                                               "normalExec");
-        pb.inheritIO();
         Process p = pb.start();
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             throw new Exception("Parent process timed out");
@@ -97,6 +93,10 @@ public class JspawnhelperProtocol {
         if (p.exitValue() != 0) {
             throw new Exception("Parent process exited with " + p.exitValue());
         }
+        OutputAnalyzer output = new OutputAnalyzer(p);
+        output.shouldContain("Recursively executing 'JspawnhelperProtocol normalExec'");
+        String realPwd = Path.of("").toAbsolutePath().toString();
+        output.shouldContain(realPwd);
     }
 
     private static void simulateCrashInChild(int stage) throws Exception {
@@ -144,7 +144,7 @@ public class JspawnhelperProtocol {
         try (BufferedReader br = p.inputReader()) {
             line = br.readLine();
             while (line != null && !line.startsWith("posix_spawn:")) {
-                System.out.println(line);
+                System.out.println("parent stdout:" + line);
                 line = br.readLine();
             }
         }

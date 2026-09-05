@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,35 +53,35 @@ class SSLStreams {
     /* held by thread doing the hand-shake on this connection */
     Lock handshaking = new ReentrantLock();
 
-    SSLStreams (ServerImpl server, SSLContext sslctx, SocketChannel chan) throws IOException {
+    SSLStreams(ServerImpl server, SSLContext sslctx, SocketChannel chan) throws IOException {
         this.server = server;
         this.sslctx= sslctx;
         this.chan= chan;
         InetSocketAddress addr =
                 (InetSocketAddress)chan.socket().getRemoteSocketAddress();
-        engine = sslctx.createSSLEngine (addr.getHostName(), addr.getPort());
-        engine.setUseClientMode (false);
+        engine = sslctx.createSSLEngine(addr.getHostName(), addr.getPort());
+        engine.setUseClientMode(false);
         HttpsConfigurator cfg = server.getHttpsConfigurator();
-        configureEngine (cfg, addr);
-        wrapper = new EngineWrapper (chan, engine);
+        configureEngine(cfg, addr);
+        wrapper = new EngineWrapper(chan, engine);
     }
 
     @SuppressWarnings("deprecation")
-    private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr){
+    private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr) {
         if (cfg != null) {
-            Parameters params = new Parameters (cfg, addr);
+            Parameters params = new Parameters(cfg, addr);
 //BEGIN_TIGER_EXCLUDE
-            cfg.configure (params);
+            cfg.configure(params);
             SSLParameters sslParams = params.getSSLParameters();
             if (sslParams != null) {
-                engine.setSSLParameters (sslParams);
+                engine.setSSLParameters(sslParams);
             } else
 //END_TIGER_EXCLUDE
             {
                 /* tiger compatibility */
                 if (params.getCipherSuites() != null) {
                     try {
-                        engine.setEnabledCipherSuites (
+                        engine.setEnabledCipherSuites(
                             params.getCipherSuites()
                         );
                     } catch (IllegalArgumentException e) { /* LOG */}
@@ -93,7 +93,7 @@ class SSLStreams {
                 }
                 if (params.getProtocols() != null) {
                     try {
-                        engine.setEnabledProtocols (
+                        engine.setEnabledProtocols(
                             params.getProtocols()
                         );
                     } catch (IllegalArgumentException e) { /* LOG */}
@@ -106,11 +106,11 @@ class SSLStreams {
         InetSocketAddress addr;
         HttpsConfigurator cfg;
 
-        Parameters (HttpsConfigurator cfg, InetSocketAddress addr) {
+        Parameters(HttpsConfigurator cfg, InetSocketAddress addr) {
             this.addr = addr;
             this.cfg = cfg;
         }
-        public InetSocketAddress getClientAddress () {
+        public InetSocketAddress getClientAddress() {
             return addr;
         }
         public HttpsConfigurator getHttpsConfigurator() {
@@ -118,10 +118,10 @@ class SSLStreams {
         }
 //BEGIN_TIGER_EXCLUDE
         SSLParameters params;
-        public void setSSLParameters (SSLParameters p) {
+        public void setSSLParameters(SSLParameters p) {
             params = p;
         }
-        SSLParameters getSSLParameters () {
+        SSLParameters getSSLParameters() {
             return params;
         }
 //END_TIGER_EXCLUDE
@@ -130,14 +130,14 @@ class SSLStreams {
     /**
      * cleanup resources allocated inside this object
      */
-    void close () throws IOException {
+    void close() throws IOException {
         wrapper.close();
     }
 
     /**
      * return the SSL InputStream
      */
-    InputStream getInputStream () throws IOException {
+    InputStream getInputStream() throws IOException {
         if (is == null) {
             is = new InputStream();
         }
@@ -147,14 +147,14 @@ class SSLStreams {
     /**
      * return the SSL OutputStream
      */
-    OutputStream getOutputStream () throws IOException {
+    OutputStream getOutputStream() throws IOException {
         if (os == null) {
             os = new OutputStream();
         }
         return os;
     }
 
-    SSLEngine getSSLEngine () {
+    SSLEngine getSSLEngine() {
         return engine;
     }
 
@@ -183,11 +183,11 @@ class SSLStreams {
         PACKET, APPLICATION
     };
 
-    private ByteBuffer allocate (BufType type) {
-        return allocate (type, -1);
+    private ByteBuffer allocate(BufType type) {
+        return allocate(type, -1);
     }
 
-    private ByteBuffer allocate (BufType type, int len) {
+    private ByteBuffer allocate(BufType type, int len) {
         assert engine != null;
         synchronized (this) {
             int size;
@@ -210,7 +210,7 @@ class SSLStreams {
                 }
                 size = app_buf_size;
             }
-            return ByteBuffer.allocate (size);
+            return ByteBuffer.allocate(size);
         }
     }
 
@@ -222,10 +222,10 @@ class SSLStreams {
      * flip is set to true if the old buffer needs to be flipped
      * before it is copied.
      */
-    private ByteBuffer realloc (ByteBuffer b, boolean flip, BufType type) {
+    private ByteBuffer realloc(ByteBuffer b, boolean flip, BufType type) {
         synchronized (this) {
             int nsize = 2 * b.capacity();
-            ByteBuffer n = allocate (type, nsize);
+            ByteBuffer n = allocate(type, nsize);
             if (flip) {
                 b.flip();
             }
@@ -252,7 +252,7 @@ class SSLStreams {
         boolean closed = false;
         int u_remaining; // the number of bytes left in unwrap_src after an unwrap()
 
-        EngineWrapper (SocketChannel chan, SSLEngine engine) throws IOException {
+        EngineWrapper(SocketChannel chan, SSLEngine engine) throws IOException {
             this.chan = chan;
             this.engine = engine;
             wrapLock = new Object();
@@ -261,7 +261,7 @@ class SSLStreams {
             wrap_dst = allocate(BufType.PACKET);
         }
 
-        void close () throws IOException {
+        void close() throws IOException {
         }
 
         /* try to wrap and send the data in src. Handles OVERFLOW.
@@ -275,17 +275,17 @@ class SSLStreams {
 
         WrapperResult wrapAndSendX(ByteBuffer src, boolean ignoreClose) throws IOException {
             if (closed && !ignoreClose) {
-                throw new IOException ("Engine is closed");
+                throw new IOException("Engine is closed");
             }
             Status status;
             WrapperResult r = new WrapperResult();
             synchronized (wrapLock) {
                 wrap_dst.clear();
                 do {
-                    r.result = engine.wrap (src, wrap_dst);
+                    r.result = engine.wrap(src, wrap_dst);
                     status = r.result.getStatus();
                     if (status == Status.BUFFER_OVERFLOW) {
-                        wrap_dst = realloc (wrap_dst, true, BufType.PACKET);
+                        wrap_dst = realloc(wrap_dst, true, BufType.PACKET);
                     }
                 } while (status == Status.BUFFER_OVERFLOW);
                 if (status == Status.CLOSED && !ignoreClose) {
@@ -296,7 +296,7 @@ class SSLStreams {
                     int l = wrap_dst.remaining();
                     assert l == r.result.bytesProduced();
                     while (l>0) {
-                        l -= chan.write (wrap_dst);
+                        l -= chan.write(wrap_dst);
                     }
                 }
             }
@@ -313,7 +313,7 @@ class SSLStreams {
             WrapperResult r = new WrapperResult();
             r.buf = dst;
             if (closed) {
-                throw new IOException ("Engine is closed");
+                throw new IOException("Engine is closed");
             }
             boolean needData;
             if (u_remaining > 0) {
@@ -329,19 +329,19 @@ class SSLStreams {
                 do {
                     if (needData) {
                         do {
-                        x = chan.read (unwrap_src);
+                        x = chan.read(unwrap_src);
                         } while (x == 0);
                         if (x == -1) {
-                            throw new IOException ("connection closed for reading");
+                            throw new IOException("connection closed for reading");
                         }
                         unwrap_src.flip();
                     }
-                    r.result = engine.unwrap (unwrap_src, r.buf);
+                    r.result = engine.unwrap(unwrap_src, r.buf);
                     status = r.result.getStatus();
                     if (status == Status.BUFFER_UNDERFLOW) {
                         if (unwrap_src.limit() == unwrap_src.capacity()) {
                             /* buffer not big enough */
-                            unwrap_src = realloc (
+                            unwrap_src = realloc(
                                 unwrap_src, false, BufType.PACKET
                             );
                         } else {
@@ -349,12 +349,12 @@ class SSLStreams {
                              * data off the channel. Reset pointers
                              * for reading off SocketChannel
                              */
-                            unwrap_src.position (unwrap_src.limit());
-                            unwrap_src.limit (unwrap_src.capacity());
+                            unwrap_src.position(unwrap_src.limit());
+                            unwrap_src.limit(unwrap_src.capacity());
                         }
                         needData = true;
                     } else if (status == Status.BUFFER_OVERFLOW) {
-                        r.buf = realloc (r.buf, true, BufType.APPLICATION);
+                        r.buf = realloc(r.buf, true, BufType.APPLICATION);
                         needData = false;
                     } else if (status == Status.CLOSED) {
                         closed = true;
@@ -374,13 +374,13 @@ class SSLStreams {
      * all of the given user data has been sent and any handshake has been
      * completed. Caller should check if engine has been closed.
      */
-    public WrapperResult sendData (ByteBuffer src) throws IOException {
+    public WrapperResult sendData(ByteBuffer src) throws IOException {
         WrapperResult r=null;
         while (src.remaining() > 0) {
             r = wrapper.wrapAndSend(src);
             Status status = r.result.getStatus();
             if (status == Status.CLOSED) {
-                doClosure ();
+                doClosure();
                 return r;
             }
             HandshakeStatus hs_status = r.result.getHandshakeStatus();
@@ -399,16 +399,16 @@ class SSLStreams {
      * and returned. This call handles handshaking automatically.
      * Caller should check if engine has been closed.
      */
-    public WrapperResult recvData (ByteBuffer dst) throws IOException {
+    public WrapperResult recvData(ByteBuffer dst) throws IOException {
         /* we wait until some user data arrives */
         WrapperResult r = null;
         assert dst.position() == 0;
         while (dst.position() == 0) {
-            r = wrapper.recvAndUnwrap (dst);
+            r = wrapper.recvAndUnwrap(dst);
             dst = (r.buf != dst) ? r.buf: dst;
             Status status = r.result.getStatus();
             if (status == Status.CLOSED) {
-                doClosure ();
+                doClosure();
                 return r;
             }
 
@@ -416,7 +416,7 @@ class SSLStreams {
             if (hs_status != HandshakeStatus.FINISHED &&
                 hs_status != HandshakeStatus.NOT_HANDSHAKING)
             {
-                doHandshake (hs_status);
+                doHandshake(hs_status);
             }
         }
         dst.flip();
@@ -426,7 +426,7 @@ class SSLStreams {
     /* we've received a close notify. Need to call wrap to send
      * the response
      */
-    void doClosure () throws IOException {
+    void doClosure() throws IOException {
         try {
             handshaking.lock();
             ByteBuffer tmp = allocate(BufType.APPLICATION);
@@ -435,8 +435,8 @@ class SSLStreams {
             HandshakeStatus hs;
             do {
                 tmp.clear();
-                tmp.flip ();
-                r = wrapper.wrapAndSendX (tmp, true);
+                tmp.flip();
+                r = wrapper.wrapAndSendX(tmp, true);
                 hs = r.result.getHandshakeStatus();
                 st = r.result.getStatus();
             } while (st != Status.CLOSED &&
@@ -452,7 +452,7 @@ class SSLStreams {
      * is called with no data to send then there must be no problem
      */
     @SuppressWarnings("fallthrough")
-    void doHandshake (HandshakeStatus hs_status) throws IOException {
+    void doHandshake(HandshakeStatus hs_status) throws IOException {
         try {
             handshaking.lock();
             ByteBuffer tmp = allocate(BufType.APPLICATION);
@@ -478,7 +478,7 @@ class SSLStreams {
 
                     case NEED_UNWRAP:
                         tmp.clear();
-                        r = wrapper.recvAndUnwrap (tmp);
+                        r = wrapper.recvAndUnwrap(tmp);
                         if (r.buf != tmp) {
                             tmp = r.buf;
                         }
@@ -507,27 +507,27 @@ class SSLStreams {
 
         boolean needData = true;
 
-        InputStream () {
-            bbuf = allocate (BufType.APPLICATION);
+        InputStream() {
+            bbuf = allocate(BufType.APPLICATION);
         }
 
-        public int read (byte[] buf, int off, int len) throws IOException {
+        public int read(byte[] buf, int off, int len) throws IOException {
             if (closed) {
-                throw new IOException ("SSL stream is closed");
+                throw new IOException("SSL stream is closed");
             }
             if (eof) {
                 return -1;
             }
-            int available=0;
+            int available = 0;
             if (!needData) {
                 available = bbuf.remaining();
-                needData = (available==0);
+                needData = (available == 0);
             }
             if (needData) {
                 bbuf.clear();
-                WrapperResult r = recvData (bbuf);
-                bbuf = r.buf== bbuf? bbuf: r.buf;
-                if ((available=bbuf.remaining()) == 0) {
+                WrapperResult r = recvData(bbuf);
+                bbuf = r.buf == bbuf ? bbuf: r.buf;
+                if ((available = bbuf.remaining()) == 0) {
                     eof = true;
                     return -1;
                 } else {
@@ -538,26 +538,26 @@ class SSLStreams {
             if (len > available) {
                 len = available;
             }
-            bbuf.get (buf, off, len);
+            bbuf.get(buf, off, len);
             return len;
         }
 
-        public int available () throws IOException {
+        public int available() throws IOException {
             return bbuf.remaining();
         }
 
-        public boolean markSupported () {
+        public boolean markSupported() {
             return false; /* not possible with SSLEngine */
         }
 
-        public void reset () throws IOException {
-            throw new IOException ("mark/reset not supported");
+        public void reset() throws IOException {
+            throw new IOException("mark/reset not supported");
         }
 
-        public long skip (long s) throws IOException {
+        public long skip(long s) throws IOException {
             int n = (int)s;
             if (closed) {
-                throw new IOException ("SSL stream is closed");
+                throw new IOException("SSL stream is closed");
             }
             if (eof) {
                 return 0;
@@ -565,13 +565,13 @@ class SSLStreams {
             int ret = n;
             while (n > 0) {
                 if (bbuf.remaining() >= n) {
-                    bbuf.position (bbuf.position()+n);
+                    bbuf.position(bbuf.position()+n);
                     return ret;
                 } else {
                     n -= bbuf.remaining();
                     bbuf.clear();
-                    WrapperResult r = recvData (bbuf);
-                    bbuf = r.buf==bbuf? bbuf: r.buf;
+                    WrapperResult r = recvData(bbuf);
+                    bbuf = r.buf == bbuf ? bbuf: r.buf;
                 }
             }
             return ret; /* not reached */
@@ -582,22 +582,22 @@ class SSLStreams {
          * before this is called. Otherwise an exception will be thrown.
          * [Note. May need to revisit this. not quite the normal close() semantics
          */
-        public void close () throws IOException {
+        public void close() throws IOException {
             eof = true;
-            engine.closeInbound ();
+            engine.closeInbound();
         }
 
-        public int read (byte[] buf) throws IOException {
-            return read (buf, 0, buf.length);
+        public int read(byte[] buf) throws IOException {
+            return read(buf, 0, buf.length);
         }
 
         byte single[] = new byte [1];
 
-        public int read () throws IOException {
+        public int read() throws IOException {
             if (eof) {
                 return -1;
             }
-            int n = read (single, 0, 1);
+            int n = read(single, 0, 1);
             if (n <= 0) {
                 return -1;
             } else {
@@ -622,28 +622,28 @@ class SSLStreams {
 
         public void write(int b) throws IOException {
             single[0] = (byte)b;
-            write (single, 0, 1);
+            write(single, 0, 1);
         }
 
         public void write(byte b[]) throws IOException {
-            write (b, 0, b.length);
+            write(b, 0, b.length);
         }
         public void write(byte b[], int off, int len) throws IOException {
             if (closed) {
-                throw new IOException ("output stream is closed");
+                throw new IOException("output stream is closed");
             }
             while (len > 0) {
                 int l = len > buf.capacity() ? buf.capacity() : len;
                 buf.clear();
-                buf.put (b, off, l);
+                buf.put(b, off, l);
                 len -= l;
                 off += l;
                 buf.flip();
-                WrapperResult r = sendData (buf);
+                WrapperResult r = sendData(buf);
                 if (r.result.getStatus() == Status.CLOSED) {
                     closed = true;
                     if (len > 0) {
-                        throw new IOException ("output stream is closed");
+                        throw new IOException("output stream is closed");
                     }
                 }
             }
@@ -654,13 +654,13 @@ class SSLStreams {
         }
 
         public void close() throws IOException {
-            WrapperResult r=null;
+            WrapperResult r = null;
             engine.closeOutbound();
             closed = true;
             HandshakeStatus stat = HandshakeStatus.NEED_WRAP;
             buf.clear();
             while (stat == HandshakeStatus.NEED_WRAP) {
-                r = wrapper.wrapAndSend (buf);
+                r = wrapper.wrapAndSend(buf);
                 stat = r.result.getHandshakeStatus();
             }
             assert r.result.getStatus() == Status.CLOSED

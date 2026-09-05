@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,10 +23,10 @@
  *
  */
 
-#ifndef _IMMEDIATE_H
-#define _IMMEDIATE_H
+#ifndef CPU_AARCH64_IMMEDIATE_AARCH64_HPP
+#define CPU_AARCH64_IMMEDIATE_AARCH64_HPP
 
-#include <sys/types.h>
+#include <stdint.h>
 
 /*
  * functions to map backwards and forwards between logical or floating
@@ -51,4 +52,4 @@ uint32_t encoding_for_logical_immediate(uint64_t immediate);
 uint64_t fp_immediate_for_encoding(uint32_t imm8, int is_dp);
 uint32_t encoding_for_fp_immediate(float immediate);
 
-#endif // _IMMEDIATE_H
+#endif // CPU_AARCH64_IMMEDIATE_AARCH64_HPP

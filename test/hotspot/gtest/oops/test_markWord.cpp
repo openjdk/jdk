@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +40,16 @@
 // The test doesn't work for PRODUCT because it needs WizardMode
 #ifndef PRODUCT
 
-static void assert_test_pattern(Handle object, const char* pattern) {
+template<typename Printable>
+static void assert_test_pattern(Printable object, const char* pattern) {
   stringStream st;
   object->print_on(&st);
   ASSERT_THAT(st.base(), testing::HasSubstr(pattern));
+}
+
+template<typename Printable>
+static void assert_mark_word_print_pattern(Printable object, const char* pattern) {
+  assert_test_pattern(object, pattern);
 }
 
 class LockerThread : public JavaTestThread {
@@ -65,7 +71,7 @@ class LockerThread : public JavaTestThread {
     // state we have...
     ObjectLocker ol(h_obj, THREAD);
     ol.notify_all(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
   }
 };
 
@@ -85,13 +91,13 @@ TEST_VM(markWord, printing) {
   // Thread tries to lock it.
   {
     ObjectLocker ol(h_obj, THREAD);
-    assert_test_pattern(h_obj, "locked");
+    assert_mark_word_print_pattern(h_obj, "is_fast_locked");
   }
-  assert_test_pattern(h_obj, "is_unlocked no_hash");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral no_hash");
 
   // Hash the object then print it.
   intx hash = h_obj->identity_hash();
-  assert_test_pattern(h_obj, "is_unlocked hash=0x");
+  assert_mark_word_print_pattern(h_obj, "is_lock_neutral hash=0x");
 
   // Wait gets the lock inflated.
   {
@@ -103,8 +109,122 @@ TEST_VM(markWord, printing) {
     st->doit();
 
     ol.wait_uninterruptibly(THREAD);
-    assert_test_pattern(h_obj, "monitor");
+    assert_test_pattern(h_obj, "has_monitor");
     done.wait_with_safepoint_check(THREAD);  // wait till the thread is done.
   }
 }
+
+static void assert_lock_neutral_state(markWord mark) {
+  EXPECT_FALSE(mark.is_fast_locked());
+  EXPECT_FALSE(mark.has_monitor());
+  EXPECT_FALSE(mark.is_marked());
+  EXPECT_TRUE(mark.is_lock_neutral());
+}
+
+static void assert_copy_set_hash(markWord mark) {
+  const intptr_t hash = 4711;
+  EXPECT_FALSE(mark.has_hash());
+  markWord copy = mark.copy_set_hash(hash);
+  EXPECT_EQ(hash, copy.hash());
+  EXPECT_TRUE(copy.has_hash());
+}
+
+static void assert_type(markWord mark) {
+  EXPECT_FALSE(mark.is_flat_array());
+  EXPECT_FALSE(mark.is_inline_type());
+}
+
+TEST_VM(markWord, prototype) {
+  markWord mark = markWord::prototype();
+  assert_lock_neutral_state(mark);
+
+  assert_type(mark);
+
+  EXPECT_FALSE(mark.has_hash());
+  EXPECT_FALSE(mark.is_marked());
+
+  assert_copy_set_hash(mark);
+  assert_type(mark);
+}
+
+static void assert_inline_type(markWord mark) {
+  EXPECT_FALSE(mark.is_flat_array());
+  EXPECT_TRUE(mark.is_inline_type());
+  EXPECT_FALSE(mark.is_null_free_array());
+}
+
+TEST_VM(markWord, inline_type_prototype) {
+  markWord mark = markWord::inline_type_prototype();
+  assert_lock_neutral_state(mark);
+  assert_test_pattern(&mark, " inline_type");
+
+  assert_inline_type(mark);
+
+  EXPECT_FALSE(mark.has_hash());
+  EXPECT_FALSE(mark.is_marked());
+}
+
+#if _LP64
+
+static void assert_flat_array_type(markWord mark) {
+  EXPECT_TRUE(mark.is_flat_array());
+  EXPECT_FALSE(mark.is_inline_type());
+}
+
+TEST_VM(markWord, null_free_flat_array_prototype) {
+  markWord mark = markWord::flat_array_prototype(true /* null_free */);
+  assert_lock_neutral_state(mark);
+
+  assert_flat_array_type(mark);
+  EXPECT_TRUE(mark.is_null_free_array());
+
+  EXPECT_FALSE(mark.has_hash());
+  EXPECT_FALSE(mark.is_marked());
+
+  assert_copy_set_hash(mark);
+  assert_flat_array_type(mark);
+  EXPECT_TRUE(mark.is_null_free_array());
+
+  assert_test_pattern(&mark, " flat_null_free_array");
+}
+
+TEST_VM(markWord, nullable_flat_array_prototype) {
+  markWord mark = markWord::flat_array_prototype(false /* null_free */);
+  assert_lock_neutral_state(mark);
+
+  assert_flat_array_type(mark);
+  EXPECT_FALSE(mark.is_null_free_array());
+
+  EXPECT_FALSE(mark.has_hash());
+  EXPECT_FALSE(mark.is_marked());
+
+  assert_copy_set_hash(mark);
+  assert_flat_array_type(mark);
+  EXPECT_FALSE(mark.is_null_free_array());
+
+  assert_test_pattern(&mark, " flat_array");
+}
+
+static void assert_null_free_array_type(markWord mark) {
+  EXPECT_FALSE(mark.is_flat_array());
+  EXPECT_FALSE(mark.is_inline_type());
+  EXPECT_TRUE(mark.is_null_free_array());
+}
+
+TEST_VM(markWord, null_free_array_prototype) {
+  markWord mark = markWord::null_free_array_prototype();
+  assert_lock_neutral_state(mark);
+
+  assert_null_free_array_type(mark);
+
+  EXPECT_FALSE(mark.has_hash());
+  EXPECT_FALSE(mark.is_marked());
+
+  assert_copy_set_hash(mark);
+  assert_null_free_array_type(mark);
+
+  assert_test_pattern(&mark, " null_free_array");
+}
+#endif // _LP64
+
 #endif // PRODUCT

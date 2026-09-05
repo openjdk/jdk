@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,13 +80,13 @@ public class TestGCLogMessages {
         }
     };
 
-    private class LogMessageWithLevelC2OrJVMCIOnly extends LogMessageWithLevel {
-        public LogMessageWithLevelC2OrJVMCIOnly(String message, Level level) {
+    private class LogMessageWithLevelC2 extends LogMessageWithLevel {
+        public LogMessageWithLevelC2(String message, Level level) {
             super(message, level);
         }
 
         public boolean isAvailable() {
-            return Compiler.isC2OrJVMCIIncluded();
+            return Compiler.isC2Included();
         }
     }
 
@@ -170,7 +170,8 @@ public class TestGCLogMessages {
 
         // Post Evacuate Cleanup 1
         new LogMessageWithLevel("Post Evacuate Cleanup 1:", Level.DEBUG),
-        new LogMessageWithLevel("Merge Per-Thread State \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Flush Per-Thread State \\(ms\\):", Level.DEBUG),
+        new LogMessageWithLevel("Update Code Roots \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("LAB Waste:", Level.DEBUG),
         new LogMessageWithLevel("LAB Undo Waste:", Level.DEBUG),
         new LogMessageWithLevel("Pending Cards:", Level.DEBUG),
@@ -182,13 +183,13 @@ public class TestGCLogMessages {
 
         // Post Evacuate Cleanup 2
         new LogMessageWithLevel("Post Evacuate Cleanup 2:", Level.DEBUG),
-        new LogMessageWithLevelC2OrJVMCIOnly("Update Derived Pointers", Level.DEBUG),
+        new LogMessageWithLevelC2("Update Derived Pointers", Level.DEBUG),
         new LogMessageWithLevel("Resize TLABs \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Free Collection Set \\(ms\\):", Level.DEBUG),
         new LogMessageWithLevel("Serial Free Collection Set:", Level.TRACE),
         new LogMessageWithLevel("Young Free Collection Set \\(ms\\):", Level.TRACE),
         new LogMessageWithLevel("Non-Young Free Collection Set \\(ms\\):", Level.TRACE),
-        new LogMessageWithLevel("Reset Partial Array State Manager \\(ms\\)", Level.TRACE),
+        new LogMessageWithLevel("Destroy Per-Thread State \\(ms\\):", Level.TRACE),
 
         // Misc Top-level
         new LogMessageWithLevel("Rebuild Free List:", Level.DEBUG),

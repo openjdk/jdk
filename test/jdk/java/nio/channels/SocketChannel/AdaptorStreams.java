@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /* @test
  * @bug 8222774 4430139
- * @run testng AdaptorStreams
+ * @run junit AdaptorStreams
  * @summary Exercise socket adaptor input/output streams
  */
 
@@ -44,77 +44,82 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
 public class AdaptorStreams {
 
     /**
      * Test read when bytes are available
      */
+    @Test
     public void testRead1() throws Exception {
         withConnection((sc, peer) -> {
             peer.getOutputStream().write(99);
             int n = sc.socket().getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test read blocking before bytes are available
      */
+    @Test
     public void testRead2() throws Exception {
         withConnection((sc, peer) -> {
             scheduleWrite(peer.getOutputStream(), 99, 1000);
             int n = sc.socket().getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test read when peer has closed connection
      */
+    @Test
     public void testRead3() throws Exception {
         withConnection((sc, peer) -> {
             peer.close();
             int n = sc.socket().getInputStream().read();
-            assertEquals(n, -1);
+            assertEquals(-1, n);
         });
     }
 
     /**
      * Test read blocking before peer closes connection
      */
+    @Test
     public void testRead4() throws Exception {
         withConnection((sc, peer) -> {
             scheduleClose(peer, 1000);
             int n = sc.socket().getInputStream().read();
-            assertEquals(n, -1);
+            assertEquals(-1, n);
         });
     }
 
     /**
      * Test async close of socket when thread blocked in read
      */
+    @Test
     public void testRead5() throws Exception {
         withConnection((sc, peer) -> {
             scheduleClose(sc, 2000);
             InputStream in = sc.socket().getInputStream();
-            expectThrows(IOException.class, () -> in.read());
+            assertThrows(IOException.class, () -> in.read());
         });
     }
 
     /**
      * Test interrupted status set before read
      */
+    @Test
     public void testRead6() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
             Thread.currentThread().interrupt();
             try {
                 InputStream in = s.getInputStream();
-                expectThrows(IOException.class, () -> in.read());
+                assertThrows(IOException.class, () -> in.read());
             } finally {
                 Thread.interrupted();  // clear interrupt
             }
@@ -125,13 +130,14 @@ public class AdaptorStreams {
     /**
      * Test interrupt of thread blocked in read
      */
+    @Test
     public void testRead7() throws Exception {
         withConnection((sc, peer) -> {
             Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
             Socket s = sc.socket();
             try {
                 InputStream in = s.getInputStream();
-                expectThrows(IOException.class, () -> in.read());
+                assertThrows(IOException.class, () -> in.read());
             } finally {
                 interrupter.cancel(true);
                 Thread.interrupted();  // clear interrupt
@@ -143,68 +149,74 @@ public class AdaptorStreams {
     /**
      * Test read when channel is configured non-blocking
      */
+    @Test
     public void testRead8() throws Exception {
         withConnection((sc, peer) -> {
             sc.configureBlocking(false);
             InputStream in = sc.socket().getInputStream();
-            expectThrows(IllegalBlockingModeException.class, () -> in.read());
+            assertThrows(IllegalBlockingModeException.class, () -> in.read());
         });
     }
 
     /**
      * Test timed read when bytes are available
      */
+    @Test
     public void testTimedRead1() throws Exception {
         withConnection((sc, peer) -> {
             peer.getOutputStream().write(99);
             Socket s = sc.socket();
             s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test timed read blocking before bytes are available
      */
+    @Test
     public void testTimedRead2() throws Exception {
         withConnection((sc, peer) -> {
             scheduleWrite(peer.getOutputStream(), 99, 1000);
             Socket s = sc.socket();
             s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test timed read when the read times out
      */
+    @Test
     public void testTimedRead3() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
             s.setSoTimeout(500);
             InputStream in = s.getInputStream();
-            expectThrows(SocketTimeoutException.class, () -> in.read());
+            assertThrows(SocketTimeoutException.class, () -> in.read());
         });
     }
 
     /**
      * Test async close of socket when thread blocked in timed read
      */
+    @Test
     public void testTimedRead4() throws Exception {
         withConnection((sc, peer) -> {
             scheduleClose(sc, 2000);
             Socket s = sc.socket();
             s.setSoTimeout(60_000);
             InputStream in = s.getInputStream();
-            expectThrows(IOException.class, () -> in.read());
+            assertThrows(IOException.class, () -> in.read());
         });
     }
 
     /**
      * Test interrupted status set before timed read
      */
+    @Test
     public void testTimedRead5() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -212,7 +224,7 @@ public class AdaptorStreams {
             try {
                 s.setSoTimeout(60_000);
                 InputStream in = s.getInputStream();
-                expectThrows(IOException.class, () -> in.read());
+                assertThrows(IOException.class, () -> in.read());
             } finally {
                 Thread.interrupted();  // clear interrupt
             }
@@ -223,6 +235,7 @@ public class AdaptorStreams {
     /**
      * Test interrupt of thread blocked in timed read
      */
+    @Test
     public void testTimedRead6() throws Exception {
         withConnection((sc, peer) -> {
             Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
@@ -230,7 +243,7 @@ public class AdaptorStreams {
             try {
                 s.setSoTimeout(60_000);
                 InputStream in = s.getInputStream();
-                expectThrows(IOException.class, () -> in.read());
+                assertThrows(IOException.class, () -> in.read());
                 assertTrue(s.isClosed());
             } finally {
                 interrupter.cancel(true);
@@ -243,10 +256,11 @@ public class AdaptorStreams {
     /**
      * Test async close of socket when thread blocked in write
      */
+    @Test
     public void testWrite1() throws Exception {
         withConnection((sc, peer) -> {
             scheduleClose(sc, 2000);
-            expectThrows(IOException.class, () -> {
+            assertThrows(IOException.class, () -> {
                 OutputStream out = sc.socket().getOutputStream();
                 byte[] data = new byte[64*1000];
                 while (true) {
@@ -259,13 +273,14 @@ public class AdaptorStreams {
     /**
      * Test interrupted status set before write
      */
+    @Test
     public void testWrite2() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
             Thread.currentThread().interrupt();
             try {
                 OutputStream out = s.getOutputStream();
-                expectThrows(IOException.class, () -> out.write(99));
+                assertThrows(IOException.class, () -> out.write(99));
             } finally {
                 Thread.interrupted();  // clear interrupt
             }
@@ -276,12 +291,13 @@ public class AdaptorStreams {
     /**
      * Test interrupt of thread blocked in write
      */
+    @Test
     public void testWrite3() throws Exception {
         withConnection((sc, peer) -> {
             Future<?> interrupter = scheduleInterrupt(Thread.currentThread(), 2000);
             Socket s = sc.socket();
             try {
-                expectThrows(IOException.class, () -> {
+                assertThrows(IOException.class, () -> {
                     OutputStream out = sc.socket().getOutputStream();
                     byte[] data = new byte[64*1000];
                     while (true) {
@@ -299,11 +315,12 @@ public class AdaptorStreams {
     /**
      * Test write when channel is configured non-blocking
      */
+    @Test
     public void testWrite4() throws Exception {
         withConnection((sc, peer) -> {
             sc.configureBlocking(false);
             OutputStream out = sc.socket().getOutputStream();
-            expectThrows(IllegalBlockingModeException.class, () -> out.write(99));
+            assertThrows(IllegalBlockingModeException.class, () -> out.write(99));
         });
     }
 
@@ -311,6 +328,7 @@ public class AdaptorStreams {
      * Test read when there are bytes available and another thread is blocked
      * in write
      */
+    @Test
     public void testConcurrentReadWrite1() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -328,13 +346,14 @@ public class AdaptorStreams {
             // test read when bytes are available
             peer.getOutputStream().write(99);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test read blocking when another thread is blocked in write
      */
+    @Test
     public void testConcurrentReadWrite2() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -352,13 +371,14 @@ public class AdaptorStreams {
             // test read blocking until bytes are available
             scheduleWrite(peer.getOutputStream(), 99, 500);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test writing when another thread is blocked in read
      */
+    @Test
     public void testConcurrentReadWrite3() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -372,7 +392,7 @@ public class AdaptorStreams {
             // test write
             s.getOutputStream().write(99);
             int n = peer.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
@@ -380,6 +400,7 @@ public class AdaptorStreams {
      * Test timed read when there are bytes available and another thread is
      * blocked in write
      */
+    @Test
     public void testConcurrentTimedReadWrite1() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -398,13 +419,14 @@ public class AdaptorStreams {
             peer.getOutputStream().write(99);
             s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test timed read blocking when another thread is blocked in write
      */
+    @Test
     public void testConcurrentTimedReadWrite2() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -423,13 +445,14 @@ public class AdaptorStreams {
             scheduleWrite(peer.getOutputStream(), 99, 500);
             s.setSoTimeout(60_000);
             int n = s.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 
     /**
      * Test writing when another thread is blocked in read
      */
+    @Test
     public void testConcurrentTimedReadWrite3() throws Exception {
         withConnection((sc, peer) -> {
             Socket s = sc.socket();
@@ -444,7 +467,7 @@ public class AdaptorStreams {
             // test write
             s.getOutputStream().write(99);
             int n = peer.getInputStream().read();
-            assertEquals(n, 99);
+            assertEquals(99, n);
         });
     }
 

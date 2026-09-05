@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,44 +25,91 @@
  * @test
  * @bug 4726380 8037097
  * @summary Check that different sorts give equivalent results.
- * @run testng Correct
  * @key randomness
+ * @library /test/lib
+ * @run junit Correct
  */
 
 import java.util.*;
 
-import org.testng.annotations.Test;
-import org.testng.annotations.DataProvider;
-import static org.testng.Assert.fail;
-import static org.testng.Assert.assertEquals;
+import jdk.test.lib.valueclass.AsValueClass;
 
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class Correct {
 
     static final Random rnd = new Random();
     static final int ITERATIONS = 1000;
     static final int TEST_SIZE = 1000;
 
+    @AsValueClass
+    record Point(int x, int y) implements Comparable<Point> {
+        public int compareTo(Point o) {
+            int c = Integer.compare(x, o.x);
+            return c != 0 ? c : Integer.compare(y, o.y);
+        }
+    }
+
+    @Test
+    public void testDefaultSortPoint() {
+        for (int i=0; i<ITERATIONS; i++) {
+            int size = rnd.nextInt(TEST_SIZE) + 1;
+            Point[] array1 = getPointArray(size);
+            Point[] array2 = Arrays.copyOf(array1, array1.length);
+            Arrays.sort(array1, array1.length/3, array1.length/2);
+            stupidSort(array2, array2.length/3, array2.length/2);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
+        }
+    }
+
     @Test
     public void testDefaultSort() {
         for (int i=0; i<ITERATIONS; i++) {
             int size = rnd.nextInt(TEST_SIZE) + 1;
-            Integer[] array1 = getIntegerArray(size);
-            Integer[] array2 = Arrays.copyOf(array1, array1.length);
+            Comparable[] array1 = getIntegerArray(size);
+            Comparable[] array2 = Arrays.copyOf(array1, array1.length);
             Arrays.sort(array1, array1.length/3, array1.length/2);
             stupidSort(array2, array2.length/3, array2.length/2);
-            assertEquals(array1, array2, "Arrays did not match. size=" + size);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
         }
     }
 
-    @Test(dataProvider = "Comparators")
+    @ParameterizedTest
+    @MethodSource("pointComparators")
+    public void testComparatorSortPoint(Comparator<Point> comparator) {
+        for (int i=0; i<ITERATIONS; i++) {
+            int size = rnd.nextInt(TEST_SIZE) + 1;
+            Point[] array1 = getPointArray(size);
+            Point[] array2 = Arrays.copyOf(array1, array1.length);
+            Arrays.sort(array1, array1.length/3, array1.length/2, comparator);
+            stupidSort(array2, array2.length/3, array2.length/2, comparator);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
+        }
+    }
+
+    static Point[] getPointArray(int size) {
+        Point[] blah = new Point[size];
+        for (int x=0; x<size; x++) {
+            blah[x] = new Point(rnd.nextInt(), rnd.nextInt());
+        }
+        return blah;
+    }
+
+    @ParameterizedTest
+    @MethodSource("comparators")
     public void testComparatorSort(Comparator<Integer> comparator) {
         for (int i=0; i<ITERATIONS; i++) {
             int size = rnd.nextInt(TEST_SIZE) + 1;
             Integer[] array1 = getIntegerArray(size);
             Integer[] array2 = Arrays.copyOf(array1, array1.length);
             Arrays.sort(array1, array1.length/3, array1.length/2, comparator);
-            stupidSort(array2, array2.length/3, array2.length/2, comparator);
-            assertEquals(array1, array2, "Arrays did not match. size=" + size);
+            stupidSort((Object[])array2, array2.length/3, array2.length/2, comparator);
+            Assertions.assertArrayEquals(array2, array1, "Arrays did not match. size=" + size);
         }
     }
 
@@ -74,15 +121,15 @@ public class Correct {
         return blah;
     }
 
-    static void stupidSort(Integer[] a1, int from, int to) {
-        if (from > to - 1 )
-          return;
+    static void stupidSort(Comparable[] a1, int from, int to) {
+        if (from > to - 1)
+            return;
 
         for (int x=from; x<to; x++) {
-            Integer lowest = a1[x];
+            Comparable lowest = a1[x];
             int lowestIndex = x;
             for (int y=x + 1; y<to; y++) {
-                if (((Comparable)a1[y]).compareTo((Comparable)lowest) < 0) {
+                if (a1[y].compareTo(lowest) < 0) {
                     lowest = a1[y];
                     lowestIndex = y;
                 }
@@ -93,12 +140,13 @@ public class Correct {
         }
     }
 
-    static void stupidSort(Integer[] a1, int from, int to, Comparator<Integer> comparator) {
-        if (from > to - 1 )
-          return;
+    @SuppressWarnings("unchecked")
+    static void stupidSort(Object[] a1, int from, int to, Comparator comparator) {
+        if (from > to - 1)
+            return;
 
         for (int x=from; x<to; x++) {
-            Integer lowest = a1[x];
+            Object lowest = a1[x];
             int lowestIndex = x;
             for (int y=x + 1; y<to; y++) {
                 if (comparator.compare(a1[y], lowest) < 0) {
@@ -118,7 +166,17 @@ public class Correct {
         x[b] = t;
     }
 
-    @DataProvider(name = "Comparators", parallel = true)
+    public static Iterator<Object[]> pointComparators() {
+        Object[][] comparators = new Object[][] {
+            new Object[] { Comparator.naturalOrder() },
+            new Object[] { Comparator.<Point>naturalOrder().reversed() },
+            new Object[] { Comparator.comparingInt(Point::x).thenComparingInt(Point::y) },
+            new Object[] { Comparator.comparingInt(Point::y).thenComparingInt(Point::x) }
+        };
+
+        return Arrays.asList(comparators).iterator();
+    }
+
     public static Iterator<Object[]> comparators() {
         Object[][] comparators = new Object[][] {
             new Object[] { Comparator.naturalOrder() },

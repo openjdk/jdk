@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -164,18 +164,12 @@ public:
 
   static void print_compressed_class_space(outputStream* st) NOT_LP64({});
 
-  // Return TRUE only if UseCompressedClassPointers is True.
-  static bool using_class_space() {
-    return NOT_LP64(false) LP64_ONLY(UseCompressedClassPointers);
-  }
-
   static bool is_class_space_allocation(MetadataType mdType) {
-    return mdType == ClassType && using_class_space();
+    return CLASS_SPACE_ONLY(mdType == ClassType) NOT_CLASS_SPACE(false);
   }
 
   static bool initialized();
 
 };
-
 
 #endif // SHARE_MEMORY_METASPACE_HPP

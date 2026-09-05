@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,32 +21,36 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 /*
  * @test
  * @summary checks that InetAddress forward lookup API throw UnknownHostException
  *   when resolver returns empty address stream.
  * @library providers/empty
  * @build empty.results.provider/impl.EmptyResultsProviderImpl
- * @run testng/othervm EmptyResultsStreamTest
+ * @run junit/othervm EmptyResultsStreamTest
  */
 public class EmptyResultsStreamTest {
 
-    @Test(expectedExceptions = UnknownHostException.class)
-    public void getAllByNameTest() throws UnknownHostException {
-        System.err.println("getAllByName unexpectedly completed: " +
-                Arrays.deepToString(InetAddress.getAllByName("test1.org")));
+    @Test()
+    public void getAllByNameTest() {
+        assertThrows(UnknownHostException.class, () -> {
+            System.err.println("getAllByName unexpectedly completed: " +
+                    Arrays.deepToString(InetAddress.getAllByName("test1.org")));
+        });
     }
 
-    @Test(expectedExceptions = UnknownHostException.class)
-    public void getByNameTest() throws UnknownHostException {
-        System.err.println("getByName unexpectedly completed: " +
-                InetAddress.getByName("test2.org"));
+    @Test()
+    public void getByNameTest() {
+        assertThrows(UnknownHostException.class, () -> {
+            System.err.println("getByName unexpectedly completed: " +
+                    InetAddress.getByName("test2.org"));
+        });
     }
 }

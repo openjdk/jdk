@@ -168,8 +168,7 @@ public:
     ASSERT_EQ(vmem, ZVirtualMemory(base_offset + 2 * ZGranuleSize, ZGranuleSize));
     _reserver->unreserve(vmem);
 
-    const bool released = os::release_memory((char*)untype(blocked), ZGranuleSize);
-    ASSERT_TRUE(released);
+    os::release_memory((char*)untype(blocked), ZGranuleSize);
   }
 
   void test_remove_from_low() {

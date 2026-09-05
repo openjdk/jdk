@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,10 @@
  * @summary Test basic invocation of bootstrap methods
  * @library /java/lang/invoke/common
  * @build test.java.lang.invoke.lib.InstructionHelper
- * @run testng CondyBSMInvocation
- * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMInvocation
+ * @run junit CondyBSMInvocation
+ * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyBSMInvocation
  */
 
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
 import test.java.lang.invoke.lib.InstructionHelper;
 
 import java.lang.constant.ConstantDesc;
@@ -48,6 +45,10 @@ import java.util.stream.Stream;
 
 import static java.lang.invoke.MethodType.methodType;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 public class CondyBSMInvocation {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
 
@@ -59,11 +60,7 @@ public class CondyBSMInvocation {
                 "bsm", methodType(Object.class)
         );
 
-        try {
-            mh.invoke();
-            Assert.fail("NoSuchMethodError expected to be thrown");
-        } catch (NoSuchMethodError e) {
-        }
+        assertThrows(NoSuchMethodError.class, mh::invoke);
     }
 
     static MethodHandle[] bsms(String bsmName) {
@@ -114,11 +111,7 @@ public class CondyBSMInvocation {
                     "shape_bsm", bsm.type()
             );
 
-            try {
-                Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown for " + bsm);
-            } catch (BootstrapMethodError e) {
-            }
+            assertThrows(BootstrapMethodError.class, mh::invoke);
         }
     }
 
@@ -139,11 +132,7 @@ public class CondyBSMInvocation {
                     "sig_bsm", bsm.type()
             );
 
-            try {
-                Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown for " + bsm);
-            } catch (BootstrapMethodError e) {
-            }
+            assertThrows(BootstrapMethodError.class, mh::invoke);
         }
     }
 
@@ -202,7 +191,7 @@ public class CondyBSMInvocation {
 
     static void assertAll(Object... as) {
         for (int i = 0; i < as.length; i++) {
-            Assert.assertEquals(as[i], i);
+            assertEquals(i, as[i]);
         }
     }
 
@@ -219,7 +208,7 @@ public class CondyBSMInvocation {
             );
 
             Object r = mh.invoke();
-            Assert.assertEquals(r, Integer.toString(n));
+            assertEquals(Integer.toString(n), r);
         }
 
         {
@@ -231,7 +220,7 @@ public class CondyBSMInvocation {
             );
 
             Object r = mh.invoke();
-            Assert.assertEquals(r, Integer.toString(9));
+            assertEquals(Integer.toString(9), r);
 
         }
     }
@@ -248,13 +237,8 @@ public class CondyBSMInvocation {
                     IntStream.range(0, n - 1).boxed().toArray(ConstantDesc[]::new)
             );
 
-            try {
-                Object r = mh.invoke();
-                Assert.fail("BootstrapMethodError expected to be thrown for arrity " + n);
-            } catch (BootstrapMethodError e) {
-                Throwable t = e.getCause();
-                Assert.assertTrue(WrongMethodTypeException.class.isAssignableFrom(t.getClass()));
-            }
+            var e = assertThrows(BootstrapMethodError.class, mh::invoke);
+            assertInstanceOf(WrongMethodTypeException.class, e.getCause());
         }
     }
 }

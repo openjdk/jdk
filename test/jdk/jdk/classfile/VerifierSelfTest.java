@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,23 +26,25 @@
  * @summary Testing ClassFile Verifier.
  * @bug 8333812 8361526
  * @run junit VerifierSelfTest
+ * @run junit/othervm --enable-preview VerifierSelfTest
  */
 import java.io.IOException;
 import java.lang.classfile.constantpool.PoolEntry;
 import java.lang.constant.ClassDesc;
 
-import static java.lang.classfile.ClassFile.ACC_STATIC;
-import static java.lang.classfile.ClassFile.JAVA_8_VERSION;
+import static java.lang.classfile.ClassFile.*;
 import static java.lang.constant.ConstantDescs.*;
 
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandleInfo;
+import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +60,11 @@ import java.lang.constant.ModuleDesc;
 import jdk.internal.classfile.impl.BufWriterImpl;
 import jdk.internal.classfile.impl.DirectClassBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -211,7 +217,6 @@ class VerifierSelfTest {
                                 cob.iconst_0()
                                    .ifThen(CodeBuilder::nop)
                                    .return_()
-                                   .with(new CloneAttribute(StackMapTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
@@ -331,12 +336,10 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Code attribute in native or abstract method ParserVerificationTestClass::m()
-                Wrong StackMapTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Wrong LocalVariableTypeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
-                Multiple StackMapTable attributes in Code attribute for method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
@@ -418,6 +421,71 @@ class VerifierSelfTest {
         return lst;
     }
 
+    enum ComparisonInstruction {
+        IF_ACMPEQ(Opcode.IF_ACMPEQ, 2),
+        IF_ACMPNE(Opcode.IF_ACMPNE, 2),
+        IFNONNULL(Opcode.IFNONNULL, 1),
+        IFNULL(Opcode.IFNULL, 1);
+        final Opcode opcode;
+        final int argCount;
+        ComparisonInstruction(Opcode opcode, int argCount) {
+            this.opcode = opcode;
+            this.argCount = argCount;
+        }
+    }
+
+    enum UninitializeKind {
+        UNINITIALIZED, UNINITIALIZED_THIS
+    }
+
+    @ParameterizedTest
+    @MethodSource("uninitializedInBytecodeClasses")
+    public void testUninitializedInComparisons(ComparisonInstruction inst, UninitializeKind kind) throws Throwable {
+        var bytes = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ClassDesc.of("Test"), clb -> clb
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    StackMapFrameInfo.VerificationTypeInfo uninitializeInfo;
+                    if (kind == UninitializeKind.UNINITIALIZED) {
+                        uninitializeInfo = StackMapFrameInfo.UninitializedVerificationTypeInfo.of(cob.newBoundLabel());
+                        cob.new_(CD_Object);
+                    } else {
+                        uninitializeInfo = StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS;
+                        cob.aload(0);
+                    }
+
+                    // Stack: uninitializeInfo
+                    for (int i = 0; i < inst.argCount; i++) {
+                        cob.dup();
+                    }
+                    var dest = cob.newLabel();
+                    cob.branch(inst.opcode, dest)
+                       .nop()
+                       .labelBinding(dest)
+                       .with(StackMapTableAttribute.of(List.of(StackMapFrameInfo.of(dest,
+                               List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                               List.of(uninitializeInfo)))))
+                       .invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    if (kind == UninitializeKind.UNINITIALIZED) {
+                        // still need to call super constructor
+                        cob.aload(0)
+                           .invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    }
+                    cob.return_();
+                }));
+        var errors = ClassFile.of().verify(bytes);
+        assertNotEquals(List.of(), errors, () -> errors + " : " + ClassFile.of().parse(bytes).toDebugString());
+        var lookup = MethodHandles.lookup();
+        assertThrows(VerifyError.class, () -> lookup.defineHiddenClass(bytes, true)); // force JVM verification
+    }
+
+    public static Stream<Arguments> uninitializedInBytecodeClasses() {
+        return Arrays.stream(ComparisonInstruction.values())
+                .mapMulti((inst, sink) -> {
+                    for (var kind : UninitializeKind.values()) {
+                        sink.accept(Arguments.of(inst, kind));
+                    }
+                });
+    }
+
     @Test // JDK-8350029
     void testInvokeSpecialInterfacePatch() {
         var runClass = ClassDesc.of("Run");
@@ -439,5 +507,123 @@ class VerifierSelfTest {
             assertNotEquals(List.of(), errors, "invokespecial, isInterface = " + isInterface);
             assertTrue(errors.getFirst().getMessage().contains("interface method to invoke is not in a direct superinterface"), errors.getFirst().getMessage());
         }
+    }
+
+    @Test // JDK-8357037
+    void testCodeEndsWithSwitch() {
+        var testClass = ClassDesc.of("Test");
+        var context = ClassFile.of();
+        var bytes = context.build(testClass, clb -> clb
+                .withVersion(JAVA_28_VERSION, 0)
+                .withMethodBody("tableSwitchFoo", MTD_void, 0, cob -> {
+                    Label skip = cob.newLabel();
+                    cob.goto_(skip);
+                    Label back = cob.newBoundLabel();
+                    cob.return_()
+                            .labelBinding(skip)
+                            .iconst_0()
+                            .tableswitch(0, 2, back, List.of());
+                })
+                .withMethodBody("lookupSwitchFoo", MTD_void, 0, cob -> {
+                    Label skip = cob.newLabel();
+                    cob.goto_(skip);
+                    Label back = cob.newBoundLabel();
+                    cob.return_()
+                            .labelBinding(skip)
+                            .iconst_0()
+                            .lookupswitch(back, List.of());
+                }));
+        assertEquals(List.of(), context.verify(bytes));
+    }
+
+    @Test // JDK-8388631
+    void testControlFlowAlias() {
+        var testName = "Test";
+        var testDesc = ClassDesc.of(testName);
+        var bytes = ClassFile.of(StackMapsOption.DROP_STACK_MAPS).build(testDesc, clb -> clb
+                .withVersion(latestMajorVersion(), PREVIEW_MINOR_VERSION)
+                .withFlags(ACC_PUBLIC | ACC_IDENTITY)
+                .withField("f", CD_int, ACC_STRICT_INIT)
+                .withMethodBody(INIT_NAME, MethodTypeDesc.of(CD_void, CD_boolean), 0, cob -> {
+                    Label ifEnd = cob.newLabel();
+                    cob.iload(1)
+                            .ifeq(ifEnd)
+                            .aload(0)
+                            .iconst_1()
+                            .putfield(testDesc, "f", CD_int)
+                            .labelBinding(ifEnd)
+                            .aload(0)
+                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                            .return_()
+                            .with(StackMapTableAttribute.of(List.of(StackMapFrameInfo.of(ifEnd,
+                                    List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS, StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                                    List.of(),
+                                    List.of(cob.constantPool().nameAndTypeEntry("f", CD_int))))));
+                }));
+        ClassModel cm = ClassFile.of().parse(bytes);
+        var stackMapsTable = cm.methods().getFirst().findAttribute(Attributes.code()).orElseThrow()
+                .findAttribute(Attributes.stackMapTable()).orElseThrow();
+        assertNotEquals(246, stackMapsTable.entries().getFirst().frameType());
+        assertNotEquals(List.of(), ClassFile.of().verify(cm)); // field f not initialized
+    }
+
+    @Test // JDK-8389840
+    @Disabled // Need StackMapFrameInfo.of fix
+    void testUninitializedThisOnStackOnly() {
+        var testName = "Test";
+        var testDesc = ClassDesc.of(testName);
+        var bytes = ClassFile.of(StackMapsOption.DROP_STACK_MAPS).build(testDesc, clb -> clb
+                .withVersion(latestMajorVersion(), PREVIEW_MINOR_VERSION)
+                .withFlags(ACC_PUBLIC | ACC_IDENTITY)
+                .withField("f", CD_int, ACC_STRICT_INIT)
+                .withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                    List<StackMapFrameInfo> frames = new ArrayList<>();
+                    cob.aload(0) // stack for invokespecial
+                            .dup() // stack for putfield
+                            .iconst_4()
+                            .iconst_m1() // stack for astore
+                            .istore(0) // nuke uninitializedThis from locals
+                            .iconst_3(); // stack for branch
+                    var elseLabel = cob.newLabel();
+                    var endIfLabel = cob.newLabel();
+                    cob.ifeq(elseLabel)
+                            .putfield(testDesc, "f", CD_int)
+                            .goto_(endIfLabel)
+                            .labelBinding(elseLabel);
+                    frames.add(StackMapFrameInfo.of(elseLabel,
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                                    StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS,
+                                    StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                            List.of(cob.constantPool().nameAndTypeEntry("f", CD_int))));
+                    cob.putfield(testDesc, "f", CD_int)
+                            .labelBinding(endIfLabel);
+                    frames.add(StackMapFrameInfo.of(endIfLabel,
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                            List.of()));
+                    cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                    var else2Label = cob.newLabel();
+                    var endIf2Label = cob.newLabel();
+                    cob.iconst_1()
+                            .ifeq(else2Label)
+                            .nop()
+                            .goto_(endIf2Label)
+                            .labelBinding(else2Label);
+                    frames.add(StackMapFrameInfo.of(else2Label,
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                            List.of(),
+                            List.of()));
+                    cob.nop()
+                            .labelBinding(endIf2Label);
+                    frames.add(StackMapFrameInfo.of(endIf2Label,
+                            List.of(StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
+                            List.of(),
+                            List.of()));
+                    cob.return_()
+                            .with(StackMapTableAttribute.of(frames));
+                }));
+
+        assertEquals(List.of(), ClassFile.of().verify(bytes));
     }
 }

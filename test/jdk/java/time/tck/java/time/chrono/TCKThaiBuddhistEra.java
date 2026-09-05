@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,8 +55,9 @@
 package tck.java.time.chrono;
 
 import static java.time.temporal.ChronoField.ERA;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.chrono.Era;
 import java.time.chrono.ThaiBuddhistChronology;
@@ -64,16 +65,17 @@ import java.time.chrono.ThaiBuddhistEra;
 import java.time.temporal.ValueRange;
 import java.util.List;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Test.
  */
-@Test
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TCKThaiBuddhistEra {
 
-    @DataProvider(name = "ThaiBuddhistEras")
     Object[][] data_of_eras() {
         return new Object[][] {
                     {ThaiBuddhistEra.BEFORE_BE, "BEFORE_BE", 0},
@@ -85,11 +87,12 @@ public class TCKThaiBuddhistEra {
     //-----------------------------------------------------------------------
     // valueOf()
     //-----------------------------------------------------------------------
-    @Test(dataProvider="ThaiBuddhistEras")
+    @ParameterizedTest
+    @MethodSource("data_of_eras")
     public void test_valueOf(ThaiBuddhistEra era , String eraName, int eraValue) {
-        assertEquals(era.getValue(), eraValue);
-        assertEquals(ThaiBuddhistEra.of(eraValue), era);
-        assertEquals(ThaiBuddhistEra.valueOf(eraName), era);
+        assertEquals(eraValue, era.getValue());
+        assertEquals(era, ThaiBuddhistEra.of(eraValue));
+        assertEquals(era, ThaiBuddhistEra.valueOf(eraName));
     }
 
     //-----------------------------------------------------------------------
@@ -99,7 +102,7 @@ public class TCKThaiBuddhistEra {
     public void test_values() {
         List<Era> eraList = ThaiBuddhistChronology.INSTANCE.eras();
         ThaiBuddhistEra[] eras = ThaiBuddhistEra.values();
-        assertEquals(eraList.size(), eras.length);
+        assertEquals(eras.length, eraList.size());
         for (ThaiBuddhistEra era : eras) {
             assertTrue(eraList.contains(era));
         }
@@ -111,7 +114,7 @@ public class TCKThaiBuddhistEra {
     @Test
     public void test_range() {
         for (ThaiBuddhistEra era : ThaiBuddhistEra.values()) {
-            assertEquals(era.range(ERA), ValueRange.of(0, 1));
+            assertEquals(ValueRange.of(0, 1), era.range(ERA));
         }
     }
 

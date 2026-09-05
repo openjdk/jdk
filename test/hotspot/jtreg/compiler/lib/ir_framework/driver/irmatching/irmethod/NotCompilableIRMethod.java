@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.irmethod;
 
 import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.Run;
-import compiler.lib.ir_framework.RunMode;
+import compiler.lib.ir_framework.Test;
 
 import java.lang.reflect.Method;
 
@@ -39,11 +38,11 @@ import java.lang.reflect.Method;
  */
 public class NotCompilableIRMethod implements IRMethodMatchable {
     private final Method method;
-    private final int ruleCount;
+    private final int irRuleCount;
 
-    public NotCompilableIRMethod(Method method, int ruleCount) {
+    public NotCompilableIRMethod(Method method, int irRuleCount) {
         this.method = method;
-        this.ruleCount = ruleCount;
+        this.irRuleCount = irRuleCount;
     }
 
     @Override
@@ -56,6 +55,6 @@ public class NotCompilableIRMethod implements IRMethodMatchable {
      */
     @Override
     public NotCompilableIRMethodMatchResult match() {
-        return new NotCompilableIRMethodMatchResult(method, ruleCount);
+        return new NotCompilableIRMethodMatchResult(method, irRuleCount);
     }
 }

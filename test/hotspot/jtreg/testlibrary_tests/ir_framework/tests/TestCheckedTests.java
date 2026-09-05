@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -180,6 +180,12 @@ class BadIRAndRuntimeCheckedTests {
             throw new BadCheckedTestException("expected");
         }
     }
+
+    static class BadCheckedTestException extends RuntimeException {
+        BadCheckedTestException(String s) {
+            super(s);
+        }
+    }
 }
 
 class BadIRCheckedTests {
@@ -222,11 +228,5 @@ class BadIRCheckedTests {
         if (retValue != 42) {
             throw new RuntimeException("must be 42");
         }
-    }
-}
-
-class BadCheckedTestException extends RuntimeException {
-    BadCheckedTestException(String s) {
-        super(s);
     }
 }

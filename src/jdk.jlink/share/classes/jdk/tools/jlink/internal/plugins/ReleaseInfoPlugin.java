@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,13 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.lang.module.ModuleDescriptor;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,8 +109,8 @@ public final class ReleaseInfoPlugin extends AbstractPlugin {
             default: {
                 // --release-info <file>
                 Properties props = new Properties();
-                try (FileInputStream fis = new FileInputStream(operation)) {
-                    props.load(fis);
+                try (Reader reader = Files.newBufferedReader(Path.of(operation))) {
+                    props.load(reader); // Use reader API so as to read in as UTF-8
                 } catch (IOException exp) {
                     throw new UncheckedIOException(exp);
                 }

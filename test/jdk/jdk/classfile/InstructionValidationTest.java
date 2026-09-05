@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8341277 8361102 8361182 8361614
+ * @bug 8341277 8361102 8361182 8361614 8385114
  * @summary Testing ClassFile (pseudo-)instruction argument validation.
  * @run junit InstructionValidationTest
  */
@@ -94,15 +94,44 @@ class InstructionValidationTest {
     @Test
     void testSwitch() {
         TestUtil.runCodeHandler(cob -> {
+            // Null labels/cases
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(null, List.of(SwitchCase.of(1, cob.startLabel()))));
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(cob.startLabel(), null));
+            assertThrows(NullPointerException.class, () -> cob.tableswitch(cob.startLabel(), Collections.singletonList(null)));
             assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, cob.startLabel(), null));
             assertThrows(NullPointerException.class, () -> cob.lookupswitch(cob.startLabel(), null));
             assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, cob.startLabel(), Collections.singletonList(null)));
             assertThrows(NullPointerException.class, () -> cob.lookupswitch(cob.startLabel(), Collections.singletonList(null)));
             assertThrows(NullPointerException.class, () -> cob.tableswitch(-1, 1, null, List.of()));
             assertThrows(NullPointerException.class, () -> cob.lookupswitch(null, List.of()));
+            // Illegal start/end
+            assertThrows(IllegalArgumentException.class, () -> cob.tableswitch(cob.startLabel(), List.of()));
+            assertThrows(IllegalArgumentException.class, () -> cob.tableswitch(1, -1, cob.startLabel(), List.of()));
+            assertThrows(IllegalArgumentException.class, () -> cob.tableswitch(Integer.MAX_VALUE, Integer.MIN_VALUE, cob.startLabel(), List.of()));
+            assertThrows(IllegalArgumentException.class, () -> cob.tableswitch(1, 16384, cob.startLabel(), List.of()));
             // Ensures nothing redundant is written in case of failure
             cob.return_();
         });
+
+        Label[] capture = new Label[1];
+        ClassFile.of().build(CD_Object, clb -> clb.withMethodBody("test", MTD_void, 0, cob -> {
+            capture[0] = cob.startLabel();
+            cob.return_();
+        }));
+        Label dummyLabel = capture[0];
+        assertNotNull(dummyLabel);
+
+        TableSwitchInstruction.of(0, 0, dummyLabel, List.of());
+        LookupSwitchInstruction.of(dummyLabel, List.of());
+        assertThrows(NullPointerException.class, () -> TableSwitchInstruction.of(0, 0, dummyLabel, null));
+        assertThrows(NullPointerException.class, () -> LookupSwitchInstruction.of(dummyLabel, null));
+        assertThrows(NullPointerException.class, () -> TableSwitchInstruction.of(0, 0, dummyLabel, Collections.singletonList(null)));
+        assertThrows(NullPointerException.class, () -> LookupSwitchInstruction.of(dummyLabel, Collections.singletonList(null)));
+        assertThrows(NullPointerException.class, () -> TableSwitchInstruction.of(0, 0, null, List.of()));
+        assertThrows(NullPointerException.class, () -> LookupSwitchInstruction.of(null, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> TableSwitchInstruction.of(1, -1, dummyLabel, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> TableSwitchInstruction.of(Integer.MAX_VALUE, Integer.MIN_VALUE, dummyLabel, List.of()));
+        assertThrows(IllegalArgumentException.class, () -> TableSwitchInstruction.of(1, 16384, dummyLabel, List.of()));
     }
 
     @Test
@@ -195,6 +224,7 @@ class InstructionValidationTest {
                 ensureFailFast(i, cob -> cob.iinc(i, 1));
             }
             check(fails, () -> IncrementInstruction.of(i, 1));
+            check(fails, () -> IncrementInstruction.of(IINC_W, i, 1));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(i));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(RET_W, i));
             check(fails, () -> LocalVariable.of(i, "test", CD_Object, dummyLabel, dummyLabel));
@@ -208,6 +238,7 @@ class InstructionValidationTest {
                 check(fails, () -> LoadInstruction.of(u1Op, i));
             for (var u1Op : List.of(ASTORE, ISTORE, LSTORE, FSTORE, DSTORE))
                 check(fails, () -> StoreInstruction.of(u1Op, i));
+            check(fails, () -> IncrementInstruction.of(IINC, i, 1));
             check(fails, () -> DiscontinuedInstruction.RetInstruction.of(RET, i));
         }
 
@@ -250,12 +281,25 @@ class InstructionValidationTest {
         IncrementInstruction.of(0, 2);
         IncrementInstruction.of(0, Short.MAX_VALUE);
         IncrementInstruction.of(0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, 2);
+        IncrementInstruction.of(IINC, 0, Byte.MIN_VALUE);
+        IncrementInstruction.of(IINC, 0, Byte.MAX_VALUE);
+        IncrementInstruction.of(IINC_W, 0, 2);
+        IncrementInstruction.of(IINC_W, 0, Short.MIN_VALUE);
+        IncrementInstruction.of(IINC_W, 0, Short.MAX_VALUE);
+
         for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
             assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(0, i));
             TestUtil.runCodeHandler(cob -> {
                 assertThrows(IllegalArgumentException.class, () -> cob.iinc(0, i));
                 cob.return_();
             });
+        }
+        for (int i : new int[] {Byte.MIN_VALUE - 1, Byte.MAX_VALUE + 1}) {
+            assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(IINC, 0, i));
+        }
+        for (int i : new int[] {Short.MIN_VALUE - 1, Short.MAX_VALUE + 1}) {
+            assertThrows(IllegalArgumentException.class, () -> IncrementInstruction.of(IINC_W, 0, i));
         }
     }
 

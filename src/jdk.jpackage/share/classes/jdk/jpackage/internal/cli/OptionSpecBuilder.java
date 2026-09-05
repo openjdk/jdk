@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.jpackage.internal.cli;
+
+import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 
 import java.io.File;
 import java.lang.reflect.Array;
@@ -61,28 +63,63 @@ final class OptionSpecBuilder<T> {
         this.valueType = Objects.requireNonNull(valueType);
     }
 
-    OptionSpecBuilder(OptionSpecBuilder<T> other) {
+    private OptionSpecBuilder(OptionSpecBuilder<T> other) {
         valueType = other.valueType;
+        initFrom(other);
+        defaultValue = other.defaultValue;
+        defaultOptionalValue = other.defaultOptionalValue;
+        converterBuilder = other.converterBuilder.copy();
+        validatorBuilder = other.validatorBuilder.copy();
+        validator = other.validator;
+
+        if (other.arrayDefaultValue != null) {
+            arrayDefaultValue = Arrays.copyOf(other.arrayDefaultValue, other.arrayDefaultValue.length);
+        } else {
+            arrayDefaultValue = null;
+        }
+    }
+
+    private <U> OptionSpecBuilder(OptionSpecBuilder<U> other, ValueConverter<U, T> converter) {
+        Function<U, T> converterFunction = toFunction(converter::convert);
+
+        this.valueType = converter.valueType();
+        initFrom(other);
+        converter(other, converter);
+
+        other.defaultValue().map(converterFunction).ifPresent(this::defaultValue);
+        other.defaultOptionalValue().map(converterFunction).ifPresent(this::defaultOptionalValue);
+
+        if (other.arrayDefaultValue != null) {
+            arrayDefaultValue = Stream.of(other.arrayDefaultValue).map(converterFunction).toArray(length -> {
+                @SuppressWarnings("unchecked")
+                var arr = (T[])Array.newInstance(valueType, length);
+                return arr;
+            });
+        }
+    }
+
+    private void initFrom(OptionSpecBuilder<?> other) {
         name = other.name;
+        nameAliases.clear();
         nameAliases.addAll(other.nameAliases);
         description = other.description;
         mergePolicy = other.mergePolicy;
         scope = Set.copyOf(other.scope);
-        defaultValue = other.defaultValue;
-        defaultOptionalValue = other.defaultOptionalValue;
         valuePattern = other.valuePattern;
-        converterBuilder = other.converterBuilder.copy();
-        validatorBuilder = other.validatorBuilder.copy();
-
-        if (other.arrayDefaultValue != null) {
-            arrayDefaultValue = Arrays.copyOf(other.arrayDefaultValue, other.arrayDefaultValue.length);
-        }
         arrayValuePatternSeparator = other.arrayValuePatternSeparator;
         arrayTokenizer = other.arrayTokenizer;
     }
 
     OptionSpecBuilder<T> copy() {
         return new OptionSpecBuilder<>(this);
+    }
+
+    <U> OptionSpecBuilder<U> map(ValueConverter<T, U> converter) {
+        return new OptionSpecBuilder<>(this, converter);
+    }
+
+    <U> OptionSpecBuilder<U> map(Function<OptionSpecBuilder<T>, OptionSpecBuilder<U>> mapper) {
+        return mapper.apply(this);
     }
 
     Class<? extends T> valueType() {
@@ -135,8 +172,18 @@ final class OptionSpecBuilder<T> {
                 scope,
                 OptionSpecBuilder.this.mergePolicy().orElse(MergePolicy.CONCATENATE),
                 defaultArrayOptionalValue(),
-                Optional.of(arryValuePattern()),
+                Optional.of(arrayValuePattern()),
                 OptionSpecBuilder.this.description().orElse(""));
+    }
+
+    Optional<? extends Validator<T, RuntimeException>> createValidator() {
+        return Optional.ofNullable(validator).or(() -> {
+            if (validatorBuilder.hasValidatingMethod()) {
+                return Optional.of(validatorBuilder.create());
+            } else {
+                return Optional.empty();
+            }
+        });
     }
 
     OptionSpecBuilder<T> tokenizer(String splitRegexp) {
@@ -162,11 +209,13 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> validatorExceptionFormatString(String v) {
         validatorBuilder.formatString(v);
+        validator = null;
         return this;
     }
 
-    OptionSpecBuilder<T> validatorExceptionFormatString(UnaryOperator<String> mutator) {
-        validatorBuilder.formatString(mutator.apply(validatorBuilder.formatString().orElse(null)));
+    OptionSpecBuilder<T> validatorExceptionFormatString(UnaryOperator<String> mapper) {
+        validatorBuilder.formatString(mapper.apply(validatorBuilder.formatString().orElse(null)));
+        validator = null;
         return this;
     }
 
@@ -175,18 +224,19 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> converterExceptionFormatString(UnaryOperator<String> mutator) {
-        converterBuilder.formatString(mutator.apply(converterBuilder.formatString().orElse(null)));
+    OptionSpecBuilder<T> converterExceptionFormatString(UnaryOperator<String> mapper) {
+        converterBuilder.formatString(mapper.apply(converterBuilder.formatString().orElse(null)));
         return this;
     }
 
     OptionSpecBuilder<T> validatorExceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
         validatorBuilder.exceptionFactory(v);
+        validator = null;
         return this;
     }
 
-    OptionSpecBuilder<T> validatorExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return validatorExceptionFactory(mutator.apply(validatorBuilder.exceptionFactory().orElse(null)));
+    OptionSpecBuilder<T> validatorExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return validatorExceptionFactory(mapper.apply(validatorBuilder.exceptionFactory().orElse(null)));
     }
 
     OptionSpecBuilder<T> converterExceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
@@ -194,49 +244,68 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> converterExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return converterExceptionFactory(mutator.apply(converterBuilder.exceptionFactory().orElse(null)));
+    OptionSpecBuilder<T> converterExceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return converterExceptionFactory(mapper.apply(converterBuilder.exceptionFactory().orElse(null)));
     }
 
     OptionSpecBuilder<T> exceptionFormatString(String v) {
         return validatorExceptionFormatString(v).converterExceptionFormatString(v);
     }
 
-    OptionSpecBuilder<T> exceptionFormatString(UnaryOperator<String> mutator) {
-        return validatorExceptionFormatString(mutator).converterExceptionFormatString(mutator);
+    OptionSpecBuilder<T> exceptionFormatString(UnaryOperator<String> mapper) {
+        return validatorExceptionFormatString(mapper).converterExceptionFormatString(mapper);
     }
 
     OptionSpecBuilder<T> exceptionFactory(OptionValueExceptionFactory<? extends RuntimeException> v) {
         return validatorExceptionFactory(v).converterExceptionFactory(v);
     }
 
-    OptionSpecBuilder<T> exceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mutator) {
-        return validatorExceptionFactory(mutator).converterExceptionFactory(mutator);
+    OptionSpecBuilder<T> exceptionFactory(UnaryOperator<OptionValueExceptionFactory<? extends RuntimeException>> mapper) {
+        return validatorExceptionFactory(mapper).converterExceptionFactory(mapper);
     }
 
-    OptionSpecBuilder<T> converter(ValueConverter<T> v) {
+    OptionSpecBuilder<T> converter(ValueConverter<String, T> v) {
         converterBuilder.converter(v);
         return this;
     }
 
-    OptionSpecBuilder<T> converter(Function<String, T> v) {
+    <U> OptionSpecBuilder<T> converter(OptionSpecBuilder<U> other, ValueConverter<U, T> v) {
+        converterBuilder = other.finalizeConverterBuilder().map(v);
+        return this;
+    }
+
+    <U> OptionSpecBuilder<T> interimConverter(OptionSpecBuilder<U> other) {
+        converterBuilder = converterBuilder.map(other.finalizeConverterBuilder());
+        return this;
+    }
+
+    OptionSpecBuilder<T> converter(ValueConverterFunction<String, T> v) {
         return converter(ValueConverter.create(v, valueType));
     }
 
     OptionSpecBuilder<T> validator(Predicate<T> v) {
         validatorBuilder.predicate(v::test);
+        validator = null;
         return this;
     }
 
     @SuppressWarnings("overloads")
     OptionSpecBuilder<T> validator(Consumer<T> v) {
         validatorBuilder.consumer(v::accept);
+        validator = null;
         return this;
     }
 
     @SuppressWarnings("overloads")
-    OptionSpecBuilder<T> validator(UnaryOperator<Validator.Builder<T, RuntimeException>> mutator) {
-        validatorBuilder = mutator.apply(validatorBuilder);
+    OptionSpecBuilder<T> validator(UnaryOperator<Validator.Builder<T, RuntimeException>> mapper) {
+        validatorBuilder = mapper.apply(validatorBuilder);
+        validator = null;
+        return this;
+    }
+
+    OptionSpecBuilder<T> validator(Validator<T, RuntimeException> v) {
+        validatorBuilder.predicate(null).consumer(null);
+        validator = Objects.requireNonNull(v);
         return this;
     }
 
@@ -247,6 +316,7 @@ final class OptionSpecBuilder<T> {
 
     OptionSpecBuilder<T> withoutValidator() {
         validatorBuilder.predicate(null).consumer(null);
+        validator = null;
         return this;
     }
 
@@ -279,8 +349,8 @@ final class OptionSpecBuilder<T> {
         return this;
     }
 
-    OptionSpecBuilder<T> scope(UnaryOperator<Set<OptionScope>> mutator) {
-        return scope(mutator.apply(scope().orElseGet(Set::of)));
+    OptionSpecBuilder<T> scope(UnaryOperator<Set<OptionScope>> mapper) {
+        return scope(mapper.apply(scope().orElseGet(Set::of)));
     }
 
     OptionSpecBuilder<T> inScope(OptionScope... v) {
@@ -400,10 +470,12 @@ final class OptionSpecBuilder<T> {
     }
 
     private Optional<String> defaultValuePattern() {
-        return converterBuilder.converter().map(_ -> {
+        if (converterBuilder.hasConverter()) {
             final var tokens = name.split("-");
-            return tokens[tokens.length - 1];
-        });
+            return Optional.of(tokens[tokens.length - 1]);
+        } else {
+            return Optional.empty();
+        }
     }
 
     private List<OptionName> names() {
@@ -413,25 +485,21 @@ final class OptionSpecBuilder<T> {
         ).flatMap(Collection::stream).map(OptionName::new).distinct().toList();
     }
 
-    private Optional<OptionValueConverter<T>> createConverter() {
-        if (converterBuilder.converter().isPresent()) {
-            final var newBuilder = converterBuilder.copy();
-            createValidator().ifPresent(newBuilder::validator);
-            return Optional.of(newBuilder.create());
+    private Optional<OptionValueConverter<String, T>> createConverter() {
+        if (converterBuilder.hasConverter()) {
+            return Optional.of(finalizeConverterBuilder().create());
         } else {
             return Optional.empty();
         }
     }
 
-    private Optional<Validator<T, ? extends RuntimeException>> createValidator() {
-        if (validatorBuilder.hasValidatingMethod()) {
-            return Optional.of(validatorBuilder.create());
-        } else {
-            return Optional.empty();
-        }
+    private OptionValueConverter.Builder<T> finalizeConverterBuilder() {
+        final var newBuilder = converterBuilder.copy();
+        createValidator().ifPresent(newBuilder::validator);
+        return newBuilder;
     }
 
-    private OptionValueConverter<T[]> createArrayConverter() {
+    private OptionValueConverter<String, T[]> createArrayConverter() {
         final var newBuilder = converterBuilder.copy();
         newBuilder.tokenizer(Optional.ofNullable(arrayTokenizer).orElse(str -> {
             return new String[] { str };
@@ -440,7 +508,7 @@ final class OptionSpecBuilder<T> {
         return newBuilder.createArray();
     }
 
-    private String arryValuePattern() {
+    private String arrayValuePattern() {
         final var elementValuePattern = OptionSpecBuilder.this.valuePattern().orElseThrow();
         if (arrayValuePatternSeparator == null) {
             return elementValuePattern;
@@ -468,6 +536,7 @@ final class OptionSpecBuilder<T> {
     private String valuePattern;
     private OptionValueConverter.Builder<T> converterBuilder = OptionValueConverter.build();
     private Validator.Builder<T, RuntimeException> validatorBuilder = Validator.build();
+    private Validator<T, RuntimeException> validator;
 
     private T[] arrayDefaultValue;
     private String arrayValuePatternSeparator;

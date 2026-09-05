@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,9 +272,7 @@ void MemSummaryReporter::report_summary_of_tag(MemTag mem_tag,
   } else if (mem_tag == mtClass) {
     // Metadata information
     report_metadata(Metaspace::NonClassType);
-    if (Metaspace::using_class_space()) {
-      report_metadata(Metaspace::ClassType);
-    }
+    CLASS_SPACE_ONLY(report_metadata(Metaspace::ClassType);)
   }
   out->cr();
 }
@@ -354,33 +352,30 @@ int MemDetailReporter::report_malloc_sites() {
 }
 
 int MemDetailReporter::report_virtual_memory_allocation_sites()  {
-  VirtualMemorySiteIterator  virtual_memory_itr =
-    _baseline.virtual_memory_sites(MemBaseline::by_size);
-
-  if (virtual_memory_itr.is_empty()) return 0;
+  _baseline.sort_virtual_memory_sites(MemBaseline::by_size);
 
   outputStream* out = output();
 
-  const VirtualMemoryAllocationSite*  virtual_memory_site;
   int num_omitted = 0;
-  while ((virtual_memory_site = virtual_memory_itr.next()) != nullptr) {
+  for (int i = 0; i < _baseline.virtual_memory_sites_length(); i++) {
+    const VirtualMemoryAllocationSite& virtual_memory_site = _baseline.virtual_memory_sites()[i];
     // Don't report free sites; does not count toward omitted count.
-    if (virtual_memory_site->reserved() == 0) {
+    if (virtual_memory_site.reserved() == 0) {
       continue;
     }
     // Omit printing if the current value and the historic peak value both fall below the
     // reporting scale threshold
-    if (amount_in_current_scale(MAX2(virtual_memory_site->reserved(),
-                                     virtual_memory_site->peak_size())) == 0) {
+    if (amount_in_current_scale(MAX2(virtual_memory_site.reserved(),
+                                     virtual_memory_site.peak_size())) == 0) {
       num_omitted++;
       continue;
     }
-    const NativeCallStack* stack = virtual_memory_site->call_stack();
+    const NativeCallStack* stack = virtual_memory_site.call_stack();
     _stackprinter.print_stack(stack);
     INDENT_BY(29,
       out->print("(");
-      print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
-      const MemTag mem_tag = virtual_memory_site->mem_tag();
+      print_total(virtual_memory_site.reserved(), virtual_memory_site.committed());
+      const MemTag mem_tag = virtual_memory_site.mem_tag();
       if (mem_tag != mtNone) {
         out->print(" Tag=%s", NMTUtil::tag_to_name(mem_tag));
       }
@@ -395,14 +390,14 @@ int MemDetailReporter::report_virtual_memory_allocation_sites()  {
 void MemDetailReporter::report_virtual_memory_map() {
   // Virtual memory map always in base address order
   output()->print_cr("Virtual memory map:");
-  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
+  _baseline.virtual_memory_allocations()->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     report_virtual_memory_region(&rgn);
     return true;
   });
 }
 
-void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
-  assert(reserved_rgn != nullptr, "null pointer");
+void MemDetailReporter::report_virtual_memory_region(const VirtualMemoryRegion* rgn) {
+  assert(rgn != nullptr, "null pointer");
 
   // We don't bother about reporting peaks here.
   // That is because peaks - in the context of virtual memory, peak of committed areas - make little sense
@@ -414,16 +409,16 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
   // usage *by callsite*.
 
   // Don't report if size is too small.
-  if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
+  if (amount_in_current_scale(rgn->size()) == 0) return;
 
   outputStream* out = output();
   const char* scale = current_scale();
-  const NativeCallStack*  stack = reserved_rgn->call_stack();
-  bool all_committed = reserved_rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*reserved_rgn);
+  const NativeCallStack*  stack = rgn->reserved_call_stack();
+  bool all_committed = rgn->size() == _baseline.virtual_memory_allocations()->committed_size(*rgn);
   const char* region_type = (all_committed ? "reserved and committed" : "reserved");
   out->cr();
-  print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
-  out->print(" for %s", NMTUtil::tag_to_name(reserved_rgn->mem_tag()));
+  print_virtual_memory_region(region_type, rgn->base(), rgn->size());
+  out->print(" for %s", NMTUtil::tag_to_name(rgn->mem_tag()));
   if (stack->is_empty()) {
     out->cr();
   } else {
@@ -433,9 +428,9 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
 
   if (all_committed) {
     bool reserved_and_committed = false;
-    _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
-                                                                  [&](CommittedMemoryRegion& committed_rgn) {
-      if (committed_rgn.equals(*reserved_rgn)) {
+    _baseline.virtual_memory_allocations()->visit_committed_regions(*rgn,
+                                                                  [&](VirtualMemoryRegion& committed_rgn) {
+      if (committed_rgn.equals(*rgn)) {
         // One region spanning the entire reserved region, with the same stack trace.
         // Don't print this regions because the "reserved and committed" line above
         // already indicates that the region is committed.
@@ -450,13 +445,13 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     }
   }
 
-  auto print_committed_rgn = [&](const CommittedMemoryRegion& crgn) {
+  auto print_committed_rgn = [&](const VirtualMemoryRegion& rgn) {
     // Don't report if size is too small
-    if (amount_in_current_scale(crgn.size()) == 0) return;
-    stack = crgn.call_stack();
+    if (amount_in_current_scale(rgn.size()) == 0) return;
+    stack = rgn.committed_call_stack();
     out->cr();
     INDENT_BY(8,
-      print_virtual_memory_region("committed", crgn.base(), crgn.size());
+      print_virtual_memory_region("committed", rgn.base(), rgn.size());
       if (stack->is_empty()) {
         out->cr();
       } else {
@@ -466,9 +461,9 @@ void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion*
     )
   };
 
-  _baseline.virtual_memory_allocations()->visit_committed_regions(*reserved_rgn,
-                                                                  [&](CommittedMemoryRegion& crgn) {
-    print_committed_rgn(crgn);
+  _baseline.virtual_memory_allocations()->visit_committed_regions(*rgn,
+                                                                  [&](VirtualMemoryRegion& committed_rgn) {
+    print_committed_rgn(committed_rgn);
     return true;
   });
 }
@@ -754,9 +749,9 @@ void MemSummaryDiffReporter::diff_summary_of_tag(MemTag mem_tag,
 void MemSummaryDiffReporter::print_metaspace_diff(const MetaspaceCombinedStats& current_ms,
                                                   const MetaspaceCombinedStats& early_ms) const {
   print_metaspace_diff("Metadata", current_ms.non_class_space_stats(), early_ms.non_class_space_stats());
-  if (Metaspace::using_class_space()) {
-    print_metaspace_diff("Class space", current_ms.class_space_stats(), early_ms.class_space_stats());
-  }
+#if INCLUDE_CLASS_SPACE
+  print_metaspace_diff("Class space", current_ms.class_space_stats(), early_ms.class_space_stats());
+#endif
 }
 
 void MemSummaryDiffReporter::print_metaspace_diff(const char* header,
@@ -837,38 +832,61 @@ void MemDetailDiffReporter::diff_malloc_sites() const {
 }
 
 void MemDetailDiffReporter::diff_virtual_memory_sites() const {
-  VirtualMemorySiteIterator early_itr = _early_baseline.virtual_memory_sites(MemBaseline::by_site);
-  VirtualMemorySiteIterator current_itr = _current_baseline.virtual_memory_sites(MemBaseline::by_site);
+  _early_baseline.sort_virtual_memory_sites(MemBaseline::by_site);
+  _current_baseline.sort_virtual_memory_sites(MemBaseline::by_site);
 
-  const VirtualMemoryAllocationSite* early_site   = early_itr.next();
-  const VirtualMemoryAllocationSite* current_site = current_itr.next();
+  const VirtualMemoryAllocationSite* early_site = nullptr;
+  const VirtualMemoryAllocationSite* current_site = nullptr;
+  int early_i = 0;
+  int current_i = 0;
+  auto early_next = [&]() -> const VirtualMemoryAllocationSite* {
+    if (early_i < _early_baseline.virtual_memory_sites_length()) {
+      const VirtualMemoryAllocationSite* e = &_early_baseline.virtual_memory_sites()[early_i];
+      early_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
+  auto current_next = [&]() -> const VirtualMemoryAllocationSite* {
+    if (current_i < _current_baseline.virtual_memory_sites_length()) {
+      const VirtualMemoryAllocationSite* e = &_current_baseline.virtual_memory_sites()[current_i];
+      current_i++;
+      return e;
+    } else {
+      return nullptr;
+    }
+  };
+
+  early_site = early_next();
+  current_site = current_next();
 
   while (early_site != nullptr || current_site != nullptr) {
     if (early_site == nullptr) {
       new_virtual_memory_site(current_site);
-      current_site = current_itr.next();
+      current_site = current_next();
     } else if (current_site == nullptr) {
       old_virtual_memory_site(early_site);
-      early_site = early_itr.next();
+      early_site = early_next();
     } else {
       int compVal = current_site->call_stack()->compare(*early_site->call_stack());
       if (compVal < 0) {
         new_virtual_memory_site(current_site);
-        current_site = current_itr.next();
+        current_site = current_next();
       } else if (compVal > 0) {
         old_virtual_memory_site(early_site);
-        early_site = early_itr.next();
+        early_site = early_next();
       } else if (early_site->mem_tag() != current_site->mem_tag()) {
         // This site was originally allocated with one memory tag, then released,
         // then re-allocated at the same site (as far as we can tell) with a different memory tag.
         old_virtual_memory_site(early_site);
-        early_site = early_itr.next();
+        early_site = early_next();
         new_virtual_memory_site(current_site);
-        current_site = current_itr.next();
+        current_site = current_next();
       } else {
         diff_virtual_memory_site(early_site, current_site);
-        early_site   = early_itr.next();
-        current_site = current_itr.next();
+        early_site   = early_next();
+        current_site = current_next();
       }
     }
   }

@@ -190,7 +190,7 @@ final class RSAClientKeyExchange {
                 throw chc.conContext.fatal(Alert.ILLEGAL_PARAMETER,
                         "Cannot generate RSA premaster secret", gse);
             }
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Produced RSA ClientKeyExchange handshake message", ckem);
             }
@@ -270,7 +270,7 @@ final class RSAClientKeyExchange {
 
             RSAClientKeyExchangeMessage ckem =
                     new RSAClientKeyExchangeMessage(shc, message);
-            if (SSLLogger.isOn() && SSLLogger.isOn("ssl,handshake")) {
+            if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                 SSLLogger.fine(
                     "Consuming RSA ClientKeyExchange handshake message", ckem);
             }

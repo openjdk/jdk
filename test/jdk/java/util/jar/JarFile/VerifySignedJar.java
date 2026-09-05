@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,18 +21,20 @@
  * questions.
  */
 
-/**
+/*
  * @test
- * @library /test/lib
  * @modules java.base/sun.security.x509
  * @modules java.base/sun.security.tools.keytool
  * @bug 4419266 4842702
  * @summary Make sure verifying signed Jar doesn't throw SecurityException
+ * @run junit VerifySignedJar
  */
 import jdk.security.jarsigner.JarSigner;
+import org.junit.jupiter.api.Test;
 import sun.security.tools.keytool.CertAndKeyGen;
 import sun.security.x509.X500Name;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -40,21 +42,24 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collections;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import static jdk.test.lib.Utils.runAndCheckException;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 
 public class VerifySignedJar {
 
-    public static void main(String[] args) throws Exception {
-
+    @Test
+    void signedJarSecurityExceptionTest() throws Exception {
         Path j = createJar();
         Path s = signJar(j, keyEntry("cn=duke"));
 
@@ -70,38 +75,30 @@ public class VerifySignedJar {
             }
 
             // Read ZIP and JAR entries by name
-            Objects.requireNonNull(jf.getEntry("getprop.class"));
-            Objects.requireNonNull(jf.getJarEntry("getprop.class"));
+            assertNotNull(jf.getEntry("getprop.class"));
+            assertNotNull(jf.getJarEntry("getprop.class"));
 
             // Make sure we throw NPE on null parameters
-            runAndCheckException(() -> jf.getEntry(null), NullPointerException.class);
-            runAndCheckException(() -> jf.getJarEntry(null), NullPointerException.class);
-            runAndCheckException(() -> jf.getInputStream(null), NullPointerException.class);
+            assertThrows(NullPointerException.class, () -> jf.getEntry(null));
+            assertThrows(NullPointerException.class, () -> jf.getJarEntry(null));
+            assertThrows(NullPointerException.class, () -> jf.getInputStream(null));
 
         } catch (SecurityException se) {
-            throw new Exception("Got SecurityException when verifying signed " +
-                "jar:" + se);
+            fail("Got SecurityException when verifying signed jar:" + se);
         }
     }
 
     // Check that a JAR entry is signed by an expected DN
-    private static void checkSignedBy(JarEntry e, String expectedDn) throws Exception {
+    private static void checkSignedBy(JarEntry e, String expectedDn) {
         Certificate[] certs = e.getCertificates();
-        if (certs == null || certs.length == 0) {
-            throw new Exception("JarEntry has no certificates: " + e.getName());
-        }
-
-        if (certs[0] instanceof X509Certificate x) {
-            String name = x.getSubjectX500Principal().getName();
-            if (!name.equalsIgnoreCase(expectedDn)) {
-                throw new Exception("Expected entry signed by %s, was %s".formatted(name, expectedDn));
-            }
-        } else {
-            throw new Exception("Expected JarEntry.getCertificate to return X509Certificate");
-        }
+        assertNotNull(certs, "JarEntry has no certificates: " + e.getName());
+        assertNotEquals(0, certs.length, "JarEntry has no certificates: " + e.getName());
+        var x = assertInstanceOf(X509Certificate.class, certs[0], "Expected JarEntry.getCertificate to return X509Certificate");
+        String name = x.getSubjectX500Principal().getName();
+        assertTrue(name.equalsIgnoreCase(expectedDn), "Expected entry signed by %s, was %s".formatted(name, expectedDn));
     }
 
-    private static Path createJar() throws Exception {
+    private static Path createJar() throws IOException {
         Path j = Path.of("unsigned.jar");
         try (JarOutputStream out = new JarOutputStream(Files.newOutputStream(j))){
             out.putNextEntry(new JarEntry("getprop.class"));

@@ -161,12 +161,17 @@ final class ConnectionPool {
                                  InetSocketAddress addr,
                                  InetSocketAddress proxy) {
         if (stopped) return null;
+        List<HttpConnection> purgedConnections;
+        HttpConnection acquiredConnection;
         stateLock.lock();
         try {
-            return getConnection0(secure, addr, proxy);
+            purgedConnections = purgeExpiredConnections(timeSource.instant());
+            acquiredConnection = getConnection0(secure, addr, proxy);
         } finally {
             stateLock.unlock();
         }
+        purgedConnections.forEach(this::close);
+        return acquiredConnection;
     }
 
     private HttpConnection getConnection0(boolean secure,
@@ -205,32 +210,38 @@ final class ConnectionPool {
 
         // it's possible that cleanup may have been called.
         HttpConnection toClose = null;
+        boolean stopping = false;
         stateLock.lock();
         try {
             if (cleanup.isDone()) {
                 return;
-            } else if (stopped) {
-                conn.close();
-                return;
-            }
-            if (MAX_POOL_SIZE > 0 && expiryList.size() >= MAX_POOL_SIZE) {
-                toClose = expiryList.removeOldest();
-                if (toClose != null) removeFromPool(toClose);
-            }
-            if (conn instanceof PlainHttpConnection) {
-                putConnection(conn, plainPool);
+            } else if (stopping = stopped) {
+                toClose = conn;
             } else {
-                assert conn.isSecure();
-                putConnection(conn, sslPool);
+                if (MAX_POOL_SIZE > 0 && expiryList.size() >= MAX_POOL_SIZE) {
+                    toClose = expiryList.removeOldest();
+                    if (toClose != null) removeFromPool(toClose);
+                }
+                if (conn instanceof PlainHttpConnection) {
+                    putConnection(conn, plainPool);
+                } else {
+                    assert conn.isSecure();
+                    putConnection(conn, sslPool);
+                }
+                expiryList.add(conn, now, keepAlive);
             }
-            expiryList.add(conn, now, keepAlive);
         } finally {
             stateLock.unlock();
         }
         if (toClose != null) {
             if (debug.on()) {
-                debug.log("Maximum pool size reached: removing oldest connection %s",
-                          toClose.dbgString());
+                if (stopping) {
+                    debug.log("Stopping: close connection %s",
+                            toClose.dbgString());
+                } else {
+                    debug.log("Maximum pool size reached: removing oldest connection %s",
+                            toClose.dbgString());
+                }
             }
             close(toClose);
         }
@@ -313,16 +324,7 @@ final class ConnectionPool {
         List<HttpConnection> closelist;
         stateLock.lock();
         try {
-            closelist = expiryList.purgeUntil(now);
-            for (HttpConnection c : closelist) {
-                if (c instanceof PlainHttpConnection) {
-                    boolean wasPresent = removeFromPool(c, plainPool);
-                    assert wasPresent;
-                } else {
-                    boolean wasPresent = removeFromPool(c, sslPool);
-                    assert wasPresent;
-                }
-            }
+            closelist = purgeExpiredConnections(now);
             nextPurge = now.until(
                     expiryList.nextExpiryDeadline().orElse(now),
                     ChronoUnit.MILLIS);
@@ -331,6 +333,16 @@ final class ConnectionPool {
         }
         closelist.forEach(this::close);
         return nextPurge;
+    }
+
+    private List<HttpConnection> purgeExpiredConnections(Deadline now) {
+        assert stateLock.isHeldByCurrentThread();
+        var closelist = expiryList.purgeUntil(now);
+        for (HttpConnection c : closelist) {
+            var wasPresent = removeFromPool(c, c instanceof PlainHttpConnection ? plainPool : sslPool);
+            assert wasPresent;
+        }
+        return closelist;
     }
 
     private void close(HttpConnection c) {

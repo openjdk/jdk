@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8246774
  * @summary Checks that the appropriate value is given to the canonical ctr
  * @library /test/lib
- * @run testng DifferentStreamFieldsTest
+ * @run junit DifferentStreamFieldsTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -38,14 +38,19 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import jdk.test.lib.serial.SerialObjectBuilder;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static org.testng.Assert.assertEquals;
+
+import org.junit.jupiter.api.Assertions;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Checks that the appropriate value is given to the canonical ctr.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class DifferentStreamFieldsTest {
 
     record R01(boolean x) implements Serializable {}
@@ -76,7 +81,6 @@ public class DifferentStreamFieldsTest {
 
     record R14(R13[]x) implements Serializable {}
 
-    @DataProvider(name = "recordTypeAndExpectedValue")
     public Object[][] recordTypeAndExpectedValue() {
         return new Object[][]{
             new Object[]{R01.class, false},
@@ -96,7 +100,8 @@ public class DifferentStreamFieldsTest {
         };
     }
 
-    @Test(dataProvider = "recordTypeAndExpectedValue")
+    @ParameterizedTest
+    @MethodSource("recordTypeAndExpectedValue")
     public void testWithDifferentTypes(Class<?> clazz, Object expectedXValue)
     throws Exception {
         out.println("\n---");
@@ -108,7 +113,7 @@ public class DifferentStreamFieldsTest {
         Object obj = deserialize(bytes);
         out.println("deserialized: " + obj);
         Object actualXValue = clazz.getDeclaredMethod("x").invoke(obj);
-        assertEquals(actualXValue, expectedXValue);
+        assertEquals(expectedXValue, actualXValue);
 
         bytes = SerialObjectBuilder
             .newBuilder(clazz.getName())
@@ -118,7 +123,7 @@ public class DifferentStreamFieldsTest {
         obj = deserialize(bytes);
         out.println("deserialized: " + obj);
         actualXValue = clazz.getDeclaredMethod("x").invoke(obj);
-        assertEquals(actualXValue, expectedXValue);
+        assertEquals(expectedXValue, actualXValue);
     }
 
     // --- all together
@@ -137,18 +142,18 @@ public class DifferentStreamFieldsTest {
 
         R15 obj = deserialize(bytes);
         out.println("deserialized: " + obj);
-        assertEquals(obj.a, false);
-        assertEquals(obj.b, 0);
-        assertEquals(obj.c, 0);
-        assertEquals(obj.d, '\u0000');
-        assertEquals(obj.e, 0);
-        assertEquals(obj.f, 0l);
-        assertEquals(obj.g, 0f);
-        assertEquals(obj.h, 0d);
-        assertEquals(obj.i, null);
-        assertEquals(obj.j, null);
-        assertEquals(obj.k, null);
-        assertEquals(obj.l, null);
+        assertEquals(false, obj.a);
+        assertEquals(0, obj.b);
+        assertEquals(0, obj.c);
+        assertEquals('\u0000', obj.d);
+        assertEquals(0, obj.e);
+        assertEquals(0l, obj.f);
+        assertEquals(0f, obj.g);
+        assertEquals(0d, obj.h);
+        assertEquals(null, obj.i);
+        assertEquals(null, obj.j);
+        assertEquals(null, obj.k);
+        assertEquals(null, obj.l);
     }
 
     @Test
@@ -166,9 +171,9 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             var deser1 = deserialize(OOSBytes);
-            assertEquals(deser1, r);
+            assertEquals(r, deser1);
             var deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
         }
         {
             record R(int x, int y) implements Serializable {}
@@ -176,7 +181,7 @@ public class DifferentStreamFieldsTest {
             var r = new R(7, 8);
             byte[] OOSBytes = serialize(r);
             var deser1 = deserialize(OOSBytes);
-            assertEquals(deser1, r);
+            assertEquals(r, deser1);
 
             byte[] builderBytes = SerialObjectBuilder
                 .newBuilder(R.class.getName())
@@ -185,7 +190,7 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             var deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
 
             builderBytes = SerialObjectBuilder
                 .newBuilder(R.class.getName())
@@ -193,7 +198,7 @@ public class DifferentStreamFieldsTest {
                 .addPrimitiveField("x", int.class, 7)
                 .build();
             deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
 
             builderBytes = SerialObjectBuilder
                 .newBuilder(R.class.getName())
@@ -203,12 +208,12 @@ public class DifferentStreamFieldsTest {
                 .addPrimitiveField("z", int.class, 9) // additional fields
                 .build();
             deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
 
             r = new R(0, 0);
             OOSBytes = serialize(r);
             deser1 = deserialize(OOSBytes);
-            assertEquals(deser1, r);
+            assertEquals(r, deser1);
 
             builderBytes = SerialObjectBuilder
                 .newBuilder(R.class.getName())
@@ -216,13 +221,13 @@ public class DifferentStreamFieldsTest {
                 .addPrimitiveField("x", int.class, 0)
                 .build();
             deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
 
             builderBytes = SerialObjectBuilder
                 .newBuilder(R.class.getName())  // no field values
                 .build();
             deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
         }
     }
 
@@ -234,7 +239,7 @@ public class DifferentStreamFieldsTest {
 
         var r = new Str("Hello", "World!");
         var deser1 = deserialize(serialize(r));
-        assertEquals(deser1, r);
+        assertEquals(r, deser1);
 
         byte[] builderBytes = SerialObjectBuilder
             .newBuilder(Str.class.getName())
@@ -243,7 +248,7 @@ public class DifferentStreamFieldsTest {
             .build();
 
         var deser2 = deserialize(builderBytes);
-        assertEquals(deser2, deser1);
+        assertEquals(deser1, deser2);
 
         builderBytes = SerialObjectBuilder
             .newBuilder(Str.class.getName())
@@ -254,7 +259,7 @@ public class DifferentStreamFieldsTest {
             .build();
 
         var deser3 = deserialize(builderBytes);
-        assertEquals(deser3, deser1);
+        assertEquals(deser1, deser3);
     }
 
     @Test
@@ -264,8 +269,8 @@ public class DifferentStreamFieldsTest {
             record IntArray(int[]ints, long[]longs) implements Serializable {}
             IntArray r = new IntArray(new int[]{5, 4, 3, 2, 1}, new long[]{9L});
             IntArray deser1 = deserialize(serialize(r));
-            assertEquals(deser1.ints(), r.ints());
-            assertEquals(deser1.longs(), r.longs());
+            Assertions.assertArrayEquals(r.ints(), deser1.ints());
+            Assertions.assertArrayEquals(r.longs(), deser1.longs());
 
             byte[] builderBytes = SerialObjectBuilder
                 .newBuilder(IntArray.class.getName())
@@ -274,14 +279,14 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             IntArray deser2 = deserialize(builderBytes);
-            assertEquals(deser2.ints(), deser1.ints());
-            assertEquals(deser2.longs(), deser1.longs());
+            Assertions.assertArrayEquals(deser1.ints(), deser2.ints());
+            Assertions.assertArrayEquals(deser1.longs(), deser2.longs());
         }
         {
             record StrArray(String[]stringArray) implements Serializable {}
             StrArray r = new StrArray(new String[]{"foo", "bar"});
             StrArray deser1 = deserialize(serialize(r));
-            assertEquals(deser1.stringArray(), r.stringArray());
+            Assertions.assertArrayEquals(r.stringArray(), deser1.stringArray());
 
             byte[] builderBytes = SerialObjectBuilder
                 .newBuilder(StrArray.class.getName())
@@ -289,7 +294,7 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             StrArray deser2 = deserialize(builderBytes);
-            assertEquals(deser2.stringArray(), deser1.stringArray());
+            Assertions.assertArrayEquals(deser1.stringArray(), deser2.stringArray());
         }
     }
 
@@ -302,7 +307,7 @@ public class DifferentStreamFieldsTest {
 
             var r = new NumberHolder(123);
             var deser1 = deserialize(serialize(r));
-            assertEquals(deser1, r);
+            assertEquals(r, deser1);
 
             byte[] builderBytes = SerialObjectBuilder
                 .newBuilder(NumberHolder.class.getName())
@@ -310,7 +315,7 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             var deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
         }
 
         {
@@ -318,7 +323,7 @@ public class DifferentStreamFieldsTest {
 
             var r = new IntegerHolder(123);
             var deser1 = deserialize(serialize(r));
-            assertEquals(deser1, r);
+            assertEquals(r, deser1);
 
             byte[] builderBytes = SerialObjectBuilder
                 .newBuilder(IntegerHolder.class.getName())
@@ -326,7 +331,7 @@ public class DifferentStreamFieldsTest {
                 .build();
 
             var deser2 = deserialize(builderBytes);
-            assertEquals(deser2, deser1);
+            assertEquals(deser1, deser2);
         }
     }
 
@@ -338,7 +343,7 @@ public class DifferentStreamFieldsTest {
 
         var r = new StringHolder("123");
         var deser1 = deserialize(serialize(r));
-        assertEquals(deser1, r);
+        assertEquals(r, deser1);
 
         byte[] builderBytes = SerialObjectBuilder
             .newBuilder(StringHolder.class.getName())
@@ -362,7 +367,7 @@ public class DifferentStreamFieldsTest {
 
         var r = new IntHolder(123);
         var deser1 = deserialize(serialize(r));
-        assertEquals(deser1, r);
+        assertEquals(r, deser1);
 
         byte[] builderBytes = SerialObjectBuilder
             .newBuilder(IntHolder.class.getName())

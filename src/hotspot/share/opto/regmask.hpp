@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,8 +285,9 @@ class RegMask {
         _rm_word_ext = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
+        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, _rm_word_ext,
                                            old_ext_size, new_ext_size);
+
       }
       if (initialize_by_infinite_stack) {
         int fill = 0;
@@ -354,16 +355,12 @@ public:
   }
 
   // SlotsPerLong is 2, since slots are 32 bits and longs are 64 bits.
-  // Also, consider the maximum alignment size for a normally allocated
-  // value.  Since we allocate register pairs but not register quads (at
-  // present), this alignment is SlotsPerLong (== 2).  A normally
-  // aligned allocated register is either a single register, or a pair
-  // of adjacent registers, the lower-numbered being even.
-  // See also is_aligned_Pairs() below, and the padding added before
-  // Matcher::_new_SP to keep allocated pairs aligned properly.
-  // If we ever go to quad-word allocations, SlotsPerQuad will become
-  // the controlling alignment constraint.  Note that this alignment
-  // requirement is internal to the allocator, and independent of any
+  // We allocate single registers for 32 bit values and register pairs for 64
+  // bit values. The number of registers allocated for vectors match their size. E.g. for 128 bit
+  // vectors (VecX) we allocate a set of 4 registers. Allocated sets are adjacent and aligned.
+  // See RegMask::find_first_set(), is_aligned_pairs(), is_aligned_sets(), and the padding added before
+  // Matcher::_new_SP to keep allocated pairs and sets aligned properly.
+  // Note that this alignment requirement is internal to the allocator, and independent of any
   // particular platform.
   enum { SlotsPerLong = 2,
          SlotsPerVecA = 4,
@@ -796,8 +793,6 @@ public:
     int rm_index_diff = _offset - rm._offset;
     int rm_hwm_tr = (int)rm._hwm - rm_index_diff;
     int rm_lwm_tr = (int)rm._lwm - rm_index_diff;
-    int rm_rm_max_tr = (int)rm.rm_word_max_index() - rm_index_diff;
-    int rm_rm_size_tr = (int)rm._rm_size_in_words - rm_index_diff;
     int hwm = MIN2((int)_hwm, rm_hwm_tr);
     int lwm = MAX2((int)_lwm, rm_lwm_tr);
     for (int i = lwm; i <= hwm; i++) {

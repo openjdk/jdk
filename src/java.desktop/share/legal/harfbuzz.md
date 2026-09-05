@@ -1,4 +1,4 @@
-## Harfbuzz 11.2.0
+## Harfbuzz v14.2.0
 
 ### Harfbuzz License
 
@@ -75,7 +75,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 The below applies to the following file(s):
 libharfbuzz/hb-unicode-emoji-table.hh
 
-© 2024 Unicode®, Inc.
+© 2025 Unicode®, Inc.
 
 Unicode and the Unicode Logo are registered trademarks of Unicode, Inc.
 in the U.S. and other countries.

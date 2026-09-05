@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,6 @@
 #endif
 
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
-
-// Workaround for C++ overloading nastiness on '0' for RegisterOrConstant.
-inline static RegisterOrConstant constant(int value) {
-  return RegisterOrConstant(value);
-}
 
 void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_reg,
                                           Register temp_reg, Register temp2_reg) {
@@ -109,14 +104,13 @@ void MethodHandles::verify_ref_kind(MacroAssembler* _masm, int ref_kind, Registe
   __ andi(temp, temp, java_lang_invoke_MemberName::MN_REFERENCE_KIND_MASK);
   __ cmpwi(CR1, temp, ref_kind);
   __ beq(CR1, L);
-  { char* buf = NEW_C_HEAP_ARRAY(char, 100, mtInternal);
-    jio_snprintf(buf, 100, "verify_ref_kind expected %x", ref_kind);
-    if (ref_kind == JVM_REF_invokeVirtual ||
-        ref_kind == JVM_REF_invokeSpecial)
-      // could do this for all ref_kinds, but would explode assembly code size
-      trace_method_handle(_masm, buf);
-    __ stop(buf);
+  const char* msg = ref_kind_to_verify_msg(ref_kind);
+  if (ref_kind == JVM_REF_invokeVirtual ||
+      ref_kind == JVM_REF_invokeSpecial) {
+    // could do this for all ref_kinds, but would explode assembly code size
+    trace_method_handle(_masm, msg);
   }
+  __ stop(msg);
   BLOCK_COMMENT("} verify_ref_kind");
   __ BIND(L);
 }
@@ -150,7 +144,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
   __ cmplwi(CR0, R19_method, 0);
   __ beq(CR0, L_no_such_method);
 
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+  // The following jump might pass an inline type argument that was erased to Object as oop to a
+  // callee that expects inline type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->inline_entry_point() or _adapter->c2i_inline_entry()) which will take care
+  // of translating between the calling conventions.
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_inline_offset() :
                                                      Method::from_interpreted_offset();
   __ ld(target, in_bytes(entry_offset), R19_method);
   __ mtctr(target);

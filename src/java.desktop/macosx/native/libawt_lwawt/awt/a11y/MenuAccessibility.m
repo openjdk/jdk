@@ -68,6 +68,11 @@ static jclass sjc_CAccessibility = NULL;
                                                              sjm_getCurrentAccessiblePopupMenu,
                                                              fAccessible, fComponent);
 
+    CHECK_EXCEPTION();
+    if (axComponent == nil) {
+        return nil;
+    }
+
     CommonComponentAccessibility *currentElement = [CommonComponentAccessibility createWithAccessible:axComponent
                                                             withEnv:env withView:self->fView isCurrent:YES];
 

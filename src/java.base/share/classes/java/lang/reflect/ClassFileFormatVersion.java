@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -379,10 +379,34 @@ public enum ClassFileFormatVersion {
      * @since 26
      *
      * @see <a
-     * href="https://docs.oracle.com/javase/specs/jvms/se26/html/index.html">
+     * href="https://docs.oracle.com/en/java/javase/26/docs/specs/jvms/index.html">
      * <cite>The Java Virtual Machine Specification, Java SE 26 Edition</cite></a>
      */
     RELEASE_26(70),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 27.
+     *
+     * @since 27
+     *
+     * @see <a
+     * href="https://docs.oracle.com/en/java/javase/27/docs/specs/jvms/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 27 Edition</cite></a>
+     */
+    RELEASE_27(71),
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 28.
+     *
+     * @since 28
+     *
+     * @see <a
+     * href="https://docs.oracle.com/en/java/javase/28/docs/specs/jvms/index.html">
+     * <cite>The Java Virtual Machine Specification, Java SE 28 Edition</cite></a>
+     */
+    RELEASE_28(72),
     ; // Reduce code churn when appending new constants
 
     // Note to maintainers: when adding constants for newer releases,
@@ -398,7 +422,7 @@ public enum ClassFileFormatVersion {
      * {@return the latest class file format version}
      */
     public static ClassFileFormatVersion latest() {
-        return RELEASE_26;
+        return RELEASE_28;
     }
 
     /**

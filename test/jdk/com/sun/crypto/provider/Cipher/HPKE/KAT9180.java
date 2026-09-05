@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,12 +82,12 @@ public class KAT9180 {
         var c1 = Cipher.getInstance("HPKE");
         var c2 = Cipher.getInstance("HPKE");
         var ts = JSONValue.parse(new String(Files.readAllBytes(archivePath), StandardCharsets.UTF_8));
-        for (var tg : ts.asArray()) {
-            var mode = Integer.parseInt(tg.get("mode").asString());
+        for (var tg : ts.elements()) {
+            var mode = tg.get("mode").asInt();
             System.err.print('I');
-            var kem_id = Integer.parseInt(tg.get("kem_id").asString());
-            var kdf_id = Integer.parseInt(tg.get("kdf_id").asString());
-            var aead_id = Integer.parseInt(tg.get("aead_id").asString());
+            var kem_id = tg.get("kem_id").asInt();
+            var kdf_id = tg.get("kdf_id").asInt();
+            var aead_id = tg.get("aead_id").asInt();
             var ikmR = h.parseHex(tg.get("ikmR").asString());
             var ikmE = h.parseHex(tg.get("ikmE").asString());
             var info = h.parseHex(tg.get("info").asString());
@@ -117,7 +117,7 @@ public class KAT9180 {
             if (enc != null) {
                 System.err.print('e');
                 var count = 0;
-                for (var p : enc.asArray()) {
+                for (var p : enc.elements()) {
                     var aad = h.parseHex(p.get("aad").asString());
                     var pt = h.parseHex(p.get("pt").asString());
                     var ct = h.parseHex(p.get("ct").asString());

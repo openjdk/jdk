@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,17 @@ package jdk.jpackage.internal.cli;
 import static jdk.jpackage.internal.cli.StandardOption.HELP;
 import static jdk.jpackage.internal.cli.StandardOption.VERBOSE;
 import static jdk.jpackage.internal.cli.StandardOption.VERSION;
+import static jdk.jpackage.internal.log.StandardLogger.ERROR_LOGGER;
 
+import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.UncheckedIOException;
 import java.nio.file.NoSuchFileException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -44,9 +49,17 @@ import java.util.function.Supplier;
 import java.util.spi.ToolProvider;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.util.OperatingSystem;
-import jdk.jpackage.internal.Log;
+import jdk.jpackage.internal.Globals;
+import jdk.jpackage.internal.cli.JOptSimpleOptionsBuilder.ConvertedOptionsBuilder;
+import jdk.jpackage.internal.log.ErrorLogger;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.ExecutableAttributesWithCapturedOutput;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.SelfContainedException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedExitCodeException;
+import jdk.jpackage.internal.util.CommandOutputControl.UnexpectedResultException;
+import jdk.jpackage.internal.util.SetBuilder;
+import jdk.jpackage.internal.util.Slot;
 import jdk.jpackage.internal.util.function.ExceptionBox;
 
 /**
@@ -54,7 +67,16 @@ import jdk.jpackage.internal.util.function.ExceptionBox;
  */
 public final class Main {
 
-    public static final class Provider implements ToolProvider {
+    public record Provider(Supplier<CliBundlingEnvironment> bundlingEnvSupplier, OperatingSystem os) implements ToolProvider {
+
+        public Provider {
+            Objects.requireNonNull(bundlingEnvSupplier);
+            Objects.requireNonNull(os);
+        }
+
+        public Provider() {
+            this(DefaultBundlingEnvironmentLoader.INSTANCE, OperatingSystem.current());
+        }
 
         @Override
         public String name() {
@@ -63,7 +85,22 @@ public final class Main {
 
         @Override
         public int run(PrintWriter out, PrintWriter err, String... args) {
-            return Main.run(out, err, args);
+            return Main.run(os, bundlingEnvSupplier, out, err, args);
+        }
+
+        @Override
+        public int run(PrintStream out, PrintStream err, String... args) {
+            PrintWriter outWriter = toPrintWriter(out);
+            PrintWriter errWriter = toPrintWriter(err);
+            try {
+                try {
+                    return run(outWriter, errWriter, args);
+                } finally {
+                    outWriter.flush();
+                }
+            } finally {
+                errWriter.flush();
+            }
         }
     }
 
@@ -72,34 +109,69 @@ public final class Main {
     }
 
     public static void main(String... args) {
-        var out = new PrintWriter(System.out, true);
-        var err = new PrintWriter(System.err, true);
-        System.exit(run(out, err, args));
+        var out = toPrintWriter(System.out);
+        var err = toPrintWriter(System.err);
+        System.exit(run(OperatingSystem.current(), DefaultBundlingEnvironmentLoader.INSTANCE, out, err, args));
     }
 
-    public static int run(PrintWriter out, PrintWriter err, String... args) {
+    static int run(
+            OperatingSystem os,
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
+        return Globals.main(() -> {
+            return runWithGlobals(os, bundlingEnvSupplier, out, err, args);
+        });
+    }
+
+    private static int runWithGlobals(
+            OperatingSystem os,
+            Supplier<CliBundlingEnvironment> bundlingEnvSupplier,
+            PrintWriter out,
+            PrintWriter err,
+            String... args) {
+
+        Objects.requireNonNull(os);
+        Objects.requireNonNull(bundlingEnvSupplier);
+        Objects.requireNonNull(args);
+        for (String arg : args) {
+            Objects.requireNonNull(arg);
+        }
         Objects.requireNonNull(out);
         Objects.requireNonNull(err);
 
-        Log.setPrintWriter(out, err);
+        Globals.instance().logEnv(LogConfigParser.quiet().out(out).err(err).create());
+
+        final var runner = new Runner(t -> {
+            Globals.instance().logger(ERROR_LOGGER).reportError(t);
+        });
 
         try {
-            try {
-                args = CommandLine.parse(args);
-            } catch (FileNotFoundException|NoSuchFileException ex) {
-                Log.fatalError(I18N.format("ERR_CannotParseOptions", ex.getMessage()));
-                return 1;
-            } catch (IOException ex) {
-                throw ExceptionBox.rethrowUnchecked(ex);
+            var mappedArgs = Slot.<String[]>createEmpty();
+
+            int preprocessStatus = runner.run(() -> {
+                try {
+                    mappedArgs.set(CommandLine.parse(args));
+                    return List.of();
+                } catch (FileNotFoundException | NoSuchFileException ex) {
+                    return List.of(new JPackageException(I18N.format("ERR_CannotParseOptions", ex.getMessage()), ex));
+                } catch (IOException ex) {
+                    return List.of(ex);
+                }
+            });
+
+            if (preprocessStatus != 0) {
+                return preprocessStatus;
             }
 
-            final var bundlingEnv = ServiceLoader.load(CliBundlingEnvironment.class,
-                    CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
+            final var bundlingEnv = bundlingEnvSupplier.get();
 
-            final var parseResult = Utils.buildParser(OperatingSystem.current(), bundlingEnv).create().apply(args);
+            final var parseResult = Utils.buildParser(os, bundlingEnv).create().apply(mappedArgs.get());
 
-            return new Runner().run(() -> {
-                final var parsedOptionsBuilder = parseResult.orElseThrow();
+            return runner.run(() -> {
+                var parsedOptionsBuilder = parseResult.orElseThrow();
 
                 final var options = parsedOptionsBuilder.create();
 
@@ -119,11 +191,33 @@ public final class Main {
                     return List.of();
                 }
 
+                var skippedOptions = new ArrayList<OptionIdentifier>();
+
                 if (VERBOSE.containsIn(options)) {
-                    Log.setVerbose();
+                    // The "--verbose" option is on the command line.
+                    // Pick this option from the command line and parse its string value.
+                    // This will delay parsing of the rest of the command line
+                    // until the configuration of the logging is complete.
+                    parsedOptionsBuilder.copyWithExcludes(
+                            SetBuilder.build(StandardOption.options())
+                                    .remove(VERBOSE.getOption())
+                                    .create().stream().map(WithOptionIdentifier::id).toList()
+                    ).convertedOptions().map(ConvertedOptionsBuilder::create).map(VERBOSE::getFrom).value().ifPresent(logEnvBuilder -> {
+                        skippedOptions.add(VERBOSE.id());
+                        Globals.instance().logEnv(logEnvBuilder.out(out).err(err).create());
+                    });
+                } else if ("true".equals(System.getenv("JPACKAGE_DEBUG"))) {
+                    // There is no "--verbose" option on the command line,
+                    // but the "JPACKAGE_DEBUG" environment variable is set to "true".
+                    // Enable the default verbose output.
+                    Globals.instance().logEnv(LogConfigParser.defaultVerbose().out(out).err(err).create());
                 }
 
-                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, bundlingEnv);
+                if (!skippedOptions.isEmpty()) {
+                    parsedOptionsBuilder = parsedOptionsBuilder.copyWithExcludes(skippedOptions);
+                }
+
+                final var optionsProcessor = new OptionsProcessor(parsedOptionsBuilder, os, bundlingEnv);
 
                 final var validationResult = optionsProcessor.validate();
 
@@ -144,67 +238,121 @@ public final class Main {
         }
     }
 
+    /*
+     * Exception (error) reporting:
+     *
+     * There are two types of exceptions to handle:
+     *
+     * 1. Exceptions explicitly thrown by jpackage code with localized,
+     *    jpackage-specific error messages. These are usually instances of
+     *    JPackageException.
+     *
+     * 2. Exceptions thrown by JDK code (for example, an NPE from Optional.of(...)).
+     *    These should normally not occur or should be handled at the point
+     *    where they arise. If they reach this level of exception handling,
+     *    it indicates a flaw in jpackage’s internal logic.
+     *
+     * Always print stack traces for exceptions of type #2.
+     * Print stack traces for exceptions of type #1 only in verbose mode.
+     * Always print the messages for exceptions of any type.
+     */
 
-    record ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
-        ErrorReporter {
+    public record ErrorReporter(
+            Consumer<Throwable> stackTracePrinter,
+            Consumer<String> messagePrinter,
+            boolean alwaysPrintStackTrace,
+            boolean printCommandOutput) implements ErrorLogger {
+
+        public ErrorReporter {
             Objects.requireNonNull(stackTracePrinter);
             Objects.requireNonNull(messagePrinter);
         }
 
-        void reportError(Throwable t) {
-            if (t instanceof ConfigException cfgEx) {
-                printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
-            } else if (t instanceof ExceptionBox ex) {
-                reportError(ex.getCause());
-            } else if (t instanceof UncheckedIOException ex) {
-                reportError(ex.getCause());
+        public ErrorReporter(Consumer<Throwable> stackTracePrinter, Consumer<String> messagePrinter) {
+            this(stackTracePrinter, messagePrinter, true, false);
+        }
+
+        public void reportError(Throwable t) {
+
+            var unfoldedExceptions = new ArrayList<Exception>();
+            ExceptionBox.visitUnboxedExceptionsRecursively(t, unfoldedExceptions::add);
+
+            unfoldedExceptions.forEach(ex -> {
+                if (ex instanceof ConfigException cfgEx) {
+                    printError(cfgEx, Optional.ofNullable(cfgEx.getAdvice()));
+                } else if (ex instanceof UncheckedIOException) {
+                    printError(ex.getCause(), Optional.empty());
+                } else if (ex instanceof UnexpectedResultException urex) {
+                    printExternalCommandError(urex);
+                } else {
+                    printError(ex, Optional.empty());
+                }
+            });
+        }
+
+        private void printExternalCommandError(UnexpectedResultException ex) {
+            var result = ex.getResult();
+            var commandOutput = ((ExecutableAttributesWithCapturedOutput)result.execAttrs()).printableOutput();
+            var printableCommandLine = result.execAttrs().printableCommandLine();
+
+            if (alwaysPrintStackTrace) {
+                stackTracePrinter.accept(ex);
+            }
+
+            String msg;
+            if (ex instanceof UnexpectedExitCodeException) {
+                msg = I18N.format("error.command-failed-unexpected-exit-code", result.getExitCode(), printableCommandLine);
+            } else if (result.exitCode().isPresent()) {
+                msg = I18N.format("error.command-failed-unexpected-output", printableCommandLine);
             } else {
-                printError(t, Optional.empty());
+                msg = I18N.format("error.command-failed-timed-out", printableCommandLine);
+            }
+
+            messagePrinter.accept(I18N.format("message.error-header", msg));
+            if (printCommandOutput) {
+                messagePrinter.accept(I18N.format("message.failed-command-output-header"));
+                try (var lines = new BufferedReader(new StringReader(commandOutput)).lines()) {
+                    lines.forEach(messagePrinter);
+                }
             }
         }
 
         private void printError(Throwable t, Optional<String> advice) {
-            stackTracePrinter.accept(t);
+            var isSelfContained = isSelfContained(t);
+
+            if (!isSelfContained || alwaysPrintStackTrace) {
+                stackTracePrinter.accept(t);
+            }
 
             String msg;
-            if (isAlienExceptionType(t)) {
-                msg = t.toString();
-            } else {
+            if (isSelfContained) {
                 msg = t.getMessage();
+            } else {
+                msg = t.toString();
             }
 
             messagePrinter.accept(I18N.format("message.error-header", msg));
             advice.ifPresent(v -> messagePrinter.accept(I18N.format("message.advice-header", v)));
         }
 
-        private static boolean isAlienExceptionType(Throwable t) {
-            switch (t) {
-                case JPackageException _ -> {
-                    return false;
-                }
-                case Utils.ParseException _ -> {
-                    return false;
-                }
-                case StandardOption.AddLauncherIllegalArgumentException _ -> {
-                    return false;
-                }
-                default -> {
-                    return true;
-                }
-            }
+        private static boolean isSelfContained(Throwable t) {
+            return t.getClass().getAnnotation(SelfContainedException.class) != null;
         }
     }
 
 
-    static final class Runner {
+    record Runner(Consumer<Throwable> errorReporter) {
+
+        Runner {
+            Objects.requireNonNull(errorReporter);
+        }
 
         int run(Supplier<? extends Collection<? extends Exception>> r) {
             final var exceptions = runIt(r);
             if (exceptions.isEmpty()) {
                 return 0;
             } else {
-                var errorReporter = new ErrorReporter(Log::verbose, Log::fatalError);
-                exceptions.forEach(errorReporter::reportError);
+                exceptions.forEach(errorReporter);
                 return 1;
             }
         }
@@ -220,5 +368,20 @@ public final class Main {
 
     private static String getVersion() {
         return System.getProperty("java.version");
+    }
+
+    private static PrintWriter toPrintWriter(PrintStream ps) {
+        return new PrintWriter(ps, true, ps.charset());
+    }
+
+    private enum DefaultBundlingEnvironmentLoader implements Supplier<CliBundlingEnvironment> {
+        INSTANCE;
+
+        @Override
+        public CliBundlingEnvironment get() {
+            return ServiceLoader.load(
+                    CliBundlingEnvironment.class,
+                    CliBundlingEnvironment.class.getClassLoader()).findFirst().orElseThrow();
+        }
     }
 }

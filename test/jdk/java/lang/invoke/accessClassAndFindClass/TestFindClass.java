@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @bug 8150782 8207027 8266269
  * @compile TestFindClass.java TestCls.java p/Foo.java q/Bar.java
- * @run testng/othervm -ea -esa test.java.lang.invoke.TestFindClass
+ * @run junit/othervm -ea -esa test.java.lang.invoke.TestFindClass
  */
 package test.java.lang.invoke;
 
@@ -34,9 +34,11 @@ import q.Bar;
 
 import static java.lang.invoke.MethodHandles.*;
 
-import static org.testng.AssertJUnit.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-import org.testng.annotations.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestFindClass {
 
@@ -68,13 +70,12 @@ public class TestFindClass {
         assertEquals(Class1[].class, aClass);
     }
 
-    @Test(expectedExceptions = {ClassNotFoundException.class})
+    @Test
     public void classNotFoundExceptionTest() throws IllegalAccessException, ClassNotFoundException {
-        lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent");
+        assertThrows(ClassNotFoundException.class, () -> lookup().findClass(PACKAGE_PREFIX + "TestFindClass$NonExistent"));
     }
 
-    @DataProvider
-    Object[][] illegalAccessFind() {
+    static Object[][] illegalAccessFind() {
         return new Object[][] {
                 {publicLookup(), PACKAGE_PREFIX + "TestFindClass$Class1"},
                 {publicLookup(), PACKAGE_PREFIX + "TestCls$PrivateSIC"}
@@ -84,9 +85,10 @@ public class TestFindClass {
     /**
      * Assertion: @throws IllegalAccessException if the class is not accessible, using the allowed access modes.
      */
-    @Test(dataProvider = "illegalAccessFind", expectedExceptions = {ClassNotFoundException.class})
+    @ParameterizedTest
+    @MethodSource("illegalAccessFind")
     public void illegalAccessExceptionTest(Lookup lookup, String className) throws IllegalAccessException, ClassNotFoundException {
-        lookup.findClass(className);
+        assertThrows(ClassNotFoundException.class, () -> lookup.findClass(className));
     }
 
     @Test
@@ -104,8 +106,8 @@ public class TestFindClass {
         lookup().findClass("[Lp.Foo$T;");
     }
 
-    @Test(expectedExceptions = {NullPointerException.class})
+    @Test
     public void illegalArgument() throws IllegalAccessException, ClassNotFoundException {
-        lookup().findClass(null);
+        assertThrows(NullPointerException.class, () -> lookup().findClass(null));
     }
 }

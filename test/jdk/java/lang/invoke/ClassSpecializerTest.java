@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,24 @@
 /* @test
  * @summary Smoke-test class specializer, used to create BoundMethodHandle classes
  * @compile/module=java.base java/lang/invoke/ClassSpecializerHelper.java
- * @run testng/othervm/timeout=250 -ea -esa ClassSpecializerTest
+ * @run junit/othervm/timeout=250 -ea -esa ClassSpecializerTest
  */
 
 // Useful diagnostics to try:
 //   -Djava.lang.invoke.MethodHandle.TRACE_RESOLVE=true
 //   -Djava.lang.invoke.MethodHandle.DUMP_CLASS_FILES=true
 
-
-import org.testng.annotations.*;
 import java.lang.invoke.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.lang.invoke.ClassSpecializerHelper.*;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 
 public class ClassSpecializerTest {
@@ -58,12 +61,12 @@ public class ClassSpecializerTest {
             }
             args.set(0, key * 1000 + 42);
             Frob f = (Frob) mh.invokeWithArguments(args.toArray());
-            assert(f.kind() == k);
+            assertSame(k, f.kind());
             System.out.println("k.f(...) = " + f.toString());
             List<Object> l = f.asList();
             System.out.println("f.l = " + l);
             args.subList(0,1).clear();  // drop label
-            assert(args.equals(l));
+            assertEquals(args, l);
         }
     }
     private static Object coughUpA(Class<?> pt) throws Throwable {

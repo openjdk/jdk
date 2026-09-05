@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,9 @@ class NativeThreadSet {
     private static final int OTHER_THREAD_INDEX = -99;
 
     private final int initialCapacity;
-    private long[] threads;             // array of thread handles, created lazily
-    private int used;                   // number of thread handles in threads array
-    private int otherThreads;           // count of threads without a native thread handle
+    private Thread[] threads;     // array of platform threads, created lazily
+    private int used;             // number of elements in threads array
+    private int otherThreads;     // additional threads that can't be signalled
     private boolean waitingToEmpty;
 
     NativeThreadSet(int n) {
@@ -45,28 +45,28 @@ class NativeThreadSet {
      * it can efficiently be removed later.
      */
     int add() {
-        long th = NativeThread.current();
         synchronized (this) {
-            if (!NativeThread.isNativeThread(th)) {
+            final Thread t = NativeThread.threadToSignal();
+            if (t == null || t.isVirtual()) {
                 otherThreads++;
                 return OTHER_THREAD_INDEX;
             }
 
-            // add native thread handle to array, creating or growing array if needed
+            // add platform threads to array, creating or growing array if needed
             int start = 0;
             if (threads == null) {
-                threads = new long[initialCapacity];
+                threads = new Thread[initialCapacity];
             } else if (used >= threads.length) {
                 int on = threads.length;
                 int nn = on * 2;
-                long[] nthreads = new long[nn];
+                Thread[] nthreads = new Thread[nn];
                 System.arraycopy(threads, 0, nthreads, 0, on);
                 threads = nthreads;
                 start = on;
             }
             for (int i = start; i < threads.length; i++) {
-                if (threads[i] == 0) {
-                    threads[i] = th;
+                if (threads[i] == null) {
+                    threads[i] = t;
                     used++;
                     return i;
                 }
@@ -81,8 +81,7 @@ class NativeThreadSet {
     void remove(int i) {
         synchronized (this) {
             if (i >= 0) {
-                assert threads[i] == NativeThread.current();
-                threads[i] = 0;
+                threads[i] = null;
                 used--;
             } else if (i == OTHER_THREAD_INDEX) {
                 otherThreads--;
@@ -104,9 +103,9 @@ class NativeThreadSet {
         while (used > 0 || otherThreads > 0) {
             int u = used, i = 0;
             while (u > 0 && i < threads.length) {
-                long th = threads[i];
-                if (th != 0) {
-                    NativeThread.signal(th);
+                Thread t = threads[i];
+                if (t != null) {
+                    NativeThread.signal(t);
                     u--;
                 }
                 i++;

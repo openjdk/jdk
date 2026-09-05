@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Predicate;
 import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.XmlUtils;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.Test;
@@ -133,8 +134,7 @@ public class AppImagePackageTest {
      */
     @Test
     public static void testBadAppImage() throws IOException {
-        Path appImageDir = TKit.createTempDirectory("appimage");
-        Files.createFile(appImageDir.resolve("foo"));
+        Path appImageDir = createInvalidAppImage();
         configureBadAppImage(appImageDir).addInitializer(cmd -> {
             cmd.removeArgumentWithValue("--name");
         }).run(Action.CREATE);
@@ -145,8 +145,7 @@ public class AppImagePackageTest {
      */
     @Test
     public static void testBadAppImage2() throws IOException {
-        Path appImageDir = TKit.createTempDirectory("appimage");
-        Files.createFile(appImageDir.resolve("foo"));
+        Path appImageDir = createInvalidAppImage();
         configureBadAppImage(appImageDir).run(Action.CREATE);
     }
 
@@ -174,7 +173,7 @@ public class AppImagePackageTest {
 
         final var appImageDir = appImageCmd.outputBundle();
 
-        final var expectedError = JPackageStringBundle.MAIN.cannedFormattedString(
+        final var expectedError = JPackageCommand.makeError(
                 "error.invalid-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir);
 
         configureBadAppImage(appImageDir, expectedError).addRunOnceInitializer(() -> {
@@ -205,7 +204,7 @@ public class AppImagePackageTest {
     }
 
     private static PackageTest configureBadAppImage(Path appImageDir) {
-        return configureBadAppImage(appImageDir, JPackageStringBundle.MAIN.cannedFormattedString(
+        return configureBadAppImage(appImageDir, JPackageCommand.makeError(
                 "error.missing-app-image-file", AppImageFile.getPathInAppImage(Path.of("")), appImageDir));
     }
 
@@ -213,7 +212,7 @@ public class AppImagePackageTest {
         return new PackageTest().addInitializer(cmd -> {
             cmd.usePredefinedAppImage(appImageDir);
             cmd.ignoreDefaultVerbose(true); // no "--verbose" option
-            cmd.validateOutput(expectedError);
+            cmd.validateErr(expectedError);
         }).setExpectedExitCode(1);
     }
 
@@ -225,6 +224,21 @@ public class AppImagePackageTest {
     private static Path iconPath(String name) {
         return TKit.TEST_SRC_ROOT.resolve(Path.of("resources", name
                 + TKit.ICON_SUFFIX));
+    }
+
+    private static Path createInvalidAppImage() throws IOException {
+        Path appImageDir = TKit.createTempDirectory("appimage");
+        if (TKit.isOSX()) {
+            // Create minimal macOS bundle to prevent jpackage bail out early
+            // with "error.parameter-not-mac-bundle" error.
+            var bundle = new MacBundle(appImageDir);
+            Files.createDirectories(bundle.macOsDir());
+            Files.createFile(bundle.infoPlistFile());
+        } else {
+            Files.createFile(appImageDir.resolve("foo"));
+        }
+
+        return appImageDir;
     }
 
 }

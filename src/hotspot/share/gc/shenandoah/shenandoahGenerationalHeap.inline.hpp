@@ -34,4 +34,5 @@ inline bool ShenandoahGenerationalHeap::is_tenurable(const ShenandoahHeapRegion*
   return _age_census->is_tenurable(r->age());
 }
 
+
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP_INLINE_HPP

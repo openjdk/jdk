@@ -40,17 +40,18 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_generations() override;
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
   static ShenandoahGenerationalHeap* heap() {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     CollectedHeap* heap = Universe::heap();
     return cast(heap);
   }
 
   static ShenandoahGenerationalHeap* cast(CollectedHeap* heap) {
-    assert(ShenandoahCardBarrier, "Should have card barrier to use genenrational heap");
+    assert(ShenandoahCardBarrier, "Should have card barrier to use generational heap");
     return checked_cast<ShenandoahGenerationalHeap*>(heap);
   }
 
@@ -60,21 +61,10 @@ public:
 
 private:
   // ---------- Evacuations and Promotions
-  //
-  // True when regions and objects should be aged during the current cycle
-  ShenandoahSharedFlag  _is_aging_cycle;
   // Age census used for adapting tenuring threshold
   ShenandoahAgeCensus* _age_census;
 
 public:
-  void set_aging_cycle(bool cond) {
-    _is_aging_cycle.set_cond(cond);
-  }
-
-  inline bool is_aging_cycle() const {
-    return _is_aging_cycle.is_set();
-  }
-
   // Return the age census object for young gen
   ShenandoahAgeCensus* age_census() const {
     return _age_census;
@@ -82,12 +72,16 @@ public:
 
   inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
 
+  void start_idle_span() override;
+
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
   void update_region_ages(ShenandoahMarkingContext* ctx);
 
   oop evacuate_object(oop p, Thread* thread) override;
-  oop try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region, ShenandoahAffiliation target_gen);
+
+  template<ShenandoahAffiliation FROM_REGION, ShenandoahAffiliation TO_REGION>
+  oop try_evacuate_object(oop p, Thread* thread, uint from_region_age);
 
   // In the generational mode, we will use these two functions for young, mixed, and global collections.
   // For young and mixed, the generation argument will be the young generation, otherwise it will be the global generation.
@@ -97,9 +91,6 @@ public:
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
 
-  void retire_plab(PLAB* plab);
-  void retire_plab(PLAB* plab, Thread* thread);
-
   // ---------- Update References
   //
   // In the generational mode, we will use this function for young, mixed, and global collections.
@@ -108,10 +99,6 @@ public:
   void final_update_refs_update_region_states() override;
 
 private:
-  HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
-
   const size_t _min_plab_size;
   const size_t _max_plab_size;
 
@@ -130,23 +117,11 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-  // Used for logging the result of a region transfer outside the heap lock
-  struct TransferResult {
-    bool success;
-    size_t region_count;
-    const char* region_destination;
-
-    void print_on(const char* when, outputStream* ss) const;
-  };
-
   // Zeros out the evacuation and promotion reserves
   void reset_generation_reserves();
 
   // Computes the optimal size for the old generation, represented as a surplus or deficit of old regions
-  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
-
-  // Transfers surplus old regions to young, or takes regions from young to satisfy old region deficit
-  TransferResult balance_generations();
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_trashed_regions, size_t young_trashed_regions);
 
   // Balances generations, coalesces and fills old regions if necessary
   void complete_degenerated_cycle();

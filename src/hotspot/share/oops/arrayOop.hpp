@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_OOPS_ARRAYOOP_HPP
 
 #include "oops/oop.hpp"
+#include "runtime/globals.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -55,6 +56,9 @@ private:
 
   // Given a type, return true if elements of that type must be aligned to 64-bit.
   static bool element_type_should_be_aligned(BasicType type) {
+    if (type == T_FLAT_ELEMENT) {
+      return true; //CMH: tighten the alignment when removing T_FLAT_ELEMENT
+    }
 #ifdef _LP64
     if (type == T_OBJECT || type == T_ARRAY) {
       return !UseCompressedOops;
@@ -80,8 +84,7 @@ private:
 
   // The _length field is not declared in C++.  It is allocated after the
   // mark-word when using compact headers (+UseCompactObjectHeaders), otherwise
-  // after the compressed Klass* when running with compressed class-pointers
-  // (+UseCompressedClassPointers), or else after the full Klass*.
+  // after the compressed Klass*.
   static int length_offset_in_bytes() {
     return oopDesc::base_offset_in_bytes();
   }
@@ -132,6 +135,7 @@ private:
   // 32 bit platforms when we convert it to a byte size.
   static int32_t max_array_length(BasicType type) {
     assert(type < T_CONFLICT, "wrong type");
+    assert(type != T_FLAT_ELEMENT, "wrong type");
     assert(type2aelembytes(type) != 0, "wrong type");
 
     int hdr_size_in_bytes = base_offset_in_bytes(type);
@@ -152,6 +156,7 @@ private:
     return (int32_t)max_elements_per_size_t;
   }
 
+  inline bool is_null_free_array() const;
 };
 
 #endif // SHARE_OOPS_ARRAYOOP_HPP

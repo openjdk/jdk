@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,14 +73,14 @@ class HttpConnection {
         return sb.toString();
     }
 
-    HttpConnection () {
+    HttpConnection() {
     }
 
-    void setChannel (SocketChannel c) {
+    void setChannel(SocketChannel c) {
         chan = c;
     }
 
-    void setContext (HttpContextImpl ctx) {
+    void setContext(HttpContextImpl ctx) {
         context = ctx;
     }
 
@@ -88,11 +88,11 @@ class HttpConnection {
         return state;
     }
 
-    void setState (State s) {
+    void setState(State s) {
         state = s;
     }
 
-    void setParameters (
+    void setParameters(
         InputStream in, OutputStream rawout, SocketChannel chan,
         SSLEngine engine, SSLStreams sslStreams, SSLContext sslContext, String protocol,
         HttpContextImpl context, InputStream raw
@@ -110,21 +110,21 @@ class HttpConnection {
         this.logger = context.getLogger();
     }
 
-    SocketChannel getChannel () {
+    SocketChannel getChannel() {
         return chan;
     }
 
-    synchronized void close () {
+    synchronized void close() {
         if (closed) {
             return;
         }
         closed = true;
         if (logger != null && chan != null) {
-            logger.log (Level.TRACE, "Closing connection: " + chan.toString());
+            logger.log(Level.TRACE, "Closing connection: " + chan.toString());
         }
 
         if (!chan.isOpen()) {
-            ServerImpl.dprint ("Channel already closed");
+            ServerImpl.dprint("Channel already closed");
             return;
         }
         try {
@@ -133,65 +133,65 @@ class HttpConnection {
                 raw.close();
             }
         } catch (IOException e) {
-            ServerImpl.dprint (e);
+            ServerImpl.dprint(e);
         }
         try {
             if (rawout != null) {
                 rawout.close();
             }
         } catch (IOException e) {
-            ServerImpl.dprint (e);
+            ServerImpl.dprint(e);
         }
         try {
             if (sslStreams != null) {
                 sslStreams.close();
             }
         } catch (IOException e) {
-            ServerImpl.dprint (e);
+            ServerImpl.dprint(e);
         }
         try {
             chan.close();
         } catch (IOException e) {
-            ServerImpl.dprint (e);
+            ServerImpl.dprint(e);
         }
     }
 
     /* remaining is the number of bytes left on the lowest level inputstream
      * after the exchange is finished
      */
-    void setRemaining (int r) {
+    void setRemaining(int r) {
         remaining = r;
     }
 
-    int getRemaining () {
+    int getRemaining() {
         return remaining;
     }
 
-    SelectionKey getSelectionKey () {
+    SelectionKey getSelectionKey() {
         return selectionKey;
     }
 
-    InputStream getInputStream () {
+    InputStream getInputStream() {
             return i;
     }
 
-    OutputStream getRawOutputStream () {
+    OutputStream getRawOutputStream() {
             return rawout;
     }
 
-    String getProtocol () {
+    String getProtocol() {
             return protocol;
     }
 
-    SSLEngine getSSLEngine () {
+    SSLEngine getSSLEngine() {
             return engine;
     }
 
-    SSLContext getSSLContext () {
+    SSLContext getSSLContext() {
             return sslContext;
     }
 
-    HttpContextImpl getHttpContext () {
+    HttpContextImpl getHttpContext() {
             return context;
     }
 }

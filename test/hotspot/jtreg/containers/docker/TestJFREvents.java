@@ -34,6 +34,7 @@
  * @modules java.base/jdk.internal.platform
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
+ *          java.base/jdk.internal.platform
  *          java.management
  *          jdk.jartool/sun.tools.jar
  * @build JfrReporter jdk.test.whitebox.WhiteBox
@@ -61,9 +62,7 @@ public class TestJFREvents {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Test Environment: detected availableCPUs = " + availableCPUs);
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
+        DockerTestUtils.checkCanTestDocker();
 
         // If cgroups is not configured, report success.
         Metrics metrics = Metrics.systemMetrics();
@@ -163,6 +162,7 @@ public class TestJFREvents {
         String memoryFailCountFld = "memoryFailCount";
         String memoryUsageFld = "memoryUsage";
         String swapMemoryUsageFld = "swapMemoryUsage";
+        String hostMemoryUsageFld = "hostMemoryUsage";
 
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
@@ -170,7 +170,8 @@ public class TestJFREvents {
             .shouldHaveExitValue(0)
             .shouldContain(memoryFailCountFld)
             .shouldContain(memoryUsageFld)
-            .shouldContain(swapMemoryUsageFld);
+            .shouldContain(swapMemoryUsageFld)
+            .shouldContain(hostMemoryUsageFld);
     }
 
     private static void testIOUsage() throws Exception {

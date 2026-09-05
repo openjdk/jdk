@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,6 +366,24 @@ class WindowsNativeDispatcher {
     }
     private static native void GetFileAttributesEx0(long lpFileName, long address)
         throws WindowsException;
+
+    /**
+     * GetFileInformationByName(
+     *   PCWSTR                  FileName,
+     *   FILE_INFO_BY_NAME_CLASS FileInformationClass,
+     *   PVOID                   FileInfoBuffer,
+     *   ULONG                   FileInfoBufferSize
+     * )
+     */
+    static void GetFileInformationByName(String path, int infoClass, long address, int size)
+        throws WindowsException
+    {
+        try (NativeBuffer buffer = asNativeBuffer(path)) {
+            GetFileInformationByName0(buffer.address(), infoClass, address, size);
+        }
+    }
+    private static native void GetFileInformationByName0(long pathAddress,
+        int infoClass, long infoAddress, int infoSize) throws WindowsException;
 
     /**
      * SetFileTime(
@@ -1085,19 +1103,28 @@ class WindowsNativeDispatcher {
         unsafe.copyMemory(chars, Unsafe.ARRAY_CHAR_BASE_OFFSET, null,
             buffer.address(), (long)stringLengthInBytes);
         unsafe.putChar(buffer.address() + stringLengthInBytes, (char)0);
-        buffer.setOwner(s);
+        if (!Thread.currentThread().isVirtual())
+            buffer.setOwner(s);
         return buffer;
+    }
+
+    // -- capabilities --
+    private static final int SUPPORTS_GETFILEINFORMATIONBYNAME = 1 << 1;
+    private static final int capabilities;
+
+    static boolean supportsGetFileInformationByName() {
+        return (capabilities & SUPPORTS_GETFILEINFORMATIONBYNAME) != 0;
     }
 
     // -- native library initialization --
 
-    private static native void initIDs();
+    private static native int init();
 
     static {
         // nio.dll has dependency on net.dll
         jdk.internal.loader.BootLoader.loadLibrary("net");
         jdk.internal.loader.BootLoader.loadLibrary("nio");
-        initIDs();
+        capabilities = init();
     }
 
 }

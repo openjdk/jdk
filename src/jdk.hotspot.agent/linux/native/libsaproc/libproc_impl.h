@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,12 @@
 
 #define BUF_SIZE     (PATH_MAX + NAME_MAX + 1)
 
-// .eh_frame data
-typedef struct eh_frame_info {
-  uintptr_t library_base_addr;
+// frame data
+typedef struct frame_info {
   uintptr_t v_addr;
   unsigned char* data;
   int size;
-} eh_frame_info;
+} frame_info;
 
 // list of shared objects
 typedef struct lib_info {
@@ -49,7 +48,7 @@ typedef struct lib_info {
   uintptr_t        end;
   uintptr_t        exec_start;
   uintptr_t        exec_end;
-  eh_frame_info    eh_frame;
+  frame_info       frame;
   struct symtab*   symtab;
   int              fd;        // file descriptor for lib
   struct lib_info* next;
@@ -95,6 +94,9 @@ struct core_data {
    // part of the class sharing workaround
    int                classes_jsa_fd; // file descriptor of class share archive
    uintptr_t          dynamic_addr;  // address of dynamic section of a.out
+   uintptr_t          vdso_addr;     // address of vDSO
+   off_t              vdso_offset;   // offset of vDSO in core
+   size_t             vdso_size;     // size of vDSO
    uintptr_t          ld_base_addr;  // base address of ld.so
    size_t             num_maps;  // number of maps.
    map_info*          maps;      // maps in a linked list
@@ -112,6 +114,10 @@ struct ps_prochandle {
    int                num_threads;
    thread_info*       threads;   // head of thread list
    struct core_data*  core;      // data only used for core dumps, NULL for process
+#ifdef __aarch64__
+   // true if the HWCAP_PACA variant of Pointer Authentication Code (PAC) is enabled.
+   bool               pac_enabled;
+#endif
 };
 
 #ifdef __cplusplus

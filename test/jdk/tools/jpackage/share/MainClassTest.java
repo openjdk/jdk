@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  */
 
 
+import static jdk.jpackage.test.JPackageCommand.cannedArgument;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -35,17 +37,15 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import jdk.jpackage.internal.util.function.ThrowingConsumer;
 import jdk.jpackage.test.Annotations.Parameters;
 import jdk.jpackage.test.Annotations.Test;
 import jdk.jpackage.test.CannedFormattedString;
-import jdk.jpackage.test.JPackageStringBundle;
 import jdk.jpackage.test.CfgFile;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
-import static jdk.jpackage.test.JPackageCommand.cannedArgument;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.TKit;
@@ -91,7 +91,7 @@ public final class MainClassTest {
         }
 
         Script expectedErrorMessage(String key, Object... args) {
-            expectedErrorMessage = JPackageStringBundle.MAIN.cannedFormattedString(key, args);
+            expectedErrorMessage = JPackageCommand.makeError(key, args);
             return this;
         }
 
@@ -146,6 +146,7 @@ public final class MainClassTest {
 
         cmd = JPackageCommand
                 .helloAppImage(script.appDesc)
+                .enableMessageCategories(MessageCategory.ERRORS)
                 .ignoreDefaultRuntime(true);
         if (!script.withJLink) {
             cmd.addArguments("--runtime-image", Path.of(System.getProperty(
@@ -222,7 +223,7 @@ public final class MainClassTest {
         if (script.expectedErrorMessage != null) {
             // This is the case when main class is not found nor in jar
             // file nor on command line.
-            cmd.validateOutput(script.expectedErrorMessage).execute(1);
+            cmd.validateErr(script.expectedErrorMessage).execute(1);
             return;
         }
 
@@ -240,8 +241,7 @@ public final class MainClassTest {
             cmd.executeAndAssertHelloAppImageCreated();
         } else {
             cmd.executeAndAssertImageCreated();
-            var appVerifier = HelloApp.assertMainLauncher(cmd);
-            if (appVerifier != null) {
+            HelloApp.assertMainLauncher(cmd).ifPresent(appVerifier -> {
                 List<String> output = appVerifier
                         .saveOutput(true)
                         .expectedExitCode(1)
@@ -249,7 +249,7 @@ public final class MainClassTest {
                 TKit.assertTextStream(String.format(
                         "Error: Could not find or load main class %s",
                         nonExistingMainClass)).apply(output);
-            }
+            });
         }
 
         CfgFile cfg = cmd.readLauncherCfgFile();

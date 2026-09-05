@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,7 +128,6 @@ import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
@@ -138,8 +137,6 @@ import sun.awt.X11GraphicsDevice;
 import sun.awt.X11GraphicsEnvironment;
 import sun.awt.XSettings;
 import sun.awt.datatransfer.DataTransferer;
-import sun.awt.screencast.ScreencastHelper;
-import sun.awt.screencast.XdgDesktopPortal;
 import sun.awt.util.PerformanceLogger;
 import sun.awt.util.ThreadGroupUtils;
 import sun.font.FontConfigManager;
@@ -627,14 +624,8 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         while(true) {
             // Fix for 6829923: we should gracefully handle toolkit thread interruption
             if (Thread.currentThread().isInterrupted()) {
-                // We expect interruption from the AppContext.dispose() method only.
                 // If the thread is interrupted from another place, let's skip it
-                // for compatibility reasons. Probably some time later we'll remove
-                // the check for AppContext.isDisposed() and will unconditionally
-                // break the loop here.
-                if (AppContext.getAppContext().isDisposed()) {
-                    break;
-                }
+                // for compatibility reasons.
             }
             awtLock();
             try {
@@ -1523,21 +1514,16 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         awtLock();
         try {
             if (numberOfButtons == 0) {
-                if (XdgDesktopPortal.isRemoteDesktop()
-                        && ScreencastHelper.isAvailable()) {
+                numberOfButtons = getNumberOfButtonsImpl();
+                numberOfButtons = (numberOfButtons > MAX_BUTTONS_SUPPORTED) ? MAX_BUTTONS_SUPPORTED : numberOfButtons;
+                //4th and 5th buttons are for wheel and shouldn't be reported as buttons.
+                //If we have more than 3 physical buttons and a wheel, we report N-2 buttons.
+                //If we have 3 physical buttons and a wheel, we report 3 buttons.
+                //If we have 1,2,3 physical buttons, we report it as is i.e. 1,2 or 3 respectively.
+                if (numberOfButtons >= 5) {
+                    numberOfButtons -= 2;
+                } else if (numberOfButtons == 4 || numberOfButtons == 5) {
                     numberOfButtons = 3;
-                } else {
-                    numberOfButtons = getNumberOfButtonsImpl();
-                    numberOfButtons = (numberOfButtons > MAX_BUTTONS_SUPPORTED) ? MAX_BUTTONS_SUPPORTED : numberOfButtons;
-                    //4th and 5th buttons are for wheel and shouldn't be reported as buttons.
-                    //If we have more than 3 physical buttons and a wheel, we report N-2 buttons.
-                    //If we have 3 physical buttons and a wheel, we report 3 buttons.
-                    //If we have 1,2,3 physical buttons, we report it as is i.e. 1,2 or 3 respectively.
-                    if (numberOfButtons >= 5) {
-                        numberOfButtons -= 2;
-                    } else if (numberOfButtons == 4 || numberOfButtons == 5) {
-                        numberOfButtons = 3;
-                    }
                 }
             }
             //Assume don't have to re-query the number again and again.
@@ -1777,7 +1763,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
         final int altL = keysymToPrimaryKeycode(XKeySymConstants.XK_Alt_L);
         final int altR = keysymToPrimaryKeycode(XKeySymConstants.XK_Alt_R);
         final int numLock = keysymToPrimaryKeycode(XKeySymConstants.XK_Num_Lock);
-        final int modeSwitch = keysymToPrimaryKeycode(XKeySymConstants.XK_Mode_switch);
+        int modeSwitchTmp = keysymToPrimaryKeycode(XKeySymConstants.XK_Mode_switch);
+        if (modeSwitchTmp == 0) {
+            modeSwitchTmp = keysymToPrimaryKeycode(XKeySymConstants.XK_ISO_Level3_Shift);
+        }
+        final int modeSwitch = modeSwitchTmp;
         final int shiftLock = keysymToPrimaryKeycode(XKeySymConstants.XK_Shift_Lock);
         final int capsLock  = keysymToPrimaryKeycode(XKeySymConstants.XK_Caps_Lock);
 
@@ -2055,14 +2045,6 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                (exclusionType == Dialog.ModalExclusionType.NO_EXCLUDE) ||
                (exclusionType == Dialog.ModalExclusionType.APPLICATION_EXCLUDE) ||
                (exclusionType == Dialog.ModalExclusionType.TOOLKIT_EXCLUDE);
-    }
-
-    static EventQueue getEventQueue(Object target) {
-        AppContext appContext = targetToAppContext(target);
-        if (appContext != null) {
-            return (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
-        }
-        return null;
     }
 
     static void removeSourceEvents(EventQueue queue,

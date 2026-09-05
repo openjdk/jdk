@@ -40,7 +40,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 }
 
 // !!! This is legacy support for enum classes before JEP 483. This file is not used when
-// !!! CDSConfig::is_initing_classes_at_dump_time()==true.
+// !!! CDSConfig::is_dumping_aot_linked_classes()==true.
 //
 // Java Enum classes have synthetic <clinit> methods that look like this
 //     enum MyEnum {FOO, BAR}
@@ -63,7 +63,7 @@ bool CDSEnumKlass::is_enum_obj(oop orig_obj) {
 void CDSEnumKlass::handle_enum_obj(int level,
                                    KlassSubGraphInfo* subgraph_info,
                                    oop orig_obj) {
-  assert(!CDSConfig::is_initing_classes_at_dump_time(), "only for legacy support of enums");
+  assert(!CDSConfig::is_dumping_aot_linked_classes(), "only for legacy support of enums");
   assert(level > 1, "must never be called at the first (outermost) level");
   assert(is_enum_obj(orig_obj), "must be");
 
@@ -91,10 +91,13 @@ void CDSEnumKlass::archive_static_field(int level, KlassSubGraphInfo* subgraph_i
               ik->external_name(), fd.name()->as_C_string());
   }
   oop oop_field = mirror->obj_field(fd.offset());
+  // There should be no oops for ObjArrayKlass but InstanceKlass::array_klasses holds a list of ObjArrayKlass,
+  // therefore we need the super of the refined array klass.
+  Klass* oop_field_klass = oop_field->is_refined_objArray() ? oop_field->klass()->super() : oop_field->klass();
   if (oop_field == nullptr) {
     guarantee(false, "static field %s::%s must not be null",
               ik->external_name(), fd.name()->as_C_string());
-  } else if (oop_field->klass() != ik && oop_field->klass() != ik->array_klass_or_null()) {
+  } else if (oop_field_klass != ik && oop_field_klass != ik->array_klass_or_null()) {
     guarantee(false, "static field %s::%s is of the wrong type",
               ik->external_name(), fd.name()->as_C_string());
   }

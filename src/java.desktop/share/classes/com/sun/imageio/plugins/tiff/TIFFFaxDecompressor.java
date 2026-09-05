@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -591,6 +591,7 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
      * Invokes the superclass method and then sets instance variables on
      * the basis of the metadata set on this decompressor.
      */
+    @Override
     public void beginDecoding() {
         super.beginDecoding();
 
@@ -627,6 +628,7 @@ class TIFFFaxDecompressor extends TIFFDecompressor {
         }
     }
 
+    @Override
     public void decodeRaw(byte[] b, int dstOffset,
                           int pixelBitStride, // will always be 1
                           int scanlineStride) throws IOException {

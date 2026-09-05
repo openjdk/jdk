@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -63,7 +64,7 @@
 // if too small.
 // Run with +PrintInterpreter to get the VM to print out the size.
 // Max size with JVMTI
-int TemplateInterpreter::InterpreterCodeSize = JVMCI_ONLY(268) NOT_JVMCI(256) * 1024;
+int TemplateInterpreter::InterpreterCodeSize = 268 * 1024;
 
 // Global Register Names
 static const Register rbcp     = r13;
@@ -176,10 +177,14 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   address entry = __ pc();
 
   // Restore stack bottom in case i2c adjusted stack
-  __ movptr(rcx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ lea(rsp, Address(rbp, rcx, Address::times_ptr));
+  __ movptr(rscratch1, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  __ lea(rsp, Address(rbp, rscratch1, Address::times_ptr));
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+
+  if (state == atos && InlineTypeReturnedAsFields) {
+    __ store_inline_type_fields_to_buf(nullptr);
+  }
 
   __ restore_bcp();
   __ restore_locals();
@@ -224,32 +229,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   __ restore_bcp();
   __ restore_locals();
   const Register thread = r15_thread;
-#if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.  This can
-  // only occur on method entry so emit it only for vtos with step 0.
-  if (EnableJVMCI && state == vtos && step == 0) {
-    Label L;
-    __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
-    __ jcc(Assembler::zero, L);
-    // Clear flag.
-    __ movb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
-    // Satisfy calling convention for lock_method().
-    __ get_method(rbx);
-    // Take lock.
-    lock_method();
-    __ bind(L);
-  } else {
-#ifdef ASSERT
-    if (EnableJVMCI) {
-      Label L;
-      __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
-      __ jcc(Assembler::zero, L);
-      __ stop("unexpected pending monitor in deopt entry");
-      __ bind(L);
-    }
-#endif
-  }
-#endif
   // handle exceptions
   {
     Label L;
@@ -976,8 +955,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()),
-          _thread_in_native_trans);
+  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1008,14 +986,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ mov(rsp, r12); // restore sp
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Check preemption for Object.wait()
   Label not_preempted;
@@ -1229,7 +1204,7 @@ address TemplateInterpreterGenerator::generate_abstract_entry(void) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1349,6 +1324,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     }
 #endif
   }
+
+  // If object_init == true, we should insert a StoreStore barrier here to
+  // prevent strict fields initial default values from being observable.
+  // However, x86 is a TSO platform, so if `this` escapes, strict fields
+  // initialized values are guaranteed to be the ones observed, so the
+  // barrier can be elided.
 
   // start execution
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@
 #ifndef OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
 #define OS_POSIX_PERMITFORBIDDENFUNCTIONS_POSIX_HPP
 
+#include "cppstdlib/cstdlib.hpp"
 #include "utilities/compilerWarnings.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+#include <unistd.h>
 
 // Provide wrappers for some functions otherwise forbidden from use in HotSpot.
 // See forbiddenFunctions.hpp for details.
 
 namespace permit_forbidden_function {
 BEGIN_ALLOW_FORBIDDEN_FUNCTIONS
+
+[[noreturn]] inline void _exit(int status) { ::_exit(status); }
 
 // Used by the POSIX implementation of os::realpath.
 inline char* realpath(const char* path, char* resolved_path) {

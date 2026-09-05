@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 8219083
- * @summary HttpExchange.getResponseBody write and close should not throw
- *          even when response length is zero
- * @library /test/lib
- * @run junit ZeroLengthOutputStream
- */
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -44,19 +36,27 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
-import java.util.logging.StreamHandler;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 
-public class ZeroLengthOutputStream
-{
+/*
+ * @test
+ * @bug 8219083
+ * @summary HttpExchange.getResponseBody write and close should not throw
+ *          even when response length is zero
+ * @library /test/lib
+ * @comment We use othervm because this test configures logging handlers
+ *          for the system wide "com.sun.net.httpserver" logger
+ * @run junit/othervm ${test.main.class}
+ */
+public class ZeroLengthOutputStream {
 
-    public static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
+    private static final Logger LOGGER = Logger.getLogger("com.sun.net.httpserver");
     public volatile boolean closed;
     public CountDownLatch cdl = new CountDownLatch(1);
 
@@ -80,15 +80,18 @@ public class ZeroLengthOutputStream
         }
     }
 
+    private static void setupLogging() {
+        final Handler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINEST);
+        LOGGER.setLevel(Level.FINEST);
+        LOGGER.addHandler(handler);
+    }
+
     /**
      * Http Server
      */
     HttpServer startHttpServer() throws IOException {
-        Handler outHandler = new StreamHandler(System.out,
-                                 new SimpleFormatter());
-        outHandler.setLevel(Level.FINEST);
-        LOGGER.setLevel(Level.FINEST);
-        LOGGER.addHandler(outHandler);
+        setupLogging(); // merely for debugging
         InetAddress loopback = InetAddress.getLoopbackAddress();
         HttpServer httpServer = HttpServer.create(new InetSocketAddress(loopback, 0), 0);
         httpServer.createContext("/flis/", new MyHandler());

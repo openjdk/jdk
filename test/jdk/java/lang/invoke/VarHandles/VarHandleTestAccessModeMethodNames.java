@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,32 +23,34 @@
 
 /*
  * @test
- * @run testng VarHandleTestAccessModeMethodNames
+ * @run junit VarHandleTestAccessModeMethodNames
  * @modules java.base/java.lang.invoke:open
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestAccessModeMethodNames {
 
-    @DataProvider
     public static Object[][] accessModesProvider() {
         return Stream.of(VarHandle.AccessMode.values()).
                 map(am -> new Object[]{am}).
                 toArray(Object[][]::new);
     }
 
-    @Test(dataProvider = "accessModesProvider")
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void testMethodName(VarHandle.AccessMode am) {
-        assertEquals(am.methodName(), toMethodName(am.name()));
+        assertEquals(toMethodName(am.name()), am.methodName());
     }
 
     private static String toMethodName(String name) {
@@ -62,9 +64,10 @@ public class VarHandleTestAccessModeMethodNames {
     }
 
 
-    @Test(dataProvider = "accessModesProvider")
+    @ParameterizedTest
+    @MethodSource("accessModesProvider")
     public void testReturnType(VarHandle.AccessMode am) throws Exception {
-        assertEquals(getReturnType(am.methodName()), getAccessModeReturnType(am));
+        assertEquals(getAccessModeReturnType(am), getReturnType(am.methodName()));
     }
 
     private static Class<?> getReturnType(String name) throws Exception {

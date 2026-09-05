@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,7 +112,7 @@ class Disassembler : public AbstractDisassembler {
   // interpreter code, by riding on the customary __ macro in the interpreter generator.
   // See templateTable_x86.cpp for an example.
   template<class T> inline static T* hook(const char* file, int line, T* masm) {
-    if (PrintInterpreter) {
+    if (PrintInterpreter NOT_PRODUCT(|| true)) {
       _hook(file, line, masm);
     }
     return masm;

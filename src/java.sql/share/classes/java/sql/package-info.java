@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,22 @@
  * use and update data from a spread sheet, flat file, or any other tabular
  * data source.
  *
- * <h2>What the JDBC 4.3 API Includes</h2>
- * The JDBC 4.3 API includes both
+ * <h2>What the JDBC 4.5 API Includes</h2>
+ * The JDBC 4.5 API includes both
  * the {@code java.sql} package, referred to as the JDBC core API,
  * and the {@code javax.sql} package, referred to as the JDBC Optional
  * Package API. This complete JDBC API
- * is included in the Java Standard Edition (Java SE), version 7.
+ * is included in the Java Standard Edition (Java SE).
  * The {@code javax.sql} package extends the functionality of the JDBC API
  * from a client-side API to a server-side API, and it is an essential part
  * of the Java  Enterprise Edition
  * (Java EE) technology.
  *
  * <h2>Versions</h2>
- * The JDBC 4.3 API incorporates all of the previous JDBC API versions:
+ * The JDBC 4.5 API incorporates all the previous JDBC API versions:
  * <UL>
+ *     <LI> The JDBC 4.4 API</li>
+ *     <LI> The JDBC 4.3 API</li>
  *     <LI> The JDBC 4.2 API</li>
  *     <LI> The JDBC 4.1 API</li>
  *     <LI> The JDBC 4.0 API</li>
@@ -70,6 +72,10 @@
  * Javadoc comments for the JDBC API,
  * they indicate the following:
  * <UL>
+ *     <LI>Since 26 -- new in the JDBC 4.5 API and part of the Java SE platform,
+ *         version 26</li>
+ *      <LI>Since 24 -- new in the JDBC 4.4 API and part of the Java SE platform,
+ *         version 24</li>
  *     <LI>Since 9 -- new in the JDBC 4.3 API and part of the Java SE platform,
  *         version 9</li>
  *     <LI>Since 1.8 -- new in the JDBC 4.2 API and part of the Java SE platform,
@@ -126,6 +132,7 @@
  *       <LI>{@code Blob} interface -- mapping for SQL {@code BLOB}
  *       <LI>{@code Clob} interface -- mapping for SQL {@code CLOB}
  *       <LI>{@code Date} class -- mapping for SQL {@code DATE}
+ *       <LI>{@code JDBCType} class -- provides enum constants for SQL types
  *       <LI>{@code NClob} interface -- mapping for SQL {@code NCLOB}
  *       <LI>{@code Ref} interface -- mapping for SQL {@code REF}
  *       <LI>{@code RowId} interface -- mapping for SQL {@code ROWID}
@@ -166,6 +173,26 @@
  *      </UL>
  * </UL>
  *
+ *     <h3>{@code java.sql} and {@code javax.sql} Features Introduced in the JDBC 4.5 API</h3>
+ *  <UL>
+ *      <LI>The interfaces {@code Array}, {@code Blob}, {@code Clob}, {@code NClob}
+ *      and  {@code SQLXML} now extend the {@code AutoCloseable} interface and
+ *      include a default {@code close} method implementation</LI>
+ *     <LI>Added support to {@code Connection} for enquoting literals
+ *     and simple identifiers</LI>
+ *      <LI> {@code SQLPermissions} has been deprecated for removal</LI>
+ *      <LI> The SQL Types {@code JSON} and {@code DECFLOAT} have been added to
+ *           {@code JDBCType} and {@code Types}</LI>
+ *  </UL>
+ *     <h3>{@code java.sql} and {@code javax.sql} Features Introduced in the JDBC 4.4 API</h3>
+ *  <UL>
+ *      <LI>Remove mention of {@code SecurityManager} and {@code SecurityException}
+ *            as the {@code SecurityManager} is no longer supported</LI>
+ *      <LI> {@code SQLPermissions} can no longer be used to control access to
+ *            resources as the {@code SecurityManager} is no longer supported</LI>
+ *     <LI>Added support to {@code Connection} for enquoting literals
+ *     and simple identifiers</LI>
+ *  </UL>
  *     <h3>{@code java.sql} and {@code javax.sql} Features Introduced in the JDBC 4.3 API</h3>
  * <UL>
  *     <LI>Added {@code Sharding} support</LI>
@@ -232,7 +259,6 @@
  *
  * </UL>
  *
- *
  * <h3>{@code java.sql} and {@code javax.sql} Features Introduced in the JDBC 3.0 API</h3>
  * <UL>
  *   <LI>Pooled statements -- reuse of statements associated with a pooled
@@ -288,7 +314,6 @@
  *       handling and passing data
  * </UL>
  *
- *
  * <h3>Custom Mapping of UDTs</h3>
  * A user-defined type (UDT) defined in SQL can be mapped to a class in the Java
  * programming language. An SQL structured type or an SQL {@code DISTINCT}
@@ -317,7 +342,7 @@
  * <h2>Package Specification</h2>
  *
  * <ul>
- *   <li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.3 Specification</a>
+ *   <li><a href="https://jcp.org/en/jsr/detail?id=221">JDBC 4.5 Specification</a>
  * </ul>
  *
  * <h2>Related Documentation</h2>
@@ -326,7 +351,6 @@
  *   <li><a href="http://docs.oracle.com/javase/tutorial/jdbc/basics/index.html">
  *           Lesson:JDBC Basics(The Java Tutorials &gt; JDBC Database Access)</a>
  *
- *  <li>&ldquo;<i>JDBC API Tutorial and Reference, Third Edition</i>&rdquo;
  * </ul>
  * @since 1.1
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,7 @@ public:
   FN(ra,          Resource areas) \
   FN(node,        C2 Node arena) \
   FN(comp,        C2 Compile arena) \
+  FN(idealloop,   C2 Ideal Loop arena) \
   FN(type,        C2 Type arena) \
   FN(states,      C2 Matcher States Arena) \
   FN(reglive,     C2 Register Allocation Live Arenas) \
@@ -239,12 +240,12 @@ private:
 #define NEW_ARENA_ARRAY(arena, type, size) \
   (type*) (arena)->Amalloc((size) * sizeof(type))
 
-#define REALLOC_ARENA_ARRAY(arena, type, old, old_size, new_size)    \
-  (type*) (arena)->Arealloc((char*)(old), (old_size) * sizeof(type), \
-                            (new_size) * sizeof(type) )
+#define REALLOC_ARENA_ARRAY(arena, old, old_size, new_size)    \
+  (REALLOC_RETURN_TYPE(old)) (arena)->Arealloc((char*)(old), (old_size) * sizeof(*old), \
+                                               (new_size) * sizeof(*old) )
 
-#define FREE_ARENA_ARRAY(arena, type, old, size) \
-  (arena)->Afree((char*)(old), (size) * sizeof(type))
+#define FREE_ARENA_ARRAY(arena, obj, size) \
+  (arena)->Afree((char*)(obj), (size) * sizeof(*obj))
 
 #define NEW_ARENA_OBJ(arena, type) \
   NEW_ARENA_ARRAY(arena, type, 1)

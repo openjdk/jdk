@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,20 +66,24 @@ public class MotifInternalFrameTitlePane
         super(frame);
     }
 
+    @Override
     protected void installDefaults() {
         setFont(UIManager.getFont("InternalFrame.titleFont"));
         setPreferredSize(new Dimension(100, BUTTON_SIZE));
     }
 
+    @Override
     protected void uninstallListeners() {
         // Get around protected method in superclass
         super.uninstallListeners();
     }
 
+    @Override
     protected PropertyChangeListener createPropertyChangeListener() {
         return this;
     }
 
+    @Override
     protected LayoutManager createLayout() {
         return this;
     }
@@ -88,6 +92,7 @@ public class MotifInternalFrameTitlePane
         return systemMenu;
     }
 
+    @Override
     protected void assembleSystemMenu() {
         systemMenu = new JPopupMenu();
         JMenuItem mi = systemMenu.add(restoreAction);
@@ -106,12 +111,14 @@ public class MotifInternalFrameTitlePane
 
         systemButton = new SystemButton();
         systemButton.addActionListener(new ActionListener() {
+            @Override
             public void actionPerformed(ActionEvent e) {
                 systemMenu.show(systemButton, 0, BUTTON_SIZE);
             }
         });
 
         systemButton.addMouseListener(new MouseAdapter() {
+            @Override
             public void mousePressed(MouseEvent evt) {
                 try {
                     frame.setSelected(true);
@@ -137,6 +144,7 @@ public class MotifInternalFrameTitlePane
         }
     }
 
+    @Override
     protected void createButtons() {
         minimizeButton = new MinimizeButton();
         minimizeButton.addActionListener(iconifyAction);
@@ -146,6 +154,7 @@ public class MotifInternalFrameTitlePane
     }
 
 
+    @Override
     protected void addSubComponents() {
         title = new Title(frame.getTitle());
         title.setFont(getFont());
@@ -156,6 +165,7 @@ public class MotifInternalFrameTitlePane
         add(maximizeButton);
     }
 
+    @Override
     public void paintComponent(Graphics g) {
     }
 
@@ -165,9 +175,11 @@ public class MotifInternalFrameTitlePane
         shadow = s;
     }
 
+    @Override
     public void actionPerformed(ActionEvent e) {
     }
 
+    @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
         JInternalFrame f = (JInternalFrame)evt.getSource();
@@ -194,16 +206,21 @@ public class MotifInternalFrameTitlePane
         enableActions();
     }
 
+    @Override
     public void addLayoutComponent(String name, Component c) {}
+    @Override
     public void removeLayoutComponent(Component c) {}
+    @Override
     public Dimension preferredLayoutSize(Container c)  {
         return minimumLayoutSize(c);
     }
 
+    @Override
     public Dimension minimumLayoutSize(Container c) {
         return new Dimension(100, BUTTON_SIZE);
     }
 
+    @Override
     public void layoutContainer(Container c) {
         int w = getWidth();
         systemButton.setBounds(0, 0, BUTTON_SIZE, BUTTON_SIZE);
@@ -226,6 +243,7 @@ public class MotifInternalFrameTitlePane
         title.setBounds(BUTTON_SIZE, 0, x, BUTTON_SIZE);
     }
 
+    @Override
     protected void showSystemMenu(){
       systemMenu.show(systemButton, 0, BUTTON_SIZE);
     }
@@ -245,23 +263,28 @@ public class MotifInternalFrameTitlePane
             setBorderPainted(false);
         }
 
+        @Override
         @SuppressWarnings("deprecation")
         public boolean isFocusTraversable() {
             return false;
         }
 
+        @Override
         public void requestFocus() {
             // ignore request.
         }
 
+        @Override
         public Dimension getMinimumSize() {
             return buttonDimension;
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return buttonDimension;
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             Dimension d = getSize();
             int maxX = d.width - 1;
@@ -284,6 +307,7 @@ public class MotifInternalFrameTitlePane
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class MinimizeButton extends FrameButton {
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             g.setColor(highlight);
@@ -297,6 +321,7 @@ public class MotifInternalFrameTitlePane
 
    @SuppressWarnings("serial") // Superclass is not serializable across versions
    private class MaximizeButton extends FrameButton {
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             int max = BUTTON_SIZE - 5;
@@ -312,9 +337,12 @@ public class MotifInternalFrameTitlePane
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class SystemButton extends FrameButton {
+        @Override
         public boolean isFocusTraversable() { return false; }
+        @Override
         public void requestFocus() {}
 
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             g.setColor(highlight);
@@ -339,26 +367,33 @@ public class MotifInternalFrameTitlePane
 
             // Forward mouse events to titlebar for moves.
             addMouseMotionListener(new MouseMotionListener() {
+                @Override
                 public void mouseDragged(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseMoved(MouseEvent e) {
                     forwardEventToParent(e);
                 }
             });
             addMouseListener(new MouseListener() {
+                @Override
                 public void mouseClicked(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mousePressed(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseReleased(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseEntered(MouseEvent e) {
                     forwardEventToParent(e);
                 }
+                @Override
                 public void mouseExited(MouseEvent e) {
                     forwardEventToParent(e);
                 }
@@ -377,6 +412,7 @@ public class MotifInternalFrameTitlePane
             getParent().dispatchEvent(newEvent);
         }
 
+        @Override
         public void paintComponent(Graphics g) {
             super.paintComponent(g);
             if (frame.isSelected()) {

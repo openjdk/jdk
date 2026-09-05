@@ -25,7 +25,6 @@
  * @test
  * @bug 8283044
  * @summary Stress delivery of asynchronous exceptions while target is at monitorenter
- * @requires test.thread.factory == null
  * @library /test/hotspot/jtreg/testlibrary
  * @run main/othervm/native AsyncExceptionOnMonitorEnter 0
  * @run main/othervm/native -agentlib:AsyncExceptionOnMonitorEnter AsyncExceptionOnMonitorEnter 1
@@ -45,9 +44,13 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
     public static native int exitRawMonitor();
     public static native void destroyRawMonitor();
 
+    // Avoid using CountDownLatch or similar objects that require unparking the
+    // main thread. Otherwise, if the main thread is run as a virtual thread, the
+    // async exception could be sent while the target is still executing FJP logic.
+    public volatile boolean started = false;
+    public volatile boolean gotMonitor = false;
+
     private static Object o1 = new Object();
-    private static boolean firstWorker = true;
-    private static Semaphore sem = new Semaphore(0);
 
     @Override
     public void run() {
@@ -60,11 +63,9 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
 
     public void testWithJavaMonitor() {
         try {
+            started = true;
             synchronized (o1) {
-                if (firstWorker) {
-                    firstWorker = false;
-                    sem.release();
-                }
+                gotMonitor = true;
                 Thread.sleep(1000);
             }
         } catch (ThreadDeath td) {
@@ -75,20 +76,16 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
 
 
     public void testWithJVMTIRawMonitor() {
-        boolean savedFirst = false;
         try {
+            started = true;
             int retCode = enterRawMonitor();
-            if (retCode != 0 && firstWorker) {
+            if (retCode != 0) {
                 throw new RuntimeException("error in JVMTI RawMonitorEnter: retCode=" + retCode);
             }
-            if (firstWorker) {
-                firstWorker = false;
-                savedFirst = true;
-                sem.release();
-            }
-            Thread.sleep(1000);
+            gotMonitor = true;
+            Thread.sleep(500);
             retCode = exitRawMonitor();
-            if (retCode != 0 && savedFirst) {
+            if (retCode != 0) {
                 throw new RuntimeException("error in JVMTI RawMonitorExit: retCode=" + retCode);
             }
         } catch (ThreadDeath td) {
@@ -134,15 +131,18 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
             AsyncExceptionOnMonitorEnter worker2 = new AsyncExceptionOnMonitorEnter();
 
             try {
-                // Start firstWorker worker and wait until monitor is acquired
-                firstWorker = true;
+                // Start first worker and wait until monitor is acquired
                 worker1.start();
-                sem.acquire();
+                while (!worker1.gotMonitor) {
+                    Thread.sleep(1);
+                }
 
                 // Start second worker and allow some time for target to block on monitorenter
                 // before executing Thread.stop()
                 worker2.start();
-                Thread.sleep(300);
+                while (!worker2.started) {
+                    Thread.sleep(10);
+                }
 
                 while (true) {
                     JVMTIUtils.stopThread(worker2);
@@ -151,6 +151,8 @@ public class AsyncExceptionOnMonitorEnter extends Thread {
                         // not released worker2 will deadlock on enter
                         JVMTIUtils.stopThread(worker1);
                     }
+                    // Give time to throw exception
+                    Thread.sleep(10);
 
                     if (!worker1.isAlive() && !worker2.isAlive()) {
                         // Done with Thread.stop() calls since

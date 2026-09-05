@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ public class AllocateMemory {
         // allocateMemory() should throw an OutOfMemoryError when the underlying malloc fails,
         // since we start with -XX:MallocLimit
         try {
-            address = unsafe.allocateMemory(100 * 1024 * 1024);
+            address = unsafe.allocateMemory(101 * 1024 * 1024);
             throw new RuntimeException("Did not get expected OutOfMemoryError");
         } catch (OutOfMemoryError e) {
             // Expected

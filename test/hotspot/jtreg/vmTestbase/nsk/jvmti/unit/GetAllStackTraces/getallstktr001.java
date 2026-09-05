@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class getallstktr001 {
             try { Thread.sleep(500); } catch ( InterruptedException e ) {}
 
             boolean allThreadsReady = true;
-            for ( Thread t : thr ) {
+            for ( TestThread t : thr ) {
                 StackTraceElement[] stack = t.getStackTrace();
                 if ( stack.length == 0 ) {
                     System.out.println("Thread " + t.getName() + " has an empty stack. Seems strange.");
@@ -117,6 +117,10 @@ public class getallstktr001 {
         }
         return GetResult();
     }
+    // Note: TestThread must extend Thread, not ThreadWrapper. This test uses
+    // JVMTI GetAllStackTraces which only returns platform threads, and 40
+    // threads blocking on native RawMonitorEnter pins carriers causing deadlock.
+    // See JDK-8384958.
 
     static class TestThread extends Thread {
         static int counter=0;

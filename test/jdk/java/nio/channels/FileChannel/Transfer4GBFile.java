@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @bug 4638365
  * @summary Test FileChannel.transferFrom and transferTo for 4GB files
  * @build FileChannelUtils
- * @run testng/timeout=300 Transfer4GBFile
+ * @run junit/timeout=300 Transfer4GBFile
  */
 
 import java.io.BufferedWriter;
@@ -38,9 +38,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardOpenOption.*;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Transfer4GBFile {
 
@@ -71,10 +73,8 @@ public class Transfer4GBFile {
 
             long bytesWritten = sourceChannel.transferTo(testSize - 40, 10,
                     sinkChannel);
-            if (bytesWritten != 10) {
-                throw new RuntimeException("Transfer test 4 failed " +
-                        bytesWritten);
-            }
+            assertEquals(10, bytesWritten,
+                         "Transfer test 4 failed " + bytesWritten);
         }
 
         Files.delete(source);
@@ -112,10 +112,8 @@ public class Transfer4GBFile {
              FileChannel sinkChannel = FileChannel.open(sink, WRITE)) {
             long bytesWritten = sinkChannel.transferFrom(sourceChannel,
                     testSize - 40, 10);
-            if (bytesWritten != 10) {
-                throw new RuntimeException("Transfer test 5 failed " +
-                        bytesWritten);
-            }
+            assertEquals(10, bytesWritten,
+                         "Transfer test 5 failed " + bytesWritten);
         }
 
         Files.delete(source);

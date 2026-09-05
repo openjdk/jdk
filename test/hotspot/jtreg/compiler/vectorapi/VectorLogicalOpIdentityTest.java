@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,8 @@ import jdk.test.lib.Utils;
  * @key randomness
  * @library /test/lib /
  * @summary Add identity transformations for vector logic operations
- * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch=="aarch64"
+ * @requires (os.simpleArch == "x64" & vm.cpu.features ~= ".*avx.*") | os.arch=="aarch64" |
+             (os.arch == "riscv64" & vm.cpu.features ~= ".*rvv.*")
  * @modules jdk.incubator.vector
  *
  * @run driver compiler.vectorapi.VectorLogicalOpIdentityTest
@@ -302,7 +303,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b, m), b, m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testAndMaskSameValue1() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -323,7 +324,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(AndV(a, b, m), a, m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testAndMaskSameValue2() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -344,7 +345,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform AndV(a, AndV(a, b, m), m) ==> AndV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.AND_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testAndMaskSameValue3() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -566,7 +567,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), b, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testOrMaskSameValue1() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -587,7 +588,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), a, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testOrMaskSameValue2() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -608,7 +609,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(a, OrV(a, b, m), m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true", "rvv", "true"})
     public static void testOrMaskSameValue3() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);

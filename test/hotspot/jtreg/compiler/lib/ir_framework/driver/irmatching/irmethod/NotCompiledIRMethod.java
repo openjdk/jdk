@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,11 @@ import java.lang.reflect.Method;
  */
 public class NotCompiledIRMethod implements IRMethodMatchable {
     private final Method method;
-    private final int ruleCount;
+    private final int irRuleCount;
 
-    public NotCompiledIRMethod(Method method, int ruleCount) {
+    public NotCompiledIRMethod(Method method, int irRuleCount) {
         this.method = method;
-        this.ruleCount = ruleCount;
+        this.irRuleCount = irRuleCount;
     }
 
     @Override
@@ -55,6 +55,6 @@ public class NotCompiledIRMethod implements IRMethodMatchable {
      */
     @Override
     public NotCompiledIRMethodMatchResult match() {
-        return new NotCompiledIRMethodMatchResult(method, ruleCount);
+        return new NotCompiledIRMethodMatchResult(method, irRuleCount);
     }
 }

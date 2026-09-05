@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,15 +62,9 @@ public class PlatformVersionTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"1", "1.2", "1.2.3"})
+    @ValueSource(strings = {"0", "0.1", "1", "1.2", "1.2.3", "1.2.3.4"})
     public void testValidCfBundleVersion(String version) {
         testImpl(PlatformVersion.MAC_CFBUNDLE_VERSION_CLASS, version, true);
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {"0", "0.1", "1.2.3.4"})
-    public void testInvalidCfBundleVersion(String version) {
-        testImpl(PlatformVersion.MAC_CFBUNDLE_VERSION_CLASS, version, false);
     }
 
     private static void testImpl(PlatformVersion parser, String version, boolean valid) {

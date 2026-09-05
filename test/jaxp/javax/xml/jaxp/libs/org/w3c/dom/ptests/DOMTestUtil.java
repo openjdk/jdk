@@ -22,11 +22,9 @@
  */
 package org.w3c.dom.ptests;
 
-import static jaxp.library.JAXPTestUtilities.FILE_SEP;
-import static jaxp.library.JAXPTestUtilities.getPathByClassName;
-
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -39,15 +37,22 @@ import org.xml.sax.SAXException;
  * This class defines the path constant and common method
  */
 public class DOMTestUtil {
+    private static final Path TEST_SRC = Path.of(System.getProperty("test.src")).toAbsolutePath();
+
+    private static String forwardSlashDir(Path p) {
+        // Convention in these tests is to include trailing '/' in directory strings.
+        return p.toString().replace(File.separatorChar, '/') + '/';
+    }
+
     /*
      * XML source file directory.
      */
-    public static final String XML_DIR = getPathByClassName(DOMTestUtil.class, ".." + FILE_SEP + "xmlfiles");
+    public static final String XML_DIR = forwardSlashDir(TEST_SRC.resolveSibling("xmlfiles"));
 
     /*
      * Golden validation files directory.
      */
-    public static final String GOLDEN_DIR = getPathByClassName(DOMTestUtil.class, ".." + FILE_SEP + "xmlfiles" + FILE_SEP + "out");
+    public static final String GOLDEN_DIR = XML_DIR + "out/";
 
     /*
      * Error Message for DOMException being expected.

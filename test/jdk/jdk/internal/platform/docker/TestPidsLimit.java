@@ -30,6 +30,7 @@
  * @requires container.support
  * @requires !vm.asan
  * @library /test/lib
+ * @modules java.base/jdk.internal.platform
  * @build TestPidsLimit
  * @run driver/timeout=480 TestPidsLimit
  */
@@ -49,10 +50,8 @@ public class TestPidsLimit {
     private static final int UNLIMITED_PIDS_DOCKER = -1;
 
     public static void main(String[] args) throws Exception {
-        if (!DockerTestUtils.canTestDocker()) {
-            return;
-        }
-
+        DockerTestUtils.checkCanTestDocker();
+        DockerTestUtils.checkCanUseResourceLimits();
         DockerTestUtils.buildJdkContainerImage(imageName);
 
         try {
@@ -60,9 +59,7 @@ public class TestPidsLimit {
             testPidsLimit("2000");
             testPidsLimit("Unlimited");
         } finally {
-            if (!DockerTestUtils.RETAIN_IMAGE_AFTER_TEST) {
-                DockerTestUtils.removeDockerImage(imageName);
-            }
+            DockerTestUtils.removeDockerImage(imageName);
         }
     }
 

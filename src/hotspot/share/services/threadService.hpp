@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ private:
 
   // As could this...
   // Number of heap bytes allocated by terminated threads.
-  static volatile jlong _exited_allocated_bytes;
+  static volatile uint64_t _exited_allocated_bytes;
 
   // These 2 counters are like the above thread counts, but are
   // atomically decremented in ThreadService::current_thread_exiting instead of
@@ -106,8 +106,8 @@ public:
   static int get_live_thread_count()          { return _atomic_threads_count; }
   static int get_daemon_thread_count()        { return _atomic_daemon_threads_count; }
 
-  static jlong exited_allocated_bytes()       { return AtomicAccess::load(&_exited_allocated_bytes); }
-  static void incr_exited_allocated_bytes(jlong size) {
+  static uint64_t exited_allocated_bytes()    { return AtomicAccess::load(&_exited_allocated_bytes); }
+  static void incr_exited_allocated_bytes(uint64_t size) {
     // No need for an atomic add because called under the Threads_lock,
     // but because _exited_allocated_bytes is read concurrently, need
     // atomic store to avoid readers seeing a partial update.
@@ -635,7 +635,7 @@ class JavaThreadSleepState : public JavaThreadStatusChanger {
 // jdk.internal.vm.ThreadSnapshot support
 class ThreadSnapshotFactory: AllStatic {
 public:
-  JVMTI_ONLY(static oop get_thread_snapshot(jobject jthread, TRAPS);)
+  static oop get_thread_snapshot(jobject jthread, TRAPS);
 };
 
 #endif // SHARE_SERVICES_THREADSERVICE_HPP

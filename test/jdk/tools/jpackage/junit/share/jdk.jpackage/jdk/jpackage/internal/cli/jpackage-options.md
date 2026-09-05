@@ -5,6 +5,7 @@
 | --add-modules | bundle |  |  |  | CONCATENATE |
 | --app-content | bundle |  |  |  | CONCATENATE |
 | --app-image | mac-sign, native-bundle |  | x |  | USE_LAST |
+| --app-resources | bundle |  |  |  | CONCATENATE |
 | --app-version | bundle | x | x |  | USE_LAST |
 | --arguments | bundle |  |  | x | CONCATENATE |
 | --copyright | bundle | x | x |  | USE_LAST |
@@ -29,7 +30,7 @@
 | --linux-shortcut | linux-deb, linux-rpm | x | x | x | USE_LAST |
 | --mac-app-category | mac-bundle | x | x |  | USE_LAST |
 | --mac-app-image-sign-identity | mac | x | x |  | USE_LAST |
-| --mac-app-store | mac-bundle | x | x |  | USE_LAST |
+| --mac-app-store | mac | x | x |  | USE_LAST |
 | --mac-dmg-content | mac-dmg | x | x |  | CONCATENATE |
 | --mac-entitlements | mac | x | x |  | USE_LAST |
 | --mac-installer-sign-identity | mac-pkg | x | x |  | USE_LAST |
@@ -61,3 +62,4 @@
 | --win-shortcut-prompt | win-exe, win-msi | x | x |  | USE_LAST |
 | --win-update-url | win-exe, win-msi | x | x |  | USE_LAST |
 | --win-upgrade-uuid | win-exe, win-msi | x | x |  | USE_LAST |
+| --win-with-ui | win-exe, win-msi | x | x |  | USE_LAST |

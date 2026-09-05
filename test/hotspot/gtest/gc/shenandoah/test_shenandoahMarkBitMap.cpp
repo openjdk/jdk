@@ -165,8 +165,8 @@ public:
 
   static bool run_test() {
     ShenandoahHeap* heap = ShenandoahHeap::heap();
-    size_t heap_size = heap->max_capacity();
-    size_t heap_size_words = heap_size / HeapWordSize;
+    size_t test_heap_size = MIN2(32 * M, heap->max_capacity());
+    size_t heap_size_words = test_heap_size / HeapWordSize;
     HeapWord* my_heap_memory = heap->base();
     HeapWord* end_of_my_heap = my_heap_memory + heap_size_words;
     MemRegion heap_descriptor(my_heap_memory, heap_size_words);
@@ -175,7 +175,7 @@ public:
     _assertion_failures = 0;
 
     size_t bitmap_page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
-    size_t bitmap_size_orig = ShenandoahMarkBitMap::compute_size(heap_size);
+    size_t bitmap_size_orig = ShenandoahMarkBitMap::compute_size(test_heap_size);
     size_t bitmap_size = align_up(bitmap_size_orig, bitmap_page_size);
     size_t bitmap_word_size = (bitmap_size + HeapWordSize - 1) / HeapWordSize;
 
@@ -555,7 +555,7 @@ public:
                       is_weakly_marked_object_after_2nd_clear, is_strongly_marked_object_after_2nd_clear,
                       all_marked_objects_after_2nd_clear, my_heap_memory, end_of_my_heap);
 
-    FREE_C_HEAP_ARRAY(HeapWord, my_bitmap_memory);
+    FREE_C_HEAP_ARRAY(my_bitmap_memory);
     _success = true;
     return true;
   }

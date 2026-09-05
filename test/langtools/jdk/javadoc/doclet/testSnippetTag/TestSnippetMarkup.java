@@ -1123,7 +1123,7 @@ First line // @highlight :
             }
             String output = fileManager.getFileString(DOCUMENTATION_OUTPUT, "A.html");
             // use the [^<>] regex to select HTML elements that immediately enclose "content"
-            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" title=\"[^<>]*\" class=\"[^<>]*\">)"
+            Matcher m = Pattern.compile("(?is)(<a href=\"[^<>]*\" class=\"[^<>]*\">)"
                     +  LABEL_PLACEHOLDER + "(</a>)").matcher(output);
             if (!m.find()) {
                 throw new IOException(output);

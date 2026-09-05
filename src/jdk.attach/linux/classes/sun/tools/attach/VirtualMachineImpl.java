@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@ package sun.tools.attach;
 
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -41,6 +43,10 @@ import java.util.regex.Pattern;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitorException;
+import sun.jvmstat.PlatformSupport;
+
 /*
  * Linux implementation of HotSpotVirtualMachine
  */
@@ -50,12 +56,13 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
     // location is the same for all processes, otherwise the tools
     // will not be able to find all Hotspot processes.
-    // Any changes to this needs to be synchronized with HotSpot.
-    private static final Path TMPDIR = Path.of("/tmp");
+    // This calls a Hotspot native method to get a consistent temporary
+    // directory.
+    private static final String vmTemp = PlatformSupport.getTemporaryDirectory();
+    private static final Path TMPDIR = Path.of(vmTemp);
 
     private static final Path PROC     = Path.of("/proc");
     private static final Path STATUS   = Path.of("status");
-    private static final Path ROOT_TMP = Path.of("root/tmp");
 
     String socket_path;
     private OperationProperties props = new OperationProperties(VERSION_1); // updated in ctor
@@ -81,6 +88,9 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         // Then we attempt to find the socket file again.
         final File socket_file = findSocketFile(pid, ns_pid);
         socket_path = socket_file.getPath();
+        if (!validateSocketFileLength(socket_file.getPath())) {
+            throw new AttachNotSupportedException("Socket file path too long: " + socket_path);
+        }
         if (!socket_file.exists()) {
             // Keep canonical version of File, to delete, in case target process ends and /proc link has gone:
             File f = createAttachFile(pid, ns_pid).getCanonicalFile();
@@ -228,7 +238,7 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // Return the socket file for the given process.
     private File findSocketFile(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        return new File(findTargetProcessTmpDirectory(pid, ns_pid), ".java_pid" + ns_pid);
+        return new File(findTargetProcessTmpDirectory(pid), ".java_pid" + ns_pid);
     }
 
     // On Linux a simple handshake is used to start the attach mechanism
@@ -243,39 +253,69 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
         } catch (IOException _) {
-            f = new File(findTargetProcessTmpDirectory(pid, ns_pid), fn.toString());
+            f = new File(findTargetProcessTmpDirectory(pid), fn.toString());
             f.createNewFile();
         }
         return f;
     }
 
-    private String findTargetProcessTmpDirectory(long pid, long ns_pid) throws AttachNotSupportedException, IOException {
-        final var procPidRoot = PROC.resolve(Long.toString(pid)).resolve(ROOT_TMP);
+    private String findTargetProcessTmpDirectory(long pid) throws IOException {
+        final var tmpOnProcPidRoot = PROC.resolve(Long.toString(pid)).resolve("root")
+                                         .resolve(vmTemp.startsWith("/") ? vmTemp.substring(1) : vmTemp);
 
         /* We need to handle at least 4 different cases:
-         * 1. Caller and target processes share PID namespace and root filesystem (host to host or container to
-         *    container with both /tmp mounted between containers).
-         * 2. Caller and target processes share PID namespace and root filesystem but the target process has elevated
-         *    privileges (host to host).
-         * 3. Caller and target processes share PID namespace but NOT root filesystem (container to container).
-         * 4. Caller and target processes share neither PID namespace nor root filesystem (host to container)
+         * 1. Caller and target processes share PID namespace and root
+         *    filesystem (host to host or container to container with both /tmp
+         *    mounted between containers).
+         * 2. Caller and target processes share PID namespace and root
+         *    filesystem but the target process has elevated privileges
+         *    (host to host).
+         * 3. Caller and target processes share PID namespace but NOT root
+         *    filesystem (container to container).
+         * 4. Caller and target processes share neither PID namespace nor root
+         *    filesystem (host to container)
          *
-         * if target is elevated, we cant use /proc/<pid>/... so we have to fallback to /tmp, but that may not be shared
-         * with the target/attachee process, we can try, except in the case where the ns_pid also exists in this pid ns
-         * which is ambiguous, if we share /tmp with the intended target, the attach will succeed, if we do not,
-         * then we will potentially attempt to attach to some arbitrary process with the same pid (in this pid ns)
-         * as that of the intended target (in its * pid ns).
-         *
-         * so in that case we should prehaps throw - or risk sending SIGQUIT to some arbitrary process... which could kill it
-         *
-         * however we can also check the target pid's signal masks to see if it catches SIGQUIT and only do so if in
-         * fact it does ... this reduces the risk of killing an innocent process in the current ns as opposed to
-         * attaching to the actual target JVM ... c.f: checkCatchesAndSendQuitTo() below.
-         *
-         * note that if pid == ns_pid we are in a shared pid ns with the target and may (potentially) share /tmp
+         * if target is elevated, we cant use /proc/<pid>/... so we have to
+         * fallback to /tmp, but that may not be shared with the target/attachee
+         * process, so we should check whether /tmp on both is same. This method
+         * would throw AttachOperationFailedException if they are different
+         * because we cannot make a connection with target VM.
          */
 
-        return (Files.isWritable(procPidRoot) ? procPidRoot : TMPDIR).toString();
+        try {
+            if (Files.isWritable(tmpOnProcPidRoot)) {
+                return tmpOnProcPidRoot.toString();
+            } else if (Files.isSameFile(tmpOnProcPidRoot, TMPDIR)) {
+                return TMPDIR.toString();
+            } else {
+                throw new AttachOperationFailedException("Unable to access the filesystem of the target process");
+            }
+        } catch (IOException ioe) {
+            try {
+                boolean found = MonitoredHost.getMonitoredHost("//localhost")
+                                             .activeVms()
+                                             .stream()
+                                             .anyMatch(i -> pid == i.intValue());
+                if (found) {
+                    // We can use /tmp because target process is on same host
+                    // even if we cannot access /proc/<PID>/root.
+                    // The process with capsh/setcap would fall this pattern.
+                    return TMPDIR.toString();
+                }
+                // Throw original IOE if target process not found on localhost.
+                throw ioe;
+            } catch (URISyntaxException e) {
+                // URISyntaxException is defined as a checked exception at
+                // MonitoredHost.getMonitoredHost() if the URI string poorly
+                // formed. However "//localhost" is hard-coded at here, so the
+                // exception should not happen.
+                throw new AssertionError("Unexpected exception", e);
+            } catch (MonitorException e) {
+                // Other exceptions (happened at MonitoredHost) would be wrapped
+                // with AttachOperationFailedException.
+                throw new AttachOperationFailedException("Unable to find target proces", e);
+            }
+        }
     }
 
     // Return the inner most namespaced PID if there is one,
@@ -394,6 +434,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     static native int read(int fd, byte buf[], int off, int bufLen) throws IOException;
 
     static native void write(int fd, byte buf[], int off, int bufLen) throws IOException;
+
+    static native boolean validateSocketFileLength(String socketPath);
 
     static {
         System.loadLibrary("attach");

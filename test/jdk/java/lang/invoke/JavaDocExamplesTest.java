@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /* @test
  * @summary example code used in javadoc for java.lang.invoke API
  * @compile JavaDocExamplesTest.java
- * @run testng/othervm test.java.lang.invoke.JavaDocExamplesTest
+ * @run junit/othervm test.java.lang.invoke.JavaDocExamplesTest
  */
 
 package test.java.lang.invoke;
@@ -36,8 +36,8 @@ import static java.lang.invoke.MethodType.*;
 
 import java.util.*;
 
-import org.testng.*;
-import org.testng.annotations.*;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author jrose
@@ -350,14 +350,14 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     static void assertEquals(Object exp, Object act) {
         if (verbosity > 0)
             System.out.println("result: "+act);
-        Assert.assertEquals(exp, act);
+        Assertions.assertEquals(exp, act);
     }
 
     static void assertTrue(boolean b) {
         if (verbosity > 0) {
             System.out.println("result: " + b);
         }
-        Assert.assertTrue(b);
+        Assertions.assertTrue(b);
     }
 
     @Test public void testMethodHandlesSummary() throws Throwable {

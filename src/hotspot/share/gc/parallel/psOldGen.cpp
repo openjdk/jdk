@@ -30,6 +30,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -113,9 +114,11 @@ void PSOldGen::initialize_performance_counters() {
   const char* perf_data_name = "old";
   _gen_counters = new GenerationCounters(perf_data_name, 1, 1, min_gen_size(),
                                          max_gen_size(), virtual_space()->committed_size());
-  _space_counters = new SpaceCounters(perf_data_name, 0,
-                                      virtual_space()->reserved_size(),
-                                      _object_space, _gen_counters);
+  _space_counters = new HSpaceCounters(_gen_counters->name_space(),
+                                       perf_data_name,
+                                       0,
+                                       virtual_space()->reserved_size(),
+                                       _object_space->capacity_in_bytes());
 }
 
 HeapWord* PSOldGen::expand_and_allocate(size_t word_size) {
@@ -266,7 +269,7 @@ bool PSOldGen::expand_by(size_t bytes) {
     }
     post_resize();
     if (UsePerfData) {
-      _space_counters->update_capacity();
+      _space_counters->update_capacity(_object_space->capacity_in_bytes());
       _gen_counters->update_capacity(_virtual_space->committed_size());
     }
   }
@@ -394,7 +397,7 @@ void PSOldGen::print_on(outputStream* st) const {
 
 void PSOldGen::update_counters() {
   if (UsePerfData) {
-    _space_counters->update_all();
+    _space_counters->update_all(_object_space->capacity_in_bytes(), _object_space->used_in_bytes());
     _gen_counters->update_capacity(_virtual_space->committed_size());
   }
 }

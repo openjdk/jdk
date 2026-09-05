@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JInternalFrame } component during move.
- * <p>See <a href="http://monaco.sfbay.sun.com/detail.jsf?cr=6985399">CR6768230</a> for details and base class for test info.
  */
 /*
  * @test
@@ -117,6 +116,7 @@ public class JInternalFrameMoveOverlapping extends OverlappingTestBase {
         JFrame frame = new JFrame("Test Window");
         frame.setSize(300, 300);
         frame.setContentPane(desktopPane);
+        frame.setLocationRelativeTo(null);
         frame.setVisible(true);
 
         locTopFrame = topFrame.getLocationOnScreen();

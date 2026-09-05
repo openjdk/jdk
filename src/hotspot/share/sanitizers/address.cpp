@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmError.hpp"
 
+#ifndef _WINDOWS
 #include <dlfcn.h>
 #include <stdio.h>
 
@@ -117,5 +118,12 @@ void Asan::report(outputStream* st) {
     st->cr();
   }
 }
+
+#else // defined windows
+
+void Asan::initialize() {}
+bool Asan::had_error() { return false; }
+void Asan::report(outputStream* st) {}
+#endif // ifndef _WINDOWS
 
 #endif // ADDRESS_SANITIZER

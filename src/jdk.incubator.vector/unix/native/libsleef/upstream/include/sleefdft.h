@@ -6,6 +6,7 @@ extern "C"
 {
 #endif
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
@@ -46,20 +47,24 @@ IMPORT struct SleefDFT *SleefDFT_float_init1d(uint32_t n, const float *in, float
 IMPORT struct SleefDFT *SleefDFT_float_init2d(uint32_t n, uint32_t m, const float *in, float *out, uint64_t mode);
 IMPORT void SleefDFT_float_execute(struct SleefDFT *ptr, const float *in, float *out);
 
+IMPORT void SleefDFT_execute(struct SleefDFT *ptr, const void *in, void *out);
+
 IMPORT void SleefDFT_dispose(struct SleefDFT *ptr);
 
 IMPORT void SleefDFT_setPath(struct SleefDFT *ptr, char *pathStr);
+IMPORT int SleefDFT_getPath(struct SleefDFT *ptr, char *pathStr, int pathStrSize);
+
+IMPORT void SleefDFT_setDefaultVerboseFP(FILE *fp);
 
 //
 
 IMPORT void SleefDFT_setPlanFilePath(const char *path, const char *arch, uint64_t mode);
+IMPORT int SleefDFT_savePlan(const char *pathStr);
 
-#define SLEEF_PLAN_AUTOMATIC 0
 #define SLEEF_PLAN_READONLY (1 << 0)
 #define SLEEF_PLAN_RESET (1 << 1)
-#define SLEEF_PLAN_BUILDALLPLAN (1 << 2)
+#define SLEEF_PLAN_AUTOMATIC (1 << 2)
 #define SLEEF_PLAN_NOLOCK (1 << 3)
-#define SLEEF_PLAN_MEASURE (1 << 29)
 #define SLEEF_PLAN_REFERTOENVVAR (1 << 30)
 
 #undef IMPORT

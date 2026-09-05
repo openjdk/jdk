@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,10 +385,10 @@ public sealed class PacketSpaceManager implements PacketSpace
             }
             packetEmitter.checkAbort(PacketSpaceManager.this.packetNumberSpace);
             // Handle is called from within the executor
-            var nextDeadline = this.nextDeadline;
+            Deadline newDeadline;
             Deadline now = now();
-            congestionController.updatePacer(now);
             do {
+                congestionController.updatePacer(now);
                 transmitNow = false;
                 var closed = !isOpenForTransmission();
                 if (closed) {
@@ -534,16 +534,17 @@ public sealed class PacketSpaceManager implements PacketSpace
                     packetEmitter.ptoBackoffIncreased(PacketSpaceManager.this, backoff);
                 }
 
-                // if nextDeadline is not Deadline.MAX the task will be
+                // if newDeadline is not Deadline.MAX the task will be
                 // automatically rescheduled.
                 if (debug.on()) debug.log("handle: refreshing deadline");
-                nextDeadline = computeNextDeadline();
-            } while(!nextDeadline.isAfter(now));
+                newDeadline = computeNextDeadline();
+                now = now();
+            } while(!newDeadline.isAfter(now));
 
-            logNoDeadline(nextDeadline, true);
-            if (Deadline.MAX.equals(nextDeadline)) return;
+            logNoDeadline(newDeadline, true);
+            if (Deadline.MAX.equals(newDeadline)) return;
             // we have a new deadline
-            packetEmitter.reschedule(this, nextDeadline);
+            packetEmitter.reschedule(this, newDeadline);
         }
 
         /**
@@ -644,22 +645,15 @@ public sealed class PacketSpaceManager implements PacketSpace
             return false;
         }
 
-        boolean hasNoDeadline() {
-            return Deadline.MAX.equals(nextDeadline);
-        }
-
         // reschedule this task
         void reschedule() {
             Deadline deadline = computeNextDeadline();
-            Deadline nextDeadline = this.nextDeadline;
             if (Deadline.MAX.equals(deadline)) {
-                debug.log("no deadline, don't reschedule");
-            } else if (deadline.equals(nextDeadline)) {
-                debug.log("deadline unchanged, don't reschedule");
-            } else {
-                packetEmitter.reschedule(this, deadline);
-                debug.log("retransmission task: rescheduled");
+                if (debug.on()) debug.log("no deadline, don't reschedule");
+                return;
             }
+            if (debug.on()) debug.log("retransmission task: rescheduled");
+            packetEmitter.reschedule(this, deadline);
         }
 
         @Override
@@ -1303,7 +1297,7 @@ public sealed class PacketSpaceManager implements PacketSpace
             } finally {
                 transferLock.unlock();
             }
-            if (found && packetTransmissionTask.hasNoDeadline()) {
+            if (found) {
                 packetTransmissionTask.reschedule();
             }
             if (!found) {
@@ -1339,9 +1333,7 @@ public sealed class PacketSpaceManager implements PacketSpace
                         return;
                     }
                     addAcknowledgement(pending);
-                    if (packetTransmissionTask.hasNoDeadline()) {
-                        packetTransmissionTask.reschedule();
-                    }
+                    packetTransmissionTask.reschedule();
                 } finally {
                     transferLock.unlock();
                 }
