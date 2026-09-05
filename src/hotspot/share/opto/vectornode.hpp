@@ -1816,8 +1816,8 @@ class VectorTestNode : public CmpNode {
 };
 
 // Blend two vectors based on a vector mask. For each lane, select the value
-// from the first input vector (vec1) if the corresponding mask lane is set,
-// otherwise select from the second input vector (vec2).
+// from the second input vector (vec2) if the corresponding mask lane is set,
+// otherwise select from the first input vector (vec1).
 class VectorBlendNode : public VectorNode {
  public:
   VectorBlendNode(Node* vec1, Node* vec2, Node* mask)
@@ -1825,6 +1825,7 @@ class VectorBlendNode : public VectorNode {
   }
 
   virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
   Node* vec1() const { return in(1); }
   Node* vec2() const { return in(2); }
