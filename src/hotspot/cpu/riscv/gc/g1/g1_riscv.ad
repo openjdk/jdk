@@ -284,7 +284,7 @@ instruct g1EncodePAndStoreN(indirect mem, iRegP src, iRegPNoSp tmp1, iRegPNoSp t
 
 instruct g1CompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
@@ -348,7 +348,7 @@ instruct g1CompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRe
 
 instruct g1CompareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
@@ -408,7 +408,7 @@ instruct g1CompareAndExchangeNAcq(iRegNNoSp res, indirect mem, iRegN oldval, iRe
 
 instruct g1CompareAndSwapP(iRegINoSp res, indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegP oldval, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapP mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, KILL cr);
@@ -472,7 +472,7 @@ instruct g1CompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP newval, iRegPNo
 
 instruct g1CompareAndSwapN(iRegINoSp res, indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegN oldval, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set res (CompareAndSwapN mem (Binary oldval newval)));
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
   effect(TEMP res, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
@@ -538,7 +538,7 @@ instruct g1CompareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN newval, iRegPNo
 
 instruct g1GetAndSetP(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp preval, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetP mem newval));
   effect(TEMP preval, TEMP tmp1, TEMP tmp2, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
@@ -590,7 +590,7 @@ instruct g1GetAndSetPAcq(indirect mem, iRegP newval, iRegPNoSp tmp1, iRegPNoSp t
 
 instruct g1GetAndSetN(indirect mem, iRegN newval, iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3, iRegNNoSp preval, rFlagsReg cr)
 %{
-  predicate(UseG1GC && n->as_LoadStore()->barrier_data() != 0);
+  predicate(UseG1GC && !needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() != 0);
   match(Set preval (GetAndSetN mem newval));
   effect(TEMP preval, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
   ins_cost(2 * VOLATILE_REF_COST);
