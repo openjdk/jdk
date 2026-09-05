@@ -5437,7 +5437,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
@@ -5460,7 +5460,7 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
@@ -5481,7 +5481,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
@@ -5504,7 +5504,7 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
@@ -5524,6 +5524,8 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5542,6 +5544,8 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5560,7 +5564,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
@@ -5580,7 +5584,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == 0));
 
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
@@ -5769,7 +5773,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
@@ -5793,7 +5797,7 @@ instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
@@ -5815,7 +5819,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
@@ -5839,7 +5843,7 @@ instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
@@ -5860,6 +5864,8 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5879,6 +5885,8 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5898,7 +5906,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
@@ -5919,7 +5927,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == 0));
 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
 
