@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,87 @@ void DivByZeroStub::emit_code(LIR_Assembler* ce) {
 }
 
 
+// Implementation of LoadFlattenedArrayStub
+
+LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr result, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _result = result;
+  _scratch_reg = FrameMap::R3_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
+  // Pass arguments on stack.
+  __ std(_array->as_register(), -16, R1_SP);
+  __ std(_index->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_load_flat_array_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ mr_if_needed(_result->as_register(), R3_RET);
+  __ b(_continuation);
+}
+
+
+// Implementation of StoreFlattenedArrayStub
+
+StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR_Opr value, CodeEmitInfo* info) {
+  _array = array;
+  _index = index;
+  _value = value;
+  _scratch_reg = LIR_OprFact::illegalOpr;
+  _info = new CodeEmitInfo(info);
+}
+
+void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
+  // Pass arguments on stack.
+  __ std(_array->as_register(), -24, R1_SP);
+  __ std(_index->as_register(), -16, R1_SP);
+  __ std(_value->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_store_flat_array_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  __ b(_continuation);
+}
+
+
+// Implementation of SubstitutabilityCheckStub
+SubstitutabilityCheckStub::SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info) {
+  _left = left;
+  _right = right;
+  _scratch_reg = FrameMap::R3_oop_opr;
+  _info = new CodeEmitInfo(info);
+}
+
+void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
+  __ bind(_entry);
+  // Pass arguments on stack.
+  __ std(_left->as_register(), -16, R1_SP);
+  __ std(_right->as_register(), -8, R1_SP);
+  address stub = Runtime1::entry_for(StubId::c1_substitutability_check_id);
+  //__ load_const_optimized(R0, stub);
+  __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
+  __ mtctr(R0);
+  __ bctrl();
+  ce->add_call_info_here(_info);
+  ce->verify_oop_map(_info);
+  // Result is in R3_RET (_scratch_reg)
+  __ b(_continuation);
+}
+
+
 void ImplicitNullCheckStub::emit_code(LIR_Assembler* ce) {
   address a;
   if (_info->deoptimize_on_exception()) {
@@ -231,17 +312,20 @@ void NewTypeArrayStub::emit_code(LIR_Assembler* ce) {
 
 
 // Implementation of NewObjectArrayStub
-NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result, CodeEmitInfo* info) {
+NewObjectArrayStub::NewObjectArrayStub(LIR_Opr klass_reg, LIR_Opr length, LIR_Opr result,
+                                       CodeEmitInfo* info, bool is_null_free) {
   _klass_reg = klass_reg;
   _length = length;
   _result = result;
   _info = new CodeEmitInfo(info);
+  _is_null_free = is_null_free;
 }
 
 void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
 
-  address entry = Runtime1::entry_for(StubId::c1_new_object_array_id);
+  address entry = _is_null_free ? Runtime1::entry_for(StubId::c1_new_null_free_array_id)
+                                : Runtime1::entry_for(StubId::c1_new_object_array_id);
   //__ load_const_optimized(R0, entry);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(entry));
   __ mr_if_needed(/*op->tmp1()->as_register()*/ R5_ARG3, _length->as_register()); // already sign-extended
@@ -254,6 +338,15 @@ void NewObjectArrayStub::emit_code(LIR_Assembler* ce) {
 
 void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  if (_throw_ie_stub != nullptr) {
+    // When we come here, _obj_reg has already been checked to be non-null.
+    const int is_value_mask = markWord::inline_type_pattern;
+    __ ld(R0, oopDesc::mark_offset_in_bytes(), _obj_reg->as_register());
+    __ andi(R0, R0, is_value_mask);
+    __ cmpdi(CR0, R0, is_value_mask);
+    __ bc_far_optimized(Assembler::bcondCRbiIs1, __ bi0(CR0, Assembler::equal), *_throw_ie_stub->entry());
+  }
+
   address stub = Runtime1::entry_for(ce->compilation()->has_fpu_code() ? StubId::c1_monitorenter_id : StubId::c1_monitorenter_nofpu_id);
   //__ load_const_optimized(R0, stub);
   __ add_const_optimized(R0, R29_TOC, MacroAssembler::offset_to_global_toc(stub));
@@ -443,15 +536,13 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
     return; // CodeCache is full
   }
 
-  bool success = ce->emit_trampoline_stub_for_call(SharedRuntime::get_resolve_static_call_stub());
-  if (!success) { return; }
-
-  __ relocate(relocInfo::static_call_type);
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ code()->set_insts_mark();
-  __ bl(__ pc());
+  AddressLiteral resolve(SharedRuntime::get_resolve_static_call_stub(),
+                         relocInfo::static_call_type);
+  address call_pc = __ trampoline_call(resolve);
+  if (call_pc == nullptr) {
+    ce->bailout("const/stub overflow in call with trampoline");
+    return;
+  }
   ce->add_call_info_here(info());
   ce->verify_oop_map(info());
 

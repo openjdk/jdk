@@ -76,7 +76,7 @@ public class ClassListFormatE extends ClassListFormatBase {
                 "Hello",
                 "java/lang/Object id: 1",
                 "CustomInterface2_ia id: 2 super: 1 source: " + customJarPath,
-                "CustomLoadee id: 2 super: 1 interfaces: 2 source: " + customJarPath
+                "CustomLoadee id: 3 super: 1 interfaces: 2 source: " + customJarPath
             ),
             "The number of interfaces (1) specified in class list does not match the class file (0)");
 

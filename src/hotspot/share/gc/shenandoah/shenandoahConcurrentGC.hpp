@@ -91,18 +91,14 @@ protected:
   void entry_class_unloading();
   void entry_strong_roots();
   void entry_cleanup_early();
+  void entry_complete_abbreviated_cycle();
+  void entry_final_roots();
   void entry_evacuate();
   void entry_update_thread_roots();
   void entry_update_card_table();
   void entry_concurrent_update_refs_prepare(ShenandoahHeap* heap);
   void entry_update_refs();
   void entry_cleanup_complete();
-
-  // This is the last phase of a cycle which performs no evacuations
-  bool entry_final_roots();
-
-  // Called when the collection set is empty, but the generational mode has regions to promote in place
-  void entry_promote_in_place() const;
 
   // Actual work for the phases
   void op_reset();
@@ -135,23 +131,7 @@ protected:
 private:
   void start_mark();
 
-  bool complete_abbreviated_cycle();
-
   static bool has_in_place_promotions(ShenandoahHeap* heap);
-
-  // Messages for GC trace events, they have to be immortal for
-  // passing around the logging/tracing systems
-  const char* init_mark_event_message() const;
-  const char* final_mark_event_message() const;
-  const char* verify_final_event_message() const;
-  const char* conc_final_roots_event_message() const;
-  const char* conc_mark_event_message() const;
-  const char* conc_reset_event_message() const;
-  const char* conc_reset_after_collect_event_message() const;
-  const char* conc_weak_refs_event_message() const;
-  const char* conc_weak_roots_event_message() const;
-  const char* conc_cleanup_event_message() const;
-  const char* conc_init_update_refs_event_message() const;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONCURRENTGC_HPP

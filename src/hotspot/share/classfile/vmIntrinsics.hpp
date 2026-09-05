@@ -326,6 +326,20 @@ class methodHandle;
   do_intrinsic(_newArray,                 java_lang_reflect_Array, newArray_name, newArray_signature,            F_SN)  \
    do_name(     newArray_name,                                    "newArray")                                           \
    do_signature(newArray_signature,                               "(Ljava/lang/Class;I)Ljava/lang/Object;")             \
+  do_intrinsic(_newNullRestrictedAtomicArray, jdk_internal_value_ValueClass, newNullRestrictedAtomicArray_name, newArray_signature3, F_SN) \
+   do_name(     newNullRestrictedAtomicArray_name,                "newNullRestrictedAtomicArray0")                      \
+  do_intrinsic(_newNullRestrictedNonAtomicArray, jdk_internal_value_ValueClass, newNullRestrictedNonAtomicArray_name, newArray_signature3, F_SN) \
+   do_name(     newNullRestrictedNonAtomicArray_name,             "newNullRestrictedNonAtomicArray0")                   \
+  do_intrinsic(_newNullableAtomicArray, jdk_internal_value_ValueClass, newNullableAtomicArray_name, newArray_signature2, F_SN) \
+   do_name(     newNullableAtomicArray_name,                      "newNullableAtomicArray0")                            \
+   do_signature(newArray_signature2,                              "(Ljava/lang/Class;I)[Ljava/lang/Object;")            \
+   do_signature(newArray_signature3,                              "(Ljava/lang/Class;ILjava/lang/Object;)[Ljava/lang/Object;") \
+  do_intrinsic(_isFlatArray, jdk_internal_value_ValueClass, isFlatArray_name, object_array_boolean_signature, F_SN)     \
+   do_name(     isFlatArray_name,                                 "isFlatArray0")                                       \
+  do_intrinsic(_isNullRestrictedArray, jdk_internal_value_ValueClass, isNullRestrictedArray_name, object_array_boolean_signature, F_SN) \
+   do_name(     isNullRestrictedArray_name,                       "isNullRestrictedArray0")                             \
+  do_intrinsic(_isAtomicArray, jdk_internal_value_ValueClass, isAtomicArray_name, object_array_boolean_signature, F_SN) \
+   do_name(     isAtomicArray_name,                               "isAtomicArray0")                                     \
                                                                                                                         \
   do_intrinsic(_onSpinWait,               java_lang_Thread,       onSpinWait_name, onSpinWait_signature,         F_S)   \
    do_name(     onSpinWait_name,                                  "onSpinWait")                                         \
@@ -459,7 +473,7 @@ class methodHandle;
                                                                                                                         \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
-   do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \
+   do_name(vectorizedMismatch_name, "vectorizedMismatchInternal")                                                       \
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
@@ -526,9 +540,12 @@ class methodHandle;
                                                                                                                         \
   /* support for sun.security.provider.SHAKE128Parallel */                                                              \
   do_class(sun_security_provider_sha3_parallel,                "sun/security/provider/SHA3Parallel")                    \
-   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)   \
+   do_intrinsic(_double_keccak, sun_security_provider_sha3_parallel, double_keccak_name, double_keccak_signature, F_S)  \
    do_name(     double_keccak_name,                                 "doubleKeccak")                                     \
    do_signature(double_keccak_signature,                            "([J[J)I")                                          \
+   do_intrinsic(_quad_keccak, sun_security_provider_sha3_parallel, quad_keccak_name, quad_keccak_signature, F_S)        \
+   do_name(     quad_keccak_name,                                 "quadKeccak")                                         \
+   do_signature(quad_keccak_signature,                            "([J[J[J[J)I")                                        \
                                                                                                                         \
   /* support for sun.security.provider.DigestBase */                                                                    \
   do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
@@ -546,6 +563,13 @@ class methodHandle;
    do_name(intPolyAssign_name, "conditionalAssign")                                                                     \
    do_signature(intPolyAssign_signature, "(I[J[J)V")                                                                    \
                                                                                                                         \
+  /* support for sun.security.util.math.intpoly.IntegerPolynomial25519 */                                               \
+  do_class(sun_security_util_math_intpoly_IntegerPolynomial25519, "sun/security/util/math/intpoly/IntegerPolynomial25519") \
+  do_intrinsic(_intpoly_mult_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolyMult_name, intPolyMult_signature, F_R) \
+  do_intrinsic(_intpoly_square_25519, sun_security_util_math_intpoly_IntegerPolynomial25519, intPolySquare_name, intPolySquare_signature, F_R) \
+  do_name(intPolySquare_name, "square")                                                                                  \
+  do_signature(intPolySquare_signature, "([J[J)V")                                                                       \
+                                                                                                                         \
   /* support for java.util.Base64.Encoder*/                                                                             \
   do_class(java_util_Base64_Encoder, "java/util/Base64$Encoder")                                                        \
   do_intrinsic(_base64_encodeBlock, java_util_Base64_Encoder, encodeBlock_name, encodeBlock_signature, F_R)             \
@@ -697,6 +721,16 @@ class methodHandle;
   do_intrinsic(_fullFence,                jdk_internal_misc_Unsafe,     fullFence_name, fullFence_signature,           F_RN)     \
    do_name(     fullFence_name,                                         "fullFence")                                             \
    do_alias(    fullFence_signature,                                    void_method_signature)                                   \
+  do_intrinsic(_arrayInstanceBaseOffset,  jdk_internal_misc_Unsafe,     arrayInstanceBaseOffset_name, arrayProperties_signature, F_RN) \
+   do_name(     arrayInstanceBaseOffset_name,                           "arrayInstanceBaseOffset0")                              \
+   do_signature(arrayProperties_signature,                              "([Ljava/lang/Object;)I")                                \
+  do_intrinsic(_arrayInstanceIndexScale,  jdk_internal_misc_Unsafe,     arrayInstanceIndexScale_name, arrayProperties_signature, F_RN) \
+   do_name(     arrayInstanceIndexScale_name,                           "arrayInstanceIndexScale0")                              \
+  do_intrinsic(_arrayLayout,              jdk_internal_misc_Unsafe,     arrayLayout_name, arrayProperties_signature, F_RN)       \
+   do_name(     arrayLayout_name,                                       "arrayLayout0")                                          \
+  do_intrinsic(_getFieldMap,              jdk_internal_misc_Unsafe,     getFieldMap_name, getFieldMap_signature, F_RN)           \
+   do_name(     getFieldMap_name,                                       "getFieldMap0")                                          \
+   do_signature(getFieldMap_signature,                                  "(Ljava/lang/Class;)[I")                                 \
                                                                                                                         \
   /* Custom branch frequencies profiling support for JSR292 */                                                          \
   do_class(java_lang_invoke_MethodHandleImpl,               "java/lang/invoke/MethodHandleImpl")                        \
@@ -733,6 +767,8 @@ class methodHandle;
   do_signature(putFloat_signature,        "(Ljava/lang/Object;JF)V")                                                    \
   do_signature(getDouble_signature,       "(Ljava/lang/Object;J)D")                                                     \
   do_signature(putDouble_signature,       "(Ljava/lang/Object;JD)V")                                                    \
+  do_signature(getFlatValue_signature,    "(Ljava/lang/Object;JILjava/lang/Class;)Ljava/lang/Object;")                  \
+  do_signature(putFlatValue_signature,    "(Ljava/lang/Object;JILjava/lang/Class;Ljava/lang/Object;)V")                 \
                                                                                                                         \
   do_name(getReference_name,"getReference")     do_name(putReference_name,"putReference")                               \
   do_name(getBoolean_name,"getBoolean")         do_name(putBoolean_name,"putBoolean")                                   \
@@ -743,6 +779,7 @@ class methodHandle;
   do_name(getLong_name,"getLong")               do_name(putLong_name,"putLong")                                         \
   do_name(getFloat_name,"getFloat")             do_name(putFloat_name,"putFloat")                                       \
   do_name(getDouble_name,"getDouble")           do_name(putDouble_name,"putDouble")                                     \
+  do_name(getFlatValue_name,"getFlatValue")     do_name(putFlatValue_name,"putFlatValue")                               \
                                                                                                                         \
   do_intrinsic(_getReference,       jdk_internal_misc_Unsafe,     getReference_name, getReference_signature,     F_RN)  \
   do_intrinsic(_getBoolean,         jdk_internal_misc_Unsafe,     getBoolean_name, getBoolean_signature,         F_RN)  \
@@ -753,6 +790,7 @@ class methodHandle;
   do_intrinsic(_getLong,            jdk_internal_misc_Unsafe,     getLong_name, getLong_signature,               F_RN)  \
   do_intrinsic(_getFloat,           jdk_internal_misc_Unsafe,     getFloat_name, getFloat_signature,             F_RN)  \
   do_intrinsic(_getDouble,          jdk_internal_misc_Unsafe,     getDouble_name, getDouble_signature,           F_RN)  \
+  do_intrinsic(_getFlatValue,       jdk_internal_misc_Unsafe,     getFlatValue_name, getFlatValue_signature,     F_RN)  \
   do_intrinsic(_putReference,       jdk_internal_misc_Unsafe,     putReference_name, putReference_signature,     F_RN)  \
   do_intrinsic(_putBoolean,         jdk_internal_misc_Unsafe,     putBoolean_name, putBoolean_signature,         F_RN)  \
   do_intrinsic(_putByte,            jdk_internal_misc_Unsafe,     putByte_name, putByte_signature,               F_RN)  \
@@ -762,6 +800,7 @@ class methodHandle;
   do_intrinsic(_putLong,            jdk_internal_misc_Unsafe,     putLong_name, putLong_signature,               F_RN)  \
   do_intrinsic(_putFloat,           jdk_internal_misc_Unsafe,     putFloat_name, putFloat_signature,             F_RN)  \
   do_intrinsic(_putDouble,          jdk_internal_misc_Unsafe,     putDouble_name, putDouble_signature,           F_RN)  \
+  do_intrinsic(_putFlatValue,       jdk_internal_misc_Unsafe,     putFlatValue_name, putFlatValue_signature,     F_RN)  \
                                                                                                                         \
   do_name(getReferenceVolatile_name,"getReferenceVolatile")   do_name(putReferenceVolatile_name,"putReferenceVolatile") \
   do_name(getBooleanVolatile_name,"getBooleanVolatile")       do_name(putBooleanVolatile_name,"putBooleanVolatile")     \

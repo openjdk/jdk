@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,8 +115,8 @@ public class ModulePathAndCP {
                                   moduleDir.toString(), // --module-path
                                   MAIN_MODULE) // -m
             .assertNormalExit(out -> {
-                out.shouldContain("[class,load] com.greetings.Main source: shared objects file")
-                   .shouldContain("[class,load] org.astro.World source: shared objects file");
+                out.shouldMatch("\\[class,load *\\] com\\.greetings\\.Main source: shared objects file")
+                   .shouldMatch("\\[class,load *\\] org\\.astro\\.World source: shared objects file");
             });
 
         // run with the archive with the --module-path different from the one during
@@ -181,7 +181,7 @@ public class ModulePathAndCP {
                                   jars, // --module-path
                                   MAIN_MODULE) // -m
             .assertNormalExit(out -> {
-                out.shouldContain("[class,load] com.greetings.Main source: shared objects file")
+                out.shouldMatch("\\[class,load *\\] com\\.greetings\\.Main source: shared objects file")
                    .shouldMatch(".class.load. org.astro.World source:.*org.astro.jar");
             });
     }

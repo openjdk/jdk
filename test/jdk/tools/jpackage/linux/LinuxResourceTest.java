@@ -28,8 +28,8 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
 import jdk.jpackage.test.Annotations.Test;
-import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JPackageCommand.StandardAssert;
 import jdk.jpackage.test.JPackageOutputValidator;
 import jdk.jpackage.test.LinuxHelper;
@@ -59,6 +59,8 @@ public class LinuxResourceTest {
             cmd
             .setFakeRuntime()
             .saveConsoleOutput(true)
+            .setEnabledMessageCategories(MessageCategory.RESOURCES, MessageCategory.PROGRESS, MessageCategory.WARNINGS)
+            .setDisabledMessageCategories()
             .addArguments("--resource-dir", TKit.createTempDirectory("resources"));
         })
         .forTypes(PackageType.LINUX_DEB)
@@ -76,10 +78,13 @@ public class LinuxResourceTest {
                     "Maintainer: APPLICATION_MAINTAINER",
                     "Priority: optional",
                     archProp.format(),
-                    "Provides: dont-install-me",
                     "Description: APPLICATION_DESCRIPTION",
                     "Installed-Size: APPLICATION_INSTALLED_SIZE",
-                    "Depends: PACKAGE_DEFAULT_DEPENDENCIES"
+                    "Depends: PACKAGE_DEFAULT_DEPENDENCIES",
+                    // The value of the last field must not be an empty string.
+                    // Otherwise newer versions of dpkg-deb fails with
+                    // "end of file before value of field 'Depends' (missing final newline)" error
+                    "Provides: dont-install-me"
             ));
 
             cmd.excludeStandardAsserts(StandardAssert.LINUX_PACKAGE_ARCH);
@@ -185,14 +190,13 @@ public class LinuxResourceTest {
 
             final var customResourcePath = customResourcePath();
 
-            new JPackageOutputValidator()
-                    .expectMatchingStrings(
-                            MAIN.cannedFormattedString("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath),
-                            MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath)
-                    )
-                    .matchTimestamps()
-                    .stripTimestamps()
-                    .applyTo(cmd);
+            new JPackageOutputValidator().stderr().expectMatchingStrings(
+                    JPackageCommand.makeProgressWarning("error.unexpected-package-property", name, expectedValue, customValue, customResourcePath)
+            ).applyTo(cmd);
+
+            new JPackageOutputValidator().expectMatchingStrings(
+                    MAIN.cannedFormattedString("error.unexpected-package-property.advice", token, customValue, name, customResourcePath)
+            ).matchTimestamps().stripTimestamps().applyTo(cmd);
         }
 
         private Path customResourcePath() {

@@ -188,7 +188,7 @@ public:
   address load_archive_data(StubId stub_id, GrowableArray<address> *entries = nullptr, GrowableArray<address>* extras = nullptr);
   void store_archive_data(StubId stub_id, address start, address end, GrowableArray<address> *entries = nullptr, GrowableArray<address>* extras = nullptr);
 #ifdef ASSERT
-  void verify_stub(StubId stub_id);
+  void verify_stub(const char* name, StubId stub_id);
 #endif
 
 };

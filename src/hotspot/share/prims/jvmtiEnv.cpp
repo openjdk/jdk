@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1205,35 +1205,13 @@ jvmtiError
 JvmtiEnv::StopThread(jthread thread, jobject exception) {
   JavaThread* current_thread = JavaThread::current();
 
-  MountUnmountDisabler disabler(thread);
-  ThreadsListHandle tlh(current_thread);
-  JavaThread* java_thread = nullptr;
-  oop thread_oop = nullptr;
-
   NULL_CHECK(thread, JVMTI_ERROR_INVALID_THREAD);
-
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, current_thread, &java_thread, &thread_oop);
-
-  bool is_virtual = thread_oop != nullptr && thread_oop->is_a(vmClasses::BaseVirtualThread_klass());
-
-  if (is_virtual && !is_JavaThread_current(java_thread, thread_oop)) {
-    if (!is_vthread_suspended(thread_oop, java_thread)) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    }
-    if (java_thread == nullptr) { // unmounted virtual thread
-      return JVMTI_ERROR_OPAQUE_FRAME;
-    }
-  }
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
   oop e = JNIHandles::resolve_external_guard(exception);
   NULL_CHECK(e, JVMTI_ERROR_NULL_POINTER);
 
-  JavaThread::send_async_exception(java_thread, e);
-
-  return JVMTI_ERROR_NONE;
-
+  StopThreadClosure op(current_thread, e);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end StopThread */
 
 
@@ -1627,7 +1605,7 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
   NULL_CHECK(group_obj, JVMTI_ERROR_INVALID_THREAD_GROUP);
 
   Handle *thread_objs = nullptr;
-  objArrayHandle group_objs;
+  refArrayHandle group_objs;
   jint nthreads = 0;
   jint ngroups = 0;
   int hidden_threads = 0;
@@ -1935,9 +1913,7 @@ JvmtiEnv::FollowReferences(jint heap_filter, jclass klass, jobject initial_objec
       return JVMTI_ERROR_NONE;
     }
     k = java_lang_Class::as_Klass(k_mirror);
-    if (klass == nullptr) {
-      return JVMTI_ERROR_INVALID_CLASS;
-    }
+    assert(k != nullptr, "k_mirror is not null and not primitive, must have a valid klass");
   }
 
   if (initial_object != nullptr) {
@@ -2737,7 +2713,7 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
 jvmtiError
 JvmtiEnv::GetClassModifiers(oop k_mirror, jint* modifiers_ptr) {
   jint result = java_lang_Class::modifiers(k_mirror);
-  if (!java_lang_Class::is_primitive(k_mirror)) {
+  if (!Arguments::is_valhalla_enabled() && !java_lang_Class::is_primitive(k_mirror)) {
     // Reset the deleted  ACC_SUPER bit (deleted in compute_modifier_flags()).
     result |= JVM_ACC_SUPER;
   }
@@ -2858,7 +2834,8 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
   jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
   for (int i = 0; i < result_count; i++, flds.next()) {
     result_list[i] = jfieldIDWorkaround::to_jfieldID(ik, flds.offset(),
-                                                     flds.access_flags().is_static());
+                                                     flds.access_flags().is_static(),
+                                                     flds.field_descriptor().is_flat());
   }
   assert(flds.done(), "just checking");
 
@@ -2896,8 +2873,9 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
       return JVMTI_ERROR_NONE;
     }
 
-    Array<InstanceKlass*>* interface_list = InstanceKlass::cast(k)->local_interfaces();
-    const int result_length = (interface_list == nullptr ? 0 : interface_list->length());
+    InstanceKlass* ik = InstanceKlass::cast(k);
+    Array<InstanceKlass*>* interface_list = ik->local_interfaces();
+    int result_length = (interface_list == nullptr ? 0 : interface_list->length());
     jclass* result_list = (jclass*) jvmtiMalloc(result_length * sizeof(jclass));
     for (int i_index = 0; i_index < result_length; i_index += 1) {
       InstanceKlass* klass_at = interface_list->at(i_index);
@@ -3093,9 +3071,12 @@ JvmtiEnv::GetObjectHashCode(jobject object, jint* hash_code_ptr) {
   NULL_CHECK(mirror, JVMTI_ERROR_INVALID_OBJECT);
   NULL_CHECK(hash_code_ptr, JVMTI_ERROR_NULL_POINTER);
 
-  {
-    jint result = (jint) mirror->identity_hash();
-    *hash_code_ptr = result;
+  if (mirror->is_inline_type()) {
+    // For inline types, use the klass as a hash code.
+    // TBD to improve this (see also JvmtiTagMapKey::get_hash for similar case).
+    *hash_code_ptr = (jint)((int64_t)mirror->klass() >> 3);
+  } else {
+    *hash_code_ptr = (jint)mirror->identity_hash();
   }
   return JVMTI_ERROR_NONE;
 } /* end GetObjectHashCode */

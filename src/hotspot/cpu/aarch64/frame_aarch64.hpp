@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -66,7 +66,6 @@
 
  public:
   enum {
-    pc_return_offset                                 =  0,
     // All frames
     link_offset                                      =  0,
     return_addr_offset                               =  1,
@@ -151,6 +150,17 @@
   }
 
  public:
+  // Support for scalarized inline type calling convention
+  intptr_t* repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const;
+  struct CompiledFramePointers {
+    intptr_t* sender_sp;       // The top of the stack of the sender
+    intptr_t** saved_fp_addr;  // Where rfp (x29) is saved on the stack (FP #1 in remove_frame's comment)
+    address* sender_pc_addr;   // Where lr (x30) is saved on the stack (LR #1)
+  };
+  CompiledFramePointers compiled_frame_details() const;
+  static intptr_t* repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr);
+  bool was_augmented_on_entry(int& real_size) const;
+
   // Constructors
 
   frame(intptr_t* sp, intptr_t* fp, address pc);
@@ -186,8 +196,6 @@
 
   // deoptimization support
   void interpreter_frame_set_last_sp(intptr_t* sp);
-
-  static jint interpreter_frame_expression_stack_direction() { return -1; }
 
   // returns the sending frame, without applying any barriers
   inline frame sender_raw(RegisterMap* map) const;

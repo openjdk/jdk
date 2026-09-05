@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class CustomQueryTest {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         boolean isSecondAttempt = false;
         // The test may fail if some new MBean is registered while the test
-        // is running (e.g. Graal MBean). In this case just retry the test.
+        // is running. In this case just retry the test.
         while (true) {
             mbs.registerMBean(new Count(), countName);
             int mbeanCount = mbs.getMBeanCount();

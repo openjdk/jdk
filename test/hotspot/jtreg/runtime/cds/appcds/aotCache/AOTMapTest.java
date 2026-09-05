@@ -27,6 +27,7 @@
  * @summary Test the contents of -Xlog:aot+map with AOT workflow
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.misc
  * @build AOTMapTest Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
@@ -39,12 +40,33 @@
  * @summary Test the contents of -Xlog:aot+map with dynamic CDS archive
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @build AOTMapTest Hello
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar AOTMapTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar cust.jar Hello
  * @run main/othervm/timeout=240 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. AOTMapTest DYNAMIC
+ */
+
+/**
+ * @test id=valhalla
+ * @bug 8362566
+ * @summary Test the contents of -Xlog:aot+map with AOT workflow and flat arrays
+ * @enablePreview
+ * @requires vm.cds.supports.aot.class.linking & vm.debug & vm.cds.write.archived.java.heap
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
+ * @modules java.base/jdk.internal.value java.base/jdk.internal.misc java.base/jdk.internal.vm.annotation
+ * @build Hello AOTMapTest
+ * @compile test-classes/AOTMapTestValhallaHelper.java
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
+ *                 AOTMapTestApp
+ *                 Hello
+ *                 AOTMapTestValhallaHelper
+ *                 AOTMapTestValhallaHelper$Wrapper
+ *                 AOTMapTestValhallaHelper$WrapperWrapper
+ *                 AOTMapTestValhallaHelper$ArchivedData
+ * @run main/othervm/timeout=240 AOTMapTest AOT --two-step-training Valhalla
  */
 
 import java.io.File;
@@ -59,12 +81,9 @@ public class AOTMapTest {
     static final String appJar = ClassFileInstaller.getJarPath("app.jar");
     static final String mainClass = "AOTMapTestApp";
     static final String classLoadLogFile = "production.class.load.log";
-
+    static boolean testValhalla;
     public static void main(String[] args) throws Exception {
-        doTest(args);
-    }
-
-    public static void doTest(String[] args) throws Exception {
+        testValhalla = args.length >= 3 && args[2].equals("Valhalla");
         Tester tester = new Tester();
         tester.run(args);
 
@@ -111,12 +130,24 @@ public class AOTMapTest {
 
             vmArgs.add("-Xmx128M");
             vmArgs.add("-Xlog:aot=debug");
+            vmArgs.add("--add-exports");
+            vmArgs.add("java.base/jdk.internal.misc=ALL-UNNAMED");
+
+            if (testValhalla) {
+                vmArgs.add("--enable-preview");
+                vmArgs.add("--add-exports");
+                vmArgs.add("java.base/jdk.internal.value=ALL-UNNAMED");
+
+                if (runMode == RunMode.ASSEMBLY) {
+                    vmArgs.add("-XX:AOTInitTestClass=AOTMapTestValhallaHelper");
+                }
+            }
 
             // filesize=0 ensures that a large map file not broken up in multiple files.
-            String logMapPrefix = "-Xlog:aot+map=debug,aot+map+oops=trace:file=";
+            String logMapPrefix = "-Xlog:aot+map=trace,aot+map+oops=trace:file=";
             String logSuffix = ":none:filesize=0";
 
-            if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC) {
+            if (runMode == RunMode.ASSEMBLY || runMode == RunMode.DUMP_DYNAMIC || runMode == RunMode.DUMP_STATIC) {
                 vmArgs.add(logMapPrefix + dumpMapFile + logSuffix);
             } else if (runMode == RunMode.PRODUCTION) {
                 vmArgs.add(logMapPrefix + runMapFile + logSuffix);
@@ -130,6 +161,7 @@ public class AOTMapTest {
         public String[] appCommandLine(RunMode runMode) {
             return new String[] {
                 mainClass,
+                testValhalla ? "Valhalla" : "none"
             };
         }
     }
@@ -140,6 +172,12 @@ class AOTMapTestApp {
     public static void main(String[] args) throws Exception {
         System.out.println("Hello AOTMapTestApp");
         testCustomLoader();
+
+        if (args[0].equals("Valhalla")) {
+            Class<?> c = Class.forName("AOTMapTestValhallaHelper");
+            Object o = c.newInstance();
+            System.out.println(o);
+        }
     }
 
     static void testCustomLoader() throws Exception {

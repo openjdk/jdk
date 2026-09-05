@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,12 +106,6 @@ bool ShenandoahDirectCardMarkRememberedSet::is_write_card_dirty(HeapWord* p) con
   size_t index = card_index_for_addr(p);
   CardValue* bp = &(_card_table->write_byte_map())[index];
   return (bp[0] == CardTable::dirty_card_val());
-}
-
-void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) {
-  size_t index = card_index_for_addr(p);
-  CardValue* bp = &(_card_table->write_byte_map())[index];
-  bp[0] = CardTable::dirty_card_val();
 }
 
 void ShenandoahDirectCardMarkRememberedSet::mark_range_as_dirty(HeapWord* p, size_t num_heap_words) {
@@ -232,7 +226,7 @@ void ShenandoahCardCluster::update_card_table(HeapWord* start, HeapWord* end) {
     previous_address = address;
 
     const oop obj = cast_to_oop(address);
-    address += obj->size();
+    address += ShenandoahForwarding::size(obj);
   }
 
   // Register the last object seen in this range.
@@ -351,7 +345,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
       if (prev < left) {
         oop obj = cast_to_oop(prev);
         assert(oopDesc::is_oop(obj), "Should be an object");
-        HeapWord* obj_end = prev + obj->size();
+        HeapWord* obj_end = prev + ShenandoahForwarding::size(obj);
         if (obj_end > left) {
           return prev;
         }
@@ -403,7 +397,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
     if (ctx->is_marked(p)) {
       oop obj = cast_to_oop(p);
       assert(oopDesc::is_oop(obj), "Should be an object");
-      assert(p + obj->size() > left, "This object should span start of card");
+      assert(p + ShenandoahForwarding::size(obj) > left, "This object should span start of card");
       assert(p < right, "Result must precede right");
       return p;
     } else {
@@ -449,7 +443,7 @@ HeapWord* ShenandoahCardCluster::first_object_start(const size_t card_index, con
 #ifdef ASSERT
   oop obj = cast_to_oop(p);
   assert(oopDesc::is_oop(obj), "Should be an object");
-  assert(p + obj->size() > left, "obj should end after left end of card");
+  assert(p + ShenandoahForwarding::size(obj) > left, "obj should end after left end of card");
 #endif // ASSERT
   return p;
 }
@@ -472,10 +466,6 @@ bool ShenandoahScanRemembered::is_write_card_dirty(size_t card_index) {
 
 bool ShenandoahScanRemembered::is_card_dirty(HeapWord* p) {
   return _rs->is_card_dirty(p);
-}
-
-void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) {
-  _rs->mark_card_as_dirty(p);
 }
 
 bool ShenandoahScanRemembered::is_write_card_dirty(HeapWord* p) {
@@ -524,7 +514,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
   while (base_addr + offset < address) {
     oop obj = cast_to_oop(base_addr + offset);
     if (!ctx || ctx->is_marked(obj)) {
-      offset += obj->size();
+      offset += ShenandoahForwarding::size(obj);
     } else {
       // If this object is not live, don't trust its size(); all objects above tams are live.
       ShenandoahHeapRegion* r = heap->heap_region_containing(obj);
@@ -553,7 +543,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
     do {
       oop obj = cast_to_oop(base_addr + offset);
       prev_offset = offset;
-      offset += obj->size();
+      offset += ShenandoahForwarding::size(obj);
     } while (offset < max_offset);
     if (_scc->get_last_start(index) != prev_offset) {
       return false;
@@ -592,7 +582,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
       oop obj = cast_to_oop(base_addr + offset);
       if (ctx->is_marked(obj)) {
         prev_offset = offset;
-        offset += obj->size();
+        offset += ShenandoahForwarding::size(obj);
         last_obj = obj;
       } else {
         offset = ctx->get_next_marked_addr(base_addr + offset, tams) - base_addr;
@@ -602,7 +592,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
         // by consulting the size() fields of each.
       }
     } while (offset < max_offset);
-    if (last_obj != nullptr && prev_offset + last_obj->size() >= max_offset) {
+    if (last_obj != nullptr && prev_offset + ShenandoahForwarding::size(last_obj) >= max_offset) {
       // last marked object extends beyond end of card
       if (_scc->get_last_start(index) != prev_offset) {
         return false;
@@ -640,8 +630,12 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
   bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
+    if (!heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* region = heap->get_region(i);
-    if (region->is_old() && region->is_active() && !region->is_cset()) {
+    if (region->is_active() && !region->is_cset()) {
       HeapWord* start_of_range = region->bottom();
       HeapWord* end_of_range = region->top();
       size_t start_cluster_no = cluster_for_addr(start_of_range);
@@ -808,11 +802,11 @@ void ShenandoahScanRememberedTask::work(uint worker_id) {
 }
 
 void ShenandoahScanRememberedTask::do_work(uint worker_id) {
-  ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::ScanClusters, worker_id);
+  ShenandoahWorkerTimingsTracker x(ShenandoahPhaseTimings::init_scan_rset, ShenandoahPhaseTimings::Work, worker_id);
 
   ShenandoahObjToScanQueue* q = _queue_set->queue(worker_id);
   ShenandoahObjToScanQueue* old = _old_queue_set == nullptr ? nullptr : _old_queue_set->queue(worker_id);
-  ShenandoahMarkRefsClosure<YOUNG> cl(q, _rp, old);
+  ShenandoahRedirtyCardsMarkClosure cl(q, _rp, old);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
   ShenandoahScanRemembered* scanner = heap->old_generation()->card_scan();
 
@@ -1084,7 +1078,7 @@ void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
         if (r->is_humongous_start()) {
           // First, clear the remembered set
           oop obj = cast_to_oop(obj_addr);
-          size_t size = obj->size();
+          size_t size = ShenandoahForwarding::size(obj);
 
           size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
           size_t region_index = r->index();

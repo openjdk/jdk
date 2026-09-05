@@ -29,7 +29,7 @@
 keys=randomness
 
 # Minimum jtreg version
-requiredVersion=8.2.1+1
+requiredVersion=8.3+1
 
 # Prevent TestNG-based tests under this root, use @run junit actions instead
 disallowedActions=testng

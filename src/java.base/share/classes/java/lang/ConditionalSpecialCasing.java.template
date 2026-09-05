@@ -1,0 +1,366 @@
+/*
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package java.lang;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Locale;
+import sun.text.Normalizer;
+
+
+/**
+ * This is a utility class for {@code String.toLowerCase()} and
+ * {@code String.toUpperCase()}, that handles special casing with
+ * conditions.  In other words, it handles the mappings with conditions
+ * that are defined in
+ * <a href="http://www.unicode.org/Public/UNIDATA/SpecialCasing.txt">Special
+ * Casing Properties</a> file.
+ * <p>
+ * Note that the unconditional case mappings (including 1:M mappings)
+ * are handled in {@code Character.toLower/UpperCase()}.
+ */
+final class ConditionalSpecialCasing {
+
+    // context conditions.
+    static final int NONE =                     0;
+    static final int FINAL_SIGMA =              1;
+    static final int AFTER_SOFT_DOTTED =        2;
+    static final int MORE_ABOVE =               3;
+    static final int AFTER_I =                  4;
+    static final int NOT_BEFORE_DOT =           5;
+
+    // combining class definitions
+    static final int COMBINING_CLASS_ABOVE = 230;
+
+    // Special case mapping entries
+    static Entry[] entry = {
+%%%SpecialCasing%%%
+    };
+
+    // A hash table that contains the above entries
+    private static final HashMap<Integer, HashSet<Entry>> entryTable = new HashMap<>();
+    static {
+        // create hashtable from the entry
+        for (Entry cur : entry) {
+            Integer cp = cur.codePoint();
+            HashSet<Entry> set = entryTable.get(cp);
+            if (set == null) {
+                set = new HashSet<>();
+                entryTable.put(cp, set);
+            }
+            set.add(cur);
+        }
+    }
+
+    static int toLowerCaseEx(String src, int index, Locale locale) {
+        char[] result = lookUpTable(src, index, locale, true);
+
+        if (result != null) {
+            if (result.length == 1) {
+                return result[0];
+            } else {
+                return Character.ERROR;
+            }
+        } else {
+            // default to Character class' one
+            return Character.toLowerCase(src.codePointAt(index));
+        }
+    }
+
+    static int toUpperCaseEx(String src, int index, Locale locale) {
+        char[] result = lookUpTable(src, index, locale, false);
+
+        if (result != null) {
+            if (result.length == 1) {
+                return result[0];
+            } else {
+                return Character.ERROR;
+            }
+        } else {
+            // default to Character class' one
+            return Character.toUpperCaseEx(src.codePointAt(index));
+        }
+    }
+
+    static char[] toLowerCaseCharArray(String src, int index, Locale locale) {
+        return lookUpTable(src, index, locale, true);
+    }
+
+    static char[] toUpperCaseCharArray(String src, int index, Locale locale) {
+        char[] result = lookUpTable(src, index, locale, false);
+        if (result != null) {
+            return result;
+        } else {
+            return Character.toUpperCaseCharArray(src.codePointAt(index));
+        }
+    }
+
+    private static char[] lookUpTable(String src, int index, Locale locale, boolean bLowerCasing) {
+        HashSet<Entry> set = entryTable.get(src.codePointAt(index));
+        char[] ret = null;
+
+        if (set != null) {
+            Iterator<Entry> iter = set.iterator();
+            String currentLang = locale.getLanguage();
+            while (iter.hasNext()) {
+                Entry entry = iter.next();
+                String conditionLang = entry.language();
+                if ((conditionLang.isEmpty() || (conditionLang.equals(currentLang))) &&
+                        isConditionMet(src, index, entry.condition())) {
+                    ret = bLowerCasing ? entry.lowerCase() : entry.upperCase();
+                    if (!conditionLang.isEmpty()) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        return ret;
+    }
+
+    private static boolean isConditionMet(String src, int index, int condition) {
+        return switch (condition) {
+            case NONE              -> true;
+            case FINAL_SIGMA       -> isFinalSigma(src, index);
+            case AFTER_SOFT_DOTTED -> isAfterSoftDotted(src, index);
+            case MORE_ABOVE        -> isMoreAbove(src, index);
+            case AFTER_I           -> isAfterI(src, index);
+            case NOT_BEFORE_DOT    -> !isBeforeDot(src, index);
+            default -> throw new InternalError("Special casing condition is not recognized.");
+        };
+    }
+
+    /**
+     * Implements the "Final_Sigma" condition
+     *
+     * Specification: C is preceded by a sequence consisting of a cased letter
+     * and then zero or more case-ignorable characters, and C is not followed
+     * by a sequence consisting of zero or more case-ignorable characters and
+     * then a cased letter.
+     *
+     * Regular Expression:
+     *   Before C: \p{cased} (\p{Case_Ignorable})*
+     *   After C: !((\p{Case_Ignorable})* \p{cased})
+     */
+    private static boolean isFinalSigma(String src, int index) {
+        int cp;
+
+        // Look for a preceding 'cased' letter before 'case-ignorable's
+        for (int i = index; i > 0; i -= Character.charCount(cp)) {
+            cp = src.codePointBefore(i);
+            if (isCased(cp)) {
+                int len = src.length();
+                // Check that there are no 'case-ignorable'*'cased' letters after the index
+                for (i = index + Character.charCount(src.codePointAt(index));
+                        i < len;
+                        i += Character.charCount(cp)) {
+                    cp = src.codePointAt(i);
+                    if (isCased(cp)) {
+                        return false;
+                    } else if (!isCaseIgnorable(cp)) {
+                        break;
+                    }
+                }
+
+                return true;
+            } else if (!isCaseIgnorable(cp)) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Implements the "After_I" condition
+     *
+     * Specification: The last preceding base character was an uppercase I,
+     * and there is no intervening combining character class 230 (ABOVE).
+     *
+     * Regular Expression:
+     *   Before C: [I]([{cc!=230}&{cc!=0}])*
+     */
+    private static boolean isAfterI(String src, int index) {
+        int ch;
+        int cc;
+
+        // Look for the last preceding base character
+        for (int i = index; i > 0; i -= Character.charCount(ch)) {
+
+            ch = src.codePointBefore(i);
+
+            if (ch == 'I') {
+                return true;
+            } else {
+                cc = Normalizer.getCombiningClass(ch);
+                if ((cc == 0) || (cc == COMBINING_CLASS_ABOVE)) {
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Implements the "After_Soft_Dotted" condition
+     *
+     * Specification: The last preceding character with combining class
+     * of zero before C was Soft_Dotted, and there is no intervening
+     * combining character class 230 (ABOVE).
+     *
+     * Regular Expression:
+     *   Before C: [{Soft_Dotted==true}]([{cc!=230}&{cc!=0}])*
+     */
+    private static boolean isAfterSoftDotted(String src, int index) {
+        int ch;
+        int cc;
+
+        // Look for the last preceding character
+        for (int i = index; i > 0; i -= Character.charCount(ch)) {
+
+            ch = src.codePointBefore(i);
+
+            if (isSoftDotted(ch)) {
+                return true;
+            } else {
+                cc = Normalizer.getCombiningClass(ch);
+                if ((cc == 0) || (cc == COMBINING_CLASS_ABOVE)) {
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Implements the "More_Above" condition
+     *
+     * Specification: C is followed by one or more characters of combining
+     * class 230 (ABOVE) in the combining character sequence.
+     *
+     * Regular Expression:
+     *   After C: [{cc!=0}]*[{cc==230}]
+     */
+    private static boolean isMoreAbove(String src, int index) {
+        int ch;
+        int cc;
+        int len = src.length();
+
+        // Look for a following ABOVE combining class character
+        for (int i = index + Character.charCount(src.codePointAt(index));
+                i < len; i += Character.charCount(ch)) {
+
+            ch = src.codePointAt(i);
+            cc = Normalizer.getCombiningClass(ch);
+
+            if (cc == COMBINING_CLASS_ABOVE) {
+                return true;
+            } else if (cc == 0) {
+                return false;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Implements the "Before_Dot" condition
+     *
+     * Specification: C is followed by {@code U+0307 COMBINING DOT ABOVE}.
+     * Any sequence of characters with a combining class that is
+     * neither 0 nor 230 may intervene between the current character
+     * and the combining dot above.
+     *
+     * Regular Expression:
+     *   After C: ([{cc!=230}&{cc!=0}])*[\u0307]
+     */
+    private static boolean isBeforeDot(String src, int index) {
+        int ch;
+        int cc;
+        int len = src.length();
+
+        // Look for a following COMBINING DOT ABOVE
+        for (int i = index + Character.charCount(src.codePointAt(index));
+                i < len; i += Character.charCount(ch)) {
+
+            ch = src.codePointAt(i);
+
+            if (ch == '\u0307') {
+                return true;
+            } else {
+                cc = Normalizer.getCombiningClass(ch);
+                if ((cc == 0) || (cc == COMBINING_CLASS_ABOVE)) {
+                    return false;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Examines whether a character is 'cased'.
+     *
+     * The 'cased' property values are specified in the data
+     * file DerivedCoreProperties.txt in the Unicode Character Database.
+     */
+    private static boolean isCased(int cp) {
+        return
+%%%Cased%%%
+    }
+
+    /**
+     * Examines whether a character is 'Case_Ignorable'.
+     *
+     * The 'Case_Ignorable' property values are specified in the data
+     * file DerivedCoreProperties.txt in the Unicode Character Database.
+     */
+    private static boolean isCaseIgnorable(int cp) {
+        return
+%%%Case_Ignorable%%%
+    }
+
+    /**
+     * Examines whether a character is 'Soft_Dotted'.
+     *
+     * The 'Soft_Dotted' property values are specified in the data
+     * file PropList.txt in the Unicode Character Database.
+     */
+    private static boolean isSoftDotted(int cp) {
+        return
+%%%Soft_Dotted%%%
+    }
+
+    /**
+     * Represents a code point with conditional special casing.
+     * If `language` is empty, the casing rule applies across all languages.
+     */
+    private record Entry(int codePoint, char [] lowerCase, char [] upperCase,
+        String language, int condition) {};
+}

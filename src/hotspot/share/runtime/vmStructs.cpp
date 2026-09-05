@@ -60,6 +60,8 @@
 #include "oops/constMethod.hpp"
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
+#include "oops/flatArrayKlass.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -218,6 +220,7 @@
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
+  nonstatic_field(Klass,                       _kind,                                         const Klass::KlassKind)                \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -235,7 +238,7 @@
   nonstatic_field(MethodData,                  _method,                                       Method*)                               \
   nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
   nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
-  COMPILER2_OR_JVMCI_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,     u2))                                   \
+  COMPILER2_PRESENT(nonstatic_field(MethodCounters, _interpreter_throwout_count,              u2))                                   \
   JVMTI_ONLY(nonstatic_field(MethodCounters,   _number_of_breakpoints,                        u2))                                   \
   nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
   nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
@@ -496,7 +499,7 @@
   nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
   nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
   nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int16_t)                               \
+  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
   nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
   nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
   nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
@@ -659,7 +662,6 @@
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
@@ -928,9 +930,12 @@
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
            declare_type(ArrayKlass, Klass)                                \
-           declare_type(ObjArrayKlass, ArrayKlass)                        \
            declare_type(TypeArrayKlass, ArrayKlass)                       \
+           declare_type(ObjArrayKlass, ArrayKlass)                        \
+             declare_type(FlatArrayKlass, ArrayKlass)                     \
+             declare_type(RefArrayKlass, ArrayKlass)                      \
       declare_type(InstanceKlass, Klass)                                  \
+        declare_type(InlineKlass, InstanceKlass)                          \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
@@ -1017,7 +1022,7 @@
         declare_type(StringDedupThread, JavaThread)                       \
         declare_type(AttachListenerThread, JavaThread)                    \
         declare_type(JfrRecorderThread, JavaThread)                       \
-        DEBUG_ONLY(COMPILER2_OR_JVMCI_PRESENT(                            \
+        DEBUG_ONLY(COMPILER2_PRESENT(                                     \
           declare_type(DeoptimizeObjectsALotThread, JavaThread)))         \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
@@ -1185,6 +1190,7 @@
    declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(InstanceKlass::ClassState)                        \
+   declare_integer_type(Klass::KlassKind)                                 \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
@@ -1367,15 +1373,10 @@
                                                                           \
   declare_constant(_thread_uninitialized)                                 \
   declare_constant(_thread_new)                                           \
-  declare_constant(_thread_new_trans)                                     \
   declare_constant(_thread_in_native)                                     \
-  declare_constant(_thread_in_native_trans)                               \
   declare_constant(_thread_in_vm)                                         \
-  declare_constant(_thread_in_vm_trans)                                   \
   declare_constant(_thread_in_Java)                                       \
-  declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
-  declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
@@ -1408,7 +1409,7 @@
   declare_constant(Klass::_lh_header_size_mask)                           \
   declare_constant(Klass::_lh_array_tag_shift)                            \
   declare_constant(Klass::_lh_array_tag_type_value)                       \
-  declare_constant(Klass::_lh_array_tag_obj_value)                        \
+  declare_constant(Klass::_lh_array_tag_ref_value)                        \
                                                                           \
   declare_constant(Method::nonvirtual_vtable_index)                       \
   declare_constant(Method::extra_stack_entries_for_jsr292)                \
@@ -1481,6 +1482,22 @@
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
                                                                           \
+  /************************/                                              \
+  /* Klass KlassKind enum */                                              \
+  /************************/                                              \
+                                                                          \
+  declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
+  declare_constant(Klass::KlassKind::InlineKlassKind)                     \
+  declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
+  declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
+  declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \
+  declare_constant(Klass::KlassKind::InstanceStackChunkKlassKind)         \
+  declare_constant(Klass::KlassKind::TypeArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::ObjArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::RefArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::FlatArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::UnknownKlassKind)                    \
+                                                                          \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
   /*********************************/                                     \
@@ -1519,6 +1536,9 @@
   declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_free_inline_type)      \
+  declare_constant(FieldInfo::FieldFlags::_ff_flat)                       \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_marker)                \
                                                                           \
   /******************************/                                        \
   /* Debug info                 */                                        \
@@ -1577,9 +1597,6 @@
   declare_constant(Deoptimization::Reason_unstable_fused_if)              \
   declare_constant(Deoptimization::Reason_receiver_constraint)            \
   declare_constant(Deoptimization::Reason_not_compiled_exception_handler) \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_transfer_to_interpreter)))        \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_unresolved)))                     \
-  NOT_ZERO(JVMCI_ONLY(declare_constant(Deoptimization::Reason_jsr_mismatch)))                   \
   declare_constant(Deoptimization::Reason_tenured)                        \
   declare_constant(Deoptimization::Reason_LIMIT)                          \
   declare_constant(Deoptimization::Reason_RECORDED_LIMIT)                 \
@@ -1598,10 +1615,8 @@
                                                                           \
   declare_constant(Deoptimization::_action_bits)                          \
   declare_constant(Deoptimization::_reason_bits)                          \
-  declare_constant(Deoptimization::_debug_id_bits)                        \
   declare_constant(Deoptimization::_action_shift)                         \
   declare_constant(Deoptimization::_reason_shift)                         \
-  declare_constant(Deoptimization::_debug_id_shift)                       \
                                                                           \
   /******************************************/                            \
   /* BasicType enum (globalDefinitions.hpp) */                            \
@@ -1714,8 +1729,6 @@
   /**********************/                                                \
   NOT_ZERO(PPC64_ONLY(declare_constant(frame::entry_frame_locals_size)))  \
                                                                           \
-  declare_constant(frame::pc_return_offset)                               \
-                                                                          \
   /*************/                                                         \
   /* vmSymbols */                                                         \
   /*************/                                                         \
@@ -1757,12 +1770,6 @@
   declare_constant(PerfData::U_Events)                                    \
   declare_constant(PerfData::U_String)                                    \
   declare_constant(PerfData::U_Hertz)                                     \
-                                                                          \
-  /****************/                                                      \
-  /* JVMCI */                                                             \
-  /****************/                                                      \
-                                                                          \
-  declare_preprocessor_constant("INCLUDE_JVMCI", INCLUDE_JVMCI)           \
                                                                           \
   /****************/                                                      \
   /*  VMRegImpl   */                                                      \
@@ -1825,8 +1832,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \
@@ -2143,3 +2150,4 @@ void vmStructs_init() {
   VMStructs::init();
 }
 #endif // ASSERT
+

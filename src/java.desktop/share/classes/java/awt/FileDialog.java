@@ -43,6 +43,7 @@ import sun.awt.AWTAccessor;
  * its {@code show} method to display the dialog,
  * it blocks the rest of the application until the user has
  * chosen a file.
+ * This means that {@link Dialog#setModalityType(ModalityType)} may be ignored.
  *
  * @see Window#show
  *
@@ -450,6 +451,14 @@ public class FileDialog extends Dialog {
     /**
      * Gets the selected file of this file dialog.  If the user
      * selected {@code CANCEL}, the returned file is {@code null}.
+     * <p>
+     * It is platform-specific as to what happens for {@code LOAD} mode of a
+     * non-existent file. For example, it may be possible for the user to
+     * "accept" the result of a {@code setFile} value or to edit in the name
+     * of some other file to load/open even if it is not present.
+     * Applications should therefore verify the file represented by the
+     * returned {@code String} exists.
+     * The value is usually the basename, not a full path name.
      *
      * @return    the currently selected file of this file dialog window,
      *                or {@code null} if none is selected
@@ -504,13 +513,26 @@ public class FileDialog extends Dialog {
      * specified file. This file becomes the default file if it is set
      * before the file dialog window is first shown.
      * <p>
-     * When the dialog is shown, the specified file is selected. The kind of
-     * selection depends on the file existence, the dialog type, and the native
-     * platform. E.g., the file could be highlighted in the file list, or a
+     * When the dialog is shown, the specified file may be pre-selected.
+     * The visible manifestation of this selection, if any, depends on factors
+     * such as the file existence, the dialog mode, and the native platform.
+     * For example, the file could be highlighted in the file list, or a
      * file name editbox could be populated with the file name.
      * <p>
      * This method accepts either a full file path, or a file name with an
      * extension if used together with the {@code setDirectory} method.
+     * It is platform-specific how a full file path interacts with {@code setDirectory}.
+     * It may be that the directory is always used instead of the file path, or
+     * the file path overrides the directory, or even that the full file path
+     * is interpreted as a base file name. Therefore, it is strongly recommended to
+     * use {@code setDirectory} to set the folder and {@code setFile} to
+     * set a base file name.
+     * <p>
+     * Appearance and behaviours may also differ between {@code LOAD} and {@code SAVE} modes.
+     * <p>
+     * It is also platform-specific as to what happens for {@code LOAD} mode of a non-existent file.
+     * For example, it may be possible for the user to "accept" the {@code setFile} value or
+     * to edit in the name of some other file to load/open even if it is not present.
      * <p>
      * Specifying "" as the file is exactly equivalent to specifying
      * {@code null} as the file.
@@ -529,6 +551,9 @@ public class FileDialog extends Dialog {
 
     /**
      * Enables or disables multiple file selection for the file dialog.
+     * <p>
+     * Multiple mode may be ignored in some cases, for example, commonly
+     * {@code SAVE} mode dialogs do not support it.
      *
      * @param enable    if {@code true}, multiple file selection is enabled;
      *                  {@code false} - disabled.

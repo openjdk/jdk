@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ package compiler.debug;
  * @bug 8344013
  * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Verify the xmlStream log stack is not left in a bad state
- * @run main/othervm -XX:+LogCompilation -XX:CompileCommand=log,*.* -XX:+CITimeVerbose -Xcomp compiler.debug.TestLogStackAssert
+ * @run main/othervm -XX:-DisplayVMOutput -XX:+LogCompilation
+ *                   -XX:CompileCommand=log,*.* -XX:+CITimeVerbose -Xcomp
+ *                   compiler.debug.TestLogStackAssert
  */
 public class TestLogStackAssert {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,9 @@ public final class QuicTimerQueue {
     private volatile Deadline scheduledDeadline = Deadline.MAX;
     private volatile Deadline returnedDeadline = Deadline.MAX;
 
+    // Not volatile: never accessed without holding monitor
+    private Deadline notifiedDeadline = Deadline.MAX;
+
     /**
      * Creates a new timer queue with the given notifier.
      * A notifier is used to notify the timer thread that
@@ -113,33 +116,8 @@ public final class QuicTimerQueue {
      * @param event an event to be scheduled
      */
     public void offer(QuicTimedEvent event) {
-        if (event instanceof Marker marker)
-            throw new IllegalArgumentException(marker.name());
-        assert QuicTimedEvent.COMPARATOR.compare(event, FLOOR) > 0;
-        assert QuicTimedEvent.COMPARATOR.compare(event, CEILING) < 0;
-        Deadline deadline = event.deadline();
-        scheduled.add(event);
-        scheduled(deadline);
         if (debug.on()) debug.log("QuicTimerQueue: event %s offered", event);
-        if (notify(deadline)) {
-            if (debug.on()) debug.log("QuicTimerQueue: event %s will be rescheduled", event);
-            if (Log.quicTimer()) {
-                var now = debugNow();
-                Log.logQuic(String.format("%s: QuicTimerQueue: event %s will be scheduled" +
-                                " at %s (returned deadline: %s, nextDeadline: %s)",
-                        Thread.currentThread().getName(), event, d(now, deadline),
-                        d(now, returnedDeadline), d(now, nextDeadline())));
-            }
-            notifier.run();
-        } else {
-            if (Log.quicTimer()) {
-                var now = debugNow();
-                Log.logQuic(String.format("%s: QuicTimerQueue: event %s will not be scheduled" +
-                                " at %s (returned deadline: %s, nextDeadline: %s)",
-                        Thread.currentThread().getName(), event, d(now, deadline),
-                        d(now, returnedDeadline), d(now, nextDeadline())));
-            }
-        }
+        reschedule(event, event.deadline());
     }
 
     /**
@@ -181,7 +159,7 @@ public final class QuicTimerQueue {
         int drained = 0;
         int dues;
         synchronized (this) {
-            scheduledDeadline = Deadline.MAX;
+            scheduledDeadline = returnedDeadline = notifiedDeadline = Deadline.MAX;
         }
         // moved scheduled / rescheduled tasks to due, until
         // nothing else is due. Then process dues.
@@ -347,7 +325,16 @@ public final class QuicTimerQueue {
         synchronized (this) {
             if (deadline.isBefore(nextDeadline())
                 || deadline.isBefore(returnedDeadline)) {
-                return true;
+                // notifiedDeadline will be reset to MAX first thing in
+                // processEventAndReturnNextDeadline; We do not want
+                // to call the notifier (wake the selector) again if it's
+                // been already called for a notifiedDeadline <= to deadline;
+                // On the other hand, if deadline < notifiedDeadline, we
+                // need to call the notifier to force an additional wakeup
+                if (deadline.isBefore(notifiedDeadline)) {
+                    notifiedDeadline = deadline;
+                    return true;
+                }
             }
         }
         return false;

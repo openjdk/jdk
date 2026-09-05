@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jvmti.unit.ForceEarlyReturn;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import java.io.PrintStream;
 import nsk.share.Consts;
 
@@ -75,7 +76,7 @@ public class earlyretfp {
     }
 
     // Tested thread class
-    static class earlyretThread extends Thread {
+    static class earlyretThread extends ThreadWrapper {
         public void run() {
             double val0 = 0.0;    // an arbitrary value
             /* Start a chain of recursive calls with NESTING_DEPTH.

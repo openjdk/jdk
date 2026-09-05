@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -543,7 +543,8 @@ annotations.
 			<language type="saq">Samburu</language>
 			<language type="sas">Sasak</language>
 			<language type="sat">Santali</language>
-			<language type="saz">Saurashtra</language>
+			<language type="saz">Sourashtra</language>
+			<language type="saz" alt="variant">Saurashtra</language>
 			<language type="sba">Ngambay</language>
 			<language type="sbp">Sangu</language>
 			<language type="sc">Sardinian</language>
@@ -875,7 +876,8 @@ annotations.
 			<script type="Samr">Samaritan</script>
 			<script type="Sara">Sarati</script>
 			<script type="Sarb">Old South Arabian</script>
-			<script type="Saur">Saurashtra</script>
+			<script type="Saur">Sourashtra</script>
+			<script type="Saur" alt="variant">Saurashtra</script>
 			<script type="Sgnw">SignWriting</script>
 			<script type="Shaw">Shavian</script>
 			<script type="Shrd">Sharada</script>
@@ -1711,7 +1713,8 @@ annotations.
 			<type key="numbers" type="roman" scope="core">Roman uppercase</type>
 			<type key="numbers" type="romanlow">Roman Lowercase Numerals</type>
 			<type key="numbers" type="romanlow" scope="core">Roman lowercase</type>
-			<type key="numbers" type="saur">Saurashtra Digits</type>
+			<type key="numbers" type="saur">Sourashtra Digits</type>
+			<type key="numbers" type="saur" alt="variant">Saurashtra Digits</type>
 			<type key="numbers" type="segment">Segmented Digits</type>
 			<type key="numbers" type="segment" scope="core">Segmented</type>
 			<type key="numbers" type="shrd">Sharada Digits</type>
@@ -1999,7 +2002,7 @@ annotations.
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">h a v</dateFormatItem>
 						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
-						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2250,7 +2253,7 @@ annotations.
 						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">h a v</dateFormatItem>
 						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
-						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>
@@ -2870,7 +2873,7 @@ annotations.
 						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
 						<dateFormatItem id="hv">h a v</dateFormatItem>
 						<dateFormatItem id="hv" alt="ascii">h a v</dateFormatItem>
-						<dateFormatItem id="Hv">HH'h' v</dateFormatItem>
+						<dateFormatItem id="Hv">HH v</dateFormatItem>
 						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">E, M/d</dateFormatItem>

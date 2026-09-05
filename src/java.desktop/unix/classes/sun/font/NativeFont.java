@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,8 +251,8 @@ public final class NativeFont extends PhysicalFont {
             /* If no FileFont's are found, delegate font may be
              * a NativeFont, so we need to avoid recursing here.
              */
-            if (delegateFont instanceof NativeFont) {
-                return new NativeStrike((NativeFont)delegateFont, desc);
+            if (delegateFont instanceof NativeFont nf) {
+                return new NativeStrike(nf, desc);
             }
             FontStrike delegate = delegateFont.createStrike(desc);
             return new DelegateStrike(this, desc, delegate);

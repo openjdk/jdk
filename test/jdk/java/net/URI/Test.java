@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1137,6 +1137,53 @@ public class Test {
             norm().p("b");
         test("a/../b:c").p("a/../b:c").z()
             .norm().p("./b:c").z();
+
+        // Relative URI empty path segment normalization
+        String[] slashes = {"/", "//", "///", "////"};
+        for (var s1 : slashes) {
+            test("/1" + s1).p("/1" + s1).z()
+                    .norm().p("/1/").z();
+            test("/1" + s1 + "2").p("/1" + s1 + "2").z()
+                    .norm().p("/1/2").z();
+            test("///1" + s1).p("/1" + s1).z()
+                    .norm().p("/1/").z();
+            test("///1" + s1 + "2").p("/1" + s1 + "2").z()
+                    .norm().p("/1/2").z();
+            for (var s2 : slashes) {
+                test("/1" + s1 + "2" + s2).p("/1" + s1 + "2" + s2).z()
+                        .norm().p("/1/2/").z();
+                test("///1" + s1 + "2" + s2).p("/1" + s1 + "2" + s2).z()
+                        .norm().p("/1/2/").z();
+            }
+        }
+
+        // Absolute URI empty path segment normalization
+        for (var s1 : slashes) {
+            test("//a" + s1).h("a").p(s1).z()
+                    .norm().h("a").p("/").z();
+            test("//a" + s1 + "1").h("a").p(s1 + "1").z()
+                    .norm().h("a").p("/1").z();
+            test("s://a" + s1).s("s").h("a").p(s1).z()
+                    .norm().s("s").h("a").p("/").z();
+            test("s://a" + s1 + "1").s("s").h("a").p(s1 + "1").z()
+                    .norm().s("s").h("a").p("/1").z();
+            for (var s2 : slashes) {
+                test("//a" + s1 + "1" + s2).h("a").p(s1 + "1" + s2).z()
+                        .norm().h("a").p("/1/").z();
+                test("//a" + s1 + "1" + s2 + "2").h("a").p(s1 + "1" + s2 + "2").z()
+                        .norm().h("a").p("/1/2").z();
+                test("s://a" + s1 + "1" + s2).s("s").h("a").p(s1 + "1" + s2).z()
+                        .norm().s("s").h("a").p("/1/").z();
+                test("s://a" + s1 + "1" + s2 + "2").s("s").h("a").p(s1 + "1" + s2 + "2").z()
+                        .norm().s("s").h("a").p("/1/2").z();
+                for (var s3 : slashes) {
+                    test("//a" + s1 + "1" + s2 + "2" + s3).h("a").p(s1 + "1" + s2 + "2" + s3).z()
+                            .norm().h("a").p("/1/2/").z();
+                    test("s://a" + s1 + "1" + s2 + "2" + s3).s("s").h("a").p(s1 + "1" + s2 + "2" + s3).z()
+                            .norm().s("s").h("a").p("/1/2/").z();
+                }
+            }
+        }
 
         // Normalization of already normalized URI should yield the
         // same URI

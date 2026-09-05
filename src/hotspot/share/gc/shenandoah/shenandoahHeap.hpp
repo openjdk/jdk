@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -30,6 +30,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
@@ -47,6 +48,7 @@
 
 class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
+class ShenandoahAllocator;
 class ShenandoahCollectorPolicy;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
@@ -65,7 +67,6 @@ class ShenandoahFreeSet;
 class ShenandoahConcurrentMark;
 class ShenandoahFullGC;
 class ShenandoahMonitoringSupport;
-class ShenandoahPacer;
 class ShenandoahReferenceProcessor;
 class ShenandoahUncommitThread;
 class ShenandoahVerifier;
@@ -227,11 +228,12 @@ private:
   Atomic<size_t> _committed;
   shenandoah_padding(1);
 
+  ShenandoahAllocationRate _alloc_rate;
+  ShenandoahDecayAllocRate _alloc_rate_decay;
+
 public:
   void increase_committed(size_t bytes);
   void decrease_committed(size_t bytes);
-
-  void reset_bytes_allocated_since_gc_start();
 
   size_t min_capacity()      const;
   size_t max_capacity()      const override;
@@ -242,6 +244,10 @@ public:
   size_t committed()         const;
 
   void set_soft_max_capacity(size_t v);
+
+  ShenandoahAllocationRate& alloc_rate() {
+    return _alloc_rate;
+  }
 
 // ---------- Periodic Tasks
 //
@@ -281,6 +287,7 @@ private:
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   uint8_t* _affiliations;       // Holds array of enum ShenandoahAffiliation, including FREE status in non-generational mode
+  uint8_t* _biased_affiliations;
 
 public:
 
@@ -487,8 +494,8 @@ private:
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
 
-  // Turn off weak roots flag, purge old satb buffers in generational mode
-  void concurrent_final_roots(HandshakeClosure* handshake_closure = nullptr);
+  // Turn off weak roots flag
+  void concurrent_final_roots();
 
   virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
   // Final update region states
@@ -528,7 +535,7 @@ private:
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahFreeSet*         _free_set;
-  ShenandoahPacer*           _pacer;
+  ShenandoahAllocator*       _allocator;
   ShenandoahVerifier*        _verifier;
 
   ShenandoahPhaseTimings*       _phase_timings;
@@ -553,7 +560,7 @@ public:
   ShenandoahCollectorPolicy* shenandoah_policy() const { return _shenandoah_policy; }
   ShenandoahMode*            mode()              const { return _gc_mode;           }
   ShenandoahFreeSet*         free_set()          const { return _free_set;          }
-  ShenandoahPacer*           pacer()             const { return _pacer;             }
+  ShenandoahAllocator*       allocator()         const { return _allocator;         }
 
   ShenandoahPhaseTimings*    phase_timings()     const { return _phase_timings;     }
 
@@ -628,6 +635,15 @@ public:
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
 
+  // Returns true if `maybe_old` is in old and `maybe_young` is in young
+  inline bool is_old_to_young(const void* maybe_old, oop maybe_young) const;
+
+  // Returns false if `p` is not in the heap or does not have the given affiliation.
+  inline bool has_affiliation(const void* p, ShenandoahAffiliation affiliation) const;
+
+  // Does not check that `obj` is in the heap (debug builds assert that `obj` is in the heap).
+  inline bool has_affiliation(oop obj, ShenandoahAffiliation affiliation) const;
+
   // Returns true iff the young generation is being collected and the given pointer
   // is in the old generation. This is used to prevent the young collection from treating
   // such an object as unreachable.
@@ -637,6 +653,10 @@ public:
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
   inline ShenandoahAffiliation region_affiliation(size_t index) const;
+
+  inline bool is_region_young(size_t index) const;
+  inline bool is_region_old(size_t index) const;
+  inline bool is_region_free(size_t index) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
 
@@ -680,6 +700,13 @@ public:
   void pin_object(JavaThread* thread, oop obj) override;
   void unpin_object(JavaThread* thread, oop obj) override;
 
+  // Flushes this thread's accumulated pin count to its cached region's
+  // shared counter and clears the thread's count.
+  void flush_region_pin_cache(JavaThread* thread);
+
+  // Flushes all Java threads' pin counts.
+  void flush_region_pin_cache();
+
   void sync_pinned_region_status();
   void assert_pinned_region_status() const NOT_DEBUG_RETURN;
   void assert_pinned_region_status(ShenandoahGeneration* generation) const NOT_DEBUG_RETURN;
@@ -696,7 +723,7 @@ protected:
   inline HeapWord* allocate_from_gclab(Thread* thread, size_t size);
 
 private:
-  HeapWord* allocate_memory_under_lock(ShenandoahAllocRequest& request, bool& in_new_region);
+  HeapWord* allocate_memory_work(ShenandoahAllocRequest& request, bool& in_new_region);
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
@@ -862,6 +889,19 @@ private:
 
   void try_inject_alloc_failure();
   bool should_inject_alloc_failure();
+
+  // Randomly pin a region when ShenandoahPinRegionRate > 0. Pin injection is only called after
+  // the cycle has populated _live_data and runs concurrently on the control thread. Releasing
+  // injected pins is done at the start of every cycle preventing stale pinned region states.
+  void try_inject_pin();
+  void release_injected_pins();
+
+  // Maximum number of regions that can be injected with pins.
+  static const uint MAX_INJECTED_PINS = 32;
+
+  // Tracker for injected pins added by try_inject_pin().
+  size_t _injected_pin_indices[MAX_INJECTED_PINS];
+  uint   _injected_pin_count;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP

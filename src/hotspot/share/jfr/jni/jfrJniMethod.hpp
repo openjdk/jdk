@@ -179,6 +179,8 @@ jlongArray JNICALL jfr_set_method_trace_filters(JNIEnv* env, jclass jvm, jobject
 
 jlongArray JNICALL jfr_drain_stale_method_tracer_ids(JNIEnv* env, jclass);
 
+jboolean JNICALL jfr_try_update_epoch(JNIEnv* env, jclass jvm, jobject obj);
+
 #ifdef __cplusplus
 }
 #endif

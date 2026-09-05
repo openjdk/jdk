@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,10 +176,10 @@ import static jdk.internal.util.Exceptions.formatMsg;
  * <i>normalization</i>, <i>resolution</i>, and <i>relativization</i>.
  *
  * <p> <i>Normalization</i> is the process of removing unnecessary {@code "."}
- * and {@code ".."} segments from the path component of a hierarchical URI.
- * Each {@code "."} segment is simply removed.  A {@code ".."} segment is
- * removed only if it is preceded by a non-{@code ".."} segment.
- * Normalization has no effect upon opaque URIs.
+ * and {@code ".."} segments, and redundant {@code "/"} (empty segments) from
+ * the path component of a hierarchical URI. Each {@code "."} and empty segment
+ * is simply removed. A {@code ".."} segment is removed only if it is preceded
+ * by a non-{@code ".."} segment. Normalization has no effect upon opaque URIs.
  *
  * <p> <i>Resolution</i> is the process of resolving one URI against another,
  * <i>base</i> URI.  The resulting URI is constructed from components of both
@@ -1028,6 +1028,9 @@ public final class URI
      *   prepended.  This prevents a relative URI with a path such as
      *   {@code "a:b/c/d"} from later being re-parsed as an opaque URI with a
      *   scheme of {@code "a"} and a scheme-specific part of {@code "b/c/d"}.
+     *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
+     *
+     *   <li><p> All redundant {@code "/"} (empty segments) are removed.
      *   <b><i>(Deviation from RFC&nbsp;2396)</i></b> </p></li>
      *
      * </ol>

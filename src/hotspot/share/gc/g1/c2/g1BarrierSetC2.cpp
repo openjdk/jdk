@@ -212,7 +212,7 @@ Node* G1BarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) c
   return CardTableBarrierSetC2::load_at_resolved(access, val_type);
 }
 
-void G1BarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const {
+void G1BarrierSetC2::eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const {
   eliminate_gc_barrier_data(node);
 }
 
@@ -503,7 +503,7 @@ int G1BarrierSetC2::get_store_barrier(C2Access& access) const {
   return barriers;
 }
 
-void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach) const {
+void G1BarrierSetC2::elide_dominated_barrier(MachNode* mach, MachNode* dominator) const {
   uint8_t barrier_data = mach->barrier_data();
   barrier_data &= ~G1C2BarrierPre;
   if (CardTableBarrierSetC2::use_ReduceInitialCardMarks()) {
@@ -575,7 +575,7 @@ void G1BarrierSetC2::emit_stubs(CodeBuffer& cb) const {
     }
     stubs->at(i)->emit_code(masm);
   }
-  masm.flush();
+  // Code will be copied. No ICache sync required.
 }
 
 #ifndef PRODUCT

@@ -812,6 +812,7 @@ public enum Option {
     },
 
     MULTIRELEASE("--multi-release", "opt.arg.multi-release", "opt.multi-release", HIDDEN, FILEMANAGER),
+    PREVIEWMODE("--preview-mode", "opt.arg.preview-mode", "opt.preview-mode", HIDDEN, FILEMANAGER),
 
     INHERIT_RUNTIME_ENVIRONMENT("--inherit-runtime-environment", "opt.inherit_runtime_environment",
             HIDDEN, BASIC) {

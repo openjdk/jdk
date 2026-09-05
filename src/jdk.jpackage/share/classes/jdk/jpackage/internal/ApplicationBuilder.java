@@ -65,6 +65,7 @@ final class ApplicationBuilder {
         appDirSources = other.appDirSources;
         externalApp = other.externalApp;
         contentDirSources = other.contentDirSources;
+        resourcesDirSources = other.resourcesDirSources;
         appImageLayout = other.appImageLayout;
         runtimeBuilder = other.runtimeBuilder;
         launchers = other.launchers;
@@ -96,6 +97,7 @@ final class ApplicationBuilder {
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
                 Optional.ofNullable(appDirSources).orElseGet(List::of),
                 Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                Optional.ofNullable(resourcesDirSources).orElseGet(List::of),
                 appImageLayout,
                 Optional.ofNullable(runtimeBuilder),
                 launchersAsList,
@@ -179,6 +181,11 @@ final class ApplicationBuilder {
         return this;
     }
 
+    ApplicationBuilder resourcesDirSources(Collection<RootedPath> v) {
+        resourcesDirSources = v;
+        return this;
+    }
+
     ApplicationBuilder derivedVersionNormalizer(UnaryOperator<String> v) {
         derivedVersionNormalizer = v;
         return this;
@@ -192,7 +199,7 @@ final class ApplicationBuilder {
                 derivedVersion = derivedVersion.map(v -> {
                     var mappedVersion = derivedVersionNormalizer.apply(v);
                     if (!mappedVersion.equals(v)) {
-                        Log.verbose(I18N.format("message.version-normalized", mappedVersion, v));
+                        Log.trace("Normalize derived bundle version from [%s] to [%s]", v, mappedVersion);
                     }
                     return mappedVersion;
                 });
@@ -205,10 +212,10 @@ final class ApplicationBuilder {
         if (appImageLayout instanceof RuntimeLayout && runtimeReleaseFile != null) {
             try {
                 var releaseVersion = new RuntimeReleaseFile(runtimeReleaseFile).getJavaVersion().toString();
-                Log.verbose(I18N.format("message.release-version", releaseVersion));
+                Log.trace("Derive bundle version [%s] from [%s] file", releaseVersion, runtimeReleaseFile);
                 return Optional.of(releaseVersion);
             } catch (Exception ex) {
-                Log.verbose(ex);
+                Log.trace(ex, "Failed to derive bundle version from [%s] file", runtimeReleaseFile);
                 return Optional.empty();
             }
         } else if (launchers != null) {
@@ -218,7 +225,7 @@ final class ApplicationBuilder {
                     .flatMap(modularStartupInfo -> {
                         var moduleVersion = modularStartupInfo.moduleVersion();
                         moduleVersion.ifPresent(v -> {
-                            Log.verbose(I18N.format("message.module-version", v, modularStartupInfo.moduleName()));
+                            Log.trace("Derive bundle version [%s] from [%s] module", v, modularStartupInfo.moduleName());
                         });
                         return moduleVersion;
                     });
@@ -339,6 +346,7 @@ final class ApplicationBuilder {
                 app.copyright(),
                 app.appDirSources(),
                 app.contentDirSources(),
+                app.resourcesDirSources(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -388,6 +396,7 @@ final class ApplicationBuilder {
     private Collection<RootedPath> appDirSources;
     private ExternalApplication externalApp;
     private Collection<RootedPath> contentDirSources;
+    private Collection<RootedPath> resourcesDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;

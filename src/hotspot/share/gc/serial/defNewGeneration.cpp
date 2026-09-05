@@ -737,7 +737,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   // Done, insert forward pointer to obj in this header
   old->forward_to(obj);
 
-  if (SerialStringDedup::is_candidate_from_evacuation(obj, new_obj_is_tenured)) {
+  if (SerialStringDedup::is_candidate_from_evacuation(obj, klass, new_obj_is_tenured)) {
     // Record old; request adds a new weak reference, which reference
     // processing expects to refer to a from-space object.
     _string_dedup_requests.add(old);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,18 @@
  *
  */
 
-import org.testng.annotations.*;
 
 import java.lang.foreign.MemorySegment;
 import java.nio.CharBuffer;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 /*
  * @test
  * @bug 8294621
  * @summary test that StringCharBuffer is not accepted by MemorySegment::ofBuffer
- * @run testng TestOfBufferIssue
+ * @run junit TestOfBufferIssue
  */
 
 public class TestOfBufferIssue {

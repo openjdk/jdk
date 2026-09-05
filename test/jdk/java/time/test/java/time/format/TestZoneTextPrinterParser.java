@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import java.text.DateFormatSymbols;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.format.DecimalStyle;
@@ -41,6 +42,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
@@ -54,7 +56,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /*
  * @test
  * @bug 8081022 8151876 8166875 8177819 8189784 8206980 8277049 8278434 8346948
- *      8174269
+ *      8174269 8371842 8388214
  * @key randomness
  */
 
@@ -63,6 +65,14 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
+
+    // Explicit dstOffset attributes from CLDR v48.2 metazone data.
+    private static final Map<String, ZoneOffset> CLDR_EXPLICIT_DST_OFFSETS = Map.of(
+            "Africa/Windhoek", ZoneOffset.of("+02:00"),
+            "America/Vancouver", ZoneOffset.of("-07:00"),
+            "Canada/Pacific", ZoneOffset.of("-07:00"),
+            "Europe/Dublin", ZoneOffset.of("+01:00"),
+            "Eire", ZoneOffset.of("+01:00"));
 
     private static final Locale[] SAMPLE_LOCALES = {
         Locale.US, Locale.UK, Locale.FRANCE, Locale.GERMANY, Locale.ITALY, Locale.forLanguageTag("es"),
@@ -92,10 +102,17 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                 }
                 zdt = zdt.withZoneSameLocal(ZoneId.of(zid));
                 TimeZone tz = TimeZone.getTimeZone(zid);
-                boolean isDST = tz.inDaylightTime(new Date(zdt.toInstant().toEpochMilli()));
+                long epochMilli = zdt.toInstant().toEpochMilli();
+                boolean isDST = tz.inDaylightTime(new Date(epochMilli));
+                // Some zones now use an explicit daylight offset in CLDR without java.util.TimeZone
+                // reporting DST for the instant.
+                ZoneOffset explicitDstOffset = CLDR_EXPLICIT_DST_OFFSETS.get(zid);
+                boolean useDaylightName = explicitDstOffset != null
+                        ? zdt.getOffset().equals(explicitDstOffset)
+                        : isDST;
                 for (Locale locale : SAMPLE_LOCALES) {
-                    String longDisplayName = tz.getDisplayName(isDST, TimeZone.LONG, locale);
-                    String shortDisplayName = tz.getDisplayName(isDST, TimeZone.SHORT, locale);
+                    String longDisplayName = tz.getDisplayName(useDaylightName, TimeZone.LONG, locale);
+                    String shortDisplayName = tz.getDisplayName(useDaylightName, TimeZone.SHORT, locale);
                     if ((longDisplayName.startsWith("GMT+") && shortDisplayName.startsWith("GMT+"))
                             || (longDisplayName.startsWith("GMT-") && shortDisplayName.startsWith("GMT-"))) {
                         // exclude ROOT
@@ -107,9 +124,9 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
                         continue;
                     }
                     printText(locale, zdt, TextStyle.FULL, tz,
-                            tz.getDisplayName(isDST, TimeZone.LONG, locale));
+                            tz.getDisplayName(useDaylightName, TimeZone.LONG, locale));
                     printText(locale, zdt, TextStyle.SHORT, tz,
-                            tz.getDisplayName(isDST, TimeZone.SHORT, locale));
+                            tz.getDisplayName(useDaylightName, TimeZone.SHORT, locale));
                 }
             }
         }

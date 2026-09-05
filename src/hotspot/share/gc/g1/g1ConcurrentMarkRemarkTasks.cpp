@@ -28,6 +28,7 @@
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1RemSetTrackingPolicy.hpp"
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -65,7 +66,7 @@ struct G1UpdateRegionLivenessAndSelectForRebuildTask::G1OnRegionClosure : public
     _freed_bytes += hr->used();
     hr->set_containing_set(nullptr);
     hr->clear_both_card_tables();
-    _cm->clear_statistics(hr);
+    _cm->assert_statistics_clear(hr);
     G1HeapRegionPrinter::mark_reclaim(hr);
     _g1h->concurrent_refine()->notify_region_reclaimed(hr);
   }
@@ -147,7 +148,7 @@ G1UpdateRegionLivenessAndSelectForRebuildTask::G1UpdateRegionLivenessAndSelectFo
 
 G1UpdateRegionLivenessAndSelectForRebuildTask::~G1UpdateRegionLivenessAndSelectForRebuildTask() {
   if (!_cleanup_list.is_empty()) {
-    log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.length());
+    log_debug(gc)("Reclaimed %u empty regions", _cleanup_list.num_regions());
     // And actually make them available.
     _g1h->prepend_to_freelist(&_cleanup_list);
   }
@@ -208,7 +209,8 @@ void G1UpdateRegionLivenessAndSelectForRebuildTask::prune(GrowableArrayCHeap<G1H
       wasted_bytes + reclaimable > allowed_waste) {
       break;
     }
-    r->rem_set()->clear(true /* cardset_only */);
+    assert(!r->rem_set()->has_card_set_group(), "must not have a card set group");
+    r->rem_set()->set_state_untracked();
 
     wasted_bytes += reclaimable;
     num_pruned++;

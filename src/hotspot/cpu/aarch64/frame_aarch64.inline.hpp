@@ -32,6 +32,9 @@
 #include "interpreter/interpreter.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "pauth_aarch64.hpp"
+#ifdef COMPILER1
+#include "c1/c1_Runtime1.hpp"
+#endif
 
 // Inline functions for AArch64 frames:
 
@@ -403,9 +406,11 @@ inline int frame::sender_sp_ret_address_offset() {
   return frame::sender_sp_offset - frame::return_addr_offset;
 }
 
-//------------------------------------------------------------------------------
-// frame::sender
-inline frame frame::sender(RegisterMap* map) const {
+// This method can be on a hot path. Since Valhalla made it a bit bigger, compilers are
+// not as eager to inline it, but in some cases, it makes a significant difference.
+// Let's encourage the compiler to inline sender all the way to frame::repair_sender_sp.
+// through frame::sender_for_compiled_frame.
+ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   frame result = sender_raw(map);
 
   if (map->process_frames() && !map->in_cont()) {
@@ -418,7 +423,7 @@ inline frame frame::sender(RegisterMap* map) const {
   return result;
 }
 
-inline frame frame::sender_raw(RegisterMap* map) const {
+ALWAYSINLINE frame frame::sender_raw(RegisterMap* map) const {
   // Default is we done have to follow them. The sender_for_xxx will
   // update it accordingly
   map->set_include_argument_oops(false);
@@ -443,29 +448,78 @@ inline frame frame::sender_raw(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
+// Check for a method with scalarized inline type arguments that needs
+// a stack repair and return the repaired sender stack pointer.
+ALWAYSINLINE intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  nmethod* nm = _cb->as_nmethod_or_null();
+  if (nm != nullptr && nm->needs_stack_repair()) {
+    // The stack increment resides just below the saved FP on the stack and
+    // records the total frame size excluding the two words for saving FP and LR
+    // (see MacroAssembler::remove_frame).
+    intptr_t* sp_inc_addr = (intptr_t*) (saved_fp_addr - 1);
+    assert(*sp_inc_addr % StackAlignmentInBytes == 0, "sp_inc not aligned");
+    int real_frame_size = (*sp_inc_addr / wordSize) + metadata_words_at_bottom;
+    assert(real_frame_size >= _cb->frame_size() && real_frame_size <= 1000000, "invalid frame size");
+    sender_sp = unextended_sp() + real_frame_size;
+  }
+  return sender_sp;
+}
+
+// See comment in MacroAssembler::remove_frame
+ALWAYSINLINE frame::CompiledFramePointers frame::compiled_frame_details() const {
   // we cannot rely upon the last fp having been saved to the thread
   // in C2 code but it will have been pushed onto the stack. so we
   // have to find it relative to the unextended sp
 
   assert(_cb->frame_size() > 0, "must have non-zero frame size");
-  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted) ? unextended_sp() + _cb->frame_size()
-                                                                    : sender_sp();
+
+  // if need stack repair: the bottom of the fake frame, under LR #2
+  // else the bottom of the frame
+  intptr_t* l_sender_sp = (!PreserveFramePointer || _sp_is_trusted)
+      ? unextended_sp() + _cb->frame_size()
+      : sender_sp();
+
   assert(!_sp_is_trusted || l_sender_sp == real_fp(), "");
+
+  // the actual bottom of the frame. This actually changes something if the frame needs stack repair
+  l_sender_sp = repair_sender_sp(l_sender_sp, (intptr_t**)(l_sender_sp - frame::sender_sp_offset));
+
+  // From the sender's sp, we can locate the real saved lr (x30) and rfp (x29): they are
+  // immediately above, no matter if the stack was extended or not
+  CompiledFramePointers cfp;
+  cfp.sender_sp = l_sender_sp;
+  cfp.saved_fp_addr = (intptr_t**)(l_sender_sp - frame::sender_sp_offset);
+  cfp.sender_pc_addr = (address*)(l_sender_sp - frame::return_addr_offset);
+
+  return cfp;
+}
+
+ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
+  CompiledFramePointers cfp = compiled_frame_details();
 
   // The return_address is always the word on the stack.
   // For ROP protection, C1/C2 will have signed the sender_pc,
   // but there is no requirement to authenticate it here.
-  address sender_pc = pauth_strip_verifiable((address) *(l_sender_sp - 1));
-
-  intptr_t** saved_fp_addr = (intptr_t**) (l_sender_sp - frame::sender_sp_offset);
+  address sender_pc = pauth_strip_verifiable(*cfp.sender_pc_addr);
 
   if (map->update_map()) {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
-    if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
-      map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
+    bool c1_buffering = false;
+#ifdef COMPILER1
+    nmethod* nm = _cb->as_nmethod_or_null();
+    if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
+        pc() < nm->verified_inline_entry_point()) {
+      // The VEP and VIEP(RO) of C1-compiled methods call buffer_inline_args_xxx
+      // before doing any argument shuffling, so we need to scan the oops
+      // as the caller passes them.
+      c1_buffering = true;
+    }
+#endif
+    if (!_cb->is_nmethod() || c1_buffering) { // compiled frames do not use callee-saved registers
+      bool caller_args = _cb->caller_must_gc_arguments(map->thread()) || c1_buffering;
+      map->set_include_argument_oops(caller_args);
       if (oop_map() != nullptr) {
         _oop_map->update_register_map(this, map);
       }
@@ -478,19 +532,19 @@ inline frame frame::sender_for_compiled_frame(RegisterMap* map) const {
     // Since the prolog does the save and restore of FP there is no oopmap
     // for it so we must fill in its location as if there was an oopmap entry
     // since if our caller was compiled code there could be live jvm state in it.
-    update_map_with_saved_link(map, saved_fp_addr);
+    update_map_with_saved_link(map, cfp.saved_fp_addr);
   }
 
   if (Continuation::is_return_barrier_entry(sender_pc)) {
     if (map->walk_cont()) { // about to walk into an h-stack
       return Continuation::top_frame(*this, map);
     } else {
-      return Continuation::continuation_bottom_sender(map->thread(), *this, l_sender_sp);
+      return Continuation::continuation_bottom_sender(map->thread(), *this, cfp.sender_sp);
     }
   }
 
-  intptr_t* unextended_sp = l_sender_sp;
-  return frame(l_sender_sp, unextended_sp, *saved_fp_addr, sender_pc);
+  intptr_t* unextended_sp = cfp.sender_sp;
+  return frame(cfp.sender_sp, unextended_sp, *cfp.saved_fp_addr, sender_pc);
 }
 
 template <typename RegisterMapT>

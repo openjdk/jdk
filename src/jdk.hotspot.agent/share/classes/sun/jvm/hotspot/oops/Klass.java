@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,84 @@ import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
 
 public class Klass extends Metadata implements ClassConstants {
+
+  public static class KlassKind {
+
+    public static KlassKind InstanceKlassKind;
+    public static KlassKind InlineKlassKind;
+    public static KlassKind InstanceRefKlassKind;
+    public static KlassKind InstanceMirrorKlassKind;
+    public static KlassKind InstanceClassLoaderKlassKind;
+    public static KlassKind InstanceStackChunkKlassKind;
+    public static KlassKind TypeArrayKlassKind;
+    public static KlassKind ObjArrayKlassKind;
+    public static KlassKind RefArrayKlassKind;
+    public static KlassKind FlatArrayKlassKind;
+    public static KlassKind UnknownKlassKind;
+
+    private final int value;
+
+    static {
+      VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
+    }
+
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+      Type type = db.lookupType("Klass::KlassKind");
+
+      InstanceKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceKlassKind").intValue());
+      InlineKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InlineKlassKind").intValue());
+      InstanceRefKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceRefKlassKind").intValue());
+      InstanceMirrorKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceMirrorKlassKind").intValue());
+      InstanceClassLoaderKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceClassLoaderKlassKind").intValue());
+      InstanceStackChunkKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceStackChunkKlassKind").intValue());
+      TypeArrayKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::TypeArrayKlassKind").intValue());
+      ObjArrayKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::ObjArrayKlassKind").intValue());
+      RefArrayKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::RefArrayKlassKind").intValue());
+      FlatArrayKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::FlatArrayKlassKind").intValue());
+      UnknownKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::UnknownKlassKind").intValue());
+    }
+
+    private KlassKind(int value) {
+      this.value = value;
+    }
+
+    public static KlassKind valueOf(int rawValue) {
+      if (rawValue == InstanceKlassKind.value) {
+        return InstanceKlassKind;
+      } else if (rawValue == InlineKlassKind.value) {
+        return InlineKlassKind;
+      } else if (rawValue == InstanceRefKlassKind.value) {
+        return InstanceRefKlassKind;
+      } else if (rawValue == InstanceMirrorKlassKind.value) {
+        return InstanceMirrorKlassKind;
+      } else if (rawValue == InstanceClassLoaderKlassKind.value) {
+        return InstanceClassLoaderKlassKind;
+      } else if (rawValue == InstanceStackChunkKlassKind.value) {
+        return InstanceStackChunkKlassKind;
+      } else if (rawValue == TypeArrayKlassKind.value) {
+        return TypeArrayKlassKind;
+      } else if (rawValue == ObjArrayKlassKind.value) {
+        return ObjArrayKlassKind;
+      } else if (rawValue == RefArrayKlassKind.value) {
+        return RefArrayKlassKind;
+      } else if (rawValue == FlatArrayKlassKind.value) {
+        return FlatArrayKlassKind;
+      } else if (rawValue == UnknownKlassKind.value) {
+        return UnknownKlassKind;
+      } else {
+        throw new IllegalArgumentException("Out of range");
+      }
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+      if ((obj != null) && (obj instanceof KlassKind k)) {
+          return k.value == this.value;
+      }
+      return false;
+    }
+  }
+
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -49,11 +127,12 @@ public class Klass extends Metadata implements ClassConstants {
   public static int LH_HEADER_SIZE_SHIFT;
   public static int LH_ARRAY_TAG_SHIFT;
   public static int LH_ARRAY_TAG_TYPE_VALUE;
-  public static int LH_ARRAY_TAG_OBJ_VALUE;
+
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type    = db.lookupType("Klass");
     javaMirrorFieldOffset = type.getField("_java_mirror").getOffset();
+    kindField    = new CIntField(type.getCIntegerField("_kind"), 0);
     superField   = new MetadataField(type.getAddressField("_super"), 0);
     layoutHelper = new IntField(type.getJIntField("_layout_helper"), 0);
     name         = type.getAddressField("_name");
@@ -73,7 +152,6 @@ public class Klass extends Metadata implements ClassConstants {
     LH_HEADER_SIZE_SHIFT       = db.lookupIntConstant("Klass::_lh_header_size_shift").intValue();
     LH_ARRAY_TAG_SHIFT         = db.lookupIntConstant("Klass::_lh_array_tag_shift").intValue();
     LH_ARRAY_TAG_TYPE_VALUE    = db.lookupIntConstant("Klass::_lh_array_tag_type_value").intValue();
-    LH_ARRAY_TAG_OBJ_VALUE     = db.lookupIntConstant("Klass::_lh_array_tag_obj_value").intValue();
   }
 
 
@@ -91,6 +169,7 @@ public class Klass extends Metadata implements ClassConstants {
 
   // Fields
   private static long javaMirrorFieldOffset;
+  private static CIntField kindField;
   private static MetadataField  superField;
   private static IntField layoutHelper;
   private static AddressField  name;
@@ -111,6 +190,7 @@ public class Klass extends Metadata implements ClassConstants {
     VMOopHandle vmOopHandle = VMObjectFactory.newObject(VMOopHandle.class, addr);
     return vmOopHandle.resolve();
   }
+  public KlassKind getKind()            { return KlassKind.valueOf((int)kindField.getValue(this)); }
   public Klass    getSuper()            { return (Klass)    superField.getValue(this);   }
   public Klass    getJavaSuper()        { return null;  }
   public int      getLayoutHelper()     { return            layoutHelper.getValue(this); }

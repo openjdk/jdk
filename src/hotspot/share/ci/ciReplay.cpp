@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -38,12 +39,15 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/arrayProperties.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -511,15 +515,14 @@ class CompileReplay : public StackObj {
         return k;
       }
       obj = ciReplay::obj_field(obj, field);
-      // array
       if (obj != nullptr && obj->is_objArray()) {
-        objArrayOop arr = (objArrayOop)obj;
+        objArrayOop arr = oop_cast<objArrayOop>(obj);
         int index = parse_int("index");
         if (index >= arr->length()) {
           report_error("bad array index");
           return nullptr;
         }
-        obj = arr->obj_at(index);
+        obj = arr->obj_at(index, THREAD);
       }
     } while (obj != nullptr);
     if (obj == nullptr) {
@@ -822,7 +825,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass>)* methods <length> (<offset> <klass> <name> <signature>)*
+  // ciMethodData <klass> <name> <signature> <state> <invocation_counter> orig <length> <byte>* data <length> <ptr>* oops <length> (<offset> <klass> <array properties>?)* methods <length> (<offset> <klass> <name> <signature>)*
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -862,6 +865,12 @@ class CompileReplay : public StackObj {
         return;
       }
       Klass* k = parse_klass(CHECK);
+      if (had_error()) {
+        return;
+      }
+      if (_version >= 3 && k != nullptr && k->is_objArray_klass()) {
+        k = create_concrete_object_array_klass(ObjArrayKlass::cast(k), THREAD);
+      }
       rec->_classes_offsets[i] = offset;
       rec->_classes[i] = k;
     }
@@ -880,6 +889,15 @@ class CompileReplay : public StackObj {
       rec->_methods_offsets[i] = offset;
       rec->_methods[i] = m;
     }
+  }
+
+  ObjArrayKlass* create_concrete_object_array_klass(ObjArrayKlass* obj_array_klass, TRAPS) {
+    ArrayProperties array_properties(checked_cast<ArrayProperties::Type>(parse_int("array_properties")));
+    if (!Arguments::is_valhalla_enabled()) {
+      // Ignore Valhalla-specific properties
+      array_properties = ArrayProperties::Default();
+    }
+    return obj_array_klass->klass_with_properties(array_properties, THREAD);
   }
 
   // instanceKlass <name>
@@ -1007,8 +1025,165 @@ class CompileReplay : public StackObj {
     }
   }
 
-  // staticfield <klass> <name> <signature> <value>
-  //
+  class InlineTypeFieldInitializer : public FieldClosure {
+    oop _vt;
+    CompileReplay* _replay;
+  public:
+    InlineTypeFieldInitializer(oop vt, CompileReplay* replay)
+  : _vt(vt), _replay(replay) {}
+
+    void do_field(fieldDescriptor* fd) {
+      BasicType bt = fd->field_type();
+      const char* string_value = fd->is_null_free_inline_type() ? nullptr : _replay->parse_escaped_string();
+      switch (bt) {
+      case T_BYTE: {
+        int value = atoi(string_value);
+        _vt->byte_field_put(fd->offset(), value);
+        break;
+      }
+      case T_BOOLEAN: {
+        int value = atoi(string_value);
+        _vt->bool_field_put(fd->offset(), value);
+        break;
+      }
+      case T_SHORT: {
+        int value = atoi(string_value);
+        _vt->short_field_put(fd->offset(), value);
+        break;
+      }
+      case T_CHAR: {
+        int value = atoi(string_value);
+        _vt->char_field_put(fd->offset(), value);
+        break;
+      }
+      case T_INT: {
+        int value = atoi(string_value);
+        _vt->int_field_put(fd->offset(), value);
+        break;
+      }
+      case T_LONG: {
+        jlong value;
+        if (sscanf(string_value, JLONG_FORMAT, &value) != 1) {
+          fprintf(stderr, "Error parsing long: %s\n", string_value);
+          break;
+        }
+        _vt->long_field_put(fd->offset(), value);
+        break;
+      }
+      case T_FLOAT: {
+        float value = atof(string_value);
+        _vt->float_field_put(fd->offset(), value);
+        break;
+      }
+      case T_DOUBLE: {
+        double value = atof(string_value);
+        _vt->double_field_put(fd->offset(), value);
+        break;
+      }
+      case T_ARRAY:
+      case T_OBJECT:
+        if (fd->is_null_free_inline_type() && fd->is_flat()) {
+          InlineKlass* vk = InlineKlass::cast(fd->field_holder()->get_inline_type_field_klass(fd->index()));
+          int field_offset = fd->offset() - vk->payload_offset();
+          oop obj = cast_to_oop(cast_from_oop<address>(_vt) + field_offset);
+          InlineTypeFieldInitializer init_fields(obj, _replay);
+          vk->do_nonstatic_fields(&init_fields);
+        } else {
+          JavaThread* THREAD = JavaThread::current();
+          bool res = _replay->process_staticfield_reference(string_value, _vt, fd, THREAD);
+          assert(res, "should succeed for arrays & objects");
+        }
+      default: {
+        fatal("Unhandled type: %s", type2name(bt));
+      }
+      }
+    }
+  };
+
+  bool process_staticfield_reference(const char* field_signature, oop java_mirror, fieldDescriptor* fd, TRAPS) {
+    if (field_signature[0] == JVM_SIGNATURE_ARRAY) {
+      int length = parse_int("array length");
+      oop value = nullptr;
+
+      if (length != -1) {
+        if (field_signature[1] == JVM_SIGNATURE_ARRAY) {
+          // multi dimensional array
+          Klass* k = resolve_klass(field_signature, CHECK_(true));
+          ArrayKlass* kelem = (ArrayKlass *)k;
+          int rank = 0;
+          while (field_signature[rank] == JVM_SIGNATURE_ARRAY) {
+            rank++;
+          }
+          jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
+          dims[0] = length;
+          for (int i = 1; i < rank; i++) {
+            dims[i] = 1; // These aren't relevant to the compiler
+          }
+          value = kelem->multi_allocate(rank, dims, CHECK_(true));
+        } else {
+          if (strcmp(field_signature, "[B") == 0) {
+            value = oopFactory::new_byteArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[Z") == 0) {
+            value = oopFactory::new_boolArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[C") == 0) {
+            value = oopFactory::new_charArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[S") == 0) {
+            value = oopFactory::new_shortArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[F") == 0) {
+            value = oopFactory::new_floatArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[D") == 0) {
+            value = oopFactory::new_doubleArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[I") == 0) {
+            value = oopFactory::new_intArray(length, CHECK_(true));
+          } else if (strcmp(field_signature, "[J") == 0) {
+            value = oopFactory::new_longArray(length, CHECK_(true));
+          } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
+                     field_signature[1] == JVM_SIGNATURE_CLASS) {
+            const char* flatness = parse_string();
+            if (strcmp(flatness, "ref") == 0) {
+              const char* nullability = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(false).with_null_restricted(null_restricted);
+              value = oopFactory::new_refArray(kelem, length, props, CHECK_(true));
+            } else if (strcmp(flatness, "flat") == 0) {
+              const char* nullability = parse_string();
+              const char* atomicity = parse_string();
+              bool null_restricted = (strcmp(nullability, "null-free") == 0);
+              bool non_atomic = (strcmp(atomicity, "non-atomic") == 0);
+              Klass* actual_array_klass = parse_klass(CHECK_(true));
+              Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
+              ArrayProperties props = ArrayProperties::Default().with_non_atomic(non_atomic).with_null_restricted(null_restricted);
+              value = oopFactory::new_flatArray(InlineKlass::cast(kelem), length, props, CHECK_(true));
+            } else {
+              report_error("unrecognized array kind");
+            }
+          } else {
+            report_error("unhandled array staticfield");
+          }
+        }
+        java_mirror->obj_field_put(fd->offset(), value);
+        return true;
+      }
+    } else if (strcmp(field_signature, "Ljava/lang/String;") == 0) {
+      const char* string_value = parse_escaped_string();
+      Handle value = java_lang_String::create_from_str(string_value, CHECK_(true));
+      java_mirror->obj_field_put(fd->offset(), value());
+      return true;
+    } else if (field_signature[0] == JVM_SIGNATURE_CLASS) {
+      const char* instance = parse_escaped_string();
+      oop value = nullptr;
+      if (instance != nullptr) {
+        Klass* k = resolve_klass(instance, CHECK_(true));
+        value = InstanceKlass::cast(k)->allocate_instance(CHECK_(true));
+      }
+      java_mirror->obj_field_put(fd->offset(), value);
+      return true;
+    }
+    return false;
+  }
+
   // Initialize a class and fill in the value for a static field.
   // This is useful when the compile was dependent on the value of
   // static fields but it's impossible to properly rerun the static
@@ -1018,7 +1193,7 @@ class CompileReplay : public StackObj {
 
     if (k == nullptr || ReplaySuppressInitializers == 0 ||
         (ReplaySuppressInitializers == 2 && k->class_loader() == nullptr)) {
-      skip_remaining();
+        skip_remaining();
       return;
     }
 
@@ -1029,7 +1204,7 @@ class CompileReplay : public StackObj {
     fieldDescriptor fd;
     Symbol* name = SymbolTable::new_symbol(field_name);
     Symbol* sig = SymbolTable::new_symbol(field_signature);
-    if (!k->find_local_field(name, sig, &fd) ||
+    if (!k->find_local_field(name, sig, &fd, _version >= 3) ||
         !fd.is_static() ||
         fd.has_initial_value()) {
       report_error(field_name);
@@ -1037,96 +1212,52 @@ class CompileReplay : public StackObj {
     }
 
     oop java_mirror = k->java_mirror();
-    if (field_signature[0] == JVM_SIGNATURE_ARRAY) {
-      int length = parse_int("array length");
-      oop value = nullptr;
-
-      if (length != -1) {
-        if (field_signature[1] == JVM_SIGNATURE_ARRAY) {
-          // multi dimensional array
-          ArrayKlass* kelem = (ArrayKlass *)parse_klass(CHECK);
-          if (kelem == nullptr) {
-            return;
-          }
-          int rank = 0;
-          while (field_signature[rank] == JVM_SIGNATURE_ARRAY) {
-            rank++;
-          }
-          jint* dims = NEW_RESOURCE_ARRAY(jint, rank);
-          dims[0] = length;
-          for (int i = 1; i < rank; i++) {
-            dims[i] = 1; // These aren't relevant to the compiler
-          }
-          value = kelem->multi_allocate(rank, dims, CHECK);
-        } else {
-          if (strcmp(field_signature, "[B") == 0) {
-            value = oopFactory::new_byteArray(length, CHECK);
-          } else if (strcmp(field_signature, "[Z") == 0) {
-            value = oopFactory::new_boolArray(length, CHECK);
-          } else if (strcmp(field_signature, "[C") == 0) {
-            value = oopFactory::new_charArray(length, CHECK);
-          } else if (strcmp(field_signature, "[S") == 0) {
-            value = oopFactory::new_shortArray(length, CHECK);
-          } else if (strcmp(field_signature, "[F") == 0) {
-            value = oopFactory::new_floatArray(length, CHECK);
-          } else if (strcmp(field_signature, "[D") == 0) {
-            value = oopFactory::new_doubleArray(length, CHECK);
-          } else if (strcmp(field_signature, "[I") == 0) {
-            value = oopFactory::new_intArray(length, CHECK);
-          } else if (strcmp(field_signature, "[J") == 0) {
-            value = oopFactory::new_longArray(length, CHECK);
-          } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
-                     field_signature[1] == JVM_SIGNATURE_CLASS) {
-            Klass* actual_array_klass = parse_klass(CHECK);
-            Klass* kelem = ObjArrayKlass::cast(actual_array_klass)->element_klass();
-            value = oopFactory::new_objArray(kelem, length, CHECK);
-          } else {
-            report_error("unhandled array staticfield");
-          }
-        }
+    if (strcmp(field_signature, "I") == 0) {
+      const char* string_value = parse_escaped_string();
+      int value = atoi(string_value);
+      java_mirror->int_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "B") == 0) {
+      const char* string_value = parse_escaped_string();
+      int value = atoi(string_value);
+      java_mirror->byte_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "C") == 0) {
+      const char* string_value = parse_escaped_string();
+      int value = atoi(string_value);
+      java_mirror->char_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "S") == 0) {
+      const char* string_value = parse_escaped_string();
+      int value = atoi(string_value);
+      java_mirror->short_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "Z") == 0) {
+      const char* string_value = parse_escaped_string();
+      int value = atoi(string_value);
+      java_mirror->bool_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "J") == 0) {
+      const char* string_value = parse_escaped_string();
+      jlong value;
+      if (sscanf(string_value, JLONG_FORMAT, &value) != 1) {
+        fprintf(stderr, "Error parsing long: %s\n", string_value);
+        return;
       }
+      java_mirror->long_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "F") == 0) {
+      const char* string_value = parse_escaped_string();
+      float value = atof(string_value);
+      java_mirror->float_field_put(fd.offset(), value);
+    } else if (strcmp(field_signature, "D") == 0) {
+      const char* string_value = parse_escaped_string();
+      double value = atof(string_value);
+      java_mirror->double_field_put(fd.offset(), value);
+    } else if (fd.is_null_free_inline_type()) {
+      Klass* kelem = resolve_klass(field_signature, CHECK);
+      InlineKlass* vk = InlineKlass::cast(kelem);
+      oop value = vk->allocate_instance(CHECK);
+      InlineTypeFieldInitializer init_fields(value, this);
+      vk->do_nonstatic_fields(&init_fields);
       java_mirror->obj_field_put(fd.offset(), value);
     } else {
-      const char* string_value = parse_escaped_string();
-      if (strcmp(field_signature, "I") == 0) {
-        int value = atoi(string_value);
-        java_mirror->int_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "B") == 0) {
-        int value = atoi(string_value);
-        java_mirror->byte_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "C") == 0) {
-        int value = atoi(string_value);
-        java_mirror->char_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "S") == 0) {
-        int value = atoi(string_value);
-        java_mirror->short_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "Z") == 0) {
-        int value = atoi(string_value);
-        java_mirror->bool_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "J") == 0) {
-        jlong value;
-        if (sscanf(string_value, JLONG_FORMAT, &value) != 1) {
-          fprintf(stderr, "Error parsing long: %s\n", string_value);
-          return;
-        }
-        java_mirror->long_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "F") == 0) {
-        float value = atof(string_value);
-        java_mirror->float_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "D") == 0) {
-        double value = atof(string_value);
-        java_mirror->double_field_put(fd.offset(), value);
-      } else if (strcmp(field_signature, "Ljava/lang/String;") == 0) {
-        Handle value = java_lang_String::create_from_str(string_value, CHECK);
-        java_mirror->obj_field_put(fd.offset(), value());
-      } else if (field_signature[0] == JVM_SIGNATURE_CLASS) {
-        oop value = nullptr;
-        if (string_value != nullptr) {
-          Klass* k = resolve_klass(string_value, CHECK);
-          value = InstanceKlass::cast(k)->allocate_instance(CHECK);
-        }
-        java_mirror->obj_field_put(fd.offset(), value);
-      } else {
+      bool res = process_staticfield_reference(field_signature, java_mirror, &fd, CHECK);
+      if (!res)  {
         report_error("unhandled staticfield");
       }
     }

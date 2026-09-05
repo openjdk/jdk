@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,9 @@
 #include "runtime/vmOperations.hpp"
 #include "utilities/ostream.hpp"
 
+// Forward Declaration
+
+class JvmtiEnv;
 
 ///////////////////////////////////////////////////////////////
 //
@@ -180,6 +183,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
   javaVFrame* _jvf;
   bool        _set;
   bool        _self;
+  bool        _need_clone; // THIS object is in a value object constructor
 
   static const jvalue _DEFAULT_VALUE;
 
@@ -192,6 +196,7 @@ class VM_BaseGetOrSetLocal : public VM_Operation {
   virtual javaVFrame* get_java_vframe() = 0;
   bool check_slot_type_lvt(javaVFrame* vf);
   bool check_slot_type_no_lvt(javaVFrame* vf);
+  void check_and_clone_this_value_object();
 
 public:
   VM_BaseGetOrSetLocal(JavaThread* calling_thread, jint depth, jint index,
@@ -201,6 +206,7 @@ public:
   jvmtiError result()    { return _result; }
 
   void doit();
+  void doit_epilogue();
   bool allow_nested_vm_operations() const;
   virtual const char* name() const = 0;
 

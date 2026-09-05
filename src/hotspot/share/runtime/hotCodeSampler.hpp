@@ -90,8 +90,8 @@ class ThreadSampler : public StackObj {
  public:
   ThreadSampler() : _samples(INITIAL_TABLE_SIZE, HotCodeSampleSeconds * 1000 / HotCodeMaxSamplingMs) {}
 
-  // Iterate over and sample all Java threads
-  void sample_all_java_threads();
+  // Iterate over and sample all Java threads. Return false if sampling was interrupted by JFR sampling.
+  bool sample_all_java_threads();
 
   // Iterate over all samples with a callback function
   template<typename Function>

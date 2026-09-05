@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,6 +327,7 @@ inline frame frame::sender(RegisterMap* map) const {
 
 inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
   assert(map != nullptr, "map must be set");
+  assert(!_cb->is_nmethod() || !_cb->as_nmethod()->needs_stack_repair(), "unsupported");
 
   intptr_t* sender_sp = this->sender_sp();
   address   sender_pc = this->sender_pc();
@@ -335,6 +336,11 @@ inline frame frame::sender_for_compiled_frame(RegisterMap *map) const {
     // Tell GC to use argument oopmaps for some runtime stubs that need it.
     // For C1, the runtime stub might not have oop maps, so set this flag
     // outside of update_register_map.
+#ifdef COMPILER1
+    DEBUG_ONLY(nmethod* nm = _cb->as_nmethod_or_null());
+    assert(nm == nullptr || !nm->is_compiled_by_c1() || !nm->method()->has_scalarized_args() ||
+           pc() >= nm->verified_inline_entry_point(), "unsupported");
+#endif
     if (!_cb->is_nmethod()) { // compiled frames do not use callee-saved registers
       map->set_include_argument_oops(_cb->caller_must_gc_arguments(map->thread()));
       if (oop_map() != nullptr) {

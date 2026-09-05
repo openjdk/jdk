@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass.  Blows registers tmp1, tmp2 and tmp3.
   void gen_subtype_check(Register sub_klass, Register super_klass,
-                         Register tmp1, Register tmp2, Register tmp3, Label &ok_is_subtype);
+                         Register tmp1, Register tmp2, Register tmp3, Label &ok_is_subtype, bool profile = true);
 
   // Load object from cpool->resolved_references(index).
   void load_resolved_reference_at_index(Register result, Register index, Register tmp1, Register tmp2,
@@ -255,7 +255,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void update_mdp_for_ret(TosState state, Register return_bci);
 
   void profile_taken_branch(Register scratch, Register bumped_count);
-  void profile_not_taken_branch(Register scratch1, Register scratch2);
+  void profile_not_taken_branch(Register scratch1, Register scratch2, bool acmp = false);
   void profile_call(Register scratch1, Register scratch2);
   void profile_final_call(Register scratch1, Register scratch2);
   void profile_virtual_call(Register Rreceiver, Register Rscratch1, Register Rscratch2);
@@ -264,8 +264,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_switch_default(Register scratch1, Register scratch2);
   void profile_switch_case(Register index, Register scratch1,Register scratch2, Register scratch3);
   void profile_null_seen(Register Rscratch1, Register Rscratch2);
-  void record_klass_in_profile(Register receiver, Register scratch1, Register scratch2);
-  void record_klass_in_profile_helper(Register receiver, Register scratch1, Register scratch2, int start_row, Label& done);
+
+  template <class ArrayData> void profile_array_type(Register array, Register tmp1, Register tmp2);
+
+  void profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3);
+  void profile_element_type(Register element, Register tmp1, Register tmp2);
+  void profile_acmp(Register left, Register right, Register tmp1, Register tmp2);
 
   // Argument and return type profiling.
   void profile_obj_type(Register obj, Register mdo_addr_base, RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2);
@@ -283,6 +287,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void notify_method_entry();
   void notify_method_exit(bool is_native_method, TosState state,
                           NotifyMethodExitMode mode, bool check_exceptions);
+
+  // Allocate instance in "obj" and read in the content of the inline field
+  // NOTES:
+  //   - input holder object via "obj", which must be r0,
+  //     will return new instance via the same reg
+  void read_flat_field(Register entry, Register obj);
+  void write_flat_field(Register entry, Register tmp1, Register tmp2, Register obj, Register field_offset, Register value);
 };
 
 #endif // CPU_PPC_INTERP_MASM_PPC_HPP

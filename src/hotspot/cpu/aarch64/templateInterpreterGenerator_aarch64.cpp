@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,6 +41,7 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -467,6 +468,11 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   __ lea(esp, Address(rfp, rscratch1, Address::lsl(Interpreter::logStackElementSize)));
   // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
+
+  if (state == atos && InlineTypeReturnedAsFields) {
+    __ store_inline_type_fields_to_buf(nullptr, true);
+  }
+
   __ restore_bcp();
   __ restore_locals();
   __ restore_constant_pool_cache();
@@ -524,30 +530,6 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
   // null last_sp until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
-#if INCLUDE_JVMCI
-  // Check if we need to take lock at entry of synchronized method.  This can
-  // only occur on method entry so emit it only for vtos with step 0.
-  if (EnableJVMCI && state == vtos && step == 0) {
-    Label L;
-    __ ldrb(rscratch1, Address(rthread, JavaThread::pending_monitorenter_offset()));
-    __ cbz(rscratch1, L);
-    // Clear flag.
-    __ strb(zr, Address(rthread, JavaThread::pending_monitorenter_offset()));
-    // Take lock.
-    lock_method();
-    __ bind(L);
-  } else {
-#ifdef ASSERT
-    if (EnableJVMCI) {
-      Label L;
-      __ ldrb(rscratch1, Address(rthread, JavaThread::pending_monitorenter_offset()));
-      __ cbz(rscratch1, L);
-      __ stop("unexpected pending monitor in deopt entry");
-      __ bind(L);
-    }
-#endif
-  }
-#endif
   // handle exceptions
   {
     Label L;
@@ -1440,7 +1422,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ verify_sve_vector_length();
 
   // change thread state
-  __ mov(rscratch1, _thread_in_native_trans);
+  __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
@@ -1465,17 +1447,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ mov(rscratch1, _thread_in_Java);
-  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-  __ stlrw(rscratch1, rscratch2);
 
   // Check preemption for Object.wait()
   Label not_preempted;
@@ -1657,7 +1634,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls;
 
@@ -1782,6 +1759,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
       __ bind(L);
     }
 #endif
+  }
+
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore);
   }
 
   // start execution

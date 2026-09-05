@@ -29,6 +29,7 @@
 #include "gc/parallel/psPromotionManager.inline.hpp"
 #include "gc/parallel/psScavenge.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/partialArraySplitter.inline.hpp"
 #include "gc/shared/partialArrayState.hpp"
@@ -45,6 +46,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 
 PaddedEnd<PSPromotionManager>* PSPromotionManager::_manager_array = nullptr;
 PSPromotionManager::PSScannerTasksQueueSet* PSPromotionManager::_stack_array_depth = nullptr;
@@ -163,12 +165,6 @@ PSPromotionManager::PSPromotionManager()
   // We set the old lab's start array.
   _old_lab.set_start_array(old_gen()->start_array());
 
-  if (ParallelGCThreads == 1) {
-    _target_stack_size = 0;
-  } else {
-    _target_stack_size = GCDrainStackTargetSize;
-  }
-
   // let's choose 1.5x the chunk size
   _min_array_size_for_chunking = (3 * ParGCArrayScanChunk / 2);
 
@@ -204,10 +200,7 @@ void PSPromotionManager::restore_preserved_marks() {
   _preserved_marks_set->restore(&ParallelScavengeHeap::heap()->workers());
 }
 
-void PSPromotionManager::drain_stacks(bool totally_drain) {
-  const uint threshold = totally_drain ? 0
-                                       : _target_stack_size;
-
+void PSPromotionManager::trim_stacks_to_threshold(uint threshold) {
   PSScannerTasksQueue* const tq = claimed_stack_depth();
   do {
     ScannerTask task;
@@ -225,9 +218,22 @@ void PSPromotionManager::drain_stacks(bool totally_drain) {
     }
   } while (!tq->overflow_empty());
 
-  assert(!totally_drain || tq->taskqueue_empty(), "Sanity");
-  assert(totally_drain || tq->size() <= _target_stack_size, "Sanity");
+  assert(tq->size() <= threshold, "Sanity");
   assert(tq->overflow_empty(), "Sanity");
+}
+
+void PSPromotionManager::trim_stacks() {
+  const uint target_stack_size = GCDrainStackTargetSize;
+  const uint max_stack_size = target_stack_size * 2 + 1;
+
+  PSScannerTasksQueue* const tq = claimed_stack_depth();
+  if (!tq->overflow_empty() || tq->size() > max_stack_size) {
+    trim_stacks_to_threshold(target_stack_size);
+  }
+}
+
+void PSPromotionManager::drain_stacks() {
+  trim_stacks_to_threshold(0);
 }
 
 void PSPromotionManager::flush_labs() {
@@ -259,15 +265,18 @@ void PSPromotionManager::process_array_chunk(objArrayOop obj, size_t start, size
 void PSPromotionManager::process_array_chunk(PartialArrayState* state, bool stolen) {
   // Access before release by claim().
   objArrayOop to_array = objArrayOop(state->destination());
+  precond(to_array->is_array_with_oops());
+
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, &_claimed_stack_depth, stolen);
+
   process_array_chunk(to_array, claim._start, claim._end);
 }
 
 void PSPromotionManager::push_objArray(oop old_obj, oop new_obj) {
   assert(old_obj->is_forwarded(), "precondition");
   assert(old_obj->forwardee() == new_obj, "precondition");
-  assert(new_obj->is_objArray(), "precondition");
+  precond(new_obj->is_array_with_oops());
 
   objArrayOop to_array = objArrayOop(new_obj);
   size_t array_length = to_array->length();

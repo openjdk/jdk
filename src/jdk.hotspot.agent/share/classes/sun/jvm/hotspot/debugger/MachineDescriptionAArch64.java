@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,13 @@
 package sun.jvm.hotspot.debugger;
 
 public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement implements MachineDescription {
+
+  private boolean pac;
+
+  public MachineDescriptionAArch64() {
+    pac = false;
+  }
+
   public long getAddressSize() {
     return 8;
   }
@@ -36,4 +43,13 @@ public class MachineDescriptionAArch64 extends MachineDescriptionTwosComplement 
   public boolean isBigEndian() {
     return false;
   }
+
+  public void enablePAC() {
+    pac = true;
+  }
+
+  public boolean isPACEnabled() {
+    return pac;
+  }
+
 }

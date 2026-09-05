@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
  * constant pool of a {@code class} file.
  * <p>
  * The use of a {@code PackageEntry} is represented by a {@link PackageDesc}
- * that does not represent the unnamed package.  Conversions are through
+ * that does not represent an unnamed package.  Conversions are through
  * {@link ConstantPoolBuilder#packageEntry(PackageDesc)} and
  * {@link #asSymbol()}.
  * <p>
@@ -68,6 +68,9 @@ public sealed interface PackageEntry extends PoolEntry
 
     /**
      * {@return whether this entry describes the given package}
+     * <p>
+     * This method always returns {@code false} for a package descriptor
+     * representing an unnamed package.
      *
      * @param desc the package descriptor
      * @since 25

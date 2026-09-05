@@ -365,11 +365,14 @@ private:
   };
 
   class OopFieldPusher;
+  class InlineKlassFinder;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
+  static void find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj);
+  static void add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k);
 
   static void reset_archived_object_states(TRAPS);
   static void ensure_determinism(TRAPS);
@@ -442,14 +445,13 @@ private:
   // Run-time only
   static void clear_root(int index);
   static void get_segment_indexes(int index, int& segment_index, int& internal_index);
-  static void setup_test_class(const char* test_class_name) PRODUCT_RETURN;
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
   static void finish_materialize_objects() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void write_heap(AOTMappedHeapInfo* mapped_heap_info, AOTStreamedHeapInfo* streamed_heap_info) NOT_CDS_JAVA_HEAP_RETURN;
-  static objArrayOop scratch_resolved_references(ConstantPool* src);
+  static refArrayOop scratch_resolved_references(ConstantPool* src);
   static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void remove_scratch_resolved_references(ConstantPool* src) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_dumping() NOT_CDS_JAVA_HEAP_RETURN;
@@ -468,11 +470,7 @@ private:
   static void init_heap_writer() NOT_CDS_JAVA_HEAP_RETURN;
   static void write_subgraph_info_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_tables(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
-
-#ifndef PRODUCT
-  static bool is_a_test_class_in_unnamed_module(Klass* ik) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  static void initialize_test_class_from_archive(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-#endif
+  static void load_cached_resolved_methods() NOT_CDS_JAVA_HEAP_RETURN;
 
   static void initialize_java_lang_invoke(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_classes_for_special_subgraph(Handle loader, TRAPS) NOT_CDS_JAVA_HEAP_RETURN;

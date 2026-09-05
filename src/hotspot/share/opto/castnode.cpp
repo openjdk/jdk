@@ -27,9 +27,12 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/phaseX.hpp"
+#include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
 #include "utilities/checkedCast.hpp"
@@ -107,13 +110,20 @@ const Type* ConstraintCastNode::Value(PhaseGVN* phase) const {
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
-Node* ConstraintCastNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+Node *ConstraintCastNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
+
+  // Push cast through InlineTypeNode
+  if (in(1)->is_InlineType()) {
+    return ideal_cast_of_inline_type_node(phase);
+  }
+
   if (in(1) != nullptr && phase->type(in(1)) != Type::TOP) {
     return TypeNode::Ideal(phase, can_reshape);
   }
+
   return nullptr;
 }
 
@@ -194,6 +204,11 @@ TypeNode* ConstraintCastNode::dominating_cast(PhaseGVN* gvn, PhaseTransform* pt)
 
 bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) const {
   const Type* t = phase->type(other);
+  if ((t->isa_rawptr() && (type()->isa_oopptr() || type()->isa_klassptr())) ||
+      ((t->isa_oopptr() || t->isa_klassptr()) && type()->isa_rawptr())) {
+    assert(is_CheckCastPP(), "unrelated types from %s", Name());
+    return false;
+  }
   if (!t->higher_equal_speculative(type())) {
     return false;
   }
@@ -210,6 +225,53 @@ bool ConstraintCastNode::higher_equal_types(PhaseGVN* phase, const Node* other) 
 Node* ConstraintCastNode::pin_node_under_control_impl() const {
   assert(_dependency.is_floating(), "already pinned");
   return make_cast_for_type(in(0), in(1), bottom_type(), _dependency.with_pinned_dependency(), _extra_types);
+}
+
+Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
+  InlineTypeNode* vt = in(1)->as_InlineType();
+  if (type()->isa_rawptr() != nullptr) {
+    return nullptr;
+  }
+
+  const Type* join = vt->type()->filter(type());
+  if (join == Type::TOP) {
+    // Do not push a dead Cast since its type can be unrelated
+    return nullptr;
+  }
+
+  if (join == vt->type()->remove_speculative()) {
+    // Redundant cast, let Identity handle
+    return nullptr;
+  }
+
+  if (join == TypePtr::NULL_PTR) {
+    // Will collapse to the constant null
+    return nullptr;
+  }
+
+  // The only possible case left is that the cast is a cast to not-null
+  assert(join == vt->type()->filter(TypePtr::NOTNULL), "must be");
+  InlineTypeNode* res = vt->clone()->as_InlineType();
+  res->set_null_marker(*phase);
+
+  // Push the cast to the oop input if possible
+  if (vt->is_allocated(phase)) {
+    Node* new_oop = clone();
+    new_oop->set_req(1, vt->get_oop());
+    res->set_oop(*phase, phase->transform(new_oop));
+  }
+
+  // Push the cast to the null-free inputs of vt
+  for (uint i = 0; i < vt->field_count(); i++) {
+    if (vt->field(i)->is_null_free()) {
+      const ConstraintCastNode::DependencyType& dep = _dependency.is_floating() ? ConstraintCastNode::DependencyType::FloatingNarrowing
+                                                                                : ConstraintCastNode::DependencyType::NonFloatingNarrowing;
+      Node* new_fv = new CastPPNode(in(0), vt->field_value(i), TypePtr::NOTNULL, dep);
+      res->set_field_value(i, phase->transform(new_fv));
+    }
+  }
+
+  return res;
 }
 
 #ifndef PRODUCT
@@ -413,6 +475,16 @@ Node* CastLLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return nullptr;
 }
 
+//=============================================================================
+//------------------------------Identity---------------------------------------
+// If input is already higher or equal to cast type, then this is an identity.
+Node* CheckCastPPNode::Identity(PhaseGVN* phase) {
+  if (in(1)->is_InlineType() && _type->isa_instptr() && phase->type(in(1))->inline_klass()->is_subtype_of(_type->is_instptr()->instance_klass())) {
+    return in(1);
+  }
+  return ConstraintCastNode::Identity(phase);
+}
+
 // CastPPNodes are removed before matching, while alias classes are needed in global code motion.
 // As a result, it is not valid for a CastPPNode to change the oop such that the derived pointers
 // lie in different alias classes with and without the node. For example, a CastPPNode c may not
@@ -466,11 +538,26 @@ const Type* CheckCastPPNode::Value(PhaseGVN* phase) const {
   const TypePtr *my_type = _type->isa_ptr();
   const Type *result = _type;
   if (in_type != nullptr && my_type != nullptr) {
+    // TODO 8302672
+    if (!StressReflectiveCode && my_type->isa_aryptr() && in_type->isa_aryptr()) {
+      // Propagate array properties (not flat/null-free)
+      // Don't do this when StressReflectiveCode is enabled because it might lead to
+      // a dying data path while the corresponding flat/null-free check is not folded.
+      my_type = my_type->is_aryptr()->update_properties(in_type->is_aryptr());
+      if (my_type == nullptr) {
+        return Type::TOP; // Inconsistent properties
+      }
+    }
     TypePtr::PTR in_ptr = in_type->ptr();
     if (in_ptr == TypePtr::Null) {
+      // A null input cast to a type that cannot be null (e.g. NotNull) describes
+      // an impossible value: the join is empty, so the result must be TOP.
+      if (my_type->join_ptr(TypePtr::Null) == TypePtr::TopPTR) {
+        return Type::TOP;
+      }
       result = in_type;
     } else if (in_ptr != TypePtr::Constant) {
-      result =  my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
+      result = my_type->cast_to_ptr_type(my_type->join_ptr(in_ptr));
     }
   }
 

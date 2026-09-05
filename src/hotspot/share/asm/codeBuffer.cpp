@@ -937,8 +937,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
   // Move all the code and relocations to the new blob:
   relocate_code_to(&cb);
 
-  // some internal addresses, _last_insn _last_label, are used during code emission,
-  // adjust them in expansion
+  // some internal addresses, _last_merge_candidate and _last_label, are used during
+  // code emission, adjust them in expansion
   adjust_internal_address(insts_begin(), cb.insts_begin());
 
   // Copy the temporary code buffer into the current code buffer.
@@ -966,8 +966,8 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 }
 
 void CodeBuffer::adjust_internal_address(address from, address to) {
-  if (_last_insn != nullptr) {
-    _last_insn += to - from;
+  if (_last_merge_candidate != nullptr) {
+    _last_merge_candidate += to - from;
   }
   if (_last_label != nullptr) {
     _last_label += to - from;

@@ -54,7 +54,7 @@
   // PowerPC requires masked shift counts.
   static const bool need_masked_shift_count = true;
 
-  // Power6 requires postalloc expand (see block.cpp for description of postalloc expand).
+  // PPC64 requires postalloc expand (see block.cpp for description of postalloc expand).
   static const bool require_postalloc_expand = true;
 
   // No support for generic vector operands.
@@ -157,7 +157,7 @@
 
   // true means we have fast l2f conversion
   static constexpr bool convL2FSupported(void) {
-    // fcfids can do the conversion (>= Power7).
+    // fcfids can do the conversion.
     // fcfid + frsp showed rounding problem when result should be 0x3f800001.
     return true;
   }

@@ -27,8 +27,6 @@ package com.sun.tools.javac.comp;
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
@@ -43,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.SequencedSet;
 import java.util.function.Consumer;
@@ -51,6 +50,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 import static com.sun.tools.javac.code.Flags.RECORD;
 
 /** A class to compute exhaustiveness of set of switch cases.
@@ -75,7 +75,7 @@ public class ExhaustivenessComputer {
     private final Types types;
     private final Check chk;
     private final Infer infer;
-    private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new HashMap<>();
+    private final Map<Pair<Type, Type>, Boolean> isSubtypeCache = new LinkedHashMap<>();
     private final long maxBaseChecks;
     private long baseChecks = NO_BASE_CHECKS_COUNTING;
 
@@ -109,9 +109,9 @@ public class ExhaustivenessComputer {
     }
 
     public ExhaustivenessResult exhausts(JCExpression selector, List<JCCase> cases) {
-        Set<PatternDescription> patternSet = new HashSet<>();
-        Map<Symbol, Set<Symbol>> enum2Constants = new HashMap<>();
-        Set<Object> booleanLiterals = new HashSet<>(Set.of(0, 1));
+        Set<PatternDescription> patternSet = new LinkedHashSet<>();
+        Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
+        Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
         for (JCCase c : cases) {
             if (!TreeInfo.unguardedCase(c))
                 continue;
@@ -129,7 +129,7 @@ public class ExhaustivenessComputer {
                         Symbol s = TreeInfo.symbol(constantLabel.expr);
                         if (s != null && s.isEnum()) {
                             enum2Constants.computeIfAbsent(s.owner, x -> {
-                                Set<Symbol> result = new HashSet<>();
+                                Set<Symbol> result = new LinkedHashSet<>();
                                 s.owner.members()
                                         .getSymbols(sym -> sym.kind == Kind.VAR && sym.isEnum())
                                         .forEach(result::add);
@@ -167,7 +167,7 @@ public class ExhaustivenessComputer {
                                 return Stream.of(pd);
                             }
                         })
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toCollection(LinkedHashSet::new));
 
             return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
@@ -184,7 +184,7 @@ public class ExhaustivenessComputer {
      */
     private CoverageResult computeCoverage(Type selectorType, Set<PatternDescription> patterns, PatternEquivalence patternEquivalence) {
         Set<PatternDescription> updatedPatterns;
-        Set<Set<PatternDescription>> seenPatterns = new HashSet<>();
+        Set<Set<PatternDescription>> seenPatterns = new LinkedHashSet<>();
         boolean useHashes = true;
         boolean repeat = true;
         do {
@@ -223,12 +223,28 @@ public class ExhaustivenessComputer {
 
     private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
         for (Type seltypeComponent : components(seltype)) {
-            for (PatternDescription pd : patterns) {
-                if(isBpCovered(seltypeComponent, pd)) {
-                    return true;
-                }
+            if (isCoveredBy(seltypeComponent, patterns)) {
+                return true;
             }
         }
+        return false;
+    }
+
+    private boolean isCoveredBy(Type seltype, Iterable<PatternDescription> patterns) {
+        for (PatternDescription pd : patterns) {
+            if(isBpCovered(seltype, pd)) {
+                return true;
+            }
+            if (seltype.tsym.isSealed() && seltype.tsym.isAbstract()) {
+                boolean allDirectPermittedSubtypesPermitted =
+                        directPermittedSubTypes(seltype)
+                                 .map(csym -> instantiatePatternType(seltype, csym))
+                                 .allMatch(currentPermitted -> isCoveredBy(currentPermitted, patterns));
+
+                return allDirectPermittedSubtypesPermitted;
+            }
+        }
+
         return false;
     }
 
@@ -244,10 +260,10 @@ public class ExhaustivenessComputer {
                     }
                     yield List.nil();
                 }
-                yield List.of(types.erasure(seltype));
+                yield List.of(seltype);
             }
             case TYPEVAR -> components(((TypeVar) seltype).getUpperBound());
-            default -> List.of(types.erasure(seltype));
+            default -> List.of(seltype);
         };
     }
 
@@ -260,11 +276,11 @@ public class ExhaustivenessComputer {
         Set<Symbol> existingBindings = patterns.stream()
                                                .filter(pd -> pd instanceof BindingPattern)
                                                .map(pd -> ((BindingPattern) pd).type.tsym)
-                                               .collect(Collectors.toSet());
+                                               .collect(Collectors.toCollection(LinkedHashSet::new));
 
         for (PatternDescription pdOne : patterns) {
             if (pdOne instanceof BindingPattern bpOne) {
-                Set<PatternDescription> toAdd = new HashSet<>();
+                Set<PatternDescription> toAdd = new LinkedHashSet<>();
 
                 for (Type sup : types.directSupertypes(bpOne.type)) {
                     ClassSymbol clazz = (ClassSymbol) types.erasure(sup).tsym;
@@ -285,7 +301,7 @@ public class ExhaustivenessComputer {
                         Set<Symbol> permitted = allPermittedSubTypes(clazz, isApplicableSubtypePredicate(selectorType));
 
                         //the set of pending permitted subtypes needed to cover clazz:
-                        Set<Symbol> pendingPermitted = new HashSet<>(permitted);
+                        Set<Symbol> pendingPermitted = new LinkedHashSet<>(permitted);
 
                         for (PatternDescription pdOther : patterns) {
                             if (pdOther instanceof BindingPattern bpOther) {
@@ -320,7 +336,7 @@ public class ExhaustivenessComputer {
                 }
 
                 if (!toAdd.isEmpty()) {
-                    Set<PatternDescription> newPatterns = new HashSet<>(patterns);
+                    Set<PatternDescription> newPatterns = new LinkedHashSet<>(patterns);
                     newPatterns.addAll(toAdd);
                     return newPatterns;
                 }
@@ -330,7 +346,7 @@ public class ExhaustivenessComputer {
     }
 
     private Set<Symbol> allPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
-        Set<Symbol> permitted = new HashSet<>();
+        Set<Symbol> permitted = new LinkedHashSet<>();
         List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
 
         while (permittedSubtypesClosure.nonEmpty()) {
@@ -371,8 +387,16 @@ public class ExhaustivenessComputer {
         }
     }
 
+    private Stream<TypeSymbol> directPermittedSubTypes(Type type) {
+        List<Type> permitted = ((ClassSymbol) type.tsym).getPermittedSubclasses();
+
+        return permitted.stream()
+                        .map(permittedType -> permittedType.tsym)
+                        .filter(isApplicableSubtypePredicate(type));
+    }
+
     private Set<ClassSymbol> leafPermittedSubTypes(TypeSymbol root, Predicate<ClassSymbol> accept) {
-        Set<ClassSymbol> permitted = new HashSet<>();
+        Set<ClassSymbol> permitted = new LinkedHashSet<>();
         List<ClassSymbol> permittedSubtypesClosure = baseClasses(root);
 
         while (permittedSubtypesClosure.nonEmpty()) {
@@ -446,11 +470,11 @@ public class ExhaustivenessComputer {
                 patterns.stream()
                         .filter(pd -> pd instanceof RecordPattern)
                         .map(pd -> (RecordPattern) pd)
-                        .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym));
+                        .collect(groupingBy(pd -> (ClassSymbol) pd.recordType.tsym, LinkedHashMap::new, toList()));
 
         for (var e : groupByRecordClass.entrySet()) {
             int nestedPatternsCount = e.getKey().getRecordComponents().size();
-            Set<RecordPattern> current = new HashSet<>(e.getValue());
+            Set<RecordPattern> current = new LinkedHashSet<>(e.getValue());
 
             for (int mismatchingCandidate = 0;
                  mismatchingCandidate < nestedPatternsCount;
@@ -461,7 +485,7 @@ public class ExhaustivenessComputer {
                          .stream()
                          //error recovery, ignore patterns with incorrect number of nested patterns:
                          .filter(pd -> pd.nested.length == nestedPatternsCount)
-                         .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0));
+                         .collect(groupingBy(pd -> useHashes ? pd.hashCode(mismatchingCandidateFin) : 0, LinkedHashMap::new, toList()));
                 for (var candidates : groupEquivalenceCandidates.values()) {
                     var candidatesArr = candidates.toArray(RecordPattern[]::new);
 
@@ -486,7 +510,7 @@ public class ExhaustivenessComputer {
                             }
                         }
 
-                        var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
+                        var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toCollection(LinkedHashSet::new));
                         var updatedPatterns = reduceNestedPatterns(nestedPatterns, useHashes, patternEquivalence);
 
                         updatedPatterns = reduceRecordPatterns(updatedPatterns);
@@ -508,8 +532,8 @@ public class ExhaustivenessComputer {
                 }
             }
 
-            if (!current.equals(new HashSet<>(e.getValue()))) {
-                Set<PatternDescription> result = new HashSet<>(patterns);
+            if (!current.equals(new LinkedHashSet<>(e.getValue()))) {
+                Set<PatternDescription> result = new LinkedHashSet<>(patterns);
                 result.removeAll(e.getValue());
                 result.addAll(current);
                 return result;
@@ -615,7 +639,7 @@ public class ExhaustivenessComputer {
      * and replace those with a simple binding pattern over $record.
      */
     private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
-        var newPatterns = new HashSet<PatternDescription>();
+        var newPatterns = new LinkedHashSet<PatternDescription>();
         boolean modified = false;
         for (PatternDescription pd : patterns) {
             if (pd instanceof RecordPattern rpOne) {
@@ -666,8 +690,8 @@ public class ExhaustivenessComputer {
         Set<Symbol> existingBindings = patterns.stream()
                                                .filter(pd -> pd instanceof BindingPattern)
                                                .map(pd -> ((BindingPattern) pd).type.tsym)
-                                               .collect(Collectors.toSet());
-        Set<PatternDescription> result = new HashSet<>(patterns);
+                                               .collect(Collectors.toCollection(LinkedHashSet::new));
+        Set<PatternDescription> result = new LinkedHashSet<>(patterns);
 
         for (Iterator<PatternDescription> it = result.iterator(); it.hasNext();) {
             PatternDescription pd = it.next();
@@ -877,11 +901,8 @@ public class ExhaustivenessComputer {
         if (toExpand instanceof BindingPattern bp) {
             if (bp.type.tsym.isSealed()) {
                 //try to replace binding patterns for sealed types with all their immediate permitted applicable types:
-                List<Type> permitted = ((ClassSymbol) bp.type.tsym).getPermittedSubclasses();
                 Set<PatternDescription> applicableDirectPermittedPatterns =
-                        permitted.stream()
-                                 .map(type -> type.tsym)
-                                 .filter(isApplicableSubtypePredicate(targetType))
+                        directPermittedSubTypes(bp.type)
                                  .map(csym -> new BindingPattern(types.erasure(csym.type)))
                                  .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -995,7 +1016,7 @@ public class ExhaustivenessComputer {
     private Set<PatternDescription> replace(Iterable<? extends PatternDescription> in,
                                             PatternDescription what,
                                             Collection<? extends PatternDescription> to) {
-        Set<PatternDescription> result = new HashSet<>();
+        Set<PatternDescription> result = new LinkedHashSet<>();
 
         for (PatternDescription pd : in) {
             Collection<? extends PatternDescription> replaced = replace(pd, what, to);
@@ -1019,7 +1040,7 @@ public class ExhaustivenessComputer {
                 for (int c = 0; c < rp.nested.length; c++) {
                     Collection<? extends PatternDescription> replaced = replace(rp.nested[c], what, to);
                     if (replaced != null) {
-                        Set<PatternDescription> withReplaced = new HashSet<>();
+                        Set<PatternDescription> withReplaced = new LinkedHashSet<>();
 
                         generatePatternsWithReplacedNestedPattern(rp, c, replaced, Set.of(), withReplaced::add);
 
@@ -1046,14 +1067,14 @@ public class ExhaustivenessComputer {
 
         for (Iterator<PatternDescription> it = candidates.iterator(); it.hasNext(); ) {
             PatternDescription current = it.next();
-            Set<PatternDescription> reducedAdded = new HashSet<>(candidates);
+            Set<PatternDescription> reducedAdded = new LinkedHashSet<>(candidates);
 
             reducedAdded.remove(current);
 
             Set<PatternDescription> combinedPatterns =
                     Stream.concat(basePatterns.stream(),
                                   replace(inMissingPatterns, toExpand, reducedAdded).stream())
-                          .collect(Collectors.toSet());
+                          .collect(Collectors.toCollection(LinkedHashSet::new));
 
             if (computeCoverage(selectorType, combinedPatterns, PatternEquivalence.LOOSE).covered()) {
                 it.remove();
@@ -1176,7 +1197,7 @@ public class ExhaustivenessComputer {
                                 .map(rp -> (RecordPattern) rp)
                                 .filter(rp -> types.isSameType(rp.recordType(), rootPatternRecord.recordType()))
                                 .map(rp -> rp.nested[indexFin])
-                                .collect(Collectors.toSet());
+                                .collect(Collectors.toCollection(LinkedHashSet::new));
 
             return basePatternsHaveRecordPatternOnThisSpot(filteredBasePatterns, rootPatternRecord.nested[index], added);
         }

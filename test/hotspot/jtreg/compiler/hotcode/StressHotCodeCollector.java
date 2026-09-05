@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,11 +25,13 @@
 
 /*
  * @test
+ * @key randomness
+ * @requires vm.compiler2.enabled & vm.opt.SegmentedCodeCache != false
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -Xcomp -XX:-TieredCompilation -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSampleSeconds=10
+ * @run main/othervm -Xbootclasspath/a:. -Xcomp -XX:-TieredCompilation -XX:+SegmentedCodeCache -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap
+ *                   -XX:+NMethodRelocation -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:HotCodeIntervalSeconds=0 -XX:HotCodeSampleSeconds=10
  *                   -XX:HotCodeStablePercent=-1 -XX:HotCodeSamplePercent=100 -XX:HotCodeStartupDelaySeconds=0
  *                   compiler.hotcode.StressHotCodeCollector
  */
@@ -38,6 +41,7 @@ package compiler.hotcode;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import jdk.test.whitebox.WhiteBox;
@@ -89,7 +93,7 @@ public class StressHotCodeCollector {
         generateCode();
 
         long start = System.currentTimeMillis();
-        Random random = new Random();
+        Random random = Utils.getRandomInstance();
 
         while (System.currentTimeMillis() - start < RUN_MILLIS) {
             for (TestMethod m : methods) {

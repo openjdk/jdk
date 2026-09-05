@@ -193,13 +193,9 @@ void BarrierSetC1::load_at_resolved(LIRAccess& access, LIR_Opr result) {
     __ membar_acquire();
   }
 
-  /* Normalize boolean value returned by unsafe operation, i.e., value  != 0 ? value = true : value false. */
+  // Truncate boolean values returned by unsafe operations.
   if (mask_boolean) {
-    LabelObj* equalZeroLabel = new LabelObj();
-    __ cmp(lir_cond_equal, result, 0);
-    __ branch(lir_cond_equal, equalZeroLabel->label());
-    __ move(LIR_OprFact::intConst(1), result);
-    __ branch_destination(equalZeroLabel->label());
+    __ logical_and(result, LIR_OprFact::intConst(1), result);
   }
 }
 

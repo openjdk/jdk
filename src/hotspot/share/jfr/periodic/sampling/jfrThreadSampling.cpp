@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "code/codeCache.inline.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/nmethod.hpp"
+#include "code/pcDesc.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jfr/jfrEvents.hpp"
 #include "jfr/periodic/sampling/jfrCPUTimeThreadSampler.hpp"
@@ -148,7 +149,7 @@ static bool compute_sender_frame(JfrSampleRequest& request, frame& sender_frame,
   return true;
 }
 
-static inline const PcDesc* get_pc_desc(nmethod* nm, void* pc) {
+static inline PcDesc* get_pc_desc(nmethod* nm, void* pc) {
   assert(nm != nullptr, "invariant");
   assert(pc != nullptr, "invariant");
   return nm->pc_desc_near(static_cast<address>(pc));
@@ -209,13 +210,38 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
           // on the stack. For extra assurance, we know that we can create this frame size at this
           // very location because we just popped such a frame before we hit the return poll site.
           //
-          // Let's attempt to correct for the safepoint bias.
-          const PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
+          // For frames that need stack repair, special care is needed. This is because the general stack-walking code
+          // reads the frame size from the stack, but here that memory is already overwritten by the SafepointBlob.
+          // If we are careful, we don't need to reconstruct a frame that needs stack repair, because we can process
+          // the nmethod directly, unpacking it in the first part of the stack trace.
+          // To accomplish this, we must provide both the PcDesc and the nmethod to the stack-walking code,
+          // which is done by updating the JfrSampleRequest. A special marker, NEEDS_STACK_REPAIR, is set in the bcp field.
+          // In this case, the top_frame becomes the sender frame of the nmethod, similar to how interpreter frames are handled.
+          //
+          // Let's attempt to correct for the safepoint bias
+          PcDesc* const pc_desc = get_pc_desc(sampled_nm, sampled_pc);
           if (is_valid(pc_desc)) {
             intptr_t* const synthetic_sp = sender_sp - sampled_nm->frame_size();
+            in_continuation = Continuation::get_continuation_entry_for_sp(jt, synthetic_sp) != nullptr;
+            if (sampled_nm->needs_stack_repair()) {
+              JfrSampleRequest& modified_request = const_cast<JfrSampleRequest&>(request);
+              modified_request._sample_pc = pc_desc;
+              modified_request._sample_sp = sampled_nm;
+              modified_request._sample_bcp = reinterpret_cast<address>(JfrSampleRequestFrameType::NEEDS_STACK_REPAIR);
+              if (!stream.is_done()) {
+                stream.next();
+                // If the needs stack repair frame is in a continuation, check that the sender frame is too.
+                if (in_continuation && !is_in_continuation(*stream.current(), jt)) {
+                  // Leave sender frame empty.
+                  return true;
+                }
+                // The top_frame becomes the sender of the nmethod that needs stack repair.
+                top_frame = *stream.current();
+              }
+              return true;
+            }
             intptr_t* const synthetic_fp = sender_sp AARCH64_ONLY( - frame::sender_sp_offset);
             top_frame = frame(synthetic_sp, synthetic_sp, synthetic_fp, pc_desc->real_pc(sampled_nm), sampled_nm);
-            in_continuation = is_in_continuation(top_frame, jt);
             return true;
           }
         }

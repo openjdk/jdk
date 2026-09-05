@@ -322,7 +322,8 @@ public abstract class InnerClassesTestBase extends TestResult {
     }
 
     protected List<String> getCompileOptions() {
-        return Collections.emptyList();
+        // Use a release before value classes for now.
+        return List.of("--release", "25");
     }
 
     private List<List<Modifier>> getAllCombinations(Modifier[] accessModifiers, Modifier[] otherModifiers) {
@@ -439,7 +440,8 @@ public abstract class InnerClassesTestBase extends TestResult {
         PUBLIC("public"), PRIVATE("private"),
         PROTECTED("protected"), DEFAULT("default"),
         FINAL("final"), ABSTRACT("abstract"),
-        STATIC("static"), EMPTY("");
+        STATIC("static"), EMPTY(""),
+        IDENTITY("identity");
 
         private final String str;
 

@@ -204,13 +204,13 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_jfrChunkWriter.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jfrMemorySizer.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jfrTraceIdKlassQueue.cpp := unused-const-variable, \
-    DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_jvmFlag.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_macroAssembler_ppc_sha.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
     DISABLED_WARNINGS_gcc_safepointMechanism.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_shenandoahGenerationalHeap.cpp := stringop-overflow, \
+    DISABLED_WARNINGS_gcc_shenandoahHeap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_shenandoahLock.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_stubGenerator_s390.cpp := unused-const-variable, \
     DISABLED_WARNINGS_gcc_synchronizer.cpp := stringop-overflow, \
@@ -284,13 +284,6 @@ ifeq ($(call isTargetOs, windows), true)
 
   $(BUILD_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
 endif
-
-# Always recompile abstract_vm_version.cpp if libjvm needs to be relinked. This ensures
-# that the internal vm version is updated as it relies on __DATE__ and __TIME__
-# macros.
-ABSTRACT_VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/abstract_vm_version$(OBJ_SUFFIX)
-$(ABSTRACT_VM_VERSION_OBJ): $(filter-out $(ABSTRACT_VM_VERSION_OBJ), \
-    $(BUILD_LIBJVM_TARGET_DEPS))
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
   ifeq ($(call isTargetOs, windows), true)

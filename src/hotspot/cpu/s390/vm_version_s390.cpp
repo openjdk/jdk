@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
  */
 
 #include "asm/assembler.inline.hpp"
-#include "compiler/disassembler.hpp"
 #include "code/compiledIC.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/disassembler.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
@@ -105,7 +106,7 @@ void VM_Version::initialize() {
   int model_ix = get_model_index();
 
   if ( model_ix >= 7 ) {
-    if (FLAG_IS_DEFAULT(SuperwordUseVX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVX, true);
     }
     if (model_ix > 7 && FLAG_IS_DEFAULT(UseSFPV) && SuperwordUseVX) {
@@ -326,6 +327,34 @@ void VM_Version::initialize() {
   // Unaligned accesses are not atomic, of course.
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  if (InlineTypePassFieldsAsArgs) {
+    warning("InlineTypePassFieldsAsArgs not supported on this CPU.");
+    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  }
+  if (InlineTypeReturnedAsFields) {
+    warning("InlineTypeReturnedAsFields not supported on this CPU.");
+    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  }
+  // TODO: Valhalla optimizations
+  if (UseArrayFlattening) {
+    FLAG_SET_DEFAULT(UseArrayFlattening, false);
+  }
+  if (UseFieldFlattening) {
+    FLAG_SET_DEFAULT(UseFieldFlattening, false);
+  }
+  if (UseNullFreeNonAtomicValueFlattening) {
+    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
+  }
+  if (UseNullableAtomicValueFlattening) {
+    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
+  }
+  if (UseNullFreeAtomicValueFlattening) {
+    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
+  }
+  if (UseNullableNonAtomicValueFlattening) {
+    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
   }
 }
 
@@ -1113,7 +1142,7 @@ void VM_Version::determine_features() {
   a->z_br(Z_R14);
 
   address code_end = a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   cbuf.insts()->set_end(code_end);
 

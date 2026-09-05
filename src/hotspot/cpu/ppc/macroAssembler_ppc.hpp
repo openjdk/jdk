@@ -28,12 +28,16 @@
 
 #include "asm/assembler.hpp"
 #include "oops/accessDecorators.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/macros.hpp"
 
 // MacroAssembler extends Assembler by a few frequently used macros.
 
 class ciTypeArray;
 class OopMap;
+class ciInlineKlass;
+class SigEntry;
+class VMRegPair;
 
 class MacroAssembler: public Assembler {
  public:
@@ -380,8 +384,24 @@ class MacroAssembler: public Assembler {
                            Register toc);
 #endif
 
+  // CompiledIC call
+  bool ic_call(Register Rmethod_toc,
+               address target,
+               jint method_index = 0,
+               bool scratch_emit = false,
+               bool fixed_size = false);
   static int ic_check_size();
   int ic_check(int end_alignment);
+
+  enum { trampoline_stub_size = 6 * 4 };
+  address trampoline_call(AddressLiteral target,
+                          Register Rmethod_toc = noreg,
+                          bool scratch_emit = false);
+
+  // Inline type specific methods
+#include "asm/macroAssembler_common.hpp"
+
+  void save_stack_increment(int sp_inc, int frame_size);
 
  protected:
 
@@ -702,9 +722,6 @@ class MacroAssembler: public Assembler {
     Label&   slow_case                 // continuation point if fast allocation fails
   );
 
-  enum { trampoline_stub_size = 6 * 4 };
-  address emit_trampoline_stub(int destination_toc_offset, int insts_call_instruction_offset, Register Rtoc = noreg);
-
   void compiler_fast_lock_object(ConditionRegister flag, Register oop, Register box,
                                  Register tmp1, Register tmp2, Register tmp3);
 
@@ -802,9 +819,38 @@ class MacroAssembler: public Assembler {
                            MacroAssembler::PreservationLevel preservation_level);
   void load_method_holder(Register holder, Register method);
 
-  static int instr_size_for_load_klass();
   void decode_klass_not_null(Register dst, Register src = noreg);
   Register encode_klass_not_null(Register dst, Register src = noreg);
+
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Label& not_inline_type, bool can_be_null = true);
+
+  void test_field_is_null_free_inline_type(Register flags, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free);
+  void test_field_is_flat(Register flags, Label& is_flat);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label, bool maybe_far = false);
+  void test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array, bool maybe_far = false);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array, bool maybe_far = false);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
+
+  void load_metadata(Register dst, Register src);
+
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_address(Register oop, Register data, Register inline_klass, Register t1);
 
   // SIGTRAP-based range checks for arrays.
   inline void trap_range_check_l(Register a, Register b);
@@ -835,6 +881,7 @@ class MacroAssembler: public Assembler {
   void clear_memory_unrolled(Register base_ptr, int cnt_dwords, Register tmp = R0, int offset = 0);
   void clear_memory_constlen(Register base_ptr, int cnt_dwords, Register tmp = R0);
   void clear_memory_doubleword(Register base_ptr, Register cnt_dwords, Register tmp = R0, long const_cnt = -1);
+  void fill_words(Register base, Register cnt, Register value);
 
   // Emitters for BigInteger.multiplyToLen intrinsic.
   inline void multiply64(Register dest_hi, Register dest_lo,
@@ -862,6 +909,12 @@ class MacroAssembler: public Assembler {
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                        Register tmp6, Register tmp7, Register tmp8, Register tmp9, Register tmp10,
                        Register tmp11, Register tmp12, Register tmp13);
+
+  // non-atomic 64-bit memory increment by simm16
+  void increment_mem64(Register base, RegisterOrConstant ind_or_offs, int val, Register tmp);
+
+  // Bytecode profiling (tmp2 = noreg is allowed, but then recv is killed)
+  void profile_receiver_type(Register recv, Register mdp, int mdp_offset, Register tmp1, Register tmp2);
 
   // Emitters for CRC32 calculation.
   // A note on invertCRC:
@@ -997,6 +1050,9 @@ class MacroAssembler: public Assembler {
   void should_not_reach_here(const char* msg = nullptr) { stop(stop_shouldnotreachhere, msg); }
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
+
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
 };
 
 #endif // CPU_PPC_MACROASSEMBLER_PPC_HPP

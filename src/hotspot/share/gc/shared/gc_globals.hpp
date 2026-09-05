@@ -46,6 +46,8 @@
 #include "gc/z/z_globals.hpp"
 #endif
 
+constexpr uint MaxGCCardSizeInBytes = NOT_LP64(512) LP64_ONLY(1024);
+
 #define GC_FLAGS(develop,                                                   \
                  develop_pd,                                                \
                  product,                                                   \
@@ -199,10 +201,9 @@
           range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(size_t, ReferencesPerThread, 1000, EXPERIMENTAL,                  \
-               "Ergonomically start one thread for this amount of "         \
-               "references for reference processing if "                    \
-               "ParallelRefProcEnabled is true. Specify 0 to disable and "  \
-               "use all threads.")                                          \
+          "Ergonomically start one thread for this amount of references "   \
+          "for reference processing for parallel stop-the-world garbage "   \
+          "collectors. Specify 0 to force use of all available threads.")   \
                                                                             \
   product(uint, InitiatingHeapOccupancyPercent, 45,                         \
           "The percent occupancy (IHOP) of the current old generation "     \
@@ -286,7 +287,7 @@
   develop(uintx, MaxVirtMemFraction, 2,                                     \
           "Maximum fraction (1/n) of virtual memory used for ergonomically "\
           "determining maximum heap size")                                  \
-          range(1, max_uintx)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
@@ -524,7 +525,7 @@
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
-          range(128, NOT_LP64(512) LP64_ONLY(1024))                         \
+          range(128, MaxGCCardSizeInBytes)                                  \
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)
   // end of GC_FLAGS
 

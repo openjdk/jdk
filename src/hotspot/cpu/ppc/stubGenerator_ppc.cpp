@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2025 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -339,8 +339,21 @@ class StubGenerator: public StubCodeGenerator {
       __ blr(); // return to caller
 
       // case T_OBJECT:
-      // case T_LONG:
       __ bind(ret_is_object);
+      if (InlineTypeReturnedAsFields) {
+        // Check for scalarized return value
+        __ cmpdi(CR0, R3_RET, 0);
+        __ beq(CR0, ret_is_long);
+        // Load pack handler address
+        __ untested("call stub InlineTypeReturnedAsFields"); // TODO: check return registers usage
+        __ andi(R12_scratch2, R3_RET, -2);
+        __ ld(R12_scratch2, InlineKlass::adr_members_offset(), R12_scratch2);
+        __ ld(R12_scratch2, InlineKlass::pack_handler_jobject_offset(), R12_scratch2);
+        __ mtctr(R12_scratch2);
+        __ bctr(); // tail call
+      } // else fall through
+
+      // case T_LONG:
       __ bind(ret_is_long);
       __ std(R3_RET, 0, r_arg_result_addr);
       __ blr(); // return to caller
@@ -567,7 +580,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   //
   address generate_ghash_processBlocks() {
-    StubCodeMark mark(this, "StubRoutines", "ghash");
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
 
     // Registers for parameters
@@ -2606,10 +2620,16 @@ class StubGenerator: public StubCodeGenerator {
     __ beq(CR0, L_objArray);
 
     __ cmpd(CR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
-    __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
+    __ bne(CR5, L_failed);
 
-    __ crnand(CR5, Assembler::equal, CR6, Assembler::less);
-    __ beq(CR5, L_failed);
+    // Check for flat inline type array -> return -1
+    __ test_flat_array_oop(src, temp, L_failed);
+
+    // Check for null-free (non-flat) inline type array -> handle as object array
+    __ test_null_free_array_oop(src, temp, L_objArray);
+
+    __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
+    __ bge(CR6, L_failed);
 
     // At this point, it is known to be a typeArray (array_tag 0x3).
 #ifdef ASSERT
@@ -2756,16 +2776,12 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast, L_error;
-
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
     Register key            = R5_ARG3;  // round key array
 
-    Register keylen         = R8;
-    Register temp           = R9;
-    Register keypos         = R10;
-    Register fifteen        = R12;
+    Register keylen         = R6;
+    Register tmp            = R7;
 
     VectorRegister vRet     = VR0;
 
@@ -2774,182 +2790,23 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vKey3    = VR3;
     VectorRegister vKey4    = VR4;
 
-    VectorRegister fromPerm = VR5;
-    VectorRegister keyPerm  = VR6;
-    VectorRegister toPerm   = VR7;
-    VectorRegister fSplt    = VR8;
+    VectorRegister vp       = VR6;  // permute vector for byte vector accesses on P8 LE
 
-    VectorRegister vTmp1    = VR9;
-    VectorRegister vTmp2    = VR10;
-    VectorRegister vTmp3    = VR11;
-    VectorRegister vTmp4    = VR12;
-
-    __ li              (fifteen, 15);
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
 
     // load unaligned from[0-15] to vRet
-    __ lvx             (vRet, from);
-    __ lvx             (vTmp1, fifteen, from);
-    __ lvsl            (fromPerm, from);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb        (fSplt, 0x0f);
-    __ vxor            (fromPerm, fromPerm, fSplt);
-#endif
-    __ vperm           (vRet, vRet, vTmp1, fromPerm);
+    __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
 
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
-    // to load keys
-    __ load_perm       (keyPerm, key);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb        (vTmp2, -16);
-    __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
-#endif
-
-    // load the 1st round key to vTmp1
-    __ lvx             (vTmp1, key);
-    __ li              (keypos, 16);
-    __ lvx             (vKey1, keypos, key);
-    __ vec_perm        (vTmp1, vKey1, keyPerm);
-
-    // 1st round
-    __ vxor            (vRet, vRet, vTmp1);
-
-    // load the 2nd round key to vKey1
-    __ li              (keypos, 32);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vKey2, keyPerm);
-
-    // load the 3rd round key to vKey2
-    __ li              (keypos, 48);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, keyPerm);
-
-    // load the 4th round key to vKey3
-    __ li              (keypos, 64);
-    __ lvx             (vKey4, keypos, key);
-    __ vec_perm        (vKey3, vKey4, keyPerm);
-
-    // load the 5th round key to vKey4
-    __ li              (keypos, 80);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey4, vTmp1, keyPerm);
-
-    // 2nd - 5th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-    __ vcipher         (vRet, vRet, vKey3);
-    __ vcipher         (vRet, vRet, vKey4);
-
-    // load the 6th round key to vKey1
-    __ li              (keypos, 96);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
-
-    // load the 7th round key to vKey2
-    __ li              (keypos, 112);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, keyPerm);
-
-    // load the 8th round key to vKey3
-    __ li              (keypos, 128);
-    __ lvx             (vKey4, keypos, key);
-    __ vec_perm        (vKey3, vKey4, keyPerm);
-
-    // load the 9th round key to vKey4
-    __ li              (keypos, 144);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey4, vTmp1, keyPerm);
-
-    // 6th - 9th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-    __ vcipher         (vRet, vRet, vKey3);
-    __ vcipher         (vRet, vRet, vKey4);
-
-    // load the 10th round key to vKey1
-    __ li              (keypos, 160);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
-
-    // load the 11th round key to vKey2
-    __ li              (keypos, 176);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey2, vTmp1, keyPerm);
-
-    // if all round keys are loaded, skip next 4 rounds
-    __ cmpwi           (CR0, keylen, 44);
-    __ beq             (CR0, L_doLast);
-
-    // 10th - 11th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-
-    // load the 12th round key to vKey1
-    __ li              (keypos, 192);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
-
-    // load the 13th round key to vKey2
-    __ li              (keypos, 208);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey2, vTmp1, keyPerm);
-
-    // if all round keys are loaded, skip next 2 rounds
-    __ cmpwi           (CR0, keylen, 52);
-    __ beq             (CR0, L_doLast);
-
-#ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
-#endif
-
-    // 12th - 13th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-
-    // load the 14th round key to vKey1
-    __ li              (keypos, 224);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vTmp1, vKey2, keyPerm);
-
-    // load the 15th round key to vKey2
-    __ li              (keypos, 240);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey2, vTmp1, keyPerm);
-
-    __ bind(L_doLast);
-
-    // last two rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipherlast     (vRet, vRet, vKey2);
-
-#ifdef VM_LITTLE_ENDIAN
-    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
-    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
-    __ vxor            (toPerm, toPerm, fSplt);
-
-    // Swap Bytes
-    __ vperm           (vRet, vRet, vRet, toPerm);
-#endif
+    aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
 
     // store result (unaligned)
-    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
-    Register lo = temp, hi = fifteen; // Reuse
-    __ vsldoi          (vTmp1, vRet, vRet, 8);
-    __ mfvrd           (hi, vRet);
-    __ mfvrd           (lo, vTmp1);
-    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
-    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
 
     __ blr();
 
-#ifdef ASSERT
-    __ bind(L_error);
-    __ stop("aescrypt_encryptBlock: invalid key length");
-#endif
      return start;
   }
 
@@ -2964,16 +2821,12 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast, L_do44, L_do52, L_error;
-
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
     Register key            = R5_ARG3;  // round key array
 
-    Register keylen         = R8;
-    Register temp           = R9;
-    Register keypos         = R10;
-    Register fifteen        = R12;
+    Register keylen         = R6;
+    Register tmp            = R7;
 
     VectorRegister vRet     = VR0;
 
@@ -2983,40 +2836,116 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vKey4    = VR4;
     VectorRegister vKey5    = VR5;
 
-    VectorRegister fromPerm = VR6;
-    VectorRegister keyPerm  = VR7;
-    VectorRegister toPerm   = VR8;
-    VectorRegister fSplt    = VR9;
+    VectorRegister vp       = VR6;  // permute vector for byte vector accesses on P8 LE
 
-    VectorRegister vTmp1    = VR10;
-    VectorRegister vTmp2    = VR11;
-    VectorRegister vTmp3    = VR12;
-    VectorRegister vTmp4    = VR13;
-
-    __ li              (fifteen, 15);
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
 
     // load unaligned from[0-15] to vRet
-    __ lvx             (vRet, from);
-    __ lvx             (vTmp1, fifteen, from);
-    __ lvsl            (fromPerm, from);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb        (fSplt, 0x0f);
-    __ vxor            (fromPerm, fromPerm, fSplt);
-#endif
-    __ vperm           (vRet, vRet, vTmp1, fromPerm); // align [and byte swap in LE]
+    __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
 
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
-    // to load keys
-    __ load_perm       (keyPerm, key);
-#ifdef VM_LITTLE_ENDIAN
-    __ vxor            (vTmp2, vTmp2, vTmp2);
-    __ vspltisb        (vTmp2, -16);
-    __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vrld            (keyPerm, keyPerm, vTmp2);
-    __ vsldoi          (keyPerm, keyPerm, keyPerm, 8);
+    aes_decrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4, vKey5);
+
+    // store result (unaligned)
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
+
+    __ blr();
+     return start;
+  }
+
+  // ==========================================================================
+  // AES helper functions for PPC64
+  //
+  // These emit the AES round instructions.
+  // Each call to these helpers emits a sequence of vcipher/vncipher
+  // instructions.
+  //
+  // ==========================================================================
+  // Emits the AES encrypt round instructions.
+  //
+  // vRet:    in/out — the AES state (plaintext in, ciphertext out)
+  // key:     register holding pointer to expanded key array
+  // keylen:  register holding key length (44/52/60)
+  //
+  void aes_encrypt_rounds(VectorRegister vRet,
+                          Register key, Register keylen, Register tmp,
+                          VectorRegister vKey1, VectorRegister vKey2,
+                          VectorRegister vKey3, VectorRegister vKey4) {
+    Label L_doLast;
+
+    // round 0: AddRoundKey
+    __ load_word_vector_unaligned(vKey1, 0, key, tmp);
+    __ vxor            (vRet, vRet, vKey1);
+
+    // rounds 2-5
+    __ load_word_vector_unaligned(vKey1, 16, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 32, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 48, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 64, key, tmp);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
+
+    // rounds 6-9
+    __ load_word_vector_unaligned(vKey1, 80, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 96, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 128, key, tmp);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+    __ vcipher         (vRet, vRet, vKey3);
+    __ vcipher         (vRet, vRet, vKey4);
+
+    // rounds 10-11
+    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 160, key, tmp);
+
+    __ cmpwi           (CR0, keylen, 44);   // AES-128 -> final rounds
+    __ beq             (CR0, L_doLast);
+
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+
+    // rounds 12-13
+    __ load_word_vector_unaligned(vKey1, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 192, key, tmp);
+
+    __ cmpwi           (CR0, keylen, 52);   // AES-192 -> final rounds
+    __ beq             (CR0, L_doLast);
+#ifdef ASSERT
+      __ cmpwi         (CR0, keylen, 60);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_encrypt_rounds - invalid key length");
 #endif
+
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipher         (vRet, vRet, vKey2);
+
+    // rounds 14-15
+    __ load_word_vector_unaligned(vKey1, 208, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 224, key, tmp);
+
+    __ bind(L_doLast);
+    __ vcipher         (vRet, vRet, vKey1);
+    __ vcipherlast     (vRet, vRet, vKey2);
+  }
+
+
+  // ==========================================================================
+  // Emits the AES decrypt round instructions.
+  //
+  // vRet:    in/out — the AES state (ciphertext in, plaintext out)
+  // key:     register holding pointer to expanded key array
+  // keylen:  register holding key length (44/52/60)
+  //
+  void aes_decrypt_rounds(VectorRegister vRet,
+                          Register key, Register keylen, Register tmp,
+                          VectorRegister vKey1, VectorRegister vKey2,
+                          VectorRegister vKey3, VectorRegister vKey4,
+                          VectorRegister vKey5) {
+    Label L_doLast, L_do44, L_do52;
 
     __ cmpwi           (CR0, keylen, 44);
     __ beq             (CR0, L_do44);
@@ -3025,176 +2954,205 @@ class StubGenerator: public StubCodeGenerator {
     __ beq             (CR0, L_do52);
 
 #ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
+      __ cmpwi         (CR0, keylen, 60);
+      __ asm_assert_eq(FILE_AND_LINE ": aes_decrypt_rounds - invalid key length");
 #endif
+    // ---- AES-256: round keys 15-11 ----
+    __ load_word_vector_unaligned(vKey1, 224, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 208, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 192, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey5, 160, key, tmp);
 
-    // load the 15th round key to vKey1
-    __ li              (keypos, 240);
-    __ lvx             (vKey1, keypos, key);
-    __ li              (keypos, 224);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vKey2, vKey1, keyPerm);
-
-    // load the 14th round key to vKey2
-    __ li              (keypos, 208);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
-
-    // load the 13th round key to vKey3
-    __ li              (keypos, 192);
-    __ lvx             (vKey4, keypos, key);
-    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
-
-    // load the 12th round key to vKey4
-    __ li              (keypos, 176);
-    __ lvx             (vKey5, keypos, key);
-    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
-
-    // load the 11th round key to vKey5
-    __ li              (keypos, 160);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
-
-    // 1st - 5th rounds
     __ vxor            (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipher        (vRet, vRet, vKey5);
-
     __ b               (L_doLast);
 
     __ align(32);
+    // ---- AES-192: round keys 13-11 ----
     __ bind            (L_do52);
+    __ load_word_vector_unaligned(vKey1, 192, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 176, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 160, key, tmp);
 
-    // load the 13th round key to vKey1
-    __ li              (keypos, 208);
-    __ lvx             (vKey1, keypos, key);
-    __ li              (keypos, 192);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vKey2, vKey1, keyPerm);
-
-    // load the 12th round key to vKey2
-    __ li              (keypos, 176);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
-
-    // load the 11th round key to vKey3
-    __ li              (keypos, 160);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey3, vTmp1, vKey3, keyPerm);
-
-    // 1st - 3rd rounds
     __ vxor            (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
-
     __ b               (L_doLast);
 
     __ align(32);
+    // ---- AES-128: round key 11 ----
     __ bind            (L_do44);
-
-    // load the 11th round key to vKey1
-    __ li              (keypos, 176);
-    __ lvx             (vKey1, keypos, key);
-    __ li              (keypos, 160);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey1, vTmp1, vKey1, keyPerm);
-
-    // 1st round
+    __ load_word_vector_unaligned(vKey1, 160, key, tmp);
     __ vxor            (vRet, vRet, vKey1);
 
+    // ---- Common rounds 10-1 ----
     __ bind            (L_doLast);
+    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 128, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 96,  key, tmp);
+    __ load_word_vector_unaligned(vKey5, 80,  key, tmp);
 
-    // load the 10th round key to vKey1
-    __ li              (keypos, 144);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vKey2, vTmp1, keyPerm);
-
-    // load the 9th round key to vKey2
-    __ li              (keypos, 128);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
-
-    // load the 8th round key to vKey3
-    __ li              (keypos, 112);
-    __ lvx             (vKey4, keypos, key);
-    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
-
-    // load the 7th round key to vKey4
-    __ li              (keypos, 96);
-    __ lvx             (vKey5, keypos, key);
-    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
-
-    // load the 6th round key to vKey5
-    __ li              (keypos, 80);
-    __ lvx             (vTmp1, keypos, key);
-    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
-
-    // last 10th - 6th rounds
     __ vncipher        (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipher        (vRet, vRet, vKey5);
-
-    // load the 5th round key to vKey1
-    __ li              (keypos, 64);
-    __ lvx             (vKey2, keypos, key);
-    __ vec_perm        (vKey1, vKey2, vTmp1, keyPerm);
-
-    // load the 4th round key to vKey2
-    __ li              (keypos, 48);
-    __ lvx             (vKey3, keypos, key);
-    __ vec_perm        (vKey2, vKey3, vKey2, keyPerm);
-
-    // load the 3rd round key to vKey3
-    __ li              (keypos, 32);
-    __ lvx             (vKey4, keypos, key);
-    __ vec_perm        (vKey3, vKey4, vKey3, keyPerm);
-
-    // load the 2nd round key to vKey4
-    __ li              (keypos, 16);
-    __ lvx             (vKey5, keypos, key);
-    __ vec_perm        (vKey4, vKey5, vKey4, keyPerm);
-
-    // load the 1st round key to vKey5
-    __ lvx             (vTmp1, key);
-    __ vec_perm        (vKey5, vTmp1, vKey5, keyPerm);
-
-    // last 5th - 1th rounds
+    __ load_word_vector_unaligned(vKey1, 64, key, tmp);
+    __ load_word_vector_unaligned(vKey2, 48, key, tmp);
+    __ load_word_vector_unaligned(vKey3, 32, key, tmp);
+    __ load_word_vector_unaligned(vKey4, 16, key, tmp);
+    __ load_word_vector_unaligned(vKey5, 0,  key, tmp);
     __ vncipher        (vRet, vRet, vKey1);
     __ vncipher        (vRet, vRet, vKey2);
     __ vncipher        (vRet, vRet, vKey3);
     __ vncipher        (vRet, vRet, vKey4);
     __ vncipherlast    (vRet, vRet, vKey5);
+  }
 
-#ifdef VM_LITTLE_ENDIAN
-    // toPerm = 0x0F0E0D0C0B0A09080706050403020100
-    __ lvsl            (toPerm, keypos); // keypos is a multiple of 16
-    __ vxor            (toPerm, toPerm, fSplt);
+  // ==========================================================================
+  // CBC Encrypt stub — using helper functions
+  //   from:      R3_ARG1          - source byte array address (plaintext)
+  //   to:        R4_ARG2          - destination byte array address (ciphertext)
+  //   key:       R5_ARG3          - round key array
+  //   rvec:      R6_ARG4          - r vector byte array address (initialization vector)
+  //   input_len: R7_ARG5          - length of input in bytes
+  //
+  // Returns:
+  //   R3_RET - number of bytes processed
+  //
+  address generate_cipherBlockChaining_encryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_encryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
 
-    // Swap Bytes
-    __ vperm           (vRet, vRet, vRet, toPerm);
-#endif
+    address start = __ function_entry();
 
-    // store result (unaligned)
-    // Note: We can't use a read-modify-write sequence which touches additional Bytes.
-    Register lo = temp, hi = fifteen; // Reuse
-    __ vsldoi          (vTmp1, vRet, vRet, 8);
-    __ mfvrd           (hi, vRet);
-    __ mfvrd           (lo, vTmp1);
-    __ std             (hi, 0 LITTLE_ENDIAN_ONLY(+ 8), to);
-    __ std             (lo, 0 BIG_ENDIAN_ONLY(+ 8), to);
+    Label L_enc_loop;
 
+    Register from       = R3_ARG1;
+    Register to         = R4_ARG2;
+    Register key        = R5_ARG3;
+    Register rvec       = R6_ARG4;
+    Register input_len  = R7_ARG5;
+
+    Register keylen     = R8;
+    Register tmp        = R9;
+    Register len        = R10;
+
+    VectorRegister vRet  = VR0;
+    VectorRegister vKey1 = VR1;
+    VectorRegister vKey2 = VR2;
+    VectorRegister vKey3 = VR3;
+    VectorRegister vKey4 = VR4;
+    VectorRegister vIn   = VR5;
+    VectorRegister vp    = VR6;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp  = VR7;
+
+    __ mr              (len, input_len);
+
+    // vp must be computed once, before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
+
+    __ load_byte_vector_unaligned(vRet, 0, rvec, tmp, vp);
+
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
+                                arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    __ align(32);
+    __ bind(L_enc_loop);
+    __ load_byte_vector_unaligned(vIn, 0, from, tmp, vp);
+    __ addi            (from, from, 16);
+    __ vxor            (vRet, vRet, vIn);                      // CBC XOR
+    aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
+    __ addi            (to, to, 16);
+    __ addic_          (len, len, -16);
+    __ bne             (CR0, L_enc_loop);
+
+    // save the last ciphertext block in rvec; it is the IV for the next call
+    __ store_byte_vector_unaligned(vRet, 0, rvec, tmp, vp, vTmp);
+    __ mr              (R3_RET, input_len);
     __ blr();
 
-#ifdef ASSERT
-    __ bind(L_error);
-    __ stop("aescrypt_decryptBlock: invalid key length");
-#endif
-     return start;
+    return start;
+  }
+
+  // ==========================================================================
+  //  CBC Decrypt stub
+  //  Arguments:
+  //    R3_ARG1 - from:      source byte array address (ciphertext)
+  //    R4_ARG2 - to:        destination byte array address (plaintext)
+  //    R5_ARG3 - key:       round key array
+  //    R6_ARG4 - rvec:      r vector byte array address (in/out), holds the
+  //                         initialization vector on entry and is updated with
+  //                         the last ciphertext block on exit
+  //    R7_ARG5 - input_len: length of input in bytes, a multiple of 16
+  //
+  //  Returns:
+  //    R3_RET  - number of bytes processed
+  // ==========================================================================
+
+  address generate_cipherBlockChaining_decryptAESCrypt() {
+    assert(UseAESIntrinsics, "need AES instructions support");
+    StubId stub_id = StubId::stubgen_cipherBlockChaining_decryptAESCrypt_id;
+    StubCodeMark mark(this, stub_id);
+
+    address start = __ function_entry();
+
+    Label L_dec_loop;
+
+    Register from       = R3_ARG1;
+    Register to         = R4_ARG2;
+    Register key        = R5_ARG3;
+    Register rvec       = R6_ARG4;
+    Register input_len  = R7_ARG5;
+
+    Register keylen     = R8;
+    Register tmp        = R9;
+    Register len        = R10;
+
+    VectorRegister vRet     = VR0;
+    VectorRegister vKey1    = VR1;
+    VectorRegister vKey2    = VR2;
+    VectorRegister vKey3    = VR3;
+    VectorRegister vKey4    = VR4;
+    VectorRegister vKey5    = VR5;
+    VectorRegister vIV      = VR6;
+    VectorRegister vSavedCT = VR7;
+    VectorRegister vp       = VR8;   // permute vector for P8 LE byte accesses
+    VectorRegister vTmp     = VR9;
+    __ mr              (len, input_len);
+    // vp must be computed before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, /*temp*/ vRet);
+
+    __ load_byte_vector_unaligned(vIV, 0, rvec, tmp, vp);
+
+    __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() -
+                                arrayOopDesc::base_offset_in_bytes(T_INT), key);
+
+    __ align(32);
+    __ bind(L_dec_loop);
+    __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
+    __ addi            (from, from, 16);
+    __ vor             (vSavedCT, vRet, vRet);      // AES will destroy vRet
+    aes_decrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4, vKey5);
+    __ vxor            (vRet, vRet, vIV);           // CBC XOR (after decrypt)
+    __ vor             (vIV, vSavedCT, vSavedCT);   // IV = previous ciphertext
+    __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp, vTmp);
+    __ addi            (to, to, 16);
+    __ addic_          (len, len, -16);
+    __ bne             (CR0, L_dec_loop);
+
+    __ store_byte_vector_unaligned(vIV, 0, rvec, tmp, vp, vTmp);
+    __ mr              (R3_RET, input_len);
+    __ blr();
+
+    return start;
   }
 
   address generate_sha256_implCompress(StubId stub_id) {
@@ -3723,7 +3681,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    StubId stub_id = StubId::stubgen_f2hf_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ f2hf(R3_RET, F1_ARG1, F0);
     __ blr();
@@ -3732,7 +3691,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    StubId stub_id = StubId::stubgen_hf2f_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ hf2f(F1_RET, R3_ARG1);
     __ blr();
@@ -4801,6 +4761,7 @@ void generate_lookup_secondary_supers_table_stub() {
     }
 
     if (return_barrier) {
+      assert(!InlineTypeReturnedAsFields, "unsupported");
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
       DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
       __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
@@ -4845,6 +4806,7 @@ void generate_lookup_secondary_supers_table_stub() {
     __ mr(R1_SP, R3_RET); // R3_RET contains the SP of the thawed top frame
 
     if (return_barrier) {
+      assert(!InlineTypeReturnedAsFields, "unsupported");
       // we're now in the caller of the frame that returned to the barrier
       __ mr(R3_RET, nvtmp); __ fmr(F1_RET, nvftmp); // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
     } else {
@@ -5038,9 +5000,8 @@ void generate_lookup_secondary_supers_table_stub() {
   }
 
   void generate_compiler_stubs() {
-#if COMPILER2_OR_JVMCI
-
 #ifdef COMPILER2
+
     if (UseMultiplyToLenIntrinsic) {
       StubRoutines::_multiplyToLen = generate_multiplyToLen();
     }
@@ -5058,7 +5019,6 @@ void generate_lookup_secondary_supers_table_stub() {
       StubRoutines::_montgomerySquare
         = CAST_FROM_FN_PTR(address, SharedRuntime::montgomery_square);
     }
-#endif
 
     // data cache line writeback
     if (VM_Version::supports_data_cache_line_flush()) {
@@ -5073,6 +5033,8 @@ void generate_lookup_secondary_supers_table_stub() {
     if (UseAESIntrinsics) {
       StubRoutines::_aescrypt_encryptBlock = generate_aescrypt_encryptBlock();
       StubRoutines::_aescrypt_decryptBlock = generate_aescrypt_decryptBlock();
+      StubRoutines::_cipherBlockChaining_encryptAESCrypt = generate_cipherBlockChaining_encryptAESCrypt();
+      StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
     }
 
     if (UseSHA256Intrinsics) {
@@ -5091,7 +5053,7 @@ void generate_lookup_secondary_supers_table_stub() {
       StubRoutines::_base64_encodeBlock = generate_base64_encodeBlock();
     }
 #endif
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
   }
 
  public:

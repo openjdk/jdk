@@ -1171,27 +1171,16 @@ bool followed_by_acquire(const Node *load) {
 
 // PPC port: Removed use of lazy constant construct.
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   // It's only a single branch-and-link instruction.
   return 4;
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
-  // Offset is 4 with postalloc expanded calls (bl is one instruction). We use
-  // postalloc expanded calls if we use inline caches and do not update method data.
-  if (UseInlineCaches) return 4;
-
-  int vtable_index = this->_vtable_index;
-  if (vtable_index < 0) {
-    // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-    assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
-    return 12;
-  } else {
-    return 20 + MacroAssembler::instr_size_for_load_klass();
-  }
+int MachCallDynamicJavaNode::ret_addr_offset() const {
+  return 12;
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
+int MachCallRuntimeNode::ret_addr_offset() const {
   if (rule() == CallRuntimeDirect_rule) {
     // CallRuntimeDirectNode uses call_c.
 #if defined(ABI_ELFv2)
@@ -1311,9 +1300,6 @@ class CallStubImpl {
 
  public:
 
-  // Emit call stub, compiled java to interpreter.
-  static void emit_trampoline_stub(C2_MacroAssembler *masm, int destination_toc_offset, int insts_call_instruction_offset);
-
   // Size of call trampoline stub.
   // This doesn't need to be accurate to the byte, but it
   // must be larger than or equal to the real size of the stub.
@@ -1331,81 +1317,6 @@ class CallStubImpl {
 %} // end source_hpp
 
 source %{
-
-// Emit a trampoline stub for a call to a target which is too far away.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call-site in the stub section:
-//   load the call target from the constant pool
-//   branch via CTR (LR/link still points to the call-site above)
-
-void CallStubImpl::emit_trampoline_stub(C2_MacroAssembler *masm, int destination_toc_offset, int insts_call_instruction_offset) {
-  address stub = __ emit_trampoline_stub(destination_toc_offset, insts_call_instruction_offset);
-  if (stub == nullptr) {
-    ciEnv::current()->record_out_of_memory_failure();
-  }
-}
-
-//=============================================================================
-
-// Emit an inline branch-and-link call and a related trampoline stub.
-//
-// code sequences:
-//
-// call-site:
-//   branch-and-link to <destination> or <trampoline stub>
-//
-// Related trampoline stub for this call-site in the stub section:
-//   load the call target from the constant pool
-//   branch via CTR (LR/link still points to the call-site above)
-//
-
-typedef struct {
-  int insts_call_instruction_offset;
-  int ret_addr_offset;
-} EmitCallOffsets;
-
-// Emit a branch-and-link instruction that branches to a trampoline.
-// - Remember the offset of the branch-and-link instruction.
-// - Add a relocation at the branch-and-link instruction.
-// - Emit a branch-and-link.
-// - Remember the return pc offset.
-EmitCallOffsets emit_call_with_trampoline_stub(C2_MacroAssembler *masm, address entry_point, relocInfo::relocType rtype) {
-  EmitCallOffsets offsets = { -1, -1 };
-  const int start_offset = __ offset();
-  offsets.insts_call_instruction_offset = __ offset();
-
-  // No entry point given, use the current pc.
-  if (entry_point == nullptr) entry_point = __ pc();
-
-  // Put the entry point as a constant into the constant pool.
-  const address entry_point_toc_addr   = __ address_constant(entry_point, RelocationHolder::none);
-  if (entry_point_toc_addr == nullptr) {
-    ciEnv::current()->record_out_of_memory_failure();
-    return offsets;
-  }
-  const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-  // Emit the trampoline stub which will be related to the branch-and-link below.
-  CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, offsets.insts_call_instruction_offset);
-  if (ciEnv::current()->failing()) { return offsets; } // Code cache may be full.
-  __ relocate(rtype);
-
-  // Note: At this point we do not have the address of the trampoline
-  // stub, and the entry point might be too far away for bl, so __ pc()
-  // serves as dummy and the bl will be patched later.
-  __ bl((address) __ pc());
-
-  offsets.ret_addr_offset = __ offset() - start_offset;
-
-  return offsets;
-}
-
-//=============================================================================
 
 // Factory for creating loadConL* nodes for large/small constant pool.
 
@@ -1426,7 +1337,7 @@ int ConstantTable::calculate_table_base_offset() const {
 
 bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  iRegPdstOper *op_dst = new iRegPdstOper();
+  iRegLdstOper *op_dst = new iRegLdstOper();
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
 
@@ -1631,11 +1542,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   C->output()->set_frame_complete(__ offset());
 }
 
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. determine dynamically.
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   // Return number of relocatable values contained in this instruction.
   return 1; // 1 reloc entry for load_const(toc).
@@ -1692,11 +1598,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     }
     __ safepoint_poll(*code_stub, temp, true /* at_return */, true /* in_nmethod */);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -2049,6 +1950,18 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 }
 
 #ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
+#ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print_cr("---- MachUEPNode ----");
   st->print_cr("...");
@@ -2059,11 +1972,6 @@ void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // This is the unverified entry point.
   __ ic_check(CodeEntryAlignment);
   // Argument is valid and klass is as expected, continue.
-}
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
 }
 
 //=============================================================================
@@ -2227,6 +2135,9 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       return VM_Version::supports_data_cache_line_flush();
+
+    case Op_OnSpinWait:
+      return VM_Version::supports_on_spin_wait();
   }
 
   return true; // Per default match rules are supported.
@@ -2437,26 +2348,26 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 28 : FLOATPRESSURE;
 }
 
-// Register for DIVI projection of divmodI.
-const RegMask& Matcher::divI_proj_mask() {
+// Register for the first projection of an int pair
+const RegMask& Matcher::firstI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODI projection of divmodI.
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for DIVL projection of divmodL.
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
 
-// Register for MODL projection of divmodL.
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   ShouldNotReachHere();
   return RegMask::EMPTY;
 }
@@ -2632,7 +2543,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m1->_opnds[0] = new iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;             // src
-    m1->_opnds[2] = new iRegPdstOper(); // toc
+    m1->_opnds[2] = new iRegLdstOper(); // toc
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
     m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2663,7 +2574,7 @@ loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immL
     // operands for new nodes
     m2->_opnds[0] = new iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;             // src
-    m2->_opnds[2] = new iRegPdstOper(); // toc
+    m2->_opnds[2] = new iRegLdstOper(); // toc
 
     // Initialize ins_attrib instruction offset.
     m2->_cbuf_insts_offset = -1;
@@ -2714,7 +2625,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m1->_opnds[0] = new  iRegLdstOper(); // dst
     m1->_opnds[1] = immSrc;              // src
-    m1->_opnds[2] = new  iRegPdstOper(); // toc
+    m1->_opnds[2] = new  iRegLdstOper(); // toc
 
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
@@ -2760,7 +2671,7 @@ loadConLReplicatedNodesTuple loadConLReplicatedNodesTuple_create(Compile *C, Pha
     // operands for new nodes
     m2->_opnds[0] = new  iRegLdstOper(); // dst
     m2->_opnds[1] = immSrc;              // src
-    m2->_opnds[2] = new  iRegPdstOper(); // toc
+    m2->_opnds[2] = new  iRegLdstOper(); // toc
 
     m3->_opnds[0] = new  vecXOper();     // dst
     m3->_opnds[1] = new  iRegLdstOper(); // src
@@ -2888,6 +2799,11 @@ encode %{
       loadConP_hiNode *m1 = new loadConP_hiNode();
       loadConP_loNode *m2 = new loadConP_loNode();
 
+      // If this is an oop, both m1 and m2 must be consider oops so postalloc scheduling does not
+      // put a safepoint between them
+      m1->_bottom_type = bottom_type();
+      m2->_bottom_type = bottom_type();
+
       // inputs for new nodes
       m1->add_req(nullptr, n_toc);
       m2->add_req(nullptr, m1);
@@ -2895,7 +2811,8 @@ encode %{
       // operands for new nodes
       m1->_opnds[0] = new iRegPdstOper(); // dst
       m1->_opnds[1] = op_src;             // src
-      m1->_opnds[2] = new iRegPdstOper(); // toc
+      m1->_opnds[2] = new iRegLdstOper(); // toc
+
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
       m2->_opnds[2] = new iRegLdstOper(); // base
@@ -2920,7 +2837,7 @@ encode %{
       // operands for new nodes
       m2->_opnds[0] = new iRegPdstOper(); // dst
       m2->_opnds[1] = op_src;             // src
-      m2->_opnds[2] = new iRegPdstOper(); // toc
+      m2->_opnds[2] = new iRegLdstOper(); // toc
 
       // Register allocation for new nodes.
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2947,7 +2864,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2971,7 +2888,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegLdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -3158,13 +3075,6 @@ encode %{
     __ bind(done);
   %}
 
-  enc_class enc_cmove_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-    Label done;
-    __ bso($crx$$CondRegister, done);
-    __ mffprd($dst$$Register, $src$$FloatRegister);
-    __ bind(done);
-  %}
-
   enc_class enc_bc(flagsRegSrc crx, cmpOp cmp, Label lbl) %{
     Label d;   // dummy
     __ bind(d);
@@ -3321,45 +3231,27 @@ encode %{
   // Usage of r1 and r2 in the stubs allows to distinguish them.
   enc_class enc_java_static_call(method meth) %{
     address entry_point = (address)$meth$$method;
+    address call_pc;
 
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
-      emit_call_with_trampoline_stub(masm, entry_point, relocInfo::runtime_call_type);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-    } else {
-      // Remember the offset not the address.
-      const int start_offset = __ offset();
-
-      // The trampoline stub.
-      // No entry point given, use the current pc.
-      // Make sure branch fits into
-      if (entry_point == nullptr) entry_point = __ pc();
-
-      // Put the entry point as a constant into the constant pool.
-      const address entry_point_toc_addr = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_toc_addr == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
+      call_pc = __ trampoline_call(AddressLiteral(entry_point, relocInfo::runtime_call_type));
+      if (call_pc == nullptr) {
+        ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
-      const int entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
-
-      // Emit the trampoline stub which will be related to the branch-and-link below.
-      CallStubImpl::emit_trampoline_stub(masm, entry_point_toc_offset, start_offset);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
+    } else {
       int method_index = resolved_method_index(masm);
-      __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
-                  : static_call_Relocation::spec(method_index));
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      call_pc = __ trampoline_call(AddressLiteral(entry_point, rspec));
+      if (call_pc == nullptr) {
+        ciEnv::current()->record_failure("CodeCache is full");
+        return;
+      }
 
-      // The real call.
-      // Note: At this point we do not have the address of the trampoline
-      // stub, and the entry point might be too far away for bl, so __ pc()
-      // serves as dummy and the bl will be patched later.
-      __ set_inst_mark();
-      __ bl(__ pc());  // Emits a relocation.
-
-      // The stub for call to interpreter.
-      address stub = CompiledDirectCall::emit_to_interp_stub(masm);
-      __ clear_inst_mark();
+      // Emit stub for static call
+      address stub = CompiledDirectCall::emit_to_interp_stub(masm, call_pc);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3368,157 +3260,21 @@ encode %{
     __ post_call_nop();
   %}
 
-  // Second node of expanded dynamic call - the call.
-  enc_class enc_java_dynamic_call_sched(method meth) %{
-    if (!ra_->C->output()->in_scratch_emit_size()) {
-      // Create a call trampoline stub for the given method.
-      const address entry_point = !($meth$$method) ? nullptr : (address)$meth$$method;
-      const address entry_point_const = __ address_constant(entry_point, RelocationHolder::none);
-      if (entry_point_const == nullptr) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      const int entry_point_const_toc_offset = __ offset_to_method_toc(entry_point_const);
-      CallStubImpl::emit_trampoline_stub(masm, entry_point_const_toc_offset, __ offset());
-      if (ra_->C->env()->failing()) { return; } // Code cache may be full.
-
-      // Build relocation at call site with ic position as data.
-      assert((_load_ic_hi_node != nullptr && _load_ic_node == nullptr) ||
-             (_load_ic_hi_node == nullptr && _load_ic_node != nullptr),
-             "must have one, but can't have both");
-      assert((_load_ic_hi_node != nullptr && _load_ic_hi_node->_cbuf_insts_offset != -1) ||
-             (_load_ic_node != nullptr    && _load_ic_node->_cbuf_insts_offset != -1),
-             "must contain instruction offset");
-      const int virtual_call_oop_addr_offset = _load_ic_hi_node != nullptr
-        ? _load_ic_hi_node->_cbuf_insts_offset
-        : _load_ic_node->_cbuf_insts_offset;
-      const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
-      assert(MacroAssembler::is_load_const_from_method_toc_at(virtual_call_oop_addr),
-             "should be load from TOC");
-      int method_index = resolved_method_index(masm);
-      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
-    }
-
-    // At this point I do not have the address of the trampoline stub,
-    // and the entry point might be too far away for bl. Pc() serves
-    // as dummy and bl will be patched later.
-    __ bl((address) __ pc());
-    __ post_call_nop();
-  %}
-
-  // postalloc expand emitter for virtual calls.
-  enc_class postalloc_expand_java_dynamic_call_sched(method meth, iRegLdst toc) %{
-
-    // Create the nodes for loading the IC from the TOC.
-    loadConLNodesTuple loadConLNodes_IC =
-      loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) Universe::non_oop_word()),
-                                OptoReg::Name(R19_H_num), OptoReg::Name(R19_num));
-
-    // Create the call node.
-    CallDynamicJavaDirectSchedNode *call = new CallDynamicJavaDirectSchedNode();
-    call->_vtable_index      = _vtable_index;
-    call->_method            = _method;
-    call->_optimized_virtual = _optimized_virtual;
-    call->_tf                = _tf;
-    call->_entry_point       = _entry_point;
-    call->_cnt               = _cnt;
-    call->_guaranteed_safepoint = true;
-    call->_oop_map           = _oop_map;
-    call->_jvms              = _jvms;
-    call->_jvmadj            = _jvmadj;
-    call->_has_ea_local_in_scope = _has_ea_local_in_scope;
-    call->_in_rms            = _in_rms;
-    call->_nesting           = _nesting;
-    call->_override_symbolic_info = _override_symbolic_info;
-    call->_arg_escape        = _arg_escape;
-
-    // New call needs all inputs of old call.
-    // Req...
-    for (uint i = 0; i < req(); ++i) {
-      // The expanded node does not need toc any more.
-      // Add the inline cache constant here instead. This expresses the
-      // register of the inline cache must be live at the call.
-      // Else we would have to adapt JVMState by -1.
-      if (i == mach_constant_base_node_input()) {
-        call->add_req(loadConLNodes_IC._last);
-      } else {
-        call->add_req(in(i));
-      }
-    }
-    // ...as well as prec
-    for (uint i = req(); i < len(); ++i) {
-      call->add_prec(in(i));
-    }
-
-    // Remember nodes loading the inline cache into r19.
-    call->_load_ic_hi_node = loadConLNodes_IC._large_hi;
-    call->_load_ic_node    = loadConLNodes_IC._small;
-
-    // Operands for new nodes.
-    call->_opnds[0] = _opnds[0];
-    call->_opnds[1] = _opnds[1];
-
-    // Only the inline cache is associated with a register.
-    assert(Matcher::inline_cache_reg() == OptoReg::Name(R19_num), "ic reg should be R19");
-
-    // Push new nodes.
-    if (loadConLNodes_IC._large_hi) nodes->push(loadConLNodes_IC._large_hi);
-    if (loadConLNodes_IC._last)     nodes->push(loadConLNodes_IC._last);
-    nodes->push(call);
-  %}
-
   // Compound version of call dynamic
   // Toc is only passed so that it can be used in ins_encode statement.
   // In the code we have to use $constanttablebase.
   enc_class enc_java_dynamic_call(method meth, iRegLdst toc) %{
     int start_offset = __ offset();
-
-    Register Rtoc = (ra_) ? $constanttablebase : R2_TOC;
-
-    int vtable_index = this->_vtable_index;
-    if (vtable_index < 0) {
-      // Must be invalid_vtable_index, not nonvirtual_vtable_index.
-      assert(vtable_index == Method::invalid_vtable_index, "correct sentinel value");
-      Register ic_reg = as_Register(Matcher::inline_cache_reg_encode());
-
-      // Virtual call relocation will point to ic load.
-      address virtual_call_meta_addr = __ pc();
-      // Load a clear inline cache.
-      AddressLiteral empty_ic((address) Universe::non_oop_word());
-      bool success = __ load_const_from_method_toc(ic_reg, empty_ic, Rtoc, /*fixed_size*/ true);
-      if (!success) {
-        ciEnv::current()->record_out_of_memory_failure();
-        return;
-      }
-      // CALL to fixup routine.  Fixup routine uses ScopeDesc info
-      // to determine who we intended to call.
-      __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
-      emit_call_with_trampoline_stub(masm, (address)$meth$$method, relocInfo::none);
-      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-      assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
-    } else {
-      assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-      // Go thru the vtable. Get receiver klass. Receiver already
-      // checked for non-null. If we'll go thru a C2I adapter, the
-      // interpreter expects method in R19_method.
-
-      __ load_klass(R11_scratch1, R3);
-
-      int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
-      __ li(R19_method, v_off);
-      __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
-      // NOTE: for vtable dispatches, the vtable entry will never be
-      // null. However it may very well end up in handle_wrong_method
-      // if the method is abstract for the particular class.
-      __ ld(R11_scratch1, in_bytes(Method::from_compiled_offset()), R19_method);
-      // Call target. Either compiled code or C2I adapter.
-      __ mtctr(R11_scratch1);
-      __ bctrl();
-      assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
-             "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
+    int method_index = resolved_method_index(masm);
+    bool scratch_emit = ra_ == nullptr;
+    Register Rtoc = scratch_emit ? R2_TOC : $constanttablebase;
+    bool success = __ ic_call(Rtoc, (address)$meth$$method, method_index, scratch_emit, true /*fixed_size*/);
+    if (!success) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
     }
+    assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
+           "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     __ post_call_nop();
   %}
 
@@ -3712,30 +3468,34 @@ frame %{
   //    4 what apparently works and saves us some spills.
   return_addr(STACK 4);
 
-  // Location of native (C/C++) and interpreter return values. This
-  // is specified to be the same as Java. In the 32-bit VM, long
-  // values are actually returned from native calls in O0:O1 and
-  // returned to the interpreter in I0:I1. The copying to and from
-  // the register pairs is done by the appropriate call and epilog
-  // opcodes. This simplifies the register allocator.
-  c_return_value %{
-    assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
-            (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
-            "only return normal values");
-    // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
-    static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
-    static int typeToRegHi[Op_RegL+1] = { 0,   0,     OptoReg::Bad, R3_H_num, R3_H_num, OptoReg::Bad, F1_H_num, R3_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Location of compiled Java return values.  Same as C
   return_value %{
     assert((ideal_reg >= Op_RegI && ideal_reg <= Op_RegL) ||
             (ideal_reg == Op_RegN && CompressedOops::base() == nullptr && CompressedOops::shift() == 0),
             "only return normal values");
-    // enum names from opcodes.hpp:    Op_Node Op_Set Op_RegN       Op_RegI       Op_RegP       Op_RegF       Op_RegD       Op_RegL
-    static int typeToRegLo[Op_RegL+1] = { 0,   0,     R3_num,   R3_num,   R3_num,   F1_num,   F1_num,   R3_num };
-    static int typeToRegHi[Op_RegL+1] = { 0,   0,     OptoReg::Bad, R3_H_num, R3_H_num, OptoReg::Bad, F1_H_num, R3_H_num };
+    // enum names from opcodes.hpp
+    static int typeToRegLo[Op_RegL+1] = {
+      0,              // Op_Node
+      0,              // Op_Set
+      R3_num,         // Op_RegN
+      R3_num,         // Op_RegI
+      R3_num,         // Op_RegP
+      F1_num,         // Op_RegF
+      F1_num,         // Op_RegD
+      R3_num,         // Op_RegL
+    };
+
+    static int typeToRegHi[Op_RegL+1] = {
+      0,              // Op_Node
+      0,              // Op_Set
+      OptoReg::Bad,   // Op_RegN
+      OptoReg::Bad,   // Op_RegI
+      R3_H_num,       // Op_RegP
+      OptoReg::Bad,   // Op_RegF
+      F1_H_num,       // Op_RegD
+      R3_H_num        // Op_RegL
+    };
+
     return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
   %}
 %}
@@ -3785,9 +3545,6 @@ ins_attrib ins_alignment(1);
 // (optional attribute)
 ins_attrib ins_cannot_rematerialize(false);
 ins_attrib ins_should_rematerialize(false);
-
-// Instruction has variable size depending on alignment.
-ins_attrib ins_variable_size_depending_on_alignment(false);
 
 // Instruction is a nop.
 ins_attrib ins_is_nop(false);
@@ -5974,6 +5731,9 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
     MachNode *m1 = new loadConN_hiNode();
     MachNode *m2 = new loadConN_loNode();
     MachNode *m3 = new clearMs32bNode();
+    m1->_bottom_type = bottom_type();
+    m2->_bottom_type = bottom_type();
+    m3->_bottom_type = bottom_type();
     m1->add_req(nullptr);
     m2->add_req(nullptr, m1);
     m3->add_req(nullptr, m2);
@@ -6052,6 +5812,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
   postalloc_expand %{
     // Load high bits into register. Sign extended.
     MachNode *m1 = new loadConNKlass_hiNode();
+    m1->_bottom_type = bottom_type();
     m1->add_req(nullptr);
     m1->_opnds[0] = op_dst;
     m1->_opnds[1] = op_src;
@@ -6062,6 +5823,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     if (!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
       m2 = new loadConNKlass_maskNode();
+      m2->_bottom_type = bottom_type();
       m2->add_req(nullptr, m1);
       m2->_opnds[0] = op_dst;
       m2->_opnds[1] = op_src;
@@ -6071,6 +5833,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     }
 
     MachNode *m3 = new loadConNKlass_loNode();
+    m3->_bottom_type = bottom_type();
     m3->add_req(nullptr, m2);
     m3->_opnds[0] = op_dst;
     m3->_opnds[1] = op_src;
@@ -6846,36 +6609,6 @@ instruct decodeN2I_unscaled(iRegIdst dst, iRegNsrc src) %{
 
 // Convert klass pointer into compressed form.
 
-// Nodes for postalloc expand.
-
-// Shift node for expand.
-instruct encodePKlass_shift(iRegNdst dst, iRegNsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodePKlass src));
-  predicate(false);
-
-  format %{ "SRDI    $dst, $src, 3 \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-instruct encodePKlass_sub_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (EncodePKlass (Binary base src)));
-  predicate(false);
-
-  format %{ "SUB     $dst, $base, $src \t// encode" %}
-  size(4);
-  ins_encode %{
-    __ subf($dst$$Register, $base$$Register, $src$$Register);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Disjoint narrow oop base.
 instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
@@ -6890,115 +6623,55 @@ instruct encodePKlass_Disjoint(iRegNdst dst, iRegPsrc src) %{
 %}
 
 // shift != 0, base != 0
-instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
+instruct encodePKlass_not_null(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
   match(Set dst (EncodePKlass (Binary base src)));
   predicate(false);
 
-  format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
-  postalloc_expand %{
-    encodePKlass_sub_baseNode *n1 = new encodePKlass_sub_baseNode();
-    n1->add_req(n_region, n_base, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_base;
-    n1->_opnds[2] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    encodePKlass_shiftNode *n2 = new encodePKlass_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
+  format %{ "EncodePKlass $dst = ($src - $base) >> 3\t// $src != nullptr" %}
+  size(8);
+  ins_encode %{
+    __ subf($dst$$Register, $base$$Register, $src$$Register);
+    __ srdi($dst$$Register, $dst$$Register, CompressedKlassPointers::shift());
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // shift != 0, base != 0
-instruct encodePKlass_not_null_ExEx(iRegNdst dst, iRegPsrc src) %{
+instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegPsrc src) %{
   match(Set dst (EncodePKlass src));
   //predicate(CompressedKlassPointers::shift() != 0 &&
   //          true /* TODO: PPC port CompressedKlassPointers::base_overlaps()*/);
 
-  //format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
     immL baseImm %{ (jlong)(intptr_t)CompressedKlassPointers::base() %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
-    encodePKlass_not_null_Ex(dst, base, src);
+    encodePKlass_not_null(dst, base, src);
   %}
 %}
 
 // Decode nodes.
 
-// Shift node for expand.
-instruct decodeNKlass_shift(iRegPdst dst, iRegPsrc src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
-  match(Set dst (DecodeNKlass src));
-  predicate(false);
-
-  format %{ "SLDI    $dst, $src, #3 \t// DecodeNKlass" %}
-  size(4);
-  ins_encode %{
-    __ sldi($dst$$Register, $src$$Register, CompressedKlassPointers::shift());
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Add node for expand.
-
-instruct decodeNKlass_add_base(iRegPdst dst, iRegLsrc base, iRegPdst src) %{
-  // The match rule is needed to make it a 'MachTypeNode'!
+// src != 0, shift != 0, base != 0
+instruct decodeNKlass_notNull(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
   match(Set dst (DecodeNKlass (Binary base src)));
   predicate(false);
 
-  format %{ "ADD     $dst, $base, $src \t// DecodeNKlass, add klass base" %}
-  size(4);
+  format %{ "DecodeNKlass $dst = ($base + $src) << 3\t// $src != nullptr, base pre-shifted" %}
+  size(8);
   ins_encode %{
     __ add($dst$$Register, $base$$Register, $src$$Register);
+    __ sldi($dst$$Register, $dst$$Register, CompressedKlassPointers::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc src) %{
-  match(Set dst (DecodeNKlass (Binary base src)));
-  //effect(kill src); // We need a register for the immediate result after shifting.
-  predicate(false);
-
-  format %{ "DecodeNKlass $dst =  $base + ($src << 3) \t// $src != nullptr, postalloc expanded" %}
-  postalloc_expand %{
-    decodeNKlass_add_baseNode *n1 = new decodeNKlass_add_baseNode();
-    n1->add_req(n_region, n_base, n_src);
-    n1->_opnds[0] = op_dst;
-    n1->_opnds[1] = op_base;
-    n1->_opnds[2] = op_src;
-    n1->_bottom_type = _bottom_type;
-
-    decodeNKlass_shiftNode *n2 = new decodeNKlass_shiftNode();
-    n2->add_req(n_region, n1);
-    n2->_opnds[0] = op_dst;
-    n2->_opnds[1] = op_dst;
-    n2->_bottom_type = _bottom_type;
-
-    ra_->set_pair(n1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-    ra_->set_pair(n2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
-
-    nodes->push(n1);
-    nodes->push(n2);
-  %}
-%}
-
-// src != 0, shift != 0, base != 0
-instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
+instruct decodeNKlass_notNull_Ex(iRegPdst dst, iRegNsrc src) %{
   match(Set dst (DecodeNKlass src));
   // predicate(CompressedKlassPointers::shift() != 0 &&
   //           CompressedKlassPointers::base() != 0);
-
-  //format %{ "DecodeNKlass $dst, $src \t// $src != nullptr, expanded" %}
 
   ins_cost(DEFAULT_COST*2);  // Don't count constant.
   expand %{
@@ -7007,7 +6680,7 @@ instruct decodeNKlass_notNull_addBase_ExEx(iRegPdst dst, iRegNsrc src) %{
     immL baseImm %{ (jlong)((intptr_t)CompressedKlassPointers::base() >> CompressedKlassPointers::shift()) %}
     iRegLdst base;
     loadConL_Ex(base, baseImm);
-    decodeNKlass_notNull_addBase_Ex(dst, base, src);
+    decodeNKlass_notNull(dst, base, src);
   %}
 %}
 
@@ -7158,6 +6831,21 @@ instruct membar_CPUOrder() %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct onspinwait() %{
+  match(OnSpinWait);
+  ins_cost(DEFAULT_COST);
+
+  format %{ "OnSpinWait (smt_prio_low ; smt_prio_medium)" %}
+  size(8);
+  ins_encode %{
+    __ block_comment("spin_wait {");
+    __ smt_prio_low();
+    __ smt_prio_medium();
+    __ block_comment("}");
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 //----------Conditional Move---------------------------------------------------
 
 // Cmove using isel.
@@ -7224,8 +6912,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
   match(Set dst (CMoveF (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  ins_variable_size_depending_on_alignment(true);
-
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   size(8);
   ins_encode %{
@@ -7242,8 +6928,6 @@ instruct cmovF_reg(cmpOp cmp, flagsRegSrc crx, regF dst, regF src) %{
 instruct cmovD_reg(cmpOp cmp, flagsRegSrc crx, regD dst, regD src) %{
   match(Set dst (CMoveD (Binary cmp crx) (Binary dst src)));
   ins_cost(DEFAULT_COST+BRANCH_COST);
-
-  ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVEF  $cmp, $crx, $dst, $src\n\t" %}
   size(8);
@@ -8485,8 +8169,6 @@ instruct cmovI_bne_negI_reg(iRegIdst dst, flagsRegSrc crx, iRegIsrc src1) %{
   effect(USE_DEF dst, USE src1, USE crx);
   predicate(false);
 
-  ins_variable_size_depending_on_alignment(true);
-
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   size(8);
   ins_encode %{
@@ -8542,8 +8224,6 @@ instruct divL_reg_regnotMinus1(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
 instruct cmovL_bne_negL_reg(iRegLdst dst, flagsRegSrc crx, iRegLsrc src1) %{
   effect(USE_DEF dst, USE src1, USE crx);
   predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
 
   format %{ "CMOVE   $dst, neg($src1), $crx" %}
   size(8);
@@ -9375,61 +9055,14 @@ instruct andI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Left shifted Immediate And
-instruct andI_reg_immIhi16(iRegIdst dst, iRegIsrc src1, immIhi16  src2, flagsRegCR0 cr0) %{
+instruct andI_reg_immI(iRegIdst dst, iRegIsrc src1, immI src2, flagsRegCR0 cr0) %{
   match(Set dst (AndI src1 src2));
+  predicate(Assembler::andi_supports((juint)(n->in(2)->get_int())));
   effect(KILL cr0);
-  format %{ "ANDIS   $dst, $src1, $src2.hi" %}
-  size(4);
-  ins_encode %{
-    __ andis_($dst$$Register, $src1$$Register, (int)((unsigned short)(($src2$$constant & 0xFFFF0000) >> 16)));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And
-instruct andI_reg_uimm16(iRegIdst dst, iRegIsrc src1, uimmI16 src2, flagsRegCR0 cr0) %{
-  match(Set dst (AndI src1 src2));
-  effect(KILL cr0);
-
   format %{ "ANDI    $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    // FIXME: avoid andi_ ?
-    __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And where the immediate is a negative power of 2.
-instruct andI_reg_immInegpow2(iRegIdst dst, iRegIsrc src1, immInegpow2 src2) %{
-  match(Set dst (AndI src1 src2));
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(juint)$src2$$constant));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andI_reg_immIpow2minus1(iRegIdst dst, iRegIsrc src1, immIpow2minus1 src2) %{
-  match(Set dst (AndI src1 src2));
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((juint)$src2$$constant + 1u));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andI_reg_immIpowerOf2(iRegIdst dst, iRegIsrc src1, immIpowerOf2 src2) %{
-  match(Set dst (AndI src1 src2));
-  predicate(UseRotateAndMaskInstructionsPPC64);
-  format %{ "ANDWI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    int bitpos = 31 - log2i_exact((juint)$src2$$constant);
-    __ rlwinm($dst$$Register, $src1$$Register, 0, bitpos, bitpos);
+    __ andi($dst$$Register, $src1$$Register, (juint)$src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9447,50 +9080,27 @@ instruct andL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-// Immediate And long
-instruct andL_reg_uimm16(iRegLdst dst, iRegLsrc src1, uimmL16 src2, flagsRegCR0 cr0) %{
+instruct andL_reg_immL(iRegLdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) %{
   match(Set dst (AndL src1 src2));
+  predicate(Assembler::andi_supports(n->in(2)->get_long()));
   effect(KILL cr0);
-
   format %{ "ANDI    $dst, $src1, $src2 \t// long" %}
   size(4);
   ins_encode %{
-    // FIXME: avoid andi_ ?
-    __ andi_($dst$$Register, $src1$$Register, $src2$$constant);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-// Immediate And Long where the immediate is a negative power of 2.
-instruct andL_reg_immLnegpow2(iRegLdst dst, iRegLsrc src1, immLnegpow2 src2) %{
-  match(Set dst (AndL src1 src2));
-  format %{ "ANDDI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrrdi($dst$$Register, $src1$$Register, log2i_exact(-(julong)$src2$$constant));
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct andL_reg_immLpow2minus1(iRegLdst dst, iRegLsrc src1, immLpow2minus1 src2) %{
-  match(Set dst (AndL src1 src2));
-  format %{ "ANDDI   $dst, $src1, $src2" %}
-  size(4);
-  ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
+    __ andi($dst$$Register, $src1$$Register, $src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
 
 // AndL + ConvL2I.
-instruct convL2I_andL_reg_immLpow2minus1(iRegIdst dst, iRegLsrc src1, immLpow2minus1 src2) %{
+instruct convL2I_andL_reg_immL(iRegIdst dst, iRegLsrc src1, immL src2, flagsRegCR0 cr0) %{
   match(Set dst (ConvL2I (AndL src1 src2)));
-  ins_cost(DEFAULT_COST);
-
-  format %{ "ANDDI   $dst, $src1, $src2 \t// long + l2i" %}
+  predicate(Assembler::andi_supports(n->in(1)->in(2)->get_long()));
+  effect(KILL cr0);
+  format %{ "ANDI    $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $src1$$Register, 64 - log2i_exact((julong)$src2$$constant + 1ull));
+    __ andi($dst$$Register, $src1$$Register, $src2$$constant); // optimized version
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9503,7 +9113,7 @@ instruct orI_reg_reg(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9515,7 +9125,7 @@ instruct orI_reg_reg_2(iRegIdst dst, iRegIsrc src1, iRegIsrc src2) %{
   format %{ "OR      $dst, $src1, $src2" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9553,7 +9163,7 @@ instruct orL_reg_reg(iRegLdst dst, iRegLsrc src1, iRegLsrc src2) %{
   size(4);
   format %{ "OR      $dst, $src1, $src2 \t// long" %}
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9566,7 +9176,7 @@ instruct orI_regL_regL(iRegIdst dst, iRegLsrc src1, iRegLsrc src2) %{
   format %{ "OR      $dst, $src1, $src2 \t// long + l2i" %}
   size(4);
   ins_encode %{
-    __ or_unchecked($dst$$Register, $src1$$Register, $src2$$Register);
+    __ orr($dst$$Register, $src1$$Register, $src2$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -9920,6 +9530,17 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct castN2X(iRegLdst dst, iRegNsrc src) %{
+  match(Set dst (CastP2X src));
+
+  format %{ "MR      $dst, $src \t// Ptr->Long" %}
+  // variable size, 0 or 4.
+  ins_encode %{
+    __ mr_if_needed($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct castPP(iRegPdst dst) %{
   match(Set dst (CastPP dst));
   format %{ " -- \t// castPP of $dst" %}
@@ -10235,6 +9856,34 @@ instruct convL2I_reg(iRegIdst dst, iRegLsrc src) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVI   $crx, $dst, $src" %}
+  size(8);
+  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovI_bso_reg_con0(iRegIdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVI   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
+  size(12);
+  ins_encode %{
+    Label done;
+    __ li($dst$$Register, 0);
+    __ bso($crx$$CondRegister, done);
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct convD2IRaw_regD(regD dst, regD src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -10248,88 +9897,6 @@ instruct convD2IRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovI_bso_stackSlotL(iRegIdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovI_bso_reg(iRegIdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVI   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovI_bso_reg_conLvalue0_Ex(iRegIdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVI   $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  src
-    //    \       |    |   /
-    //     dst=cmovI_bso_reg_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConI16(0)
-    //      |
-    //      ^  region  dst  crx  src
-    //      |   \       |    |    /
-    //      dst=cmovI_bso_reg
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConI16Node();
-    MachNode *m2 = new cmovI_bso_regNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_src);
-
-    // precedences for new nodes
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immI16Oper(0);
-
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_src;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-
 // Double to Int conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
   match(Set dst (ConvD2I src));
@@ -10340,7 +9907,7 @@ instruct convD2I_reg_mffprd_ExEx(iRegIdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2IRaw_regD(tmpD, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10368,7 +9935,7 @@ instruct convF2I_regF_mffprd_ExEx(iRegIdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2IRaw_regF(tmpF, src);                         // Convert float to int (speculated).
-    cmovI_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
+    cmovI_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10410,6 +9977,34 @@ instruct zeroExtendL_regL(iRegLdst dst, iRegLsrc src, immL_32bits mask) %{
   ins_pipe(pipe_class_default);
 %}
 
+instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVL   $crx, $dst, $src" %}
+  size(8);
+  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
+  ins_pipe(pipe_class_default);
+%}
+
+instruct cmovL_bso_reg_con0(iRegLdst dst, flagsRegSrc crx, regD src) %{
+  // no match-rule, false predicate
+  effect(DEF dst, USE crx, USE src);
+  predicate(false);
+
+  format %{ "CMOVL   $dst, $crx, $src, 0 \t// set to 0 if unordered" %}
+  size(12);
+  ins_encode %{
+    Label done;
+    __ li($dst$$Register, 0);
+    __ bso($crx$$CondRegister, done);
+    __ mffprd($dst$$Register, $src$$FloatRegister);
+    __ bind(done);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 instruct convF2LRaw_regF(regF dst, regF src) %{
   // no match-rule, false predicate
   effect(DEF dst, USE src);
@@ -10423,85 +10018,6 @@ instruct convF2LRaw_regF(regF dst, regF src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmovL_bso_stackSlotL(iRegLdst dst, flagsRegSrc crx, stackSlotL src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_stackSlotL(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-instruct cmovL_bso_reg(iRegLdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOVL   $crx, $dst, $src" %}
-  size(8);
-  ins_encode( enc_cmove_bso_reg(dst, crx, src) );
-  ins_pipe(pipe_class_default);
-%}
-
-
-instruct cmovL_bso_reg_conLvalue0_Ex(iRegLdst dst, flagsRegSrc crx, regD src) %{
-  // no match-rule, false predicate
-  effect(DEF dst, USE crx, USE src);
-  predicate(false);
-
-  format %{ "CMOVL   $dst, $crx, $src \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  dst  crx  src
-    //    \       |    |   /
-    //     dst=cmovL_bso_reg_conLvalue0
-    //
-    // with
-    //
-    //   region  dst
-    //    \       /
-    //     dst=loadConL16(0)
-    //      |
-    //      ^  region  dst  crx  src
-    //      |   \       |    |    /
-    //      dst=cmovL_bso_reg
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new loadConL16Node();
-    MachNode *m2 = new cmovL_bso_regNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region);
-    m2->add_req(n_region, n_crx, n_src);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new immL16Oper(0);
-    m2->_opnds[0] = op_dst;
-    m2->_opnds[1] = op_crx;
-    m2->_opnds[2] = op_src;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // dst
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
-  %}
-%}
-
-
 // Float to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
   match(Set dst (ConvF2L src));
@@ -10512,7 +10028,7 @@ instruct convF2L_reg_mffprd_ExEx(iRegLdst dst, regF src) %{
     flagsReg crx;
     cmpFUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convF2LRaw_regF(tmpF, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpF);        // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpF);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -10529,7 +10045,6 @@ instruct convD2LRaw_regD(regD dst, regD src) %{
   ins_pipe(pipe_class_default);
 %}
 
-
 // Double to Long conversion, NaN is mapped to 0. Special version for Power8.
 instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
   match(Set dst (ConvD2L src));
@@ -10540,7 +10055,7 @@ instruct convD2L_reg_mffprd_ExEx(iRegLdst dst, regD src) %{
     flagsReg crx;
     cmpDUnordered_reg_reg(crx, src, src);               // Check whether src is NaN.
     convD2LRaw_regD(tmpD, src);                         // Convert float to long (speculated).
-    cmovL_bso_reg_conLvalue0_Ex(dst, crx, tmpD);        // Cmove based on NaN check.
+    cmovL_bso_reg_con0(dst, crx, tmpD);                 // Cmove based on NaN check.
   %}
 %}
 
@@ -11062,84 +10577,22 @@ instruct cmpFUnordered_reg_reg(flagsReg crx, regF src1, regF src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmov_bns_less(flagsReg crx) %{
-  // no match-rule, false predicate
-  effect(DEF crx);
-  predicate(false);
-
-  ins_variable_size_depending_on_alignment(true);
-
-  format %{ "CMOV    $crx" %}
-  size(12);
-  ins_encode %{
-    Label done;
-    __ bns($crx$$CondRegister, done);        // not unordered -> keep crx
-    __ li(R0, 0);
-    __ cmpwi($crx$$CondRegister, R0, 1);     // unordered -> set crx to 'less'
-    __ bind(done);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
 // Compare floating, generate condition code.
-instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
-  // FIXME: should we match 'If cmp (CmpF src1 src2))' ??
-  //
-  // The following code sequence occurs a lot in mpegaudio:
-  //
-  // block BXX:
-  // 0: instruct cmpFUnordered_reg_reg (cmpF_reg_reg-0):
-  //    cmpFUrd CR6, F11, F9
-  // 4: instruct cmov_bns_less (cmpF_reg_reg-1):
-  //    cmov CR6
-  // 8: instruct branchConSched:
-  //    B_FARle CR6, B56  P=0.500000 C=-1.000000
+instruct cmpF_reg_reg(flagsReg crx, regF src1, regF src2) %{
   match(Set crx (CmpF src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  format %{ "CMPF    $crx, $src1, $src2 \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  src1  src2
-    //    \       |     |
-    //     crx=cmpF_reg_reg
-    //
-    // with
-    //
-    //   region  src1  src2
-    //    \       |     |
-    //     crx=cmpFUnordered_reg_reg
-    //      |
-    //      ^  region
-    //      |   \
-    //      crx=cmov_bns_less
-    //
-
-    // Create new nodes.
-    MachNode *m1 = new cmpFUnordered_reg_regNode();
-    MachNode *m2 = new cmov_bns_lessNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region, n_src1, n_src2);
-    m2->add_req(n_region);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_crx;
-    m1->_opnds[1] = op_src1;
-    m1->_opnds[2] = op_src2;
-    m2->_opnds[0] = op_crx;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // crx
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // crx
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
+  format %{ "CMPF    $crx, $src1, $src2" %}
+  size(16);
+  ins_encode %{
+    Label done;
+    __ fcmpu($crx$$CondRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ bns($crx$$CondRegister, done);
+    __ li(R0, 0);
+    __ cmpwi($crx$$CondRegister, R0, 1);
+    __ bind(done);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compare float, generate -1,0,1
@@ -11177,53 +10630,21 @@ instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct cmpD_reg_reg_Ex(flagsReg crx, regD src1, regD src2) %{
+instruct cmpD_reg_reg(flagsReg crx, regD src1, regD src2) %{
   match(Set crx (CmpD src1 src2));
   ins_cost(DEFAULT_COST+BRANCH_COST);
 
-  format %{ "CmpD    $crx, $src1, $src2 \t// postalloc expanded" %}
-  postalloc_expand %{
-    //
-    // replaces
-    //
-    //   region  src1  src2
-    //    \       |     |
-    //     crx=cmpD_reg_reg
-    //
-    // with
-    //
-    //   region  src1  src2
-    //    \       |     |
-    //     crx=cmpDUnordered_reg_reg
-    //      |
-    //      ^  region
-    //      |   \
-    //      crx=cmov_bns_less
-    //
-
-    // create new nodes
-    MachNode *m1 = new cmpDUnordered_reg_regNode();
-    MachNode *m2 = new cmov_bns_lessNode();
-
-    // inputs for new nodes
-    m1->add_req(n_region, n_src1, n_src2);
-    m2->add_req(n_region);
-    m2->add_prec(m1);
-
-    // operands for new nodes
-    m1->_opnds[0] = op_crx;
-    m1->_opnds[1] = op_src1;
-    m1->_opnds[2] = op_src2;
-    m2->_opnds[0] = op_crx;
-
-    // registers for new nodes
-    ra_->set_pair(m1->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // crx
-    ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this)); // crx
-
-    // Insert new nodes.
-    nodes->push(m1);
-    nodes->push(m2);
+  format %{ "CMPD    $crx, $src1, $src2" %}
+  size(16);
+  ins_encode %{
+    Label done;
+    __ fcmpu($crx$$CondRegister, $src1$$FloatRegister, $src2$$FloatRegister);
+    __ bns($crx$$CondRegister, done);
+    __ li(R0, 0);
+    __ cmpwi($crx$$CondRegister, R0, 1);
+    __ bind(done);
   %}
+  ins_pipe(pipe_class_default);
 %}
 
 // Compare double, generate -1,0,1
@@ -11564,24 +10985,7 @@ instruct partialSubtypeCheckConstSuper(rarg3RegP sub, rarg2RegP super_reg, immP 
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
-  predicate(!UseObjectMonitorTable);
-  match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2);
-
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
-  ins_encode %{
-    __ fast_lock($crx$$CondRegister, $oop$$Register, $box$$Register,
-                 $tmp1$$Register, $tmp2$$Register, noreg /*tmp3*/);
-    // If locking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_locking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastLockMonitorTable(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR1 cr1) %{
-  predicate(UseObjectMonitorTable);
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3, flagsRegCR1 cr1) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr1);
 
@@ -11636,8 +11040,8 @@ instruct array_size(iRegLdst dst, iRegPsrc end, iRegPsrc start) %{
 %}
 
 // Clear-array with constant short array length. The versions below can use dcbz with cnt > 30.
-instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, KILL ctr);
   ins_cost(2 * MEMORY_REF_COST);
 
@@ -11649,8 +11053,8 @@ instruct inlineCallClearArrayShort(immLmax30 cnt, rarg2RegP base, Universe dummy
 %}
 
 // Clear-array with constant large array length.
-instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRegLdst tmp, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, immL_0 zero, Universe dummy, iRegLdst tmp, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL base, TEMP tmp, KILL ctr);
   ins_cost(3 * MEMORY_REF_COST);
 
@@ -11662,14 +11066,28 @@ instruct inlineCallClearArrayLarge(immL cnt, rarg2RegP base, Universe dummy, iRe
 %}
 
 // Clear-array with dynamic array length.
-instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, Universe dummy, regCTR ctr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArray(rarg1RegL cnt, rarg2RegP base, immL_0 zero, Universe dummy, regCTR ctr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(USE_KILL cnt, USE_KILL base, KILL ctr);
   ins_cost(4 * MEMORY_REF_COST);
 
   format %{ "ClearArray $cnt, $base" %}
   ins_encode %{
     __ clear_memory_doubleword($base$$Register, $cnt$$Register, R0); // kills cnt, base, R0
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// Clear-array with dynamic array length and non-zero value.
+instruct inlineCallClearArrayWordFill(rarg1RegL cnt, rarg2RegP base, iRegLdst val, Universe dummy, regCTR ctr) %{
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(USE_KILL base, KILL ctr);
+  ins_cost(8 * MEMORY_REF_COST);
+
+  format %{ "ClearArray $cnt, $base, $val" %}
+  ins_encode %{
+    __ fill_words($base$$Register, $cnt$$Register, $val$$Register);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -14028,15 +13446,14 @@ instruct safePoint_poll(iRegPdst poll) %{
 // ============================================================================
 // Call Instructions
 
-// Call Java Static Instruction
-
 source %{
 
 #include "runtime/continuation.hpp"
 
 %}
 
-// Schedulable version of call static node.
+// Call Java Static Instruction
+
 instruct CallStaticJavaDirect(method meth) %{
   match(CallStaticJava);
   effect(USE meth);
@@ -14052,51 +13469,9 @@ instruct CallStaticJavaDirect(method meth) %{
 
 // Call Java Dynamic Instruction
 
-// Used by postalloc expand of CallDynamicJavaDirectSchedEx (actual call).
-// Loading of IC was postalloc expanded. The nodes loading the IC are reachable
-// via fields ins_field_load_ic_hi_node and ins_field_load_ic_node.
-// The call destination must still be placed in the constant pool.
-instruct CallDynamicJavaDirectSched(method meth) %{
-  match(CallDynamicJava); // To get all the data fields we need ...
-  effect(USE meth);
-  predicate(false);       // ... but never match.
-
-  ins_field_load_ic_hi_node(loadConL_hiNode*);
-  ins_field_load_ic_node(loadConLNode*);
-  ins_num_consts(1 /* 1 patchable constant: call destination */);
-
-  format %{ "BL        \t// dynamic $meth ==> " %}
-  size((Continuations::enabled() ? 8 : 4));
-  ins_encode( enc_java_dynamic_call_sched(meth) );
-  ins_pipe(pipe_class_call);
-%}
-
-// Schedulable (i.e. postalloc expanded) version of call dynamic java.
-// We use postalloc expanded calls if we use inline caches
-// and do not update method data.
-//
-// This instruction has two constants: inline cache (IC) and call destination.
-// Loading the inline cache will be postalloc expanded, thus leaving a call with
-// one constant.
-instruct CallDynamicJavaDirectSched_Ex(method meth) %{
-  match(CallDynamicJava);
-  effect(USE meth);
-  predicate(UseInlineCaches);
-  ins_cost(CALL_COST);
-
-  ins_num_consts(2 /* 2 patchable constants: inline cache, call destination. */);
-
-  format %{ "CALL,dynamic $meth \t// postalloc expanded" %}
-  postalloc_expand( postalloc_expand_java_dynamic_call_sched(meth, constanttablebase) );
-%}
-
-// Compound version of call dynamic java
-// We use postalloc expanded calls if we use inline caches
-// and do not update method data.
 instruct CallDynamicJavaDirect(method meth) %{
   match(CallDynamicJava);
   effect(USE meth);
-  predicate(!UseInlineCaches);
   ins_cost(CALL_COST);
 
   // Enc_java_to_runtime_call needs up to 4 constants (method data oop).

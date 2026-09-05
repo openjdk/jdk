@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -278,8 +278,8 @@ public class StandardGlyphVector extends GlyphVector {
                 return new StandardGlyphVector(gv, frc);
             }
         }
-        if (gv instanceof StandardGlyphVector) {
-            return (StandardGlyphVector)gv;
+        if (gv instanceof StandardGlyphVector sgv) {
+            return sgv;
         }
         return new StandardGlyphVector(gv, gv.getFontRenderContext());
     }
@@ -636,61 +636,54 @@ public class StandardGlyphVector extends GlyphVector {
         return null;
     }
 
-    public boolean equals(GlyphVector rhs) {
-        if (this == rhs) {
+    public boolean equals(GlyphVector gv) {
+
+        if (gv == this) {
             return true;
         }
-        if (rhs == null) {
+
+        if (!(gv instanceof StandardGlyphVector other)) {
             return false;
         }
 
-        try {
-            StandardGlyphVector other = (StandardGlyphVector)rhs;
+        if (glyphs.length != other.glyphs.length) {
+            return false;
+        }
 
-            if (glyphs.length != other.glyphs.length) {
+        for (int i = 0; i < glyphs.length; ++i) {
+            if (glyphs[i] != other.glyphs[i]) {
                 return false;
             }
+        }
 
-            for (int i = 0; i < glyphs.length; ++i) {
-                if (glyphs[i] != other.glyphs[i]) {
+        if (!font.equals(other.font)) {
+            return false;
+        }
+
+        if (!frc.equals(other.frc)) {
+            return false;
+        }
+
+        if ((other.positions == null) != (positions == null)) {
+            if (positions == null) {
+                initPositions();
+            } else {
+                other.initPositions();
+            }
+        }
+
+        if (positions != null) {
+            for (int i = 0; i < positions.length; ++i) {
+                if (positions[i] != other.positions[i]) {
                     return false;
                 }
             }
-
-            if (!font.equals(other.font)) {
-                return false;
-            }
-
-            if (!frc.equals(other.frc)) {
-                return false;
-            }
-
-            if ((other.positions == null) != (positions == null)) {
-                if (positions == null) {
-                    initPositions();
-                } else {
-                    other.initPositions();
-                }
-            }
-
-            if (positions != null) {
-                for (int i = 0; i < positions.length; ++i) {
-                    if (positions[i] != other.positions[i]) {
-                        return false;
-                    }
-                }
-            }
-
-            if (gti == null) {
-                return other.gti == null;
-            } else {
-                return gti.equals(other.gti);
-            }
         }
-        catch (ClassCastException e) {
-            // assume they are different simply by virtue of the class difference
 
-            return false;
+        if (gti == null) {
+            return other.gti == null;
+        } else {
+            return gti.equals(other.gti);
         }
     }
 
@@ -707,13 +700,11 @@ public class StandardGlyphVector extends GlyphVector {
      * the inherited Object.equals(Object) as well.  GlyphVector should do
      * this, and define two glyphvectors as not equal if the classes differ.
      */
-    public boolean equals(Object rhs) {
-        try {
-            return equals((GlyphVector)rhs);
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
         }
-        catch (ClassCastException e) {
-            return false;
-        }
+        return o instanceof GlyphVector other && this.equals(other);
     }
 
     /**
@@ -1110,8 +1101,8 @@ public class StandardGlyphVector extends GlyphVector {
 
     private void initFontData() {
         font2D = FontUtilities.getFont2D(font);
-        if (font2D instanceof FontSubstitution) {
-           font2D = ((FontSubstitution)font2D).getCompositeFont2D();
+        if (font2D instanceof FontSubstitution sub) {
+           font2D = sub.getCompositeFont2D();
         }
         float s = font.getSize2D();
         if (font.isTransformed()) {
@@ -1731,11 +1722,11 @@ public class StandardGlyphVector extends GlyphVector {
                                                      aa, fm);
             // Get the strike via the handle. Shouldn't matter
             // if we've invalidated the font but its an extra precaution.
-        // do we want the CompFont from CFont here ?
-        Font2D f2d = sgv.font2D;
-        if (f2d instanceof FontSubstitution) {
-           f2d = ((FontSubstitution)f2d).getCompositeFont2D();
-        }
+            // do we want the CompFont from CFont here ?
+            Font2D f2d = sgv.font2D;
+            if (f2d instanceof FontSubstitution sub) {
+               f2d = sub.getCompositeFont2D();
+            }
             FontStrike strike = f2d.handle.font2D.getStrike(desc);  // !!! getStrike(desc, false)
 
             return new GlyphStrike(sgv, strike, dx, dy);

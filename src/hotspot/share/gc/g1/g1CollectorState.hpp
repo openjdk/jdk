@@ -59,7 +59,7 @@ class G1CollectorState {
   // has been in progress when the request came in.
   //
   // This flag remembers that there is an unfullfilled request.
-  volatile bool _initiate_conc_mark_if_possible;
+  bool _initiate_conc_mark_if_possible;
 
 public:
   G1CollectorState() :
@@ -110,11 +110,6 @@ public:
 
   // Pause kind queries
   inline static void assert_is_young_pause(Pause type);
-
-  inline static bool is_young_only_pause(Pause type);
-  inline static bool is_concurrent_start_pause(Pause type);
-  inline static bool is_prepare_mixed_pause(Pause type);
-  inline static bool is_mixed_pause(Pause type);
 
   inline static bool is_concurrent_cycle_pause(Pause type);
 };

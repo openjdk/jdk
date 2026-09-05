@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "logging/log.hpp"
@@ -89,6 +90,7 @@ void ConcurrentGCBreakpoints::release_control() {
   MonitorLocker ml(monitor());
   log_trace(gc, breakpoint)("release_control");
   reset_request_state();
+  CodeCache::clear_deferred_unloading_gc_request();
   ml.notify_all();
 }
 
