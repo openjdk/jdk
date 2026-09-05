@@ -2528,20 +2528,29 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   uint use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
-    if (use->outcnt() > 0) {
-      Node* bol = use->raw_out(0);
-      if (bol->outcnt() > 0) {
-        Node* iff = bol->raw_out(0);
-        if (iff->outcnt() == 2) {
+    for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = use->fast_out(j);
+      if (!bol->is_Bool()) {
+        continue;
+      }
+      for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+        Node* bol_use = bol->fast_out(k);
+        if (bol_use->is_CMove()) {
+          // CMoveNode::Identity folds "(x == y) ? y : x" by comparing the inputs
+          // of the Cmp with those of the CMove.
+          worklist.push(bol_use);
+        } else if (bol_use->is_If() && bol_use->outcnt() == 2) {
           // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
           // phi merging either 0 or 1 onto the worklist
-          Node* ifproj0 = iff->raw_out(0);
-          Node* ifproj1 = iff->raw_out(1);
-          if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
+          Node* ifproj0 = bol_use->raw_out(0);
+          Node* ifproj1 = bol_use->raw_out(1);
+          if (ifproj0->is_IfProj() && ifproj1->is_IfProj() &&
+              ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
             Node* region0 = ifproj0->raw_out(0);
             Node* region1 = ifproj1->raw_out(0);
-            if( region0 == region1 )
+            if (region0 == region1 && region0->is_Region()) {
               add_users_to_worklist0(region0, worklist);
+            }
           }
         }
       }
