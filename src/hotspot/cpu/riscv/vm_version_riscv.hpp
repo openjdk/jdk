@@ -459,6 +459,7 @@ private:
 
   static void useRVA23U64Profile();
 
+ public:
   // VM modes (satp.mode) privileged ISA 1.10
   enum VM_MODE : int {
     VM_NOTSET = -1,
@@ -469,6 +470,7 @@ private:
     VM_SV64   = 64
   };
 
+ private:
   static VM_MODE parse_satp_mode(const char* vm_mode);
 
   // Values from riscv_hwprobe()
@@ -526,6 +528,17 @@ private:
   // RISCV64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
+
+  // Max virtual address width implied by the satp mode. Returns 48 when
+  // the mode is unknown (mbare, or before feature initialization).
+  static int max_va_bits() {
+    if (!satp_mode.enabled()) return 48;
+    switch ((int)satp_mode.value()) {
+      case VM_SV39: return 39;
+      case VM_SV48: return 48;
+      default:      return 48;
+    }
+  }
 
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
