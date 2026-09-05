@@ -2552,7 +2552,7 @@ public class Types {
                             syms.noSymbol);
         IntersectionClassType intersectionType = new IntersectionClassType(bounds, bc, allInterfaces);
         bc.type = intersectionType;
-        bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) || bounds.head.hasTag(ARRAY) ?
+        bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) ?
                 syms.objectType : // error condition, recover
                 erasure(firstExplicitBound);
         bc.members_field = WriteableScope.create(bc);
