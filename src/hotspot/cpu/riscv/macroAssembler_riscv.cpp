@@ -7224,3 +7224,133 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 
   bind(unlocked);
 }
+
+// Vectorized mismatch using RVV instructions.
+// result contains element index of first mismatch (>= 0), or -1 if all match.
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb,
+                                         Register length, Register log2_array_indxscale,
+                                         Register result, Register tmp1, Register tmp2,
+                                         VectorRegister vreg0, VectorRegister vreg1, VectorRegister vreg2) {
+  assert(UseRVV && UseZbb, "RVV and Zbb must be enabled");
+  assert(MaxVectorSize == 16 || MaxVectorSize == 32, "sanity");
+
+  Label NOT_EQUAL, ALL_MATCH, DONE;
+  Label CONVERT_RESULT;
+
+  assert_different_registers(obja, objb, length, log2_array_indxscale, result, tmp1, tmp2);
+  // Convert element count to byte count
+  sll(length, length, log2_array_indxscale);
+  mv(result, zr);
+
+  Label SKIP_SCALAR;
+  mv(tmp1, 8);
+  bgeu(length, tmp1, SKIP_SCALAR);
+  // Scalar comparison for small arrays
+  {
+    Label SCALAR_LOOP, SCALAR_MISMATCH;
+    Label INT_DONE;
+
+    // For 4 <= bytes < 8: compare first 4 bytes as int
+    li(tmp2, 4);
+    bltu(length, tmp2, SCALAR_LOOP);
+
+    lw(tmp1, Address(obja, 0));
+    lw(tmp2, Address(objb, 0));
+    beq(tmp1, tmp2, INT_DONE);
+
+    // Words differ: find first differing byte
+    xorr(tmp1, tmp1, tmp2);
+    ctzw(result, tmp1);
+    srai(result, result, 3);
+    j(CONVERT_RESULT);
+
+    // Words match, advance by 4
+    bind(INT_DONE);
+    addi(obja, obja, 4);
+    addi(objb, objb, 4);
+    addi(result, result, 4);
+    subi(length, length, 4);
+
+    // Byte-by-byte loop for remaining bytes
+    bind(SCALAR_LOOP);
+    beqz(length, ALL_MATCH);
+    lb(tmp1, Address(obja, 0));
+    lb(tmp2, Address(objb, 0));
+    bne(tmp1, tmp2, CONVERT_RESULT);
+    addi(obja, obja, 1);
+    addi(objb, objb, 1);
+    addi(result, result, 1);
+    addi(length, length, -1);
+    j(SCALAR_LOOP);
+  }
+
+  bind(SKIP_SCALAR);
+
+  Label VECTOR_LOOP, VECTOR_TAIL;
+  const int align = MaxVectorSize * 2;  // bytes loaded per m2 vector op
+  if ((CacheLineSize % align) == 0) {
+    // Peel the unaligned head so vector loads of the main loop start at an
+    // address aligned to the m2 load width and never split a cache line.
+    // Only obja is aligned; objb usually shares the same relative alignment.
+    Label ALIGNED;
+
+    andi(tmp2, obja, align - 1);
+    beqz(tmp2, ALIGNED);
+    mv(tmp1, align);
+    sub(tmp2, tmp1, tmp2);              // tmp2 is peel bytes
+    bgeu(tmp2, length, VECTOR_TAIL);    // vector tail can handle it
+    vsetvli(tmp1, tmp2, e8, m2);
+    vle8_v(vreg0, obja);
+    vle8_v(vreg1, objb);
+    vmsne_vv(vreg2, vreg0, vreg1);
+    vfirst_m(tmp2, vreg2);
+    bgez(tmp2, NOT_EQUAL);
+    add(obja, obja, tmp1);
+    add(objb, objb, tmp1);
+    add(result, result, tmp1);
+    sub(length, length, tmp1);
+    bind(ALIGNED);
+  }
+
+  vsetvli(tmp1, length, e8, m2);
+
+  // Main vector loop
+  bind(VECTOR_LOOP);
+  beqz(length, ALL_MATCH);
+  blt(length, tmp1, VECTOR_TAIL);
+
+  vle8_v(vreg0, obja);
+  add(obja, obja, tmp1);
+  vle8_v(vreg1, objb);
+  vmsne_vv(vreg2, vreg0, vreg1);
+  add(objb, objb, tmp1);
+
+  vfirst_m(tmp2, vreg2);
+  bgez(tmp2, NOT_EQUAL);
+
+  sub(length, length, tmp1);
+  add(result, result, tmp1);
+  j(VECTOR_LOOP);
+
+  // Tail of vector loop
+  bind(VECTOR_TAIL);
+  vsetvli(tmp1, length, e8, m2);
+  vle8_v(vreg0, obja);
+  vle8_v(vreg1, objb);
+  vmsne_vv(vreg2, vreg0, vreg1);
+  vfirst_m(tmp2, vreg2);
+  blt(tmp2, zr, ALL_MATCH);
+
+  // Mismatch found: tmp2 = byte index within current vector chunk
+  bind(NOT_EQUAL);
+  add(result, result, tmp2);        // total byte offset of mismatch
+  bind(CONVERT_RESULT);
+  srl(result, result, log2_array_indxscale);  // convert byte index to element index
+  j(DONE);
+
+  // All bytes matched, return -1
+  bind(ALL_MATCH);
+  mv(result, -1);
+
+  bind(DONE);
+}

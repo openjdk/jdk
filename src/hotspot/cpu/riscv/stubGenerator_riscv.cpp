@@ -7884,6 +7884,50 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  // Generate vectorizedMismatch stub using RVV instructions.
+  //
+  // Arguments (C calling convention):
+  //   c_rarg0 - obja   (address of array A)
+  //   c_rarg1 - objb   (address of array B)
+  //   c_rarg2 - length (element count)
+  //   c_rarg3 - scale  (log2 of element size)
+  //
+  // Returns:
+  //   x10 - int >= 0: mismatched index,
+  //               -1: equals
+  address generate_vectorizedMismatch() {
+    StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+    start = __ pc();
+
+    __ enter();
+
+    const Register obja   = c_rarg0;
+    const Register objb   = c_rarg1;
+    const Register length = c_rarg2;
+    const Register scale  = c_rarg3;
+    const Register tmp1   = t0;
+    const Register tmp2   = t1;
+    const Register result = t2;
+
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, v0, v4, v8);
+
+    __ mv(x10, result);
+    __ leave();
+    __ ret();
+
+    // record the stub start and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
 #undef __
 
   // Initialization
@@ -7950,6 +7994,10 @@ static const int64_t right_3_bits = right_n_bits(3);
       }
     }
 #endif // COMPILER2
+
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();
     StubRoutines::_upcall_stub_load_target = generate_upcall_stub_load_target();
