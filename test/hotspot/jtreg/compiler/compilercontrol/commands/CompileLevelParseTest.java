@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8313713
+ * @bug 8313713 8380669
  * @summary Test if the following CompileCommand options support compilation
  *          level bitmask argument: break, compileonly, exclude, print
  * @library /test/lib
@@ -40,8 +40,11 @@ import java.util.List;
 public class CompileLevelParseTest {
     private static final List<String> commandsWithCompileLevel = List.of("break", "compileonly", "exclude", "print");
     private static final List<String> compLevels = List.of("0", "1", "11", "111", "10", "100", "101", "1000", "1111");
-    private static final List<String> invalidCompLevels = List.of("-9223372036854775808", "-1", "-1111", "10000", "2", "20000", "01012",
-            "91", "9", "c1", "true", "false");
+    private static final List<String> invalidCompLevels = List.of("-2147483648", "2147483648", "2147483647",
+            "-4294967296", "4294967295", "4294967296",
+            "-9223372036854775808", "9223372036854775807", "9223372036854775808",
+            "99999999999999999999", "-99999999999999999999",
+            "-1", "-1111", "10000", "2", "20000", "01012", "91", "9", "c1", "true", "false");
     private static final String DEFAULT_COMP_LEVEL = "1111";
     private static final String METHOD_EXP = "java/lang/Object.toString";
 
@@ -50,19 +53,19 @@ public class CompileLevelParseTest {
             ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP, "-version")
                     .shouldHaveExitValue(0)
                     .shouldNotContain("CompileCommand: An error occurred during parsing")
-                    .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + DEFAULT_COMP_LEVEL); // should be registered
+                    .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " uint " + cmd + " = " + DEFAULT_COMP_LEVEL); // should be registered
             for (String level : compLevels) {
                 ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," + level, "-version")
                         .shouldHaveExitValue(0)
                         .shouldNotContain("CompileCommand: An error occurred during parsing")
-                        .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + level); // should be registered
+                        .shouldContain("CompileCommand: " + cmd + " " + METHOD_EXP + " uint " + cmd + " = " + level); // should be registered
             }
             // Note that values like "1suffix" are still accepted
             for (String incorrectLevel : invalidCompLevels) {
                 ProcessTools.executeTestJava("-XX:CompileCommand=" + cmd + "," + METHOD_EXP + "," +incorrectLevel, "-version")
                         .shouldHaveExitValue(1)
                         .shouldContain("CompileCommand: An error occurred during parsing")
-                        .shouldNotContain("CompileCommand: " + cmd + " " + METHOD_EXP + " intx " + cmd + " = " + incorrectLevel);
+                        .shouldNotContain("CompileCommand: " + cmd + " " + METHOD_EXP + " uint " + cmd + " = " + incorrectLevel);
             }
         }
     }

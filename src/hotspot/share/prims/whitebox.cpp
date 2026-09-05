@@ -2232,7 +2232,7 @@ static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jst
   return CompilerOracle::has_option_value(mh, option, *value);
 }
 
-WB_ENTRY(jobject, WB_GetMethodBooleaneOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+WB_ENTRY(jobject, WB_GetMethodBooleanOption(JNIEnv* env, jobject wb, jobject method, jstring name))
   bool result;
   if (GetMethodOption<bool> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
@@ -2255,6 +2255,26 @@ WB_END
 WB_ENTRY(jobject, WB_GetMethodUintxOption(JNIEnv* env, jobject wb, jobject method, jstring name))
   uintx result;
   if (GetMethodOption <uintx> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return longBox(thread, env, result);
+  }
+  return nullptr;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodIntOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  int result;
+  if (GetMethodOption <int> (thread, env, method, name, &result)) {
+    // can't be in VM when we call JNI
+    ThreadToNativeFromVM ttnfv(thread);
+    return longBox(thread, env, result);
+  }
+  return nullptr;
+WB_END
+
+WB_ENTRY(jobject, WB_GetMethodUintOption(JNIEnv* env, jobject wb, jobject method, jstring name))
+  uint result;
+  if (GetMethodOption <uint> (thread, env, method, name, &result)) {
     // can't be in VM when we call JNI
     ThreadToNativeFromVM ttnfv(thread);
     return longBox(thread, env, result);
@@ -3125,7 +3145,13 @@ static JNINativeMethod methods[] = {
   {CC"getFlatArrayBitInPlace",     CC"()J",           (void*)&WB_GetFlatArrayBitInPlace},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
-                                                      (void*)&WB_GetMethodBooleaneOption},
+                                                      (void*)&WB_GetMethodBooleanOption},
+  {CC"getMethodIntOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetMethodIntOption},
+  {CC"getMethodUintOption",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetMethodUintOption},
   {CC"getMethodIntxOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Long;",
                                                       (void*)&WB_GetMethodIntxOption},

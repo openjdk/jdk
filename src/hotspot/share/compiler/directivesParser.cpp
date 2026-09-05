@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,11 +287,25 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
       break;
 
     case JSON_NUMBER_INT:
-      if (option_key->flag_type == intxFlag) {
-        intx ival = v->int_value;
+      if (option_key->flag_type == intFlag) {
+        int ival = v->int_value;
+        (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == uintFlag) {
+        if (v->int_value < 0) {
+          error(VALUE_ERROR, "Cannot use negative value for an %s flag", flag_type_names[option_key->flag_type]);
+          return false;
+        }
+        uint ival = (uint) v->int_value;
+        (set->*test)((void *)&ival);
+      } else if (option_key->flag_type == intxFlag) {
+        intx ival = (intx) v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == uintxFlag) {
-        uintx ival = v->uint_value;
+        if (v->int_value < 0) {
+          error(VALUE_ERROR, "Cannot use negative value for an %s flag", flag_type_names[option_key->flag_type]);
+          return false;
+        }
+        uintx ival = (uintx) v->int_value;
         (set->*test)((void *)&ival);
       } else if (option_key->flag_type == doubleFlag) {
         double dval = (double)v->int_value;

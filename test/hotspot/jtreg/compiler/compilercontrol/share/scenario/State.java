@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class State {
     private Optional<Boolean> printAssembly = Optional.empty();
     private Optional<Boolean> printInline = Optional.empty();
     private Optional<Boolean> log = Optional.empty();
+    private Optional<Boolean> memStat = Optional.empty();
     private Optional<String> controlIntrinsic = Optional.empty();
 
     public State() {
@@ -77,6 +78,9 @@ public class State {
                     break;
                 case "log" :
                     st.log = parseElement(values);
+                    break;
+                case "memstat" :
+                    st.memStat = parseElement(values);
                     break;
                 case "print_assembly" :
                     st.printAssembly = parseElement(values);
@@ -133,7 +137,8 @@ public class State {
                 + "\ndont_inline " + Arrays.toString(dontInline)
                 + "\nlog " + log
                 + "\nprint_assembly " + printAssembly
-                + "\nprint_inline " + printInline;
+                + "\nprint_inline " + printInline
+                + "\nmemstat " + memStat;
     }
 
     public Optional<Boolean> getCompilableOptional(Scenario.Compiler compiler) {
@@ -276,6 +281,10 @@ public class State {
         printInline = Optional.of(value);
     }
 
+    public void setMemStat(boolean value) {
+        memStat = Optional.of(value);
+    }
+
     public void setControlIntrinsic(String argument) {
         if (argument != null) {
             controlIntrinsic = Optional.of(argument);
@@ -320,6 +329,9 @@ public class State {
                 break;
             case PRINT:
                 setPrintAssembly(true);
+                break;
+            case MEMSTAT:
+                setMemStat(true);
                 break;
             case INTRINSIC:
                 setControlIntrinsic(compileCommand.argument);
@@ -378,6 +390,8 @@ public class State {
         result.printInline = mergeOptional(high.printInline, low.printInline);
         // set LogCompilation
         result.log = mergeOptional(high.log, low.log);
+        // set MemStat
+        result.memStat = mergeOptional(high.memStat, low.memStat);
         // set controlIntrinsic
         result.controlIntrinsic = mergeOptional(high.controlIntrinsic, low.controlIntrinsic);
 
