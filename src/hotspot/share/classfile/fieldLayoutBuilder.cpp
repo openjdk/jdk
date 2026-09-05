@@ -187,19 +187,14 @@ bool LayoutRawBlock::fit(int size, int alignment) {
 
 FieldGroup::FieldGroup(int contended_group) :
   _next(nullptr),
-  _small_primitive_fields(nullptr),
-  _big_primitive_fields(nullptr),
+  _non_oop_fields(nullptr),
   _oop_fields(nullptr),
   _contended_group(contended_group) {} // -1 means no contended group, 0 means default contended group
 
 void FieldGroup::add_primitive_field(int idx, BasicType type) {
   int size = type2aelembytes(type);
   LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::REGULAR, size, size /* alignment == size for primitive types */);
-  if (size >= heapOopSize) {
-    add_to_big_primitive_list(block);
-  } else {
-    add_to_small_primitive_list(block);
-  }
+  add_to_non_oop_list(block);
 }
 
 void FieldGroup::add_oop_field(int idx) {
@@ -218,35 +213,21 @@ void FieldGroup::add_flat_field(int idx, InlineKlass* vk, LayoutKind lk) {
   LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::FLAT, size, alignment);
   block->set_inline_klass(vk);
   block->set_layout_kind(lk);
-  if (block->size() >= heapOopSize) {
-    add_to_big_primitive_list(block);
-  } else {
-    assert(!vk->contains_oops(), "Size of Inline klass with oops should be >= heapOopSize");
-    add_to_small_primitive_list(block);
-  }
+  assert(!vk->contains_oops() || block->size() >= heapOopSize, "Size of Inline klass with oops should be >= heapOopSize");
+  add_to_non_oop_list(block);
 }
 
 void FieldGroup::sort_by_size() {
-  if (_small_primitive_fields != nullptr) {
-    _small_primitive_fields->sort(LayoutRawBlock::compare_size_inverted);
-  }
-  if (_big_primitive_fields != nullptr) {
-    _big_primitive_fields->sort(LayoutRawBlock::compare_size_inverted);
+  if (_non_oop_fields != nullptr) {
+    _non_oop_fields->sort(LayoutRawBlock::compare_size_inverted);
   }
 }
 
-void FieldGroup::add_to_small_primitive_list(LayoutRawBlock* block) {
-  if (_small_primitive_fields == nullptr) {
-    _small_primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
+void FieldGroup::add_to_non_oop_list(LayoutRawBlock* block) {
+  if (_non_oop_fields == nullptr) {
+    _non_oop_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
   }
-  _small_primitive_fields->append(block);
-}
-
-void FieldGroup::add_to_big_primitive_list(LayoutRawBlock* block) {
-  if (_big_primitive_fields == nullptr) {
-    _big_primitive_fields = new GrowableArray<LayoutRawBlock*>(INITIAL_LIST_SIZE);
-  }
-  _big_primitive_fields->append(block);
+  _non_oop_fields->append(block);
 }
 
 FieldLayout::FieldLayout(GrowableArray<FieldInfo>* field_info, Array<InlineLayoutInfo>* inline_layout_info_array, ConstantPool* cp) :
@@ -310,18 +291,41 @@ LayoutRawBlock* FieldLayout::first_field_block() {
   return block;
 }
 
-// Insert a set of fields into a layout.
-// For each field, search for an empty slot able to fit the field
+// Return the first non-oop field smaller than a heap oop.
+int FieldGroup::first_small_field_index() const {
+  if (_non_oop_fields == nullptr) {
+    return 0;
+  }
+
+  int index = 0;
+  while (index < _non_oop_fields->length() && _non_oop_fields->at(index)->size() >= heapOopSize) {
+    index++;
+  }
+  return index;
+}
+
+// Insert fields from a list into a layout. add() inserts the whole list,
+// while add_range() inserts a half-open range of the list.
+// For each selected field, search for an empty slot able to fit the field
 // (satisfying both size and alignment requirements), if none is found,
 // add the field at the end of the layout.
 // Fields cannot be inserted before the block specified in the "start" argument
 void FieldLayout::add(GrowableArray<LayoutRawBlock*>* list, LayoutRawBlock* start) {
-  if (list == nullptr) return;
-  if (start == nullptr) start = this->_start;
+  if (list == nullptr) {
+    return;
+  }
+  add_range(list, 0, list->length(), start);
+}
+
+void FieldLayout::add_range(GrowableArray<LayoutRawBlock*>* list, int from, int to, LayoutRawBlock* start) {
+  assert(list != nullptr, "sanity");
+  assert(0 <= from && from <= to && to <= list->length(), "sanity");
+
+  if (start == nullptr) start = _start;
   bool last_search_success = false;
   int last_size = 0;
   int last_alignment = 0;
-  for (int i = 0; i < list->length(); i ++) {
+  for (int i = from; i < to; i ++) {
     LayoutRawBlock* b = list->at(i);
     LayoutRawBlock* cursor = nullptr;
     LayoutRawBlock* candidate = nullptr;
@@ -985,14 +989,14 @@ LayoutRawBlock* FieldLayoutBuilder::insert_contended_padding(LayoutRawBlock* slo
 
 // Computation of regular classes layout is an evolution of the previous default layout
 // (FieldAllocationStyle 1):
-//   - primitive fields (both primitive types and flat inline types) are allocated
+//   - non-oop fields (both primitive types and flat inline types) are allocated
 //     first (from the biggest to the smallest)
 //   - oop fields are allocated, either in existing gaps or at the end of
 //     the layout. We allocate oops in a single block to have a single oop map entry.
 //   - if the super class ended with an oop, we lead with oops. That will cause the
 //     trailing oop map entry of the super class and the oop map entry of this class
 //     to be folded into a single entry later. Correspondingly, if the super class
-//     ends with a primitive field, we gain nothing by leading with oops; therefore
+//     ends with a non-oop field, we gain nothing by leading with oops; therefore
 //     we let oop fields trail, thus giving future derived classes the chance to apply
 //     the same trick.
 void FieldLayoutBuilder::compute_regular_layout() {
@@ -1013,11 +1017,9 @@ void FieldLayoutBuilder::compute_regular_layout() {
 
   if (_super_ends_with_oop) {
     _layout->add(_root_group->oop_fields());
-    _layout->add(_root_group->big_primitive_fields());
-    _layout->add(_root_group->small_primitive_fields());
+    _layout->add(_root_group->non_oop_fields());
   } else {
-    _layout->add(_root_group->big_primitive_fields());
-    _layout->add(_root_group->small_primitive_fields());
+    _layout->add(_root_group->non_oop_fields());
     _layout->add(_root_group->oop_fields());
   }
 
@@ -1032,8 +1034,7 @@ void FieldLayoutBuilder::compute_regular_layout() {
         start = padding;
       }
 
-      _layout->add(cg->big_primitive_fields(), start);
-      _layout->add(cg->small_primitive_fields(), start);
+      _layout->add(cg->non_oop_fields(), start);
       _layout->add(cg->oop_fields(), start);
       need_tail_padding = true;
     }
@@ -1043,10 +1044,9 @@ void FieldLayoutBuilder::compute_regular_layout() {
     insert_contended_padding(_layout->last_block());
   }
 
-  // Warning: IntanceMirrorKlass expects static oops to be allocated first
+  // InstanceMirrorKlass expects static oop fields to be allocated first.
   _static_layout->add_contiguously(_static_fields->oop_fields());
-  _static_layout->add(_static_fields->big_primitive_fields());
-  _static_layout->add(_static_fields->small_primitive_fields());
+  _static_layout->add(_static_fields->non_oop_fields());
 
   epilogue();
 }
@@ -1058,10 +1058,10 @@ void FieldLayoutBuilder::compute_regular_layout() {
 // of inline classes is to be embedded into other containers, it is critical
 // to keep their size as small as possible. For this reason, the allocation
 // strategy is:
-//   - big primitive fields (primitive types and flat inline types larger
-//     than an oop) are allocated first (from the biggest to the smallest)
+//   - non-oop fields at least as large as a heap oop are allocated first
+//     (from the biggest to the smallest)
 //   - then oop fields
-//   - then small primitive fields (from the biggest to the smallest)
+//   - then non-oop fields smaller than a heap oop (from the biggest to the smallest)
 //
 void FieldLayoutBuilder::compute_inline_class_layout() {
 
@@ -1151,9 +1151,21 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
     }
   }
 
-  _layout->add(_root_group->big_primitive_fields());
+  // The non-oop fields are sorted in decreasing size order. Split the list around
+  // heapOopSize so oop fields can be placed between large and small fields.
+  GrowableArray<LayoutRawBlock*>* non_oop_fields = _root_group->non_oop_fields();
+  int split_index = 0;
+
+  if (non_oop_fields != nullptr) {
+    split_index = _root_group->first_small_field_index();
+    _layout->add_range(non_oop_fields, 0, split_index);
+  }
+
   _layout->add(_root_group->oop_fields());
-  _layout->add(_root_group->small_primitive_fields());
+
+  if (non_oop_fields != nullptr) {
+    _layout->add_range(non_oop_fields, split_index, non_oop_fields->length());
+  }
 
   LayoutRawBlock* first_field = _layout->first_field_block();
   if (first_field != nullptr) {
@@ -1311,10 +1323,9 @@ void FieldLayoutBuilder::compute_inline_class_layout() {
       _payload_size_in_bytes = null_free_atomic_layout_size_in_bytes();
     }
   }
-  // Warning:: InstanceMirrorKlass expects static oops to be allocated first
+  // InstanceMirrorKlass expects static oop fields to be allocated first.
   _static_layout->add_contiguously(_static_fields->oop_fields());
-  _static_layout->add(_static_fields->big_primitive_fields());
-  _static_layout->add(_static_fields->small_primitive_fields());
+  _static_layout->add(_static_fields->non_oop_fields());
 
   generate_acmp_maps();
   epilogue();
@@ -1354,7 +1365,8 @@ void FieldLayoutBuilder::register_embedded_oops(OopMapBlocksBuilder* nonstatic_o
       nonstatic_oop_maps->add(b->offset(), 1);
     }
   }
-  register_embedded_oops_from_list(nonstatic_oop_maps, group->big_primitive_fields());
+  // A non-oop block can be a flat field that contains embedded oops.
+  register_embedded_oops_from_list(nonstatic_oop_maps, group->non_oop_fields());
 }
 
 static int insert_segment(GrowableArray<AcmpMapSegment>* map, int offset, int size, int last_idx) {
