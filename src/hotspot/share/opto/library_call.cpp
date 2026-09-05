@@ -2474,6 +2474,25 @@ bool LibraryCallKit::inline_unsafe_access(bool is_store, const BasicType type, c
   // Save state and restore on bailout
   SavedState old_state(this);
 
+  if (const TypeAryPtr* base_ary_type = _gvn.type(base)->isa_aryptr(); type == T_OBJECT && base_ary_type != nullptr) {
+    // Read an object from a primitive array, or a Phi some of whose inputs are primitive arrays
+    if (base_ary_type->elem()->make_ptr() == nullptr) {
+      return false;
+    }
+
+    // Must not be a flat array
+    if (base_ary_type->is_flat()) {
+      return false;
+    }
+
+    // Refine the base so alias analysis can work properly
+    Node* refined_base = must_be_not_null(base, false);
+    base_ary_type = base_ary_type->cast_to_not_flat();
+    refined_base = _gvn.transform(new CheckCastPPNode(control(), base, base_ary_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+    replace_in_map(base, refined_base);
+    base = refined_base;
+  }
+
   Node* adr = make_unsafe_address(base, offset, type, kind == Relaxed);
   assert(!stopped(), "Inlining of unsafe access failed: address construction stopped unexpectedly");
 
