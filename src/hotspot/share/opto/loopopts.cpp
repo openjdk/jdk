@@ -1029,9 +1029,16 @@ bool PhaseIdealLoop::try_move_load_before_loops(LoadNode* ld) {
     for (; worklist_idx < worklist.size(); worklist_idx++) {
       Node* mem = worklist.at(worklist_idx);
       if (has_ctrl(mem) && current_loop->is_invariant(mem)) {
-        // We should only be able to step outside the loop from the loop phi, so this means the
-        // graph is broken, bail out for now
-        return false;
+        // We somehow walk out of the loop without encountering the loop phi. A possible case is
+        // that our memory input is a bottom memory Phi and its inputs are MergeMems. While the
+        // MergeMems may be inside current_loop, the input corresponding to the memory accessed by
+        // ld may not. In principle, it means that ld is not updated inside current_loop, otherwise
+        // we must have a Phi corresponding to the memory accessed by ld at the head of
+        // current_loop. However, this case is rare, handling it is hard both in terms of theory
+        // and implemetation, and there may be a rare chance that our memory graph is broken. As a
+        // result, we conservatively assume ld has interfering accesses in current_loop.
+        may_have_update_in_loop = true;
+        break;
       }
 
       if (mem->is_Phi()) {
