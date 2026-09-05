@@ -77,8 +77,7 @@ public class CheckedQueue {
             abq.add(Integer.toString(i));
         }
 
-        Queue q = Collections.checkedQueue(abq, String.class);
-        q.add(0);
+        testAddWrongType(abq, String.class, 0);
     }
 
     /**
@@ -88,10 +87,12 @@ public class CheckedQueue {
      */
     @Test(expectedExceptions = ClassCastException.class)
     public void testAddFail2() {
-        ArrayBlockingQueue<String> abq = new ArrayBlockingQueue(1);
-        Queue q = Collections.checkedQueue(abq, String.class);
+        testAddWrongType(new ArrayBlockingQueue<String>(1), String.class, 0);
+    }
 
-        q.add(0);
+    private static void testAddWrongType(Queue rawQueue, Class<?> type, Object wrongTypeElement) {
+        Queue q = Collections.checkedQueue(rawQueue, type);
+        q.add(wrongTypeElement);
     }
 
     /**
@@ -154,14 +155,15 @@ public class CheckedQueue {
     }
 
     @Test
-    public void testValueCheckedQueue() {
+    public void testValueCheckedQueuePeek() {
         Queue<VClass> q = Collections.checkedQueue(new ArrayDeque<>(), VClass.class);
         q.add(new VClass(1, new int[] { 1 }));
         if (!q.peek().equals(new VClass(1, new int[] { 1 })))
             fail("value checkedQueue peek failed");
-        try {
-            ((Queue) q).add("not a Tuple");
-            fail("value checkedQueue accepted wrong type");
-        } catch (ClassCastException expected) { }
+    }
+
+    @Test(expectedExceptions = ClassCastException.class)
+    public void testValueCheckedQueueAddFail() {
+        testAddWrongType(new ArrayDeque<VClass>(), VClass.class, "not a Tuple");
     }
 }

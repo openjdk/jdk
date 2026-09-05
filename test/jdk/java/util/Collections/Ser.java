@@ -36,8 +36,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.List;
-import java.util.Set;
 
 public class Ser {
 
@@ -56,91 +54,27 @@ public class Ser {
     }
 
     public static void main(String[] args) throws Exception {
+        checkSerialization(Collections.EMPTY_SET, "empty set");
+        checkSerialization(Collections.EMPTY_LIST, "empty list");
+        checkSerialization(Collections.singleton("gumby"), "singleton");
+        checkSerialization(Collections.nCopies(50, "gumby"), "nCopies");
+        checkSerialization(Collections.singleton(new SerV(1)), "value singleton");
+        checkSerialization(Collections.nCopies(5, new SerV(2)), "value nCopies");
+    }
 
+    private static void checkSerialization(Object obj, String label) throws Exception {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(Collections.EMPTY_SET);
+            out.writeObject(obj);
             out.flush();
             ObjectInputStream in = new ObjectInputStream(
                     new ByteArrayInputStream(bos.toByteArray()));
 
-            if (!Collections.EMPTY_SET.equals(in.readObject()))
-                throw new RuntimeException("empty set Ser/Deser failure.");
+            if (!obj.equals(in.readObject()))
+                throw new RuntimeException(label + " Ser/Deser failure.");
         } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize empty set:" + e);
-        }
-
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            out.writeObject(Collections.EMPTY_LIST);
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(
-                    new ByteArrayInputStream(bos.toByteArray()));
-
-            if (!Collections.EMPTY_LIST.equals(in.readObject()))
-                throw new RuntimeException("empty list Ser/Deser failure.");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize empty list:" + e);
-        }
-
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            Set gumby = Collections.singleton("gumby");
-            out.writeObject(gumby);
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(
-                    new ByteArrayInputStream(bos.toByteArray()));
-
-            if (!gumby.equals(in.readObject()))
-                throw new RuntimeException("Singleton Ser/Deser failure.");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize singleton:" + e);
-        }
-
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            List gumbies = Collections.nCopies(50, "gumby");
-            out.writeObject(gumbies);
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(
-                    new ByteArrayInputStream(bos.toByteArray()));
-
-            if (!gumbies.equals(in.readObject()))
-                throw new RuntimeException("nCopies Ser/Deser failure.");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize nCopies:" + e);
-        }
-
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            Set<SerV> one = Collections.singleton(new SerV(1));
-            out.writeObject(one);
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(
-                    new ByteArrayInputStream(bos.toByteArray()));
-            if (!one.equals(in.readObject()))
-                throw new RuntimeException("value singleton Ser/Deser failure");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize value singleton: " + e);
-        }
-
-        try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream out = new ObjectOutputStream(bos);
-            List<SerV> many = Collections.nCopies(5, new SerV(2));
-            out.writeObject(many);
-            out.flush();
-            ObjectInputStream in = new ObjectInputStream(
-                    new ByteArrayInputStream(bos.toByteArray()));
-            if (!many.equals(in.readObject()))
-                throw new RuntimeException("value nCopies Ser/Deser failure");
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to serialize value nCopies: " + e);
+            throw new RuntimeException("Failed to serialize " + label + ":" + e);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,19 +26,26 @@
  * @bug 4286765
  * @summary HashMap and TreeMap entrySet().remove(k) spuriously returned
  *          false if the Map previously mapped k to null.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
 public class KeySetRemove {
     public static void main(String[] args) throws Exception {
-        Map[] m = {new HashMap(), new TreeMap()};
-        for (int i=0; i<m.length; i++) {
-            m[i].put("bananas", null);
-            if (!m[i].keySet().remove("bananas"))
-                throw new Exception("Yes, we have no bananas: "+i);
+        test("bananas");
+        test(new VClass(1, new int[] { 1 }));
+    }
+
+    private static void test(Object key) throws Exception {
+        Map[] maps = { new HashMap(), new TreeMap() };
+        for (int i = 0; i < maps.length; i++) {
+            maps[i].put(key, null);
+            if (!maps[i].keySet().remove(key))
+                throw new Exception(key + " was not removed: " + i);
         }
     }
 }
