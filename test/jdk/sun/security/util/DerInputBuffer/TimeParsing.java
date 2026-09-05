@@ -129,7 +129,7 @@ public class TimeParsing {
   private static  void checkUTC(Date d0, byte[] b, String text) throws Exception {
       Date d1 = decodeUTC(b);
       Instant d1Instant = decodeUTCInstant(b);
-      if (!d0.equals(d1) && !d1.toInstant().equals(d1Instant)) {
+      if (!d0.equals(d1) || !d1.toInstant().equals(d1Instant)) {
           throw new Exception("UTCTime " + text +
                               " failed: " + d1.toGMTString());
       } else {
@@ -142,7 +142,7 @@ public class TimeParsing {
 
         Date d1 = decodeGeneralized(b);
         Instant d1Instant = decodeGeneralizedInstant(b);
-        if (!d0.equals(d1) && !d1.toInstant().equals(d1Instant)) {
+        if (!d0.equals(d1) || !d1.toInstant().equals(d1Instant)) {
             throw new Exception("GeneralizedTime " + text +
                                 " failed: " + d1.toGMTString());
         } else {
