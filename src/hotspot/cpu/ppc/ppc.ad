@@ -3737,6 +3737,15 @@ operand immI_minus1() %{
   interface(CONST_INTER);
 %}
 
+// constant 'int 4'.
+operand immI_4() %{
+  predicate(n->get_int() == 4);
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // int value 16.
 operand immI_16() %{
   predicate(n->get_int() == 16);
@@ -9526,6 +9535,16 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
   // variable size, 0 or 4.
   ins_encode %{
     __ mr_if_needed($dst$$Register, $src$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct castI2N(iRegNdst dst, iRegIsrc src) %{
+  match(Set dst (CastI2N src));
+  format %{ "MR      $dst, $src \t// int->Narrow Ptr" %}
+  // variable size, 0 or 4
+  ins_encode %{
+    __ clrldi($dst$$Register, $src$$Register, 32); // zero high word
   %}
   ins_pipe(pipe_class_default);
 %}
