@@ -240,84 +240,56 @@ public final class ScopedMemoryAccess {
     @ForceInline
     public boolean isLoaded(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            return isLoadedInternal(session, mappedUtils, address, isSync, size);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    public boolean isLoadedInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
-        try {
             if (session != null) {
-                session.checkValidStateRaw();
+                session.acquire0();
             }
             return mappedUtils.isLoaded(address, isSync, size);
         } finally {
-            Reference.reachabilityFence(session);
+            if (session != null) {
+                session.release0();
+            }
         }
     }
 
     @ForceInline
     public void load(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            loadInternal(session, mappedUtils, address, isSync, size);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    public void loadInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
-        try {
             if (session != null) {
-                session.checkValidStateRaw();
+                session.acquire0();
             }
             mappedUtils.load(address, isSync, size);
         } finally {
-            Reference.reachabilityFence(session);
+            if (session != null) {
+                session.release0();
+            }
         }
     }
 
     @ForceInline
     public void unload(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
         try {
-            unloadInternal(session, mappedUtils, address, isSync, size);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    public void unloadInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, long address, boolean isSync, long size) {
-        try {
             if (session != null) {
-                session.checkValidStateRaw();
+                session.acquire0();
             }
             mappedUtils.unload(address, isSync, size);
         } finally {
-            Reference.reachabilityFence(session);
+            if (session != null) {
+                session.release0();
+            }
         }
     }
 
     @ForceInline
     public void force(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, FileDescriptor fd, long address, boolean isSync, long index, long length) {
         try {
-            forceInternal(session, mappedUtils, fd, address, isSync, index, length);
-        } catch (ScopedAccessError ex) {
-            throw ex.newRuntimeException();
-        }
-    }
-
-    @ForceInline @Scoped
-    public void forceInternal(MemorySessionImpl session, MappedMemoryUtilsProxy mappedUtils, FileDescriptor fd, long address, boolean isSync, long index, long length) {
-        try {
             if (session != null) {
-                session.checkValidStateRaw();
+                session.acquire0();
             }
             mappedUtils.force(fd, address, isSync, index, length);
         } finally {
-            Reference.reachabilityFence(session);
+            if (session != null) {
+                session.release0();
+            }
         }
     }
 
