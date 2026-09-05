@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -378,6 +380,21 @@ public final class ListFormat extends Format {
 
         return format(input, StringBufFactory.of(),
                 DontCareFieldPosition.INSTANCE).toString();
+    }
+
+    /**
+     * {@return a {@code Collector} that concatenates the input elements into a
+     * string with the patterns of this {@code ListFormat}, in encounter order}
+     *
+     * <p>The returned Collector requires at least one input element.
+     * It will throw {@link IllegalArgumentException} if there are no input elements.
+     *
+     * @since 28
+     */
+    public Collector<CharSequence, ?, String> toCollector() {
+        return Collectors.collectingAndThen(
+                Collectors.mapping(String::valueOf, Collectors.toList()),
+                this::format);
     }
 
     /**

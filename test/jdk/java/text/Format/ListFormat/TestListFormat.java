@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8041488 8316974 8318569 8306116 8385736 8385834 8386200
+ * @bug 8041488 8316974 8318569 8306116 8385736 8385834 8386200 8391789
  * @summary Tests for ListFormat class
  * @run junit TestListFormat
  */
@@ -35,6 +35,10 @@ import java.text.ParseException;
 import java.text.ParsePosition;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -441,6 +445,27 @@ public class TestListFormat {
             ListFormat [locale: "%s", start: "{0}, {1}", middle: "{0}, {1}", end: "{0} and {1}", two: "{0} and {1}", three: "{0}, {1} and {2}"]
             """.formatted(world.getDisplayName()),
             ListFormat.getInstance(world, ListFormat.Type.STANDARD, ListFormat.Style.FULL).toString());
+    }
+
+    @Test
+    void toCollector() {
+        ListFormat format = ListFormat.getInstance(Locale.ENGLISH, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
+        Collector<CharSequence, ?, String> collector = format.toCollector();
+        assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
+        assertEquals("a",
+                Stream.of("a").collect(collector));
+        assertEquals("a and b",
+                Stream.of("a", "b").collect(collector));
+        assertEquals("a, b, and c",
+                Stream.of("a", "b", "c").collect(collector));
+        assertEquals("a, b, and c",
+                Stream.of(new StringBuilder("a"), "b", new StringBuffer("c")).collect(collector));
+        assertEquals("a, b, c, and null",
+                Stream.of(new StringBuilder("a"), "b", new StringBuffer("c"), null).collect(collector));
+        assertEquals("1, 2, 3, 4, 5, 6, 7, 8, and 9",
+                IntStream.range(1, 10).mapToObj(String::valueOf).collect(collector));
+        assertEquals("1, 2, 3, 4, 5, 6, 7, 8, and 9",
+                IntStream.range(1, 10).parallel().mapToObj(String::valueOf).collect(collector));
     }
 
     private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
