@@ -32,14 +32,11 @@
 
 package jdk.internal.org.commonmark.renderer.html;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
- * Allows http, https and mailto protocols for url.
+ * Allows http, https, mailto, and data protocols for url.
  * Also allows protocol relative urls, and relative urls.
  * Implementation based on https://github.com/OWASP/java-html-sanitizer/blob/f07e44b034a45d94d6fd010279073c38b6933072/src/main/java/org/owasp/html/FilterUrlByProtocolAttributePolicy.java
  */
@@ -47,7 +44,7 @@ public class DefaultUrlSanitizer implements UrlSanitizer {
     private Set<String> protocols;
 
     public DefaultUrlSanitizer() {
-        this(Arrays.asList("http", "https", "mailto"));
+        this(List.of("http", "https", "mailto", "data"));
     }
 
     public DefaultUrlSanitizer(Collection<String> protocols) {

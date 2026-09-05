@@ -35,20 +35,18 @@ package jdk.internal.org.commonmark.renderer.html;
 import jdk.internal.org.commonmark.internal.util.Escaping;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 
 public class HtmlWriter {
 
-    private static final Map<String, String> NO_ATTRIBUTES = Collections.emptyMap();
+    private static final Map<String, String> NO_ATTRIBUTES = Map.of();
 
     private final Appendable buffer;
     private char lastChar = 0;
 
     public HtmlWriter(Appendable out) {
-        if (out == null) {
-            throw new NullPointerException("out must not be null");
-        }
+        Objects.requireNonNull(out, "out must not be null");
         this.buffer = out;
     }
 
@@ -72,12 +70,14 @@ public class HtmlWriter {
         append("<");
         append(name);
         if (attrs != null && !attrs.isEmpty()) {
-            for (Map.Entry<String, String> attrib : attrs.entrySet()) {
+            for (var attr : attrs.entrySet()) {
                 append(" ");
-                append(Escaping.escapeHtml(attrib.getKey()));
-                append("=\"");
-                append(Escaping.escapeHtml(attrib.getValue()));
-                append("\"");
+                append(Escaping.escapeHtml(attr.getKey()));
+                if (attr.getValue() != null) {
+                    append("=\"");
+                    append(Escaping.escapeHtml(attr.getValue()));
+                    append("\"");
+                }
             }
         }
         if (voidElement) {

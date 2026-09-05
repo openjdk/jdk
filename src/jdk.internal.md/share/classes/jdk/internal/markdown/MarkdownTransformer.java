@@ -28,6 +28,7 @@ package jdk.internal.markdown;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -57,6 +58,8 @@ import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.InlineParserContext;
 import jdk.internal.org.commonmark.parser.InlineParserFactory;
 import jdk.internal.org.commonmark.parser.Parser;
+import jdk.internal.org.commonmark.parser.beta.InlineContentParserFactory;
+import jdk.internal.org.commonmark.parser.beta.LinkProcessor;
 import jdk.internal.org.commonmark.parser.delimiter.DelimiterProcessor;
 
 import static com.sun.tools.javac.util.Position.NOPOS;
@@ -542,10 +545,32 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     return inlineParserContext.getCustomDelimiterProcessors();
                 }
 
+                @Override
+                @Deprecated
+                public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
+                    return getDefinition(LinkReferenceDefinition.class, label);
+                }
+
+                @Override
+                public List<InlineContentParserFactory> getCustomInlineContentParserFactories() {
+                    return inlineParserContext.getCustomInlineContentParserFactories();
+                }
+
+                @Override
+                public List<LinkProcessor> getCustomLinkProcessors() {
+                    return inlineParserContext.getCustomLinkProcessors();
+                }
+
+                @Override
+                public Set<Character> getCustomLinkMarkers() {
+                    return inlineParserContext.getCustomLinkMarkers();
+                }
+
                 /**
                  * {@inheritDoc}
                  *
-                 * If the given label does not match any explicitly defined
+                 * If {@code type} indicates a link reference lookup and
+                 * the given label does not match any explicitly defined
                  * link reference definition, but does match a reference
                  * to a program element, a synthetic link reference definition
                  * is returned, with the label prefixed by the {@code autorefScheme}.
@@ -554,7 +579,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                  * @return the link reference definition for the label, or {@code null}
                  */
                 @Override
-                public LinkReferenceDefinition getLinkReferenceDefinition(String label) {
+                public <D> D getDefinition(Class<D> type, String label) {
                     // In CommonMark, square brackets characters need to be escaped within a link label.
                     // See https://spec.commonmark.org/0.30/#link-label
                     //   Unescaped square bracket characters are not allowed inside the opening
@@ -563,9 +588,9 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                     // so we remove them before creating the autoref URL.
                     // Note that the characters always appear together as a pair in API references.
                     var l = label.replace("\\[\\]", "[]");
-                    var d = inlineParserContext.getLinkReferenceDefinition(l);
-                    return d == null && isReference(l)
-                            ? new LinkReferenceDefinition("", autorefScheme + l, "")
+                    var d = inlineParserContext.getDefinition(type, label);
+                    return d == null && type == LinkReferenceDefinition.class && isReference(l)
+                            ? type.cast(new LinkReferenceDefinition("", autorefScheme + l, ""))
                             : d;
                 }
             });
