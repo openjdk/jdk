@@ -2765,7 +2765,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
     save_native_result(masm, ret_type, workspace_slot_offset); // Make Z_R2 available as work reg.
 
-    __ safepoint_poll(sync, Z_R1);
+    __ safepoint_poll(sync, Z_R1, true /* at_return */, false /* in_nmethod */);
 
     __ load_and_test_int(Z_R0, Address(Z_thread, JavaThread::suspend_flags_offset()));
     __ z_bre(no_block);
