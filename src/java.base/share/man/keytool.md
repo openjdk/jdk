@@ -1335,13 +1335,15 @@ The following examples show the defaults for various option values:
 -keysize
     2048 (when using -genkeypair and -keyalg is "DSA")
     3072 (when using -genkeypair and -keyalg is "RSA", "RSASSA-PSS", or "DH")
-    384 (when using -genkeypair and -keyalg is "EC")
     56 (when using -genseckey and -keyalg is "DES")
     168 (when using -genseckey and -keyalg is "DESede")
 
 -groupname
-    ed25519 (when using -genkeypair and -keyalg is "EdDSA", key size is 255)
-    x25519 (when using -genkeypair and -keyalg is "XDH", key size is 255)
+    secp384r1 (when using -genkeypair and -keyalg is "EC")
+    ed25519 (when using -genkeypair and -keyalg is "EdDSA")
+    x25519 (when using -genkeypair and -keyalg is "XDH")
+    ML-DSA-65 (when using -genkeypair and -keyalg is "ML-DSA")
+    ML-KEM-768 (when using -genkeypair and -keyalg is "ML-KEM")
 
 -validity 90
 
@@ -1378,10 +1380,6 @@ RSASSA-PSS  \< 624    RSASSA-PSS (with SHA-256, key size is too small for
                       using SHA-384)
             \<= 7680  RSASSA-PSS (with SHA-384)
             \> 7680   RSASSA-PSS (with SHA-512)
-EdDSA       255       Ed25519
-            448       Ed448
-Ed25519     255       Ed25519
-Ed448       448       Ed448
 -------     --------  --------------
 
 * The key size, measured in bits, corresponds to the size of the private key.
@@ -1393,6 +1391,12 @@ algorithm as its hash and MGF1 algorithms.
 
 * If neither a default `-keysize` or `-groupname` is defined for an algorithm,
 the security provider will choose a default setting.
+
+* Modern digital signature algorithms such as EdDSA and ML-DSA use the same
+name for both the key and signature algorithms. Only the signature algorithm
+with the same name can be used with a given key algorithm. The specific
+signature parameter set (for example, Ed25519 or Ed448 for EdDSA) is the
+same as that of the key.
 
 **Note:**
 

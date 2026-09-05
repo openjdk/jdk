@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
+import java.util.Locale;
 import java.util.TimeZone;
 
 import sun.security.pkcs10.PKCS10;
@@ -149,7 +150,9 @@ public final class CertAndKeyGen {
                 prng = new SecureRandom();
             }
             try {
-                keyGen.initialize(new NamedParameterSpec(name), prng);
+                keyGen.initialize(keyType.toUpperCase(Locale.ROOT).equals("EC")
+                        ? new ECGenParameterSpec(name)
+                        : new NamedParameterSpec(name), prng);
             } catch (InvalidAlgorithmParameterException e) {
                 if (keyType.equalsIgnoreCase("EC")) {
                     // EC has another NamedParameterSpec
