@@ -1045,8 +1045,6 @@ const jubyte   heapPaddingByteVal = 0xBD;                   // value used to zap
 const juint    badHeapWordVal     = 0xBAADBABE;             // value used to zap heap after GC
 const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
-const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
-const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
 const juint    badRegWordVal      = 0xDEADDA7A;             // value used to zap registers
 
 // (These must be implemented as #defines because C++ compilers are

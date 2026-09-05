@@ -260,14 +260,14 @@ void Parse::load_interpreter_state(Node* osr_buf) {
 
     Node* box = _gvn.transform(osr_box);
 
-    // Displaced headers and locked objects are interleaved in the
+    // Object monitor cache and locked objects are interleaved in the
     // temp OSR buffer.  We only copy the locked objects out here.
     // Fetch the locked object from the OSR temp buffer and copy to our fastlock node.
     Node* lock_object = fetch_interpreter_state(index*2, Type::get_const_basic_type(T_OBJECT), monitors_addr);
-    // Try and copy the displaced header to the BoxNode
-    Node* displaced_hdr = fetch_interpreter_state((index*2) + 1, Type::get_const_basic_type(T_ADDRESS), monitors_addr);
+    // Try and copy the object monitor cache to the BoxNode
+    Node* object_monitor_cache = fetch_interpreter_state((index*2) + 1, Type::get_const_basic_type(T_ADDRESS), monitors_addr);
 
-    store_to_memory(control(), box, displaced_hdr, T_ADDRESS, MemNode::unordered);
+    store_to_memory(control(), box, object_monitor_cache, T_ADDRESS, MemNode::unordered);
 
     // Build a bogus FastLockNode (no code will be generated) and push the
     // monitor into our debug info.

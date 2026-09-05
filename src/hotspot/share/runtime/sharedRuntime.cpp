@@ -3805,13 +3805,12 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 //
 // This code is used convert interpreter frames into compiled frames.  It is
 // called from very start of a compiled OSR nmethod.  A temp array is
-// allocated to hold the interesting bits of the interpreter frame.  All
-// active locks are inflated to allow them to move.  The displaced headers and
-// active interpreter locals are copied into the temp buffer.  Then we return
-// back to the compiled code.  The compiled code then pops the current
-// interpreter frame off the stack and pushes a new compiled frame.  Then it
-// copies the interpreter locals and displaced headers where it wants.
-// Finally it calls back to free the temp buffer.
+// allocated to hold the interesting bits of the interpreter frame.  The active
+// object monitor oops and caches, and active interpreter locals are copied into
+// the temp buffer.  Then we return back to the compiled code.  The compiled
+// code then pops the current interpreter frame off the stack and pushes a new
+// compiled frame.  Then it copies the object monitor oops and caches, and
+// interpreter locals where it wants. Finally it calls back to free the temp buffer.
 //
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
@@ -3861,7 +3860,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
                        (HeapWord*)&buf[0],
                        max_locals);
 
-  // Inflate locks.  Copy the displaced headers.  Be careful, there can be holes.
+  // Copy the object monitor oops and caches.  Be careful, there can be holes.
   int i = max_locals;
   for (BasicObjectLock *kptr2 = fr.interpreter_frame_monitor_end();
        kptr2 < fr.interpreter_frame_monitor_begin();

@@ -47,17 +47,12 @@ class BasicLock {
  public:
   BasicLock() : _monitor(nullptr) {}
 
-  void set_bad_monitor_deopt() { set_monitor(reinterpret_cast<ObjectMonitor*>(badDispHeaderDeopt)); }
-
   inline ObjectMonitor* object_monitor_cache() const;
   inline void clear_object_monitor_cache();
   inline void set_object_monitor_cache(ObjectMonitor* mon);
   static int object_monitor_cache_offset_in_bytes() { return monitor_offset_in_bytes(); }
 
   void print_on(outputStream* st, oop owner) const;
-
-  // move a basic lock (used during deoptimization)
-  void move_to(oop obj, BasicLock* dest);
 };
 
 // A BasicObjectLock associates a specific Java object with a BasicLock.
