@@ -247,6 +247,15 @@ void VM_Version::c2_initialize() {
     }
   }
 
+  intx max_inline_size = MIN2(MaxVectorSize, (intx)256);
+  if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+    FLAG_SET_DEFAULT(ArrayOperationPartialInlineSize, UseRVV ? max_inline_size : 0);
+  }
+  if (ArrayOperationPartialInlineSize > max_inline_size) {
+    warning("Setting ArrayOperationPartialInlineSize to %d", (int)max_inline_size);
+    ArrayOperationPartialInlineSize = max_inline_size;
+  }
+
   if (FLAG_IS_DEFAULT(AlignVector)) {
     FLAG_SET_DEFAULT(AlignVector,
       unaligned_vector.value() != MISALIGNED_VECTOR_FAST);
