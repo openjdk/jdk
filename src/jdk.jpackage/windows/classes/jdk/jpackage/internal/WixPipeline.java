@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
+import jdk.internal.util.Architecture;
 import jdk.jpackage.internal.util.PathUtils;
 
 /**
@@ -191,7 +192,7 @@ final class WixPipeline {
                 "-pdbtype", "none",
                 "-intermediatefolder", wixObjDir.toString(),
                 "-ext", "WixToolset.Util.wixext",
-                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86"
+                "-arch", wix4ArchArg(Architecture.current())
         ));
 
         cmdline.addAll(lightOptions);
@@ -236,7 +237,7 @@ final class WixPipeline {
                 "-nologo",
                 wixSource.path.toString(),
                 "-ext", "WixUtilExtension",
-                "-arch", WixFragmentBuilder.is64Bit() ? "x64" : "x86",
+                "-arch", wix3ArchArg(Architecture.current()),
                 "-out", wixObj.toString()
         ));
 
@@ -253,6 +254,31 @@ final class WixPipeline {
 
     private void execute(List<String> cmdline) throws IOException {
         Executor.of(new ProcessBuilder(cmdline).directory(workDir.toFile())).executeExpectSuccess();
+    }
+
+    // Maps the given architecture to the value of the "-arch" argument of the
+    // WiX v4+ "build" command. WiX v4 added support for building arm64 MSI
+    // packages, so AArch64 is mapped to "arm64" unlike the WiX v3 mapping below.
+    static String wix4ArchArg(Architecture arch) {
+        return switch (arch) {
+            case X86 -> "x86";
+            case X64 -> "x64";
+            case AARCH64 -> "arm64";
+            default -> throw I18N.buildConfigException("error.msi-arch-unsupported", arch).create();
+        };
+    }
+
+    // Maps the given architecture to the value of the "-arch" argument of the
+    // WiX v3 "candle" command. WiX v3 doesn't support building arm64 MSI
+    // packages, so AArch64 is explicitly rejected.
+    static String wix3ArchArg(Architecture arch) {
+        return switch (arch) {
+            case X86 -> "x86";
+            case X64 -> "x64";
+            default -> throw I18N.buildConfigException("error.msi-arch-unsupported-wix3", arch)
+                    .advice("error.msi-arch-unsupported-wix3.advice")
+                    .create();
+        };
     }
 
     private void addWixVariablesToCommandLine(Stream<WixSource> wixSources, Consumer<List<String>> sink) {
