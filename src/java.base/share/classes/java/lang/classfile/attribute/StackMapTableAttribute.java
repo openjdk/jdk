@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,9 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * AttributeStability#LABELS labels} in the {@code code} array.
  * <p>
  * This attribute was introduced in the Java SE Platform version 6, major
- * version {@value ClassFile#JAVA_6_VERSION}.
+ * version {@value ClassFile#JAVA_6_VERSION}.  The format of this attribute
+ * received an update in a preview VM feature (JVMS {@jvms strict-fields-4.7.4})
+ * in the current Java SE release.
  *
  * @see Attributes#stackMapTable()
  * @see DiscontinuedInstruction.JsrInstruction
