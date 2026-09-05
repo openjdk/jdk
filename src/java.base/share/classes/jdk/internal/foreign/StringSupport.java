@@ -30,14 +30,11 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.reflect.Array;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.util.Objects;
 
 import static java.lang.foreign.ValueLayout.*;
 
@@ -358,8 +355,9 @@ public final class StringSupport {
 
     public static int copyBytes(String string, MemorySegment segment, Charset charset, long offset, int srcIndex, int numChars) {
         if (bytesCompatible(string, charset, srcIndex, numChars)) {
-            copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
-            return numChars;
+            MemorySegment src = asReadOnlySegment(string, srcIndex, numChars);
+            MemorySegment.copy(src, 0, segment, offset, src.byteSize());
+            return (int) src.byteSize();
         } else {
             byte[] bytes = string.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
@@ -367,7 +365,15 @@ public final class StringSupport {
         }
     }
 
-    public static void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength) {
-        JAVA_LANG_ACCESS.copyToSegmentRaw(string, segment, offset, srcIndex, srcLength);
+    public static MemorySegment asReadOnlySegment(String string) {
+        return JAVA_LANG_ACCESS.asReadOnlySegment(string);
+    }
+
+    public static MemorySegment asReadOnlySegment(String string, int srcIndex, int numChars) {
+        return JAVA_LANG_ACCESS.asReadOnlySegment(string, srcIndex, numChars);
+    }
+
+    public static Charset stringCharset(String string) {
+        return JAVA_LANG_ACCESS.stringCharset(string);
     }
 }

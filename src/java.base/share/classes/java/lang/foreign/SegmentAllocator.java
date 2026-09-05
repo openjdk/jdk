@@ -139,9 +139,10 @@ public interface SegmentAllocator {
         MemorySegment segment;
         int length;
         if (StringSupport.bytesCompatible(str, charset, 0, str.length())) {
-            length = str.length();
-            segment = allocateNoInit((long) length + termCharSize);
-            StringSupport.copyToSegmentRaw(str, segment, 0, 0, str.length());
+            MemorySegment src = MemorySegment.ofString(str).segment();
+            length = (int) src.byteSize();
+            segment = allocateNoInit(src.byteSize() + termCharSize);
+            MemorySegment.copy(src, 0, segment, 0, src.byteSize());
         } else {
             byte[] bytes = str.getBytes(charset);
             length = bytes.length;
@@ -192,8 +193,9 @@ public interface SegmentAllocator {
         Objects.checkFromIndexSize(srcIndex, numChars, str.length());
         MemorySegment segment;
         if (StringSupport.bytesCompatible(str, charset, srcIndex, numChars)) {
-            segment = allocateNoInit(numChars);
-            StringSupport.copyToSegmentRaw(str, segment, 0, srcIndex, numChars);
+            MemorySegment src = MemorySegment.ofString(str, srcIndex, numChars).segment();
+            segment = allocateNoInit(src.byteSize());
+            MemorySegment.copy(src, 0, segment, 0, src.byteSize());
         } else {
             byte[] bytes = str.substring(srcIndex, srcIndex + numChars).getBytes(charset);
             segment = allocateNoInit(bytes.length);

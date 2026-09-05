@@ -29,11 +29,11 @@ import java.io.ObjectStreamField;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Native;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 import java.util.ArrayList;
@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -63,6 +64,8 @@ import sun.nio.cs.ArrayEncoder;
 
 import sun.nio.cs.ISO_8859_1;
 import sun.nio.cs.US_ASCII;
+import sun.nio.cs.UTF_16BE;
+import sun.nio.cs.UTF_16LE;
 import sun.nio.cs.UTF_8;
 
 /**
@@ -2129,15 +2132,18 @@ public final class String
         return false;
     }
 
-    void copyToSegmentRaw(MemorySegment segment, long offset, int srcIndex, int srcLength) {
-        if (!isLatin1()) {
-            // This method is intended to be used together with bytesCompatible, which currently only supports
-            // latin1 strings. In the future, bytesCompatible could be updated to handle more cases, like
-            // UTF-16 strings (when the platform and charset endianness match, and the String doesn’t contain
-            // unpaired surrogates). If that happens, copyToSegmentRaw should also be updated.
-            throw new IllegalStateException("This string does not support copyToSegmentRaw");
-        }
-        MemorySegment.copy(value, srcIndex, segment, ValueLayout.JAVA_BYTE, offset, srcLength);
+    MemorySegment asReadOnlySegment(int srcIndex, int numChars) {
+        return SegmentFactories.ofString(value, coder, srcIndex, numChars);
+    }
+
+    MemorySegment asReadOnlySegment() {
+        return SegmentFactories.ofString(value);
+    }
+
+    Charset charset() {
+        return isLatin1() ? ISO_8859_1.INSTANCE
+                : (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) ? UTF_16BE.INSTANCE
+                : UTF_16LE.INSTANCE;
     }
 
     /**

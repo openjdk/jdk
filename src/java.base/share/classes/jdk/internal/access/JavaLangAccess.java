@@ -640,9 +640,19 @@ public interface JavaLangAccess {
     String getLoaderNameID(ClassLoader loader);
 
     /**
-     * Copy the string bytes to an existing segment, avoiding intermediate copies.
+     * Returns a read-only view of a subrange of the string bytes.
      */
-    void copyToSegmentRaw(String string, MemorySegment segment, long offset, int srcIndex, int srcLength);
+    MemorySegment asReadOnlySegment(String string, int srcIndex, int numChars);
+
+    /**
+     * Returns a read-only view of the string bytes.
+     */
+    MemorySegment asReadOnlySegment(String string);
+
+    /**
+     * The {@link Charset} of {@link #asReadOnlySegment(String)}.
+     */
+    Charset stringCharset(String string);
 
     /**
      * Are the string bytes compatible with the given charset?
