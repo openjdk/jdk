@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @bug 8250677
  * @run testng VersionTest
  * @summary Basic tests for java.lang.module.ModuleDescriptor.Version.
  */
@@ -117,7 +118,12 @@ public class VersionTest {
             { "1.2.3-ea+104", "1.2.3-ea+105" },
             { "1.2.3-ea+104-4084552", "1.2.3-ea+104-4084552+8849330" },
             { "1+104", "1+105" },
-            { "1.0-alpha1", "1.0-alpha2" }
+            { "1.0-alpha1", "1.0-alpha2" },
+            { "1", "1+1" },
+            { "1-1", "1+1" },
+            { "1-foo", "1+foo" },
+            { "1-foo+bar", "1+foo+bar" },
+            { "1-foo+bar", "1+foo-bar" },
 
         };
     }

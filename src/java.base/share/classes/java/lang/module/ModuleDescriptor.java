@@ -1102,7 +1102,8 @@ public final class ModuleDescriptor
             if (c == '-' && i >= n)
                 throw new IllegalArgumentException(v + ": Empty pre-release");
 
-            while (i < n) {
+            boolean parsePreRelease = c == '-';
+            while (parsePreRelease && i < n) {
                 c = v.charAt(i);
                 if (c == '.' || c == '-') {
                     i++;
