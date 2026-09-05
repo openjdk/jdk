@@ -175,7 +175,7 @@ public:
     INDENT_BY(57);
     st->print("%s-%s", mapping_info._state_buffer.base(), mapping_info._type_buffer.base());
     INDENT_BY(63);
-    st->print("%#11llx", reinterpret_cast<const unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<const unsigned long long>(mem_info.AllocationBase));
+    st->print("%#11llx", reinterpret_cast<unsigned long long>(mem_info.BaseAddress) - reinterpret_cast<unsigned long long>(mem_info.AllocationBase));
     INDENT_BY(72);
     if (_session.print_nmt_info_for_region(mem_info.BaseAddress, static_cast<const char*>(mem_info.BaseAddress) + mem_info.RegionSize)) {
       st->print(" ");
