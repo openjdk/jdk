@@ -420,7 +420,7 @@ class NativeFarCall: public NativeInstruction {
 
   // Sets the NativeCall's destination, not necessarily mt-safe.
   // Used when relocating code.
-  void set_destination(address dest, int toc_offset);
+  void set_destination(address dest);
 
   // Checks whether instr points at a NativeFarCall instruction.
   static bool is_far_call_at(address instr) {
