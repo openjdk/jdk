@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8345431 8375433
+ * @bug 8345431 8375433 8382938
  * @summary test validator to report malformed jar file
  * @run junit/othervm ValidatorTest
  */
@@ -306,6 +306,66 @@ class ValidatorTest {
             for (var entryName : invalidEntryNames) {
                 assertTrue(err.contains("Warning: entry name " + entryName + " is not valid"), "missing warning for " + entryName);
             }
+        }
+    }
+
+    @Test
+    public void testClassWithDifferentExtendsClause() throws Exception {
+        var foo21 = Path.of("21", "Foo.java");
+        Files.createDirectories(foo21.getParent());
+        Files.writeString(foo21,
+                """
+                abstract class Foo extends java.util.AbstractCollection {}
+                """);
+        var foo25 = Path.of("25", "Foo.java");
+        Files.createDirectories(foo25.getParent());
+        Files.writeString(foo25,
+                """
+                abstract class Foo extends java.util.AbstractList {}
+                """);
+        JAVAC_TOOL.run(System.out, System.err, "--release", "21", "-d", "21", foo21.toString());
+        JAVAC_TOOL.run(System.out, System.err, "--release", "25", "-d", "25", foo25.toString());
+        try {
+            jar("--create --file mr.jar -C 21 . --release 25 -C 25 .");
+            fail("Expecting non-zero exit code");
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            assertLinesMatch(
+                    """
+                    entry: META-INF/versions/25/Foo.class, contains a class with different api from earlier version
+                    invalid multi-release jar file mr.jar deleted
+                    """.lines(), err.lines());
+        }
+    }
+
+    @Test
+    public void testInterfaceWithDifferentExtendsClause() throws Exception {
+        var foo21 = Path.of("21", "Foo.java");
+        Files.createDirectories(foo21.getParent());
+        Files.writeString(foo21,
+                """
+                interface Foo<E> extends java.util.Collection<E> {}
+                """);
+        var foo25 = Path.of("25", "Foo.java");
+        Files.createDirectories(foo25.getParent());
+        Files.writeString(foo25,
+                """
+                interface Foo<E> extends java.util.SequencedCollection<E> {}
+                """);
+        JAVAC_TOOL.run(System.out, System.err, "--release", "21", "-d", "21", foo21.toString());
+        JAVAC_TOOL.run(System.out, System.err, "--release", "25", "-d", "25", foo25.toString());
+        try {
+            jar("--create --file mr.jar -C 21 . --release 25 -C 25 .");
+            fail("Expecting non-zero exit code");
+        } catch (IOException e) {
+            var err = e.getMessage();
+            System.out.println(err);
+            assertLinesMatch(
+                    """
+                    entry: META-INF/versions/25/Foo.class, contains a class with different api from earlier version
+                    invalid multi-release jar file mr.jar deleted
+                    """.lines(), err.lines());
         }
     }
 
