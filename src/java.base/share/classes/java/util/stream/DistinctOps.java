@@ -122,14 +122,21 @@ final class DistinctOps {
                 if (StreamOpFlag.DISTINCT.isKnown(flags)) {
                     return sink;
                 } else if (StreamOpFlag.SORTED.isKnown(flags)) {
+                    // Keep lastSeen as a fast path for the common case where equal
+                    // elements are adjacent after sorting, and also track all emitted
+                    // elements in a set so duplicates are still removed when
+                    // compareTo is inconsistent with equals (including when equal
+                    // elements are not in the same sort group).
                     return new Sink.ChainedReference<>(sink) {
                         boolean seenNull;
                         T lastSeen;
+                        Set<T> seen;
 
                         @Override
                         public void begin(long size) {
                             seenNull = false;
                             lastSeen = null;
+                            seen = new HashSet<>();
                             downstream.begin(-1);
                         }
 
@@ -137,6 +144,7 @@ final class DistinctOps {
                         public void end() {
                             seenNull = false;
                             lastSeen = null;
+                            seen = null;
                             downstream.end();
                         }
 
@@ -145,10 +153,15 @@ final class DistinctOps {
                             if (t == null) {
                                 if (!seenNull) {
                                     seenNull = true;
-                                    downstream.accept(lastSeen = null);
+                                    lastSeen = null;
+                                    seen.add(null);
+                                    downstream.accept(null);
                                 }
-                            } else if (lastSeen == null || !t.equals(lastSeen)) {
-                                downstream.accept(lastSeen = t);
+                            } else if (lastSeen != null && t.equals(lastSeen)) {
+                                // Consecutive duplicate — common after a consistent sort
+                            } else if (seen.add(t)) {
+                                lastSeen = t;
+                                downstream.accept(t);
                             }
                         }
                     };
