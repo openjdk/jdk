@@ -106,7 +106,90 @@ public class AOTMapTest {
         }
         mapFile.shouldHaveClass("AOTMapTestApp"); // built-in class
         mapFile.shouldHaveClass("Hello"); // unregistered class
+
+
+        if (testValhalla) {
+            validateValhalla(mapFile);
+        }
     }
+
+    static void validateValhalla(AOTMapReader.MapFile mapFile) {
+        checkArchivedData(mapFile);
+        checkWrapperArray(mapFile);
+    }
+
+    static void checkArchivedData(AOTMapReader.MapFile mapFile) {
+        /* Should have something like this
+         *
+         * 0x000000008816dda8: @@ Object (0x0102dbb5) AOTMapTestValhallaHelper$ArchivedData
+         *  - klass: 'AOTMapTestValhallaHelper$ArchivedData' 0x0000000800525c00
+         *  - fields (7 words):
+         *    - Flat inline type field 'AOTMapTestValhallaHelper$Wrapper':
+         *      - Flat inline type field 'java/lang/Integer':
+         *        - private final value 'value' (fields 0x00000000) 'I' @8  -1431677611 (0xaaaa5555)
+         *        - [null_marker] @12 Field marked as non-null
+         *      - [null_marker] @13 Field marked as non-null
+         *    - Flat inline null-free type field 'AOTMapTestValhallaHelper$WrapperWrapper':
+         *      - Flat inline type field 'AOTMapTestValhallaHelper$Wrapper':
+         *        - Flat inline type field 'java/lang/Integer':
+         *          - private final value 'value' (fields 0x00000000) 'I' @16  -1145346458 (0xbbbb6666)
+         *          - [null_marker] @20 Field marked as non-null
+         *        - [null_marker] @21 Field marked as non-null
+         * ....
+         */
+        String klass = "AOTMapTestValhallaHelper$ArchivedData";
+        String[] objs = mapFile.getHeapObjectsOfType(klass);
+        if (objs == null || objs.length != 1) {
+            throw new RuntimeException("Expected exactly one heap object of type " + klass + " but got " +
+                                       ((objs == null) ? "none" : ("" + objs.length)));
+        }
+        String s = objs[0];
+        System.out.println(s);
+        checkMatch(s, "final value 'value' .fields 0x00000000. 'I' @[0-9]+ +-1431677611 .0xaaaa5555.");
+        checkMatch(s, "final value 'value' .fields 0x00000000. 'I' @[0-9]+ +-1145346458 .0xbbbb6666.");
+    }
+
+    static void checkWrapperArray(AOTMapReader.MapFile mapFile) {
+        /* Should have something like this
+         *
+         * 0x00000000881aeb18: @@ Object (0x01035d63) [LAOTMapTestValhallaHelper$Wrapper; length: 3
+         *  - klass: 'AOTMapTestValhallaHelper$Wrapper'[] 0x000000080052a000
+         *  - Flat inline type element 'AOTMapTestValhallaHelper$Wrapper': - Index   0 offset  16:
+         *    - Flat inline type field 'java/lang/Integer':
+         *      - private final value 'value' (fields 0x00000000) 'I' @8  43690 (0x0000aaaa)
+         *      - [null_marker] @12 Field marked as non-null
+         *    - [null_marker] @21 Field marked as non-null
+         *  - Flat inline type element 'AOTMapTestValhallaHelper$Wrapper': - Index   1 offset  24:
+         *    - Flat inline type field 'java/lang/Integer':
+         *      - private final value 'value' (fields 0x00000000) 'I' @8  48059 (0x0000bbbb)
+         *      - [null_marker] @12 Field marked as non-null
+         *    - [null_marker] @29 Field marked as non-null
+         *  - Flat inline type element 'AOTMapTestValhallaHelper$Wrapper': - Index   2 offset  32:
+         *    - Flat inline type field 'java/lang/Integer':
+         *      - private final value 'value' (fields 0x00000000) 'I' @8  52428 (0x0000cccc)
+         *      - [null_marker] @12 Field marked as non-null
+         *    - [null_marker] @37 Field marked as non-null
+         */
+        String klass = "[LAOTMapTestValhallaHelper$Wrapper;";
+        String[] objs = mapFile.getHeapObjectsOfType(klass);
+        if (objs == null || objs.length != 1) {
+            throw new RuntimeException("Expected exactly one heap object of type " + klass + " but got " +
+                                       ((objs == null) ? "none" : ("" + objs.length)));
+        }
+        String s = objs[0];
+        System.out.println(s);
+        checkMatch(s, "final value 'value' .fields 0x00000000. 'I' @[0-9]+ +43690 .0x0000aaaa.");
+        checkMatch(s, "final value 'value' .fields 0x00000000. 'I' @[0-9]+ +48059 .0x0000bbbb.");
+        checkMatch(s, "final value 'value' .fields 0x00000000. 'I' @[0-9]+ +52428 .0x0000cccc.");
+    }
+
+    static void checkMatch(String s, String regexp) {
+        if (!s.matches("(?s).*" + regexp + ".*")) { // (?s) enables DOTALL mode
+            System.err.println("Found:\n" + s);
+            throw new RuntimeException("String does not match " + regexp);
+        }
+    }
+
 
     static class Tester extends CDSAppTester {
         String dumpMapFile;

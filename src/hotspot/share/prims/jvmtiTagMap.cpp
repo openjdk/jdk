@@ -1381,8 +1381,7 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
     }
     // check for possible nulls
     if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
-      address payload = cast_from_oop<address>(obj.obj()) + field_offset;
-      if (field->inline_klass()->is_payload_marked_as_null(payload)) {
+      if (field->inline_klass()->is_payload_marked_as_null(obj.obj(), field_offset)) {
         continue;
       }
     }
@@ -3116,8 +3115,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
       if (field->is_flat()) {
         // check for possible nulls
         if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
-          address payload = cast_from_oop<address>(o.obj()) + field_offset;
-          if (field->inline_klass()->is_payload_marked_as_null(payload)) {
+          if (field->inline_klass()->is_payload_marked_as_null(o.obj(), field_offset)) {
             continue;
           }
         }

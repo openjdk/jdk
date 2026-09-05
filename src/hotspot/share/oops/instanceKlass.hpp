@@ -79,26 +79,58 @@ class OopMapCache;
 class InterpreterOopMap;
 class PackageEntry;
 class ModuleEntry;
+class InlineKlass;
 
-// This is used in iterators below.
+// FieldClosure is used to iterate on the fields of an InstanceKlass.
+// - When _flat_field_klass is null, _flat_field_offset must be zero. This is used for
+//   - Iterating on the static fields of a class, or
+//   - Iterating on the non-static fields in a heap oop (excluding any fields declared
+//     inside flattened fields).
+// - When _flat_field_klass is non-null, _flat_field_offset must be non-zero. This is used for
+//   iterating on the fields of a value object of the type _flat_field_klass. The
+//   payload of the value object is located at _flat_field_offset from the heap address
+//   of the oop.
+//
+// For example, if we have a heap oop of the Line class:
+//
+//      value class Point {
+//          @NullRestricted Integer x;
+//          @NullRestricted Integer y;
+//      }
+//      value class Line {
+//          @NullRestricted Point p1;
+//          @NullRestricted Point p2;
+//      }
+//
+// Assuming that object header is 8 bytes:
+// When do_field() is called on | _flat_field_klass | _flat_field_offset:
+//   Line::p1                       null               0
+//   Line::p2                       null               0
+//   Line::p1::x                    Point              8  -> p1 is at offset 8 of the heap oop
+//   Line::p1::y                    Point              8
+//   Line::p2::x                    Point             16
+//   Line::p2::y                    Point             16
+//   Line::p1::x::value             Integer            8
+//   Line::p1::y::value             Integer           12
+//   Line::p2::x::value             Integer           16
+//   Line::p2::y::value             Integer           20  -> p2.y is at offset 20 of the heap oop
 class FieldClosure: public StackObj {
+  InlineKlass* _flat_field_klass;
+  int _flat_field_offset; // in bytes
 public:
-  virtual void do_field(fieldDescriptor* fd) = 0;
-};
+  FieldClosure(InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
+    : _flat_field_klass(flat_field_klass), _flat_field_offset(flat_field_offset) {
+    if (flat_field_klass == nullptr) {
+      precond(flat_field_offset == 0);
+    } else {
+      assert(flat_field_offset != 0, "flattened value object cannot be at offset 0");
+    }
+  }
 
-// Print fields.
-// If "obj" argument to constructor is null, prints fields as if they are static fields,
-// otherwise prints non-static fields. It is possible to print non-static fields the same
-// way as static fields when no oops are available, such as when debug printing classes.
-class FieldPrinter: public FieldClosure {
-   oop _obj;
-   outputStream* _st;
-   int _indent;
-   int _base_offset;
- public:
-   FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, int base_offset = 0) :
-                 _obj(obj), _st(st), _indent(indent), _base_offset(base_offset) {}
-   void do_field(fieldDescriptor* fd);
+  InlineKlass* flat_field_klass() const { return _flat_field_klass; }
+  int flat_field_offset() const { return _flat_field_offset; }
+
+  virtual void do_field(fieldDescriptor* fd) = 0;
 };
 
 // Describes where oops are located in instances of this klass.
@@ -1303,9 +1335,7 @@ public:
   void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
-
-  void oop_print_on      (oop obj, outputStream* st) override { oop_print_on(obj, st, 0, 0); }
-  void oop_print_on      (oop obj, outputStream* st, int indent = 0, int base_offset = 0);
+  void oop_print_on      (oop obj, outputStream* st) override;
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose = false);

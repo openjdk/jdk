@@ -276,22 +276,27 @@ class InlineKlass: public InstanceKlass {
     return has_nullable_non_atomic_layout() || has_nullable_atomic_layout();
   }
 
-  jbyte* null_marker_address(address payload) {
+  jbyte* null_marker_address(address payload) const {
     assert(supports_nullable_layouts(), " Must do");
     return (jbyte*)payload + null_marker_offset_in_payload();
   }
 
-  bool is_payload_marked_as_null(address payload) {
+  bool is_payload_marked_as_null(oop obj, int offset) const {
+    address payload = cast_from_oop<address>(obj) + offset;
+    return is_payload_marked_as_null(payload);
+  }
+
+  bool is_payload_marked_as_null(address payload) const {
     assert(supports_nullable_layouts(), " Must do");
     return *null_marker_address(payload) == 0;
   }
 
-  void mark_payload_as_non_null(address payload) {
+  void mark_payload_as_non_null(address payload) const {
     assert(supports_nullable_layouts(), " Must do");
     *null_marker_address(payload) = 1;
   }
 
-  void mark_payload_as_null(address payload) {
+  void mark_payload_as_null(address payload) const {
     assert(supports_nullable_layouts(), " Must do");
     *null_marker_address(payload) = 0;
   }

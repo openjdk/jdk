@@ -32,6 +32,9 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/constantTag.hpp"
 
+class InlineKlass;
+class InstanceKlass;
+
 // A fieldDescriptor describes the attributes of a single field (instance or class variable).
 // It needs the class constant pool to work (because it only holds indices into the pool
 // rather than the actual info).
@@ -112,14 +115,37 @@ class fieldDescriptor {
   inline void set_is_field_modification_watched(const bool value);
   inline void set_has_initialized_final_update(const bool value);
 
+  InlineKlass* flat_field_klass();
+  bool is_flat_field_marked_as_null(address obj, FieldClosure* fc);
+  bool is_flat_field_marked_as_null(oop obj, FieldClosure* fc) {
+    return is_flat_field_marked_as_null(cast_from_oop<address>(obj), fc);
+  }
+  int field_offset_in_obj(FieldClosure* fc) const;
+
   // Initialization
   void reinitialize(const InstanceKlass* ik, const FieldInfo& fieldinfo);
 
   // Print
   void print() const;
-  void print_on(outputStream* st, int base_offset = 0) const;
-  void print_on_for(outputStream* st, oop obj, int indent = 0, int base_offset = 0);
+  void print_on(outputStream* st, FieldClosure* fc = nullptr) const;
+  void print_on_for(outputStream* st, oop obj, int indent = 0, FieldClosure* fc = nullptr);
   void print_access_flags(outputStream* st) const;
+};
+
+// FieldPrinter
+//
+// Print fields of a class to the _st. If _obj is null, static fields of the class are printed;
+// otherwise non-static fields of the class are printed.
+//
+// The fields are printed by an iterator function (such as InstanceKlass::print_nonstatic_fields())
+// that calls this->do_field(fd) on every applicable field descriptor the class.
+class FieldPrinter: public FieldClosure {
+  oop _obj;
+  outputStream* _st;
+  int _indent;
+public:
+  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
+  void do_field(fieldDescriptor* fd);
 };
 
 #endif // SHARE_RUNTIME_FIELDDESCRIPTOR_HPP
