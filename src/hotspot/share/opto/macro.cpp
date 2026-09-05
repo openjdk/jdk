@@ -39,11 +39,14 @@
 #include "opto/convertnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/inlinetypenode.hpp"
+#include "opto/int128tnode.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/macro.hpp"
+#include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
+#include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
@@ -3164,6 +3167,49 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   }
 }
 
+void PhaseMacroExpand::expand_add_sub_i128t_node(Int128TBinaryNode* addsub) {
+  if (Matcher::match_rule_supported(addsub->Opcode())) {
+    addsub->remove_flag(Node::Flag_is_macro);
+    C->remove_macro_node(addsub);
+    return;
+  }
+
+  bool is_add = addsub->Opcode() == Op_AddI128T;
+  Node* new_lo;
+  if (is_add) {
+    new_lo = _igvn.transform(new AddLNode(addsub->lo1(), addsub->lo2()));
+  } else {
+    new_lo = _igvn.transform(new SubLNode(addsub->lo1(), addsub->lo2()));
+  }
+
+  if (Node* lo = addsub->result_lo_or_null(); lo != nullptr) {
+    _igvn.replace_node(lo, new_lo);
+  }
+
+  // uint64_t lo1, lo2, hi1, hi2
+  // uint64_t sum_lo = lo1 + lo2
+  // uint64_t sum_lo_overflow = sum_lo < lo2 ? 1 : 0
+  // uint64_t sum_hi = hi1 + hi2 + sum_lo_overflow = hi1 + hi2 + (sum_lo < lo2 ? 1 : 0)
+  // uint64_t dif_lo = lo1 - lo2
+  // uint64_t dif_lo_overflow = lo1 < lo2 ? 1 : 0
+  // uint64_t dif_hi = hi1 - hi2 - dif_lo_overflow = hi1 - hi2 - (lo1 < lo2 ? 1 : 0)
+  if (Node* hi = addsub->result_hi_or_null(); hi != nullptr) {
+    Node* overflow_cmp = _igvn.transform(new CmpULNode(is_add ? new_lo : addsub->lo1(), addsub->lo2()));
+    Node* overflow_bol = _igvn.transform(new BoolNode(overflow_cmp, BoolTest::lt));
+    Node* overflow_int = _igvn.transform(new CMoveLNode(overflow_bol, _igvn.longcon(0), _igvn.longcon(1), TypeLong::LONG));
+    Node* hi2 = _igvn.transform(new AddLNode(addsub->hi2(), overflow_int));
+    Node* new_hi;
+    if (is_add) {
+      new_hi = _igvn.transform(new AddLNode(addsub->hi1(), hi2));
+    } else {
+      new_hi = _igvn.transform(new SubLNode(addsub->hi1(), hi2));
+    }
+    _igvn.replace_node(hi, new_hi);
+  }
+
+  _igvn.remove_dead_node(addsub, PhaseIterGVN::NodeOrigin::Graph);
+}
+
 // Perform refining of strip mined loop nodes in the macro nodes list.
 void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
    for (int i = C->macro_count(); i > 0; i--) {
@@ -3279,7 +3325,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
-               n->Opcode() == Op_MinL,
+               n->Opcode() == Op_MinL      ||
+               n->Opcode() == Op_AddI128T  ||
+               n->Opcode() == Op_SubI128T,
                "unknown node type in macro list");
       }
       if (C->failing()) {
@@ -3470,6 +3518,10 @@ bool PhaseMacroExpand::expand_macro_nodes() {
         transform_later(call);
         break;
       }
+      case Op_AddI128T:
+      case Op_SubI128T:
+        expand_add_sub_i128t_node(static_cast<Int128TBinaryNode*>(n));
+        break;
       default:
         assert(false, "unknown node type in macro list");
       }
