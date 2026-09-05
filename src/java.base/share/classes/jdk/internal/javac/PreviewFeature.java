@@ -73,7 +73,6 @@ public @interface PreviewFeature {
         STRICT_FIELDS,
         @JEP(number=401, title="Value Classes and Objects", status = "Preview")
         VALUE_OBJECTS,
-        @JEP(number=533, title="Structured Concurrency", status="Seventh Preview")
         STRUCTURED_CONCURRENCY,
         @JEP(number = 531, title = "Lazy Constants", status = "Third Preview")
         LAZY_CONSTANTS,

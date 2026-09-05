@@ -30,7 +30,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * An API for <em>structured concurrency</em>. {@code StructuredTaskScope} supports cases
@@ -50,18 +49,11 @@ import jdk.internal.javac.PreviewFeature;
  * to execute a subtask as a {@linkplain Callable value-returning method}. The subtask
  * executes concurrently with the code inside the {@code try} block, and concurrently with
  * other subtasks forked in the scope. After forking all subtasks, the code inside the
- * block uses the {@link #join() join()} method to wait for all subtasks to finish (or
- * some other outcome) as a single operation. The code after the {@code join()} method
- * processes the outcome. Execution does not continue beyond the {@code try} block (or
- * {@code close} method) until all threads started in the scope to execute subtasks have
- * finished.
- *
- * <p> To ensure correct usage, the {@link #fork(Callable)}, {@link #join()} and {@link
- * #close()} methods may only be invoked by the <em>owner thread</em> (the thread that
- * opened the {@code StructuredTaskScope}), the {@code fork(Callable)} method may not be
- * called after {@code join()}, the {@code join()} method must be invoked to get the outcome
- * after forking subtasks, and the {@code close()} method throws an exception after closing
- * if the owner did not invoke the {@code join()} method after forking subtasks.
+ * block uses the {@link #join() join()} method to wait for all subtasks to finish
+ * (or for another outcome) as a single operation. The code after the {@code join()}
+ * method processes the outcome. Execution does not continue beyond the {@code try} block
+ * (or {@code close} method) until all threads started in the scope to execute subtasks
+ * have finished.
  *
  * <p> As a first example, consider a "main" task that splits into two subtasks to
  * concurrently fetch values from two remote services. The main task aggregates the results
@@ -70,14 +62,6 @@ import jdk.internal.javac.PreviewFeature;
  * the forked subtask. Both subtasks may complete successfully, one subtask may succeed
  * and the other may fail, or both subtasks may fail.
  *
- * <p> The main task in the example is interested in the successful result from both
- * subtasks. It waits in the {@link #join()} method for both subtasks to complete
- * successfully or for either subtask to fail. If both subtasks complete successfully then
- * the {@code join()} method completes normally and the task uses the {@link Subtask#get()
- * Subtask.get()} method to get the result of each subtask. If one of the subtasks fails
- * then the other subtask is cancelled, and the {@code join()} method throws {@link
- * ExecutionException} with the exception from the failed subtask as the {@linkplain
- * Throwable#getCause() cause}.
  * {@snippet lang=java :
  *    // @link substring="open()" target="#open()" :
  *    try (var scope = StructuredTaskScope.open()) {
@@ -97,19 +81,40 @@ import jdk.internal.javac.PreviewFeature;
  *    } // close
  * }
  *
+ * <p> The main task in the example is interested in the successful result from both
+ * subtasks. It waits in the {@link #join()} method for both subtasks to complete
+ * successfully or for either subtask to fail. If both subtasks complete successfully then
+ * the {@code join()} method completes normally and the task uses the {@link Subtask#get()
+ * Subtask.get()} method to get the result of each subtask. If one of the subtasks fails
+ * then the other subtask is cancelled, and the {@code join()} method throws {@link
+ * ExecutionException} with the exception from the failed subtask as the {@linkplain
+ * Throwable#getCause() cause}.
+ *
  * <p> The {@link #close() close()} method always waits for threads executing subtasks to
  * finish, even if the {@code join()} method throws, so that execution cannot continue
- * beyond the {@code close()} method until the interrupted threads finish.
+ * beyond the {@code close()} method until all subtasks have finished.
+ *
+ * <p> To ensure correct usage, the following restrictions are enforced:
+ * <ul>
+ * <li> The {@code fork} methods and the {@link #join()} and {@link #close()} methods may
+ * only be invoked by the <em>owner thread</em> (the thread that opened the {@code
+ * StructuredTaskScope}).
+ * <li> The {@code join()} method must be invoked to get the outcome after forking
+ * subtasks (the {@code close} method throws an exception after closing if the owner
+ * did not invoke the {@code join} method after forking subtasks).
+ * <li> Neither {@code fork} method may be called after {@code join()} is invoked.
+ * </ul>
  *
  * <p> To allow for cancellation, subtasks must be coded so that they finish as soon as
- * possible when interrupted. Subtasks that do not respond to interrupt, e.g. block on
- * methods that are not interruptible, may delay the {@link #close() close()} method
- * indefinitely.
+ * possible when {@link Thread##thread-interruption interrupted}. Subtasks that do not
+ * respond to interrupt, e.g. block on methods that are not interruptible, may delay the
+ * {@link #close() close()} method indefinitely.
  *
  * <p> In the example, the subtasks produce results of different types ({@code String} and
- * {@code Integer}). In other cases the subtasks may all produce results of the same type.
- * If the example had used {@code StructuredTaskScope.<String>open()} to open the scope
- * then it could only be used to fork subtasks that return a {@code String} result.
+ * {@code Integer}). In other cases where the subtasks produce results of the same type,
+ * the scope can be opened with that type as the subtask result type. For example,
+ * {@code StructuredTaskScope.<String>open()} opens a scope that can only be used to
+ * fork subtasks that produce a {@code String} result.
  *
  * <h2>Joiners</h2>
  *
@@ -124,17 +129,19 @@ import jdk.internal.javac.PreviewFeature;
  * is an exception, a {@code Joiner} may cause {@code join()} to throw an exception
  * other than {@code ExecutionException}.
  *
- * <p> A {@code Joiner} may <a id="Cancellation"><i>cancel</i></a> the scope (sometimes
- * called "short-circuiting") when some condition is reached, e.g. a subtask fails, that
- * does not require the outcome of other subtasks that are still executing. Cancelling the
- * scope prevents new threads from being started in the scope, cancels subtasks in the
- * scope that have not completed execution, and causes the {@code join()} method to wake up
- * with the outcome (result or exception). In the above example, the outcome is that {@code
- * join()} completes normally when all subtasks succeed. The scope is cancelled if any
- * subtask fails and {@code join()} throws {@code ExecutionException} with the exception
- * from the failed subtask as the {@linkplain Throwable#getCause() cause}. Other {@code
- * Joiner} implementations may cancel the scope for other reasons, and may cause {@code
- * join()} to throw a different exception when the outcome is an exception.
+ * <p> <b><a id="Cancellation"><i>Cancellation</i></a>:</b> A {@code Joiner} may cancel
+ * the scope (sometimes called "short-circuiting") when some condition is reached, for
+ * example, when a subtask fails, and the outcomes (results or exceptions) of other
+ * subtasks that are still executing are not required. Cancelling the scope prevents new
+ * subtasks from being forked in the scope, cancels subtasks in the scope that have not
+ * completed execution (this will {@linkplain Thread#interrupt() interrupt} the threads
+ * executing the subtasks) and causes the {@code join()} method to wake up with the outcome.
+ * In the above example, the outcome is that {@code join()} completes normally when all
+ * subtasks succeed. The scope is cancelled if any subtask fails and {@code join()} throws
+ * {@code ExecutionException} with the exception from the failed subtask as the {@linkplain
+ * Throwable#getCause() cause}. Other {@code Joiner} implementations may cancel the scope
+ * for other reasons, and may cause {@code join()} to throw a different exception when
+ * the outcome is an exception.
  *
  * <p> The {@link Joiner Joiner} interface defines static factory methods to create a
  * {@code Joiner} for a number of common cases. The interface can be implemented when a
@@ -189,10 +196,10 @@ import jdk.internal.javac.PreviewFeature;
  * <p> The {@link #open(UnaryOperator)} and {@link #open(Joiner, UnaryOperator)} methods
  * can be used to create a {@code StructuredTaskScope} that uses a different {@code
  * ThreadFactory}, is named for monitoring and management purposes, or has a timeout that
- * cancels the scope if the timeout expires before or while waiting for subtasks to
- * complete. The {@code open} methods are called with an {@linkplain UnaryOperator operator}
- * that is applied to the default configuration and returns a {@link Configuration
- * Configuration} for the {@code StructuredTaskScope} under construction.
+ * cancels the scope if the timeout expires before the {@code join()} method is invoked
+ * or completes. The {@code open} methods are called with an {@linkplain UnaryOperator
+ * operator} that is applied to the default configuration and returns a {@link
+ * Configuration Configuration} for the {@code StructuredTaskScope} under construction.
  *
  * <p> The following example opens a new {@code StructuredTaskScope} with a {@code
  * ThreadFactory} that creates virtual threads {@linkplain Thread#getName() named}
@@ -215,8 +222,8 @@ import jdk.internal.javac.PreviewFeature;
  *}
  *
  * <p> A second example sets a timeout, represented by a {@link Duration}. The timeout
- * starts when the new scope is opened. If the timeout expires before or while waiting in
- * the {@link #join()} method then the scope is {@linkplain ##Cancellation cancelled}
+ * starts when the new scope is opened. If the timeout expires before the {@code join()}
+ * method is invoked or completes then the scope is {@linkplain ##Cancellation cancelled}
  * (this interrupts the threads executing the subtasks that have not completed), and the
  * {@code join()} method throws {@link ExecutionException} with a {@link
  * CancelledByTimeoutException CancelledByTimeoutException} as the cause.
@@ -239,18 +246,19 @@ import jdk.internal.javac.PreviewFeature;
  *
  * <h2>Exception handling</h2>
  *
- * <p> The outcome of the {@link #join()} method is a result or exception. When the outcome
- * is an exception then its {@linkplain Throwable#getCause() cause} will typically be
- * the exception from a failed subtask or {@link CancelledByTimeoutException
+ * <p> The outcome of the {@link #join()} method is a result or exception. When the
+ * outcome is an exception, its {@linkplain Throwable#getCause() cause} will typically
+ * be the exception from a failed subtask or {@link CancelledByTimeoutException
  * CancelledByTimeoutException} if a timeout was configured.
  *
  * <p> In some cases it may be useful to add a {@code catch} block to the
  * {@code try}-with-resources statement to handle the exception. The following example
  * uses the {@link #open(UnaryOperator)} method to open a scope with a timeout configured.
  * The {@code join()} method in this example throws {@link ExecutionException} if any
- * subtask fails or the timeout expires. The exception cause is the exception from a failed
- * subtask or {@code CancelledByTimeoutException}. The example uses the {@code switch}
- * statement to select based on the cause.
+ * subtask fails or the timeout expires before the {@code join()} method is invoked or
+ * completes. The exception cause is the exception from a failed subtask or {@code
+ * CancelledByTimeoutException}. The example uses the {@code switch} statement to select
+ * based on the cause.
  * {@snippet lang=java :
  *    try (var scope = StructuredTaskScope.open(cf -> cf.withTimeout(timeout))) {
  *
@@ -273,9 +281,9 @@ import jdk.internal.javac.PreviewFeature;
  * may be more appropriate to handle this in the subtask itself rather than the subtask
  * failing and the scope owner handling the exception.
  *
- * <p> The {@link #join()} method throws {@link InterruptedException} when interrupted
- * before or while waiting in the {@code join()} method.
- * The {@link Thread##thread-interruption Thread Interruption} section of the {@code Thread}
+ * <p> The {@link #join()} method throws {@link InterruptedException} if the owner thread
+ * is interrupted before or while waiting in the {@code join()} method. The {@link
+ * Thread##thread-interruption Thread Interruption} section of the {@code Thread}
  * specification provides guidance on handling this exception.
  *
  * <h2>Inheritance of scoped value bindings</h2>
@@ -298,7 +306,7 @@ import jdk.internal.javac.PreviewFeature;
  * use structured concurrency.
  *
  * <p> To ensure correctness, opening a new {@code StructuredTaskScope} captures the
- * current thread's scoped value bindings. These are the scoped values bindings that are
+ * current thread's scoped value bindings. These are the scoped value bindings that are
  * inherited by the threads created to execute subtasks in the scope. Forking a
  * subtask checks that the bindings in effect at the time that the subtask is forked
  * match the bindings when the {@code StructuredTaskScope} was created. This check ensures
@@ -311,10 +319,10 @@ import jdk.internal.javac.PreviewFeature;
  * <p> The following example demonstrates the inheritance of scoped value bindings. The
  * scoped value USERNAME is bound to the value "duke" for the bounded period of a lambda
  * expression by the thread executing it. The code in the block opens a {@code
- * StructuredTaskScope} and forks two subtasks, it then waits in the {@code join()} method
+ * StructuredTaskScope} and forks two subtasks, then waits in the {@code join()} method
  * and aggregates the results from both subtasks. If code executed by the threads
- * running subtask1 and subtask2 uses {@link ScopedValue#get()}, to get the value of
- * USERNAME, then value "duke" will be returned.
+ * running subtask1 and subtask2 uses {@link ScopedValue#get()} to get the value of
+ * USERNAME, then the value "duke" will be returned.
  * {@snippet lang=java :
  *     // @link substring="newInstance" target="ScopedValue#newInstance()" :
  *     private static final ScopedValue<String> USERNAME = ScopedValue.newInstance();
@@ -368,9 +376,8 @@ import jdk.internal.javac.PreviewFeature;
  * @param <R> the type of the result returned by the {@link #join() join()} method
  * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
  * @jls 17.4.5 Happens-before Order
- * @since 21
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
 public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
         extends AutoCloseable
         permits StructuredTaskScopeImpl {
@@ -385,22 +392,20 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * that failed.
      *
      * @param <T> the result type
-     * @since 21
+     * @since 28
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     sealed interface Subtask<T> extends Supplier<T> permits StructuredTaskScopeImpl.SubtaskImpl {
         /**
          * Represents the state of a {@link Subtask Subtask}.
          * @see Subtask#state()
-         * @since 21
+         * @since 28
          */
-        @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
         enum State {
             /**
-             * The subtask result or exception is not available. This state indicates that
-             * the subtask was forked but has not completed, the subtask was forked after
+             * The subtask result or exception is not available. This state does not
+             * distinguish whether the subtask is still executing, was not started because
              * the scope was {@linkplain StructuredTaskScope##Cancellation cancelled}, or
-             * the subtask completed after the scope was cancelled.
+             * completed after the scope was cancelled.
              */
             UNAVAILABLE,
             /**
@@ -432,17 +437,15 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * forked with {@link #fork(Callable) fork(Callable)} then the result from the
          * {@link Callable#call() call()} method is returned. If the subtask was forked
          * with {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
-         *
-         * <p> Code executing in the scope owner thread can use this method to get the
-         * result of a successful subtask after it has {@linkplain #join() joined}.
-         *
-         * <p> Code executing in the {@code Joiner} {@link Joiner#onComplete(Subtask)
-         * onComplete(Subtask)} method should test that the {@linkplain #state() state} is
-         * {@link State#SUCCESS SUCCESS} before using this method to get the result.
+         * This method does not wait for a result.
          *
          * <p> This method may be invoked by any thread after the scope owner has joined.
-         * The only case where this method can be used to get the result before the scope
-         * owner has joined is when called from the {@code onComplete(Subtask)} method.
+         * The only case where this method may be used to get the result before the scope
+         * owner has joined is when called from a {@link Joiner Joiner}'s {@link
+         * Joiner#onComplete(Subtask) onComplete(Subtask)} method. The {@code
+         * onComplete(Subtask)} method should test that the {@linkplain #state() state}
+         * is {@link State#SUCCESS SUCCESS} before invoking the {@code get()} method to
+         * get the result.
          *
          * @return the possibly-null result
          * @throws IllegalStateException if the subtask has not completed or did not
@@ -460,17 +463,15 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * the {@link Callable#call() call()} method is returned. If the subtask was
          * forked with {@link #fork(Runnable) fork(Runnable)} then the exception or error
          * thrown by the {@link Runnable#run() run()} method is returned.
-         *
-         * <p> Code executing in the scope owner thread can use this method to get the
-         * exception thrown by a failed subtask after it has {@linkplain #join() joined}.
-         *
-         * <p> Code executing in a {@code Joiner} {@link Joiner#onComplete(Subtask)
-         * onComplete(Subtask)} method should test that the {@linkplain #state() state} is
-         * {@link State#FAILED FAILED} before using this method to get the exception.
+         * This method does not wait for an exception.
          *
          * <p> This method may be invoked by any thread after the scope owner has joined.
-         * The only case where this method can be used to get the exception before the scope
-         * owner has joined is when called from the {@code onComplete(Subtask)} method.
+         * The only case where this method may be used to get the exception before the
+         * scope owner has joined is when called from a {@link Joiner Joiner}'s {@link
+         * Joiner#onComplete(Subtask) onComplete(Subtask)} method. The {@code
+         * onComplete(Subtask)} method should test that the {@linkplain #state() state}
+         * is {@link State#FAILED FAILED} before invoking the {@code exception()} method to
+         * get the exception.
          *
          * @throws IllegalStateException if the subtask has not completed or completed
          * with a result, or this method is invoked outside the context of the {@code
@@ -505,7 +506,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      *   exception returned by an <i>exception supplying function</i>, if any subtask fails.
      *   <li> {@link #anySuccessfulOrThrow()} and {@link #anySuccessfulOrThrow(Function)}
      *   create a {@code Joiner} that produces the result of any successful subtask for
-     *   {@code join()} to return. The {@code Joiner} causes {@code join()} to throw
+     *   {@code join()} to return. The {@code Joiner} cancels the scope when any subtask
+     *   completes successfully. The {@code Joiner} causes {@code join()} to throw
      *   {@code ExecutionException}, or an exception returned by an exception supplying
      *   function, if all subtasks fail.
      *   <li> {@link #awaitAllSuccessfulOrThrow()} and {@link #awaitAllSuccessfulOrThrow(Function)}
@@ -548,27 +550,26 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * Configuration#withTimeout(Duration) timeouts}. In many cases, a timeout will cause
      * the {@code join()} method to throw an exception with {@link
      * CancelledByTimeoutException CancelledByTimeoutException} as the cause. Some
-     * {@code Joiner} implementation may be capable of returning a result for the
+     * {@code Joiner} implementations may be capable of returning a result for the
      * timeout case.
      *
-     * <p> Designing a {@code Joiner} should take into account the code at the use-site
+     * <p> Designing a {@code Joiner} should take into account the code at the use site
      * where the results from the {@link StructuredTaskScope#join() join()} method are
-     * processed. It should be clear what the {@code Joiner} does vs. the application
-     * code at the use-site. In general, the {@code Joiner} implementation is not the
-     * place for "business logic". A {@code Joiner} should be designed to be as general
-     * purpose as possible.
+     * processed. It should be clear what the {@code Joiner} does as opposed to the
+     * application code at the use site. In general, the {@code Joiner} implementation is
+     * not the place for "business logic". A {@code Joiner} should be designed to be as
+     * general purpose as possible.
      *
      * @apiNote It is very important that a new {@code Joiner} object is created for each
      * {@code StructuredTaskScope}. {@code Joiner} objects should never be shared with
-     * different scopes or re-used after a scope is closed.
+     * different scopes or reused after a scope is closed.
      *
      * @param <T> the result type of subtasks {@linkplain #fork(Callable) forked} in the scope
      * @param <R> the type of the result returned by the {@link #join() join()} method
      * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-     * @since 25
+     * @since 28
      * @see #open(Joiner)
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     interface Joiner<T, R, R_X extends Throwable> {
         /**
          * Invoked by {@link #fork(Callable) fork(Callable)} and {@link #fork(Runnable)
@@ -577,8 +578,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * @implSpec The default implementation throws {@code NullPointerException} if the
          * subtask is {@code null}. It throws {@code IllegalArgumentException} if the
-         * subtask is not in the {@link Subtask.State#UNAVAILABLE UNAVAILABLE} state, it
-         * otherwise returns {@code false}.
+         * subtask is not in the {@link Subtask.State#UNAVAILABLE UNAVAILABLE} state,
+         * and otherwise returns {@code false}.
          *
          * @apiNote This method is invoked by the {@code fork} methods. It should not be
          * invoked directly.
@@ -602,7 +603,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @implSpec The default implementation throws {@code NullPointerException} if the
          * subtask is {@code null}. It throws {@code IllegalArgumentException} if the
          * subtask is not in the {@link Subtask.State#SUCCESS SUCCESS} or {@link
-         * Subtask.State#FAILED FAILED} state, it otherwise returns {@code false}.
+         * Subtask.State#FAILED FAILED} state, and otherwise returns {@code false}.
          *
          * @apiNote This method is invoked by subtasks when they complete. It should not
          * be invoked directly.
@@ -618,13 +619,15 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
         }
 
         /**
-         * Invoked by the {@link #join() join()} method to produce the outcome (result or
-         * exception) after waiting for all subtasks to complete or the scope is {@linkplain
+         * Invoked by the {@link #join() join()} method to produce the outcome (result
+         * or exception) after all subtasks complete or the scope is {@linkplain
          * StructuredTaskScope##Cancellation cancelled}. This method is not invoked if the
-         * scope was opened with a timeout and the timeout expires before or while waiting.
+         * scope was opened with a timeout and the timeout expires before the {@code join()}
+         * method is invoked or completes.
          *
-         * <p> This method will be called at most once, by the {@code join()} method, to
-         * produce the outcome. The behavior of this method when invoked directly is undefined.
+         * <p> This method will be called at most once by the {@code join()} method to
+         * produce the outcome. The behavior of this method when invoked directly is
+         * undefined.
          *
          * @apiNote This method is invoked by the {@code join()} method. It should not be
          * invoked directly.
@@ -636,15 +639,16 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
 
         /**
          * Invoked by the {@link #join() join()} method to produce the outcome (result or
-         * exception) when the scope was opened with a timeout and the timeout expires before
-         * or while waiting in the {@code join()} method.
+         * exception) when the scope was opened with a timeout and the timeout expires
+         * before the {@code join()} method is invoked or completes.
          *
          * <p> If the outcome is an exception, this method throws the exception with a
          * {@link CancelledByTimeoutException CancelledByTimeoutException} as the
          * {@link Throwable#getCause() cause}.
          *
-         * <p> This method will be called at most once, by the {@code join()} method, to
-         * produce the outcome. The behavior of this method when invoked directly is undefined.
+         * <p> This method will be called at most once by the {@code join()} method to
+         * produce the outcome. The behavior of this method when invoked directly is
+         * undefined.
          *
          * @apiNote This method is invoked by the {@code join()} method. It should not be
          * invoked directly.
@@ -652,7 +656,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @return the result
          * @throws R_X with a cause of {@code CancelledByTimeoutException}, if the outcome
          * is an exception
-         * @since 27
          */
         R timeout() throws R_X;
 
@@ -676,19 +679,20 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for all subtasks to complete successfully, then the {@code Joiner}
-         * causes the {@code join()} method to throw the exception returned by the
-         * exception supplying function when applied to a {@link CancelledByTimeoutException
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
+         * causes the {@code join()} method to throw the exception returned by the exception
+         * supplying function when applied to a {@link CancelledByTimeoutException
          * CancelledByTimeoutException}.
          *
-         * @apiNote Joiners returned by this method are suited to cases where all subtasks
-         * return a result of the same type. It removes the need for <i>bookkeeping</i>
-         * and the need to keep a reference to the {@link Subtask Subtask} objects returned
-         * by the {@link #fork(Callable) fork(Callable)} method. Joiners returned by {@link
-         * #awaitAllSuccessfulOrThrow(Function)} and {@link #awaitAllSuccessfulOrThrow()}
-         * are suited to cases where the subtasks return results of different types and
-         * where it is necessary to keep a reference to the {@code Subtask} objects.
+         * @apiNote A Joiner returned by this method is suited to cases where all subtasks
+         * return a result of the same type. The Joiner removes the need for
+         * <i>bookkeeping</i> and the need to keep a reference to the {@link Subtask Subtask}
+         * objects returned by the {@link #fork(Callable) fork(Callable)} method. Joiners
+         * returned by {@link #awaitAllSuccessfulOrThrow(Function)} and
+         * {@link #awaitAllSuccessfulOrThrow()} are suited to cases where the subtasks
+         * return results of different types and where it is necessary to keep a reference
+         * to the {@code Subtask} objects.
          *
          * <p> The following example is a method that opens a {@code StructuredTaskScope}
          * with a Joiner created with {@code allSuccessfulOrThrow(Function)}. The method
@@ -712,7 +716,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @param esf the exception supplying function
          * @param <T> the result type of subtasks
          * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-         * @since 27
          * @see #allSuccessfulOrThrow()
          */
         static <T, R_X extends Throwable> Joiner<T, List<T>, R_X>
@@ -737,13 +740,13 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for all subtasks to complete successfully, then the {@code Joiner}
-         * causes the {@code join()} method to throw {@code ExecutionException} with
-         * a {@link CancelledByTimeoutException CancelledByTimeoutException} as the cause.
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
+         * causes the {@code join()} method to throw {@code ExecutionException} with a
+         * {@link CancelledByTimeoutException CancelledByTimeoutException} as the cause.
          *
-         * @implSpec A Joiner returned by this method is equivalent to invoking {@link
-         * #allSuccessfulOrThrow(Function) allSuccessfulOrThrow(ExecutionException::new)}.
+         * <p> This method is equivalent to invoking {@link #allSuccessfulOrThrow(Function)
+         * allSuccessfulOrThrow(ExecutionException::new)}.
          *
          * @param <T> the result type of subtasks
          */
@@ -773,10 +776,10 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for a subtask to complete successfully, then the {@code Joiner}
-         * causes the {@code join()} method to throw the exception returned by the
-         * exception supplying function when applied to a {@link CancelledByTimeoutException
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
+         * causes the {@code join()} method to throw the exception returned by the exception
+         * supplying function when applied to a {@link CancelledByTimeoutException
          * CancelledByTimeoutException}.
          *
          * @apiNote The following example is a method that opens a {@code StructuredTaskScope}
@@ -800,7 +803,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @param esf the exception supplying function
          * @param <T> the result type of subtasks
          * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-         * @since 27
          * @see #anySuccessfulOrThrow()
          */
         static <T, R_X extends Throwable> Joiner<T, T, R_X> anySuccessfulOrThrow(Function<Throwable, R_X> esf) {
@@ -825,16 +827,15 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for a subtask to complete successfully, then the {@code Joiner}
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
          * causes the {@code join()} method to throw {@code ExecutionException} with a
          * {@link CancelledByTimeoutException CancelledByTimeoutException} as the cause.
          *
-         * @implSpec A Joiner returned by this method is equivalent to invoking {@link
-         * #anySuccessfulOrThrow(Function) anySuccessfulOrThrow(ExecutionException::new)}.
+         * <p> This method is equivalent to invoking {@link #anySuccessfulOrThrow(Function)
+         * anySuccessfulOrThrow(ExecutionException::new)}.
          *
          * @param <T> the result type of subtasks
-         * @since 26
          */
         static <T> Joiner<T, T, ExecutionException> anySuccessfulOrThrow() {
             return anySuccessfulOrThrow(ExecutionException::new);
@@ -858,10 +859,10 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for all subtasks to complete successfully, then the {@code Joiner}
-         * causes the {@code join()} method to throw the exception returned by the
-         * exception supplying function when applied to a {@link CancelledByTimeoutException
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
+         * causes the {@code join()} method to throw the exception returned by the exception
+         * supplying function when applied to a {@link CancelledByTimeoutException
          * CancelledByTimeoutException}.
          *
          * @apiNote Joiners returned by this method are suited to cases where subtasks
@@ -894,7 +895,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * @param esf the exception supplying function
          * @param <T> the result type of subtasks
          * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-         * @since 27
          */
         static <T, R_X extends Throwable> Joiner<T, Void, R_X>
         awaitAllSuccessfulOrThrow(Function<Throwable, R_X> esf) {
@@ -916,13 +916,13 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          *
          * <p> <b>Timeout Handling:</b> The {@code Joiner} cannot produce a result when
          * the scope is cancelled by a timeout. If the scope was opened with a {@linkplain
-         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before or
-         * while waiting for all subtasks to complete successfully, then the {@code Joiner}
+         * Configuration#withTimeout(Duration) timeout}, and the timeout expires before
+         * the {@code join()} method is invoked or completes, then the {@code Joiner}
          * causes the {@code join()} method to throw {@code ExecutionException} with a
          * {@link CancelledByTimeoutException CancelledByTimeoutException} as the cause.
          *
-         * @implSpec A Joiner returned by this method is equivalent to invoking {@link
-         * #awaitAllSuccessfulOrThrow(Function) awaitAllSuccessfulOrThrow(ExecutionException::new)}.
+         * <p> This method is equivalent to invoking {@link #awaitAllSuccessfulOrThrow(Function)
+         * awaitAllSuccessfulOrThrow(ExecutionException::new)}.
          *
          * @param <T> the result type of subtasks
          * @see #open()
@@ -934,8 +934,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
 
         /**
          * {@return a new Joiner that produces a list of all subtasks when all subtasks
-         * complete or {@linkplain Predicate#test(Object) evaluating} a predicate on a
-         * completed subtask causes the scope to be {@linkplain
+         * complete, or when {@linkplain Predicate#test(Object) evaluation} of a predicate
+         * on a completed subtask causes the scope to be {@linkplain
          * StructuredTaskScope##Cancellation cancelled}}
          * The {@code Joiner} does not cause the {@link #join() join()} method to throw
          * if subtasks fail or a configured {@linkplain Configuration#withTimeout(Duration)
@@ -950,14 +950,14 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * or subtasks in the {@link Subtask.State#UNAVAILABLE UNAVAILABLE} state if
          * they were forked or completed after the scope was cancelled. The scope is
          * cancelled if the given predicate {@linkplain Predicate#test(Object) evaluates}
-         * to {@code true}, or a configured timeout expires before or while waiting in the
-         * {@code join()} method.
+         * to {@code true}, or a configured timeout expires before the {@code join()}
+         * method is invoked or completes.
          *
          * <p> The given {@code Predicate}'s {@link Predicate#test(Object) test(Object)}
          * method is invoked on a completed subtask by the thread that executed the subtask.
          * The method is invoked after the subtask completes (successfully or with an
          * exception) before the thread terminates. The scope is cancelled if the {@code
-         * test} method returns {@code true}. The {@code test} method must be thread safe.
+         * test} method returns {@code true}. The {@code test} method must be thread-safe.
          * It may be invoked concurrently from several threads as multiple subtasks can
          * complete at the same time. If the method throws an exception or error, the thread
          * invokes the {@linkplain Thread.UncaughtExceptionHandler uncaught exception handler}
@@ -1004,10 +1004,10 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * }
          *
          * <p> The following example is a method that uses {@code allUntil} to create a
-         * Joiner that does not cancel the scope. The method waits for all subtasks to
-         * complete or a timeout to expire. It returns a list of all subtasks, in the
+         * Joiner that does not itself cancel the scope. The method waits for all subtasks
+         * to complete or a timeout to expire. It returns a list of all subtasks, in the
          * same order as the collection of callables, even if the timeout expires before
-         * or while waiting in {@code join()}.
+         * the {@code join()} method is invoked or completes.
          * {@snippet lang=java :
          *    <T> List<Subtask<T>> invokeAll(Collection<Callable<T>> tasks, Duration timeout) throws InterruptedException {
          *        // @link substring="withTimeout" target="Configuration#withTimeout(Duration)" :
@@ -1045,9 +1045,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
      *
-     * @since 25
+     * @since 28
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     sealed interface Configuration permits StructuredTaskScopeImpl.ConfigImpl {
         /**
          * {@return a new {@code Configuration} object with the given thread factory}
@@ -1092,10 +1091,9 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * throws because the scope was {@linkplain StructuredTaskScope##Cancellation cancelled}
      * by a timeout.
      *
-     * @since 27
+     * @since 28
      * @see Configuration#withTimeout(Duration)
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.STRUCTURED_CONCURRENCY)
     final class CancelledByTimeoutException extends RuntimeException {
         @java.io.Serial
         static final long serialVersionUID = 705788143955048766L;
@@ -1121,23 +1119,23 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * method with the default configuration to produce the configuration for the new
      * scope:
      * <ul>
-     * <li> If the {@code apply} method returns a {@code Configuration} with a {@link
-     * ThreadFactory}, set using {@link Configuration#withThreadFactory(ThreadFactory)
-     * withThreadFactory(ThreadFactory)}, its {@link ThreadFactory#newThread(Runnable)
-     * newThread(Runnable)} method will be invoked to create threads when {@linkplain
-     * #fork(Callable) forking} subtasks in the scope. If a {@code ThreadFactory} is not set
-     * then forking subtasks will create an unnamed virtual thread for each subtask. </li>
-     * <li> If the {@code apply} method returns a {@code Configuration} with a timeout, set
-     * using {@link Configuration#withTimeout(Duration) withTimeout(Duration)}, the timeout
-     * will start when the scope is opened. If the timeout expires before or while waiting in
-     * {@link #join()} then the scope will be {@linkplain ##Cancellation cancelled}. It is
-     * {@link Joiner Joiner} specific as to whether the {@code join()} method returns a
-     * result or throws an exception when a timeout occurs. If the outcome is an exception
+     * <li> If the {@code apply} method returns a configuration with a {@linkplain
+     * Configuration#withThreadFactory(ThreadFactory) ThreadFactory}, the {@code
+     * ThreadFactory}'s {@link ThreadFactory#newThread(Runnable) newThread(Runnable)}
+     * method is invoked to create threads when {@linkplain #fork(Callable) forking}
+     * subtasks in the scope. If a {@code ThreadFactory} is not set then forking subtasks
+     * will create an unnamed virtual thread for each subtask. </li>
+     * <li> If the {@code apply} method returns a configuration with a {@linkplain
+     * Configuration#withTimeout(Duration) timeout}, the timeout starts when the scope is
+     * opened. If the timeout expires before {@link #join()} is invoked or while waiting
+     * in the {@code join()} method, then the scope is {@linkplain ##Cancellation cancelled}
+     * asynchronously. Whether the {@code join()} method returns a result or throws an
+     * exception when a timeout occurs is Joiner-specific. If the outcome is an exception
      * then it will be thrown with a {@link CancelledByTimeoutException
      * CancelledByTimeoutException} as the {@linkplain Throwable#getCause() cause}. </li>
-     * <li> If the {@code apply} method returns a {@code Configuration} with a name, set
-     * using {@linkplain Configuration#withName(String) withName(String)}, the name will
-     * be used for monitoring and management purposes. </li>
+     * <li> If the {@code apply} method returns a configuration with a {@linkplain
+     * Configuration#withName(String) name}, the new scope is created with this name for
+     * monitoring and management purposes. </li>
      * <li> If the {@code apply} method throws an exception or error then it is propagated
      * by this method. </li>
      * <li> If the {@code apply} method returns {@code null} then {@code NullPointerException}
@@ -1157,7 +1155,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * @param <T> the result type of subtasks {@linkplain #fork(Callable) forked} in the scope
      * @param <R> the type of the result returned by the {@link #join() join()} method
      * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-     * @since 26
      */
     static <T, R, R_X extends Throwable> StructuredTaskScope<T, R, R_X>
     open(Joiner<? super T, ? extends R, R_X> joiner, UnaryOperator<Configuration> configOperator) {
@@ -1175,6 +1172,10 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * unnamed {@linkplain Thread##virtual-threads virtual threads}, does not name the
      * scope, and has no timeout.
      *
+     * <p> This method is equivalent to invoking the {@linkplain #open(Joiner, UnaryOperator)
+     * 2-arg open} method with the given Joiner and the {@linkplain UnaryOperator#identity()
+     * identity operator}.
+     *
      * <p> The new scope is owned by the current thread. Only code executing in this
      * thread can {@linkplain #fork(Callable) fork}, {@linkplain #join() join}, or
      * {@linkplain #close close} the scope.
@@ -1182,16 +1183,11 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
      * value} bindings for inheritance by threads forked in the scope.
      *
-     * @implSpec This factory method is equivalent to invoking the
-     * {@linkplain #open(Joiner, UnaryOperator) 2-arg open} method with the given Joiner
-     * and the {@linkplain UnaryOperator#identity() identity operator}.
-     *
      * @param joiner the Joiner
      * @return a new scope
      * @param <T> the result type of subtasks {@linkplain #fork(Callable) forked} in the scope
      * @param <R> the type of the result returned by the {@link #join() join()} method
      * @param <R_X> the type of the exception thrown by the {@link #join() join()} method
-     * @since 25
      */
     static <T, R, R_X extends Throwable> StructuredTaskScope<T, R, R_X>
     open(Joiner<? super T, ? extends R, R_X> joiner) {
@@ -1207,13 +1203,17 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * method.
      *
      * <p> The {@link #join()} method of the new scope waits for all subtasks to succeed
-     * or any subtask to fail. The {@code join() method} returns {@code null} if all
+     * or any subtask to fail. The {@code join()} method returns {@code null} if all
      * subtasks complete successfully. It throws {@link ExecutionException} if any subtask
      * fails, with the exception from the first subtask to fail as the {@linkplain
      * Throwable#getCause() cause}. If a {@linkplain Configuration#withTimeout(Duration)
-     * timeout} is configured, and the timeout expires before or while waiting in the
-     * {@code join()} method, it throws {@code ExecutionException} with a {@link
+     * timeout} is configured, and the timeout expires before the {@link #join()} method
+     * is invoked or completes, it throws {@code ExecutionException} with a {@link
      * CancelledByTimeoutException CancelledByTimeoutException} as the cause.
+     *
+     * <p> This method is equivalent to invoking the {@linkplain #open(Joiner, UnaryOperator)
+     * 2-arg open} method with a Joiner created with {@link Joiner#awaitAllSuccessfulOrThrow()
+     * Joiner.awaitAllSuccessfulOrThrow()} and the given configuration operator.
      *
      * <p> The new scope is owned by the current thread. Only code executing in this
      * thread can {@linkplain #fork(Callable) fork}, {@linkplain #join() join}, or
@@ -1222,15 +1222,9 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
      * value} bindings for inheritance by threads forked in the scope.
      *
-     * @implSpec This factory method is equivalent to invoking the {@linkplain
-     * #open(Joiner, UnaryOperator) 2-arg open} method with a Joiner created with {@link
-     * Joiner#awaitAllSuccessfulOrThrow() awaitAllSuccessfulOrThrow()} and the given
-     * configuration operator.
-     *
      * @param configOperator the operator to produce the configuration
      * @return a new scope
      * @param <T> the result type of subtasks forked in the scope
-     * @since 27
      */
     static <T> StructuredTaskScope<T, Void, ExecutionException>
     open(UnaryOperator<Configuration> configOperator) {
@@ -1249,6 +1243,11 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * unnamed {@linkplain Thread##virtual-threads virtual threads}, does not name the
      * scope, and has no timeout.
      *
+     * <p> This method is equivalent to invoking the {@linkplain #open(Joiner, UnaryOperator)
+     * 2-arg open} method with a Joiner created with {@link Joiner#awaitAllSuccessfulOrThrow()
+     * Joiner.awaitAllSuccessfulOrThrow()} and the {@linkplain UnaryOperator#identity()
+     * identity operator}.
+     *
      * <p> The new scope is owned by the current thread. Only code executing in this
      * thread can {@linkplain #fork(Callable) fork}, {@linkplain #join() join}, or
      * {@linkplain #close close} the scope.
@@ -1256,14 +1255,8 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> Construction captures the current thread's {@linkplain ScopedValue scoped
      * value} bindings for inheritance by threads forked in the scope.
      *
-     * @implSpec This factory method is equivalent to invoking the
-     * {@linkplain #open(Joiner, UnaryOperator) 2-arg open} method with a Joiner created
-     * with {@link Joiner#awaitAllSuccessfulOrThrow() awaitAllSuccessfulOrThrow()} and
-     * the {@linkplain UnaryOperator#identity() identity operator}.
-     *
      * @param <T> the result type of subtasks
      * @return a new scope
-     * @since 25
      */
     static <T> StructuredTaskScope<T, Void, ExecutionException> open() {
         return open(Joiner.awaitAllSuccessfulOrThrow(), UnaryOperator.identity());
@@ -1272,7 +1265,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
     /**
      * Forks a subtask by starting a new thread in this scope to execute a value-returning
      * method. The new thread executes the subtask concurrently with the current thread.
-     * The parameter to this method is a {@link Callable}, the new thread executes its
+     * The parameter to this method is a {@link Callable}; the new thread executes its
      * {@link Callable#call() call()} method. The thread inherits the current thread's
      * {@linkplain ScopedValue scoped value bindings} that must match the bindings
      * captured when the scope was opened.
@@ -1289,43 +1282,41 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> This method returns a {@link Subtask Subtask} object as a handle to the
      * <em>forked subtask</em>. If the scope is {@linkplain ##Cancellation cancelled}, the
      * {@code Subtask} is returned in the {@link Subtask.State#UNAVAILABLE UNAVAILABLE}
-     * state without creating a thread. In some usages, {@code Subtask} object will be used
-     * by the "main" task (the scope owner) to get the subtask's outcome (result or
-     * exception) after it has invoked {@link #join() join()} to wait for all subtasks to
-     * complete. In other usages, the scope is created with a {@link Joiner Joiner} that
+     * state without creating a thread. In some usages, the {@code Subtask} object will be
+     * used by the "main" task (the scope owner) to get the subtask's outcome (result or
+     * exception) after it has invoked {@link #join() join()}.
+     * In other usages, the scope is created with a {@link Joiner Joiner} that
      * produces the outcome for the main task to process after joining. A {@code Joiner}
      * that produces a result reduces the need for <i>bookkeeping</i> and the need for the
      * main task to retain references to {@code Subtask} objects for correlation purposes.
      *
-     * <p> To ensure correct usage, the {@link Subtask#get() Subtask.get()} method may
-     * only be called by the scope owner to get the result of a successful subtask after
-     * it has waited for subtasks to complete with the {@link #join() join()} method.
-     * Similarly, the {@link Subtask#exception() Subtask.exception()} method may only be
-     * called by the scope owner to get the exception (or error) of a failed subtask after
-     * it has joined.
+     * <p> After the scope owner has {@linkplain #join() joined} to obtain the
+     * scope's outcome, {@link Subtask#get() Subtask.get()} and {@link Subtask#exception()
+     * Subtask.exception()} can be used to get the subtask's result or exception.
      *
      * <p> This method may only be invoked by the scope owner.
      *
      * <p> <b>Joiner Implementers:</b>
      *
-     * <p> If the scope was opened with a {@link Joiner Joiner}, its {@link
+     * <p> If the scope was opened with a {@link Joiner Joiner}, the Joiner's {@link
      * Joiner#onFork(Subtask) onFork(Subtask)} method is invoked with the newly created
-     * {@code Subtask} object before the thread is created. It is invoked with the subtask
-     * in the {@code UNAVAILABLE} state. If the method throws an exception or error then
-     * it is propagated by the {@code fork(Callable)} method without creating a thread to
-     * execute the subtask. If the scope is not already cancelled, and the {@code onFork}
-     * method return {@code false}, then a thread is created and {@linkplain Thread#start()
-     * scheduled} to start execution of the subtask. If the scope is cancelled, or the
-     * {@code onFork} method returns {@code true} to cancel the scope, {@code fork(Callable)}
-     * returns the subtask in the {@code UNAVAILABLE} state.
+     * {@code Subtask} object in the {@code UNAVAILABLE} state and before a thread is
+     * created to execute it. If the {@code onFork(Subtask)} method returns {@code true}
+     * then the scope is cancelled if not already cancelled. This causes the {@code
+     * fork(Callable)} method to return the {@code Subtask} in the {@code UNAVAILABLE} state
+     * without creating a thread. If the {@code onFork(Subtask)} method returns {@code
+     * false}, and the scope is not cancelled, then the {@code fork(Callable)} method
+     * continues on to create a thread to execute the subtask. If the {@code
+     * onFork(Subtask)} method completes with an exception or error, then it is propagated
+     * by the {@code fork(Callable)} method without creating a thread to execute the subtask.
      *
      * <p> If the subtask executes and completes (successfully or with an exception) before
      * the scope is cancelled, then the thread invokes the Joiner's {@link
      * Joiner#onComplete(Subtask) onComplete(Subtask)} method with the subtask in the
      * {@link Subtask.State#SUCCESS SUCCESS} or {@link Subtask.State#FAILED FAILED} state.
-     * If the {@code onComplete(Subtask}) method returns {@code true} then the scope is
-     * cancelled, if not already cancelled. If the {@code onComplete(Subtask)} method
-     * completes with an exception or error, then the thread executes the {@linkplain
+     * If the {@code onComplete(Subtask)} method returns {@code true}, then the scope is
+     * cancelled, if not already cancelled. If the Joiner's {@code onComplete(Subtask)}
+     * method completes with an exception or error, then the thread executes the {@linkplain
      * Thread.UncaughtExceptionHandler uncaught exception handler} before the thread
      * terminates.
      *
@@ -1348,7 +1339,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * does not return a result.
      *
      * <p> This method works exactly the same as {@link #fork(Callable)} except that the
-     * parameter to this method is a {@link Runnable}, the new thread executes its
+     * parameter to this method is a {@link Runnable}; the new thread executes its
      * {@link Runnable#run() run()} method, and {@link Subtask#get() Subtask.get()} returns
      * {@code null} if the subtask completes successfully.
      *
@@ -1362,27 +1353,26 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * the same as when the scope was created
      * @throws RejectedExecutionException if the thread factory rejected creating a
      * thread to execute the subtask
-     * @since 25
      */
     <U extends T> Subtask<U> fork(Runnable task);
 
     /**
-     * Returns a result, or throws, after waiting for all subtasks to complete or the
-     * scope to be {@linkplain ##Cancellation cancelled}.
+     * Returns a result or throws an exception after waiting for all subtasks to complete
+     * or the scope to be {@linkplain ##Cancellation cancelled}.
      *
      * <p> If the scope was opened with the {@link #open()} or {@link #open(UnaryOperator)}
-     * method, then {@code join()} waits for all subtasks to succeed or any subtask to fail.
+     * method then {@code join()} waits for all subtasks to succeed or any subtask to fail.
      * It returns {@code null} if all subtasks complete successfully. It throws {@link
-     * ExecutionException} if any subtask fails, with exception from the first subtask to
-     * fail as the {@linkplain Throwable#getCause() cause}. If a {@linkplain
+     * ExecutionException} if any subtask fails, with the exception from the first subtask
+     * to fail as the {@linkplain Throwable#getCause() cause}. If a {@linkplain
      * Configuration#withTimeout(Duration) timeout} is configured and the timeout expires
-     * before or while waiting, it throws {@code ExecutionException} with a {@link
-     * CancelledByTimeoutException CancelledByTimeoutException} as the cause.
+     * before {@code join()} is invoked or completes, it throws {@code ExecutionException}
+     * with a {@link CancelledByTimeoutException CancelledByTimeoutException} as the cause.
      *
-     * <p> If the scope was opened with a {@link Joiner Joiner}, it is invoked after
-     * waiting or cancellation to produce the outcome (result or exception). This includes
-     * the <em>timeout case</em> where a timeout is configured and it expires before or
-     * while waiting in the {@code join()} method.
+     * <p> If the scope was opened with a {@link Joiner Joiner}, the {@code Joiner} is
+     * invoked after waiting or cancellation to produce the outcome (result or exception).
+     * This includes the <em>timeout case</em> where a timeout is configured and the
+     * timeout expires before this method completes.
      *
      * <p> This method may only be invoked by the scope owner. It may only be invoked once
      * to get the result, exception or timeout outcome, unless the previous invocation
@@ -1390,7 +1380,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      *
      * <p> <b>Joiner Implementers:</b>
      *
-     * <p> When all subtasks complete, or the scope cancelled, this method invokes the
+     * <p> When all subtasks complete, or the scope is cancelled, this method invokes the
      * {@code Joiner}'s {@link Joiner#result() result()} or {@link Joiner#timeout() timeout()}
      * method to produce the outcome (result or exception) for the {@code join()} method.
      * The {@code result()} method is invoked for the "no timeout" case. The {@code timeout()}
@@ -1410,7 +1400,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * interrupted} while waiting or this method is invoked with the current thread's
      * {@linkplain Thread#isInterrupted() interrupted status} set. The current thread's
      * interrupted status is cleared when this exception is thrown.
-     * @since 25
      * @see Thread##thread-interruption Thread Interruption
      */
     R join() throws R_X, InterruptedException;
@@ -1429,8 +1418,6 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * that forks subtasks before the {@link #join()} method is invoked) may use this
      * method to avoid doing work in cases where the scope is cancelled by the completion
      * of a previously forked subtask or a timeout.
-     *
-     * @since 25
      */
     boolean isCancelled();
 
@@ -1440,11 +1427,11 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
      * <p> This method first {@linkplain ##Cancellation cancels} the scope, if not already
      * cancelled. This {@linkplain Thread#interrupt() interrupts} the threads executing
      * unfinished subtasks. This method then waits for all threads to finish. If interrupted
-     * while waiting then it will continue to wait until the threads finish, before
-     * completing with the {@linkplain Thread#isInterrupted() interrupted status} set.
+     * while waiting, it continues to wait until the threads finish, then completes
+     * with the {@linkplain Thread#isInterrupted() interrupted status} set. If the scope
+     * is already closed then this method has no effect.
      *
-     * <p> This method may only be invoked by the scope owner. If the scope
-     * is already closed then the scope owner invoking this method has no effect.
+     * <p> This method may only be invoked by the scope owner.
      *
      * <p> A {@code StructuredTaskScope} is intended to be used in a <em>structured
      * manner</em>. If this method is called to close a scope before nested scopes are
