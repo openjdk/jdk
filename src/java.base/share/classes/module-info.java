@@ -268,6 +268,7 @@ module java.base {
         java.naming,
         java.rmi,
         java.net.http,
+        jdk.attach,
         jdk.charsets,
         jdk.incubator.vector,
         jdk.httpserver,

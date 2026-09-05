@@ -1007,6 +1007,12 @@ void ostream_abort() {
   }
 }
 
+void ostream_revive() {
+  defaultStream::instance = nullptr;
+  ostream_init();
+  defaultStream::revive(stdout, stderr);
+}
+
 bufferedStream::bufferedStream(size_t initial_size, size_t bufmax) : outputStream() {
   buffer_length = initial_size;
   buffer        = NEW_C_HEAP_ARRAY(char, buffer_length, mtInternal);
