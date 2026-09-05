@@ -1700,7 +1700,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     if ( instr->oper_input_base(_globalNames) != 1 ||
          strcmp("MachNode", instr->mach_base_class(_globalNames)) != 0 ) {
       fprintf(fp,"  virtual uint           oper_input_base() const { return %d; }\n",
-            instr->oper_input_base(_globalNames));
+             instr->oper_input_base(_globalNames));
     }
 
     // Make the constructor and following methods 'public:'
@@ -1803,7 +1803,7 @@ void ArchDesc::declareClasses(FILE *fp) {
     fprintf(fp, " }\n");
 
     // Virtual methods which are only generated to override base class
-    if( instr->expands() || instr->needs_projections() ||
+    if( instr->expands() || instr->needs_projections(*this) ||
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
@@ -1889,6 +1889,11 @@ void ArchDesc::declareClasses(FILE *fp) {
         fprintf(fp,"  virtual const TypePtr *adr_type() const;\n");
       }
       fprintf(fp,"  virtual const MachOper *memory_operand() const;\n");
+    }
+
+    if (!instr->expands() && instr->kills_some_inputs(*this)) {
+      fprintf(fp,"  virtual bool has_killed_inputs() const { return true; }\n");
+      fprintf(fp,"  virtual bool is_killed_input(uint i) const;\n");
     }
 
     fprintf(fp, "#ifndef PRODUCT\n");

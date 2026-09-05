@@ -16172,15 +16172,15 @@ instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
-                       iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
-                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
-                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
-                       iRegP_R10 tmp, rFlagsReg cr)
+instruct array_equalsB(iRegPNoSp ary1, iRegPNoSp ary2, iRegINoSp result,
+                       iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3,
+                       vRegD vtmp0, vRegD vtmp1, vRegD vtmp2, vRegD vtmp3,
+                       vRegD vtmp4, vRegD vtmp5, vRegD vtmp6, vRegD vtmp7,
+                       iRegPNoSp tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+  effect(TEMP_DEF result, TEMP tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
          TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
          TEMP vtmp6, TEMP vtmp7, KILL cr);
 
@@ -16197,15 +16197,15 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
   ins_pipe(pipe_class_memory);
 %}
 
-instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
-                       iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
-                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
-                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
-                       iRegP_R10 tmp, rFlagsReg cr)
+instruct array_equalsC(iRegPNoSp ary1, iRegPNoSp ary2, iRegINoSp result,
+                       iRegPNoSp tmp1, iRegPNoSp tmp2, iRegPNoSp tmp3,
+                       vRegD vtmp0, vRegD vtmp1, vRegD vtmp2, vRegD vtmp3,
+                       vRegD vtmp4, vRegD vtmp5, vRegD vtmp6, vRegD vtmp7,
+                       iRegPNoSp tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+  effect(TEMP_DEF result, TEMP tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
          TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
          TEMP vtmp6, TEMP vtmp7, KILL cr);
 
@@ -16264,13 +16264,15 @@ instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg
 %}
 
 // fast char[] to byte[] compression
-instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
+// NB: vtmp0...vtmp3 and vtmp4...vtmp5 are hard registers because
+// we're going to use them in blocks with ld1 and st1.
+instruct string_compress(iRegPNoSp src, iRegPNoSp dst, iRegINoSp len,
                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
                          vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
-                         iRegI_R0 result, rFlagsReg cr)
+                         iRegINoSp result, rFlagsReg cr)
 %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+  effect(TEMP_DEF result, TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
          USE_KILL src, USE_KILL dst, USE len, KILL cr);
 
   format %{ "String Compress $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
