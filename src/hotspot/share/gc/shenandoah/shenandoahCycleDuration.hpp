@@ -28,6 +28,11 @@
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "runtime/mutex.hpp"
 
+// ShenandoahCycleDuration provides a history of recent GC cycle durations for the purpose of predicting future GC cycle
+// times. The prediction model feeds into the triggering heuristics, which decides how long to wait before starting
+// the next concurrent GC cycle. Indirectly, the prediction model also feeds into adaptive sizing of the old and young
+// generations, and even the heap size which may expand under certain configurations if GC believes it is under
+// duress.
 class ShenandoahCycleDuration {
   // To enable detection of GC time trends, we keep separate track of the recent history of gc time.  During initialization,
   // for example, the amount of live memory may be increasing, which is likely to cause the GC times to increase.  This history
@@ -40,7 +45,9 @@ class ShenandoahCycleDuration {
 
 public:
   explicit ShenandoahCycleDuration(uint size = GC_TIME_SAMPLE_SIZE);
-  void record_duration(double timestamp_at_start, double duration);
+  // In the case that a duration has been scaled to account for atypical behavior such as an abbreviated cycle or a
+  // surged-worker cycle, synthetic_duration_factor represents the multiplier by which the actual value was scaled.
+  void record_duration(double timestamp_at_start, double duration, double synthetic_duration_factor = 1.0);
   double predict_duration(double timestamp_at_start, double margin_of_error);
 };
 
