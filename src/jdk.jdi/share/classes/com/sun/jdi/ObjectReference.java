@@ -173,6 +173,9 @@ public interface ObjectReference extends Value {
     static final int INVOKE_SINGLE_THREADED = 0x1;
     /** Perform non-virtual method invocation */
     static final int INVOKE_NONVIRTUAL      = 0x2;
+    /** Perform the equivalent of ObjectReference.disableCollection() on
+        any ObjectReference returned, including any exception thrown. */
+    static final int INVOKE_DISABLE_COLLECTION = 0x4;
 
     /**
      * Invokes the specified {@link Method} on this object in the
