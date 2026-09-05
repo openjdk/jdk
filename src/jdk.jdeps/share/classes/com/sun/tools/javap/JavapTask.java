@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -585,8 +585,14 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
         }
 
         try {
-            if (fileManager.handleOption(name, rest))
+            if (fileManager.handleOption(name, rest)) {
+                if (name.equals("-bootclasspath")
+                        || name.equals("--boot-class-path")
+                        || name.startsWith("--boot-class-path=")) {
+                    bootClassPathSpecified = true;
+                }
                 return;
+            }
         } catch (IllegalArgumentException e) {
             throw new BadArgs("err.invalid.use.of.option", name).showUsage(true);
         }
@@ -871,7 +877,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
             if (moduleLocation != null) {
                 fo = fileManager.getJavaFileForInput(moduleLocation, className, JavaFileObject.Kind.CLASS);
             } else {
-                if (className.indexOf('.') > 0 || className.indexOf('/') > 0) {
+                if (!bootClassPathSpecified && (className.indexOf('.') > 0 || className.indexOf('/') > 0)) {
                     //search for classes with a named package in the JDK modules specifed by --system option first
                     try {
                         for (Set<Location> locations: fileManager.listLocationsForModules(StandardLocation.SYSTEM_MODULES)) {
@@ -1082,6 +1088,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
     List<String> classes;
     Location moduleLocation;
     Options options;
+    boolean bootClassPathSpecified;
     //ResourceBundle bundle;
     Locale task_locale;
     Map<Locale, ResourceBundle> bundles;
