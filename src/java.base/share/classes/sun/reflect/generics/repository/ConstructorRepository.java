@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,13 @@
 
 package sun.reflect.generics.repository;
 
+import java.lang.classfile.MethodSignature;
+import java.lang.classfile.Signature;
+import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.Type;
+import java.util.List;
+
 import sun.reflect.generics.factory.GenericsFactory;
-import sun.reflect.generics.parser.SignatureParser;
-import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.generics.tree.MethodTypeSignature;
-import sun.reflect.generics.tree.TypeSignature;
 import sun.reflect.generics.visitor.Reifier;
 
 
@@ -41,7 +42,7 @@ import sun.reflect.generics.visitor.Reifier;
  * It is designed to be used unchanged by at least core reflection and JDI.
  */
 public class ConstructorRepository
-    extends GenericDeclRepository<MethodTypeSignature> {
+    extends GenericDeclRepository<MethodSignature> {
 
     /** The generic parameter types.  Lazily initialized. */
     private volatile Type[] parameterTypes;
@@ -54,8 +55,12 @@ public class ConstructorRepository
       super(rawSig, f);
     }
 
-    protected MethodTypeSignature parse(String s) {
-        return SignatureParser.make().parseMethodSig(s);
+    protected MethodSignature parse(String s) {
+        try {
+            return MethodSignature.parseFrom(s);
+        } catch (IllegalArgumentException e) {
+            throw (Error) new GenericSignatureFormatError(e.getMessage()).initCause(e);
+        }
     }
 
     /**
@@ -101,32 +106,28 @@ public class ConstructorRepository
 
     private Type[] computeParameterTypes() {
         // first, extract parameter type subtree(s) from AST
-        TypeSignature[] pts = getTree().getParameterTypes();
+        List<Signature> pts = getTree().arguments();
         // create array to store reified subtree(s)
-        int length = pts.length;
+        int length = pts.size();
         Type[] parameterTypes = new Type[length];
         // reify all subtrees
         for (int i = 0; i < length; i++) {
             Reifier r = getReifier(); // obtain visitor
-            pts[i].accept(r); // reify subtree
-            // extract result from visitor and store it
-            parameterTypes[i] = r.getResult();
+            parameterTypes[i] = r.reify(pts.get(i));
         }
         return parameterTypes;
     }
 
     private Type[] computeExceptionTypes() {
         // first, extract exception type subtree(s) from AST
-        FieldTypeSignature[] ets = getTree().getExceptionTypes();
+        List<? extends Signature> ets = getTree().throwableSignatures();
         // create array to store reified subtree(s)
-        int length = ets.length;
+        int length = ets.size();
         Type[] exceptionTypes = new Type[length];
         // reify all subtrees
         for (int i = 0; i < length; i++) {
             Reifier r = getReifier(); // obtain visitor
-            ets[i].accept(r); // reify subtree
-            // extract result from visitor and store it
-            exceptionTypes[i] = r.getResult();
+            exceptionTypes[i] = r.reify(ets.get(i));
         }
         return exceptionTypes;
     }
