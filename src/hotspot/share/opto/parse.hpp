@@ -599,8 +599,8 @@ private:
   friend class SwitchRange;
   void    do_tableswitch();
   void    do_lookupswitch();
-  void    jump_switch_ranges(Node* a, SwitchRange* lo, SwitchRange* hi, int depth = 0);
-  bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi);
+  void    jump_switch_ranges(Node* a, SwitchRange* lo, SwitchRange* hi, int depth, bool trim_ranges);
+  bool    create_jump_tables(Node* a, SwitchRange* lo, SwitchRange* hi, bool trim_ranges);
   void    linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchRange*& hi);
 
   // helper function for call statistics
