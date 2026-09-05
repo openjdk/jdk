@@ -425,8 +425,7 @@ class MethodFamily : public ResourceObj {
     } else {
       _exception_message = generate_conflicts_message(&_members);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
-      LogTarget(Debug, defaultmethods) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Debug, defaultmethods) lt; lt.is_enabled()) {
         LogStream ls(lt);
         _exception_message->print_value_on(&ls);
         ls.cr();
@@ -671,8 +670,7 @@ static void find_empty_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots,
     super = super->super();
   }
 
-  LogTarget(Debug, defaultmethods) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, defaultmethods) lt; lt.is_enabled()) {
     lt.print("Slots that need filling:");
     ResourceMark rm;
     LogStream ls(lt);
@@ -827,8 +825,7 @@ void DefaultMethods::generate_default_methods(
   KeepAliveVisitor loadKeepAlive(&keepAlive);
   loadKeepAlive.run(klass);
 
-  LogTarget(Debug, defaultmethods) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, defaultmethods) lt; lt.is_enabled()) {
     ResourceMark rm(THREAD);
     lt.print("%s %s requires default method processing",
              klass->is_interface() ? "Interface" : "Class",
@@ -845,8 +842,7 @@ void DefaultMethods::generate_default_methods(
     FindMethodsByErasedSig findMethodsByErasedSig;
     for (int i = 0; i < empty_slots.length(); ++i) {
       EmptyVtableSlot* slot = empty_slots.at(i);
-      LogTarget(Debug, defaultmethods) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Debug, defaultmethods) lt; lt.is_enabled()) {
         LogStream ls(lt);
         StreamIndentor si(&ls, 2);
         ls.print("Looking for default methods for slot ");
@@ -945,8 +941,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
     if (slot->is_bound()) {
       MethodFamily* method = slot->get_binding();
 
-      LogTarget(Debug, defaultmethods) lt;
-      if (lt.is_enabled()) {
+      if (const LogTarget(Debug, defaultmethods) lt; lt.is_enabled()) {
         ResourceMark rm(THREAD);
         LogStream ls(lt);
         ls.print("for slot: ");

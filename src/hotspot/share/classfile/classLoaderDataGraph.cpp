@@ -167,8 +167,7 @@ ClassLoaderData* ClassLoaderDataGraph::add_to_graph(Handle loader, bool has_clas
   }
 
   // Lastly log, if requested
-  LogTarget(Trace, class, loader, data) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, class, loader, data) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
     ls.print("create ");

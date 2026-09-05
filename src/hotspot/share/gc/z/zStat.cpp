@@ -1082,8 +1082,7 @@ void ZStat::run_thread() {
   }
 
   // At exit print the final stats
-  LogTarget(Info, gc, stats) exit_log;
-  if (exit_log.is_enabled()) {
+  if (const LogTarget(Info, gc, stats) exit_log; exit_log.is_enabled()) {
     print(exit_log, history);
   }
 

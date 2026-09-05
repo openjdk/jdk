@@ -1098,8 +1098,7 @@ void ciEnv::register_method(ciMethod* target,
           }
         }
 
-        LogTarget(Info, nmethod, install) lt;
-        if (lt.is_enabled()) {
+        if (const LogTarget(Info, nmethod, install) lt; lt.is_enabled()) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
           lt.print("Installing method (%d) %s ",
@@ -1111,8 +1110,7 @@ void ciEnv::register_method(ciMethod* target,
           method->set_code(method, nm);
         }
       } else {
-        LogTarget(Info, nmethod, install) lt;
-        if (lt.is_enabled()) {
+        if (const LogTarget(Info, nmethod, install) lt; lt.is_enabled()) {
           ResourceMark rm;
           char *method_name = method->name_and_sig_as_C_string();
           lt.print("Installing osr method (%d) %s @ %d",
