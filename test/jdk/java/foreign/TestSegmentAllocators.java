@@ -25,14 +25,21 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run junit/othervm TestSegmentAllocators
+ * @library /test/lib
+ * @run junit/othervm                                                           TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=-1 TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=3  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=4  TestSegmentAllocators
+ * @run junit/othervm -Djdk.internal.foreign.native.confined.pool.power.size=5  TestSegmentAllocators
  */
 
 import java.lang.foreign.*;
 
+import jdk.test.lib.thread.VThreadRunner;
 
 import java.lang.foreign.Arena;
 import java.lang.invoke.VarHandle;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.CharBuffer;
@@ -52,13 +59,31 @@ import java.util.function.Function;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.InvocationInterceptor;
+import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
+import org.junit.jupiter.params.Parameter;
+import org.junit.jupiter.params.ParameterizedClass;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@ParameterizedClass
+@EnumSource(TestSegmentAllocators.ThreadMode.class)
+@ExtendWith(TestSegmentAllocators.ThreadModeInterceptor.class)
 public class TestSegmentAllocators {
 
     final static int ELEMS = 128;
+
+    @Parameter(0)
+    private ThreadMode threadMode;
+
+    enum ThreadMode {
+        PLATFORM,
+        VIRTUAL
+    }
 
     @SuppressWarnings("unchecked")
     @ParameterizedTest
@@ -668,5 +693,32 @@ public class TestSegmentAllocators {
         return new Object[][] {
                 { SegmentAllocator.prefixAllocator(Arena.global().allocate(10, 1)) },
         };
+    }
+
+    public static final class ThreadModeInterceptor implements InvocationInterceptor {
+
+        @Override
+        public void interceptTestMethod(Invocation<Void> invocation,
+                                        ReflectiveInvocationContext<Method> invocationContext,
+                                        ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        @Override
+        public void interceptTestTemplateMethod(Invocation<Void> invocation,
+                                                ReflectiveInvocationContext<Method> invocationContext,
+                                                ExtensionContext extensionContext) throws Throwable {
+            proceed(invocation, extensionContext);
+        }
+
+        private static void proceed(Invocation<Void> invocation,
+                                    ExtensionContext extensionContext) throws Throwable {
+            TestSegmentAllocators test = (TestSegmentAllocators) extensionContext.getRequiredTestInstance();
+            if (test.threadMode == ThreadMode.VIRTUAL) {
+                VThreadRunner.run(invocation::proceed);
+            } else {
+                invocation.proceed();
+            }
+        }
     }
 }

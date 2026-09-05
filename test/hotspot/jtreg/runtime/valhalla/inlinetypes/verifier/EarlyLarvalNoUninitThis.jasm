@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,19 @@
  * questions.
  */
 
-
-/*
- * @test
- * @modules java.base/jdk.internal.misc:+open
- *
- * @summary converted from VM Testbase metaspace/gc/firstGC_default.
- * VM Testbase keywords: [nonconcurrent, quarantine]
- * VM Testbase comments: 8208250
- *
- * @library /vmTestbase /test/lib
- * @run main/othervm
- *      -Xms200m
- *      -Xlog:gc+heap=trace,gc:gc.log
- *      -XX:+IgnoreUnrecognizedVMOptions
- *      -XX:+UnlockDiagnosticVMOptions
- *      -XX:-VerifyBeforeExit
- *      -XX:-UseCompressedOops
- *      metaspace.gc.FirstGCTest
- */
-
+public identity class EarlyLarvalNoUninitThis version 72:65535
+{
+  public Method "<init>":"()V"
+    stack 1  locals 1
+  {
+         aload_0;
+         invokespecial     Method java/lang/Object."<init>":"()V";
+         goto              L7;
+  L7:    stack_frame_type  early_larval;
+           unset_fields;
+           frame_type      full;
+             locals_map    class EarlyLarvalNoUninitThis;
+             stack_map;
+         return;
+  }
+}

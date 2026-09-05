@@ -114,8 +114,23 @@ public class TestMaskedStoreIdealization {
                     return scope("");
                 }
 
+                // Single lane vectors are not intrinsified, so there is no vector store to idealize.
+                // With IncrementalInlineVector on by default the Vector API fallback implementation is
+                // inlined, creating scalar Store nodes that the rules below catch. Earlier only a
+                // CallStaticJava was emitted in its place.
+                if (vec.length == 1) {
+                    return scope("    // No Vector nodes are emitted for single lane vectors.\n");
+                }
+
                 final PrimitiveType pty = (PrimitiveType) vec.elementType;
                 final String ptyIR = pty.abbrev().equals("S") ? "C" : pty.abbrev();
+
+                // Unboxing a mask loads a boolean vector of the same length, and the shortest supported
+                // one holds four lanes on x64 but only two on AArch64. Masked stores of two lane vectors
+                // are hence only intrinsified on AArch64.
+                final String maskedStoreCPUFeatures = vec.length >= 4
+                        ? "applyIfCPUFeatureOr = {\"avx512\", \"true\", \"sve\", \"true\"}"
+                        : "applyIfCPUFeature = {\"sve\", \"true\"}";
 
                 // Verify that the Scatter store for STORE_VECTOR_AFTER_SCATTER is not eliminated.
                 var opVerification = Template.make(() -> {
@@ -152,6 +167,7 @@ public class TestMaskedStoreIdealization {
                     let("pty", vec.elementType.name()),
                     let("ptyIR", ptyIR),
                     let("idx", idx),
+                    let("maskedStoreCPUFeatures", maskedStoreCPUFeatures),
                     switch (op) {
                         case STORE_MASK, STORE_SCATTER_MASK ->
                         // For masked operations, depending on the generated mask and index map C2 does not manage to elide a branch from
@@ -164,7 +180,7 @@ public class TestMaskedStoreIdealization {
                         """
                             @IR(counts = {IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:[a-z_]*:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact:[a-z_:]*\\\\[\\\\d+\\\\]).*" + IRNode.END, ">=1",
                                           IRNode.START + "Store#{ptyIR}" + IRNode.MID + "(Memory: @aryptr:[a-z_]*:#{pty}\\\\[int:#{arraySize}\\\\]).*(:NotNull:exact:[a-z_:].*\\\\[\\\\d+\\\\]).*" + IRNode.END, "<=2"},
-                                applyIfCPUFeatureOr = {"avx512", "true", "sve", "true"},
+                                #{maskedStoreCPUFeatures},
                                 phase = CompilePhase.BEFORE_MATCHING)
                         """;
                         case STORE_SCATTER ->

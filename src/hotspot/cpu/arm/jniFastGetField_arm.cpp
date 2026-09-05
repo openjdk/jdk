@@ -26,9 +26,11 @@
 #include "asm/macroAssembler.hpp"
 #include "code/codeBlob.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -138,10 +140,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 #endif // !__ABI_HARD__
       ) {
     // Only ldr and ldrb support embedded shift, other loads do not
-    __ add(Robj, Robj, AsmOperand(R2, lsr, 2));
+    __ add(Robj, Robj, AsmOperand(R2, lsr, jfieldIDWorkaround::offset_shift));
     field_addr = Address(Robj);
   } else {
-    field_addr = Address(Robj, R2, lsr, 2);
+    field_addr = Address(Robj, R2, lsr, jfieldIDWorkaround::offset_shift);
   }
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();

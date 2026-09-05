@@ -580,7 +580,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   //
   address generate_ghash_processBlocks() {
-    StubCodeMark mark(this, "StubRoutines", "ghash");
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
 
     // Registers for parameters
@@ -2775,8 +2776,6 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast, L_error;
-
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
     Register key            = R5_ARG3;  // round key array
@@ -2798,87 +2797,16 @@ class StubGenerator: public StubCodeGenerator {
     // load unaligned from[0-15] to vRet
     __ load_byte_vector_unaligned(vRet, 0, from, tmp, vp);
 
-    // load the 1st round key to vKey1
-    __ load_word_vector_unaligned(vKey1, 0, key, tmp);
-
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
-    // 1st round
-    __ vxor            (vRet, vRet, vKey1);
-
-    // load the 2nd - 5th round key to vKey1 - vKey4
-    __ load_word_vector_unaligned(vKey1, 16, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 32, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 48, key, tmp);
-    __ load_word_vector_unaligned(vKey4, 64, key, tmp);
-
-    // 2nd - 5th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-    __ vcipher         (vRet, vRet, vKey3);
-    __ vcipher         (vRet, vRet, vKey4);
-
-    // load the 6th - 9th round key to vKey1 - vKey4
-    __ load_word_vector_unaligned(vKey1, 80, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 96, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
-    __ load_word_vector_unaligned(vKey4, 128, key, tmp);
-
-    // 6th - 9th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-    __ vcipher         (vRet, vRet, vKey3);
-    __ vcipher         (vRet, vRet, vKey4);
-
-    // load the 10th - 11th round key to vKey1 - vKey2
-    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 160, key, tmp);
-
-    // if all round keys are loaded, skip next 4 rounds
-    __ cmpwi           (CR0, keylen, 44);
-    __ beq             (CR0, L_doLast);
-
-    // 10th - 11th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-
-    // load the 12th - 13th round key to vKey1 - vKey2
-    __ load_word_vector_unaligned(vKey1, 176, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 192, key, tmp);
-
-    // if all round keys are loaded, skip next 2 rounds
-    __ cmpwi           (CR0, keylen, 52);
-    __ beq             (CR0, L_doLast);
-
-#ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
-#endif
-
-    // 12th - 13th rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipher         (vRet, vRet, vKey2);
-
-    // load the 14th - 15th round key to vKey1 - vKey2
-    __ load_word_vector_unaligned(vKey1, 208, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 224, key, tmp);
-
-    __ bind(L_doLast);
-
-    // last two rounds
-    __ vcipher         (vRet, vRet, vKey1);
-    __ vcipherlast     (vRet, vRet, vKey2);
+    aes_encrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4);
 
     // store result (unaligned)
     __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
 
     __ blr();
 
-#ifdef ASSERT
-    __ bind(L_error);
-    __ stop("aescrypt_encryptBlock: invalid key length");
-#endif
      return start;
   }
 
@@ -2892,8 +2820,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
 
     address start = __ function_entry();
-
-    Label L_doLast, L_do44, L_do52, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -2920,96 +2846,12 @@ class StubGenerator: public StubCodeGenerator {
     // load keylen (44 or 52 or 60)
     __ lwz             (keylen, arrayOopDesc::length_offset_in_bytes() - arrayOopDesc::base_offset_in_bytes(T_INT), key);
 
-    __ cmpwi           (CR0, keylen, 44);
-    __ beq             (CR0, L_do44);
-
-    __ cmpwi           (CR0, keylen, 52);
-    __ beq             (CR0, L_do52);
-
-#ifdef ASSERT
-    __ cmpwi           (CR0, keylen, 60);
-    __ bne             (CR0, L_error);
-#endif
-
-    // load the 15th - 11th round key to vKey1 - vKey5
-    __ load_word_vector_unaligned(vKey1, 224, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 208, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 192, key, tmp);
-    __ load_word_vector_unaligned(vKey4, 176, key, tmp);
-    __ load_word_vector_unaligned(vKey5, 160, key, tmp);
-
-    // 1st - 5th rounds
-    __ vxor            (vRet, vRet, vKey1);
-    __ vncipher        (vRet, vRet, vKey2);
-    __ vncipher        (vRet, vRet, vKey3);
-    __ vncipher        (vRet, vRet, vKey4);
-    __ vncipher        (vRet, vRet, vKey5);
-
-    __ b               (L_doLast);
-
-    __ align(32);
-    __ bind            (L_do52);
-
-    // load the 13th - 11th round key to vKey1 - vKey3
-    __ load_word_vector_unaligned(vKey1, 192, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 176, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 160, key, tmp);
-
-    // 1st - 3rd rounds
-    __ vxor            (vRet, vRet, vKey1);
-    __ vncipher        (vRet, vRet, vKey2);
-    __ vncipher        (vRet, vRet, vKey3);
-
-    __ b               (L_doLast);
-
-    __ align(32);
-    __ bind            (L_do44);
-
-    // load the 11th round key to vKey1
-    __ load_word_vector_unaligned(vKey1, 160, key, tmp);
-
-    // 1st round
-    __ vxor            (vRet, vRet, vKey1);
-
-    __ bind            (L_doLast);
-
-    // load the 10th - 6th round key to vKey1 - vKey5
-    __ load_word_vector_unaligned(vKey1, 144, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 128, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 112, key, tmp);
-    __ load_word_vector_unaligned(vKey4, 96, key, tmp);
-    __ load_word_vector_unaligned(vKey5, 80, key, tmp);
-
-    // last 10th - 6th rounds
-    __ vncipher        (vRet, vRet, vKey1);
-    __ vncipher        (vRet, vRet, vKey2);
-    __ vncipher        (vRet, vRet, vKey3);
-    __ vncipher        (vRet, vRet, vKey4);
-    __ vncipher        (vRet, vRet, vKey5);
-
-    // load the 5th - 1st round key to vKey1 - vKey5
-    __ load_word_vector_unaligned(vKey1, 64, key, tmp);
-    __ load_word_vector_unaligned(vKey2, 48, key, tmp);
-    __ load_word_vector_unaligned(vKey3, 32, key, tmp);
-    __ load_word_vector_unaligned(vKey4, 16, key, tmp);
-    __ load_word_vector_unaligned(vKey5, 0, key, tmp);
-
-    // last 5th - 1th rounds
-    __ vncipher        (vRet, vRet, vKey1);
-    __ vncipher        (vRet, vRet, vKey2);
-    __ vncipher        (vRet, vRet, vKey3);
-    __ vncipher        (vRet, vRet, vKey4);
-    __ vncipherlast    (vRet, vRet, vKey5);
+    aes_decrypt_rounds(vRet, key, keylen, tmp, vKey1, vKey2, vKey3, vKey4, vKey5);
 
     // store result (unaligned)
     __ store_byte_vector_unaligned(vRet, 0, to, tmp, vp);
 
     __ blr();
-
-#ifdef ASSERT
-    __ bind(L_error);
-    __ stop("aescrypt_decryptBlock: invalid key length");
-#endif
      return start;
   }
 
@@ -3839,7 +3681,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    StubId stub_id = StubId::stubgen_f2hf_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ f2hf(R3_RET, F1_ARG1, F0);
     __ blr();
@@ -3848,7 +3691,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    StubId stub_id = StubId::stubgen_hf2f_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ hf2f(F1_RET, R3_ARG1);
     __ blr();

@@ -104,7 +104,6 @@ class MacroAssembler: public Assembler {
     KlassDecodeNone,
     KlassDecodeZero,
     KlassDecodeXor,
-    KlassDecodeMovk,
     KlassDecodeFallback
   };
 
@@ -999,8 +998,6 @@ public:
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
-
-  void load_prototype_header(Register dst, Register src);
 
   void store_klass_gap(Register dst, Register src);
 

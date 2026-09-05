@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ public class StrictFields {
             throw new Error("VerifyError was not thrown as expected!");
         } catch (VerifyError ve) {
             // Once strict non-final is possible, expect "Illegal use of putfield on a strict field"
-            if (!ve.getMessage().startsWith("All strict final fields must be initialized before super()")) {
+            if (!ve.getMessage().startsWith("All strict fields must be initialized before super()")) {
                 throw new Error("Wrong VerifyError thrown", ve);
             } else {
                 System.out.println("Expected VerifyError was thrown");
