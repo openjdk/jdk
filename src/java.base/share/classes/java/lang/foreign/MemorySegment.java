@@ -1389,9 +1389,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * null-terminated byte sequence using the provided charset.
      * <p>
      * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string. The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
+     * sequences with this charset's default replacement byte array. The {@link
+     * java.nio.charset.CharsetEncoder} class should be used when more control
+     * over the encoding process is required.
      * <p>
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
@@ -2647,9 +2647,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * to the destination segment.
      * <p>
      * This method always replaces malformed-input and unmappable-character
-     * sequences with this charset's default replacement string. The {@link
-     * java.nio.charset.CharsetDecoder} class should be used when more control
-     * over the decoding process is required.
+     * sequences with this charset's default replacement byte array. The {@link
+     * java.nio.charset.CharsetEncoder} class should be used when more control
+     * over the encoding process is required.
      * <p>
      * If the given string contains any {@code '\0'} characters, they will be
      * copied as well. This means that, depending on the method used to read
@@ -2659,7 +2659,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *
      * @param src      the Java string to be written into the destination segment
      * @param dstEncoding the charset used to {@linkplain Charset#newEncoder() encode}
-     *                 the string bytes.
+     *                 the string bytes
      * @param srcIndex the starting character index of the source string
      * @param dst      the destination segment
      * @param dstOffset the starting offset, in bytes, of the destination segment
@@ -2672,9 +2672,9 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      *         are {@code < 0}
      * @throws IndexOutOfBoundsException if {@code srcIndex > src.length() - numChars}
      * @throws IllegalArgumentException if {@code dst} is {@linkplain #isReadOnly() read-only}
-     * @throws IndexOutOfBoundsException if {@code dstOffset > dstSegment.byteSize() - B} where {@code B} is the size,
-     *         in bytes, of the substring of {@code src} encoded using the given charset
-     * @return the number of copied bytes.
+     * @throws IndexOutOfBoundsException if {@code dstOffset > dst.byteSize() - B} where {@code B} is the size,
+     *         in bytes, of {@code src.substring(srcIndex, srcIndex + numChars)} encoded using the given charset
+     * @return the number of copied bytes
      * @since 27
      */
     @ForceInline

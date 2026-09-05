@@ -181,8 +181,7 @@ public interface SegmentAllocator {
      * @implSpec The default implementation for this method copies the contents of the
      *           provided Java string into a new memory segment obtained by calling
      *           {@code this.allocate(B)}, where {@code B} is the size, in bytes, of
-     *           the string encoded using the provided charset
-     *           (e.g. {@code str.getBytes(charset).length});
+     *           {@code str.substring(srcIndex, srcIndex + numChars)} encoded using the provided charset.
      * @since 27
      */
     @ForceInline
