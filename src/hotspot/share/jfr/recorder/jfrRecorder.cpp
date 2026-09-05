@@ -41,6 +41,7 @@
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/service/jfrRecorderThread.hpp"
+#include "jfr/recorder/stacktrace/jfrNativeFunctionRepository.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
@@ -305,6 +306,9 @@ bool JfrRecorder::create_components() {
   if (!create_stacktrace_repository()) {
     return false;
   }
+  if (!create_native_function_repository()) {
+    return false;
+  }
   if (!create_os_interface()) {
     return false;
   }
@@ -394,6 +398,10 @@ bool JfrRecorder::create_stacktrace_repository() {
   return _stack_trace_repository != nullptr && _stack_trace_repository->initialize();
 }
 
+bool JfrRecorder::create_native_function_repository() {
+  return JfrNativeFunctionRepository::create();
+}
+
 bool JfrRecorder::create_stringpool() {
   assert(_stringpool == nullptr, "invariant");
   assert(_repository != nullptr, "invariant");
@@ -453,6 +461,7 @@ void JfrRecorder::destroy_components() {
     JfrStackTraceRepository::destroy();
     _stack_trace_repository = nullptr;
   }
+  JfrNativeFunctionRepository::destroy();
   if (_stringpool != nullptr) {
     JfrStringPool::destroy();
     _stringpool = nullptr;

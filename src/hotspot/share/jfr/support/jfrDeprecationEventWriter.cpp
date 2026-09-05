@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ void JfrDeprecatedStackTraceWriter::install_stacktrace_blob(JfrDeprecatedEdge* e
   writer.write<u4>(edge->linenumber());
   writer.write<u4>(edge->bci());
   writer.write<u1>(edge->frame_type());
+  writer.write<u8>(0); // native function
   JfrBlobHandle blob = writer.move();
   edge->set_stacktrace(blob);
 }
