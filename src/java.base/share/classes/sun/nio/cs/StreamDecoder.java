@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public class StreamDecoder extends Reader {
     private static final int MIN_BYTE_BUFFER_SIZE = 32;
     private static final int DEFAULT_BYTE_BUFFER_SIZE = 8192;
 
+    private boolean readCalled;
     private volatile boolean closed;
 
     private void ensureOpen() throws IOException {
@@ -122,6 +123,8 @@ public class StreamDecoder extends Reader {
     @SuppressWarnings("fallthrough")
     private int read0() throws IOException {
         synchronized (lock) {
+            readCalled = true;
+
             // Return the leftover char, if there is one
             if (haveLeftoverChar) {
                 haveLeftoverChar = false;
@@ -149,6 +152,7 @@ public class StreamDecoder extends Reader {
 
     public int read(char[] cbuf, int offset, int length) throws IOException {
         synchronized (lock) {
+            readCalled = true;
             int off = offset;
             int len = length;
 
@@ -232,19 +236,28 @@ public class StreamDecoder extends Reader {
     private final InputStream in;
     private final ReadableByteChannel ch;
 
+    // true if decoder was created from cs, false if decoder was provided externally
+    private final boolean decoderFromCharset;
+
     StreamDecoder(InputStream in, Object lock, Charset cs) {
-        this(in, lock,
+        this(in, lock, cs,
             cs.newDecoder()
                 .onMalformedInput(CodingErrorAction.REPLACE)
-                .onUnmappableCharacter(CodingErrorAction.REPLACE));
+                .onUnmappableCharacter(CodingErrorAction.REPLACE),
+            true);
     }
 
     StreamDecoder(InputStream in, Object lock, CharsetDecoder dec) {
+        this(in, lock, dec.charset(), dec, false);
+    }
+
+    private StreamDecoder(InputStream in, Object lock, Charset cs, CharsetDecoder dec, boolean decoderFromCharset) {
         super(lock);
-        this.cs = dec.charset();
+        this.cs = cs;
         this.decoder = dec;
         this.in = in;
         this.ch = null;
+        this.decoderFromCharset = decoderFromCharset;
         this.bb = ByteBuffer.allocate(DEFAULT_BYTE_BUFFER_SIZE);
         bb.flip();                      // So that bb is initially empty
     }
@@ -254,6 +267,7 @@ public class StreamDecoder extends Reader {
         this.ch = ch;
         this.decoder = dec;
         this.cs = dec.charset();
+        this.decoderFromCharset = false;
         this.bb = ByteBuffer.allocate(mbc < 0
                                   ? DEFAULT_BYTE_BUFFER_SIZE
                                   : (mbc < MIN_BYTE_BUFFER_SIZE
@@ -296,7 +310,6 @@ public class StreamDecoder extends Reader {
     }
 
     int implRead(char[] cbuf, int off, int end) throws IOException {
-
         // In order to handle surrogate pairs, this method requires that
         // the invoker attempt to read at least two characters.  Saving the
         // extra character, if any, at a higher level is easier than trying
@@ -373,5 +386,18 @@ public class StreamDecoder extends Reader {
         } else {
             in.close();
         }
+    }
+
+    public String tryReadAllAsString() throws IOException {
+        if (in == null || !decoderFromCharset) {
+            return null;
+        }
+        synchronized (lock) {
+            ensureOpen();
+            if (!readCalled) {
+                return new String(in.readAllBytes(), cs);
+            }
+        }
+        return null;
     }
 }
