@@ -221,7 +221,7 @@ private:
 
   void expand_flatarraycheck_node(FlatArrayCheckNode* check);
 
-  void expand_add_sub_i128_node(Int128TBinaryNode* addsub);
+  void expand_add_sub_i128t_node(Int128TBinaryNode* addsub);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);

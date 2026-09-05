@@ -3167,7 +3167,7 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
   }
 }
 
-void PhaseMacroExpand::expand_add_sub_i128_node(Int128TBinaryNode* addsub) {
+void PhaseMacroExpand::expand_add_sub_i128t_node(Int128TBinaryNode* addsub) {
   if (Matcher::match_rule_supported(addsub->Opcode())) {
     addsub->remove_flag(Node::Flag_is_macro);
     C->remove_macro_node(addsub);
@@ -3191,7 +3191,7 @@ void PhaseMacroExpand::expand_add_sub_i128_node(Int128TBinaryNode* addsub) {
   // uint64_t sum_lo_overflow = sum_lo < lo2 ? 1 : 0
   // uint64_t sum_hi = hi1 + hi2 + sum_lo_overflow = hi1 + hi2 + (sum_lo < lo2 ? 1 : 0)
   // uint64_t dif_lo = lo1 - lo2
-  // uint64_t dif_lo_overflow = lo1 < lo2
+  // uint64_t dif_lo_overflow = lo1 < lo2 ? 1 : 0
   // uint64_t dif_hi = hi1 - hi2 - dif_lo_overflow = hi1 - hi2 - (lo1 < lo2 ? 1 : 0)
   if (Node* hi = addsub->result_hi_or_null(); hi != nullptr) {
     Node* overflow_cmp = _igvn.transform(new CmpULNode(is_add ? new_lo : addsub->lo1(), addsub->lo2()));
@@ -3520,7 +3520,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       case Op_AddI128T:
       case Op_SubI128T:
-        expand_add_sub_i128_node(static_cast<Int128TBinaryNode*>(n));
+        expand_add_sub_i128t_node(static_cast<Int128TBinaryNode*>(n));
         break;
       default:
         assert(false, "unknown node type in macro list");

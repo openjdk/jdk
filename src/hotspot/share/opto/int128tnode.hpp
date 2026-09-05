@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_OPTO_INT128NODE_HPP
-#define SHARE_OPTO_INT128NODE_HPP
+#ifndef SHARE_OPTO_INT128TNODE_HPP
+#define SHARE_OPTO_INT128TNODE_HPP
 
 #include "opto/multnode.hpp"
 
@@ -67,4 +67,4 @@ public:
   int Opcode() const final;
 };
 
-#endif // SHARE_OPTO_INT128NODE_HPP
+#endif // SHARE_OPTO_INT128TNODE_HPP
