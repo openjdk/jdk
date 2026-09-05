@@ -7635,6 +7635,7 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
 
 // Round Instruction
 instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3) %{
+  predicate(!UseZfa);
   match(Set dst (RoundDoubleMode src rmode));
   ins_cost(2 * XFER_COST + BRANCH_COST);
   effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3);
@@ -7643,6 +7644,19 @@ instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp 
   ins_encode %{
     __ round_double_mode(as_FloatRegister($dst$$reg),
                as_FloatRegister($src$$reg), $rmode$$constant, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct roundD_reg_zfa(fRegD dst, fRegD src, immI rmode) %{
+  predicate(UseZfa);
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(XFER_COST);
+  effect(TEMP_DEF dst);
+
+  format %{ "RoundDoubleMode $src, $rmode" %}
+  ins_encode %{
+    __ round_double_mode_zfa(as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), $rmode$$constant);
   %}
   ins_pipe(pipe_class_default);
 %}
