@@ -920,6 +920,25 @@ void C2_MacroAssembler::vpminmax(int opcode, BasicType elem_bt,
 
 // Float/Double min max
 
+void C2_MacroAssembler::smin_fp(BasicType elem_bt,
+                                XMMRegister dst, XMMRegister a, XMMRegister b,
+                                XMMRegister tmp1, XMMRegister tmp2) {
+  assert(UseAVX > 0, "required");
+  assert(elem_bt == T_FLOAT || elem_bt == T_DOUBLE, "sanity");
+  assert_different_registers(a, tmp1, tmp2);
+  assert_different_registers(b, tmp1, tmp2);
+
+  if (elem_bt == T_FLOAT) {
+    vminss(tmp1, a, b);
+    vminss(tmp2, b, a);
+    vorps(dst, tmp1, tmp2, Assembler::AVX_128bit);
+  } else {
+    vminsd(tmp1, a, b);
+    vminsd(tmp2, b, a);
+    vorpd(dst, tmp1, tmp2, Assembler::AVX_128bit);
+  }
+}
+
 void C2_MacroAssembler::vminmax_fp(int opcode, BasicType elem_bt,
                                    XMMRegister dst, XMMRegister a, XMMRegister b,
                                    XMMRegister tmp, XMMRegister atmp, XMMRegister btmp,
