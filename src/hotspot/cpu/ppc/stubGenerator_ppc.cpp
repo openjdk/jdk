@@ -604,13 +604,13 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp10 = VR10;
     VectorRegister vSwappedH = VR11;
     VectorRegister vTmp12 = VR12;
-    VectorRegister loadOrder = VR13;
-    VectorRegister vHigh = VR14;
-    VectorRegister vLow = VR15;
-    VectorRegister vState = VR16;
-    VectorRegister vPerm = VR17;
-    VectorRegister vCombinedResult = VR18;
-    VectorRegister vConstC2 = VR19;
+    VectorRegister vState = VR13;
+    VectorRegister vCombinedResult = VR14;
+    VectorRegister vConstC2 = VR15;
+    VectorRegister vp = VR16;                     // permute vector for byte vector accesses on P8 LE
+
+    // vp must be computed before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, vTmp12);
 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
@@ -638,14 +638,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ clrldi(blocks, blocks, 32);
     __ mtctr(blocks);
-    __ lvsl(loadOrder, temp1);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, 0xf);
-    __ vxor(loadOrder, loadOrder, vTmp12);
-#define LE_swap_bytes(x) __ vec_perm(x, x, x, loadOrder)
-#else
-#define LE_swap_bytes(x)
-#endif
 
     // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
     //
@@ -666,38 +658,15 @@ class StubGenerator: public StubCodeGenerator {
     // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
     // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
     //
-    Label L_aligned_loop, L_store, L_unaligned_loop, L_initialize_unaligned_loop;
-    __ andi(temp1, data, 15);
-    __ cmpwi(CR0, temp1, 0);
-    __ bne(CR0, L_initialize_unaligned_loop);
 
-    __ bind(L_aligned_loop);
-      __ lvx(vH, temp1, data);
-      LE_swap_bytes(vH);
+    Label L_loop;
+    __ bind(L_loop);
+      __ load_byte_vector_unaligned(vH, 0, data, temp1, vp);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
                     vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
       __ addi(data, data, 16);
-    __ bdnz(L_aligned_loop);
-    __ b(L_store);
+    __ bdnz(L_loop);
 
-    __ bind(L_initialize_unaligned_loop);
-    __ li(temp1, 0);
-    __ lvsl(vPerm, temp1, data);
-    __ lvx(vHigh, temp1, data);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, -1);
-    __ vxor(vPerm, vPerm, vTmp12);
-#endif
-    __ bind(L_unaligned_loop);
-      __ addi(data, data, 16);
-      __ lvx(vLow, temp1, data);
-      __ vec_perm(vH, vHigh, vLow, vPerm);
-      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
-      __ vmr(vHigh, vLow);
-    __ bdnz(L_unaligned_loop);
-
-    __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
     __ blr();
 
