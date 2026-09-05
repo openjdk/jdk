@@ -311,4 +311,8 @@
   void slidedown_v(VectorRegister dst, VectorRegister src,
                    uint32_t offset, Register tmp = t0);
 
+  void round_double_mode_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
+                           VectorRegister src, int round_mode,
+                           VectorRegister tmp1, VectorRegister tmp2);
+
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP
