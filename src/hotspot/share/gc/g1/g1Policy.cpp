@@ -69,6 +69,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
   _pending_cards_from_gc(0),
+  _to_collection_set_cards(0),
   _collection_set(nullptr),
   _g1h(nullptr),
   _phase_times_timer(gc_timer),
@@ -511,7 +512,7 @@ uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_
                                      candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
   uint selected_candidates = 0;
-  for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
+  for (G1CardSetGroup* gr : candidates()->from_marking_groups()) {
     if (selected_candidates >= min_marking_candidates) {
       break;
     }
@@ -539,15 +540,15 @@ double G1Policy::predict_retained_regions_evac_time() const {
 
   double result = 0.0;
 
-  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
+  G1CardSetGroupList* retained_groups = &candidates()->retained_groups();
   uint min_regions_left = MIN2(min_retained_old_cset_length(),
                                retained_groups->num_regions());
 
-  for (G1CSetCandidateGroup* group : *retained_groups) {
+  for (G1CardSetGroup* group : *retained_groups) {
     assert(group->length() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
-    // We optimistically assume that any of these marking candidate regions will
-    // be reclaimable the next gc, so just consider them as normal.
+    // We optimistically assume that any regions of these card set groups that contain pinned
+    // regions can be evacuated the next gc, so just consider them like normal.
     if (r->has_pinned_objects()) {
       num_pinned_regions++;
     }
@@ -1183,7 +1184,7 @@ double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+  size_t code_root_length = hr->rem_set()->code_roots_length();
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);

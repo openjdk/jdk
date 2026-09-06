@@ -667,6 +667,7 @@ void MethodHandles::print_as_basic_type_signature_on(outputStream* st,
     } else {
       st->put(cp[0]);
     }
+    prev_type = true;
   }
 }
 

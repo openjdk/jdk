@@ -79,7 +79,7 @@ public class hs203t001 extends RedefineAgent {
             popThreadFrame(mt.getThread());
             resumeThread(mt.getThread());
             mt.join();
-            log.println(" ..."+mt.threadState);
+            log.display(" ..."+mt.threadState);
         } catch(Exception ie) {
             ie.printStackTrace();
         }

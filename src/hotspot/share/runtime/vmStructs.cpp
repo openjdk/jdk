@@ -220,6 +220,7 @@
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
+  nonstatic_field(Klass,                       _kind,                                         const Klass::KlassKind)                \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -661,7 +662,6 @@
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
@@ -1190,6 +1190,7 @@
    declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(InstanceKlass::ClassState)                        \
+   declare_integer_type(Klass::KlassKind)                                 \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
@@ -1372,15 +1373,10 @@
                                                                           \
   declare_constant(_thread_uninitialized)                                 \
   declare_constant(_thread_new)                                           \
-  declare_constant(_thread_new_trans)                                     \
   declare_constant(_thread_in_native)                                     \
-  declare_constant(_thread_in_native_trans)                               \
   declare_constant(_thread_in_vm)                                         \
-  declare_constant(_thread_in_vm_trans)                                   \
   declare_constant(_thread_in_Java)                                       \
-  declare_constant(_thread_in_Java_trans)                                 \
   declare_constant(_thread_blocked)                                       \
-  declare_constant(_thread_blocked_trans)                                 \
   declare_constant(JavaThread::_not_terminated)                           \
   declare_constant(JavaThread::_thread_exiting)                           \
                                                                           \
@@ -1485,6 +1481,22 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
+                                                                          \
+  /************************/                                              \
+  /* Klass KlassKind enum */                                              \
+  /************************/                                              \
+                                                                          \
+  declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
+  declare_constant(Klass::KlassKind::InlineKlassKind)                     \
+  declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
+  declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
+  declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \
+  declare_constant(Klass::KlassKind::InstanceStackChunkKlassKind)         \
+  declare_constant(Klass::KlassKind::TypeArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::ObjArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::RefArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::FlatArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::UnknownKlassKind)                    \
                                                                           \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
@@ -1820,8 +1832,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \

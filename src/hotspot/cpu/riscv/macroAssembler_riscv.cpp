@@ -162,8 +162,7 @@ uint32_t MacroAssembler::get_membar_kind(address addr) {
   assert_cond(addr != nullptr);
   assert(is_membar(addr), "no membar found");
 
-  uint32_t insn = Bytes::get_native_u4(addr);
-
+  uint32_t insn = Assembler::ld_instr(addr);
   uint32_t predecessor = Assembler::extract(insn, 27, 24);
   uint32_t successor = Assembler::extract(insn, 23, 20);
 
@@ -179,7 +178,7 @@ void MacroAssembler::set_membar_kind(address addr, uint32_t order_kind) {
 
   MacroAssembler::membar_mask_to_pred_succ(order_kind, predecessor, successor);
 
-  uint32_t insn = Bytes::get_native_u4(addr);
+  uint32_t insn = Assembler::ld_instr(addr);
   address pInsn = (address) &insn;
   Assembler::patch(pInsn, 27, 24, predecessor);
   Assembler::patch(pInsn, 23, 20, successor);
@@ -542,7 +541,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // The length of the instruction sequence emitted should not depend
   // on the address of the char buffer so that the size of mach nodes for
   // scratch emit and normal emit matches.
-  la(t0, ExternalAddress((address)b));
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -739,7 +738,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   // The length of the instruction sequence emitted should not depend
   // on the address of the char buffer so that the size of mach nodes for
   // scratch emit and normal emit matches.
-  la(t0, ExternalAddress((address)b));
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -3844,11 +3843,17 @@ void MacroAssembler::encode_heap_oop(Register d, Register s) {
       mv(d, s);
     }
   } else {
-    Label notNull;
-    sub(d, s, xheapbase);
-    bgez(d, notNull);
-    mv(d, zr);
-    bind(notNull);
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      sub(t0, s, xheapbase);
+      czero_eqz(d, t0, s);  // d = s == 0 ? 0 : t0
+    } else {
+      Label notNull;
+      sub(d, s, xheapbase);
+      bgez(d, notNull);
+      mv(d, zr);
+      bind(notNull);
+    }
     if (CompressedOops::shift() != 0) {
       assert (LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
       srli(d, d, CompressedOops::shift());
@@ -3920,11 +3925,6 @@ void MacroAssembler::load_klass(Register dst, Register src, Register tmp) {
   assert_different_registers(src, tmp);
   load_narrow_klass(dst, src);
   decode_klass_not_null(dst, tmp);
-}
-
-void MacroAssembler::load_prototype_header(Register dst, Register src, Register tmp) {
-  load_klass(dst, src, tmp);
-  ld(dst, Address(dst, Klass::prototype_header_offset()));
 }
 
 void MacroAssembler::store_klass(Register dst, Register src, Register tmp) {
@@ -4060,11 +4060,18 @@ void  MacroAssembler::decode_heap_oop(Register d, Register s) {
       slli(d, s, CompressedOops::shift());
     }
   } else {
-    Label done;
-    mv(d, s);
-    beqz(s, done);
-    shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
-    bind(done);
+    assert(LogMinObjAlignmentInBytes == CompressedOops::shift(), "decode alg wrong");
+    if (UseZicond) {
+      assert_different_registers(s, t0);
+      shadd(t0, s, xheapbase, t0, LogMinObjAlignmentInBytes);
+      czero_eqz(d, t0, s);   // d = s == 0 ? 0 : t0
+    } else {
+      Label done;
+      mv(d, s);
+      beqz(s, done);
+      shadd(d, s, xheapbase, d, LogMinObjAlignmentInBytes);
+      bind(done);
+    }
   }
   verify_oop_msg(d, "broken oop in decode_heap_oop");
 }
@@ -5375,7 +5382,9 @@ void MacroAssembler::verify_secondary_supers_table(Register r_sub_klass,
     mv(x11, r_sub_klass);
     mv(x12, tmp3);
     mv(x13, result);
-    mv(x14, (address)("mismatch"));
+    const char* msg = "mismatch";
+    const char* str = (code_section()->scratch_emit()) ? msg : AOTCodeCache::add_C_string(msg);
+    la(x14, ExternalAddress((address) str));
     rt_call(CAST_FROM_FN_PTR(address, Klass::on_secondary_supers_verification_failure));
     should_not_reach_here();
   }
@@ -7123,13 +7132,13 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
 
   // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
-  ori(mark, mark, markWord::unlocked_value);
+  ori(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
     // Mask inline_type bit such that we go to the slow path if object is an inline type
     andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
   }
 
-  xori(t, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
   bne(mark, t, slow, /* is_far */ true);
@@ -7192,7 +7201,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  test_bit(t, mark, exact_log2(markWord::unlocked_value));
+  test_bit(t, mark, exact_log2(markWord::lock_neutral_value));
   beqz(t, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -7200,7 +7209,7 @@ void MacroAssembler::fast_unlock(Register obj, Register tmp1, Register tmp2, Reg
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-  ori(t, mark, markWord::unlocked_value);
+  ori(t, mark, markWord::lock_neutral_value);
   cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
           /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
   beq(mark, t, unlocked);

@@ -464,8 +464,6 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         values.at_put(j, mem);
       } else if (val->is_Store()) {
         Node* n = val->in(MemNode::ValueIn);
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        n = bs->step_over_gc_barrier(n);
         if (is_subword_type(ft)) {
           n = Compile::narrow_value(ft, n, phi_type, &_igvn, true);
         }
@@ -650,8 +648,6 @@ Node* PhaseMacroExpand::value_from_mem(Node* origin, Node* ctl, BasicType ft, co
       return value_from_alloc(ft, adr_t, alloc);
     } else if (mem->is_Store()) {
       Node* n = mem->in(MemNode::ValueIn);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      n = bs->step_over_gc_barrier(n);
       return n;
     } else if (mem->is_Phi()) {
       // attempt to produce a Phi reflecting the values on the input paths of the Phi
@@ -805,7 +801,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
   }
 
   while (can_eliminate && worklist.size() > 0) {
-    BarrierSetC2 *bs = BarrierSet::barrier_set()->barrier_set_c2();
     res = worklist.pop();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax); j < jmax && can_eliminate; j++) {
       Node* use = res->fast_out(j);
@@ -827,7 +822,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
             NOT_PRODUCT(fail_eliminate = "Mismatched access");
             can_eliminate = false;
           }
-          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !bs->is_gc_pre_barrier_node(n) && !reduce_merge_precheck) {
+          if (!n->is_Store() && n->Opcode() != Op_CastP2X && !reduce_merge_precheck) {
             DEBUG_ONLY(disq_node = n;)
             if (n->is_Load() || n->is_LoadStore()) {
               NOT_PRODUCT(fail_eliminate = "Field load";)
@@ -3076,22 +3071,38 @@ void PhaseMacroExpand::expand_subtypecheck_node(SubTypeCheckNode *check) {
   _igvn.replace_node(check, C->top());
 }
 
-// FlatArrayCheckNode (array1 array2 ...) is expanded into:
+// FlatArrayCheckNode inputs must be homogeneous: either all array inputs
+// (array1 array2 ...) or all klass inputs (klass1 klass2 ...).
+//
+// For array inputs whose users are all If nodes, the check is expanded using
+// mark words:
 //
 // long mark = array1.mark | array2.mark | ...;
-// long locked_bit = markWord::unlocked_value & array1.mark & array2.mark & ...;
-// if (locked_bit == 0) {
-//   // One array is locked, load prototype header from the klass
-//   mark = array1.klass.proto | array2.klass.proto | ...
-// }
 // if ((mark & markWord::flat_array_bit_in_place) == 0) {
-//    ...
+//   ...
+// }
+//
+// For klass inputs, and for array inputs with a non-If user, the check is
+// expanded using the klass layout helpers. For array inputs, the klasses are
+// loaded first:
+//
+// int layout = klass1.layout_helper | klass2.layout_helper | ...;
+// if ((layout & Klass::_lh_array_tag_flat_value_bit_inplace) == 0) {
+//   ...
 // }
 void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
-  bool array_inputs = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
-  if (array_inputs) {
+  bool use_mark_word = _igvn.type(check->in(FlatArrayCheckNode::ArrayOrKlass))->isa_oopptr() != nullptr;
+  Node* bol = check->unique_out();
+  for (DUIterator_Fast imax, i = bol->fast_outs(imax); i < imax; i++) {
+    if (!bol->fast_out(i)->is_If()) {
+      // No control input, fall back to layout helper check
+      use_mark_word = false;
+      break;
+    }
+  }
+
+  if (use_mark_word) {
     Node* mark = MakeConX(0);
-    Node* locked_bit = MakeConX(markWord::unlocked_value);
     Node* mem = check->in(FlatArrayCheckNode::Memory);
     for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
       Node* ary = check->in(i);
@@ -3101,53 +3112,19 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
       Node* mark_adr = basic_plus_adr(ary, oopDesc::mark_offset_in_bytes());
       Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
       mark = _igvn.transform(new OrXNode(mark, mark_load));
-      locked_bit = _igvn.transform(new AndXNode(locked_bit, mark_load));
     }
     assert(!mark->is_Con(), "Should have been optimized out");
-    Node* cmp = _igvn.transform(new CmpXNode(locked_bit, MakeConX(0)));
-    Node* is_unlocked = _igvn.transform(new BoolNode(cmp, BoolTest::ne));
 
-    // BoolNode might be shared, replace each if user
-    Node* old_bol = check->unique_out();
-    assert(old_bol->is_Bool() && old_bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      IfNode* old_iff = old_bol->last_out(i)->as_If();
-      Node* ctrl = old_iff->in(0);
-      RegionNode* region = new RegionNode(3);
-      Node* mark_phi = new PhiNode(region, TypeX_X);
+    // Replace the bool node
+    assert(bol->is_Bool() && bol->as_Bool()->_test._test == BoolTest::ne, "unexpected condition");
 
-      // Check if array is unlocked
-      IfNode* iff = _igvn.transform(new IfNode(ctrl, is_unlocked, PROB_MAX, COUNT_UNKNOWN))->as_If();
+    // Check if flat array bits are set
+    Node* mask = MakeConX(markWord::flat_array_bit_in_place);
+    Node* masked = _igvn.transform(new AndXNode(mark, mask));
+    Node* cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
+    Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
+    _igvn.replace_node(bol, is_not_flat);
 
-      // Unlocked: Use bits from mark word
-      region->init_req(1, _igvn.transform(new IfTrueNode(iff)));
-      mark_phi->init_req(1, mark);
-
-      // Locked: Load prototype header from klass
-      ctrl = _igvn.transform(new IfFalseNode(iff));
-      Node* proto = MakeConX(0);
-      for (uint i = FlatArrayCheckNode::ArrayOrKlass; i < check->req(); ++i) {
-        Node* ary = check->in(i);
-        // Make loads control dependent to make sure they are only executed if array is locked
-        Node* klass_adr = basic_plus_adr(ary, oopDesc::klass_offset_in_bytes());
-        Node* klass = _igvn.transform(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-        Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-        Node* proto_load = _igvn.transform(LoadNode::make(_igvn, ctrl, C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
-        proto = _igvn.transform(new OrXNode(proto, proto_load));
-      }
-      region->init_req(2, ctrl);
-      mark_phi->init_req(2, proto);
-
-      // Check if flat array bits are set
-      Node* mask = MakeConX(markWord::flat_array_bit_in_place);
-      Node* masked = _igvn.transform(new AndXNode(_igvn.transform(mark_phi), mask));
-      cmp = _igvn.transform(new CmpXNode(masked, MakeConX(0)));
-      Node* is_not_flat = _igvn.transform(new BoolNode(cmp, BoolTest::eq));
-
-      ctrl = _igvn.transform(region);
-      iff = _igvn.transform(new IfNode(ctrl, is_not_flat, PROB_MAX, COUNT_UNKNOWN))->as_If();
-      _igvn.replace_node(old_iff, iff);
-    }
     _igvn.replace_node(check, C->top());
   } else {
     // Fall back to layout helper check
@@ -3170,18 +3147,16 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
     }
     Node* masked = transform_later(new AndINode(lhs, intcon(Klass::_lh_array_tag_flat_value_bit_inplace)));
     Node* cmp = transform_later(new CmpINode(masked, intcon(0)));
-    Node* bol = transform_later(new BoolNode(cmp, BoolTest::eq));
+    Node* new_bol = transform_later(new BoolNode(cmp, BoolTest::eq));
     Node* m2b = transform_later(new Conv2BNode(masked));
     // The matcher expects the input to If/CMove nodes to be produced by a Bool(CmpI..)
     // pattern, but the input to other potential users (e.g. Phi) to be some
     // other pattern (e.g. a Conv2B node, possibly idealized as a CMoveI).
-    Node* old_bol = check->unique_out();
-    for (DUIterator_Last imin, i = old_bol->last_outs(imin); i >= imin; --i) {
-      Node* user = old_bol->last_out(i);
+    for (DUIterator_Last imin, i = bol->last_outs(imin); i >= imin; --i) {
+      Node* user = bol->last_out(i);
       for (uint j = 0; j < user->req(); j++) {
-        Node* n = user->in(j);
-        if (n == old_bol) {
-          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? bol : m2b);
+        if (user->in(j) == bol) {
+          _igvn.replace_input_of(user, j, (user->is_If() || user->is_CMove()) ? new_bol : m2b);
         }
       }
     }
@@ -3197,6 +3172,17 @@ void PhaseMacroExpand::refine_strip_mined_loop_macro_nodes() {
       n->as_OuterStripMinedLoop()->adjust_strip_mined_loop(&_igvn);
     }
   }
+}
+
+// Clean up the graph so we're less likely to hit the maximum node limit
+static bool cleanup_graph(PhaseIterGVN& igvn) {
+  igvn.set_delay_transform(false);
+  igvn.optimize();
+  if (igvn.C->failing()) {
+    return false;
+  }
+  igvn.set_delay_transform(true);
+  return true;
 }
 
 //---------------------------eliminate_macro_nodes----------------------
@@ -3293,8 +3279,7 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
                n->is_OpaqueConstantBool()    ||
                n->is_OpaqueInitializedAssertionPredicate() ||
                n->Opcode() == Op_MaxL      ||
-               n->Opcode() == Op_MinL      ||
-               BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(n),
+               n->Opcode() == Op_MinL,
                "unknown node type in macro list");
       }
       if (C->failing()) {
@@ -3312,12 +3297,9 @@ void PhaseMacroExpand::eliminate_macro_nodes(bool eliminate_locks) {
     // other macro nodes can remove all these safepoints, allowing the allocation to be removed.
     // Hence after igvn we retry removing macro nodes if some progress that has been made in this
     // iteration.
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing()) {
-      return;
+    if (!cleanup_graph(_igvn)) {
+      return; // failing
     }
-    _igvn.set_delay_transform(true);
 
     if (!progress) {
       break;
@@ -3407,21 +3389,18 @@ void PhaseMacroExpand::eliminate_opaque_looplimit_macro_nodes() {
 }
 
 //------------------------------expand_macro_nodes----------------------
-//  Returns true if a failure occurred.
+//  Returns false if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
   if (StressMacroExpansion) {
     C->shuffle_macro_nodes();
   }
 
-  // Clean up the graph so we're less likely to hit the maximum node
-  // limit
-  _igvn.set_delay_transform(false);
-  _igvn.optimize();
-  if (C->failing())  return true;
-  _igvn.set_delay_transform(true);
+  // Clean up after eliminate_opaque_looplimit_macro_nodes()
+  if (!cleanup_graph(_igvn)) {
+    return false; // failing
+  }
 
-
-  // Because we run IGVN after each expansion, some macro nodes may go
+  // Because we run IGVN after set of expansions, some macro nodes may go
   // dead and be removed from the list as we iterate over it. Move
   // Allocate nodes (processed in a second pass) at the beginning of
   // the list and then iterate from the last element of the list until
@@ -3429,26 +3408,34 @@ bool PhaseMacroExpand::expand_macro_nodes() {
   // the list due to nodes going dead.
   C->sort_macro_nodes();
 
-  // expand arraycopy "macro" nodes first
   // For ReduceBulkZeroing, we must first process all arraycopy nodes
-  // before the allocate nodes are expanded.
+  // before the allocate nodes are expanded. Sorting macro nodes list
+  // enforces it.
+
+  // Worst case is a macro node gets expanded into about 200 nodes.
+  // Allow 50% more for optimization.
+  static const uint macro_expansion_estimate = 300;
+  const uint macro_expansion_margin = macro_expansion_estimate * MacroExpansionCleanupCount;
+  const uint macro_expansion_limit  = C->max_node_limit() > macro_expansion_margin ?
+                                      C->max_node_limit() - macro_expansion_margin : 0;
+  uint pending_expansions_to_cleanup = 0;
+
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
-    Node * n = C->macro_node(macro_count-1);
+    Node* n = C->macro_node(macro_count-1);
     assert(n->is_macro(), "only macro nodes expected here");
     if (_igvn.type(n) == Type::TOP || (n->in(0) != nullptr && n->in(0)->is_top())) {
       // node is unreachable, so don't try to expand it
       C->remove_macro_node(n);
       continue;
     }
+    // Reached Allocate nodes - jump to second pass to process them.
     if (n->is_Allocate()) {
       break;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
+      return false;
     }
 
     DEBUG_ONLY(int old_macro_count = C->macro_count();)
@@ -3488,22 +3475,35 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return false;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
+  }
+
+  // Cleanup graph before expanding Allocate nodes.
+  if (pending_expansions_to_cleanup > 0) {
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
 
   // All nodes except Allocate nodes are expanded now. There could be
   // new optimization opportunities (such as folding newly created
   // load from a just allocated object). Run IGVN.
 
-  // expand "macro" nodes
   // nodes are removed from the macro list as they are processed
   while (C->macro_count() > 0) {
     int macro_count = C->macro_count();
@@ -3515,10 +3515,8 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       continue;
     }
     // Make sure expansion will not cause node limit to be exceeded.
-    // Worst case is a macro node gets expanded into about 200 nodes.
-    // Allow 50% more for optimization.
-    if (C->check_node_count(300, "out of nodes before macro expansion")) {
-      return true;
+    if (C->check_node_count(macro_expansion_estimate, "out of nodes before macro expansion")) {
+      return false;
     }
     switch (n->class_id()) {
     case Node::Class_Allocate:
@@ -3531,19 +3529,29 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(false, "unknown node type in macro list");
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
-    if (C->failing())  return true;
+    if (C->failing()) {
+      return false;
+    }
     C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
-    // Clean up the graph so we're less likely to hit the maximum node
-    // limit
-    _igvn.set_delay_transform(false);
-    _igvn.optimize();
-    if (C->failing())  return true;
-    _igvn.set_delay_transform(true);
+    pending_expansions_to_cleanup++;
+    if (pending_expansions_to_cleanup < MacroExpansionCleanupCount &&
+        C->live_nodes() < macro_expansion_limit) {
+      // skip clean up
+      continue;
+    }
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+    pending_expansions_to_cleanup = 0;
   }
-
+  if (pending_expansions_to_cleanup > 0) {
+    if (!cleanup_graph(_igvn)) {
+      return false; // failing
+    }
+  }
   _igvn.set_delay_transform(false);
-  return false;
+  return true;
 }
 
 #ifndef PRODUCT

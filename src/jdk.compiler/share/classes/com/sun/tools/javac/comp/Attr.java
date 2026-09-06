@@ -814,7 +814,16 @@ public class Attr extends JCTree.Visitor {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
                     bounds = bounds.prepend(attribType(bound, env));
-                types.setBounds(a, bounds.reverse());
+                bounds = bounds.reverse();
+                if (bounds.head.hasTag(ARRAY)) {
+                    /* A single bound that is an array type may structurally reference
+                     * this same type variable, as in `<T extends T[]>`, setting the bound to
+                     * Object as a recovery strategy
+                     */
+                    types.setBounds(a, List.of(syms.objectType));
+                } else {
+                    types.setBounds(a, bounds);
+                }
             } else {
                 // if no bounds are given, assume a single bound of
                 // java.lang.Object.

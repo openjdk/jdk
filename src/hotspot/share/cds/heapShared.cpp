@@ -909,7 +909,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (!orig_mirror->fast_no_hash_check()) {
+  if (orig_mirror->has_identity_hash()) {
     intptr_t src_hash = orig_mirror->identity_hash();
     if (UseCompactObjectHeaders) {
       narrowKlass nk = CompressedKlassPointers::encode(orig_mirror->klass());
@@ -918,7 +918,7 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
       // For valhalla, the prototype header is the same as markWord::prototype();
       scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
-    assert(scratch_m->mark().is_unlocked(), "sanity");
+    assert(scratch_m->mark().is_lock_neutral(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);

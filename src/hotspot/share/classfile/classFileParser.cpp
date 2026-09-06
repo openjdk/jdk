@@ -1549,8 +1549,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     if (fi.field_flags().is_contended()) {
       _has_contended_fields = true;
     }
-    if (access_flags.is_strict() && access_flags.is_static()) {
-      _has_strict_static_fields = true;
+    if (access_flags.is_strict()) {
+      if (access_flags.is_static()) {
+        _has_strict_static_fields = true;
+      } else {
+        _has_strict_instance_fields = true;
+      }
     }
     _temp_field_info->append(fi);
   }
@@ -4636,10 +4640,9 @@ void ClassFileParser:: verify_legal_field_modifiers(jint flags,
   const char* error_msg = "";
 
   // There is some overlap in the checks that apply, for example interface fields
-  // must be static, static fields can't be strict, and therefore interfaces can't
-  // have strict fields. So we don't have to check every possible invalid combination
-  // individually as long as all are covered. Once we have found an illegal combination
-  // we can stop checking.
+  // must be static, therefore interfaces can't have strict instance fields.
+  // We don't have to check every possible invalid combination individually as long as
+  // all are covered. Once we have found an illegal combination we can stop checking.
 
   if (!is_illegal) {
     if (is_interface) {
@@ -5545,6 +5548,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_nonstatic_field_size(_layout_info->_nonstatic_field_size);
   ik->set_has_nonstatic_fields(_layout_info->_has_nonstatic_fields);
   ik->set_has_strict_static_fields(_has_strict_static_fields);
+  ik->set_has_strict_instance_fields(_has_strict_instance_fields);
 
   if (_layout_info->_is_naturally_atomic) {
     ik->set_is_naturally_atomic();
@@ -5890,6 +5894,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_contended_fields(false),
   _has_aot_runtime_setup_method(false),
   _has_strict_static_fields(false),
+  _has_strict_instance_fields(false),
   _has_null_restricted_static_fields(false),
   _must_be_atomic(true),
   _has_finalizer(false),

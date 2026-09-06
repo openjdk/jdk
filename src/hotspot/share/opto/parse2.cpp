@@ -2076,19 +2076,21 @@ void Parse::acmp_type_check(Node* input, const TypeOopPtr* tinput, ProfilePtrKin
   Node* null_ctl;
   Node* cast = acmp_null_check(input, tinput, input_ptr, null_ctl);
 
-  if (input_type != nullptr) {
-    Deoptimization::DeoptReason reason;
-    if (tinput->speculative_type() != nullptr && !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
-      reason = Deoptimization::Reason_speculate_class_check;
+  if (!stopped()) {
+    if (input_type != nullptr) {
+      Deoptimization::DeoptReason reason;
+      if (tinput->speculative_type() != nullptr && !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
+        reason = Deoptimization::Reason_speculate_class_check;
+      } else {
+        reason = Deoptimization::Reason_class_check;
+      }
+      acmp_type_check_or_trap(&cast, input_type, reason);
     } else {
-      reason = Deoptimization::Reason_class_check;
+      // No specific type, check for inline type
+      BuildCutout unless(this, inline_type_test(cast, /* is_inline = */ false), PROB_MAX);
+      inc_sp(2);
+      uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
     }
-    acmp_type_check_or_trap(&cast, input_type, reason);
-  } else {
-    // No specific type, check for inline type
-    BuildCutout unless(this, inline_type_test(cast, /* is_inline = */ false), PROB_MAX);
-    inc_sp(2);
-    uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_maybe_recompile);
   }
 
   Node* ne_region = new RegionNode(2);

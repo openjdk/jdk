@@ -294,36 +294,13 @@ Node* PhaseMacroExpand::generate_nonpositive_guard(Node** ctrl, Node* index, boo
 }
 
 Node* PhaseMacroExpand::mark_word_test(Node** ctrl, Node* obj, MergeMemNode* mem, uintptr_t mask_val, RegionNode* region) {
-  // Load markword and check if obj is locked
+  // Load markword
   Node* mark = make_load_raw(nullptr, mem->memory_at(Compile::AliasIdxRaw), obj, oopDesc::mark_offset_in_bytes(), TypeX_X, TypeX_X->basic_type());
-  Node* locked_bit = MakeConX(markWord::unlocked_value);
-  locked_bit = transform_later(new AndXNode(locked_bit, mark));
-  Node* cmp = transform_later(new CmpXNode(locked_bit, MakeConX(0)));
-  Node* is_unlocked = transform_later(new BoolNode(cmp, BoolTest::ne));
-  IfNode* iff = transform_later(new IfNode(*ctrl, is_unlocked, PROB_MAX, COUNT_UNKNOWN))->as_If();
-  Node* locked_region = transform_later(new RegionNode(3));
-  Node* mark_phi = transform_later(new PhiNode(locked_region, TypeX_X));
-
-  // Unlocked: Use bits from mark word
-  locked_region->init_req(1, transform_later(new IfTrueNode(iff)));
-  mark_phi->init_req(1, mark);
-
-  // Locked: Load prototype header from klass
-  *ctrl = transform_later(new IfFalseNode(iff));
-  // Make loads control dependent to make sure they are only executed if array is locked
-  Node* klass_adr = basic_plus_adr(obj, oopDesc::klass_offset_in_bytes());
-  Node* klass = transform_later(LoadKlassNode::make(_igvn, C->immutable_memory(), klass_adr, TypeInstPtr::KLASS, TypeInstKlassPtr::OBJECT));
-  Node* proto_adr = basic_plus_adr(top(), klass, in_bytes(Klass::prototype_header_offset()));
-  Node* proto = transform_later(LoadNode::make(_igvn, *ctrl, C->immutable_memory(), proto_adr, proto_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
-
-  locked_region->init_req(2, *ctrl);
-  mark_phi->init_req(2, proto);
-  *ctrl = locked_region;
 
   // Now check if mark word bits are set
   Node* mask = MakeConX(mask_val);
-  Node* masked = transform_later(new AndXNode(mark_phi, mask));
-  cmp = transform_later(new CmpXNode(masked, mask));
+  Node* masked = transform_later(new AndXNode(mark, mask));
+  Node* cmp = transform_later(new CmpXNode(masked, mask));
   Node* bol = transform_later(new BoolNode(cmp, BoolTest::eq));
   return generate_fair_guard(ctrl, bol, region);
 }
@@ -1371,6 +1348,17 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = nullptr;
 
   if (ac->is_clonebasic()) {
+    // Flag the trailing MemBar so that optimize_simple_memory_chain knows it guards
+    // an expanded clone. clone_at_expansion virtual function may replace the ArrayCopyNode
+    // but does not set this flag.
+    Node* membar = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
+    assert(membar->is_MemBar(), "expect MemBar after clonebasic");
+    assert(membar->in(TypeFunc::Memory)->is_MergeMem() &&
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
+            "MemBar is from ac");
+    membar->as_MemBar()->set_trailing_expanded_array_copy();
+
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
     return;
@@ -1417,10 +1405,6 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
       adr_type = dest_type->is_oopptr()->add_offset(Type::OffsetBot);
       if (ac->_dest_type != TypeOopPtr::BOTTOM) {
         adr_type = ac->_dest_type->add_offset(Type::OffsetBot)->is_ptr();
-      }
-      if (ac->_src_type != ac->_dest_type) {
-        adr_type = TypeRawPtr::BOTTOM;
-        raw_base = true;
       }
     }
     merge_mem = MergeMemNode::make(mem);

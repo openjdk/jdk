@@ -40,6 +40,21 @@ struct NameAndSig {
   NameAndSig(Symbol* n, Symbol* s) : _name(n), _signature(s) {}
 };
 
+inline unsigned int nameandsig_hash(NameAndSig const& field) {
+  Symbol* name = field._name;
+  return (unsigned int) name->identity_hash();
+}
+
+inline bool nameandsig_equals(NameAndSig const& f1, NameAndSig const& f2) {
+  return f1._name == f2._name &&
+          f1._signature == f2._signature;
+}
+
+// List of unset strict fields. The boolean value is a dummy so this acts as a set
+typedef HashTable<NameAndSig, bool, 17,
+                  AnyObj::RESOURCE_AREA, mtInternal,
+                  nameandsig_hash, nameandsig_equals> AssertUnsetFieldTable;
+
 // The verifier class
 class Verifier : AllStatic {
  public:
@@ -68,6 +83,8 @@ class Verifier : AllStatic {
 
   // Print output for class+resolve
   static void trace_class_resolution(Klass* resolve_class, InstanceKlass* verify_class);
+
+  static bool supports_strict_fields(InstanceKlass* klass);
 
  private:
   static Symbol* inference_verify(

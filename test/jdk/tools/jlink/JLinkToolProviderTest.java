@@ -34,7 +34,7 @@ import java.util.spi.ToolProvider;
 /*
  * @test
  * @modules jdk.jlink
- * @run main JLinkToolProviderTest
+ * @run main/othervm JLinkToolProviderTest
  */
 public class JLinkToolProviderTest {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
