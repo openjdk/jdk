@@ -3359,6 +3359,12 @@ Method* AOTCodeReader::read_method() {
   }
   assert(m->is_method(), "sanity");
   ResourceMark rm;
+  if (m->is_old()) {
+    set_lookup_failed("Method was redefined");
+    log_debug(aot, codecache, metadata)("%d (A%d): Lookup failed for '%s': method was redefined",
+              compile_id(), comp_level(), m->name_and_sig_as_C_string());
+    return nullptr;
+  }
   Klass* k = m->method_holder();
   if (!k->is_instance_klass()) {
     set_lookup_failed("Method holder is not instance klass");
