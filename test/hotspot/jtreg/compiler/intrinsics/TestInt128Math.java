@@ -27,7 +27,7 @@ package compiler.intrinsics;
 import compiler.lib.generators.Generator;
 import compiler.lib.generators.Generators;
 import compiler.lib.ir_framework.*;
-import jdk.internal.misc.Int128T;
+import jdk.internal.math.Int128Math;
 import jdk.test.lib.Asserts;
 
 /*
@@ -35,17 +35,17 @@ import jdk.test.lib.Asserts;
  * @bug 8383724
  * @summary Test the C2 implementation of int128_t operations
  * @key randomness
- * @modules java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.math
  * @library /test/lib /
  * @run driver ${test.main.class}
  */
-public class TestInt128T {
+public class TestInt128Math {
     static final Generator<Long> LONGS = Generators.G.longs();
 
     public static void main(String[] args) {
         var framework = new TestFramework();
         framework.setDefaultWarmup(1);
-        framework.addFlags("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
+        framework.addFlags("--add-exports=java.base/jdk.internal.math=ALL-UNNAMED");
         framework.start();
     }
 
@@ -53,7 +53,7 @@ public class TestInt128T {
     @IR(counts = {IRNode.ADD_I128T, "1"}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     @IR(failOn = IRNode.ADD_I128T, phase = CompilePhase.BEFORE_MATCHING)
     public long testAddLo(long lo1, long hi1, long lo2, long hi2) {
-        return Int128T.addLo(lo1, hi1, lo2, hi2);
+        return Int128Math.addLo(lo1, hi1, lo2, hi2);
     }
 
     @Run(test = "testAddLo")
@@ -69,7 +69,7 @@ public class TestInt128T {
     @IR(counts = {IRNode.ADD_I128T, "1"}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     @IR(failOn = IRNode.ADD_I128T, phase = CompilePhase.BEFORE_MATCHING)
     public long testAddHi(long lo1, long hi1, long lo2, long hi2) {
-        return Int128T.addHi(lo1, hi1, lo2, hi2);
+        return Int128Math.addHi(lo1, hi1, lo2, hi2);
     }
 
     @Run(test = "testAddHi")
@@ -102,7 +102,7 @@ public class TestInt128T {
     @IR(counts = {IRNode.SUB_I128T, "1"}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     @IR(failOn = IRNode.SUB_I128T, phase = CompilePhase.BEFORE_MATCHING)
     public long testSubLo(long lo1, long hi1, long lo2, long hi2) {
-        return Int128T.subLo(lo1, hi1, lo2, hi2);
+        return Int128Math.subLo(lo1, hi1, lo2, hi2);
     }
 
     @Run(test = "testSubLo")
@@ -118,7 +118,7 @@ public class TestInt128T {
     @IR(counts = {IRNode.SUB_I128T, "1"}, phase = CompilePhase.BEFORE_MACRO_EXPANSION)
     @IR(failOn = IRNode.SUB_I128T, phase = CompilePhase.BEFORE_MATCHING)
     public long testSubHi(long lo1, long hi1, long lo2, long hi2) {
-        return Int128T.subHi(lo1, hi1, lo2, hi2);
+        return Int128Math.subHi(lo1, hi1, lo2, hi2);
     }
 
     @Run(test = "testSubHi")

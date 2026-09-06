@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.internal.misc;
+package jdk.internal.math;
 
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -30,7 +30,10 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * This class serves as API points to verify the correctness of the
  * implementation of corresponding C2 nodes.
  */
-public class Int128T {
+public final class Int128Math {
+    private Int128Math() {
+        throw new UnsupportedOperationException();
+    }
 
     @IntrinsicCandidate
     public static long addLo(long lo1, long hi1, long lo2, long hi2) {
