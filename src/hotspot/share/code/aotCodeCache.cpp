@@ -4269,6 +4269,18 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(C2_MacroAssembler::abort_verify_int_in_range);
   ADD_EXTERNAL_ADDRESS(C2_MacroAssembler::abort_verify_long_in_range);
 #endif // defined(AMD64) || defined(AARCH64)
+
+#ifndef PRODUCT
+  if (CountCompiledCalls) {
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_normal_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_static_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_interface_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_inlined_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_inlined_static_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_inlined_interface_calls_addr());
+    ADD_EXTERNAL_ADDRESS(SharedRuntime::nof_megamorphic_calls_addr());
+  }
+#endif // NOT PRODUCT
 #endif // COMPILER2
 
   ADD_EXTERNAL_ADDRESS(BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
