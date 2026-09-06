@@ -1102,21 +1102,22 @@ public final class ModuleDescriptor
             if (c == '-' && i >= n)
                 throw new IllegalArgumentException(v + ": Empty pre-release");
 
-            boolean parsePreRelease = c == '-';
-            while (parsePreRelease && i < n) {
-                c = v.charAt(i);
-                if (c == '.' || c == '-') {
-                    i++;
-                    continue;
+            if (c == '-') {
+                while (i < n) {
+                    c = v.charAt(i);
+                    if (c == '.' || c == '-') {
+                        i++;
+                        continue;
+                    }
+                    if (c == '+') {
+                        i++;
+                        break;
+                    }
+                    if (c >= '0' && c <= '9')
+                        i = takeNumber(v, i, pre);
+                    else
+                        i = takeString(v, i, pre);
                 }
-                if (c == '+') {
-                    i++;
-                    break;
-                }
-                if (c >= '0' && c <= '9')
-                    i = takeNumber(v, i, pre);
-                else
-                    i = takeString(v, i, pre);
             }
 
             if (c == '+' && i >= n)

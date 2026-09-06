@@ -70,6 +70,8 @@ public class VersionTest {
             { "",              null },
             { "A1",            null },  // does not start with number
             { "1.0-",          null },  // empty branch
+            { "1+",            null },  // empty build
+            { "1-a+",          null },  // empty build
 
         };
     }
