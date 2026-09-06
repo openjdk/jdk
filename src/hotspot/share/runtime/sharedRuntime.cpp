@@ -3257,7 +3257,7 @@ void AdapterHandlerLibrary::lookup_aot_cache(AdapterHandlerEntry* handler) {
   const char* name = AdapterHandlerLibrary::name(handler);
   const uint32_t id = AdapterHandlerLibrary::id(handler);
 
-  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::Adapter, id, name);
+  CodeBlob* blob = AOTCodeCache::load_adapter(id, name);
   if (blob != nullptr) {
     handler->set_adapter_blob(blob->as_adapter_blob());
   }
@@ -3367,7 +3367,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
     // try to save generated code
     const char* name = AdapterHandlerLibrary::name(handler);
     const uint32_t id = AdapterHandlerLibrary::id(handler);
-    bool success = AOTCodeCache::store_code_blob(*adapter_blob, AOTCodeEntry::Adapter, id, name);
+    bool success = AOTCodeCache::store_adapter(*adapter_blob, id, name);
     assert(success || !AOTCodeCache::is_dumping_adapter(), "caching of adapter must be disabled");
   }
 #endif // ZERO

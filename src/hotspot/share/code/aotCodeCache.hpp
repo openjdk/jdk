@@ -630,7 +630,11 @@ private:
   bool align_write_int();
   bool align_write_bytes(uint alignment);
   address reserve_bytes(uint nbytes);
-  uint write_bytes(const void* buffer, uint nbytes);
+  bool write_bytes(const void* buffer, uint nbytes);
+  bool write_int(const int val);
+  bool write_kind(DataKind kind) {
+    return write_int(static_cast<int>(kind));
+  }
   const char* addr(uint offset) const { return _load_buffer + offset; }
   static AOTCodeAddressTable* addr_table() {
     return is_on() && (cache()->_table != nullptr) ? cache()->_table : nullptr;
@@ -682,6 +686,7 @@ public:
   void preload_aot_code(TRAPS);
 
   void set_load_entries();
+  bool verify_nmethod_entry(AOTCodeEntry* entry, uint id, uint low_bound, uint high_bound);
   AOTCodeEntry* find_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level = 0);
   AOTCodeEntry* search_entry(AOTCodeEntry::Kind kind, uint id, uint comp_level);
   void invalidate_entry(AOTCodeEntry* entry);
@@ -695,9 +700,9 @@ public:
   bool write_klass(Klass* klass);
   bool write_method(Method* method);
 
-  bool write_relocations(CodeBlob& code_blob, RelocIterator& iter,
-                         GrowableArray<Handle>* oop_list = nullptr,
-                         GrowableArray<Metadata*>* metadata_list = nullptr);
+  bool write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
+                                GrowableArray<Handle>* oop_list = nullptr,
+                                GrowableArray<Metadata*>* metadata_list = nullptr);
 
   bool write_oop_map_set(CodeBlob& cb);
   bool write_nmethod_reloc_immediates(GrowableArray<Handle>& oop_list, GrowableArray<Metadata*>& metadata_list);
@@ -710,8 +715,9 @@ public:
   bool write_stub_data(CodeBlob& blob, AOTStubData *stub_data);
 
 #ifndef PRODUCT
-  bool write_asm_remarks(AsmRemarks& asm_remarks, bool use_string_table);
-  bool write_dbg_strings(DbgStrings& dbg_strings, bool use_string_table);
+  bool write_asm_remarks(AsmRemarks& asm_remarks, GrowableArray<const char*>& remarks, GrowableArray<uint>& remarks_len, uint* size);
+  bool write_dbg_strings(DbgStrings& dbg_strings, GrowableArray<const char*>& strings, GrowableArray<uint>&strings_len, uint* size);
+  bool write_asm_rem_and_dbg_str(AsmRemarks& asm_remarks, DbgStrings& dbg_strings, uint entry_position);
 #endif // PRODUCT
 
 private:
@@ -731,39 +737,27 @@ private:
   AOTCodeEntry* write_nmethod(nmethod* nm, bool for_preload);
 
 public:
-  // save and restore API for non-enumerable code blobs
-  static bool store_code_blob(CodeBlob& blob,
-                              AOTCodeEntry::Kind entry_kind,
-                              uint id,
-                              const char* name) NOT_CDS_RETURN_(false);
+  // save and restore API for adapters
+  static bool store_adapter(CodeBlob& blob, uint id, const char* name) NOT_CDS_RETURN_(false);
 
-  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  uint id, const char* name) NOT_CDS_RETURN_(nullptr);
+  static CodeBlob* load_adapter(uint id, const char* name) NOT_CDS_RETURN_(nullptr);
 
-  static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler, CompLevel comp_level) NOT_CDS_RETURN_(false);
-  static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
-
-  // save and restore API for enumerable code blobs
-
-  // API for single-stub blobs
-  static bool store_code_blob(CodeBlob& blob,
-                              AOTCodeEntry::Kind entry_kind,
+  // save and restore for single-stub blobs
+  static bool store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind,
                               BlobId id) NOT_CDS_RETURN_(false);
 
-  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  BlobId id) NOT_CDS_RETURN_(nullptr);
+  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind, BlobId id) NOT_CDS_RETURN_(nullptr);
 
-  // API for multi-stub blobs -- for use by class StubGenerator.
+  // save and restore for multi-stub blobs - for use by class StubGenerator
+  static bool store_multi_stub_blob(CodeBlob& blob, BlobId id, AOTStubData* stub_data,
+                                    CodeBuffer *code_buffer) NOT_CDS_RETURN_(false);
 
-  static bool store_code_blob(CodeBlob& blob,
-                              AOTCodeEntry::Kind kind,
-                              BlobId id,
-                              AOTStubData* stub_data,
-                              CodeBuffer *code_buffer) NOT_CDS_RETURN_(false);
+  static CodeBlob* load_multi_stub_blob(BlobId id, AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
 
-  static CodeBlob* load_code_blob(AOTCodeEntry::Kind kind,
-                                  BlobId id,
-                                  AOTStubData* stub_data) NOT_CDS_RETURN_(nullptr);
+  // save and restore API nmethods
+  static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
+
+  static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler, CompLevel comp_level) NOT_CDS_RETURN_(false);
 
   static void publish_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
   // publish all entries for a code blob in code cache address table
@@ -837,14 +831,25 @@ class AOTCodeReader {
 private:
   AOTCodeCache*  _cache;
   AOTCodeEntry*  _entry;
-  const char*    _load_buffer; // Loaded cached code buffer
-  uint  _read_position;        // Position in _load_buffer
+  address        _entry_buffer; // AOT code buffer for this entry
+  uint  _read_position;         // Position in _entry_buffer
+  uint  _read_limit;            // for bound checks
   uint  read_position() const { return _read_position; }
-  void  set_read_position(uint pos);
-  uint  align_read_int();
 
   // convenience method to convert offset in AOTCodeEntry data to its address
-  const char* addr(uint offset) const { return _load_buffer + offset; }
+  address addr(uint offset) const {
+    assert(offset <= _read_limit, "%u > %u ", offset, _read_limit);
+    return _entry_buffer + offset;
+  }
+  address position_addr() const { return addr(_read_position); }
+  bool get_set_read_position(address* pos, uint nbytes);
+  bool update_read_position(uint nbytes);
+  bool align_read_position(uint alignment);
+  bool read_int(int* val);
+  bool read_kind(DataKind* kind) {
+    return read_int(reinterpret_cast<int*>(kind));
+  }
+
 
   uint _compile_id;
   uint _comp_level;
@@ -860,10 +865,38 @@ private:
   AOTStubData*        _stub_data;
 
   const char*         _name;
-  address             _reloc_data;
   int                 _reloc_count;
+  address             _reloc_data;
   ImmutableOopMapSet* _oop_maps;
   address             _immutable_data;
+
+  int                 _cached_stub_data_count;
+  uint*               _cached_stub_data; // uint[] array
+
+  int                 _id_for_reloc_count;
+  uint*               _id_for_reloc;
+
+#ifndef PRODUCT
+  struct AsmRemData {
+    uint offset;     // remark's offset in code
+    uint str_offset; // string's offset in code's entry
+    uint str_len;    // string's len for bound check
+  };
+
+  struct DbgStrData {
+    uint str_offset; // string's offset in code's entry
+    uint str_len;    // string's len for bound check
+  };
+
+  int                 _asm_remarks_count;
+  AsmRemData*         _asm_remarks_data;
+  const char**        _asm_remarks_strings;
+
+  int                 _dbg_strings_count;
+  DbgStrData*         _dbg_strings_data;
+  const char**        _dbg_strings;
+#endif
+
   GrowableArray<Handle>*    _oop_list;
   GrowableArray<Metadata*>* _metadata_list;
   GrowableArray<Handle>*    _reloc_imm_oop_list;
@@ -871,8 +904,6 @@ private:
 
   const char* _failure;  // Failed to lookup for info (skip only this code load)
   void set_lookup_failed(const char* failure) { _failure = failure; }
-  bool lookup_failed() const { return _failure != nullptr; }
-  const char* lookup_failure() const { return _failure; }
 
   Klass* read_klass(JavaThread* thread);
   Method* read_method();
@@ -885,13 +916,14 @@ private:
   ImmutableOopMapSet* read_oop_map_set();
   void read_stub_data(CodeBlob* code_blob, AOTStubData *stub_data);
 
-  void fix_relocations(CodeBlob* code_blob, RelocIterator& iter,
-                       GrowableArray<Handle>* oop_list = nullptr,
-                       GrowableArray<Metadata*>* metadata_list = nullptr) NOT_CDS_RETURN;
+  void restore_relocations(CodeBlob* code_blob, RelocIterator& iter,
+                           GrowableArray<Handle>* oop_list = nullptr,
+                           GrowableArray<Metadata*>* metadata_list = nullptr);
 
 #ifndef PRODUCT
-  void read_asm_remarks(AsmRemarks& asm_remarks, bool use_string_table) NOT_CDS_RETURN;
-  void read_dbg_strings(DbgStrings& dbg_strings, bool use_string_table) NOT_CDS_RETURN;
+  void restore_asm_remarks(AsmRemarks& asm_remarks);
+  void restore_dbg_strings(DbgStrings& dbg_strings);
+  bool read_asm_rem_and_dbg_str();
 #endif // PRODUCT
 
 public:
@@ -902,6 +934,9 @@ public:
   CodeBlob* compile_code_blob(const char* name, AOTCodeEntry::Kind entry_kind, int id, AOTStubData* stub_data = nullptr);
 
   void restore(CodeBlob* code_blob);
+
+  bool lookup_failed() const { return _failure != nullptr; }
+  const char* lookup_failure() const { return _failure; }
 };
 
 // code cache internal runtime constants area used by AOT code
