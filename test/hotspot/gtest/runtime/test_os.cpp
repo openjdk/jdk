@@ -551,6 +551,9 @@ static address reserve_multiple(int num_stripes, size_t stripe_len) {
         tty->print_cr("reserve_multiple: retry (%d)...", stripe);
         carefully_release_multiple(p, stripe, stripe_len);
         p = nullptr;
+        // Out of the stripe loop, or the next stripe is computed from a
+        // null p and the cleanup for it releases [0, stripe_len).
+        break;
       } else {
         EXPECT_TRUE(os::commit_memory((char*)q, stripe_len, executable));
       }
