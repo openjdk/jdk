@@ -94,9 +94,13 @@ InlineTypeNode* InlineTypeNode::clone_with_phis(PhaseGVN* gvn, Node* region, Saf
     Node* value = vt->field_value(i);
     if (field->is_flat()) {
       // Handle flat fields recursively
-      value = value->as_InlineType()->clone_with_phis(gvn, region, map);
+      value = value->as_InlineType()->clone_with_phis(gvn, region, map, is_non_null && field->is_null_free());
     } else {
       t = Type::get_const_type(type);
+      if (is_non_null && field->is_null_free()) {
+        t = t->join(TypePtr::NOTNULL);
+      }
+
       value = PhiNode::make(region, init_with_top ? top : value, t);
       gvn->set_type(value, t);
       gvn->record_for_igvn(value);
@@ -1939,34 +1943,13 @@ InlineTypeNode* InlineTypeNode::clone_if_required(PhaseGVN* gvn, SafePointNode* 
 }
 
 const Type* InlineTypeNode::Value(PhaseGVN* phase) const {
-  Node* oop = get_oop();
-  const Type* toop = phase->type(oop);
-#ifdef ASSERT
-  if (oop->is_Con() && toop->is_zero_type() && _type->isa_oopptr()->is_known_instance()) {
-    // We are not allocated (anymore) and should therefore not have an instance id
-    dump(1);
-    assert(false, "Unbuffered inline type should not have known instance id");
-  }
-#endif
-  if (toop == Type::TOP) {
-    return Type::TOP;
-  }
-  const Type* t = toop->filter_speculative(_type);
-  // Because of contradicting type profiling, we can end up with top as speculative type,
-  // which would then get removed by cleanup_speculative. In this case we have to run filter_speculative
-  // again, otherwise we would break the idempotence of Value
-  if (t->speculative() == nullptr && toop->speculative() != nullptr) {
-    t = toop->filter_speculative(t);
-  }
-  if (t->singleton()) {
-    // Don't replace InlineType by a constant
-    t = _type;
-  }
   const Type* tinit = phase->type(in(NullMarker));
   if (tinit == Type::TOP) {
     return Type::TOP;
   }
-  if (tinit->isa_int() && tinit->is_int()->is_con(1)) {
+
+  const Type* t = type();
+  if (tinit == TypeInt::ONE) {
     t = t->join_speculative(TypePtr::NOTNULL);
   }
   return t;

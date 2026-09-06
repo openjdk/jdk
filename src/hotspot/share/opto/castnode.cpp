@@ -233,14 +233,16 @@ Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
     return nullptr;
   }
 
-  const Type* join = vt->type()->filter(type());
+  const Type* vt_type = vt->type();
+  const Type* join = vt_type->filter(type());
   if (join == Type::TOP) {
     // Do not push a dead Cast since its type can be unrelated
     return nullptr;
   }
 
-  if (join == vt->type()->remove_speculative()) {
-    // Redundant cast, let Identity handle
+  if (join == vt_type->remove_speculative() && type()->maybe_null()) {
+    // Redundant cast, let Identity handle. Except when the cast is not-null, in which case the
+    // users will also expect the null-free fields to be not-null.
     return nullptr;
   }
 
@@ -250,7 +252,7 @@ Node* ConstraintCastNode::ideal_cast_of_inline_type_node(PhaseGVN* phase) {
   }
 
   // The only possible case left is that the cast is a cast to not-null
-  assert(join == vt->type()->filter(TypePtr::NOTNULL), "must be");
+  assert(join == vt_type->filter(TypePtr::NOTNULL), "must be");
   InlineTypeNode* res = vt->clone()->as_InlineType();
   res->set_null_marker(*phase);
 
