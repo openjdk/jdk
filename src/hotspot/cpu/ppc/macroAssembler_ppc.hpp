@@ -1012,11 +1012,8 @@ class MacroAssembler: public Assembler {
     asm_assert_mems_zero(ne, 8, mem_offset, mem_base, msg);
   }
 
-  // Calls verify_oop. If UseCompressedOops is on, decodes the oop.
-  // Preserves reg.
-  void verify_coop(Register reg, const char*);
   // Emit code to verify that reg contains a valid oop if +VerifyOops is set.
-  void verify_oop(Register reg, const char* s = "broken oop");
+  void verify_oop(Register reg, const char* s = "broken oop", bool compressed = false);
   void verify_oop_addr(RegisterOrConstant offs, Register base, const char* s = "contains broken oop");
 
   // TODO: verify method and klass metadata (compare against vptr?)
