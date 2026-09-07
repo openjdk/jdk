@@ -21,18 +21,18 @@
  * questions.
  */
 
-// key: compiler.err.not.exhaustive.statement.details
-// key: compiler.misc.record.pattern
-// key: compiler.misc.missing.case
+// key: compiler.err.not.exhaustive.details
+// key: compiler.misc.binding.pattern
+// key: compiler.misc.missing.cases
 
-class RecordPattern {
-    void t(R r) {
-        switch (r) {
-            case R(C1 _) -> {}
+class MissingCases {
+    int t(I i) {
+        return switch (i) {
+            case R1 _ -> 0;
         };
     }
     sealed interface I {}
-    record C1() implements I {}
-    record C2() implements I {}
-    record R(I i) {}
+    record R1() implements I {}
+    record R2() implements I {}
+    record R3() implements I {}
 }

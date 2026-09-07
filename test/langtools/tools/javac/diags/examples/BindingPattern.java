@@ -23,7 +23,7 @@
 
 // key: compiler.err.not.exhaustive.details
 // key: compiler.misc.binding.pattern
-// key: compiler.misc.missing.cases
+// key: compiler.misc.missing.case
 
 class BindingPattern {
     int t(I i) {
