@@ -606,6 +606,7 @@ void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
   *(pc + 2) = 0x44;
   *(pc + 3) = 0x00;
   *(pc + 4) = 0x00;
+  // No invalidation is needed: relies on reader-side cross-modify-fence.
 }
 
 bool ShenandoahBarrierSetAssembler::is_patchable_nop(address pc) {
@@ -625,6 +626,7 @@ void ShenandoahBarrierSetAssembler::insert_patchable_jump(address pc, address ta
   *(pc + 2) = (disp >>  8) & 0xFF;
   *(pc + 3) = (disp >> 16) & 0xFF;
   *(pc + 4) = (disp >> 24) & 0xFF;
+  // No invalidation is needed: relies on reader-side cross-modify-fence.
 }
 
 bool ShenandoahBarrierSetAssembler::is_patchable_jump(address pc, address target_pc) {

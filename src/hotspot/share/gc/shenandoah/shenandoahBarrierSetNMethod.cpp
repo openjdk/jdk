@@ -70,15 +70,11 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return false;
   }
 
-  bool changed = false;
-
   // Handle oops and jumps.
-  changed |= ShenandoahNMethod::handle_oops(nm);
-  changed |= ShenandoahNMethod::handle_jumps(nm);
-
-  // If any code changed, bulk invalidate the entire nmethod.
-  if (changed) {
-    ICache::invalidate_range(nm->code_begin(), nm->code_size());
+  {
+    ICacheInvalidationContext icic;
+    ShenandoahNMethod::handle_oops(nm, &icic);
+    ShenandoahNMethod::handle_jumps(nm, &icic);
   }
 
   // CodeCache unloading support

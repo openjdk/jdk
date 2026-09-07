@@ -47,7 +47,7 @@ bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
 
-void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
+void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations, ICacheInvalidationContext* icic) {
   for (int c = 0; c < _oops_count; c ++) {
     oops->do_oop(_oops[c]);
   }
@@ -61,13 +61,13 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations) {
   }
 
   if (fix_relocations && _has_non_immed_oops) {
-    _nm->fix_oop_relocations();
+    _nm->fix_oop_relocations(icic);
   }
 }
 
-void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
+void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data, ICacheInvalidationContext* icic) {
   ShenandoahEvacuateUpdateMetadataClosure cl;
-  nmethod_data->oops_do(&cl, true /*fix relocation*/);
+  nmethod_data->oops_do(&cl, /* fix_relocations = */ true, icic);
 }
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {

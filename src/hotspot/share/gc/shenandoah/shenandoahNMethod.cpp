@@ -141,7 +141,7 @@ ShenandoahNMethod* ShenandoahNMethod::for_nmethod(nmethod* nm) {
   return new ShenandoahNMethod(nm);
 }
 
-bool ShenandoahNMethod::handle_oops(nmethod* nm) {
+void ShenandoahNMethod::handle_oops(nmethod* nm, ICacheInvalidationContext* icic) {
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != nullptr, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
@@ -149,23 +149,18 @@ bool ShenandoahNMethod::handle_oops(nmethod* nm) {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
   if ((heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) ||
       heap->is_concurrent_strong_root_in_progress()) {
-    heal_nmethod_metadata(data);
-    // Assume healing changed the code.
-    return true;
+    heal_nmethod_metadata(data, icic);
   } else if (heap->is_concurrent_mark_in_progress()) {
     ShenandoahKeepAliveClosure cl;
-    data->oops_do(&cl);
+    data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
   } else {
     // There is possibility that GC is cancelled when it arrives final mark.
     // In this case, concurrent root phase is skipped and degenerated GC should be
     // followed, where nmethods are disarmed.
   }
-
-  // No code modifications happened
-  return false;
 }
 
-bool ShenandoahNMethod::handle_jumps(nmethod* nm) {
+void ShenandoahNMethod::handle_jumps(nmethod* nm, ICacheInvalidationContext* icic) {
   ShenandoahNMethod* data = gc_data(nm);
   assert(data != nullptr, "Sanity");
   assert(data->lock()->owned_by_self(), "Must hold the lock");
@@ -180,7 +175,9 @@ bool ShenandoahNMethod::handle_jumps(nmethod* nm) {
                           code_begin + b._rel_target_pc,
                           ((gc_state & b._gc_state) != 0) == b._jump_when_state);
   }
-  return changed;
+  if (changed) {
+    icic->set_has_modified_code();
+  }
 }
 
 // Use precise instruction rewrite code, and only when it recognizes the current insns.
@@ -343,8 +340,9 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     log_register_nmethod(nm);
     append(data);
     ShenandoahNMethodLocker data_locker(data->lock());
-    if (ShenandoahNMethod::handle_jumps(nm)) {
-      ICache::invalidate_range(nm->code_begin(), nm->code_size());
+    {
+      ICacheInvalidationContext icic;
+      ShenandoahNMethod::handle_jumps(nm, &icic);
     }
     ShenandoahNMethod::disarm_nmethod(nm);
   }

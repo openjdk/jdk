@@ -82,7 +82,7 @@ public:
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahNMethodLocker locker(data->lock());
     ShenandoahIsUnloadingOopClosure cl;
-    data->oops_do(&cl);
+    data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
     return  cl.is_unloading();
   }
 };

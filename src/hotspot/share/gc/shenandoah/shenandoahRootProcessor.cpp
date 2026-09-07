@@ -238,7 +238,7 @@ public:
     }
     ShenandoahNMethod* const snm = ShenandoahNMethod::gc_data(nm);
     assert(snm != nullptr, "Sanity");
-    snm->oops_do(_oops, false /*fix_relocations*/);
+    snm->oops_do(_oops, /* fix_relocations = */ false, /* icic = */ nullptr);
   }
 };
 

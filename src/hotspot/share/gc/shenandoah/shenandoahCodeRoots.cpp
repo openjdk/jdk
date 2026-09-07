@@ -83,7 +83,8 @@ public:
 
       // Heal oops
       if (_bs->is_armed(nm)) {
-        ShenandoahNMethod::heal_nmethod_metadata(nm_data);
+        ICacheInvalidationContext icic;
+        ShenandoahNMethod::heal_nmethod_metadata(nm_data, &icic);
         // Must remain armed to complete remaining work in nmethod entry barrier
         assert(_bs->is_armed(nm), "Should remain armed");
       }

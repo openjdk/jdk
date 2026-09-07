@@ -1078,7 +1078,8 @@ public:
   void do_nmethod(nmethod* n) {
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(n);
     ShenandoahNMethodLocker locker(data->lock());
-    data->oops_do(&_cl, /* fix_relocations = */ true);
+    ICacheInvalidationContext icic;
+    data->oops_do(&_cl, /* fix_relocations = */ true, &icic);
   }
 };
 

@@ -84,7 +84,7 @@ public:
   inline nmethod* nm() const;
   inline ShenandoahNMethodLock* lock();
   inline ShenandoahNMethodLock* ic_lock();
-  inline void oops_do(OopClosure* oops, bool fix_relocations = false);
+  inline void oops_do(OopClosure* oops, bool fix_relocations, ICacheInvalidationContext* icic);
   // Update oops when the nmethod is re-registered
   void update();
 
@@ -94,9 +94,9 @@ public:
   static inline ShenandoahNMethodLock* lock_for_nmethod(nmethod* nm);
   static inline ShenandoahNMethodLock* ic_lock_for_nmethod(nmethod* nm);
 
-  static bool handle_oops(nmethod* nm);
-  static bool handle_jumps(nmethod* nm);
-  static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data);
+  static void handle_oops(nmethod* nm, ICacheInvalidationContext* icic);
+  static void handle_jumps(nmethod* nm, ICacheInvalidationContext* icic);
+  static inline void heal_nmethod_metadata(ShenandoahNMethod* nmethod_data, ICacheInvalidationContext* icic);
   static inline void disarm_nmethod(nmethod* nm);
 
   static inline ShenandoahNMethod* gc_data(nmethod* nm);

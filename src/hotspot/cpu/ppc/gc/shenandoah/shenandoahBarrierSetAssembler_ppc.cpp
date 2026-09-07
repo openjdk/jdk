@@ -729,12 +729,14 @@ static uint32_t encode_patchable_nop() {
 
 void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
   *((uint32_t*)pc) = encode_patchable_nop();
+  ICache::invalidate_word(pc);
 }
 
 void ShenandoahBarrierSetAssembler::insert_patchable_jump(address pc, address target_pc) {
   CodeBuffer cb(pc, BytesPerInstWord + 1);
   MacroAssembler a(&cb);
   a.b(target_pc);
+  ICache::invalidate_word(pc);
 }
 
 bool ShenandoahBarrierSetAssembler::is_patchable_nop(address pc) {
