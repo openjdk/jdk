@@ -44,7 +44,7 @@ class WindowsLinkSupport {
     }
 
     /**
-     * Creates a symbolic link, retyring if not privileged
+     * Creates a symbolic link, retrying if not privileged
      */
     static void createSymbolicLink(String link, String target, int flags)
         throws WindowsException
@@ -148,7 +148,7 @@ class WindowsLinkSupport {
             try {
                 WindowsFileAttributes attrs =
                     WindowsFileAttributes.get(target, false);
-                // non a link so we are done
+                // not a link so we are done
                 if (!attrs.isSymbolicLink()) {
                     return target.getPathForWin32Calls();
                 }
@@ -207,7 +207,7 @@ class WindowsLinkSupport {
         char c1 = path.charAt(1);
         if ((c0 <= 'z' && c0 >= 'a' || c0 <= 'Z' && c0 >= 'A') &&
             c1 == ':' && path.charAt(2) == '\\') {
-            // Driver specifier
+            // Drive specifier
             sb.append(Character.toUpperCase(c0));
             sb.append(":\\");
             start = 3;
@@ -315,6 +315,7 @@ class WindowsLinkSupport {
              *             USHORT  SubstituteNameLength;
              *             USHORT  PrintNameOffset;
              *             USHORT  PrintNameLength;
+             *             ULONG   Flags;
              *             WCHAR  PathBuffer[1];
              *         } SymbolicLinkReparseBuffer;
              *         struct {
@@ -335,9 +336,10 @@ class WindowsLinkSupport {
             final short OFFSETOF_PATHOFFSET = 8;
             final short OFFSETOF_PATHLENGTH = 10;
             final short OFFSETOF_PATHBUFFER = 20;
+            final short SIZEOF_REPARSE_DATA_BUFFER_HEADER = 8;
             final short SIZEOF_SYMLINK_REPARSE_BUFFER = 12;
 
-            int tag = (int)unsafe.getLong(buffer.address() + OFFSETOF_REPARSETAG);
+            int tag = unsafe.getInt(buffer.address() + OFFSETOF_REPARSETAG);
             if (tag != IO_REPARSE_TAG_SYMLINK) {
                 throw new NotLinkException(pathname, null, "Reparse point is not a symbolic link");
             }
@@ -358,7 +360,8 @@ class WindowsLinkSupport {
             // returned data must contain the fixed fields and an even-length
             // UTF-16 name whose offset and length are within the path buffer
             if ((reparseDataLength < SIZEOF_SYMLINK_REPARSE_BUFFER)
-                    || (reparseDataLength > bytesReturned - 8)
+                    || (reparseDataLength > bytesReturned - SIZEOF_REPARSE_DATA_BUFFER_HEADER)
+                    || ((nameOffset & 1) != 0)
                     || ((nameLengthInBytes & 1) != 0)
                     || (nameOffset > pathBufferSize)
                     || (nameLengthInBytes > pathBufferSize - nameOffset)) {
@@ -382,7 +385,7 @@ class WindowsLinkSupport {
     }
 
     /**
-     * Resolve all symbolic-links in a given absolute and normalized path
+     * Resolve all symbolic links in a given absolute and normalized path
      */
     private static WindowsPath resolveAllLinks(WindowsPath path)
         throws IOException
