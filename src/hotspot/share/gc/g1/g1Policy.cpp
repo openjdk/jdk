@@ -508,7 +508,7 @@ uint G1Policy::calculate_desired_num_eden_regions_before_young_only(double base_
 uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
                                                                uint min_num_eden_regions,
                                                                uint max_num_eden_regions) const {
-  uint min_num_marking_candidate_regions = MIN2(calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length()),
+  uint min_num_marking_candidate_regions = MIN2(calc_min_num_old_cset_regions(candidates()->num_last_marking_candidate_regions()),
                                                 candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
   uint num_selected_candidate_regions = 0;
@@ -517,7 +517,7 @@ uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_
       break;
     }
     predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
-    num_selected_candidate_regions += gr->length();
+    num_selected_candidate_regions += gr->num_regions();
   }
 
   return calculate_desired_num_eden_regions_before_young_only(predicted_region_evac_time_ms,
@@ -545,7 +545,7 @@ double G1Policy::predict_retained_regions_evac_time() const {
                                retained_groups->num_regions());
 
   for (G1CardSetGroup* group : *retained_groups) {
-    assert(group->length() == 1, "We should only have one region in a retained group");
+    assert(group->num_regions() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
     // We optimistically assume that any regions of these card set groups that contain pinned
     // regions can be evacuated the next gc, so just consider them like normal.

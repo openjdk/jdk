@@ -63,8 +63,8 @@ void G1CardSetGroup::calculate_efficiency() {
 }
 
 double G1CardSetGroup::liveness_percent() const {
-  assert(length() > 0, "must be");
-  size_t capacity = length() * G1HeapRegion::GrainBytes;
+  assert(num_regions() > 0, "must be");
+  size_t capacity = num_regions() * G1HeapRegion::GrainBytes;
   return ((capacity - _reclaimable_bytes) * 100.0) / capacity;
 }
 
@@ -106,7 +106,7 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
   size_t card_rs_length = _card_set.occupied();
 
   double merge_scan_time_ms = p->predict_merge_scan_time(card_rs_length);
-  double non_young_other_time_ms = p->predict_non_young_other_time_ms(length());
+  double non_young_other_time_ms = p->predict_non_young_other_time_ms(num_regions());
 
   double total_time_ms = merge_scan_time_ms +
                          predict_code_root_scan_time_ms +
@@ -115,7 +115,7 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
 
   log_trace(gc, ergo, cset) ("Prediction for card set group %u (%u regions): total_time %.2fms card_rs_length %zu merge_scan_time %.2fms code_root_scan_time_ms %.2fms evac_time_ms %.2fms other_time %.2fms bytes_to_copy %zu",
                              group_id(),
-                             length(),
+                             num_regions(),
                              total_time_ms,
                              card_rs_length,
                              merge_scan_time_ms,
@@ -151,10 +151,10 @@ int G1CardSetGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup**
 G1CardSetGroupList::G1CardSetGroupList() : _groups(8, mtGC), _num_regions(0) { }
 
 void G1CardSetGroupList::append(G1CardSetGroup* group) {
-  assert(group->length() > 0, "Do not add empty groups");
+  assert(group->num_regions() > 0, "Do not add empty groups");
   assert(!_groups.contains(group), "Already added to list");
   _groups.append(group);
-  _num_regions.store_relaxed(num_regions() + group->length());
+  _num_regions.store_relaxed(num_regions() + group->num_regions());
 }
 
 G1CardSetGroup* G1CardSetGroupList::at(uint index) {
@@ -230,7 +230,7 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
   _from_marking_groups(),
   _retained_groups(),
   _max_regions(0),
-  _last_marking_candidates_length(0)
+  _num_last_marking_candidate_regions(0)
 { }
 
 G1CollectionSetCandidates::~G1CollectionSetCandidates() {
@@ -257,7 +257,7 @@ void G1CollectionSetCandidates::clear() {
   for (uint i = 0; i < _max_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
-  _last_marking_candidates_length = 0;
+  _num_last_marking_candidate_regions = 0;
 }
 
 void G1CollectionSetCandidates::sort_marking_by_efficiency() {
@@ -296,7 +296,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
     assert(!contains(r), "must not contain region %u", r->hrm_index());
     _contains_map[r->hrm_index()] = CandidateOrigin::Marking;
 
-    if (current->length() == group_limit) {
+    if (current->num_regions() == group_limit) {
       if (group_limit != G1OldCardSetGroupSize) {
         group_limit = G1OldCardSetGroupSize;
       }
@@ -313,7 +313,7 @@ void G1CollectionSetCandidates::set_candidates_from_marking(GrowableArrayCHeap<G
   assert(_from_marking_groups.num_regions() == num_candidates, "Must be!");
 
   log_debug(gc, ergo, cset) ("Finished creating %u card set groups from %u regions", _from_marking_groups.length(), num_candidates);
-  _last_marking_candidates_length = num_candidates;
+  _num_last_marking_candidate_regions = num_candidates;
 
   verify();
 }
@@ -337,7 +337,7 @@ void G1CollectionSetCandidates::remove(G1CardSetGroupList* other) {
   G1CardSetGroupList other_retained_groups;
 
   for (G1CardSetGroup* group : *other) {
-    assert(group->length() > 0, "Should not have empty groups");
+    assert(group->num_regions() > 0, "Should not have empty groups");
     // Regions in the same group have the same source (i.e from_marking or retained).
     G1HeapRegion* r = group->region_at(0);
     if (is_from_marking(r)) {
@@ -370,18 +370,18 @@ void G1CollectionSetCandidates::add_retained_region_unsorted(G1HeapRegion* r) {
 }
 
 bool G1CollectionSetCandidates::is_empty() const {
-  return length() == 0;
+  return num_regions() == 0;
 }
 
 bool G1CollectionSetCandidates::has_more_marking_candidates() const {
-  return marking_regions_length() != 0;
+  return num_marking_regions() != 0;
 }
 
-uint G1CollectionSetCandidates::marking_regions_length() const {
+uint G1CollectionSetCandidates::num_marking_regions() const {
   return _from_marking_groups.num_regions();
 }
 
-uint G1CollectionSetCandidates::retained_regions_length() const {
+uint G1CollectionSetCandidates::num_retained_regions() const {
   return _retained_groups.num_regions();
 }
 
@@ -415,13 +415,13 @@ void G1CollectionSetCandidates::verify() {
   }
 
   verify_helper(&_from_marking_groups, from_marking, verify_map);
-  assert(from_marking == marking_regions_length(), "must be");
+  assert(from_marking == num_marking_regions(), "must be");
 
   uint from_marking_retained = 0;
   verify_helper(&_retained_groups, from_marking_retained, verify_map);
   assert(from_marking_retained == 0, "must be");
 
-  assert(length() >= marking_regions_length(), "must be");
+  assert(num_regions() >= num_marking_regions(), "must be");
 
   // Check whether the _contains_map is consistent with the list.
   for (uint i = 0; i < _max_regions; i++) {
