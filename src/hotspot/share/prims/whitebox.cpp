@@ -1691,7 +1691,8 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   }
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+    bool handle_alloc_failure = (blob_type != CodeBlobType::MethodHot);
+    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type, handle_alloc_failure);
     if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
     }
