@@ -265,8 +265,8 @@ private:
   static void register_finalizer_C(oopDesc* obj, JavaThread* current);
 
  public:
-  static void load_unknown_inline_C(flatArrayOopDesc* array, int index, JavaThread* current);
-  static void store_unknown_inline_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current);
+  static void load_unknown_value_C(flatArrayOopDesc* array, int index, JavaThread* current);
+  static void store_unknown_value_C(instanceOopDesc* buffer, flatArrayOopDesc* array, int index, JavaThread* current);
 
   static bool is_callee_saved_register(MachRegisterNumbers reg);
 
@@ -299,8 +299,8 @@ private:
 
   static address slow_arraycopy_Java()                   { return _slow_arraycopy_Java; }
   static address register_finalizer_Java()               { return _register_finalizer_Java; }
-  static address load_unknown_inline_Java()              { return _load_unknown_inline_Java; }
-  static address store_unknown_inline_Java()             { return _store_unknown_inline_Java; }
+  static address load_unknown_value_Java()              { return _load_unknown_value_Java; }
+  static address store_unknown_value_Java()             { return _store_unknown_value_Java; }
 
   static address vthread_end_first_transition_Java()     { return _vthread_end_first_transition_Java; }
   static address vthread_start_final_transition_Java()   { return _vthread_start_final_transition_Java; }
@@ -771,11 +771,11 @@ private:
   }
 #endif // INCLUDE_JFR
 
-  static const TypeFunc* load_unknown_inline_Type();
-  static const TypeFunc* store_unknown_inline_Type();
+  static const TypeFunc* load_unknown_value_Type();
+  static const TypeFunc* store_unknown_value_Type();
 
-  static const TypeFunc* store_inline_type_fields_Type();
-  static const TypeFunc* pack_inline_type_Type();
+  static const TypeFunc* store_value_type_fields_Type();
+  static const TypeFunc* pack_value_type_Type();
 
   // Dtrace support. entry and exit probes have the same signature
   static inline const TypeFunc* dtrace_method_entry_exit_Type() {
