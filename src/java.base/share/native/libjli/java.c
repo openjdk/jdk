@@ -88,6 +88,7 @@ static jboolean _have_classpath = JNI_FALSE;
 static const char *_fVersion;
 static jboolean _wc_enabled = JNI_FALSE;
 static jboolean dumpSharedSpaces = JNI_FALSE; /* -Xshare:dump */
+static const char *launchModeNames[] = { "Unknown", "Main class", "JAR file", "Module", "Source" };
 
 /*
  * Values that will be stored into splash screen environment variables.
