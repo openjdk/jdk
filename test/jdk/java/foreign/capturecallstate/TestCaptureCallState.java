@@ -25,11 +25,9 @@
  * @test
  * @bug 8356126
  * @library ../ /test/lib
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestCaptureCallState
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestCaptureCallState
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -48,8 +46,14 @@ import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.ValueLayout.JAVA_DOUBLE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_LONG;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestCaptureCallState extends NativeTestHelper {
 
     static {
@@ -67,7 +71,7 @@ public class TestCaptureCallState extends NativeTestHelper {
         assertThrows(IllegalArgumentException.class, () -> Linker.Option.captureCallState("Does not exist"));
         var duplicateOpt = Linker.Option.captureCallState("errno", "errno"); // duplicates
         var noDuplicateOpt = Linker.Option.captureCallState("errno");
-        assertEquals(duplicateOpt, noDuplicateOpt, "auto deduplication");
+        assertEquals(noDuplicateOpt, duplicateOpt, "auto deduplication");
         var display = duplicateOpt.toString();
         assertTrue(display.contains("errno"), "toString should contain state name 'errno': " + display);
     }
@@ -75,7 +79,8 @@ public class TestCaptureCallState extends NativeTestHelper {
     private record SaveValuesCase(String nativeTarget, FunctionDescriptor nativeDesc, String threadLocalName,
                                   Consumer<Object> resultCheck, boolean expectTestValue, boolean critical) {}
 
-    @Test(dataProvider = "cases")
+    @ParameterizedTest
+    @MethodSource("cases")
     public void testSavedThreadLocal(SaveValuesCase testCase) throws Throwable {
         List<Linker.Option> options = new ArrayList<>();
         options.add(Linker.Option.captureCallState(testCase.threadLocalName()));
@@ -101,14 +106,15 @@ public class TestCaptureCallState extends NativeTestHelper {
             testCase.resultCheck().accept(result);
             int savedErrno = (int) errnoHandle.get(saveSeg, 0L);
             if (testCase.expectTestValue()) {
-                assertEquals(savedErrno, testValue);
+                assertEquals(testValue, savedErrno);
             } else {
-                assertEquals(savedErrno, prevValue);
+                assertEquals(prevValue, savedErrno);
             }
         }
     }
 
-    @Test(dataProvider = "invalidCaptureSegmentCases")
+    @ParameterizedTest
+    @MethodSource("invalidCaptureSegmentCases")
     public void testInvalidCaptureSegment(MemorySegment captureSegment,
                                           Class<?> expectedExceptionType, String expectedExceptionMessage,
                                           Linker.Option[] extraOptions) {
@@ -128,7 +134,6 @@ public class TestCaptureCallState extends NativeTestHelper {
         }
     }
 
-    @DataProvider
     public static Object[][] cases() {
         List<SaveValuesCase> cases = new ArrayList<>();
 
@@ -138,9 +143,9 @@ public class TestCaptureCallState extends NativeTestHelper {
             cases.add(new SaveValuesCase("noset_errno_V", FunctionDescriptor.ofVoid(JAVA_INT),
                     "errno", o -> {}, false, critical));
             cases.add(new SaveValuesCase("set_errno_I", FunctionDescriptor.of(JAVA_INT, JAVA_INT),
-                    "errno", o -> assertEquals((int) o, 42), true, critical));
+                    "errno", o -> assertEquals(42, (int) o), true, critical));
             cases.add(new SaveValuesCase("set_errno_D", FunctionDescriptor.of(JAVA_DOUBLE, JAVA_INT),
-                    "errno", o -> assertEquals((double) o, 42.0), true, critical));
+                    "errno", o -> assertEquals(42.0, (double) o), true, critical));
 
             cases.add(structCase("SL", Map.of(JAVA_LONG.withName("x"), 42L), true, critical));
             cases.add(structCase("SLL", Map.of(JAVA_LONG.withName("x"), 42L,
@@ -180,14 +185,13 @@ public class TestCaptureCallState extends NativeTestHelper {
             MemoryLayout fieldLayout = field.getKey();
             VarHandle fieldHandle = layout.varHandle(MemoryLayout.PathElement.groupElement(fieldLayout.name().get()));
             Object value = field.getValue();
-            check = check.andThen(o -> assertEquals(fieldHandle.get(o, 0L), value));
+            check = check.andThen(o -> assertEquals(value, fieldHandle.get(o, 0L)));
         }
         String prefix = expectTestValue ? "set_errno_" : "noset_errno_";
         return new SaveValuesCase(prefix + name, FunctionDescriptor.of(layout, JAVA_INT),
                 "errno", check, expectTestValue, critical);
     }
 
-    @DataProvider
     public static Object[][] invalidCaptureSegmentCases() {
         return new Object[][]{
             {Arena.ofAuto().allocate(1), IndexOutOfBoundsException.class, ".*Out of bound access on segment.*", new Linker.Option[0]},

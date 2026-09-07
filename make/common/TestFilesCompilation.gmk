@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ define SetupTestFilesCompilationBody
         DISABLED_WARNINGS_clang := format-nonliteral \
             missing-field-initializers sometimes-uninitialized undef \
             unused-but-set-variable unused-function unused-variable, \
+        DISABLED_WARNINGS_microsoft := 4189, \
         DEFAULT_LIBCXX := false, \
         JDK_LIBS := $$($1_JDK_LIBS_$$(name)), \
         LIBS := $$($1_LIBS) $$($1_LIBS_$$(name)), \

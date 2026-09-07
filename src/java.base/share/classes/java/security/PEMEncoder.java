@@ -25,8 +25,6 @@
 
 package java.security;
 
-import jdk.internal.javac.PreviewFeature;
-
 import jdk.internal.ref.CleanerFactory;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.util.KeyUtil;
@@ -117,9 +115,8 @@ import java.util.Objects;
  * @spec https://www.rfc-editor.org/info/rfc7468
  *       RFC 7468: Textual Encodings of PKIX, PKCS, and CMS Structures
  *
- * @since 25
+ * @since 28
  */
-@PreviewFeature(feature = PreviewFeature.Feature.PEM_API)
 public final class PEMEncoder {
 
     // Singleton instance of PEMEncoder
@@ -169,8 +166,6 @@ public final class PEMEncoder {
      * @throws NullPointerException if {@code be} is {@code null}
      * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
-     *
-     * @since 27
      */
     public String encodeToString(BinaryEncodable be) {
         Objects.requireNonNull(be);
@@ -196,8 +191,6 @@ public final class PEMEncoder {
      * @throws NullPointerException if {@code be} is {@code null}
      * @throws CryptoException if an error occurs during encryption
      * @see #withEncryption(char[])
-     *
-     * @since 27
      */
     public byte[] encode(BinaryEncodable be) {
         return switch (be) {

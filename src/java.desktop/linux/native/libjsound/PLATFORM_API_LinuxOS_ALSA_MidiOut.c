@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,6 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg,
                                 UINT32 timestamp) {
     int err;
     int status;
-    int data1;
-    int data2;
     char buffer[3];
 
     TRACE2("> MIDI_OUT_SendShortMessage() %x, time: %u\n", packedMsg, (unsigned int) timestamp);

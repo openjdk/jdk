@@ -111,13 +111,6 @@ public:
   bool do_object_b(oop p) override;
 };
 
-class G1RegionMappingChangedListener : public G1MappingChangedListener {
- private:
-  void reset_from_card_cache(uint start_idx, size_t num_regions);
- public:
-  void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
-};
-
 // Helper to claim contiguous sets of JavaThread for processing by multiple threads.
 class G1JavaThreadsListClaimer : public StackObj {
   ThreadsListHandle _list;
@@ -222,9 +215,6 @@ private:
   // humongous set which was not torn down in the first place. If
   // free_list_only is true, it will only rebuild the free list.
   void rebuild_region_sets(bool free_list_only);
-
-  // Callback for region mapping changed events.
-  G1RegionMappingChangedListener _listener;
 
   // Handle G1 NUMA support.
   G1NUMA* _numa;
@@ -479,7 +469,8 @@ private:
   // at the end of a successful GC). expect_null_mutator_alloc_region
   // specifies whether the mutator alloc region is expected to be null
   // or not.
-  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
+  HeapWord* attempt_allocation_at_safepoint(uint node_index,
+                                            size_t word_size,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -518,7 +509,7 @@ private:
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t word_size);
+  HeapWord* satisfy_failed_allocation(uint node_index, size_t word_size);
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -530,7 +521,8 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
-  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+  HeapWord* satisfy_failed_allocation_helper(uint node_index,
+                                             size_t word_size,
                                              bool do_gc,
                                              bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region);
@@ -539,7 +531,7 @@ private:
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else null.
-  HeapWord* expand_and_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(uint node_index, size_t word_size);
 
   void verify_numa_regions(const char* desc);
 
@@ -763,7 +755,8 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t word_size,
+  HeapWord* do_collection_pause(uint node_index,
+                                size_t word_size,
                                 uint gc_count_before,
                                 bool* succeeded,
                                 GCCause::Cause gc_cause);
@@ -800,13 +793,13 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
-  // Group cardsets
-  G1CSetCandidateGroup _young_regions_cset_group;
+  // Young-region card set group
+  G1CardSetGroup _young_regions_card_set_group;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
+  G1CardSetGroup* young_regions_card_set_group() { return &_young_regions_card_set_group; }
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();

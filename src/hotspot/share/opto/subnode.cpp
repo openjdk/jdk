@@ -32,7 +32,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
@@ -41,6 +40,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/reverse_bits.hpp"
@@ -822,38 +822,36 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
     // Skip cases when input types are top or bottom.
     if ((t11 != Type::TOP) && (t11 != TypeInt::INT) &&
         (t12 != Type::TOP) && (t12 != TypeInt::INT)) {
-      const TypeInt *r0 = t11->is_int();
-      const TypeInt *r1 = t12->is_int();
-      jlong lo_r0 = r0->_lo;
-      jlong hi_r0 = r0->_hi;
-      jlong lo_r1 = r1->_lo;
-      jlong hi_r1 = r1->_hi;
+      const TypeInt *ti11 = t11->is_int();
+      const TypeInt *ti12 = t12->is_int();
+      jlong lo_ti11_range = ti11->_lo;
+      jlong hi_ti11_range = ti11->_hi;
+      jlong lo_ti12_range = ti12->_lo;
+      jlong hi_ti12_range = ti12->_hi;
       if (in1_op == Op_SubI) {
-        jlong tmp = hi_r1;
-        hi_r1 = -lo_r1;
-        lo_r1 = -tmp;
+        jlong tmp = hi_ti12_range;
+        hi_ti12_range = -lo_ti12_range;
+        lo_ti12_range = -tmp;
         // Note, for substructing [minint,x] type range
         // long arithmetic provides correct overflow answer.
         // The confusion come from the fact that in 32-bit
         // -minint == minint but in 64-bit -minint == maxint+1.
       }
-      jlong lo_long = lo_r0 + lo_r1;
-      jlong hi_long = hi_r0 + hi_r1;
-      int lo_tr1 = min_jint;
-      int hi_tr1 = (int)hi_long;
-      int lo_tr2 = (int)lo_long;
-      int hi_tr2 = max_jint;
-      bool underflow = lo_long != (jlong)lo_tr2;
-      bool overflow  = hi_long != (jlong)hi_tr1;
+      jlong lo_sum_range = lo_ti11_range + lo_ti12_range;
+      jlong hi_sum_range = hi_ti11_range + hi_ti12_range;
+      int hi_wrapped_range = (int)hi_sum_range;
+      int lo_wrapped_range = (int)lo_sum_range;
+      bool underflow = lo_sum_range != (jlong)lo_wrapped_range;
+      bool overflow  = hi_sum_range != (jlong)hi_wrapped_range;
       // Use sub(t1, t2) when there is no overflow (one type range)
       // or when both overflow and underflow (too complex).
-      if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
+      if ((underflow != overflow) && (hi_wrapped_range < lo_wrapped_range)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
-        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
-        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
-        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
-        const TypeInt* cmp1 = sub(tr1, t2)->is_int();
-        const TypeInt* cmp2 = sub(tr2, t2)->is_int();
+        int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
+        const TypeInt* wrapped_range1 = TypeInt::make(min_jint, hi_wrapped_range, w);
+        const TypeInt* wrapped_range2 = TypeInt::make(lo_wrapped_range, max_jint, w);
+        const TypeInt* cmp1 = sub(wrapped_range1, t2)->is_int();
+        const TypeInt* cmp2 = sub(wrapped_range2, t2)->is_int();
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
@@ -906,9 +904,9 @@ Node* CmpLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       Node* orIn = in(1)->in(i);
       if (orIn->Opcode() == Op_CastP2X) {
         Node* castIn = orIn->in(1);
-        if (castIn->is_InlineType()) {
+        if (castIn->is_ValueType()) {
           // Replace the CastP2X by the null marker
-          InlineTypeNode* vt = castIn->as_InlineType();
+          ValueTypeNode* vt = castIn->as_ValueType();
           Node* nm = phase->transform(new ConvI2LNode(vt->get_null_marker()));
           phase->is_IterGVN()->replace_input_of(in(1), i, nm);
           return this;
@@ -1028,7 +1026,7 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
       unrelated_classes = xklass0;
     }
     if (!unrelated_classes) {
-      // Handle inline type arrays
+      // Handle value type arrays
       if ((r0->is_flat_in_array() && r1->is_not_flat_in_array()) ||
           (r1->is_flat_in_array() && r0->is_not_flat_in_array())) {
         // One type is in flat arrays but the other type is not. Must be unrelated.
@@ -1070,12 +1068,6 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
 }
 
 static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
-  // Return the klass node for (indirect load from OopHandle)
-  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  //   or null if not matching.
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    n = bs->step_over_gc_barrier(n);
-
   if (n->Opcode() != Op_LoadP) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
@@ -1120,7 +1112,7 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_
   ciKlass* mirror_klass = mirror_type->as_klass();
 
   if (mirror_klass->is_array_klass() && !mirror_klass->is_type_array_klass()) {
-    if (!mirror_klass->can_be_inline_array_klass()) {
+    if (!mirror_klass->can_be_value_array_klass()) {
       // Special case for non-value arrays: They only have one (default) refined class, use it
       ciArrayKlass* refined_mirror_klass = ciObjArrayKlass::make(mirror_klass->as_array_klass()->element_klass(), true);
       return phase->makecon(TypeAryKlassPtr::make(refined_mirror_klass, Type::trust_interfaces));
@@ -1141,12 +1133,12 @@ static inline Node* isa_const_java_mirror(PhaseGVN* phase, Node* n, bool& might_
 Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* uncast_in1 = in(1)->uncast();
   Node* uncast_in2 = in(2)->uncast();
-  if (uncast_in1->is_InlineType() && phase->type(uncast_in2)->is_zero_type()) {
-    // Null checking a scalarized but nullable inline type. Check the null marker
+  if (uncast_in1->is_ValueType() && phase->type(uncast_in2)->is_zero_type()) {
+    // Null checking a scalarized but nullable value type. Check the null marker
     // input instead of the oop input to avoid keeping buffer allocations alive.
-    return new CmpINode(uncast_in1->as_InlineType()->get_null_marker(), phase->intcon(0));
+    return new CmpINode(uncast_in1->as_ValueType()->get_null_marker(), phase->intcon(0));
   }
-  if (uncast_in1->is_InlineType() || uncast_in2->is_InlineType()) {
+  if (uncast_in1->is_ValueType() || uncast_in2->is_ValueType()) {
     // In C2 IR, CmpP on value objects is a pointer comparison, not a value comparison.
     // For non-null operands it cannot reliably be true, since their buffer oops are not
     // guaranteed to be identical. Therefore, the comparison can only be true when both
@@ -1156,8 +1148,8 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     Node* input[2];
     for (int i = 1; i <= 2; ++i) {
       Node* uncast_in = in(i)->uncast();
-      if (uncast_in->is_InlineType()) {
-        input[i-1] = phase->transform(new ConvI2LNode(uncast_in->as_InlineType()->get_null_marker()));
+      if (uncast_in->is_ValueType()) {
+        input[i-1] = phase->transform(new ConvI2LNode(uncast_in->as_ValueType()->get_null_marker()));
       } else {
         input[i-1] = phase->transform(new CastP2XNode(nullptr, uncast_in));
       }
@@ -1272,7 +1264,7 @@ Node* CmpPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   superklass = t2->exact_klass();
   assert(!superklass->is_flat_array_klass(), "Unexpected flat array klass");
   if (superklass->is_obj_array_klass()) {
-    if (superklass->as_array_klass()->element_klass()->is_inlinetype() && !superklass->as_array_klass()->is_refined()) {
+    if (superklass->as_array_klass()->element_klass()->is_value_klass() && !superklass->as_array_klass()->is_refined()) {
       return nullptr;
     } else {
       // Special case for non-value arrays: They only have one (default) refined class, use it

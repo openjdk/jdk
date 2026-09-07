@@ -251,15 +251,15 @@ public:
   double predict_gc_efficiency(G1HeapRegion* hr);
 
   // The minimum number of retained regions we will add to the CSet during a young GC.
-  uint min_retained_old_cset_length() const;
+  uint min_num_retained_old_cset_regions() const;
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a single mixed GC given the initial number of regions selected during
   // marking.
-  uint calc_min_old_cset_length(uint num_candidate_regions) const;
+  uint calc_min_num_old_cset_regions(uint num_candidate_regions) const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_max_old_cset_length() const;
+  uint calc_max_num_old_cset_regions() const;
 
 private:
   void abandon_collection_set_candidates();
