@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,10 +211,7 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
       return ShenandoahForwarding::get_forwardee(p);
     }
 
-    if (mark.has_displaced_mark_helper()) {
-      // We don't want to deal with MT here just to ensure we read the right mark word.
-      // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 

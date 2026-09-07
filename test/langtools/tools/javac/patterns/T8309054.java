@@ -2,7 +2,6 @@
  * @test /nodynamiccopyright/
  * @bug 8309054
  * @summary Parsing of erroneous patterns succeeds
- * @enablePreview
  * @compile/fail/ref=T8309054.out -XDrawDiagnostics --should-stop=at=FLOW T8309054.java
  */
 

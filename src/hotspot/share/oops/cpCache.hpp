@@ -91,16 +91,12 @@ class ConstantPoolCache: public MetaspaceObj {
     };
 
   // Constructor
-  ConstantPoolCache(const intStack& invokedynamic_references_map,
-                    Array<ResolvedIndyEntry>* indy_info,
+  ConstantPoolCache(Array<ResolvedIndyEntry>* indy_info,
                     Array<ResolvedFieldEntry>* field_entries,
                     Array<ResolvedMethodEntry>* mehtod_entries);
 
-  // Initialization
-  void initialize(const intArray& invokedynamic_references_map);
  public:
   static ConstantPoolCache* allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_references_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      const GrowableArray<ResolvedFieldEntry> field_entries,
                                      const GrowableArray<ResolvedMethodEntry> method_entries,

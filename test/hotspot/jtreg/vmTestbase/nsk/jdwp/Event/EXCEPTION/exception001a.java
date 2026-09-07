@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package nsk.jdwp.Event.EXCEPTION;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -36,9 +37,9 @@ import java.io.*;
  */
 public class exception001a {
 
-    static final int BREAKPOINT_LINE = 102;
-    static final int EXCEPTION_THROW_LINE = 114;
-    static final int EXCEPTION_CATCH_LINE = 121; // line number was changed due to 4740123
+    static final int BREAKPOINT_LINE = 103;
+    static final int EXCEPTION_THROW_LINE = 115;
+    static final int EXCEPTION_CATCH_LINE = 122; // line number was changed due to 4740123
 
     static ArgumentHandler argumentHandler = null;
     static Log log = null;
@@ -84,7 +85,7 @@ public class exception001a {
     }
 
     // tested class
-    public static class TestedThreadClass extends Thread {
+    public static class TestedThreadClass extends ThreadWrapper {
 
         // static field with tested exception object
         public static volatile TestedExceptionClass exception = null;

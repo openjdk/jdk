@@ -1868,7 +1868,7 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ profile_acmp(Rsecond, Rfirst, R11_scratch1, R12_scratch2);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   if (Arguments::is_valhalla_enabled()) {
     Label taken, not_taken;
     __ cmpd(CR0, Rfirst, Rsecond);
@@ -1884,8 +1884,8 @@ void TemplateTable::if_acmp(Condition cc) {
     __ ld(R11_scratch1, oopDesc::mark_offset_in_bytes(), Rfirst);
     __ ld(R12_scratch2, oopDesc::mark_offset_in_bytes(), Rsecond);
     __ andr(R11_scratch1, R11_scratch1, R12_scratch2);
-    __ andi(R11_scratch1, R11_scratch1, is_inline_type_mask);
-    __ cmpdi(CR0, R11_scratch1, is_inline_type_mask);
+    __ andi(R11_scratch1, R11_scratch1, is_value_type_mask);
+    __ cmpdi(CR0, R11_scratch1, is_value_type_mask);
     __ bne(CR0, (cc == equal) ? not_taken : taken);
 
     // same value klass ?
@@ -2647,10 +2647,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
                  Rscratch      = R11_scratch1; // used by load_field_cp_cache_entry
                  // R12_scratch2 used by load_field_cp_cache_entry
 
-  static address field_branch_table[number_of_states],
+  static address field_rw_branch_table[number_of_states],
+                 field_norw_branch_table[number_of_states],
                  static_branch_table[number_of_states];
 
-  address* branch_table = (is_static || rc == may_not_rewrite) ? static_branch_table : field_branch_table;
+  address* branch_table = is_static ? static_branch_table :
+    (rc == may_rewrite ? field_rw_branch_table : field_norw_branch_table);
 
   // Get field offset.
   resolve_cache_and_index_for_field(byte_no, Rcache, Rscratch);
@@ -2698,14 +2700,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 #ifdef ASSERT
   __ bind(LFlagInvalid);
   __ stop("got invalid flag");
-#endif
 
-  if (!is_static && rc == may_not_rewrite) {
-    // We reuse the code from is_static.  It's jumped to via the table above.
-    return;
-  }
-
-#ifdef ASSERT
   // __ bind(Lvtos);
   address pc_before_fence = __ pc();
   __ fence(); // Volatile entry point (one instruction before non-volatile_entry point).
@@ -3213,7 +3208,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   } else { // Valhalla
     if (is_static) {
       Label is_nullable;
-      __ test_field_is_not_null_free_inline_type(Rflags, is_nullable);
+      __ test_field_is_not_null_free_value_type(Rflags, is_nullable);
       __ null_check_throw(R17_tos, -1, Rscratch);
       __ align(32, 12);
       __ bind(is_nullable);
@@ -3221,7 +3216,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
     } else {
       Label null_free_reference, is_flat, rewrite_inline;
       __ test_field_is_flat(Rflags, is_flat);
-      __ test_field_is_null_free_inline_type(Rflags, null_free_reference);
+      __ test_field_is_null_free_value_type(Rflags, null_free_reference);
       pop_and_check_object(Rclass_or_obj);
       // Store into the field
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
@@ -3233,7 +3228,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       }
       __ dispatch_epilog(vtos, Bytecodes::length_for(bytecode()));
 
-      // Implementation of the inline type semantic
+      // Implementation of the value type semantic
       __ bind(null_free_reference);
       __ null_check_throw(R17_tos, -1, Rscratch);
       pop_and_check_object(Rclass_or_obj);
@@ -4321,9 +4316,9 @@ void TemplateTable::monitorenter() {
   // Null pointer exception.
   __ null_check_throw(Robj_to_lock, -1, Rscratch1);
 
-  Label is_inline_type;
+  Label is_value_type;
   __ ld(Rscratch1, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
-  __ test_markword_is_inline_type(Rscratch1, is_inline_type);
+  __ test_markword_is_value_type(Rscratch1, is_value_type);
 
   // Check if any slot is present => short cut to allocation if not.
   __ cmpld(CR0, Rcurrent_monitor, Rbot);
@@ -4382,7 +4377,7 @@ void TemplateTable::monitorenter() {
   // The bcp has already been incremented. Just need to dispatch to next instruction.
   __ dispatch_next(vtos);
 
-  __ bind(is_inline_type);
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                     InterpreterRuntime::throw_identity_exception), Robj_to_lock);
   __ should_not_reach_here();
@@ -4409,10 +4404,10 @@ void TemplateTable::monitorexit() {
   // Null pointer check.
   __ null_check_throw(Robj_to_lock, -1, Rscratch);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   __ ld(Rscratch, oopDesc::mark_offset_in_bytes(), Robj_to_lock);
-  __ andi(Rscratch, Rscratch, is_inline_type_mask);
-  __ cmpwi(CR0, Rscratch, is_inline_type_mask);
+  __ andi(Rscratch, Rscratch, is_value_type_mask);
+  __ cmpwi(CR0, Rscratch, is_value_type_mask);
   __ beq(CR0, Lillegal_monitor_state);
 
   // Check corner case: unbalanced monitorEnter / Exit.

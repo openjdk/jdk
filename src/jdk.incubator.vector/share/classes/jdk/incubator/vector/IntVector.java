@@ -2005,6 +2005,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2036,6 +2037,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
