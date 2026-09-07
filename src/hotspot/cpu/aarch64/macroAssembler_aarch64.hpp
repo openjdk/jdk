@@ -1854,6 +1854,8 @@ public:
   SVE_DESTRUCTIVE_BINARY_5(sve_sub,  sve_uqadd, sve_uqsub, sve_umax,  sve_umin)
   SVE_DESTRUCTIVE_BINARY_INS(sve_sdiv);
   SVE_DESTRUCTIVE_BINARY_INS(sve_udiv);
+  SVE_DESTRUCTIVE_BINARY_INS(sve_lslr)
+  SVE_DESTRUCTIVE_BINARY_INS(sve_lsrr)
 
 #undef SVE_DESTRUCTIVE_BINARY_INS
 #undef SVE_DESTRUCTIVE_BINARY_5

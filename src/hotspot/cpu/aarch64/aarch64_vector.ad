@@ -3299,7 +3299,8 @@ instruct vlsl_neon(vReg dst, vReg src, vReg shift) %{
 %}
 
 instruct vlsl_sve(vReg dst_src, vReg shift) %{
-  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)));
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+            n->in(2)->outcnt() > 1);
   match(Set dst_src (LShiftVB dst_src shift));
   match(Set dst_src (LShiftVS dst_src shift));
   match(Set dst_src (LShiftVI dst_src shift));
@@ -3310,6 +3311,23 @@ instruct vlsl_sve(vReg dst_src, vReg shift) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_lsl($dst_src$$FloatRegister, __ elemType_to_regVariant(bt),
                ptrue, $shift$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vlslr_sve(vReg dst_shift, vReg src) %{
+  predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n)) &&
+            n->in(2)->outcnt() == 1);
+  match(Set dst_shift (LShiftVB src dst_shift));
+  match(Set dst_shift (LShiftVS src dst_shift));
+  match(Set dst_shift (LShiftVI src dst_shift));
+  match(Set dst_shift (LShiftVL src dst_shift));
+  format %{ "vlslr_sve $dst_shift, $dst_shift, $src" %}
+  ins_encode %{
+    assert(UseSVE > 0, "must be sve");
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_lslr($dst_shift$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3398,7 +3416,7 @@ instruct vlsr_neon_var(vReg dst, vReg src, vReg shift) %{
 %}
 
 instruct vlsr_sve(vReg dst_src, vReg shift) %{
-  predicate(UseSVE > 0);
+  predicate(UseSVE > 0 && n->in(2)->outcnt() > 1);
   match(Set dst_src (URShiftVB dst_src shift));
   match(Set dst_src (URShiftVS dst_src shift));
   match(Set dst_src (URShiftVI dst_src shift));
@@ -3411,6 +3429,22 @@ instruct vlsr_sve(vReg dst_src, vReg shift) %{
   %}
   ins_pipe(pipe_slow);
 %}
+
+instruct vlsrr_sve(vReg dst_shift, vReg src) %{
+  predicate(UseSVE > 0 && n->in(2)->outcnt() == 1);
+  match(Set dst_shift (URShiftVB src dst_shift));
+  match(Set dst_shift (URShiftVS src dst_shift));
+  match(Set dst_shift (URShiftVI src dst_shift));
+  match(Set dst_shift (URShiftVL src dst_shift));
+  format %{ "vlsrr_sve $dst_shift, $dst_shift, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_lsrr($dst_shift$$FloatRegister, __ elemType_to_regVariant(bt),
+                ptrue, $src$$FloatRegister);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 
 // vector shift with imm
 
