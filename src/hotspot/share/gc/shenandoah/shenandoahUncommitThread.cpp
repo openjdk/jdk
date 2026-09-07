@@ -34,7 +34,7 @@
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
-  _candidates = NEW_C_HEAP_ARRAY(Candidate, _heap->num_regions(), mtGC);
+  _candidates = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC);
   _candidates_count = 0;
 
   set_name("ShenUncommit");
@@ -82,20 +82,22 @@ void ShenandoahUncommitThread::run_service() {
 }
 
 // The regions that were freed in the same cycle would have roughly the same empty time.
-// Empty time is pre-coarsened to ~100ms window. Within that window, uncommit from higher
+// Empty time is coarsened to ~100ms window. Within that window, uncommit from higher
 // indexes, to allow allocation path to take earlier regions first. The windows themselves
 // have higher priority the earlier the empty time was.
-int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate& b) {
-  if (a._empty_time > b._empty_time) {
+int ShenandoahUncommitThread::compare_uncommit_priority(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b) {
+  int64_t a_empty = (int64_t)(a->empty_time() * 10);
+  int64_t b_empty = (int64_t)(b->empty_time() * 10);
+  if (a_empty > b_empty) {
     return +1;
   }
-  if (a._empty_time < b._empty_time) {
+  if (a_empty < b_empty) {
     return -1;
   }
-  if (a._region->index() < b._region->index()) {
+  if (a->index() < b->index()) {
     return +1;
   }
-  if (a._region->index() > b._region->index()) {
+  if (a->index() > b->index()) {
     return -1;
   }
   return 0;
@@ -125,9 +127,7 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_empty_committed()) {
       has_work |= (r->empty_time() < shrink_before);
-      Candidate& candidate = _candidates[_candidates_count++];
-      candidate._region = r;
-      candidate._empty_time = (int64_t)(r->empty_time() * 10);
+      _candidates[_candidates_count++] = r;
     }
   }
 
@@ -209,7 +209,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
   double start = os::elapsedTime();
 
   for (size_t i = 0; i < _candidates_count; i++) {
-    ShenandoahHeapRegion* r = _candidates[i]._region;
+    ShenandoahHeapRegion* r = _candidates[i];
     double shrink_before = os::elapsedTime() - shrink_delay;
 
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
@@ -232,7 +232,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-        log_info(gc)("Uncommitting region %zu, time=%.2f", r->index(), r->empty_time());
+        // log_info(gc)("Uncommitting region %zu, time=%.2f", r->index(), r->empty_time());
         r->make_uncommitted();
         uncommitted_count++;
       }
