@@ -2045,7 +2045,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   stp(rscratch2, lr, Address(pre(sp, -2 * wordSize)));
 
   mov(r0, reg);
-  lea(rscratch1, ExternalAddress((address)b));
+  lea(rscratch1, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2096,7 +2096,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   } else {
     ldr(r0, addr);
   }
-  lea(rscratch1, ExternalAddress((address)b));
+  lea(rscratch1, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // call indirectly to solve generation ordering problem
   lea(rscratch2, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
