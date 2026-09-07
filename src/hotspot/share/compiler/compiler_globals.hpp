@@ -427,6 +427,11 @@
           "Preload code is processed with blocking. Startup would not "     \
           "proceed until all preloaded code is done loading.")              \
                                                                             \
+  develop(bool, AOTAssertOnUnknownExternalAddress, false,                   \
+          "Assert when external address is missing from the AOT Code "      \
+          "external address table. By default (false) AOT compilation "     \
+          "will be skipped for method which references such address.")      \
+                                                                            \
 
 // end of COMPILER_FLAGS
 

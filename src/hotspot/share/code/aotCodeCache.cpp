@@ -1869,17 +1869,21 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
     }
   }
 
-  // Now we have added all the other data we can write details of any
-  // extra the AOT relocations
+  // All addresses referenced by the blob have now been added to the address
+  // tabel, so their IDs can be recorded in the relocation data.
+
+  // Don't skip assert for unknown external address in adapter and stub code.
+  bool assert_for_unknown_address = true;
+
   bool write_ok = true;
   if (store_relocations) {
     if (is_multi_stub) {
       CodeSection* cs = code_buffer->code_section(CodeBuffer::SECT_INSTS);
       RelocIterator iter(cs);
-      write_ok = cache->write_id_for_relocations(blob, iter);
+      write_ok = cache->write_id_for_relocations(blob, iter, assert_for_unknown_address);
     } else {
       RelocIterator iter(&blob);
-      write_ok = cache->write_id_for_relocations(blob, iter);
+      write_ok = cache->write_id_for_relocations(blob, iter, assert_for_unknown_address);
     }
   }
 
@@ -2599,7 +2603,8 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
   }
 
   RelocIterator iter(nm);
-  if (!write_id_for_relocations(*nm, iter, &oop_list, &metadata_list)) {
+  if (!write_id_for_relocations(*nm, iter, AOTAssertOnUnknownExternalAddress,
+                                &oop_list, &metadata_list)) {
     if (!failed()) {
       // Skip this method and reposition file
       set_write_position(entry_position);
@@ -2933,11 +2938,19 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
 
 // ------------ process code and data --------------
 
-// Can't use -1. It is valid value for jump to iteself destination
-// used by static call stub: see NativeJump::jump_destination().
+// Do nothing for relocation when:
+//  - call's destination is address of the call instruction itself
+//  - call's destination is (address)-1
+// See NativeJump::jump_destination() for example.
+
+#define NO_RELOCATION_ID -1
+
+// Bad address - skip this method compilation.
+
 #define BAD_ADDRESS_ID -2
 
 bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
+                                            bool assert_for_unknown_external_address,
                                             GrowableArray<Handle>* oop_list,
                                             GrowableArray<Metadata*>* metadata_list) {
   if (!align_write_int()) {
@@ -2975,22 +2988,30 @@ bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& 
       }
       case relocInfo::virtual_call_type:  // Fall through. They all call resolve_*_call blobs.
       case relocInfo::opt_virtual_call_type:
-      case relocInfo::static_call_type: {
+      case relocInfo::static_call_type:
+      case relocInfo::runtime_call_type: {
         CallRelocation* r = (CallRelocation*)iter.reloc();
         address dest = r->destination();
-        if (dest == r->addr()) { // possible call via trampoline on Aarch64
-          dest = (address)-1;    // do nothing in this case when loading this relocation
-        }
-        int id = _table->id_for_address(dest, iter, &code_blob);
-        if (id == BAD_ADDRESS_ID) {
-          return false;
+        int id;
+        if (dest == r->addr() || dest == (address)-1) {
+          // Possible call via trampoline on Aarch64,
+          // do nothing in this case when loading this relocation
+          id = NO_RELOCATION_ID;
+        } else {
+          id = _table->id_for_address(dest, iter, &code_blob, true /* assert_for_unknown_address */);
+          if (id == BAD_ADDRESS_ID) {
+            return false;
+          }
         }
         reloc_data.at_put(idx, id);
         break;
       }
+      case relocInfo::runtime_call_w_cp_type:
+        log_debug(aot, codecache, reloc)("runtime_call_w_cp_type relocation is not implemented");
+        return false;
       case relocInfo::trampoline_stub_type: {
         address dest = ((trampoline_stub_Relocation*)iter.reloc())->destination();
-        int id = _table->id_for_address(dest, iter, &code_blob);
+        int id = _table->id_for_address(dest, iter, &code_blob, true /* assert_for_unknown_address */);
         if (id == BAD_ADDRESS_ID) {
           return false;
         }
@@ -2999,27 +3020,10 @@ bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& 
       }
       case relocInfo::static_stub_type:
         break;
-      case relocInfo::runtime_call_type: {
-        // Record offset of runtime destination
-        CallRelocation* r = (CallRelocation*)iter.reloc();
-        address dest = r->destination();
-        if (dest == r->addr()) { // possible call via trampoline on Aarch64
-          dest = (address)-1;    // do nothing in this case when loading this relocation
-        }
-        int id = _table->id_for_address(dest, iter, &code_blob);
-        if (id == BAD_ADDRESS_ID) {
-          return false;
-        }
-        reloc_data.at_put(idx, id);
-        break;
-      }
-      case relocInfo::runtime_call_w_cp_type:
-        log_debug(aot, codecache, reloc)("runtime_call_w_cp_type relocation is not implemented");
-        return false;
       case relocInfo::external_word_type: {
         // Record offset of runtime target
         address target = ((external_word_Relocation*)iter.reloc())->target();
-        int id = _table->id_for_address(target, iter, &code_blob);
+        int id = _table->id_for_address(target, iter, &code_blob, assert_for_unknown_external_address);
         if (id == BAD_ADDRESS_ID) {
           return false;
         }
@@ -3142,25 +3146,11 @@ void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter
       }
       case relocInfo::virtual_call_type:   // Fall through. They all call resolve_*_call blobs.
       case relocInfo::opt_virtual_call_type:
-      case relocInfo::static_call_type: {
-        address dest = _cache->address_for_id(reloc_data[j]);
-        if (dest != (address)-1) {
-          ((CallRelocation*)iter.reloc())->set_destination(dest);
-        }
-        break;
-      }
-      case relocInfo::trampoline_stub_type: {
-        address dest = _cache->address_for_id(reloc_data[j]);
-        if (dest != (address)-1) {
-          ((trampoline_stub_Relocation*)iter.reloc())->set_destination(dest);
-        }
-        break;
-      }
-      case relocInfo::static_stub_type:
-        break;
+      case relocInfo::static_call_type:
       case relocInfo::runtime_call_type: {
-        address dest = _cache->address_for_id(reloc_data[j]);
-        if (dest != (address)-1) {
+        int id = reloc_data[j];
+        if (id != NO_RELOCATION_ID) { // Skip relocation with such ID
+          address dest = _cache->address_for_id(id);
           ((CallRelocation*)iter.reloc())->set_destination(dest);
         }
         break;
@@ -3168,6 +3158,16 @@ void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter
       case relocInfo::runtime_call_w_cp_type:
         // this relocation should not be in cache (see write_id_for_relocations)
         assert(false, "runtime_call_w_cp_type relocation is not implemented");
+        break;
+      case relocInfo::trampoline_stub_type: {
+        int id = reloc_data[j];
+        if (id != NO_RELOCATION_ID) { // Skip relocation with such ID
+          address dest = _cache->address_for_id(id);
+          ((trampoline_stub_Relocation*)iter.reloc())->set_destination(dest);
+        }
+        break;
+      }
+      case relocInfo::static_stub_type:
         break;
       case relocInfo::external_word_type: {
         address target = _cache->address_for_id(reloc_data[j]);
@@ -4627,9 +4627,6 @@ static int search_address(address addr, address* table, uint length) {
 
 address AOTCodeAddressTable::address_for_id(int idx) {
   assert(_extrs_complete || initializing_extrs, "AOT Code Cache VM runtime addresses table is not complete");
-  if (idx == -1) {
-    return (address)-1;
-  }
   if (idx >= (_c_str_base + _C_strings_count)) {
     fatal("recorded id: %d > recorded count %d", idx, (_c_str_base + _C_strings_count));
     return nullptr;
@@ -4658,31 +4655,29 @@ address AOTCodeAddressTable::address_for_id(int idx) {
   return result;
 }
 
-int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeBlob* code_blob) {
+int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeBlob* code_blob, bool assert_for_unknown_address) {
   assert(_extrs_complete || initializing_extrs, "AOT Code Cache VM runtime addresses table is not complete");
-  int id = -1;
-  if (addr == (address)-1) { // Static call stub has jump to itself
-    return id;
-  }
   // fast path for stubs and external addresses
   if (_hash_table != nullptr) {
     int* result = _hash_table->get(addr);
     if (result != nullptr) {
-      id = *result;
+      int id = *result;
       log_trace(aot, codecache)("Address " INTPTR_FORMAT " retrieved from AOT Code Cache address hash table with index '%d'",
                                 p2i(addr), id);
       return id;
     }
   }
   // Seach for C string
-  id = id_for_C_string(addr);
+  int id = id_for_C_string(addr);
   if (id != BAD_ADDRESS_ID) {
     return id + _c_str_base;
   }
   if (StubRoutines::contains(addr) || CodeCache::find_blob(addr) != nullptr) {
     // Search for a matching stub entry
     id = search_address(addr, _stubs_addr, _stubs_max);
-    if (id == BAD_ADDRESS_ID) {
+    if (id != BAD_ADDRESS_ID) {
+      return id + _stubs_base;
+    } else if (assert_for_unknown_address) {
 #ifdef ASSERT
       StubCodeDesc* desc = StubCodeDesc::desc_for(addr);
       reloc.print_current_on(tty);
@@ -4691,13 +4686,13 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
       const char* sub_name = (desc != nullptr) ? desc->name() : "<unknown>";
       assert(false, "Address " INTPTR_FORMAT " for Stub:%s is missing in AOT Code Cache addresses table", p2i(addr), sub_name);
 #endif
-    } else {
-      return id + _stubs_base;
     }
   } else {
     // Search in runtime functions
     id = search_address(addr, _extrs_addr, _extrs_length);
-    if (id == BAD_ADDRESS_ID) {
+    if (id != BAD_ADDRESS_ID) {
+      return _extrs_base + id;
+    } else if (assert_for_unknown_address) {
 #ifdef ASSERT
       ResourceMark rm;
       const int buflen = 1024;
@@ -4707,19 +4702,19 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
         reloc.print_current_on(tty);
         code_blob->print_on(tty);
         code_blob->print_code_on(tty);
-        assert(false, "Address " INTPTR_FORMAT " for runtime target <%s+%d>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset, (const char*)addr);
+        assert(false, "Address " INTPTR_FORMAT " for runtime target <%s+%d> is missing in AOT Code Cache addresses table", p2i(addr), func_name, offset);
       } else {
         reloc.print_current_on(tty);
         code_blob->print_on(tty);
         code_blob->print_code_on(tty);
         os::find(addr, tty);
-        assert(false, "Address " INTPTR_FORMAT " for <unknown>/('%s') is missing in AOT Code Cache addresses table", p2i(addr), (const char*)addr);
+        assert(false, "Address " INTPTR_FORMAT " for <unknown> is missing in AOT Code Cache addresses table", p2i(addr));
       }
 #endif
-    } else {
-      return _extrs_base + id;
     }
   }
+  assert(id == BAD_ADDRESS_ID, "id: %d", id);
+  log_debug(aot, codecache)("Address " INTPTR_FORMAT " is missing in AOT Code Cache addresses table", p2i(addr));
   return id;
 }
 

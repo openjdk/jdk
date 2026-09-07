@@ -242,7 +242,7 @@ public:
   const char* add_C_string(const char* str);
   int  id_for_C_string(address str);
   address address_for_C_string(int idx);
-  int  id_for_address(address addr, RelocIterator iter, CodeBlob* code_blob);
+  int  id_for_address(address addr, RelocIterator iter, CodeBlob* code_blob, bool assert_for_unknown_address);
   address address_for_id(int id);
 };
 
@@ -701,6 +701,7 @@ public:
   bool write_method(Method* method);
 
   bool write_id_for_relocations(CodeBlob& code_blob, RelocIterator& iter,
+                                bool assert_for_unknown_external_address,
                                 GrowableArray<Handle>* oop_list = nullptr,
                                 GrowableArray<Metadata*>* metadata_list = nullptr);
 

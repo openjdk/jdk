@@ -7827,7 +7827,15 @@ instruct loadConP(rRegP dst, immP con) %{
 
   format %{ "movq    $dst, $con\t# ptr" %}
   ins_encode %{
-    __ mov64($dst$$Register, $con$$constant, $con->constant_reloc(), RELOC_IMM64);
+    address con = (address)$con$$constant;
+    relocInfo::relocType rtype = $con->constant_reloc();
+    if (rtype == relocInfo::external_word_type &&
+        (con == (address)-1 ||
+         con < (address)(uintptr_t)os::vm_page_size())) {
+      // Don't use relocation for fake address
+      rtype = relocInfo::none;
+    }
+    __ mov64($dst$$Register, $con$$constant, rtype, RELOC_IMM64);
   %}
   ins_pipe(ialu_reg_fat); // XXX
 %}
