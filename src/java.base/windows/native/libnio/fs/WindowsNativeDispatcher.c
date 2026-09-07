@@ -901,8 +901,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupAccountSid0(JNIEnv* env,
 {
     WCHAR domain[255];
     WCHAR name[255];
-    DWORD domainLen = sizeof(domain);
-    DWORD nameLen = sizeof(name);
+    DWORD domainLen = (DWORD)(sizeof(domain) / sizeof(domain[0]));
+    DWORD nameLen = (DWORD)(sizeof(name) / sizeof(name[0]));
     SID_NAME_USE use;
     PSID sid = jlong_to_ptr(address);
     jstring s;
@@ -932,7 +932,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupAccountName0(JNIEnv* env,
     LPCWSTR accountName = jlong_to_ptr(nameAddress);
     PSID sid = jlong_to_ptr(sidAddress);
     WCHAR domain[255];
-    DWORD domainLen = sizeof(domain);
+    DWORD domainLen = (DWORD)(sizeof(domain) / sizeof(domain[0]));
     SID_NAME_USE use;
 
     if (LookupAccountNameW(NULL, accountName, sid, (LPDWORD)&cbSid,

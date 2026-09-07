@@ -159,7 +159,7 @@ public class TestFramework {
     public static final boolean VERBOSE = Boolean.getBoolean("Verbose");
     public static final boolean PRINT_RULE_MATCHING_TIME = Boolean.getBoolean("PrintRuleMatchingTime");
     private static final boolean TEST_LIST_IS_EMPTY = SystemProperty.getTestList().isEmpty();
-    private static final boolean EXCLUDE_LIST_IS_EMPTY = SystemProperty.getExcludeList().isEmpty();;
+    private static final boolean EXCLUDE_LIST_IS_EMPTY = SystemProperty.getExcludeList().isEmpty();
     private static final boolean REPORT_STDOUT = Boolean.getBoolean("ReportStdout");
     // Only used for internal testing and should not be used for normal user testing.
 
@@ -802,7 +802,7 @@ public class TestFramework {
     private static String getScenarioTitleAndFlags(Scenario scenario) {
         StringBuilder builder = new StringBuilder();
         String title = "Scenario #" + scenario.getIndex();
-        builder.append(title).append(System.lineSeparator()).append("=".repeat(title.length()))
+        builder.append(title).append(System.lineSeparator()).repeat("=", title.length())
                .append(System.lineSeparator());
         builder.append("Scenario flags: [").append(String.join(", ", scenario.getFlags())).append("]")
                .append(System.lineSeparator());

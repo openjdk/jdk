@@ -81,7 +81,6 @@
 #include "oops/compressedKlass.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -90,6 +89,7 @@
 #include "oops/oopHandle.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/trainingData.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/globals.hpp"
@@ -618,7 +618,7 @@ static void rewrite_bytecodes(const methodHandle& method) {
         case btos: new_code = Bytecodes::_fast_bputfield; break;
         case ztos: new_code = Bytecodes::_fast_zputfield; break;
         case atos: {
-          if (rfe->is_flat() || rfe->is_null_free_inline_type()) {
+          if (rfe->is_flat() || rfe->is_null_free_value_type()) {
             new_code = Bytecodes::_fast_vputfield;
           } else {
             new_code = Bytecodes::_fast_aputfield;

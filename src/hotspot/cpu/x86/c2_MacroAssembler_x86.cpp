@@ -313,8 +313,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
 
     // Try to lock. Transition lock bits 0b01 => 0b00
     movptr(rax_reg, mark);
-    orptr(rax_reg, markWord::unlocked_value);
-    andptr(mark, ~(int32_t)markWord::unlocked_value);
+    orptr(rax_reg, markWord::lock_neutral_value);
+    andptr(mark, ~(int32_t)markWord::lock_neutral_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, slow_path);
 
@@ -511,7 +511,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
     andptr(reg_rax, ~(int32_t)markWord::lock_mask_in_place);
-    orptr(mark, markWord::unlocked_value);
+    orptr(mark, markWord::lock_neutral_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, push_and_slow_path);
     jmp(unlocked);

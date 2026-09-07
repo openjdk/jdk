@@ -28,11 +28,11 @@
 #include "code/oopRecorder.hpp"
 #include "code/relocInfo.hpp"
 #include "compiler/compiler_globals.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/resizableHashTable.hpp"
 
@@ -53,9 +53,9 @@ class CodeOffsets: public StackObj {
 public:
   enum Entries { Entry,
                  Verified_Entry,
-                 Inline_Entry,
-                 Verified_Inline_Entry,
-                 Verified_Inline_Entry_RO,
+                 Value_Entry,
+                 Verified_Value_Entry,
+                 Verified_Value_Entry_RO,
                  Frame_Complete, // Offset in the code where the frame setup is (for forte stackwalks) is complete
                  OSR_Entry,
                  Exceptions,     // Offset where exception handler lives
@@ -77,9 +77,9 @@ public:
   CodeOffsets() {
     _values[Entry         ] = 0;
     _values[Verified_Entry] = 0;
-    _values[Inline_Entry  ] = 0;
-    _values[Verified_Inline_Entry   ] = no_such_entry_point;
-    _values[Verified_Inline_Entry_RO] = no_such_entry_point;
+    _values[Value_Entry   ] = 0;
+    _values[Verified_Value_Entry   ] = no_such_entry_point;
+    _values[Verified_Value_Entry_RO] = no_such_entry_point;
     _values[Frame_Complete] = frame_never_safe;
     _values[OSR_Entry     ] = 0;
     _values[Exceptions    ] = -1;
@@ -552,7 +552,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
     SECT_LIMIT, SECT_NONE = -1
   };
 
-  typedef LinkedListImpl<int> Offsets;
+  typedef GrowableArrayCHeap<int, mtCompiler> Offsets;
   typedef ResizeableHashTable<address, Offsets, AnyObj::C_HEAP, mtCompiler> SharedTrampolineRequests;
 
  private:

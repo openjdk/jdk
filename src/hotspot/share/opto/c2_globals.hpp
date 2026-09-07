@@ -70,6 +70,9 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  develop(bool, StressVerifyMeetJoin, false,                                \
+          "Perform cross meet/join sanity checks on all Type instances")    \
+                                                                            \
   product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
           "Optimize reachability fences "                                   \
           "(leave reachability fence nodes intact when turned off)")        \
@@ -822,6 +825,9 @@
                                                                             \
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
+                                                                            \
+  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+          "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \

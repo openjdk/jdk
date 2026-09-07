@@ -38,21 +38,22 @@
 # Compiler:
 
 # Runtime:
-runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8382398 generic-all
-runtime/cds/appcds/aotCode/AOTCodeFlags.java#parallel   8382398 generic-all
-runtime/cds/appcds/aotCode/AOTCodeFlags.java#Z          8382398 generic-all
-runtime/cds/appcds/aotCode/AOTCodeFlags.java#shenandoah 8382398 generic-all
+runtime/cds/appcds/aotCode/AOTCodeFlags.java#default_gc 8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeFlags.java#parallel   8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeFlags.java#Z          8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeFlags.java#shenandoah 8390238 generic-all
 
-runtime/cds/appcds/aotCode/AOTCodeTest.java#G1          8389577 generic-all
-runtime/cds/appcds/aotCode/AOTCodeTest.java#parallel    8389577 generic-all
-runtime/cds/appcds/aotCode/AOTCodeTest.java#serial      8389577 generic-all
-runtime/cds/appcds/aotCode/AOTCodeTest.java#Z           8389577 generic-all
-runtime/cds/appcds/aotCode/AOTCodeTest.java#shenandoah  8389577 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTest.java#G1          8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTest.java#parallel    8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTest.java#serial      8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTest.java#Z           8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTest.java#shenandoah  8390238 generic-all
 
-runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java 8389577 generic-all
-runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java 8389577 generic-all
-runtime/cds/appcds/aotCode/TestDisableAOTCode.java 8389577 generic-all
-runtime/cds/appcds/aotCode/TestVerifyAOTCode.java 8389577 generic-all
+runtime/cds/appcds/aotCode/AOTCodeCompressedOopsTest.java 8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeCPUFeatureIncompatibilityTest.java 8390238 generic-all
+runtime/cds/appcds/aotCode/AOTCodeTestUnknownExternAddress.java 8390238 generic-all
+runtime/cds/appcds/aotCode/TestDisableAOTCode.java 8390238 generic-all
+runtime/cds/appcds/aotCode/TestVerifyAOTCode.java 8390238 generic-all
 
 runtime/cds/appcds/aotCode/TestAOTCodeCounters.java 8390238 generic-all
 runtime/cds/appcds/aotCode/TestAOTCodeFeatures.java 8390238 generic-all
