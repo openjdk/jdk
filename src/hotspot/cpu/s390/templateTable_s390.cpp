@@ -1186,7 +1186,7 @@ void TemplateTable::dastore() {
 void TemplateTable::aastore() {
   // stack: ..., array, index, value
   //
-  // ── Register allocation ─────────────────────────────────────────────────
+  // -- Register allocation --------------------------------------------------
   //
   //   Rvalue       Z_tos   Z_R2   value oop (stack slot 0)
   //   Rarray       Z_ARG2  Z_R3   array oop (stack slot 2)
@@ -1218,7 +1218,7 @@ void TemplateTable::aastore() {
   // (*) LEA: compute element address in-place.  Rindex is dead after this.
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
-  // profile_multiple_element_types uses Rarray_klass as tmp3 scratch — it clobbers it.
+  // profile_multiple_element_types uses Rarray_klass as tmp3 scratch - it clobbers it.
   __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
   __ profile_multiple_element_types(Rvalue, Rscratch, Rscratch2, Rarray_klass);
 
@@ -1263,7 +1263,7 @@ void TemplateTable::aastore() {
     __ z_br(Rscratch);
     __ bind(store_null);
   }
-  // Rsub_klass (Z_R6) is free scratch — value is null so its klass was never loaded.
+  // Rsub_klass (Z_R6) is free scratch - value is null so its klass was never loaded.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
                Rsub_klass, Rscratch2, Rscratch, IS_ARRAY);
   __ z_bru(done);
