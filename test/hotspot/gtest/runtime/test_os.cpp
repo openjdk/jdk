@@ -123,6 +123,20 @@ TEST_VM(os, page_size_for_region_unaligned) {
   }
 }
 
+static void assert_random_seeded_from_gtest() {
+  const unsigned int seed =
+      static_cast<unsigned int>(::testing::UnitTest::GetInstance()->random_seed());
+  ASSERT_EQ(os::next_random(seed), os::random());
+}
+
+TEST(os, random_seeded_from_gtest) {
+  assert_random_seeded_from_gtest();
+}
+
+TEST_VM(os, random_reseeded_after_jvm_initialization) {
+  assert_random_seeded_from_gtest();
+}
+
 TEST(os, test_random) {
   const double m = 2147483647;
   double mean = 0.0, variance = 0.0, t;

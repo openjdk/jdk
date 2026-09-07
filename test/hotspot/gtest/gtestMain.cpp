@@ -139,6 +139,30 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
   }
 };
 
+class RandomSeedListener : public ::testing::EmptyTestEventListener {
+ private:
+  int _seed = 0;
+
+ public:
+  virtual void OnTestIterationStart(const ::testing::UnitTest& unit_test, int) {
+    _seed = unit_test.random_seed();
+    printf("Random seed: %d (reproduce with --gtest_random_seed=%d)\n", _seed, _seed);
+    fflush(stdout);
+  }
+
+  virtual void OnTestStart(const ::testing::TestInfo&) {
+    os::init_random(static_cast<unsigned int>(_seed));
+  }
+
+  virtual void OnTestEnd(const ::testing::TestInfo& test_info) {
+    if (test_info.result()->Failed()) {
+      printf("Random seed for failed test: %d "
+             "(reproduce with --gtest_random_seed=%d)\n", _seed, _seed);
+      fflush(stdout);
+    }
+  }
+};
+
 static char* get_java_home_arg(int argc, char** argv) {
   for (int i = 0; i < argc; i++) {
     if (strncmp(argv[i], "-jdk", strlen(argv[i])) == 0) {
@@ -270,6 +294,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   argv = remove_test_runner_arguments(&argc, argv);
 
 
+  ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
   JVMInitializerListener* jvm_listener = nullptr;
 
   if (is_vmassert_test || is_othervm_test) {
@@ -282,10 +307,11 @@ static void runUnitTestsInner(int argc, char** argv) {
       abort();
     }
   } else {
-    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
     jvm_listener = new JVMInitializerListener(argc, argv);
     listeners.Append(jvm_listener);
   }
+  // Seed after JVM initialization so it cannot consume the test's random sequence.
+  listeners.Append(new RandomSeedListener());
 
   int result = RUN_ALL_TESTS();
 
