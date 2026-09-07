@@ -1262,6 +1262,13 @@ bool unnecessary_acquire(const Node *barrier)
 
   MemBarNode* mb = barrier->as_MemBar();
 
+  if (mb->trailing_load()) {
+    // A regular RISC-V load cannot provide acquire semantics on its own, so
+    // the trailing MemBarAcquire must be kept. This may return true when the
+    // Zalasr extension is supported and the load is matched to l{b|h|w|d}.aq.
+    return false;
+  }
+
   if (mb->trailing_load_store()) {
     Node* load_store = mb->in(MemBarNode::Precedent);
     assert(load_store->is_LoadStore(), "unexpected graph shape");
@@ -1287,7 +1294,15 @@ bool unnecessary_release(const Node *barrier)
     assert(trailing_mb->leading_membar() == barrier, "inconsistent leading/trailing membars");
 
     Node* mem = trailing_mb->in(MemBarNode::Precedent);
-    if (!mem->is_Store()) {
+    if (mem->is_Store()) {
+      assert(mem->as_Store()->is_release(), "");
+      assert(trailing_mb->Opcode() == Op_MemBarVolatile, "");
+      // A regular RISC-V store cannot provide release semantics on its own,
+      // so the leading MemBarRelease must be kept. This may return true when
+      // the Zalasr extension is supported and the store is matched to
+      // s{b|h|w|d}.rl (with the trailing MemBarVolatile handled accordingly).
+      return false;
+    } else {
       assert(mem->is_LoadStore(), "");
       assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
       return cas_membar_elidable(mem->Opcode());
