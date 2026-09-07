@@ -142,6 +142,18 @@
                            FloatRegister dst, FloatRegister src,
                            bool cmp_single, bool cmov_single);
 
+  void compress_bits_v(VectorRegister dst, VectorRegister src, VectorRegister mask,
+                       VectorRegister src_tmp, VectorRegister mask_tmp,
+                       VectorRegister tmp1, VectorRegister tmp2,
+                       Register tmp, BasicType bt, uint vector_length);
+  void expand_bits_v(VectorRegister dst, VectorRegister src, VectorRegister mask,
+                     VectorRegister src_tmp, VectorRegister mask_tmp,
+                     VectorRegister mask_move1, VectorRegister mask_move2,
+                     VectorRegister mask_move3, VectorRegister mask_move4,
+                     VectorRegister mask_move5, VectorRegister mask_move6,
+                     VectorRegister tmp1, VectorRegister tmp2,
+                     Register tmp, BasicType bt, uint vector_length);
+
   void spill(Register r, bool is64, int offset) {
     is64 ? sd(r, Address(sp, offset))
          : sw(r, Address(sp, offset));
