@@ -60,7 +60,7 @@ public class TestDetachAfterExit extends NativeTestHelper  {
             output.errorTo(System.err);
 
             output.shouldHaveExitValue(0)
-                    .stdoutShouldContain("[await_join] done joining");
+                  .stdoutShouldContain("[await_join] done joining");
         } catch (TimeoutException e) {
             fail("Timeout while waiting for forked process");
         }
