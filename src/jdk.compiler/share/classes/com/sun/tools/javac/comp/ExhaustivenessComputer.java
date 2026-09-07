@@ -1278,11 +1278,13 @@ public class ExhaustivenessComputer {
 
                 //put types with a single permitted subtype (when the other type is the permitted subtype)
                 //to the front, so that are preferrably removed:
-                List<Type> t1PermittedSubClasses = ((ClassSymbol) t1.tsym).getPermittedSubclasses();
+                List<Type> t1PermittedSubClasses = t1.tsym instanceof ClassSymbol c1 ? c1.getPermittedSubclasses()
+                                                                                     : List.nil();
                 if (t1PermittedSubClasses.size() == 1 && t1PermittedSubClasses.head.tsym == t2.tsym) {
                     return true;
                 }
-                List<Type> t2PermittedSubClasses = ((ClassSymbol) t2.tsym).getPermittedSubclasses();
+                List<Type> t2PermittedSubClasses = t2.tsym instanceof ClassSymbol c2 ? c2.getPermittedSubclasses()
+                                                                                     : List.nil();
                 if (t2PermittedSubClasses.size() == 1 && t2PermittedSubClasses.head.tsym == t1.tsym) {
                     return false;
                 }

@@ -795,24 +795,26 @@ public class Flow {
                                        .sorted((d1, d2) -> d1.toString()
                                                              .compareTo(d2.toString()))
                                        .collect(List.collector());
-            JCDiagnostic missingCases = diags.fragment(Fragments.MissingCases);
+            JCDiagnostic missingCases = diags.fragment(details.size() == 1 ? Fragments.MissingCase
+                                                                           : Fragments.MissingCases);
             JCDiagnostic augmentedMissingCases = new JCDiagnostic.MultilineDiagnostic(missingCases, details);
             JCDiagnostic d = diags.error(null, log.currentSource(), pos, errorKey, augmentedMissingCases);
             log.report(d);
         }
 
         private JCDiagnostic patternToDiagnostic(PatternDescription desc) {
-            Type patternType = types.erasure(desc.type());
+            Type erasedPatternType = types.erasure(desc.type());
             return diags.fragment(switch (desc) {
                 case BindingPattern _ ->
-                    Fragments.BindingPattern(patternType);
+                    Fragments.BindingPattern(desc.type().hasTag(TypeTag.TYPEVAR) ? desc.type()
+                                                                                 : erasedPatternType);
                 case RecordPattern rp ->
-                    Fragments.RecordPattern(patternType,
+                    Fragments.RecordPattern(erasedPatternType,
                                             Arrays.stream(rp.nested())
                                                   .map(this::patternToDiagnostic)
                                                   .toList());
                 case EnumConstantPattern ep ->
-                    Fragments.EnumConstantPattern(patternType,
+                    Fragments.EnumConstantPattern(erasedPatternType,
                                                   ep.enumConstant());
             });
         }

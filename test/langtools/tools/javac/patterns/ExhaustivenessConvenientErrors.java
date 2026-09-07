@@ -1017,6 +1017,153 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
                "Lib.P2 _");
     }
 
+    @Test
+    public void testInaccessiblePermittedTypeDiamondOutsideSelectorSubtype(Path base) throws Exception {
+        //diamond hierarchy, pick the accessible type that is the closest to the inaccessible type:
+        // Baseline: K is inaccessible; J is unrelated to I
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I {}
+                   interface J {}
+                   private sealed interface K extends I {}
+                   private static final class C implements K, J {}
+                   static final class Unrelated implements I {}
+               }
+               public class Test {
+                   public void test(Lib.I i) {
+                       switch (i) {
+                           case Lib.Unrelated _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Lib.I _");
+        // Diff from previous: K is now accessible.
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I {}
+                   interface J {}
+                   sealed interface K extends I {}
+                   private static final class C implements K, J {}
+                   static final class Unrelated implements I {}
+               }
+               public class Test {
+                   public void test(Lib.I i) {
+                       switch (i) {
+                           case Lib.Unrelated _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Lib.K _");
+        // Diff from previous: J now extends I, making J and K sibling subinterfaces of I.
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I {}
+                   non-sealed interface J extends I {}
+                   sealed interface K extends I {}
+                   private static final class C implements J, K {}
+                   static final class Unrelated implements I {}
+               }
+               public class Test {
+                   public void test(Lib.I i) {
+                       switch (i) {
+                           case Lib.Unrelated _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Lib.J _");
+        // Diff from previous: J is sealed and K is non-sealed.
+        doTest(base,
+               new String[0],
+               """
+               class Lib {
+                   sealed interface I {}
+                   sealed interface J extends I {}
+                   non-sealed interface K extends I {}
+                   private static final class C implements J, K {}
+                   static final class Unrelated implements I {}
+               }
+               public class Test {
+                   public void test(Lib.I i) {
+                       switch (i) {
+                           case Lib.Unrelated _ -> {}
+                       }
+                   }
+               }
+               """,
+               "Lib.J _");
+    }
+
+    @Test
+    public void testTypeVariables(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   sealed interface I permits A, B, C {}
+                   static final class A implements I {}
+                   static final class B implements I {}
+                   static final class C implements I {}
+                   record Box<T>(I i, T t) {}
+
+                   static <T> int f(Box<T> b) {
+                       return switch (b) {
+                           case Box(A _, T _) -> 0;
+                       };
+                   }
+               }
+               """,
+               "Test.Box(Test.B _,T _)",
+               "Test.Box(Test.C _,T _)");
+    }
+
+    @Test
+    public void testPlularity(Path base) throws Exception {
+        doExactTest(base,
+                    """
+                    class Test {
+                        sealed interface I permits A, B {}
+                        static final class A implements I {}
+                        static final class B implements I {}
+                        record Box(I i) {}
+
+                        static int f(Box b) {
+                            return switch (b) {
+                                case Box(A _) -> 0;
+                            };
+                        }
+                    }
+                    """,
+                    "Test.java:8:16: compiler.err.not.exhaustive.details: (compiler.misc.missing.case,{(compiler.misc.record.pattern: Test.Box, (compiler.misc.binding.pattern: Test.B))})",
+                    "1 error");
+        doExactTest(base,
+                    """
+                    class Test {
+                        sealed interface I permits A, B, C {}
+                        static final class A implements I {}
+                        static final class B implements I {}
+                        static final class C implements I {}
+                        record Box(I i) {}
+
+                        static int f(Box b) {
+                            return switch (b) {
+                                case Box(A _) -> 0;
+                            };
+                        }
+                    }
+                    """,
+                    "Test.java:9:16: compiler.err.not.exhaustive.details: (compiler.misc.missing.cases,{(compiler.misc.record.pattern: Test.Box, (compiler.misc.binding.pattern: Test.B)),(compiler.misc.record.pattern: Test.Box, (compiler.misc.binding.pattern: Test.C))})",
+                    "1 error");
+    }
+
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedMissingPatterns) throws IOException {
         Path current = base.resolve(".");
         Path libClasses = current.resolve("libClasses");
@@ -1078,6 +1225,29 @@ public class ExhaustivenessConvenientErrors extends TestRunner {
             throw new AssertionError("Incorrect errors, expected: " + expectedPatterns +
                                       ", actual: " + missingPatterns);
         }
+    }
+
+    private void doExactTest(Path base, String testCode, String... expectedErrors) throws IOException {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        tb.writeJavaFiles(src, testCode);
+
+        Path classes = current.resolve("classes");
+
+        Files.createDirectories(classes);
+
+        List<String> log = new JavacTask(tb)
+                .options("-XDrawDiagnostics",
+                        "-XDshould-stop.at=FLOW",
+                        "-XDshould-stop.ifNoError=FLOW",
+                        "-XDexhaustivityMaxBaseChecks=" + Long.MAX_VALUE) //never give up
+                .outdir(classes)
+                .files(tb.findJavaFiles(src))
+                .run(Task.Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        tb.checkEqual(List.of(expectedErrors), log);
     }
 
 }
