@@ -210,7 +210,7 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
 template<typename T, auto Cmp>
 static void qsort_helper(T* array, int length) {
   ::qsort(array, length, sizeof(T),
-          [](const void* a, const void* b) -> int {
+          [](const void* a, const void* b) {
             return Cmp(*static_cast<const T*>(a),
                        *static_cast<const T*>(b));
           });
