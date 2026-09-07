@@ -55,4 +55,21 @@ public class ArrayAllocation {
         byte z[] = new byte[size];
         return z.length;
     }
+
+    @Param({"2"})
+    int size2;
+
+    @Benchmark
+    public Object full() {
+        return new int[size2][size2];
+    }
+
+    @Benchmark
+    public Object piecemeal() {
+        int[][] ints = new int[size2][];
+        for (int c = 0; c < size2; c++) {
+            ints[c] = new int[size2];
+        }
+        return ints;
+    }
 }
