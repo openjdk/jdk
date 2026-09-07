@@ -3934,7 +3934,6 @@ class StubGenerator: public StubCodeGenerator {
     Register count = R10;
     Register tmp0  = R11;
     Register tmp1  = R12;
-    Register tmp   = R13;
 
     VectorRegister vdata    = VR0;
     VectorRegister vones    = VR1;
@@ -3962,6 +3961,10 @@ class StubGenerator: public StubCodeGenerator {
     __ srdi(s2, adler, 16);
     __ clrldi(s2, s2, 48);         // high 16 bits
 
+    // len == 0 ?
+    __ cmpwi(CR0, len, 0);
+    __ beq(CR0, L_combine);
+
     // len < 16 ?
     __ cmpwi(CR0, len, 16);
     __ blt(CR0, L_by1);
@@ -3972,16 +3975,14 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpw(CR0, len, nmax);
     __ blt(CR0, L_by16);
 
-    __ mr(count, nmax);
+    __ load_const_optimized(count, (int)(NMAX / 16));
+    __ mtctr(count);
     __ bind(L_nmax_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
                          vdata, vones, vweights, vacc1, vacc2, vp);
 
-    __ addi(count, count, -16);
-
-    __ cmpwi(CR0, count, 16);
-    __ bge(CR0, L_nmax_loop);
+    __ bdnz(L_nmax_loop);
 
     // s1 = s1 % BASE
     //    = s1 - (s1 / base) * base
@@ -4005,7 +4006,6 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmpwi(CR0, len, 16);
     __ blt(CR0, L_by1);
-
 
     __ bind(L_by16_loop);
 
@@ -4060,9 +4060,6 @@ class StubGenerator: public StubCodeGenerator {
                              VectorRegister vones, VectorRegister vweights,
                              VectorRegister vacc1, VectorRegister vacc2, VectorRegister vp) {
 
-    // save s1
-    __ mr(tmp1, s1);
-
     // load 16 input bytes
     __ load_byte_vector_unaligned(vdata, 0, buf, tmp0, vp);
 
@@ -4099,7 +4096,7 @@ class StubGenerator: public StubCodeGenerator {
     __ mfvsrwz(tmp0, vacc2.to_vsr());
 
     // s2 += s1*16 + weighted_sum
-    __ slwi(tmp1, tmp1, 4);
+    __ slwi(tmp1, s1, 4);
     __ add(tmp0, tmp0, tmp1);
     __ add(s2, s2, tmp0);
 
