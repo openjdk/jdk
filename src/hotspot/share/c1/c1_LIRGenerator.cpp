@@ -2739,7 +2739,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -2797,7 +2797,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   LIR_Opr value = tag.result();
   int len = x->length();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
