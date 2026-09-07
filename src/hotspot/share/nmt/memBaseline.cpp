@@ -81,7 +81,7 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   int _index;
 
 public:
-  MallocAllocationSiteWalker(size_t entry_count)
+  MallocAllocationSiteWalker(int entry_count)
   : MallocSiteWalker(), _malloc_sites(NEW_C_HEAP_ARRAY_RETURN_NULL(MallocSite, entry_count, mtNMT)),
     _length(_malloc_sites == nullptr ? 0 : entry_count), _index(0) {
   }

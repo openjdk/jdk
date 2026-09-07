@@ -172,7 +172,7 @@ class MallocSiteTable : AllStatic {
 
   static void print_tuning_statistics(outputStream* st);
 
-  static size_t entry_count() {
+  static int entry_count() {
     return _entry_count.load_relaxed();
   }
 
@@ -200,7 +200,7 @@ class MallocSiteTable : AllStatic {
  private:
   // The callsite hashtable. It has to be a static table,
   // since malloc call can come from C runtime linker.
-  static Atomic<size_t>                     _entry_count;
+  static Atomic<int>                        _entry_count;
   static Atomic<MallocSiteHashtableEntry*>* _table;
   static const NativeCallStack*             _hash_entry_allocation_stack;
   static const MallocSiteHashtableEntry*    _hash_entry_allocation_site;
