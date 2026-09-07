@@ -2503,6 +2503,9 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask, public Unmounte
   // HPROF_TRACE and HPROF_FRAME records for platform and mounted virtual threads
   void dump_stack_traces(AbstractDumpWriter* writer);
 
+  // Writes the segment-phase records into 'seg_writer'.
+  void write_segment_records(int dumper_id, uint worker_id, AbstractDumpWriter* seg_writer);
+
  public:
   VM_HeapDumper(DumpWriter* writer, bool gc_before_heap_dump, bool oome, uint num_dump_threads) :
     VM_GC_Operation(0 /* total collections,      dummy, ignored */,
@@ -2707,56 +2710,25 @@ void VM_HeapDumper::work(uint worker_id) {
 
   // HPROF_HEAP_DUMP/HPROF_HEAP_DUMP_SEGMENT starts here
 
-  ResourceMark rm;
-  // share global compressor, local DumpWriter is not responsible for its life cycle
-  DumpWriter segment_writer(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
-                            writer()->is_overwrite(), writer()->compressor());
-  if (!segment_writer.has_error()) {
-    if (is_vm_dumper(dumper_id)) {
-      // dump some non-heap subrecords to heap dump segment
-      TraceTime timer("Dump non-objects (part 2)", TRACETIME_LOG(Info, heapdump));
-      // Writes HPROF_GC_CLASS_DUMP records
-      ClassDumper class_dumper(&segment_writer);
-      ClassLoaderDataGraph::classes_do(&class_dumper);
+  if (is_parallel_dump()) {
+    ResourceMark rm;
 
-      // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
-      dump_threads(&segment_writer);
-
-      // HPROF_GC_ROOT_JNI_GLOBAL
-      JNIGlobalsDumper jni_dumper(&segment_writer);
-      JNIHandles::oops_do(&jni_dumper);
-      // technically not jni roots, but global roots
-      // for things like preallocated throwable backtraces
-      Universe::vm_global()->oops_do(&jni_dumper);
-      // HPROF_GC_ROOT_STICKY_CLASS
-      // These should be classes in the null class loader data, and not all classes
-      // if !ClassUnloading
-      StickyClassDumper stiky_class_dumper(&segment_writer);
-      ClassLoaderData::the_null_class_loader_data()->classes_do(&stiky_class_dumper);
+    // share global compressor, local DumpWriter is not responsible for its life cycle
+    DumpWriter segment_writer(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
+                              writer()->is_overwrite(), writer()->compressor());
+    if (!segment_writer.has_error()) {
+      write_segment_records(dumper_id, worker_id, &segment_writer);
+      segment_writer.flush();
     }
+    // also records segment_writer errors
+    _dumper_controller->dumper_complete(&segment_writer, writer());
 
-    // Heap iteration.
-    // writes HPROF_GC_INSTANCE_DUMP records.
-    // After each sub-record is written check_segment_length will be invoked
-    // to check if the current segment exceeds a threshold. If so, a new
-    // segment is started.
-    // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
-    // of the heap dump.
+  } else {
 
-    TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper);
-    if (!is_parallel_dump()) {
-      Universe::heap()->object_iterate(&obj_dumper);
-    } else {
-      // == Parallel dump
-      _poi->object_iterate(&obj_dumper, worker_id);
-    }
+    write_segment_records(dumper_id, worker_id, writer());
+    _dumper_controller->dumper_complete(writer(), writer());
 
-    segment_writer.finish_dump_segment();
-    segment_writer.flush();
   }
-
-  _dumper_controller->dumper_complete(&segment_writer, writer());
 
   if (is_vm_dumper(dumper_id)) {
     _dumper_controller->wait_all_dumpers_complete();
@@ -2766,7 +2738,52 @@ void VM_HeapDumper::work(uint worker_id) {
 
     // At this point, all fragments of the heapdump have been written to separate files.
     // We need to merge them into a complete heapdump and write HPROF_HEAP_DUMP_END at that time.
+    // Single-threaded dump: data already in the global file.
   }
+}
+
+void VM_HeapDumper::write_segment_records(int dumper_id, uint worker_id, AbstractDumpWriter* segment_writer) {
+  if (is_vm_dumper(dumper_id)) {
+    // dump some non-heap subrecords to heap dump segment
+    TraceTime timer("Dump non-objects (part 2)", TRACETIME_LOG(Info, heapdump));
+    // Writes HPROF_GC_CLASS_DUMP records
+    ClassDumper class_dumper(segment_writer);
+    ClassLoaderDataGraph::classes_do(&class_dumper);
+
+    // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
+    dump_threads(segment_writer);
+
+    // HPROF_GC_ROOT_JNI_GLOBAL
+    JNIGlobalsDumper jni_dumper(segment_writer);
+    JNIHandles::oops_do(&jni_dumper);
+    // technically not jni roots, but global roots
+    // for things like preallocated throwable backtraces
+    Universe::vm_global()->oops_do(&jni_dumper);
+    // HPROF_GC_ROOT_STICKY_CLASS
+    // These should be classes in the null class loader data, and not all classes
+    // if !ClassUnloading
+    StickyClassDumper stiky_class_dumper(segment_writer);
+    ClassLoaderData::the_null_class_loader_data()->classes_do(&stiky_class_dumper);
+  }
+
+  // Heap iteration.
+  // writes HPROF_GC_INSTANCE_DUMP records.
+  // After each sub-record is written check_segment_length will be invoked
+  // to check if the current segment exceeds a threshold. If so, a new
+  // segment is started.
+  // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
+  // of the heap dump.
+
+  TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
+  HeapObjectDumper obj_dumper(segment_writer, this, &_flat_dumper);
+  if (!is_parallel_dump()) {
+    Universe::heap()->object_iterate(&obj_dumper);
+  } else {
+    // == Parallel dump
+    _poi->object_iterate(&obj_dumper, worker_id);
+  }
+
+  segment_writer->finish_dump_segment();
 }
 
 void VM_HeapDumper::dump_stack_traces(AbstractDumpWriter* writer) {
@@ -2820,6 +2837,13 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
 
   // write HPROF_TRACE/HPROF_FRAME records to global writer
   _dumper_controller->lock_global_writer();
+
+  // In the single-threaded direct-write path, writer() doubles as the segment
+  // writer and may have an open heap dump segment.  HPROF_TRACE is a top-level
+  // record and must be written outside any segment, so close any open one now.
+  // In the parallel path, writer() is never in a segment, so this is a no-op.
+  writer()->finish_dump_segment();
+
   thread_dumper.dump_stack_traces(writer(), _klass_map);
   _dumper_controller->unlock_global_writer();
 
@@ -2885,23 +2909,27 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   // record any error that the writer may have encountered
   set_error(writer.error());
 
-  // Heap dump process is done in two phases
-  //
-  // Phase 1: Concurrent threads directly write heap data to multiple heap files.
-  //          This is done by VM_HeapDumper, which is performed within safepoint.
-  //
-  // Phase 2: Merge multiple heap files into one complete heap dump file.
-  //          This is done by DumpMerger, which is performed outside safepoint
+  if (!dumper.is_parallel_dump()) {
+    DumperSupport::end_of_dump(&writer);
+    writer.flush();
+  } else {
+    // Heap dump process is done in two phases
+    //
+    // Phase 1: Concurrent threads directly write heap data to multiple heap files.
+    //          This is done by VM_HeapDumper, which is performed within safepoint.
+    //
+    // Phase 2: Merge multiple heap files into one complete heap dump file.
+    //          This is done by DumpMerger, which is performed outside safepoint
 
-  DumpMerger merger(path, &writer, dumper.dump_seq());
-  // Perform heapdump file merge operation in the current thread prevents us
-  // from occupying the VM Thread, which in turn affects the occurrence of
-  // GC and other VM operations.
-  merger.do_merge();
-  if (writer.error() != nullptr) {
-    set_error(writer.error());
+    DumpMerger merger(path, &writer, dumper.dump_seq());
+    // Perform heapdump file merge operation in the current thread prevents us
+    // from occupying the VM Thread, which in turn affects the occurrence of
+    // GC and other VM operations.
+    merger.do_merge();
+    if (writer.error() != nullptr) {
+      set_error(writer.error());
+    }
   }
-
   // emit JFR event
   if (error() == nullptr) {
     event.set_destination(path);
