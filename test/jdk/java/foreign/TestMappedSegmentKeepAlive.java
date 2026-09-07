@@ -68,8 +68,8 @@ public class TestMappedSegmentKeepAlive {
             FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
             Thread t = Thread.ofPlatform()
-                    // Provoke a WrongThreadException
-                    // Make sure we properly release the arena again
+                    // Provoke a WrongThreadException when acquiring the session
+                    // Make sure we properly release the session again
                     .start(() -> assertThrows(WrongThreadException.class, () -> op.accept(segment)));
             t.join();
         } // close should succeed
