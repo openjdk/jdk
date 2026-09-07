@@ -46,6 +46,9 @@ public class TestReduceAllocationClonedCast {
         for (int i = 0; i < 8_000; i++) {
             test1();
             test2();
+            test3(true, true);
+            test3(false, false);
+            test3(false, true);
         }
         System.out.println("DONE");
     }
@@ -100,6 +103,35 @@ public class TestReduceAllocationClonedCast {
         return retA;
     }
 
+    static A fieldA = new A(42);
+    static int field;
+    
+    static int test3(boolean flag, boolean flag2) {
+        A a = null;
+        if (flag) {
+            a = new A(42);
+        } else {
+            a = fieldA;
+            if (flag2) {
+                if (a == null) {
+                    throw new RuntimeException("not taken");
+                }
+            }
+            field = 42;
+        }
+        return a.field;
+    }
+
+    static class A {
+        int field;
+
+        A(int v)  {
+            field = v;
+        }
+
+    }
+
+    
     static class A1 {
         final Integer a1;
 

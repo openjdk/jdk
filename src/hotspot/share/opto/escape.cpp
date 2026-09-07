@@ -1127,7 +1127,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       }
       Node* base = get_addp_base(new_addp);
 
-      if (base->Opcode() == Op_CastPP) {
+      if (base->Opcode() == Op_CastPP && UseNewCode) {
         Node* previous_base = get_addp_base(previous_addp);
         if (previous_base->Opcode() == Op_CastPP) {
           assert(previous_base != base, "Should have been pushed through Phi");
