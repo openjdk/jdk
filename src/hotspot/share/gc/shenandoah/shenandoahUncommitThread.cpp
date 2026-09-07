@@ -81,11 +81,21 @@ void ShenandoahUncommitThread::run_service() {
   }
 }
 
+// The regions that were freed in the same cycle would have roughly the same empty time.
+// Empty time is pre-coarsened to ~100ms window. Within that window, uncommit from higher
+// indexes, to allow allocation path to take earlier regions first. The windows themselves
+// have higher priority the earlier the empty time was.
 int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate& b) {
-  if (a._priority < b._priority) {
+  if (a._empty_time > b._empty_time) {
     return +1;
   }
-  if (a._priority > b._priority) {
+  if (a._empty_time < b._empty_time) {
+    return -1;
+  }
+  if (a._region->index() < b._region->index()) {
+    return +1;
+  }
+  if (a._region->index() > b._region->index()) {
     return -1;
   }
   return 0;
@@ -117,12 +127,7 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
       has_work |= (r->empty_time() < shrink_before);
       Candidate& candidate = _candidates[_candidates_count++];
       candidate._region = r;
-
-      // The regions that were freed in the same cycle would have roughly the same empty time.
-      // Coarsen that time to about 100ms window. Within that window, uncommit from higher
-      // indexes, to allow allocation path to take earlier regions first. The windows themselves
-      // have higher priority the earlier the empty time was.
-      candidate._priority = (int64_t)r->index() - (int64_t)r->empty_time() * 10 * _heap->num_regions();
+      candidate._empty_time = (int64_t)(r->empty_time() * 10);
     }
   }
 
@@ -205,7 +210,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
 
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i]._region;
-    double shrink_before = os::elapsedTime() + shrink_delay;
+    double shrink_before = os::elapsedTime() - shrink_delay;
 
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       // Do not uncommit below the target.
@@ -227,6 +232,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+        log_info(gc)("Uncommitting region %zu, time=%.2f", r->index(), r->empty_time());
         r->make_uncommitted();
         uncommitted_count++;
       }

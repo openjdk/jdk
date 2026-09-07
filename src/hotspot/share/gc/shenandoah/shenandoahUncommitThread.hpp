@@ -35,7 +35,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
 
   struct Candidate {
     ShenandoahHeapRegion* _region;
-    int64_t _priority;
+    uint64_t _empty_time;
   };
 
   // Candidate regions
