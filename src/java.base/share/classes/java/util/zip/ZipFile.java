@@ -54,6 +54,7 @@ import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 import sun.nio.cs.UTF_8;
 import sun.nio.fs.DefaultFileSystemProvider;
 import sun.security.util.SignatureFileVerifier;
@@ -79,6 +80,7 @@ import static java.util.zip.ZipUtils.*;
  * @author      David Connelly
  * @since 1.1
  */
+@TrustFinalFields
 public class ZipFile implements ZipConstants, Closeable {
 
     private final String filePath;     // ZIP file path
@@ -92,7 +94,7 @@ public class ZipFile implements ZipConstants, Closeable {
     // a) the input streams that need to be closed
     // b) the list of cached Inflater objects
     // c) the Source object providing read access to the actual ZIP file
-    private final @Stable CleanableResource res;
+    private final CleanableResource res;
 
     private static final int STORED = ZipEntry.STORED;
     private static final int DEFLATED = ZipEntry.DEFLATED;

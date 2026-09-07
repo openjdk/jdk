@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,13 +34,14 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.Stable;
+import jdk.internal.vm.annotation.TrustFinalFields;
 
 /**
  * Provides a reverse-ordered view of a List. Not serializable.
  */
+@TrustFinalFields
 class ReverseOrderListView<E> implements List<E> {
 
-    @Stable
     final List<E> base;
     final boolean modifiable;
 
