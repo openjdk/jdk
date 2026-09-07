@@ -1908,9 +1908,6 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_SubHF:
       return UseZfh;
 
-    case Op_CMoveP:
-    case Op_CMoveN:
-      return false;
   }
 
   return true; // Per default match rules are supported.
@@ -10828,6 +10825,334 @@ instruct cmovD_cmpP(fRegD dst, fRegD src, iRegP op1, iRegP op2, cmpOp cop) %{
     __ enc_cmove_fp_cmp($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
                  as_Register($op1$$reg), as_Register($op2$$reg),
                  as_FloatRegister($dst$$reg), as_FloatRegister($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// --------- CMoveP ---------
+
+instruct cmovP_cmpI(iRegPNoSp dst, iRegP src, iRegI op1, iRegI op2, cmpOp cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpI op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpI\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpU(iRegPNoSp dst, iRegP src, iRegI op1, iRegI op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpU op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpU\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpL(iRegPNoSp dst, iRegP src, iRegL op1, iRegL op2, cmpOp cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpUL(iRegPNoSp dst, iRegP src, iRegL op1, iRegL op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpUL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpUL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpN(iRegPNoSp dst, iRegP src, iRegN op1, iRegN op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpN\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpP(iRegPNoSp dst, iRegP src, iRegP op1, iRegP op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpP\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpF(iRegPNoSp dst, iRegP src, fRegF op1, fRegF op2, cmpOp cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpF" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpD(iRegPNoSp dst, iRegP src, fRegD op1, fRegD op2, cmpOp cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveP $dst, ($op1 $cop $op2), $dst, $src\t#@cmovP_cmpD" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpP_zero(iRegPNoSp dst, immP0 src, iRegP op1, iRegP op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST * 2);
+
+  format %{ "CMoveP $dst, ($op1 $cop $op2), $dst, zr\t#@cmovP_cmpP_zero" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovP_cmpN_zero(iRegPNoSp dst, immP0 src, iRegN op1, iRegN op2, cmpOpU cop) %{
+  match(Set dst (CMoveP (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST * 2);
+
+  format %{ "CMoveP $dst, ($op1 $cop $op2), $dst, zr\t#@cmovP_cmpN_zero" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+// --------- CMoveN ---------
+
+instruct cmovN_cmpI(iRegNNoSp dst, iRegN src, iRegI op1, iRegI op2, cmpOp cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpI op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpI\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpU(iRegNNoSp dst, iRegN src, iRegI op1, iRegI op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpU op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpU\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpL(iRegNNoSp dst, iRegN src, iRegL op1, iRegL op2, cmpOp cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpUL(iRegNNoSp dst, iRegN src, iRegL op1, iRegL op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpUL op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpUL\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpN(iRegNNoSp dst, iRegN src, iRegN op1, iRegN op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpN\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpP(iRegNNoSp dst, iRegN src, iRegP op1, iRegP op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{
+    "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpP\n\t"
+  %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpF(iRegNNoSp dst, iRegN src, fRegF op1, fRegF op2, cmpOp cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpF op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpF" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), true /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpD(iRegNNoSp dst, iRegN src, fRegD op1, fRegD op2, cmpOp cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpD op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST + BRANCH_COST);
+
+  format %{ "CMoveN $dst, ($op1 $cop $op2), $dst, $src\t#@cmovN_cmpD" %}
+
+  ins_encode %{
+    __ enc_cmove_cmp_fp($cop$$cmpcode | C2_MacroAssembler::double_branch_mask,
+                        as_FloatRegister($op1$$reg), as_FloatRegister($op2$$reg),
+                        as_Register($dst$$reg), as_Register($src$$reg), false /* is_single */);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpP_zero(iRegNNoSp dst, immN0 src, iRegP op1, iRegP op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpP op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST * 2);
+
+  format %{ "CMoveN $dst, ($op1 $cop $op2), $dst, zr\t#@cmovN_cmpP_zero" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
+  %}
+
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmovN_cmpN_zero(iRegNNoSp dst, immN0 src, iRegN op1, iRegN op2, cmpOpU cop) %{
+  match(Set dst (CMoveN (Binary cop (CmpN op1 op2)) (Binary dst src)));
+  ins_cost(ALU_COST * 2);
+
+  format %{ "CMoveN $dst, ($op1 $cop $op2), $dst, zr\t#@cmovN_cmpN_zero" %}
+
+  ins_encode %{
+    __ enc_cmove($cop$$cmpcode | C2_MacroAssembler::unsigned_branch_mask,
+                 as_Register($op1$$reg), as_Register($op2$$reg),
+                 as_Register($dst$$reg), zr);
   %}
 
   ins_pipe(pipe_class_compare);
