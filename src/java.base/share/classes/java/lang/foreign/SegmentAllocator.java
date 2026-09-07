@@ -91,7 +91,7 @@ public interface SegmentAllocator {
      *}
      *
      * @param str the Java string to be converted into a C string
-     * @return a new native segment containing the converted C string
+     * @return a new segment containing the converted C string
      */
     @ForceInline
     default MemorySegment allocateFrom(String str) {
@@ -117,7 +117,7 @@ public interface SegmentAllocator {
      * @param str     the Java string to be converted into a C string
      * @param charset the charset used to {@linkplain Charset#newEncoder() encode} the
      *                string bytes
-     * @return a new native segment containing the converted C string
+     * @return a new segment containing the converted C string
      * @throws IllegalArgumentException if {@code charset} is not a
      *         {@linkplain StandardCharsets standard charset}
      * @implSpec The default implementation for this method copies the contents of the
@@ -174,7 +174,7 @@ public interface SegmentAllocator {
      *                 string bytes
      * @param srcIndex the starting index of the source string
      * @param numChars the number of characters to be copied
-     * @return a new native segment containing the encoded string
+     * @return a new segment containing the encoded string
      * @throws IndexOutOfBoundsException if either {@code srcIndex} or {@code numChars} are {@code < 0}
      * @throws IndexOutOfBoundsException if {@code srcIndex > str.length() - numChars}
      *
