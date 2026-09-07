@@ -49,9 +49,14 @@ void ShenandoahUncommitThread::run_service() {
 
   // poll_interval avoids constantly polling regions for shrinking.
   // Having an interval 10x lower than the delay would mean we hit the
-  // shrinking with lag of less than 1/10-th of true delay.
-  // ShenandoahUncommitDelay is in millis, but shrink_period is in seconds.
-  const int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
+  // shrinking with lag of less than 1/10-th of true delay. Poll interval
+  // cannot be allowed to decay to zero, which would cause indefinite wait.
+  int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
+  if (poll_interval == 0) {
+    poll_interval = 10;
+  }
+
+  // ShenandoahUncommitDelay is in millis, but shrink_delay is in seconds.
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
 
   while (!should_terminate()) {
@@ -266,5 +271,6 @@ void ShenandoahUncommitThread::forbid_uncommit() {
 
 void ShenandoahUncommitThread::allow_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  locker.notify_all();
   _uncommit_allowed.set();
 }
