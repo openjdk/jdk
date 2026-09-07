@@ -452,7 +452,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
     ShenandoahGCPhase phase(concurrent ?
         ShenandoahPhaseTimings::final_update_region_states :
         ShenandoahPhaseTimings::degen_gc_final_update_region_states);
-    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context());
+    ShenandoahFinalMarkUpdateRegionStateClosure cl(complete_marking_context(), this);
 
     parallel_heap_region_iterate(&cl);
     heap->assert_pinned_region_status(this);
@@ -800,7 +800,7 @@ void ShenandoahOldGeneration::clear_cards_for(ShenandoahHeapRegion* region) {
   _card_scan->mark_range_as_empty(region->bottom(), pointer_delta(region->end(), region->bottom()));
 }
 
-void ShenandoahOldGeneration::mark_card_as_dirty(void* location) {
+void ShenandoahOldGeneration::mark_card_as_dirty(void* location) const {
   _card_scan->mark_card_as_dirty((HeapWord*)location);
 }
 

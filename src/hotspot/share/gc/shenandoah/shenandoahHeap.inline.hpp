@@ -37,6 +37,7 @@
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -361,11 +362,36 @@ inline bool ShenandoahHeap::is_in_active_generation(oop obj) const {
 }
 
 inline bool ShenandoahHeap::is_in_young(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::YOUNG_GENERATION);
+  return has_affiliation(p, YOUNG_GENERATION);
 }
 
 inline bool ShenandoahHeap::is_in_old(const void* p) const {
-  return is_in_reserved(p) && (region_affiliation(heap_region_index_containing(p)) == ShenandoahAffiliation::OLD_GENERATION);
+  return has_affiliation(p, OLD_GENERATION);
+}
+
+inline bool ShenandoahHeap::is_old_to_young(const void* maybe_old, oop maybe_young) const {
+  if (maybe_young == nullptr) {
+    return false;
+  }
+  if (ShenandoahHeapRegion::is_in_same_region(maybe_old, maybe_young)) {
+    return false;
+  }
+  return has_affiliation(maybe_old, OLD_GENERATION) && has_affiliation(maybe_young, YOUNG_GENERATION);
+}
+
+inline bool ShenandoahHeap::has_affiliation(const void* p, ShenandoahAffiliation affiliation) const {
+  if (!is_in_reserved(p)) {
+    return false;
+  }
+
+  const size_t index = p2u(p) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
+}
+
+inline bool ShenandoahHeap::has_affiliation(oop obj, ShenandoahAffiliation affiliation) const {
+  assert(is_in_reserved(obj), "Expected decoded oop (" PTR_FORMAT ") to be in the heap", p2i(obj));
+  const size_t index = p2u(obj) >> ShenandoahHeapRegion::region_size_bytes_shift();
+  return AtomicAccess::load(_biased_affiliations + index) == affiliation;
 }
 
 inline bool ShenandoahHeap::is_in_old_during_young_collection(oop obj) const {
@@ -406,6 +432,18 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
   return (ShenandoahAffiliation) AtomicAccess::load(_affiliations + index);
+}
+
+inline bool ShenandoahHeap::is_region_young(size_t index) const {
+  return region_affiliation(index) == YOUNG_GENERATION;
+}
+
+inline bool ShenandoahHeap::is_region_old(size_t index) const {
+  return region_affiliation(index) == OLD_GENERATION;
+}
+
+inline bool ShenandoahHeap::is_region_free(size_t index) const {
+  return region_affiliation(index) == FREE;
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {

@@ -712,7 +712,7 @@ bool ciMethod::array_access_profiled_type(int bci, ciKlass*& array_type, ciKlass
   return false;
 }
 
-bool ciMethod::acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type, ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr, bool &left_inline_type, bool &right_inline_type) {
+bool ciMethod::acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_type, ProfilePtrKind& left_ptr, ProfilePtrKind& right_ptr, bool &left_value_type, bool &right_value_type) {
   if (method_data() != nullptr && method_data()->is_mature()) {
     ciProfileData* data = method_data()->bci_to_data(bci);
     if (data != nullptr && data->is_ACmpData()) {
@@ -721,8 +721,8 @@ bool ciMethod::acmp_profiled_type(int bci, ciKlass*& left_type, ciKlass*& right_
       right_type = acmp->right()->valid_type();
       left_ptr = acmp->left()->ptr_kind();
       right_ptr = acmp->right()->ptr_kind();
-      left_inline_type = acmp->left_inline_type();
-      right_inline_type = acmp->right_inline_type();
+      left_value_type = acmp->left_value_type();
+      right_value_type = acmp->right_value_type();
       return true;
     }
   }

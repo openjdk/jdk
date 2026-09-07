@@ -376,7 +376,6 @@ Method* ConstantPoolCache::method_if_resolved(int method_index) const {
 }
 
 ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
-                                     const intStack& invokedynamic_map,
                                      const GrowableArray<ResolvedIndyEntry> indy_entries,
                                      const GrowableArray<ResolvedFieldEntry> field_entries,
                                      const GrowableArray<ResolvedMethodEntry> method_entries,
@@ -390,7 +389,7 @@ ConstantPoolCache* ConstantPoolCache::allocate(ClassLoaderData* loader_data,
   Array<ResolvedMethodEntry>* resolved_method_entries = initialize_resolved_entries_array(loader_data, method_entries, CHECK_NULL);
 
   return new (loader_data, size, MetaspaceObj::ConstantPoolCacheType, THREAD)
-              ConstantPoolCache(invokedynamic_map, resolved_indy_entries, resolved_field_entries, resolved_method_entries);
+              ConstantPoolCache(resolved_indy_entries, resolved_field_entries, resolved_method_entries);
 }
 
 // Record the GC marking cycle when redefined vs. when found in the loom stack chunks.
