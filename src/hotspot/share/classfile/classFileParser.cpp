@@ -4640,10 +4640,9 @@ void ClassFileParser:: verify_legal_field_modifiers(jint flags,
   const char* error_msg = "";
 
   // There is some overlap in the checks that apply, for example interface fields
-  // must be static, static fields can't be strict, and therefore interfaces can't
-  // have strict fields. So we don't have to check every possible invalid combination
-  // individually as long as all are covered. Once we have found an illegal combination
-  // we can stop checking.
+  // must be static, therefore interfaces can't have strict instance fields.
+  // We don't have to check every possible invalid combination individually as long as
+  // all are covered. Once we have found an illegal combination we can stop checking.
 
   if (!is_illegal) {
     if (is_interface) {

@@ -1373,12 +1373,16 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+  Register mdo = noreg;
+  if (op->should_profile()) {
+    mdo = klass_RInfo;
+    __ mov_metadata(mdo, md->constant_encoding());
+  }
+
   if (op->need_null_check()) {
     __ testptr(obj, obj);
     if (op->should_profile()) {
       Label not_null;
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
       __ jccb(Assembler::notEqual, not_null);
       // Object is null; update MDO and exit
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
@@ -1386,13 +1390,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ orb(data_addr, header_bits);
       __ jmp(*obj_is_null);
       __ bind(not_null);
-
-    Register recv = k_RInfo;
-    __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv);
     } else {
       __ jcc(Assembler::equal, *obj_is_null);
     }
+  }
+
+  if (op->should_profile()) {
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj, tmp_load_klass);
+    type_profile_helper(mdo, md, data, recv);
   }
 
   if (!k->is_loaded()) {
