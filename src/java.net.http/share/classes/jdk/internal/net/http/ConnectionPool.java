@@ -161,12 +161,17 @@ final class ConnectionPool {
                                  InetSocketAddress addr,
                                  InetSocketAddress proxy) {
         if (stopped) return null;
+        List<HttpConnection> purgedConnections;
+        HttpConnection acquiredConnection;
         stateLock.lock();
         try {
-            return getConnection0(secure, addr, proxy);
+            purgedConnections = purgeExpiredConnections(timeSource.instant());
+            acquiredConnection = getConnection0(secure, addr, proxy);
         } finally {
             stateLock.unlock();
         }
+        purgedConnections.forEach(this::close);
+        return acquiredConnection;
     }
 
     private HttpConnection getConnection0(boolean secure,
@@ -319,16 +324,7 @@ final class ConnectionPool {
         List<HttpConnection> closelist;
         stateLock.lock();
         try {
-            closelist = expiryList.purgeUntil(now);
-            for (HttpConnection c : closelist) {
-                if (c instanceof PlainHttpConnection) {
-                    boolean wasPresent = removeFromPool(c, plainPool);
-                    assert wasPresent;
-                } else {
-                    boolean wasPresent = removeFromPool(c, sslPool);
-                    assert wasPresent;
-                }
-            }
+            closelist = purgeExpiredConnections(now);
             nextPurge = now.until(
                     expiryList.nextExpiryDeadline().orElse(now),
                     ChronoUnit.MILLIS);
@@ -337,6 +333,16 @@ final class ConnectionPool {
         }
         closelist.forEach(this::close);
         return nextPurge;
+    }
+
+    private List<HttpConnection> purgeExpiredConnections(Deadline now) {
+        assert stateLock.isHeldByCurrentThread();
+        var closelist = expiryList.purgeUntil(now);
+        for (HttpConnection c : closelist) {
+            var wasPresent = removeFromPool(c, c instanceof PlainHttpConnection ? plainPool : sslPool);
+            assert wasPresent;
+        }
+        return closelist;
     }
 
     private void close(HttpConnection c) {

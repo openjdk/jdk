@@ -508,16 +508,16 @@ uint G1Policy::calculate_desired_num_eden_regions_before_young_only(double base_
 uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
                                                                uint min_num_eden_regions,
                                                                uint max_num_eden_regions) const {
-  uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
-                                     candidates()->from_marking_groups().num_regions());
+  uint min_num_marking_candidate_regions = MIN2(calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length()),
+                                                candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
-  uint selected_candidates = 0;
-  for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
-    if (selected_candidates >= min_marking_candidates) {
+  uint num_selected_candidate_regions = 0;
+  for (G1CardSetGroup* gr : candidates()->from_marking_groups()) {
+    if (num_selected_candidate_regions >= min_num_marking_candidate_regions) {
       break;
     }
     predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
-    selected_candidates += gr->length();
+    num_selected_candidate_regions += gr->length();
   }
 
   return calculate_desired_num_eden_regions_before_young_only(predicted_region_evac_time_ms,
@@ -540,15 +540,15 @@ double G1Policy::predict_retained_regions_evac_time() const {
 
   double result = 0.0;
 
-  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
-  uint min_regions_left = MIN2(min_retained_old_cset_length(),
+  G1CardSetGroupList* retained_groups = &candidates()->retained_groups();
+  uint min_regions_left = MIN2(min_num_retained_old_cset_regions(),
                                retained_groups->num_regions());
 
-  for (G1CSetCandidateGroup* group : *retained_groups) {
+  for (G1CardSetGroup* group : *retained_groups) {
     assert(group->length() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
-    // We optimistically assume that any of these marking candidate regions will
-    // be reclaimable the next gc, so just consider them as normal.
+    // We optimistically assume that any regions of these card set groups that contain pinned
+    // regions can be evacuated the next gc, so just consider them like normal.
     if (r->has_pinned_objects()) {
       num_pinned_regions++;
     }
@@ -1184,7 +1184,7 @@ double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+  size_t code_root_length = hr->rem_set()->code_roots_length();
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);
@@ -1492,13 +1492,13 @@ size_t G1Policy::current_to_collection_set_cards() {
   return _to_collection_set_cards;
 }
 
-uint G1Policy::min_retained_old_cset_length() const {
+uint G1Policy::min_num_retained_old_cset_regions() const {
   // Guarantee some progress with retained regions regardless of available time by
   // taking at least one region.
   return 1;
 }
 
-uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
+uint G1Policy::calc_min_num_old_cset_regions(uint num_candidate_regions) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -1513,7 +1513,7 @@ uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
   return (uint)ceil((double)num_candidate_regions / gc_num);
 }
 
-uint G1Policy::calc_max_old_cset_length() const {
+uint G1Policy::calc_max_num_old_cset_regions() const {
   // The max old CSet region bound is based on the threshold expressed
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many

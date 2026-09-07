@@ -639,7 +639,10 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes();
+  // Symbols may be allocated in C-heap with a size smaller than src_info->size_in_bytes(), so
+  // copy the exact number of bytes to avoid triggering ASAN error.
+  int bytes = (src_info->type() == MetaspaceClosureType::SymbolType) ?
+              ((Symbol*)src)->byte_size() : src_info->size_in_bytes();
   char* dest = dump_region->allocate_metaspace_obj(bytes, src, src_info->type(),
                                                    src_info->read_only(), &_alloc_stats);
 

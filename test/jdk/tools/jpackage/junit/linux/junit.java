@@ -88,3 +88,14 @@
  *    jdk/jpackage/internal/DesktopEntryFileValidatorTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.DesktopEntryFileValidatorTest
  */
+
+/* @test
+ * @summary Test LinuxDebPackager
+ * @requires (os.family == "linux")
+ * @library /test/jdk/tools/jpackage/helpers
+ * @build jdk.jpackage.test.mock.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/LinuxDebPackagerTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.LinuxDebPackagerTest
+ */

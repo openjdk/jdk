@@ -2107,10 +2107,10 @@ void TemplateTable::if_acmp(Condition cc) {
     __ z_ltgr(Z_ARG5, Z_ARG5);
     __ z_brc(Assembler::bcondEqual, (cc == equal) ? not_taken : taken);
 
-    __ z_llill(Z_ARG3, markWord::inline_type_pattern);
+    __ z_llill(Z_ARG3, markWord::value_type_pattern);
     __ z_ng(Z_ARG3, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
     __ z_ng(Z_ARG3, Address(Z_ARG5, oopDesc::mark_offset_in_bytes()));
-    __ z_chi(Z_ARG3, markWord::inline_type_pattern);
+    __ z_chi(Z_ARG3, markWord::value_type_pattern);
     __ branch_optimized(Assembler::bcondNotEqual, (cc == equal) ? not_taken : taken);
 
     __ load_metadata(Z_ARG3, Z_tos);
@@ -3322,7 +3322,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
         __ branch_optimized(Assembler::bcondAllZero, is_nullable);
         __ null_check(Z_tos);  // FIXME JDK-8341120
         __ bind(is_nullable);
@@ -3333,7 +3333,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         Label null_free_reference, is_flat, rewrite_inline, done_valhalla;
         __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
         __ branch_optimized(Assembler::bcondAllOne, is_flat);
-        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
         __ branch_optimized(Assembler::bcondAllOne, null_free_reference);
         pop_and_check_object(obj);
         __ z_agr(fieldAddr, obj);
@@ -3344,7 +3344,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           patch_bytecode(Bytecodes::_fast_aputfield, bc_reg, patch_tmp, true, byte_no);
         }
         __ z_bru(done_valhalla);
-        // Implementation of the inline type semantic
+        // Implementation of the value type semantic
         __ bind(null_free_reference);
         __ null_check(Z_tos);  // FIXME JDK-8341120
         pop_and_check_object(obj);
@@ -4489,10 +4489,10 @@ void TemplateTable::monitorenter() {
   // Check for null object.
   __ null_check(Z_tos);
 
-  // Check for inline type (Valhalla feature)
-  NearLabel is_inline_type;
+  // Check for value type (Valhalla feature)
+  NearLabel is_value_type;
   __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
+  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   NearLabel allocated;
   // Initialize entry pointer.
@@ -4571,8 +4571,8 @@ void TemplateTable::monitorenter() {
   // next instruction.
   __ dispatch_next(vtos);
 
-  // Handle inline type exception (Valhalla feature)
-  __ bind(is_inline_type);
+  // Handle value type exception (Valhalla feature)
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                     InterpreterRuntime::throw_identity_exception), Z_tos);
   __ should_not_reach_here();
@@ -4589,12 +4589,12 @@ void TemplateTable::monitorexit() {
   // Check for null object.
   __ null_check(Z_tos);
 
-  // Check for inline type (Valhalla feature)
-  NearLabel is_inline_type, has_identity;
+  // Check for value type (Valhalla feature)
+  NearLabel is_value_type, has_identity;
   __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
+  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
   __ z_bru(has_identity);
-  __ bind(is_inline_type);
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                      InterpreterRuntime::throw_illegal_monitor_state_exception));
   __ should_not_reach_here();
