@@ -1155,6 +1155,9 @@ public:
 Node* PhaseIdealLoop::new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero) {
   OpaqueLoopInitNode* new_opaque_init = new OpaqueLoopInitNode(C, int_zero);
   register_new_node(new_opaque_init, entry_control);
+  if (_igvn.type(init) == TypeInt::ZERO) {
+    return new_opaque_init;
+  }
   Node* new_init = new AddINode(new_opaque_init, init);
   register_new_node(new_init, entry_control);
   return new_init;
