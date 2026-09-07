@@ -25,15 +25,11 @@ metaspace/gc tests - are the test for the Metaspace GC tuning, which is describe
 Java SE 8 HotSpot[tm] Virtual Machine Garbage  Collection Tuning
 
 Tests load classes and monitor the used/committed amounts of metaspace.
-There are three types of tests all extending base class - MetaspaceBaseGC
+There are two types of tests all extending base class - MetaspaceBaseGC
 
 MemoryUsageTest -
   trivial test to check memory dynamic (loading classes should lead to growth
   of used memory, gc to reduce)
-
-FirstGCTest -
-  loads classes until the GC has happened and check the GC has happened at the
-  right moment (as stated in the Spec)
 
 HighWaterMarkTest
   The test loads classes until the committed metaspace achieves the certain

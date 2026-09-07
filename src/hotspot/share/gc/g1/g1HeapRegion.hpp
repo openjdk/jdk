@@ -41,7 +41,7 @@ class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
-class G1CSetCandidateGroup;
+class G1CardSetGroup;
 class G1Predictions;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
@@ -518,8 +518,8 @@ public:
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group);
-  void uninstall_cset_group();
+  void install_card_set_group(G1CardSetGroup* card_set_group);
+  void uninstall_card_set_group();
 
   void record_surv_words_in_group(size_t words_survived);
 

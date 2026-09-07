@@ -24,11 +24,11 @@
 
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciInstance.hpp"
 #include "ci/ciInstanceKlass.hpp"
 #include "ci/ciNullObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/fieldStreams.hpp"
@@ -85,7 +85,7 @@ ciConstant ciInstance::field_value_impl(ciField* field) {
     case T_ARRAY: {
       if (field->is_flat()) {
         assert(field->is_atomic(), "do not query atomically a non-atomic flat field");
-        InlineKlass* vk = field->type()->as_inline_klass()->get_InlineKlass();
+        ValueKlass* vk = field->type()->as_value_klass()->get_ValueKlass();
         FlatValuePayload payload = FlatValuePayload::construct_from_parts(obj, offset, vk, field->layout_kind());
         oop res = payload.read(THREAD);
         if (HAS_PENDING_EXCEPTION) {
@@ -138,7 +138,7 @@ ciConstant ciInstance::field_value_impl(ciField* field) {
 ciConstant ciInstance::field_value(ciField* field) {
   assert(is_loaded(), "invalid access - must be loaded");
   assert(field->holder()->is_loaded(), "invalid access - holder must be loaded");
-  assert(field->is_static() || field->holder()->is_inlinetype() || klass()->is_subclass_of(field->holder()),
+  assert(field->is_static() || field->holder()->is_value_klass() || klass()->is_subclass_of(field->holder()),
          "invalid access - must be subclass");
   ciInstanceKlass* klass = this->klass()->as_instance_klass();
   int containing_field_idx = klass->field_index_by_offset(field->offset_in_bytes());
@@ -157,8 +157,8 @@ ciConstant ciInstance::field_value(ciField* field) {
   ciObject* obj = containing_field_value.as_object();
   if (obj->is_instance()) {
     ciInstance* inst = obj->as_instance();
-    // inst->klass() must be an inline klass since it is the value of a flat field.
-    ciInlineKlass* inst_klass = inst->klass()->as_inline_klass();
+    // inst->klass() must be a value klass since it is the value of a flat field.
+    ciValueKlass* inst_klass = inst->klass()->as_value_klass();
     ciField* field_in_value_klass = inst_klass->get_field_by_offset(inst_klass->payload_offset() + field->offset_in_bytes() - containing_field->offset_in_bytes(), false);
     return inst->sub_field_value(field_in_value_klass);
   } else if (obj->is_null_object()) {
@@ -181,7 +181,7 @@ ciConstant ciInstance::field_value(ciField* field) {
 // the result and must be called only on already cached values (to ensure consistency).
 // field_value takes care of that.
 ciConstant ciInstance::sub_field_value(ciField* field) {
-  precond(klass()->is_inlinetype());
+  precond(klass()->is_value_klass());
   precond(!field->is_flat());
   int offset = field->offset_in_bytes();
   BasicType field_btype = field->type()->basic_type();

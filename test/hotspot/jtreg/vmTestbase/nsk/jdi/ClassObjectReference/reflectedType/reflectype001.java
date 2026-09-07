@@ -128,11 +128,7 @@ public class reflectype001 {
         Binder binder   = new Binder(argsHandler, logHandler);
 
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         IOPipe pipe     = new IOPipe(debugee);
 

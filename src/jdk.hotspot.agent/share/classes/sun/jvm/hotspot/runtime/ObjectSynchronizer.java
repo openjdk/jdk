@@ -51,7 +51,7 @@ public class ObjectSynchronizer {
 
   public long identityHashValueFor(Oop obj) {
     Mark mark = obj.getMark();
-    if (mark.isUnlocked()) {
+    if (mark.isNeutral()) {
       // FIXME: can not generate marks in debugging system
       return mark.hash();
     } else if (mark.hasMonitor()) {
