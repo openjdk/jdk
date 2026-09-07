@@ -1127,7 +1127,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
       }
       Node* base = get_addp_base(new_addp);
 
-      if (base->Opcode() == Op_CastPP && UseNewCode) {
+      if (base->Opcode() == Op_CastPP) {
         Node* previous_base = get_addp_base(previous_addp);
         if (previous_base->Opcode() == Op_CastPP) {
           assert(previous_base != base, "Should have been pushed through Phi");
@@ -1141,7 +1141,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
             add_edge(ptnode_adr(base->_idx), java_object);
           }
           base = base->in(1);
-          assert(base->Opcode() != Op_CastPP, "Only one CastPP expected");
+          assert(previous_base->in(1)->is_Phi() && previous_base->in(1)->in(i) == base, "an input to the cast was cloned");
         }
       }
 
@@ -4833,6 +4833,9 @@ void ConnectionGraph::verify_ram_after_reduce_phi(const Unique_Node_List &reduci
         switch (n->Opcode()) {
           case Op_CastPP:
             base = n->in(1);
+            while (base->Opcode() == Op_CastPP) {
+              base = base->in(1);
+            }
             if (base->is_AddP()) {
               // LibraryCallKit::inline_unsafe_flat_access() inserts a CastPP with an AddP input
               base = get_addp_base(base);
