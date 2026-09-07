@@ -313,6 +313,13 @@
           "milliseconds. Setting this delay to 0 effectively uncommits "    \
           "regions almost immediately after they become unused.")           \
                                                                             \
+  product(uintx, ShenandoahUncommitGrace, 10*1000, EXPERIMENTAL,            \
+          "Uncommit memory using this grace period. Allows regions to "     \
+          "linger a bit, in case active allocation takes them back. "       \
+          "Time is in milliseconds. Setting this grace to 0 effectively "   \
+          "disables the graceful period, allowing regions to be "           \
+          "uncommitted at max speed.")                                      \
+                                                                            \
   product(bool, ShenandoahRegionSampling, false, EXPERIMENTAL,              \
           "Provide heap region sampling data via jvmstat.")                 \
                                                                             \

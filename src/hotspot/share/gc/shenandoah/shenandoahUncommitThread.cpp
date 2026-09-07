@@ -205,15 +205,20 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
 }
 
 void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed) {
+  assert(_candidates_count > 0, "Should be");
+
   uncommitted_count = 0;
   elapsed = 0;
 
   double start = os::elapsedTime();
-  double stalled = 0;
+
+  double ms_time_budget = ShenandoahUncommitGrace;
+  double ms_per_candidate = ms_time_budget / _candidates_count;
 
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i]._region;
-    double shrink_before = os::elapsedTime() - shrink_delay;
+    double cur_time = os::elapsedTime();
+    double shrink_before = cur_time - shrink_delay;
 
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       // Do not uncommit below the target.
@@ -225,10 +230,8 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       // taking the heap lock and start using the region. We are not in a hurry to uncommit,
       // otherwise, we will just trip through uncommit-commit wastefully.
       // Terminate early if we detect that GC wants to start.
-      double wait_since = os::elapsedTime();
-      bool terminate = !check_uncommit_or_delay();
-      stalled += os::elapsedTime() - wait_since;
-      if (terminate) {
+      int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * 1000));
+      if (!check_uncommit_or_delay(delay_ms)) {
         break;
       }
 
@@ -242,7 +245,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
     }
   }
 
-  elapsed = MAX2<double>(0, os::elapsedTime() - start - stalled);
+  elapsed = os::elapsedTime() - start;
 }
 
 
@@ -252,9 +255,11 @@ void ShenandoahUncommitThread::stop_service() {
   locker.notify_all();
 }
 
-bool ShenandoahUncommitThread::check_uncommit_or_delay() {
-  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-  locker.wait(10);
+bool ShenandoahUncommitThread::check_uncommit_or_delay(int delay_ms) {
+  if (delay_ms > 0) {
+    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+    locker.wait(delay_ms);
+  }
   return _uncommit_allowed.is_set();
 }
 

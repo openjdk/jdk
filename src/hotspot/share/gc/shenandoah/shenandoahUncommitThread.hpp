@@ -67,7 +67,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   bool is_uncommit_allowed() const;
 
   // Stall uncommit thread to allow allocator progress
-  bool check_uncommit_or_delay();
+  bool check_uncommit_or_delay(int delay_ms);
 
   // Iterate over and uncommit eligible regions
   void do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed);

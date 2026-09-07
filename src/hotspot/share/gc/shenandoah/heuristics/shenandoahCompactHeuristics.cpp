@@ -42,6 +42,7 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahAllocationThreshold,  10);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold,   100);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUncommitDelay,        1000);
+  SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahUncommitGrace,        1000);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGuaranteedGCInterval, 30000);
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahGarbageThreshold,     10);
 }
