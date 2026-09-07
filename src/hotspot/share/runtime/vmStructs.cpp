@@ -662,7 +662,6 @@
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \

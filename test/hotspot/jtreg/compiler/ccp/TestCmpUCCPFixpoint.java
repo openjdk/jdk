@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,17 +21,38 @@
  * questions.
  */
 
-#include "runtime/objectMonitor.hpp"
-#include "runtime/vm_version.hpp"
-#include "unittest.hpp"
+/*
+ * @test
+ * @bug 8389218
+ * @summary Test that PhaseCCP reaches a fixpoint for CmpU with a wrapped
+ *          AddI range.
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   ${test.main.class}
+ */
 
-TEST_VM(ObjectMonitor, sanity) {
-  uint cache_line_size = VM_Version::L1_data_cache_line_size();
+package compiler.ccp;
 
-  if (cache_line_size != 0) {
+public class TestCmpUCCPFixpoint {
+    static int iFld;
+    static int limit;
 
-    EXPECT_GE((size_t) in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), cache_line_size)
-        << "the _owner and _recursions fields are closer "
-        << "than a cache line which permits false sharing.";
-  }
+    public static void main(String[] args) {
+        test();
+    }
+
+    static void test() {
+        short x = -100;
+
+        for (int i = 0; i < limit; i++) {
+            x++;
+        }
+        x++;
+
+        switch (x) {
+            case Short.MIN_VALUE + 1:
+            case Short.MAX_VALUE:
+                iFld = 2;
+        }
+    }
 }

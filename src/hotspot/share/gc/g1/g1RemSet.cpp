@@ -1077,9 +1077,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        G1CSetCandidateGroup* group = r->rem_set()->cset_group();
-        assert(group != nullptr, "must have a cset group");
-        assert(group->length() == 1, "humongous regions cset group must have a single entry");
+        G1CardSetGroup* group = r->rem_set()->card_set_group();
+        assert(group != nullptr, "must have a card set group");
+        assert(group->length() == 1, "Card set groups containing humongous regions must have a single entry");
         group->clear_card_set();
       }
 
@@ -1148,7 +1148,7 @@ public:
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
-        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+        g1h->collection_set()->merge_collection_set_card_set_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
 
@@ -1211,14 +1211,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
+    uint const num_selected_groups_in_increment = g1h->collection_set()->num_selected_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), num_groups_in_increment);
+                                                  MIN2(workers->active_workers(), num_selected_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
-                        cl.name(), num_workers, num_groups_in_increment);
+    log_debug(gc, ergo)("Running %s using %u workers for %u card set groups",
+                        cl.name(), num_workers, num_selected_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 
