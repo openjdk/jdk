@@ -942,10 +942,10 @@ address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(Abstract
   assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
   address entry = __ pc();
 
-  const Register crc = c_rarg0;
-  const Register buf = c_rarg1;
-  const Register len = c_rarg2;
-  const Register off = c_rarg3;
+  const Register crc = c_rarg0; // initial crc
+  const Register buf = c_rarg1; // source java byte array address
+  const Register len = c_rarg2; // len argument to the kernel
+  const Register off = c_rarg3; // offset
 
   // Arguments are reversed on the Java expression stack.
   __ lwu(len, Address(esp));                 // end
