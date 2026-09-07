@@ -56,7 +56,7 @@ import sun.jvm.hotspot.gc.shared.CollectedHeap;
 import sun.jvm.hotspot.gc.g1.G1CollectedHeap;
 import sun.jvm.hotspot.oops.DefaultHeapVisitor;
 import sun.jvm.hotspot.oops.HeapVisitor;
-import sun.jvm.hotspot.oops.Inline;
+import sun.jvm.hotspot.oops.Value;
 import sun.jvm.hotspot.oops.InstanceKlass;
 import sun.jvm.hotspot.oops.Klass;
 import sun.jvm.hotspot.oops.Metadata;
@@ -265,7 +265,7 @@ public class CommandProcessor {
                 out.print(blanks);
                 try {
                     SimpleTreeNode field = node.getChild(i);
-                    if (field instanceof OopTreeNodeAdapter of && of.getOop() instanceof Inline oop) {
+                    if (field instanceof OopTreeNodeAdapter of && of.getOop() instanceof Value oop) {
                         out.println(of.getName() + ": ");
                         printNode(new OopTreeNodeAdapter(oop, null), indent + 1);
                     } else {

@@ -31,23 +31,23 @@ import sun.jvm.hotspot.oops.ObjectHeap;
 
 
 /**
- * Inline represents "inlineOop" in HotSpot in SA.
- * See FlattenedInline for flattened object.
+ * Value represents "valueOop" in HotSpot in SA.
+ * See FlattenedValue for flattened object.
  */
-public class Inline extends Instance {
+public class Value extends Instance {
 
-    Inline(OopHandle handle, ObjectHeap heap) {
+    Value(OopHandle handle, ObjectHeap heap) {
         super(handle, heap);
     }
 
     @Override
-    public boolean isInline() {
+    public boolean isValue() {
         return true;
     }
 
     @Override
     public void printValueOn(PrintStream tty) {
-        tty.print("Inlined object");
+        tty.print("Value object");
     }
 
 }

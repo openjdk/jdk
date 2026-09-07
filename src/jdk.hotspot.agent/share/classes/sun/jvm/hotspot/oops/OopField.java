@@ -58,7 +58,7 @@ public class OopField extends Field {
       // OopHandle does not allow to call addOffsetTo() due to prevent interior
       // object pointers. So addOffsetToAsOopHandle() is required here.
       Address payload = obj.getHandle().addOffsetToAsOopHandle(getOffset());
-      return heap.newOop(payload, (InlineKlass)getFieldKlass());
+      return heap.newOop(payload, (ValueKlass)getFieldKlass());
     } else {
       return heap.newOop(getValueAsOopHandle(obj));
     }

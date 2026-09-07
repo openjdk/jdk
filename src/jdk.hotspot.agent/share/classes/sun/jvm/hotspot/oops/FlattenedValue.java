@@ -33,15 +33,15 @@ import sun.jvm.hotspot.utilities.Assert;
 
 
 /**
- * FlattenedInline represents a flattened object in HotSpot.
+ * FlattenedValue represents a flattened object in HotSpot.
  * Note that there is no corresponding class in HotSpot. This class is used
  * in SA to handle a flattened object in same way as an oop.
  */
-public class FlattenedInline extends Inline {
+public class FlattenedValue extends Value {
 
-    private final InlineKlass klass;
+    private final ValueKlass klass;
 
-    FlattenedInline(Address payload, ObjectHeap heap, InlineKlass klass) {
+    FlattenedValue(Address payload, ObjectHeap heap, ValueKlass klass) {
         if (Assert.ASSERTS_ENABLED) {
             Assert.that(klass != null, "klass should not be null");
         }

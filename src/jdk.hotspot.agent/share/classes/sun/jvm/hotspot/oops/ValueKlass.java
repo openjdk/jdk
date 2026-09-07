@@ -48,7 +48,7 @@ public class ValueKlass extends InstanceKlass {
     }
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-      Type type = db.lookupType("InlineKlass::Members");
+      Type type = db.lookupType("ValueKlass::Members");
       payloadOffsetField = new CIntField(type.getCIntegerField("_payload_offset"), 0);
       nullMarkerOffsetField = new CIntField(type.getCIntegerField("_null_marker_offset"), 0);
     }
@@ -85,7 +85,7 @@ public class ValueKlass extends InstanceKlass {
   }
 
   public Members members() {
-    return VMObjectFactory.newObject(Members.class, getAdrInlineKlassMembers());
+    return VMObjectFactory.newObject(Members.class, getAdrValueKlassMembers());
   }
 
   public int nullMarkerOffset() {
