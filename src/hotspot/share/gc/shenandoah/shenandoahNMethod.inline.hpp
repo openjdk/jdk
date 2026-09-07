@@ -48,6 +48,8 @@ bool ShenandoahNMethod::is_unregistered() const {
 }
 
 void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations, ICacheInvalidationContext* icic) {
+  assert(!fix_relocations || icic != nullptr, "Need ICIC if fixing relocations");
+
   for (int c = 0; c < _oops_count; c ++) {
     oops->do_oop(_oops[c]);
   }

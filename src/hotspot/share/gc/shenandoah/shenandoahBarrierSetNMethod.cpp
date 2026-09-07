@@ -35,6 +35,7 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {

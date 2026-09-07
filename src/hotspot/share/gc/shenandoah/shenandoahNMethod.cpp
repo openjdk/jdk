@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/continuation.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/safepointVerifiers.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm) :

@@ -52,6 +52,7 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "memory/allocation.hpp"
 #include "prims/jvmtiTagMap.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 

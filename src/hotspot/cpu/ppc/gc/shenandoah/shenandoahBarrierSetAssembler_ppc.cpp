@@ -40,6 +40,7 @@
 #include "interpreter/interpreter.hpp"
 #include "macroAssembler_ppc.hpp"
 #include "nativeInst_ppc.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/globalDefinitions.hpp"
