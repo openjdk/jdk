@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,21 @@
  */
 
 /*
- * @test
+ * @test id=normal
  * @bug 8301093
  * @summary Verify failure to intrinsify does not pollute control flow
  * @modules java.base/jdk.internal.util:+open
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation compiler.intrinsics.TestArraysHashCode
+ */
+
+/*
+ * @test id=osr
+ * @bug 8391146
+ * @summary Verify failure to check for array type in OSR compilation
+ * @modules java.base/jdk.internal.util:+open
+ *
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=50 compiler.intrinsics.TestArraysHashCode
  */
 
 package compiler.intrinsics;
