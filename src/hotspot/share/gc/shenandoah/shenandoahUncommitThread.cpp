@@ -33,10 +33,9 @@
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
+    _candidates(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC)),
+    _candidates_count(0),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
-  _candidates = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC);
-  _candidates_count = 0;
-
   set_name("ShenUncommit");
   create_and_start();
 
@@ -209,6 +208,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
   uncommitted_count = 0;
 
   double start = os::elapsedTime();
+  double stalled = 0;
 
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i];
@@ -226,7 +226,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       // Terminate early if we detect that GC wants to start.
       double wait_since = os::elapsedTime();
       bool terminate = !check_uncommit_or_delay();
-      elapsed -= os::elapsedTime() - wait_since;
+      stalled += os::elapsedTime() - wait_since;
       if (terminate) {
         break;
       }
@@ -234,14 +234,14 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-        // log_info(gc)("Uncommitting region %zu, time=%.2f", r->index(), r->empty_time());
+        log_trace(gc)("Uncommitting region %zu, empty_time=%.2f", r->index(), r->empty_time());
         r->make_uncommitted();
         uncommitted_count++;
       }
     }
   }
 
-  elapsed += os::elapsedTime() - start;
+  elapsed = MAX2<double>(0, os::elapsedTime() - start - stalled);
 }
 
 
