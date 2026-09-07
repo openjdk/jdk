@@ -33,7 +33,7 @@
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
-    _candidates(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _heap->num_regions(), mtGC)),
+    _candidates(NEW_C_HEAP_ARRAY(Candidate, _heap->num_regions(), mtGC)),
     _candidates_count(0),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {
   set_name("ShenUncommit");
@@ -86,19 +86,17 @@ void ShenandoahUncommitThread::run_service() {
 // Empty time is coarsened to ~100ms window. Within that window, uncommit from higher
 // indexes, to allow allocation path to take earlier regions first. The windows themselves
 // have higher priority the earlier the empty time was.
-int ShenandoahUncommitThread::compare_uncommit_priority(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b) {
-  int64_t a_empty = (int64_t)(a->empty_time() * 10);
-  int64_t b_empty = (int64_t)(b->empty_time() * 10);
-  if (a_empty > b_empty) {
+int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate& b) {
+  if (a._empty_time > b._empty_time) {
     return +1;
   }
-  if (a_empty < b_empty) {
+  if (a._empty_time < b._empty_time) {
     return -1;
   }
-  if (a->index() < b->index()) {
+  if (a._region->index() < b._region->index()) {
     return +1;
   }
-  if (a->index() > b->index()) {
+  if (a._region->index() > b._region->index()) {
     return -1;
   }
   return 0;
@@ -128,7 +126,9 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
     ShenandoahHeapRegion* r = _heap->get_region(i);
     if (r->is_empty_committed()) {
       has_work |= (r->empty_time() < shrink_before);
-      _candidates[_candidates_count++] = r;
+      Candidate& candidate = _candidates[_candidates_count++];
+      candidate._region = r;
+      candidate._empty_time = (int64_t)(r->empty_time() * 10);
     }
   }
 
@@ -206,12 +206,13 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
 
 void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed) {
   uncommitted_count = 0;
+  elapsed = 0;
 
   double start = os::elapsedTime();
   double stalled = 0;
 
   for (size_t i = 0; i < _candidates_count; i++) {
-    ShenandoahHeapRegion* r = _candidates[i];
+    ShenandoahHeapRegion* r = _candidates[i]._region;
     double shrink_before = os::elapsedTime() - shrink_delay;
 
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {

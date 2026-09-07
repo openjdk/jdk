@@ -34,7 +34,12 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
 
   // Candidate regions
-  ShenandoahHeapRegion** _candidates;
+  struct Candidate {
+    ShenandoahHeapRegion* _region;
+    double _empty_time;
+  };
+
+  Candidate* _candidates;
   size_t _candidates_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
@@ -67,7 +72,7 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Iterate over and uncommit eligible regions
   void do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed);
 
-  static int compare_uncommit_priority(ShenandoahHeapRegion* a, ShenandoahHeapRegion* b);
+  static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
