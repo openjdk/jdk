@@ -495,24 +495,19 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           "buffer_inline_args" : "buffer_inline_args_no_receiver";
         __ set_info(name, dont_gc_arguments);
 
-        // This is called from a C1 method's scalarized entry point.
-        // Use save_live_registers_except_r2 so Z_R2's frame slot is NOT
-        // recorded in the OopMap as a callee-saved live oop.  The GC must
-        // not visit that slot: before the call it holds an arbitrary live
-        // argument, and after the call it holds the result we want to keep.
-        OopMap* map = save_live_registers_except_r2(sasm);
+        // This is called from a C1 method's scalarized entry point
+        OopMap* map = save_live_registers(sasm);
         Register method = Z_R13;   // Incoming
         address entry = (id == StubId::c1_buffer_inline_args_id) ?
           CAST_FROM_FN_PTR(address, buffer_inline_args) :
           CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
 
-        // Result (array of buffered value objects) is returned in Z_R2.
-        // Use restore_live_registers_except_r2 so the result is not overwritten.
-        int call_offset = __ call_RT(Z_R2, noreg, entry, method);
+        int call_offset = __ call_RT(Z_R14, noreg, entry, method);
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers_except_r2(sasm);
-        __ verify_oop(Z_R2);  // Z_R2: an array of buffered value objects
+        restore_live_registers(sasm);
+        __ z_lgr(Z_R1_scratch, Z_R14);
+        __ verify_oop(Z_R1_scratch);  // Z_R1_scratch: an array of buffered value objects
         __ z_br(Z_R14);
       }
       break;
