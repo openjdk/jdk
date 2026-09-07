@@ -45,8 +45,8 @@
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;
-class G1CSetCandidateGroup;
-class G1CSetCandidateGroupList;
+class G1CardSetGroup;
+class G1CardSetGroupList;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1CMOopClosure;
@@ -1026,9 +1026,9 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
-  void log_cset_candidate_group_add_total(G1CSetCandidateGroup* gr, const char* type);
-  void log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type);
-  void log_cset_candidate_groups();
+  void log_card_set_group_add_total(G1CardSetGroup* gr, const char* type);
+  void log_card_set_group_list(G1CardSetGroupList& gl, const char* type);
+  void log_card_set_groups();
 
 public:
   // The header and footer are printed in the constructor and

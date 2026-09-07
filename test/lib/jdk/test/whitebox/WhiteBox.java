@@ -223,7 +223,7 @@ public class WhiteBox {
   }
 
   public native int getMarkWordOffset();
-  public native long getInlineTypePattern();
+  public native long getValueTypePattern();
   public native long getNullFreeArrayBitInPlace();
   public native long getFlatArrayBitInPlace();
 

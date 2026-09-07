@@ -734,7 +734,7 @@ void AOTMappedHeapWriter::update_header_for_requested_obj(oop requested_obj, oop
 
   // We need to retain the identity_hash, because it may have been used by some hashtables
   // in the shared heap.
-  if (src_obj != nullptr && !src_obj->is_inline_type() && src_obj->has_identity_hash()) {
+  if (src_obj != nullptr && !src_obj->is_value_type() && src_obj->has_identity_hash()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }

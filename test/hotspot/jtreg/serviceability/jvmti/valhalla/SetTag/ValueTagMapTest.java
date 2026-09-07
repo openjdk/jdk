@@ -29,7 +29,7 @@
  * @enablePreview
  * @run main/othervm/native -agentlib:ValueTagMapTest
  *                          -XX:+UnlockDiagnosticVMOptions
- *                          -XX:+PrintInlineLayout
+ *                          -XX:+PrintValueLayout
  *                          -XX:+PrintFlatArrayLayout
  *                          -Xlog:jvmti+table
  *                          ValueTagMapTest

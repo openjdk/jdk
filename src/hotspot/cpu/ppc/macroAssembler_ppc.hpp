@@ -35,7 +35,7 @@
 
 class ciTypeArray;
 class OopMap;
-class ciInlineKlass;
+class ciValueKlass;
 class SigEntry;
 class VMRegPair;
 
@@ -398,7 +398,7 @@ class MacroAssembler: public Assembler {
                           Register Rmethod_toc = noreg,
                           bool scratch_emit = false);
 
-  // Inline type specific methods
+  // Value type specific methods
 #include "asm/macroAssembler_common.hpp"
 
   void save_stack_increment(int sp_inc, int frame_size);
@@ -823,13 +823,13 @@ class MacroAssembler: public Assembler {
   Register encode_klass_not_null(Register dst, Register src = noreg);
 
   // markWord tests, kills markWord reg
-  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+  void test_markword_is_value_type(Register markword, Label& is_value_type);
 
-  // inlineKlass queries, kills temp_reg
-  void test_oop_is_not_inline_type(Register object, Label& not_inline_type, bool can_be_null = true);
+  // ValueKlass queries, kills temp_reg
+  void test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null = true);
 
-  void test_field_is_null_free_inline_type(Register flags, Label& is_null_free);
-  void test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free);
+  void test_field_is_null_free_value_type(Register flags, Label& is_null_free);
+  void test_field_is_not_null_free_value_type(Register flags, Label& not_null_free);
   void test_field_is_flat(Register flags, Label& is_flat);
 
   // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
@@ -844,13 +844,13 @@ class MacroAssembler: public Assembler {
 
   void load_metadata(Register dst, Register src);
 
-  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info);
 
-  void inline_layout_info(Register holder_klass, Register index, Register layout_info);
+  void value_field_layout_info(Register holder_klass, Register index, Register layout_info);
 
-  // inline type data payload offsets...
-  void payload_offset(Register inline_klass, Register offset);
-  void payload_address(Register oop, Register data, Register inline_klass, Register t1);
+  // value type data payload offsets...
+  void payload_offset(Register value_klass, Register offset);
+  void payload_address(Register oop, Register data, Register value_klass, Register t1);
 
   // SIGTRAP-based range checks for arrays.
   inline void trap_range_check_l(Register a, Register b);
@@ -1051,7 +1051,7 @@ class MacroAssembler: public Assembler {
 
   void zap_from_to(Register low, int before, Register high, int after, Register val, Register addr) PRODUCT_RETURN;
 
-  // Inline type specific methods
+  // Value type specific methods
   #include "asm/macroAssembler_common.hpp"
 };
 

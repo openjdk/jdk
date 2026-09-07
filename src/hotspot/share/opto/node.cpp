@@ -33,7 +33,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -43,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -573,8 +573,8 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
-  if (n->is_InlineType()) {
-    C->add_inline_type(n);
+  if (n->is_ValueType()) {
+    C->add_value_type(n);
   }
   if (n->is_LoadFlat() || n->is_StoreFlat()) {
     C->add_flat_access(n);
@@ -642,8 +642,8 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
-  if (is_InlineType()) {
-    compile->remove_inline_type(this);
+  if (is_ValueType()) {
+    compile->remove_value_type(this);
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);

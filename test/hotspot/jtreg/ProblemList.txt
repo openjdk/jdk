@@ -71,6 +71,8 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
+compiler/vectorapi/AllBitsSetVectorMatchRuleTest.java 8391806 generic-aarch64
+
 #############################################################################
 
 # :hotspot_gc
@@ -115,7 +117,7 @@ containers/docker/ShareTmpDir.java 8390823 linux-all
 # :hotspot_serviceability
 
 # 8239062 and 8270326 only affects macosx-x64,macosx-aarch64
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
