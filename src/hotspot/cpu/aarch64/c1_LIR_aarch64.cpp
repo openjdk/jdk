@@ -49,5 +49,6 @@ void LIR_Address::verify() const {
   assert(index()->is_illegal() || index()->is_double_cpu() || index()->is_single_cpu(), "wrong index operand");
   assert(base()->type() == T_ADDRESS || base()->type() == T_OBJECT || base()->type() == T_LONG || base()->type() == T_METADATA,
          "wrong type for addresses");
+  assert(index()->is_illegal() || disp() == 0, "cannot set both index and displacement");
 }
 #endif // PRODUCT

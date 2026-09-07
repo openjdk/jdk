@@ -1182,8 +1182,8 @@ size_t CodeCache::max_distance_to_non_nmethod() {
     CodeHeap* blob = get_code_heap(CodeBlobType::NonNMethod);
     // the max distance is minimized by placing the NonNMethod segment
     // in between MethodProfiled and MethodNonProfiled segments
-    size_t dist1 = (size_t)blob->high() - (size_t)_low_bound;
-    size_t dist2 = (size_t)_high_bound - (size_t)blob->low();
+    size_t dist1 = (size_t)blob->high_boundary() - (size_t)_low_bound;
+    size_t dist2 = (size_t)_high_bound - (size_t)blob->low_boundary();
     return dist1 > dist2 ? dist1 : dist2;
   }
 }

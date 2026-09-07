@@ -24,7 +24,6 @@
 package jdk.internal.net.http;
 
 import jdk.internal.net.http.common.FlowTube;
-import jdk.internal.net.http.common.SSLFlowDelegate;
 import jdk.internal.net.http.common.Utils;
 
 import javax.net.ssl.SSLContext;
@@ -104,7 +103,6 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
             thread3 = new Thread(this::clientReader, "clientReader");
             publisher = new SubmissionPublisher<>(exec, Flow.defaultBufferSize(),
                     this::handlePublisherException);
-            SSLFlowDelegate.Monitor.add(this::monitor);
         }
 
         public void start() {
@@ -195,11 +193,6 @@ public class SSLTubeTest extends AbstractSSLTubeTest {
         }
 
         private final AtomicInteger loopCount = new AtomicInteger();
-
-        public String monitor() {
-            return "serverLoopback: loopcount = " + loopCount.toString()
-                    + " clientRead: count = " + readCount.toString();
-        }
 
         // thread2
         private void serverLoopback() {

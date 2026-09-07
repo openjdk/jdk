@@ -135,6 +135,10 @@ ByteSize BarrierSetNMethod::thread_disarmed_guard_value_offset() const {
   return Thread::nmethod_disarmed_guard_value_offset();
 }
 
+void BarrierSetNMethod::set_thread_disarmed_guard_value(Thread* thread) {
+  thread->set_nmethod_disarmed_guard_value(disarmed_guard_value());
+}
+
 class BarrierSetNMethodArmClosure : public ThreadClosure {
 private:
   int _disarmed_guard_value;

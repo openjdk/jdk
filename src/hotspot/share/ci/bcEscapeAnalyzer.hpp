@@ -84,6 +84,7 @@ class BCEscapeAnalyzer : public ArenaObj {
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars, bool merge = false);
   void set_modified(ArgumentMap vars, int offs, int size);
+  void set_modified_any_offset(ArgumentMap vars);
 
   bool is_recursive_call(ciMethod* callee);
   void invoke(StateInfo &state, Bytecodes::Code code, ciMethod* target, ciKlass* holder);

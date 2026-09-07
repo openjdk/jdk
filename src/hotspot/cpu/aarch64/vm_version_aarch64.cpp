@@ -544,6 +544,13 @@ void VM_Version::initialize() {
     UsePopCountInstruction = true;
   }
 
+  if (supports_paca()) {
+    // Determine the mask of address bits used for PAC. Clear bit 55 of
+    // the input to make it look like a user address.
+    // This mask would be used in mixed jstack in SA.
+    _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
+  }
+
   if (UseBranchProtection == nullptr || strcmp(UseBranchProtection, "none") == 0) {
     _rop_protection = false;
   } else if (strcmp(UseBranchProtection, "standard") == 0 ||
@@ -565,13 +572,6 @@ void VM_Version::initialize() {
   } else {
     vm_exit_during_initialization(err_msg("Unsupported UseBranchProtection: %s", UseBranchProtection));
   }
-
-  if (_rop_protection == true) {
-    // Determine the mask of address bits used for PAC. Clear bit 55 of
-    // the input to make it look like a user address.
-    _pac_mask = (uintptr_t)pauth_strip_pointer((address)~(UINT64_C(1) << 55));
-  }
-
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;

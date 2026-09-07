@@ -1121,6 +1121,8 @@ class SVEVectorOp(Instruction):
         self._bitwiseop = False
         if name[0] == 'f':
             self._width = RegVariant(2, 3)
+        elif name in ["sdiv", "udiv"]:
+            self._width = RegVariant(2, 3)
         elif not self._isPredicated and (name in ["and", "bic", "bsl", "eor", "eor3", "orr"]):
             self._width = RegVariant(3, 3)
             self._bitwiseop = True
@@ -1604,8 +1606,7 @@ generate (ExtractOp, ["extrw", "extr"])
 generate (CondBranchOp, ["EQ", "NE", "HS", "CS", "LO", "CC", "MI", "PL", "VS", "VC",
                         "HI", "LS", "GE", "LT", "GT", "LE", "AL", "NV" ])
 
-generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", # "dcps1",  "dcps2",  "dcps3"
-               ])
+generate (ImmOp, ["svc", "hvc", "smc", "brk", "hlt", "udf"])
 
 generate (Op, ["nop", "yield", "wfe", "sev", "sevl",
                "autia1716", "autiasp", "autiaz", "autib1716", "autibsp", "autibz",
@@ -2220,6 +2221,8 @@ generate(SVEVectorOp, [["add", "ZZZ"],
                        ["lsl", "ZPZ", "m", "dn"],
                        ["lsr", "ZPZ", "m", "dn"],
                        ["mul", "ZPZ", "m", "dn"],
+                       ["sdiv", "ZPZ", "m", "dn"],
+                       ["udiv", "ZPZ", "m", "dn"],
                        ["neg", "ZPZ", "m"],
                        ["not", "ZPZ", "m"],
                        ["orr", "ZPZ", "m", "dn"],

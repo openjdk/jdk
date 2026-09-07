@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@
 
 #include "gc/shenandoah/shenandoahScanRemembered.hpp"
 
-#include "gc/shared/collectorCounters.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -37,8 +35,11 @@
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
-#include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+
+void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
+  _rs->mark_card_as_dirty(p);
+}
 
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
@@ -197,7 +198,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
       // PREFIX: The object that straddles into this range of dirty cards
       // from the left may be subject to special treatment unless
       // it is an object array.
-      if (p < left && !obj->is_objArray()) {
+      if (p < left && !obj->is_refArray()) {
         // The mutator (both compiler and interpreter, but not JNI?)
         // typically dirty imprecisely (i.e. only the head of an object),
         // but GC closures typically dirty the object precisely. (It would
@@ -218,11 +219,16 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           // for the next iteration of a dirty card loop.
           upper_bound = p;   // remember upper bound for next chunk
           if (p < start_addr) {
-            // if object starts in a previous slice, it'll be handled
-            // in its entirety by the thread processing that slice; we can
-            // skip over it and avoid an unnecessary extra scan.
             assert(obj == cast_to_oop(p), "Inconsistency detected");
-            p += obj->size();
+            if (use_write_table) {
+              // The head card may have become dirty after the worker
+              // responsible for the preceding slice passed it.
+              p += obj->oop_iterate_size(cl);
+            } else {
+              // The stable read table guarantees that the worker processing
+              // the preceding slice scanned this object in its entirety.
+              p += obj->size();
+            }
           } else {
             // the object starts in our slice, we scan it in its entirety
             assert(obj == cast_to_oop(p), "Inconsistency detected");
@@ -271,7 +277,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
         assert(last_p < right, "Error");
         // check if last_p suffix needs scanning
         const oop last_obj = cast_to_oop(last_p);
-        if (!last_obj->is_objArray()) {
+        if (!last_obj->is_refArray()) {
           // scan the remaining suffix of the object
           const MemRegion last_mr(right, p);
           assert(p == last_p + last_obj->size(), "Would miss portion of last_obj");
@@ -420,6 +426,12 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   assignment->_chunk_offset = offset_within_region;
   assignment->_chunk_size = group_chunk_size;
   return true;
+}
+
+void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) const {
+  size_t index = card_index_for_addr(p);
+  CardValue* bp = &(_card_table->write_byte_map())[index];
+  bp[0] = CardTable::dirty_card_val();
 }
 
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP

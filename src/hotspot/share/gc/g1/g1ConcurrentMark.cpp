@@ -24,6 +24,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
@@ -35,7 +36,6 @@
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -70,6 +70,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -446,7 +447,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _finger(nullptr), // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   _num_active_tasks(0), // _num_active_tasks set in set_non_marking_state()
   _tasks(nullptr),
@@ -500,7 +500,7 @@ void G1ConcurrentMark::fully_initialize() {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
 
-  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
   _max_concurrent_workers = ConcGCThreads;
@@ -1378,6 +1378,8 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    CodeCache::on_gc_marking_cycle_finish();
+
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
       G1CMIsAliveClosure is_alive(this);
@@ -1446,7 +1448,7 @@ void G1ConcurrentMark::remark() {
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
 
-    G1CollectedHeap::finish_codecache_marking_cycle();
+    CodeCache::arm_all_nmethods();
 
     {
       GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
@@ -2444,7 +2446,7 @@ void G1CMTask::drain_local_queue(bool partially) {
 size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   assert(obj->length() >= (int)ObjArrayMarkingStride, "Must be a large array object %d", obj->length());
 
-  // Mark objArray klass metadata
+  // Mark klass metadata
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
@@ -2453,19 +2455,32 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_array_chunk(obj, 0, initial_chunk_size);
 
   // Include object header size
-  return objArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  if (obj->is_refArray()) {
+    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  } else {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+  }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
   // Access state before release by claim().
-  objArrayOop obj = objArrayOop(state->source());
+  objArrayOop obj = oop_cast<objArrayOop>(state->source());
 
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
 
   process_array_chunk(obj, claim._start, claim._end);
-  return heap_word_size((claim._end - claim._start) * heapOopSize);
+
+  if (obj->is_refArray()) {
+    return heap_word_size((claim._end - claim._start) * heapOopSize);
+  } else {
+    assert(obj->is_flatArray(), "Must be!");
+    size_t element_byte_size = FlatArrayKlass::cast(obj->klass())->element_byte_size();
+    size_t nof_elements = claim._end - claim._start;
+    return heap_word_size(nof_elements * element_byte_size);
+  }
 }
 
 void G1CMTask::drain_global_stack(bool partially) {
@@ -3142,9 +3157,9 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_group_id     = r->rem_set()->has_cset_group()
-                         ? r->rem_set()->cset_group_id()
-                         : G1CSetCandidateGroup::NoRemSetId;
+  uint card_set_group_id  = r->rem_set()->has_card_set_group()
+                          ? r->rem_set()->card_set_group_id()
+                          : G1CardSetGroup::NoGroupId;
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -3164,7 +3179,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_group_id);
+                        card_set_group_id);
 
   return false;
 }
@@ -3179,7 +3194,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
 
-  log_cset_candidate_groups();
+  log_card_set_groups();
 
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
@@ -3199,7 +3214,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGroup* group, const char* type) {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
@@ -3216,15 +3231,15 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSet
   _total_remset_bytes += group->card_set()->mem_size();
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
-  for (G1CSetCandidateGroup* group : gl) {
-    log_cset_candidate_group_add_total(group, type);
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_list(G1CardSetGroupList& gl, const char* type) {
+  for (G1CardSetGroup* group : gl) {
+    log_card_set_group_add_total(group, type);
   }
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
+void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Card Set Groups");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young, M=From Marking Regions, R=Retained Regions");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_H_FORMAT
@@ -3233,7 +3248,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
-                          "groud-id", "num-regions",
+                          "group-id", "num-regions",
                           "gc-eff", "liveness",
                           "remset", "type");
 
@@ -3250,9 +3265,9 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
+  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
-  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
-  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
+  log_card_set_group_list(candidates->from_marking_groups(), "M");
+  log_card_set_group_list(candidates->retained_groups(), "R");
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -345,9 +345,6 @@ void AbstractDisassembler::decode_range_abstract(address range_start, address ra
 // it respects the actual instruction length where possible.
 void AbstractDisassembler::decode_abstract(address start, address end, outputStream* ost,
                                            const int max_instr_size_in_bytes) {
-  int     idx = 0;
-  address pos = start;
-
   outputStream* st = (ost == nullptr) ? tty : ost;
 
   st->bol();

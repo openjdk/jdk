@@ -382,7 +382,7 @@ size_t G1HeapSizingPolicy::full_collection_resize_amount(bool& expand, size_t al
                                        // GC where eden is empty. During Remark there can be an
                                        // arbitrary number of eden regions which would skew the
                                        // results.
-                                       _g1h->eden_regions_count() * G1HeapRegion::GrainBytes;
+                                       _g1h->num_eden_regions() * G1HeapRegion::GrainBytes;
 
   // Add pending allocation;
   const size_t used_after_gc = current_used_after_gc +

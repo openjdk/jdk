@@ -111,8 +111,15 @@ public class NullPointerExceptionTest {
         }
         if (obtainedMsg != expectedMsg && // E.g. both are null.
             !obtainedMsg.equals(expectedMsg)) {
-            System.out.println("expected msg: " + expectedMsg);
-            Asserts.assertEquals(expectedMsg, obtainedMsg);
+            try {
+                System.out.println("expected msg: " + expectedMsg);
+                Asserts.assertEquals(expectedMsg, obtainedMsg);
+            } catch (RuntimeException rte) {
+                // Due to lack of information about null restricted fields in Xcomp, we may also guess
+                // that that was the reason for the NPE.
+                Asserts.assertTrue(obtainedMsg.contains(expectedMsg) &&
+                                   obtainedMsg.contains("is a null restricted field and there's an attempt to store null in it"));
+            }
         }
         System.out.println("\n----");
     }
@@ -305,7 +312,7 @@ public class NullPointerExceptionTest {
         } catch (NullPointerException e) {
             checkMessage(e, "oa1[0] = new Object();", e.getMessage(),
                          "Cannot store to object array because " +
-                         (hasDebugInfo ? "\"oa1\"" : "\"<local3>\"") + " is null");
+                         (hasDebugInfo ? "\"oa1\"" : "\"<local3>\"") + " is null or is a null-free array and there's an attempt to store null in it");
         }
         // bastore (boolean)
         try {
@@ -1366,7 +1373,7 @@ public class NullPointerExceptionTest {
         // If NPE is thrown in a native method, the message should
         // not be generated.
         try {
-            Array.get(null,0);
+            Array.getLength(null);
             Asserts.fail();
         } catch (NullPointerException e) {
             Asserts.assertNull(e.getMessage());

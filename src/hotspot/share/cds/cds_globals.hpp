@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,11 +64,6 @@
   product(uint, SharedSymbolTableBucketSize, 4,                             \
           "Average number of symbols per bucket in shared table")           \
           range(2, 246)                                                     \
-                                                                            \
-  develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
-          "For JVM internal testing only. The static field named "          \
-          "\"archivedObjects\" of the specified class is stored in the "    \
-          "CDS archive heap")                                               \
                                                                             \
   develop(ccstr, AOTInitTestClass, nullptr,                                 \
           "For JVM internal testing only. The specified class is stored "   \

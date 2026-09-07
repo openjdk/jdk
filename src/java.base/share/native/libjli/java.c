@@ -549,6 +549,11 @@ JavaMain(void* _args)
         LEAVE();
     }
 
+    /* Exit normally after showing the settings if no application was specified. */
+    if (showSettings != NULL && what == NULL) {
+        LEAVE();
+    }
+
     FreeKnownVMs(); /* after last possible PrintUsage */
 
     if (JLI_IsTraceLauncher()) {
@@ -1351,7 +1356,11 @@ ParseArguments(int *pargc, char ***pargv,
 
     if (*pwhat == NULL) {
         /* LM_UNKNOWN okay for options that exit */
-        if (!listModules && !describeModule && !validateModules && !dumpSharedSpaces) {
+        if (!listModules &&
+            !describeModule &&
+            !validateModules &&
+            !dumpSharedSpaces &&
+            !showSettings) {
             *pret = 1;
             printUsageKind = HELP_CONCISE;
         }

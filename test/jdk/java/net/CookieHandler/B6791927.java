@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6791927 8233886
- * @summary Wrong Locale in HttpCookie::expiryDate2DeltaSeconds
+ * @summary Wrong Locale in HttpCookie::parseExpires
  * @run main/othervm B6791927
  */
 

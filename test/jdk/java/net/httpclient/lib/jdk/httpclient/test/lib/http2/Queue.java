@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,16 +30,15 @@ import java.util.stream.Stream;
 
 import jdk.httpclient.test.lib.common.ExceptionallyCloseable;
 
-// Each stream has one of these for input. Each Http2Connection has one
+// Each stream has one of these for input. Each Http2TestServerConnection has one
 // for output. Can be used blocking or asynchronously.
 
-public class Queue<T> implements ExceptionallyCloseable {
+public final class Queue<T> implements ExceptionallyCloseable {
 
     private final LinkedList<T> q = new LinkedList<>();
     private boolean closed = false;
     private boolean closing = false;
     private Throwable exception = null;
-    private int waiters; // true if someone waiting
     private final T closeSentinel;
 
     Queue(T closeSentinel) {
@@ -64,7 +63,7 @@ public class Queue<T> implements ExceptionallyCloseable {
 
     public synchronized void put(T obj) throws IOException {
         if (!putIfOpen(obj)) {
-            throw new IOException("stream closed");
+            throw new IOException("queue closed");
         }
     }
 
@@ -72,9 +71,8 @@ public class Queue<T> implements ExceptionallyCloseable {
         Objects.requireNonNull(obj);
         if (!isOpen()) return false;
         q.add(obj);
-        if (waiters > 0) {
-            notifyAll();
-        }
+        // notify anyone waiting for items in the queue
+        notifyAll();
         return true;
     }
 
@@ -121,13 +119,11 @@ public class Queue<T> implements ExceptionallyCloseable {
             throw newIOException("stream closed");
         }
         try {
-            while (q.size() == 0) {
-                waiters++;
+            while (q.isEmpty()) {
                 wait();
                 if (closed) {
                     throw newIOException("Queue closed");
                 }
-                waiters--;
             }
             T item = q.removeFirst();
             if (item.equals(closeSentinel)) {
@@ -139,17 +135,6 @@ public class Queue<T> implements ExceptionallyCloseable {
         } catch (InterruptedException ex) {
             throw new IOException(ex);
         }
-    }
-
-    public synchronized T poll() throws IOException {
-        if (closed) {
-            throw newIOException("stream closed");
-        }
-
-        if (q.isEmpty()) {
-            return null;
-        }
-        return take();
     }
 
     private IOException newIOException(String msg) {

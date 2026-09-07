@@ -696,6 +696,34 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+// Vector divide byte
+class DivVBNode : public VectorNode {
+public:
+  DivVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide short
+class DivVSNode : public VectorNode {
+public:
+  DivVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide int
+class DivVINode : public VectorNode {
+public:
+  DivVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide long
+class DivVLNode : public VectorNode {
+public:
+  DivVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 // Vector divide half float
 class DivVHFNode : public VectorNode {
 public:

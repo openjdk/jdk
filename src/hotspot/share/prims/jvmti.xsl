@@ -1003,7 +1003,7 @@ typedef struct {
     <xsl:attribute name="href">
       <xsl:value-of select="@id"/>
     </xsl:attribute>
-    <xsl:value-of select="."/>
+    <xsl:apply-templates/>
   </a>
 </xsl:template>
 
@@ -2011,6 +2011,13 @@ typedef struct {
 
 <xsl:template match="space">
   <xsl:text>&#032;</xsl:text>
+</xsl:template>
+
+<xsl:template match="sup">
+  <sup>
+    <xsl:copy-of select="@*"/>
+    <xsl:apply-templates/>
+  </sup>
 </xsl:template>
 
 <xsl:template match="jvmti">

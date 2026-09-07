@@ -155,7 +155,7 @@ final class LinuxDebPackager extends LinuxPackager<LinuxDebPackage> {
 
         // run dpkg
         Executor.of(cmdline).retryOnKnownErrorMessage(
-                "semop(1): encountered an error: Invalid argument").execute();
+                "semop(1): encountered an error: Invalid argument").execute().expectExitCode(0);
     }
 
     @Override
