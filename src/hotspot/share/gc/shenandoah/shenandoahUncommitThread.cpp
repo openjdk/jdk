@@ -51,10 +51,7 @@ void ShenandoahUncommitThread::run_service() {
   // Having an interval 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay. Poll interval
   // cannot be allowed to decay to zero, which would cause indefinite wait.
-  int64_t poll_interval = int64_t(ShenandoahUncommitDelay) / 10;
-  if (poll_interval == 0) {
-    poll_interval = 10;
-  }
+  const int64_t poll_interval = MAX2<int64_t>(10, int64_t(ShenandoahUncommitDelay) / 10);
 
   // ShenandoahUncommitDelay is in millis, but shrink_delay is in seconds.
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
@@ -124,7 +121,7 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
   // Determine if there is work to do. This avoids locking the heap if there is
   // no work available, avoids spamming logs with superfluous logging messages,
   // and minimises the amount of work while locks are held. Fill out all candidates:
-  // even if they are currently not targeted, byy the time we get to uncommit them,
+  // even if they are currently not targeted, by the time we get to uncommit them,
   // they might become eligible too.
   double shrink_before = os::elapsedTime() - shrink_delay;
   bool has_work = false;
