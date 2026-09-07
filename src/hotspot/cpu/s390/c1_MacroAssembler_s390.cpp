@@ -143,9 +143,9 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   // Z_R2 holds the buffered value array returned by buffer_inline_args[_no_receiver].
   z_lgr(Z_R11, Z_R2);
   shuffle_value_args(true, is_value_ro_entry, sig_cc,
-                      args_passed_cc, args_on_stack_cc, regs_cc, // from
-                      args_passed,    args_on_stack,    regs,    // to
-                      0, Z_R11);
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed,    args_on_stack,    regs,    // to
+                     0, Z_R11);
 
   // Build the real frame.  The jump below skips the stack-bang and frame-setup
   // in verified_value_entry (which uses a different real_frame_size).

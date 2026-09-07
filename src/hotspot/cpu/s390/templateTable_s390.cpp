@@ -1256,7 +1256,7 @@ void TemplateTable::aastore() {
     }
     // Non-flat null-free array: throw NullPointerException.
     // test_non_null_free_array_oop branches to store_null when NOT null-free;
-    // falls through when null-free → NPE.
+    // falls through when null-free -> NPE.
     NearLabel store_null;
     __ test_non_null_free_array_oop(Rarray, Rscratch, store_null);
     __ load_absolute_address(Rscratch, Interpreter::_throw_NullPointerException_entry);
@@ -1279,7 +1279,7 @@ void TemplateTable::aastore() {
   if (UseArrayFlattening) {
     __ bind(is_flat_array);
     __ load_ptr(0, Rvalue);
-    __ load_ptr(2, Rscratch);                                                   // array
+    __ load_ptr(2, Rscratch); // array
     __ z_lgf(Rscratch2, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // raw index (int)
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store),
                Rvalue, Rscratch, Rscratch2);
