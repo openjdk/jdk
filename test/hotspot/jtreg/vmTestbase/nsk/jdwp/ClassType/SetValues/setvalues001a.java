@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +56,7 @@ public class setvalues001a {
         OriginalValuesClass original = new OriginalValuesClass();
         TargetValuesClass target = new TargetValuesClass();
         TestedClass tested = new TestedClass();
+        TestedFinalClass testedFinal = new TestedFinalClass();
 
         // send debugger signal READY
         log.display("Sending signal to debugger: " + setvalues001.READY);
@@ -279,7 +280,7 @@ public class setvalues001a {
         }
 */
 
-        // check taht no any changed value differs from target
+        // check that none of the changed values differs from target
         if (different > 0) {
             log.complain("Values of " + different + " fields have not been set correctly");
             return false;
@@ -303,7 +304,7 @@ public class setvalues001a {
         static final Object  objectValue  = new OriginalValuesClass();
     }
 
-    // class with the original values of static fields
+    // class with the target values of static fields
     public static class TargetValuesClass {
         static final boolean booleanValue = false;
         static final byte    byteValue    = (byte)0x0F;
@@ -329,6 +330,20 @@ public class setvalues001a {
                   static double   doubleValue  = OriginalValuesClass.doubleValue;
                   static String   stringValue  = OriginalValuesClass.stringValue;
                   static Object   objectValue  = OriginalValuesClass.objectValue;
+    }
+
+    // tested class with own static final fields values
+    public static class TestedFinalClass {
+        private   static final boolean  booleanValue = OriginalValuesClass.booleanValue;
+        private   static final byte     byteValue    = OriginalValuesClass.byteValue;
+        protected static final char     charValue    = OriginalValuesClass.charValue;
+        protected static final int      intValue     = OriginalValuesClass.intValue;
+        public    static final short    shortValue   = OriginalValuesClass.shortValue;
+        public    static final long     longValue    = OriginalValuesClass.longValue;
+                  static final float    floatValue   = OriginalValuesClass.floatValue;
+                  static final double   doubleValue  = OriginalValuesClass.doubleValue;
+                  static final String   stringValue  = OriginalValuesClass.stringValue;
+                  static final Object   objectValue  = OriginalValuesClass.objectValue;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,8 +101,8 @@ struct _ImageSDOps
     CGDataProviderRef        dataProvider;
 
     // Pointer in memory that is used for create the CGBitmapContext and the CGDataProvider (used for imgRef). This is a native
-    // copy of the pixels for the Image. There is a spearate copy of the pixels that lives in Java heap. There are two main
-    // reasons why we keep those pixels spearate: 1) CG doesn't support all the Java pixel formats 2) The Garbage collector can
+    // copy of the pixels for the Image. There is a separate copy of the pixels that lives in Java heap. There are two main
+    // reasons why we keep those pixels separate: 1) CG doesn't support all the Java pixel formats 2) The Garbage collector can
     // move the java pixels at any time. There are possible workarounds for both problems. Number 2) seems to be a more serious issue, since
     // we can solve 1) by only supporting certain image types.
     void *                    nativePixels;

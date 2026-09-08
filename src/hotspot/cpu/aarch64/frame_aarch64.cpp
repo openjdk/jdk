@@ -160,7 +160,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Just strip it for now.
       sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
 
-      // Repair the sender sp if this is a method with scalarized inline type args
+      // Repair the sender sp if this is a method with scalarized value type args
       sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
       sender_unextended_sp = sender_sp;
     }
@@ -805,8 +805,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  if (_cb->as_nmethod_or_null()->needs_stack_repair()) {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
     // The stack increment resides just below the saved FP on the stack and
     // records the total frame size excluding the two words for saving FP and LR
     // (see MacroAssembler::remove_frame).

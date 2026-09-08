@@ -180,7 +180,7 @@ public class Attr extends JCTree.Visitor {
 
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
-        varAssignmentOpInfo = new ResultInfo(KindSelector.of(KindSelector.VAL, KindSelector.ASG), Type.noType);
+        varAssignmentOpInfo = new ResultInfo(KindSelector.ASG_OP, Type.noType);
         unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
         methodAttrInfo = new MethodAttrInfo();
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
@@ -814,7 +814,16 @@ public class Attr extends JCTree.Visitor {
                 List<Type> bounds = List.of(attribType(tvar.bounds.head, env));
                 for (JCExpression bound : tvar.bounds.tail)
                     bounds = bounds.prepend(attribType(bound, env));
-                types.setBounds(a, bounds.reverse());
+                bounds = bounds.reverse();
+                if (bounds.head.hasTag(ARRAY)) {
+                    /* A single bound that is an array type may structurally reference
+                     * this same type variable, as in `<T extends T[]>`, setting the bound to
+                     * Object as a recovery strategy
+                     */
+                    types.setBounds(a, List.of(syms.objectType));
+                } else {
+                    types.setBounds(a, bounds);
+                }
             } else {
                 // if no bounds are given, assume a single bound of
                 // java.lang.Object.
@@ -1965,7 +1974,7 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSynchronized(JCSynchronized tree) {
-        boolean identityType = chk.checkIdentityType(tree.pos(), attribExpr(tree.lock, env));
+        boolean identityType = chk.checkIdentityRefType(tree.pos(), attribExpr(tree.lock, env));
         if (identityType && tree.lock.type != null && tree.lock.type.isValueBased()) {
             log.warning(tree.pos(), LintWarnings.AttemptToSynchronizeOnInstanceOfValueBasedClass);
         }

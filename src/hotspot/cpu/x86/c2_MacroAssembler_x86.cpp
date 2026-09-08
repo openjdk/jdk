@@ -313,8 +313,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register rax_reg,
 
     // Try to lock. Transition lock bits 0b01 => 0b00
     movptr(rax_reg, mark);
-    orptr(rax_reg, markWord::unlocked_value);
-    andptr(mark, ~(int32_t)markWord::unlocked_value);
+    orptr(rax_reg, markWord::lock_neutral_value);
+    andptr(mark, ~(int32_t)markWord::lock_neutral_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, slow_path);
 
@@ -511,7 +511,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register reg_rax, Register t, 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     movptr(reg_rax, mark);
     andptr(reg_rax, ~(int32_t)markWord::lock_mask_in_place);
-    orptr(mark, markWord::unlocked_value);
+    orptr(mark, markWord::lock_neutral_value);
     lock(); cmpxchgptr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
     jcc(Assembler::notEqual, push_and_slow_path);
     jmp(unlocked);
@@ -2243,7 +2243,6 @@ void C2_MacroAssembler::reduce16S(int opcode, Register dst, Register src1, XMMRe
 
 void C2_MacroAssembler::reduce32S(int opcode, Register dst, Register src1, XMMRegister src2, XMMRegister vtmp1, XMMRegister vtmp2) {
   assert_different_registers(src2, vtmp1);
-  int vector_len = Assembler::AVX_256bit;
   vextracti64x4_high(vtmp1, src2);
   reduce_operation_256(T_SHORT, opcode, vtmp1, vtmp1, src2);
   reduce16S(opcode, dst, src1, vtmp1, vtmp1, vtmp2);
@@ -2507,7 +2506,6 @@ XMMRegister C2_MacroAssembler::get_lane(BasicType typ, XMMRegister dst, XMMRegis
   int esize =  type2aelembytes(typ);
   int elem_per_lane = 16/esize;
   int lane = elemindex / elem_per_lane;
-  int eindex = elemindex % elem_per_lane;
 
   if (lane >= 2) {
     assert(UseAVX > 2, "required");
@@ -5188,7 +5186,7 @@ void C2_MacroAssembler::vector_castF2X_avx(BasicType to_elem_bt, XMMRegister dst
 void C2_MacroAssembler::vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                                             XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
                                             Register rscratch, int vec_enc) {
-  int to_elem_sz = type2aelembytes(to_elem_bt);
+  DEBUG_ONLY(int to_elem_sz = type2aelembytes(to_elem_bt);)
   assert(to_elem_sz <= 4, "");
   vcvttps2dq(dst, src, vec_enc);
   vector_cast_fp_to_int_special_cases_evex(T_FLOAT, dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, float_sign_flip, vec_enc);
