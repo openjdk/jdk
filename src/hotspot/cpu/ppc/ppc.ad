@@ -5664,7 +5664,7 @@ instruct loadConN0(iRegNdst dst, immN_0 src) %{
 %}
 
 // Load hi part of compressed oop constant.
-instruct loadConN_hi(iRegNdst dst, immN src) %{
+instruct loadConN_hi(iRegIdst dst, immN src) %{
   effect(DEF dst, USE src);
   ins_cost(DEFAULT_COST);
 
@@ -5677,7 +5677,7 @@ instruct loadConN_hi(iRegNdst dst, immN src) %{
 %}
 
 // Add lo part of compressed oop constant to already loaded hi part.
-instruct loadConN_lo(iRegNdst dst, iRegNsrc src1, immN src2) %{
+instruct loadConN_lo(iRegIdst dst, iRegIsrc src1, immN src2) %{
   effect(DEF dst, USE src1, USE src2);
   ins_cost(DEFAULT_COST);
 
@@ -5705,7 +5705,7 @@ instruct rldicl(iRegLdst dst, iRegLsrc src, immI16 shift, immI16 mask_begin) %{
 // 32 bits with sign-extension bits.
 // This clears these bits: dst = src & 0xFFFFFFFF.
 // TODO: Eventually call this maskN_regN_FFFFFFFF.
-instruct clearMs32b(iRegNdst dst, iRegNsrc src) %{
+instruct clearMs32b(iRegNdst dst, iRegIsrc src) %{
   effect(DEF dst, USE src);
   predicate(false);
 
@@ -5735,19 +5735,17 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
   ins_cost(DEFAULT_COST*2);
 
   expand %{
-    iRegNdst tmp1;
-    iRegNdst tmp2;
+    iRegIdst tmp1;
+    iRegIdst tmp2;
     loadConN_hi(tmp1, src);
     loadConN_lo(tmp2, tmp1, src);
     clearMs32b(dst, tmp2);
   %}
 %}
 
-// We have seen a safepoint between the hi and lo parts, and this node was handled
-// as an oop. Therefore this needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
-  match(Set dst src);
+// Keep intermediate materialization in integer registers. Only the final
+// loadConNKlass_lo result carries the narrow klass type from the expanded node.
+instruct loadConNKlass_hi(iRegIdst dst, immNKlass_NM src) %{
   effect(DEF dst, USE src);
   ins_cost(DEFAULT_COST);
 
@@ -5760,34 +5758,29 @@ instruct loadConNKlass_hi(iRegNdst dst, immNKlass_NM src) %{
   ins_pipe(pipe_class_default);
 %}
 
-// As loadConNKlass_hi this must be recognized as narrow klass, not oop!
-instruct loadConNKlass_mask(iRegNdst dst, immNKlass_NM src) %{
-  match(Set dst src);
-  effect(USE_DEF dst, USE src);
+instruct loadConNKlass_mask(iRegIdst dst, iRegIsrc src) %{
+  effect(DEF dst, USE src);
   ins_cost(DEFAULT_COST);
 
-  format %{ "MASK    $dst, $dst, 0xFFFFFFFF" %} // mask
+  format %{ "MASK    $dst, $src, 0xFFFFFFFF" %} // mask
   size(4);
   ins_encode %{
-    __ clrldi($dst$$Register, $dst$$Register, 0x20);
+    __ clrldi($dst$$Register, $src$$Register, 0x20);
   %}
   ins_pipe(pipe_class_default);
 %}
 
-// This needs a match rule so that build_oop_map knows this is
-// not a narrow oop.
-instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src) %{
-  match(Set dst src);
-  effect(USE_DEF dst, USE src);
+instruct loadConNKlass_lo(iRegNdst dst, immNKlass_NM src1, iRegIsrc src2) %{
+  effect(DEF dst, USE src1, USE src2);
   ins_cost(DEFAULT_COST);
 
-  format %{ "ORI     $dst, $dst, $src \t// narrow klass lo" %}
+  format %{ "ORI     $dst, $src2, $src1 \t// narrow klass lo" %}
   size(4);
   ins_encode %{
     // Notify OOP recorder (don't need the relocation)
-    AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
+    AddressLiteral md = __ constant_metadata_address((Klass*)$src1$$constant);
     intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
-    __ ori($dst$$Register, $dst$$Register, Csrc & 0xffff);
+    __ ori($dst$$Register, $src2$$Register, Csrc & 0xffff);
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5797,8 +5790,9 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass_no_mask src) %{
   ins_cost(DEFAULT_COST*2);
 
   expand %{
-    loadConNKlass_hi(dst, src);
-    loadConNKlass_lo(dst, src);
+    iRegIdst tmp;
+    loadConNKlass_hi(tmp, src);
+    loadConNKlass_lo(dst, src, tmp);
   %}
 %}
 
@@ -5807,9 +5801,11 @@ instruct loadConNKlass_mask_Ex(iRegNdst dst, immNKlass_mask src) %{
   ins_cost(DEFAULT_COST*3);
 
   expand %{
-    loadConNKlass_hi(dst, src);
-    loadConNKlass_mask(dst, src);
-    loadConNKlass_lo(dst, src);
+    iRegIdst tmp1;
+    iRegIdst tmp2;
+    loadConNKlass_hi(tmp1, src);
+    loadConNKlass_mask(tmp2, tmp1);
+    loadConNKlass_lo(dst, src, tmp2);
   %}
 %}
 
