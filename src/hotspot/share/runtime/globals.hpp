@@ -808,7 +808,7 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, PrintValueLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each value class or class containing "    \
-          "inlined value fields")                                           \
+          "flattenable value fields")                                       \
                                                                             \
   product(bool, PrintFlatArrayLayout, false, DIAGNOSTIC,                    \
           "Print array layout for each flattened value array")              \
@@ -818,7 +818,7 @@ const int ObjectAlignmentInBytes = 8;
           "when it determines it is possible and beneficial to do so")      \
                                                                             \
   product(bool, UseFieldFlattening, true, DIAGNOSTIC,                       \
-          "Allow the JVM to inline the fields of concrete value objects "   \
+          "Allow the JVM to flatten the fields of concrete value objects "  \
           "when it determines it is possible and beneficial to do so")      \
                                                                             \
   product(bool, UseNullableAtomicValueFlattening, true, DIAGNOSTIC,         \

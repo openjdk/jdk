@@ -303,8 +303,8 @@ class FieldLayoutBuilder : public ResourceObj {
   bool _is_naturally_atomic;
   bool _must_be_atomic;
   bool _has_nonstatic_fields;
-  bool _has_inlineable_fields;
-  bool _has_inlined_fields;
+  bool _has_flattenable_fields;
+  bool _has_flattened_fields;
   bool _is_contended;
   bool _super_ends_with_oop;
   bool _is_concrete_value;
