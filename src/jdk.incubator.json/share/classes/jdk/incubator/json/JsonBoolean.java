@@ -30,7 +30,8 @@ import jdk.incubator.json.impl.JsonBooleanImpl;
 /**
  * The interface that represents the JSON boolean literals, "true" and "false".
  * <p>
- * A {@code JsonBoolean} can be produced by {@link Json#parse(String)}.
+ * A {@code JsonBoolean} can be created by parsing JSON text using either
+ * {@link Json#parse(String)} or {@link Json#parse(char[])}.
  * <p> Alternatively, {@link #of(boolean)} can be used to
  * obtain a {@code JsonBoolean}.
  *

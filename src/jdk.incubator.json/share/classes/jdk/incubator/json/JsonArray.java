@@ -32,7 +32,8 @@ import jdk.incubator.json.impl.JsonArrayImpl;
 /**
  * The interface that represents JSON array.
  * <p>
- * A {@code JsonArray} can be produced by {@link Json#parse(String)}.
+ * A {@code JsonArray} can be created by parsing JSON text using either
+ * {@link Json#parse(String)} or {@link Json#parse(char[])}.
  * <p> Alternatively, {@link #of(List)} can be used to obtain a {@code JsonArray}.
  *
  * @spec https://datatracker.ietf.org/doc/html/rfc8259#section-5 RFC 8259:
