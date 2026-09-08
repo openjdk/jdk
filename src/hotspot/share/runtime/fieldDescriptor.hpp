@@ -32,7 +32,7 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/constantTag.hpp"
 
-class InlineKlass;
+class ValueKlass;
 class InstanceKlass;
 
 // A fieldDescriptor describes the attributes of a single field (instance or class variable).
@@ -96,7 +96,7 @@ class fieldDescriptor {
   bool is_transient()             const    { return access_flags().is_transient(); }
   bool is_strict()                const    { return access_flags().is_strict(); }
   inline bool is_flat()           const;
-  inline bool is_null_free_inline_type() const;
+  inline bool is_null_free_value_type() const;
   inline bool has_null_marker()   const;
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }
@@ -115,7 +115,7 @@ class fieldDescriptor {
   inline void set_is_field_modification_watched(const bool value);
   inline void set_has_initialized_final_update(const bool value);
 
-  InlineKlass* flat_field_klass();
+  ValueKlass* flat_field_klass();
   bool is_flat_field_marked_as_null(address obj, FieldClosure* fc);
   bool is_flat_field_marked_as_null(oop obj, FieldClosure* fc) {
     return is_flat_field_marked_as_null(cast_from_oop<address>(obj), fc);
@@ -144,7 +144,7 @@ class FieldPrinter: public FieldClosure {
   outputStream* _st;
   int _indent;
 public:
-  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
+  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, ValueKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
   void do_field(fieldDescriptor* fd);
 };
 

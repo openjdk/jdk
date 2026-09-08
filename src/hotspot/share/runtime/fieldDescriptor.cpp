@@ -27,10 +27,10 @@
 #include "oops/annotations.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -45,7 +45,7 @@ Symbol* fieldDescriptor::generic_signature() const {
 
 bool fieldDescriptor::is_trusted_final() const {
   InstanceKlass* ik = field_holder();
-  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->is_inline_klass()
+  return is_final() && (is_static() || ik->is_hidden() || ik->is_record() || ik->is_value_klass()
                         || (ik->is_abstract() && !ik->is_identity_class() && !ik->is_interface()));
 }
 
@@ -99,14 +99,14 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
-InlineKlass* fieldDescriptor::flat_field_klass() {
+ValueKlass* fieldDescriptor::flat_field_klass() {
   precond(is_flat());
-  return field_holder()->get_inline_type_field_klass(index());
+  return field_holder()->get_value_type_field_klass(index());
 }
 
 bool fieldDescriptor::is_flat_field_marked_as_null(address obj, FieldClosure* fc) {
   precond(is_flat());
-  if (is_null_free_inline_type()) {
+  if (is_null_free_value_type()) {
     return false; // Cannot be marked as null.
   } else {
     return flat_field_klass()->is_payload_marked_as_null(obj + field_offset_in_obj(fc));
@@ -118,7 +118,7 @@ int fieldDescriptor::field_offset_in_obj(FieldClosure* fc) const {
     precond(fc->flat_field_klass() == nullptr);
     return offset();
   } else {
-    InlineKlass* vk = fc->flat_field_klass();
+    ValueKlass* vk = fc->flat_field_klass();
     int flat_field_offset = fc->flat_field_offset();
     // Compute the offset of the field represented by this fieldDescriptor from
     // the beginning of an heap oop. Using the example Point class from the comments
@@ -231,19 +231,19 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
     case T_ARRAY:
     case T_OBJECT:
       if (is_flat()) {
-        InlineKlass* vk = flat_field_klass();
+        ValueKlass* vk = flat_field_klass();
         bool is_null = is_flat_field_marked_as_null(obj, fc);
 
-        if (!is_null_free_inline_type()) {
+        if (!is_null_free_value_type()) {
           assert(has_null_marker(), "should have null marker");
-          st->print("Flat inline type field '%s':", vk->name()->as_C_string());
+          st->print("Flat value type field '%s':", vk->name()->as_C_string());
           precond(is_null == vk->is_payload_marked_as_null(obj, field_offset_in_obj));
           if (is_null) {
             st->print(" null");
           }
           st->cr();
         } else {
-          st->print_cr("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+          st->print_cr("Flat value null-free type field '%s':", vk->name()->as_C_string());
         }
 
         if (!is_null) {
@@ -253,7 +253,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
         }
 
         if (field_flags().has_null_marker()) {
-          InlineLayoutInfo* li = field_holder()->inline_layout_info_adr(index());
+          ValueFieldLayoutInfo* li = field_holder()->value_field_layout_info_adr(index());
           int nm_offset = li->null_marker_offset();
 
           for (int i = 0; i < indent + 1; i++) st->print("  ");
@@ -264,7 +264,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
         }
         return; // No need to print underlying representation again (already printed by FieldPrinter above)
       }
-      // Not flat inline type field, fall through
+      // Not flat value type field, fall through
       if (obj->obj_field(field_offset_in_obj) != nullptr) {
         obj->obj_field(field_offset_in_obj)->print_value_on(st);
       } else {
@@ -304,7 +304,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
   }
 }
 
-FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, InlineKlass* flat_field_klass, int flat_field_offset) :
+FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, ValueKlass* flat_field_klass, int flat_field_offset) :
   FieldClosure(flat_field_klass, flat_field_offset), _obj(obj), _st(st), _indent(indent) {
   if (obj == nullptr) {
     assert(flat_field_offset == 0, "flattening not supported for static fields");

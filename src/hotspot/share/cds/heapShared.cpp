@@ -446,7 +446,7 @@ void HeapShared::make_archived_object_cache_gc_safe() {
 
   // Copy all CachedOopInfo into a new table using a different hashing algorithm
   archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
-      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_inline_klass()) {
+      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_value_klass()) {
         // After make_archived_object_cache_gc_safe() returns,
         // _archived_object_cache->get() is called only from the (future) AOT code
         // compiler to access heap oops referenced by AOT-compiled method.
@@ -818,7 +818,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {
-    assert(!ik->is_inline_klass(), "not supported");
+    assert(!ik->is_value_klass(), "not supported");
     InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
     precond(orig_ik->is_initialized());
     orig_mirror = orig_ik->java_mirror();
@@ -888,11 +888,11 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
     assert(success, "sanity");
   }
 
-  if (ik->is_inline_klass()) {
-    InlineKlass* ilk = InlineKlass::cast(ik);
-    if (ilk->supports_nullable_layouts()) {
-      oop null_reset_value = ilk->null_reset_value();
-      m->obj_field_put(ilk->null_reset_value_offset(), null_reset_value);
+  if (ik->is_value_klass()) {
+    ValueKlass* vk = ValueKlass::cast(ik);
+    if (vk->supports_nullable_layouts()) {
+      oop null_reset_value = vk->null_reset_value();
+      m->obj_field_put(vk->null_reset_value_offset(), null_reset_value);
       bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, null_reset_value);
       assert(success, "sanity");
     }
@@ -1748,7 +1748,7 @@ class HeapShared::FlattenedKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _obj;
 public:
-  FlattenedKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, InlineKlass* flat_field_klass, int flat_field_offset)
+  FlattenedKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, ValueKlass* flat_field_klass, int flat_field_offset)
     : FieldClosure(flat_field_klass, flat_field_offset), _subgraph_info(subgraph_info),_obj(obj) {
     precond(obj != nullptr);
     assert(obj->klass() != flat_field_klass, "a value class cannot be flattened into itself");
@@ -1760,7 +1760,7 @@ public:
 
       if (!fd->is_flat_field_marked_as_null(_obj, this)) {
         // Found a non-null flattened instance of vk. Let's record vk.
-        InlineKlass* vk = fd->flat_field_klass();
+        ValueKlass* vk = fd->flat_field_klass();
         add_flattened_class(_subgraph_info, vk);
         if (vk->has_inlined_fields()) {
           // Scan the fields of this flattened instance of vk whose payload is at field_offset_in_obj.
@@ -1773,7 +1773,7 @@ public:
   }
 };
 
-void HeapShared::add_flattened_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k) {
+void HeapShared::add_flattened_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
   subgraph_info->add_subgraph_object_klass(k);
   if (InstanceKlass::cast(k)->is_enum_subclass()
       || (subgraph_info == _dump_time_special_subgraph)) {
@@ -1781,7 +1781,7 @@ void HeapShared::add_flattened_class(KlassSubGraphInfo* subgraph_info, InlineKla
   }
 }
 
-// Recursively scan for any InlineKlass K that has least one non-null flattened instance
+// Recursively scan for any ValueKlass K that has least one non-null flattened instance
 // inside orig_obj. K should be recorded with add_flattened_class().
 //
 // Reason for doing this:
@@ -1803,7 +1803,7 @@ void HeapShared::find_flattened_classes(KlassSubGraphInfo* subgraph_info, oop or
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
     precond(orig_obj->is_flatArray());
     flatArrayOop fa = oop_cast<flatArrayOop>(orig_obj);
-    InlineKlass* elem_k = fak->element_klass();
+    ValueKlass* elem_k = fak->element_klass();
     bool added = false;
     for (int i = 0; i < fa->length(); i++) {
       if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {

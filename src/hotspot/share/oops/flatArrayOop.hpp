@@ -32,7 +32,7 @@
 
 class FlatArrayKlass;
 
-// A flatArrayOop points to a flat array containing inline types (no indirection).
+// A flatArrayOop points to a flat array containing value types (no indirection).
 // It may include embedded oops in its elements.
 
 class flatArrayOopDesc : public objArrayOopDesc {

@@ -632,7 +632,6 @@ public:
     return FakeOop(_iter, _iter->obj_at(addr));
   }
 
-
   FakeOop obj_field(int field_offset) {
     if (UseCompressedOops) {
       return read_oop_at(raw_oop()->field_addr<narrowOop>(field_offset));
@@ -838,7 +837,7 @@ class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
   outputStream* _st;
   int _indent;
 public:
-  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, InlineKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
+  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, ValueKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
     : FieldClosure(flat_field_klass, flat_field_offset), _fake_oop(fake_oop), _st(st), _indent(indent) {
     precond(_fake_oop.raw_oop() != nullptr);
   }
@@ -855,14 +854,14 @@ public:
         if (fd->is_flat()) {
           // offset of the payload that represents this field, from the beginning of _fake_oop
           int field_offset_in_obj = fd->field_offset_in_obj(this);
-          InlineKlass* vk = fd->flat_field_klass();
+          ValueKlass* vk = fd->flat_field_klass();
           bool is_null = fd->is_flat_field_marked_as_null(_fake_oop.buffered_addr(), this);
 
-          if (!fd->is_null_free_inline_type()) {
+          if (!fd->is_null_free_value_type()) {
             assert(fd->has_null_marker(), "should have null marker");
             _st->print("Flat inline type field '%s':", vk->name()->as_C_string());
           } else {
-            _st->print("Flat inline null-free type field '%s':", vk->name()->as_C_string());
+            _st->print("Flat value null-free type field '%s':", vk->name()->as_C_string());
           }
           // Print fields of flat field (recursively)
           if (!is_null) {
@@ -1027,7 +1026,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
     fake_oop.as_type_array().print_elements_on(st);
   } else if (real_klass->is_flatArray_klass()) {
     FakeFlatArray fake_flat_array = fake_oop.as_flat_array();
-    InlineKlass* elem_k = ((FlatArrayKlass*)real_klass)->element_klass();
+    ValueKlass* elem_k = ((FlatArrayKlass*)real_klass)->element_klass();
     for (int i = 0; i < fake_flat_array.length(); i++) {
       int elem_offset = fake_flat_array.value_offset(i);
       bool is_null = false;
@@ -1036,7 +1035,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
         is_null = elem_k->is_payload_marked_as_null(fake_flat_array.buffered_addr() + elem_offset);
         st->print(" - Flat inline type element '%s':", elem_k->name()->as_C_string());
       } else {
-        st->print(" - Flat inline null-free type element '%s':", elem_k->name()->as_C_string());
+        st->print(" - Flat value null-free type element '%s':", elem_k->name()->as_C_string());
       }
       st->print(" - Index %3d offset %3d: ", i, elem_offset);
 
