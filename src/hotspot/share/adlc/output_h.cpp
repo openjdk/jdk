@@ -1631,7 +1631,7 @@ void ArchDesc::declareClasses(FILE *fp) {
       if (instr->is_ideal_call() != Form::invalid_type &&
           instr->is_ideal_call() != Form::JAVA_LEAF) {
         // MachConstantBase goes behind arguments, but before jvms.
-        fprintf(fp,"assert(tf() && tf()->domain(), \"\"); return tf()->domain()->cnt();");
+        fprintf(fp,"assert(tf() && tf()->domain_cc(), \"\"); return tf()->domain_cc()->cnt();");
       } else {
         fprintf(fp,"return req()-1;");
       }

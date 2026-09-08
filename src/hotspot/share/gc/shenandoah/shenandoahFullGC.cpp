@@ -136,6 +136,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
 
   // A full GC may be entered directly, or as an upgrade from a failed
   // degenerated GC. In the latter case, self-forwarded objects may be

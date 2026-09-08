@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,20 @@
 /**
  * The {@code java.lang.runtime} package provides low-level runtime support
  * for the Java language.
+ * <p>
+ * Unless otherwise specified: <ul>
+ * <li>Methods and constructors in this package throw a {@link
+ *     NullPointerException} when they are called with {@code null} or an array
+ *     that contains {@code null} as an argument.
+ * <li>{@linkplain java.lang.invoke##bsm Bootstrap methods} in this package
+ *     throw an {@link IllegalArgumentException} when they are called with a
+ *     {@link Lookup Lookup} that does not have {@linkplain
+ *     Lookup#hasFullPrivilegeAccess() full privilege access}.
+ * </ul>
  *
  * @since 14
  */
 
 package java.lang.runtime;
+
+import java.lang.invoke.MethodHandles.Lookup;

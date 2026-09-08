@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1084,9 +1084,16 @@ public abstract class Provider extends Properties {
                 String stdAlg = attrString.substring(0, i).intern();
                 String attrName = attrString.substring(i + 1);
                 // kill additional spaces
-                while (attrName.startsWith(" ")) {
-                    attrName = attrName.substring(1);
+                int pos = 0;
+                for (; pos < attrName.length(); pos++) {
+                    if (attrName.charAt(pos) != ' ') {
+                        break;
+                    }
                 }
+                if (pos > 0) {
+                    attrName = attrName.substring(pos);
+                }
+
                 attrName = attrName.intern();
                 ServiceKey stdKey = new ServiceKey(type, stdAlg, true);
                 Service stdService = legacyMap.get(stdKey);

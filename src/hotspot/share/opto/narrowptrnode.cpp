@@ -41,7 +41,7 @@ const Type* DecodeNNode::Value(PhaseGVN* phase) const {
   if (t == Type::TOP) return Type::TOP;
   if (t == TypeNarrowOop::NULL_PTR) return TypePtr::NULL_PTR;
 
-  assert(t->isa_narrowoop(), "only  narrowoop here");
+  assert(t->isa_narrowoop(), "only narrowoop here");
   return t->make_ptr();
 }
 

@@ -22,7 +22,7 @@
  */
 
 /** @test
- *  @bug 8034854
+ *  @bug 8034854 8287203
  *  @summary Verify that the InnerClasses attribute has outer_class_info_index zero if it has
  *           inner_name_index zero (for synthetic classes)
  *  @compile SyntheticClasses.java
@@ -44,6 +44,11 @@ public class SyntheticClasses {
         File testClasses = new File(System.getProperty("test.classes"));
         for (File classFile : Objects.requireNonNull(testClasses.listFiles(f -> f.getName().endsWith(".class")))) {
             ClassModel cf = ClassFile.of().parse(classFile.toPath());
+            if ((cf.flags().flagsMask() & (ClassFile.ACC_SYNTHETIC | ClassFile.ACC_ABSTRACT)) == ClassFile.ACC_SYNTHETIC) {
+                if ((cf.flags().flagsMask() & ClassFile.ACC_IDENTITY) == 0) {
+                    throw new IllegalStateException("Missing ACC_IDENTITY on synthetic concrete identity class: " + cf.thisClass().asInternalName());
+                }
+            }
             if (cf.thisClass().asInternalName().matches(".*\\$[0-9]+")) {
                 EnclosingMethodAttribute encl = cf.findAttribute(Attributes.enclosingMethod()).orElse(null);
                 if (encl != null) {

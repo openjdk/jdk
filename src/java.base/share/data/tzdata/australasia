@@ -1744,7 +1744,7 @@ Zone	Pacific/Efate	11:13:16 -	LMT	1912 Jan 13 # Vila
 # to Japanese rule was right before 1970, ... per the current tz database
 # rule, the information doesn't warrant creation of a new timezone for Bonin
 # Islands itself and is thus as an anecdotal note for interest purpose only.
-# ... [The abovementioned link] described some special timekeeping phenomenon
+# ... [The link mentioned above] described some special timekeeping phenomenon
 # regarding Marcus island, another remote island currently owned by Japanese
 # in the same administrative unit as Bonin Islands.  Many reports claim that
 # the American coastal guard on the American quarter of the island use its own

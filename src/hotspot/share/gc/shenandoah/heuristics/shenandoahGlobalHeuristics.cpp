@@ -226,14 +226,14 @@ void ShenandoahGlobalHeuristics::choose_global_collection_set(ShenandoahCollecti
     size_t delta_bytes = budget.young_evac.reserve() - heap->young_generation()->get_evacuation_reserve();
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_old_regions, delta_regions);
-    log_info(gc)("Global GC moves %zu unaffiliated regions from old collector to young collector reserves", regions_to_transfer);
+    log_info(gc, ergo)("Global GC moves %zu unaffiliated regions from old collector to young collector reserves", regions_to_transfer);
     ssize_t negated_regions = -regions_to_transfer;
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(negated_regions);
   } else if (heap->young_generation()->get_evacuation_reserve() > budget.young_evac.reserve()) {
     size_t delta_bytes = heap->young_generation()->get_evacuation_reserve() - budget.young_evac.reserve();
     size_t delta_regions = delta_bytes / region_size_bytes;
     size_t regions_to_transfer = MIN2(unaffiliated_young_regions, delta_regions);
-    log_info(gc)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
+    log_info(gc, ergo)("Global GC moves %zu unaffiliated regions from young collector to old collector reserves", regions_to_transfer);
     heap->free_set()->move_unaffiliated_regions_from_collector_to_old_collector(regions_to_transfer);
   }
 

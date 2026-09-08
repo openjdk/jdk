@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3164,7 +3164,7 @@ public class StyleSheet extends StyleContext {
 
 
     /**
-     * SelectorMapping contains a specifitiy, as an integer, and an associated
+     * SelectorMapping contains a specificity, as an integer, and an associated
      * Style. It can also reference children <code>SelectorMapping</code>s,
      * so that it behaves like a tree.
      * <p>

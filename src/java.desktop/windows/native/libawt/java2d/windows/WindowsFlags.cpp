@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,8 +88,7 @@ void GetFlagValues(JNIEnv *env, jclass wFlagsClass)
     }
     useD3D = d3dEnabled;
     forceD3DUsage = d3dSet;
-    setHighDPIAware =
-        (IS_WINVISTA && GetStaticBoolean(env, wFlagsClass, "setHighDPIAware"));
+    setHighDPIAware = GetStaticBoolean(env, wFlagsClass, "setHighDPIAware");
     JNU_CHECK_EXCEPTION(env);
 
     J2dTraceLn(J2D_TRACE_INFO, "WindowsFlags (native):");

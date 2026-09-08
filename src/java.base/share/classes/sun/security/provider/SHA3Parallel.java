@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,9 +80,28 @@ public class SHA3Parallel {
         }
     }
 
-    public int squeezeBlock() {
-        int retVal = quadKeccak(lanesArr[0], lanesArr[1], lanesArr[2], lanesArr[3]);
-        for (int i = 0; i < NRPAR; i++) {
+    public int squeezeBlock(int nr) throws InvalidAlgorithmParameterException {
+        int retVal = 0;
+        switch (nr) {
+            case 1:
+                // until we enable single keccak intrinsic, use the better
+                // doubleKeccak
+            case 2:
+                retVal = doubleKeccak(lanesArr[0], lanesArr[1]);
+                break;
+            case 3:
+                // until we enable single keccak intrinsic, use the better
+                // doubleKeccak/quadKeccak
+            case 4:
+                retVal = quadKeccak(lanesArr[0], lanesArr[1], lanesArr[2],
+                        lanesArr[3]);
+                break;
+            default:
+                throw new InvalidAlgorithmParameterException(
+                    "Bad parallel parameter.");
+        }
+
+        for (int i = 0; i < nr; i++) {
             l2bLittle(lanesArr[i], 0, buffers[i], 0, blockSize);
         }
         return retVal;

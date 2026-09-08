@@ -487,6 +487,21 @@ public final class System {
      * hashCode().
      * The hash code for the null reference is zero.
      *
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          The "identity hash code" of a {@linkplain Class#isValue() value object}
+     *          is computed by combining the identity hash codes of the value object's fields recursively.
+     *      </div>
+     * </div>
+     * @apiNote
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          Note that, like ==, this hash code exposes information about a value object's
+     *          private fields that might otherwise be hidden by an identity object.
+     *          Developers should be cautious about storing sensitive secrets in value object fields.
+     *      </div>
+     * </div>
+     *
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
      * @since   1.1
@@ -2029,9 +2044,6 @@ public final class System {
             E[] getEnumConstantsShared(Class<E> klass) {
                 return klass.getEnumConstantsShared();
             }
-            public int classFileVersion(Class<?> clazz) {
-                return clazz.getClassFileVersion();
-            }
             public void blockedOn(Interruptible b) {
                 Thread.currentThread().blockedOn(b);
             }
@@ -2351,6 +2363,17 @@ public final class System {
             public void finishInit(StackTraceElement[] stackTrace) {
                 StackTraceElement.finishInit(stackTrace);
             }
+
+            @Override
+            public long[] getConfinedMemoryPools(Thread thread) {
+                return thread.confinedMemoryPools();
+            }
+
+            @Override
+            public long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots) {
+                return thread.getOrCreateConfinedMemoryPools(poolSlots);
+            }
+
         });
     }
 }

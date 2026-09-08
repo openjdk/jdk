@@ -63,6 +63,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder jdk.test.lib.RandomFactory
  * @run junit GZIPOverBlockingStreams
+ * @comment verify it behaves the same when jdk.util.gzip.tryReadAheadAfterTrailer system property
+ *          is set to false
+ * @run junit/othervm -Djdk.util.gzip.tryReadAheadAfterTrailer=false GZIPOverBlockingStreams
  */
 class GZIPOverBlockingStreams {
 

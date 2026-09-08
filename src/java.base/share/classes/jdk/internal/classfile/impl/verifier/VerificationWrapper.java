@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl.verifier;
 
 import java.lang.classfile.Attributes;
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
 import java.lang.classfile.attribute.LocalVariableInfo;
 import java.lang.classfile.constantpool.ClassEntry;
@@ -45,7 +46,7 @@ import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.Util;
 
 public final class VerificationWrapper {
-    private final ClassModel clm;
+    final ClassModel clm;
     private final ConstantPoolWrapper cp;
 
     public VerificationWrapper(ClassModel clm) {
@@ -73,11 +74,11 @@ public final class VerificationWrapper {
         return clm.methods().stream().map(m -> new MethodWrapper(m)).toList();
     }
 
-    boolean findField(String name, String sig) {
+    FieldModel findField(String name, String sig) {
         for (var f : clm.fields())
             if (f.fieldName().stringValue().equals(name) && f.fieldType().stringValue().equals(sig))
-                return true;
-        return false;
+                return f;
+        return null;
     }
 
     class MethodWrapper {
@@ -161,7 +162,7 @@ public final class VerificationWrapper {
 
     static class ConstantPoolWrapper {
 
-        private final ConstantPool cp;
+        final ConstantPool cp;
 
         ConstantPoolWrapper(ConstantPool cp) {
             this.cp = cp;
@@ -199,6 +200,10 @@ public final class VerificationWrapper {
 
         int refClassIndexAt(int index) {
             return cp.entryByIndex(index, MemberRefEntry.class).owner().index();
+        }
+
+        boolean is_within_bounds(int i) {
+            return i >= 1 && i <= cp.size();
         }
     }
 }

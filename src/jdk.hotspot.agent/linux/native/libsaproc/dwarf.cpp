@@ -200,6 +200,17 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         break;
       }
+      case 0x05: { // DW_CFA_offset_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        uintptr_t operand2 = read_leb(false);
+        _state.offset_from_cfa[reg] = operand2 * _data_factor;
+        break;
+      }
+      case 0x06: { // DW_CFA_restore_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
+        break;
+      }
       case 0x07: { // DW_CFA_undefined
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
         _state.offset_from_cfa[reg] = INT_MAX;
@@ -210,6 +221,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         break;
       case 0x0a: // DW_CFA_remember_state
         remember_state.push(_state);
+        remember_arch_specific_state();
         break;
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
@@ -218,29 +230,18 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         _state = remember_state.top();
         remember_state.pop();
+        restore_arch_specific_state();
         break;
       case 0xc0: {// DW_CFA_restore
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
         _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
         break;
       }
-#ifdef __aarch64__
-      // SA hasn't yet supported Pointer Authetication Code (PAC), so following
-      // instructions would be ignored with warning message.
-      //   https://github.com/ARM-software/abi-aa/blob/2025Q4/aadwarf64/aadwarf64.rst
-      case 0x2d: // DW_CFA_AARCH64_negate_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state is unimplemented.\n", op);
-        break;
-      case 0x2c: // DW_CFA_AARCH64_negate_ra_state_with_pc
-        print_debug("DWARF: DW_CFA_AARCH64_negate_ra_state_with_pc is unimplemented.\n", op);
-        break;
-      case 0x2b: // DW_CFA_AARCH64_set_ra_state
-        print_debug("DWARF: DW_CFA_AARCH64_set_ra_state is unimplemented.\n", op);
-        break;
-#endif
       default:
-        print_debug("DWARF: Unknown opcode: 0x%x\n", op);
-        return;
+        if (!process_arch_specific_dwarf_instructions(op)) {
+          print_error("DWARF: Unknown opcode: 0x%x\n", op);
+          return;
+        }
     }
   }
 }
@@ -275,14 +276,14 @@ uint32_t DwarfParser::get_decoded_value(unsigned char enc) {
   //   https://gcc.gnu.org/ml/gcc-help/2010-09/msg00166.html
 #if defined(_LP64)
   if (size == 8) {
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   } else
 #endif
   if ((enc & 0x70) == 0x10) { // 0x10 = DW_EH_PE_pcrel
-    result += _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result += _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
   } else  if (size == 2) {
-    result = static_cast<int>(result) + _lib->eh_frame.v_addr + static_cast<uintptr_t>(_buf - _lib->eh_frame.data);
+    result = static_cast<int>(result) + _lib->frame.v_addr + static_cast<uintptr_t>(_buf - _lib->frame.data);
     size = 4;
   }
 
@@ -329,8 +330,8 @@ unsigned int DwarfParser::get_pc_range() {
 
 bool DwarfParser::process_dwarf(const uintptr_t pc) {
   // https://refspecs.linuxfoundation.org/LSB_3.0.0/LSB-PDA/LSB-PDA/ehframechpt.html
-  _buf = _lib->eh_frame.data;
-  unsigned char *end = _lib->eh_frame.data + _lib->eh_frame.size;
+  _buf = _lib->frame.data;
+  unsigned char *end = _lib->frame.data + _lib->frame.size;
   while (_buf <= end) {
     uint64_t length = get_entry_length();
     if (length == 0L) {
@@ -341,7 +342,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
     uint32_t id = *(reinterpret_cast<uint32_t *>(_buf));
     _buf += 4;
     if (id != 0) { // FDE
-      uintptr_t pc_begin = get_decoded_value(_fde_ptr_encoding) + _lib->eh_frame.library_base_addr;
+      uintptr_t pc_begin = get_decoded_value(_fde_ptr_encoding) + _lib->base;
       uintptr_t pc_end = pc_begin + get_pc_range();
 
       if ((pc >= pc_begin) && (pc < pc_end)) {

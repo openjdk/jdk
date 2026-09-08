@@ -30,6 +30,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class ClassLoaderData;
+class MetaspaceClosure;
 
 class BSMAttributeEntry {
   friend class ConstantPool;
@@ -130,10 +131,8 @@ public:
     return _offsets == nullptr && _bootstrap_methods == nullptr;
   }
 
-  Array<u4>*& offsets() { return _offsets; }
-  const Array<u4>* const& offsets() const { return _offsets; }
-  Array<u2>*& bootstrap_methods() { return _bootstrap_methods; }
-  const Array<u2>* const& bootstrap_methods() const { return _bootstrap_methods; }
+  Array<u4>* offsets() const { return _offsets; }
+  Array<u2>* bootstrap_methods() const { return _bootstrap_methods; }
 
   BSMAttributeEntry* entry(int bsms_attribute_index) {
     return reinterpret_cast<BSMAttributeEntry*>(_bootstrap_methods->adr_at(_offsets->at(bsms_attribute_index)));
@@ -164,6 +163,8 @@ public:
   void end_extension(InsertionIterator& iter, ClassLoaderData* loader_data, TRAPS);
   // Append all of the BSMAEs in other into this.
   void append(const BSMAttributeEntries& other, ClassLoaderData* loader_data, TRAPS);
+
+  void metaspace_pointers_do(MetaspaceClosure* it);
 };
 
 #endif // SHARE_OOPS_BSMATTRIBUTE_HPP

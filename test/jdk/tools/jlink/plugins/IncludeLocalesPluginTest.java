@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,11 +36,13 @@ import jdk.tools.jlink.internal.TaskHelper;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.test.lib.Platform;
+import jdk.test.lib.util.FileUtils;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageValidator;
 import tests.Result;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -67,6 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *          jdk.compiler
  * @build tests.*
  * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
  * @build tools.jlink.plugins.GetAvailableLocales
  * @run junit/othervm/timeout=720 -Xmx1g IncludeLocalesPluginTest
  */
@@ -75,6 +79,8 @@ public class IncludeLocalesPluginTest {
 
     private static final String MODULE_NAME = "IncludeLocalesTest";
     private static Helper helper;
+    private Path lastImageDir;
+    private boolean testPassed;
 
     // Test data should include:
     //  - --include-locales command line option
@@ -422,18 +428,22 @@ public class IncludeLocalesPluginTest {
     @MethodSource("testData")
     public void launch(String optIncludeLocales, String optAddModules, List<String> requiredRes,
                        List<String> shouldNotExistRes, List<String> availableLocs, String errorMsg) throws Exception {
+        testPassed = false;
         // create image for each test data
         Result result;
+        lastImageDir = helper.createNewImageDir(MODULE_NAME);
         if (optIncludeLocales.isEmpty()) {
             System.out.println("Invoking jlink with no --include-locales option");
             result = JImageGenerator.getJLinkTask()
-                .output(helper.createNewImageDir(MODULE_NAME))
+                .output(lastImageDir)
+                .option("--strip-debug")
                 .addMods(optAddModules)
                 .call();
         } else {
             System.out.println("Invoking jlink with \"" + optIncludeLocales + "\"");
             result = JImageGenerator.getJLinkTask()
-                .output(helper.createNewImageDir(MODULE_NAME))
+                .output(lastImageDir)
+                .option("--strip-debug")
                 .addMods(optAddModules)
                 .option(optIncludeLocales)
                 .call();
@@ -451,6 +461,21 @@ public class IncludeLocalesPluginTest {
             result.assertFailure(new TaskHelper(TaskHelper.JLINK_BUNDLE)
                 .getMessage("error.prefix") + " " +errorMsg);
             System.out.println("\tExpected failure: " + result.getMessage());
+        }
+        testPassed = true;
+    }
+
+    @AfterEach
+    public void cleanup() {
+        if (testPassed && lastImageDir != null && Files.exists(lastImageDir)) {
+            // On Windows, the java.exe process spawned by testAvailableLocales() may
+            // hold open handles to files even after waitFor() returns.
+            // Use a non-throwing cleanup method but tolerate failures. Just log them.
+            List<IOException> failures = FileUtils.deleteFileTreeUnchecked(lastImageDir);
+            if (!failures.isEmpty()) {
+                System.err.println("WARNING: cleanup of " + lastImageDir + " incomplete:");
+                failures.forEach(e -> System.err.println("  " + e));
+            }
         }
     }
 

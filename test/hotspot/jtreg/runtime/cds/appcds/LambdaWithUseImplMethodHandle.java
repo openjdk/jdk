@@ -27,7 +27,6 @@
  * @bug 8290417
  * @summary CDS cannot archive lambda proxy with useImplMethodHandle
  * @requires vm.cds
- * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/test-classes
  * @build pkg1.BaseWithProtectedMethod
  * @build pkg2.Child
@@ -44,11 +43,10 @@ public class LambdaWithUseImplMethodHandle {
 
     // See pkg2/Child.jcod for details about the condition that triggers JDK-8290417
     public static void main(String[] args) throws Exception {
-        test(false);
-        test(true);
+        test();
     }
 
-    static void test(boolean aotClassLinking) throws Exception {
+    static void test() throws Exception {
         String appJar = ClassFileInstaller.getJarPath("test.jar");
         String mainClass = "LambdaWithUseImplMethodHandleApp";
         String expectedMsg = "Called BaseWithProtectedMethod::protectedMethod";
@@ -63,9 +61,6 @@ public class LambdaWithUseImplMethodHandle {
             .addPrefix("-XX:ExtraSharedClassListFile=" + classList,
                        "-cp", appJar)
             .setArchiveName(archiveName);
-        if (aotClassLinking) {
-            opts.addPrefix("-XX:+AOTClassLinking");
-        }
         CDSTestUtils.createArchiveAndCheck(opts);
 
         // run with archive
