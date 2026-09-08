@@ -390,8 +390,8 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
 }
 
 class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
-  uint _humongous_objects_reclaimed;
-  uint _humongous_regions_reclaimed;
+  uint _num_humongous_objects_reclaimed;
+  uint _num_humongous_regions_reclaimed;
   size_t _freed_bytes;
   G1CollectedHeap* _g1h;
 
@@ -429,8 +429,8 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
 
 public:
   G1FreeHumongousRegionClosure() :
-    _humongous_objects_reclaimed(0),
-    _humongous_regions_reclaimed(0),
+    _num_humongous_objects_reclaimed(0),
+    _num_humongous_regions_reclaimed(0),
     _freed_bytes(0),
     _g1h(G1CollectedHeap::heap())
   {}
@@ -469,12 +469,12 @@ public:
            "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
            region_index,
            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
-    _humongous_objects_reclaimed++;
+    _num_humongous_objects_reclaimed++;
 
     auto free_humongous_region = [&] (G1HeapRegion* r) {
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
-      _humongous_regions_reclaimed++;
+      _num_humongous_regions_reclaimed++;
       G1HeapRegionPrinter::eager_reclaim(r);
       // Humongous non-typeArrays may have dirty card tables. Need to be cleared. Do it
       // for all types just in case.
@@ -487,12 +487,12 @@ public:
     return false;
   }
 
-  uint humongous_objects_reclaimed() {
-    return _humongous_objects_reclaimed;
+  uint num_humongous_objects_reclaimed() {
+    return _num_humongous_objects_reclaimed;
   }
 
-  uint humongous_regions_reclaimed() {
-    return _humongous_regions_reclaimed;
+  uint num_humongous_regions_reclaimed() {
+    return _num_humongous_regions_reclaimed;
   }
 
   size_t bytes_freed() const {
@@ -536,9 +536,9 @@ public:
 
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
-    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.num_humongous_objects_reclaimed());
 
-    _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
+    _humongous_regions_reclaimed = cl.num_humongous_regions_reclaimed();
     _bytes_freed = cl.bytes_freed();
   }
 };

@@ -1037,8 +1037,8 @@ public:
 
   bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
 
-  void remove_from_old_gen_sets(const uint old_regions_removed,
-                                const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint num_old_regions_removed,
+                                const uint num_humongous_regions_removed);
   void prepend_to_freelist(G1FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
