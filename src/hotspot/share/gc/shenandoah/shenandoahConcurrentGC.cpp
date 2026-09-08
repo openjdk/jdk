@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"

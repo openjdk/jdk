@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"

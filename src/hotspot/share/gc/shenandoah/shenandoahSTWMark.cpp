@@ -24,6 +24,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
