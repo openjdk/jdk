@@ -412,7 +412,7 @@ public class TestStringEncoding {
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
                             MemorySegment text = arena.allocateFrom(testString, charset, srcIndex, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(substring.getBytes(charset).length, text.byteSize(), 
+                            assertEquals(substring.getBytes(charset).length, text.byteSize(),
                                     String.format("size mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
                                             charset, testString, srcIndex, numChars));
                             String roundTrip = text.getString(0, charset, text.byteSize());
@@ -674,7 +674,7 @@ public class TestStringEncoding {
                             String substring = string.substring(srcIndex, srcIndex + numChars);
                             var segment = arena.allocate(substring.encodedLength(charset));
                             StringSupport.copyToSegmentRaw(string, segment, 0, srcIndex, numChars);
-                            assertArrayEquals(substring.getBytes(charset), segment.toArray(JAVA_BYTE), 
+                            assertArrayEquals(substring.getBytes(charset), segment.toArray(JAVA_BYTE),
                                     String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
                                             charset, string, srcIndex, numChars));
                         }
@@ -697,7 +697,7 @@ public class TestStringEncoding {
                             int encodedLength = substring.encodedLength(charset);
                             var segment = arena.allocate(encodedLength + offset * 2);
                             StringSupport.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
-                            assertArrayEquals(substring.getBytes(charset), segment.asSlice(offset, encodedLength).toArray(JAVA_BYTE), 
+                            assertArrayEquals(substring.getBytes(charset), segment.asSlice(offset, encodedLength).toArray(JAVA_BYTE),
                                     String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
                                             charset, string, srcIndex, numChars));
                         }
