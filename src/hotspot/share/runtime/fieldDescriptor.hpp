@@ -144,6 +144,7 @@ class FieldPrinter: public FieldClosure {
   outputStream* _st;
   int _indent;
 public:
+  // See FieldClosure for the meaning of flat_field_klass and flat_field_offset
   FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, ValueKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
   void do_field(fieldDescriptor* fd);
 };

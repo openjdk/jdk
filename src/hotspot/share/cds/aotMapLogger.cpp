@@ -861,6 +861,7 @@ public:
             assert(fd->has_null_marker(), "should have null marker");
             _st->print("Flat inline type field '%s':", vk->name()->as_C_string());
           } else {
+            precond(!is_null);
             _st->print("Flat value null-free type field '%s':", vk->name()->as_C_string());
           }
           // Print fields of flat field (recursively)

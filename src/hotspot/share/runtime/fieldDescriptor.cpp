@@ -124,6 +124,7 @@ int fieldDescriptor::field_offset_in_obj(FieldClosure* fc) const {
     // the beginning of an heap oop. Using the example Point class from the comments
     // above the declaration of FieldClosure, if we are looking at Point::y::value,
     //
+    //     this->field_holder()  : InstanceKlass Point
     //     vk                    : InstanceKlass java/lang/Integer (we are looking at a field in a flattened Integer)
     //     flat_field_offset     : 12 (this flattened Integer starts at offset 16 of obj)
     //     this->name()          : "value" (the field that we are looking at. Note: it's NOT "y")
@@ -131,7 +132,7 @@ int fieldDescriptor::field_offset_in_obj(FieldClosure* fc) const {
     //     this->offset()        : 8 (the offset of the "value" field in a regular Integer heap oop)
     //     vk->payload_offset()  : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
     //   =>
-    //     field_offset_in_obj() : 12 - 8 + 8 == 12
+    //     field_offset_in_obj() : 12 - 8 + 8 == 12 (offset inside a Point oop)
     return flat_field_offset - vk->payload_offset() + this->offset();
   }
 }
@@ -243,11 +244,12 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
           }
           st->cr();
         } else {
+          precond(!is_null);
           st->print_cr("Flat value null-free type field '%s':", vk->name()->as_C_string());
         }
 
         if (!is_null) {
-          // Print fields of this flat field, which is a type of vk
+          // Print fields declared inside this flat field (which is a type of vk)
           FieldPrinter print_field(st, obj, indent + 1, vk, field_offset_in_obj);
           vk->do_nonstatic_fields(&print_field);
         }
@@ -310,7 +312,7 @@ FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, ValueKlass* fl
     assert(flat_field_offset == 0, "flattening not supported for static fields");
   } else {
     if (flat_field_offset != 0) {
-      assert(obj->klass() != flat_field_klass, "a value class cannot be flattened into itself");
+      assert(obj->klass() != flat_field_klass, "a value object cannot be flattened into itself");
     }
   }
 }

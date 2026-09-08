@@ -632,7 +632,7 @@ void ciInstanceKlass::compute_nonstatic_fields_impl(const GrowableArray<ciField*
       // Flat fields are embedded
       Klass* k = fd.flat_field_klass();
       ciValueKlass* vk = CURRENT_ENV->get_klass(k)->as_value_klass();
-      // Iterate over fields of the flat inline type and copy them to 'this'
+      // Iterate over fields of the flat value type and copy them to 'this'
       for (int i = 0; i < vk->nof_nonstatic_fields(); ++i) {
         assert(tmp_fields != nullptr, "should be initialized");
         tmp_fields->append(new (arena) ciField(declared_field, vk->nonstatic_field_at(i)));

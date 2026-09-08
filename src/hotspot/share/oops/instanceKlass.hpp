@@ -84,8 +84,8 @@ class ValueKlass;
 // FieldClosure is used to iterate on the fields of an InstanceKlass.
 // - When _flat_field_klass is null, _flat_field_offset must be zero. This is used for
 //   - Iterating on the static fields of a class, or
-//   - Iterating on the non-static fields in a heap oop (excluding any fields declared
-//     inside flattened fields).
+//   - Iterating on the non-static fields in a heap oop (as declared in the the oop's type
+//     and super types)
 // - When _flat_field_klass is non-null, _flat_field_offset must be non-zero. This is used for
 //   iterating on the fields of a value object of the type _flat_field_klass. The
 //   payload of the value object is located at _flat_field_offset from the heap address
@@ -123,7 +123,7 @@ public:
     if (flat_field_klass == nullptr) {
       precond(flat_field_offset == 0);
     } else {
-      assert(flat_field_offset != 0, "flattened value object cannot be at offset 0");
+      assert(flat_field_offset != 0, "flat field cannot be at offset 0");
     }
   }
 

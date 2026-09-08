@@ -41,7 +41,6 @@ import jdk.internal.vm.annotation.NullRestricted;
 import jdk.internal.value.ValueClass;
 
 public class ValueObjectPrinting {
-
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     static void checkEqual(String s1, String s2) {
@@ -71,7 +70,6 @@ public class ValueObjectPrinting {
         checkMatch(s, "final value flat '" + fieldName + "' .* Flat inline type field '" + type + "'");
     }
 
-
     public static void main(String[] args) {
         test(new Point(0x11, 0x22), (s) -> {
                 checkNullFree(s, "x", "java/lang/Integer");
@@ -79,7 +77,6 @@ public class ValueObjectPrinting {
                 checkMatch(s, "'value'.*0x00000011");
                 checkMatch(s, "'value'.*0x00000022");
             });
-
 
         test(new Rectangle(0x1111, 0x2222, 0x3333, 0x4444), (s) -> {
                 checkNullFree(s, "p1", "Point");
@@ -89,7 +86,6 @@ public class ValueObjectPrinting {
                 checkMatch(s, "'value'.*0x00003333");
                 checkMatch(s, "'value'.*0x00004444");
             });
-
 
         test(new PaddedRectangle(0x1, 0x22, 0x333, 0x4444), (s) -> {
                 checkNullFree(s, "p1", "Point");
@@ -111,13 +107,11 @@ public class ValueObjectPrinting {
                 checkMatch(s, "'value'.* 2222 ");
             });
 
-
         test(new NullableRectangle(33333, 44444), (s) -> {
                 checkMatch(s, "Field marked as null.*marked as non-null");
                 checkMatch(s, "'value'.* 33333 ");
                 checkMatch(s, "'value'.* 44444 ");
             });
-
 
         test(new NullableRectanglePair(111, 2222), (s) -> {
                 checkMatch(s, "Field marked as null.*marked as non-null");
@@ -126,7 +120,6 @@ public class ValueObjectPrinting {
 
                 checkMatch(s, "Field marked as non-null.*as null.*as non-null.*as null");
             });
-
 
         test(new NullableRectanglePair(333333, 44444), (s) -> {
                 checkMatch(s, "Field marked as null.*marked as non-null");
@@ -154,7 +147,6 @@ public class ValueObjectPrinting {
                     checkMatch(s, " 1111 .* 2222 .* 3333 .* 4444 .* 5555 .* 6666 ");
                 });
         }
-
     }
 
     static void test(Object o, Checker c) {
