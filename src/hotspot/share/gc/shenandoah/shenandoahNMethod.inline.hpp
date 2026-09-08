@@ -62,8 +62,15 @@ void ShenandoahNMethod::oops_do(OopClosure* oops, bool fix_relocations, ICacheIn
     }
   }
 
-  if (fix_relocations && _has_non_immed_oops) {
-    _nm->fix_oop_relocations(icic);
+  if (fix_relocations) {
+    // If we have immediate oops, tracked by us, it is likely we have modified them.
+    // Declare this fact to ICIC.
+    if (_oops_count > 0) {
+      icic->set_has_modified_code();
+    }
+    if (_has_non_immed_oops) {
+      _nm->fix_oop_relocations(icic);
+    }
   }
 }
 
