@@ -340,15 +340,15 @@ class StubGenerator: public StubCodeGenerator {
 
       // case T_OBJECT:
       __ bind(ret_is_object);
-      if (InlineTypeReturnedAsFields) {
+      if (ValueTypeReturnedAsFields) {
         // Check for scalarized return value
         __ cmpdi(CR0, R3_RET, 0);
         __ beq(CR0, ret_is_long);
         // Load pack handler address
-        __ untested("call stub InlineTypeReturnedAsFields"); // TODO: check return registers usage
+        __ untested("call stub ValueTypeReturnedAsFields"); // TODO: check return registers usage
         __ andi(R12_scratch2, R3_RET, -2);
-        __ ld(R12_scratch2, InlineKlass::adr_members_offset(), R12_scratch2);
-        __ ld(R12_scratch2, InlineKlass::pack_handler_jobject_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::adr_members_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::pack_handler_jobject_offset(), R12_scratch2);
         __ mtctr(R12_scratch2);
         __ bctr(); // tail call
       } // else fall through
@@ -580,7 +580,8 @@ class StubGenerator: public StubCodeGenerator {
   //
   //
   address generate_ghash_processBlocks() {
-    StubCodeMark mark(this, "StubRoutines", "ghash");
+    StubId stub_id = StubId::stubgen_ghash_processBlocks_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
 
     // Registers for parameters
@@ -2592,10 +2593,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpd(CR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
     __ bne(CR5, L_failed);
 
-    // Check for flat inline type array -> return -1
+    // Check for flat value type array -> return -1
     __ test_flat_array_oop(src, temp, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
+    // Check for null-free (non-flat) value type array -> handle as object array
     __ test_null_free_array_oop(src, temp, L_objArray);
 
     __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
@@ -2746,8 +2747,6 @@ class StubGenerator: public StubCodeGenerator {
 
     address start = __ function_entry();
 
-    Label L_doLast, L_error;
-
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
     Register key            = R5_ARG3;  // round key array
@@ -2792,8 +2791,6 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, stub_id);
 
     address start = __ function_entry();
-
-    Label L_doLast, L_do44, L_do52, L_error;
 
     Register from           = R3_ARG1;  // source array address
     Register to             = R4_ARG2;  // destination array address
@@ -3655,7 +3652,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_floatToFloat16() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    StubId stub_id = StubId::stubgen_f2hf_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ f2hf(R3_RET, F1_ARG1, F0);
     __ blr();
@@ -3664,7 +3662,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_float16ToFloat() {
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    StubId stub_id = StubId::stubgen_hf2f_id;
+    StubCodeMark mark(this, stub_id);
     address start = __ function_entry();
     __ hf2f(F1_RET, R3_ARG1);
     __ blr();
@@ -4733,7 +4732,7 @@ void generate_lookup_secondary_supers_table_stub() {
     }
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
       DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
       __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
@@ -4778,7 +4777,7 @@ void generate_lookup_secondary_supers_table_stub() {
     __ mr(R1_SP, R3_RET); // R3_RET contains the SP of the thawed top frame
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       // we're now in the caller of the frame that returned to the barrier
       __ mr(R3_RET, nvtmp); __ fmr(F1_RET, nvftmp); // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
     } else {
@@ -4950,7 +4949,7 @@ void generate_lookup_secondary_supers_table_stub() {
     // Generates all stubs and initializes the entry points
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
     StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
