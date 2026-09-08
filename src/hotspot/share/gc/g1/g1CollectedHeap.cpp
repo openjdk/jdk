@@ -2861,11 +2861,11 @@ void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryS
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
   size_t total_old_allocated = _old_evac_stats.allocated() + _old_evac_stats.direct_allocated();
-  uint total_allocated = _survivor_evac_stats.num_filled_regions() + _old_evac_stats.num_filled_regions();
+  uint num_allocated_regions = _survivor_evac_stats.num_filled_regions() + _old_evac_stats.num_filled_regions();
 
   log_debug(gc)("Allocated %u survivor %u old percent total %1.2f%% (%u%%)",
                 _survivor_evac_stats.num_filled_regions(), _old_evac_stats.num_filled_regions(),
-                percent_of(total_allocated, num_committed_regions() - total_allocated),
+                percent_of(num_allocated_regions, num_committed_regions() - num_allocated_regions),
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->

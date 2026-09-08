@@ -42,12 +42,12 @@ G1EvacFailureRegions::~G1EvacFailureRegions() {
   assert(_evac_failed_regions == nullptr, "not cleaned up");
 }
 
-void G1EvacFailureRegions::pre_collection(uint max_regions) {
+void G1EvacFailureRegions::pre_collection(uint max_num_regions) {
   _num_evac_failed_regions.store_relaxed(0u);
-  _evac_failed_regions_map.resize(max_regions);
-  _regions_pinned.resize(max_regions);
-  _regions_alloc_failed.resize(max_regions);
-  _evac_failed_regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
+  _evac_failed_regions_map.resize(max_num_regions);
+  _regions_pinned.resize(max_num_regions);
+  _regions_alloc_failed.resize(max_num_regions);
+  _evac_failed_regions = NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC);
 }
 
 void G1EvacFailureRegions::post_collection() {

@@ -181,7 +181,7 @@ create_g1_evacstats(unsigned gcid, const G1EvacSummary& summary) {
   s.set_used(summary.used() * HeapWordSize);
   s.set_undoWaste(summary.undo_wasted() * HeapWordSize);
   s.set_regionEndWaste(summary.region_end_waste() * HeapWordSize);
-  s.set_regionsRefilled(summary.regions_filled());
+  s.set_regionsRefilled(summary.num_regions_filled());
   s.set_directAllocated(summary.direct_allocated() * HeapWordSize);
   s.set_failureUsed(summary.failure_used() * HeapWordSize);
   s.set_failureWaste(summary.failure_waste() * HeapWordSize);

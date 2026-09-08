@@ -66,7 +66,7 @@ public:
     _bytes_used = used;
   }
 
-  void add_to_freed_regions(uint num_freed_regions) {
+  void add_to_num_freed_regions(uint num_freed_regions) {
     _num_freed_regions += num_freed_regions;
   }
 
