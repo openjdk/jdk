@@ -84,10 +84,10 @@ DEF_STATIC_JNI_OnLoad
 /*
  * Opens the named file for reading, returning a ZFILE.
  *
- * Compare this with winFileHandleOpen in windows/native/java/io/io_util_md.c.
+ * Compare this with winFileHandleOpen in windows/native/libjava/io_util_md.c.
  * This function does not take JNIEnv* and uses CreateFile (instead of
- * CreateFileW).  The expectation is that this function will be called only
- * from ZIP_Open_Generic, which in turn is used by the JVM, where we do not
+ * CreateFileW). The expectation is that this function will be called only
+ * from ZIP_Open, which in turn is used by the JVM, where we do not
  * need to concern ourselves with wide chars.
  */
 static ZFILE
@@ -767,39 +767,13 @@ readCEN(jzfile *zip, jint knownTotal)
 }
 
 /*
- * Opens a zip file with the specified mode. Returns the jzfile object
- * or NULL if an error occurred. If a zip error occurred then *pmsg will
- * be set to the error message text if pmsg != 0. Otherwise, *pmsg will be
- * set to NULL. Caller doesn't need to free the error message.
- * The error message, if set, points to a static thread-safe buffer.
- */
-jzfile *
-ZIP_Open_Generic(const char *name, char **pmsg, int mode, jlong lastModified)
-{
-    jzfile *zip = NULL;
-
-    /* Clear zip error message */
-    if (pmsg != NULL) {
-        *pmsg = NULL;
-    }
-
-    zip = ZIP_Get_From_Cache(name, pmsg, lastModified);
-
-    if (zip == NULL && pmsg != NULL && *pmsg == NULL) {
-        ZFILE zfd = ZFILE_Open(name, mode);
-        zip = ZIP_Put_In_Cache(name, zfd, pmsg, lastModified);
-    }
-    return zip;
-}
-
-/*
  * Returns the jzfile corresponding to the given file name from the cache of
  * zip files, or NULL if the file is not in the cache.  If the name is longer
  * than PATH_MAX or a zip error occurred then *pmsg will be set to the error
  * message text if pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller
  * doesn't need to free the error message.
  */
-jzfile *
+static jzfile *
 ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
 {
     char buf[PATH_MAX];
@@ -827,8 +801,9 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
     MLOCK(zfiles_lock);
     for (zip = zfiles; zip != NULL; zip = zip->next) {
         if (strcmp(name, zip->name) == 0
-            && (zip->lastModified == lastModified || zip->lastModified == 0)
-            && zip->refs < MAXREFS) {
+                && (zip->lastModified == lastModified || zip->lastModified == 0)
+                && zip->refs < MAXREFS) {
+
             zip->refs++;
             break;
         }
@@ -844,16 +819,8 @@ ZIP_Get_From_Cache(const char *name, char **pmsg, jlong lastModified)
  * pmsg != 0. Otherwise, *pmsg will be set to NULL. Caller doesn't need to
  * free the error message.
  */
-
-jzfile *
+static jzfile *
 ZIP_Put_In_Cache(const char *name, ZFILE zfd, char **pmsg, jlong lastModified)
-{
-    return ZIP_Put_In_Cache0(name, zfd, pmsg, lastModified, JNI_TRUE);
-}
-
-jzfile *
-ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
-                 jboolean usemmap)
 {
     char errbuf[256];
     jlong len;
@@ -864,7 +831,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     }
 
 #ifdef USE_MMAP
-    zip->usemmap = usemmap;
+    zip->usemmap = JNI_TRUE;
 #endif
     zip->refs = 1;
     zip->lastModified = lastModified;
@@ -916,15 +883,28 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
 
 /*
  * Opens a zip file for reading. Returns the jzfile object or NULL
- * if an error occurred. If a zip error occurred then *msg will be
- * set to the error message text if msg != 0. Otherwise, *msg will be
+ * if an error occurred. If a zip error occurred then *pmsg will be
+ * set to the error message text if pmsg != NULL. Otherwise, *pmsg will be
  * set to NULL. Caller doesn't need to free the error message.
+ * The error message, if set, points to a static thread-safe buffer.
  */
 JNIEXPORT jzfile *
 ZIP_Open(const char *name, char **pmsg)
 {
-    jzfile *file = ZIP_Open_Generic(name, pmsg, O_RDONLY, 0);
-    return file;
+    jzfile *zip = NULL;
+
+    /* Clear zip error message */
+    if (pmsg != NULL) {
+        *pmsg = NULL;
+    }
+    const jlong lastModified = 0;
+    zip = ZIP_Get_From_Cache(name, pmsg, lastModified);
+
+    if (zip == NULL && pmsg != NULL && *pmsg == NULL) {
+        ZFILE zfd = ZFILE_Open(name, O_RDONLY);
+        zip = ZIP_Put_In_Cache(name, zfd, pmsg, lastModified);
+    }
+    return zip;
 }
 
 /*
@@ -1124,6 +1104,24 @@ newEntry(jzfile *zip, jzcell *zc, AccessHint accessHint)
 }
 
 /*
+ * Locks the specified zip file for reading.
+ */
+static void
+ZIP_Lock(jzfile *zip)
+{
+    MLOCK(zip->lock);
+}
+
+/*
+ * Unlocks the specified zip file.
+ */
+static void
+ZIP_Unlock(jzfile *zip)
+{
+    MUNLOCK(zip->lock);
+}
+
+/*
  * Free the given jzentry.
  * In fact we maintain a one-entry cache of the most recently used
  * jzentry for each zip.  This optimizes a common access pattern.
@@ -1239,29 +1237,11 @@ ZIP_GetNextEntry(jzfile *zip, jint n)
 }
 
 /*
- * Locks the specified zip file for reading.
- */
-void
-ZIP_Lock(jzfile *zip)
-{
-    MLOCK(zip->lock);
-}
-
-/*
- * Unlocks the specified zip file.
- */
-void
-ZIP_Unlock(jzfile *zip)
-{
-    MUNLOCK(zip->lock);
-}
-
-/*
  * Returns the offset of the entry data within the zip file.
  * Returns -1 if an error occurred, in which case zip->msg will
  * contain the error text.
  */
-jlong
+static jlong
 ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
 {
     /* The Zip file spec explicitly allows the LOC extra data size to
@@ -1297,7 +1277,7 @@ ZIP_GetEntryDataOffset(jzfile *zip, jzentry *entry)
  * The current implementation does not support reading an entry that
  * has the size bigger than 2**32 bytes in ONE invocation.
  */
-jint
+static jint
 ZIP_Read(jzfile *zip, jzentry *entry, jlong pos, void *buf, jint len)
 {
     jlong entry_size;

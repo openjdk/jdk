@@ -29,6 +29,7 @@
 #include "ci/ciFlags.hpp"
 #include "ci/ciKlass.hpp"
 #include "ci/ciSymbol.hpp"
+#include "classfile/classFileParser.hpp"
 #include "oops/instanceKlass.hpp"
 
 // ciInstanceKlass
@@ -261,6 +262,10 @@ public:
     assert(_nonstatic_fields != nullptr, "");
     return _nonstatic_fields->at(i);
   }
+
+  int number_of_oop_entries_in_acmp_map() const;
+  int number_of_nonoop_entries_in_acmp_map() const;
+  AcmpMapSegment get_nonoop_segment_of_acmp_map(int i) const;
 
   ciInstanceKlass* unique_concrete_subklass();
   bool has_finalizable_subclass();

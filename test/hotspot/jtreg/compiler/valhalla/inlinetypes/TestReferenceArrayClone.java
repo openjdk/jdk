@@ -23,15 +23,18 @@
 
 /*
  * @test
- * @summary Verify that clone preserves the layout of reference arrays.
- * @bug 8388256
+ * @summary Verify that C2 preserves the layout of reference array clones.
+ * @bug 8388256 8390451
  * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
- * @run main ${test.main.class}
+ * @run main/othervm -Xbatch ${test.main.class}
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:-UseTLAB
- *                   -XX:CompileCommand=compileonly,${test.main.class}::testClone
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *                   ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-UseTLAB -XX:-DoEscapeAnalysis
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   ${test.main.class}
  */
 
@@ -41,17 +44,43 @@ import jdk.internal.value.ValueClass;
 import jdk.test.lib.Asserts;
 
 public class TestReferenceArrayClone {
+    static final Integer[] ARRAY = (Integer[])ValueClass.newReferenceArray(Integer.class, 1);
+
     static Integer[] testClone(Integer[] a) {
         return a.clone();
     }
 
-    public static void main(String[] args) {
-        Integer[] array = (Integer[])ValueClass.newReferenceArray(Integer.class, 1);
+    static void testDeopt(boolean deopt) {
+        Integer[] array = (Integer[])ValueClass.newReferenceArray(Integer.class, 1).clone();
         array[0] = 42;
-        array = testClone(array);
-        Asserts.assertEQ(array[0], 42, "unexpected element");
+        if (deopt) {
+            verify(array);
+        }
+    }
+
+    static void testDeoptClone(boolean deopt) {
+        Integer[] clone = ARRAY.clone();
+        if (deopt) {
+            verify(clone);
+        }
+    }
+
+    static void verify(Integer[] array) {
         Asserts.assertFalse(ValueClass.isFlatArray(array), "should not be flat");
         Asserts.assertFalse(ValueClass.isNullRestrictedArray(array), "should not be null-restricted");
         Asserts.assertTrue(ValueClass.isAtomicArray(array), "should be atomic");
+        Asserts.assertEQ(array[0], 42, "unexpected element");
+    }
+
+    public static void main(String[] args) {
+        ARRAY[0] = 42;
+        verify(testClone(ARRAY));
+
+        for (int i = 0; i < 20_000; i++) {
+            testDeopt(false);
+            testDeoptClone(false);
+        }
+        testDeopt(true);
+        testDeoptClone(true);
     }
 }

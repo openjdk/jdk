@@ -457,17 +457,18 @@ class Address {
 
   Address(address target, relocInfo::relocType rtype = relocInfo::external_word_type);
 
-  Address(Register base, RegisterOrConstant index, extend ext = lsl()) {
+  Address(Register base, RegisterOrConstant index, extend ext = lsl(0)) {
     if (index.is_register()) {
       _mode = base_plus_offset_reg;
       new (&_nonliteral) Nonliteral(base, index.as_register(), 0, ext);
     } else {
       guarantee(ext.option() == ext::uxtx, "should be");
       assert(index.is_constant(), "should be");
+      assert(ext.shift() == 0, "must be");
       _mode = base_plus_offset;
       new (&_nonliteral) Nonliteral(base,
                                     noreg,
-                                    index.as_constant() << ext.shift());
+                                    index.as_constant());
     }
   }
 

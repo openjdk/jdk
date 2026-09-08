@@ -51,8 +51,7 @@ import compiler.lib.compile_framework.CompileFramework;
 import compiler.lib.template_framework.ScopeToken;
 import compiler.lib.template_framework.Template;
 
-import static compiler.lib.template_framework.Template.let;
-import static compiler.lib.template_framework.Template.scope;
+import static compiler.lib.template_framework.Template.*;
 
 public class TestScalarizedCallingConventionLimits {
     private static final String GENERATED_CLASS_NAME = "GeneratedScalarizedCallingConventionLimits";
@@ -89,7 +88,7 @@ public class TestScalarizedCallingConventionLimits {
                 """,
             // Generate interfaces with value and identity-class implementations and a method
             // with a varying number of arguments to stress test the calling convention.
-            loop(MAX_ARGUMENT_COUNT, argumentCount -> scope(
+            repeat(MAX_ARGUMENT_COUNT, argumentCount -> scope(
                 let("argumentCount", argumentCount),
                 let("classname", "ValueImpl" + argumentCount),
                 let("parameters", commaSeparated(argumentCount, i -> "Integer a" + i)),
@@ -138,19 +137,19 @@ public class TestScalarizedCallingConventionLimits {
                 """)),
             // Generate methods with a value class receiver with a varying number of oop fields to stress
             // test code buffers during nmethod entry point generation (oops need GC barriers etc.)
-            loop(MAX_OOP_RECEIVER_FIELD_COUNT, fieldCount -> scope(
+            repeat(MAX_OOP_RECEIVER_FIELD_COUNT, fieldCount -> scope(
                 let("fieldCount", fieldCount),
                 let("arguments", commaSeparated(fieldCount, i -> "f" + i)),
                 """
                     static value class OopReceiver#fieldCount {
                 """,
-            loop(fieldCount, i -> scope(
+            repeat(fieldCount, i -> scope(
                "        Object f" + i + ";\n")),
                 """
 
                         OopReceiver#fieldCount(Object[] values) {
                 """,
-            loop(fieldCount, i -> scope(
+            repeat(fieldCount, i -> scope(
                "            this.f" + i + " = values[" + i + "];\n")),
                 """
                         }
@@ -176,9 +175,9 @@ public class TestScalarizedCallingConventionLimits {
                 """
                     public static void run() {
                 """,
-            loop(MAX_ARGUMENT_COUNT, i -> scope(
+            repeat(MAX_ARGUMENT_COUNT, i -> scope(
                "        test" + i + "();\n")),
-            loop(MAX_OOP_RECEIVER_FIELD_COUNT, i -> scope(
+            repeat(MAX_OOP_RECEIVER_FIELD_COUNT, i -> scope(
                "        testOopReceiver" + i + "();\n")),
                 """
                     }
@@ -189,12 +188,6 @@ public class TestScalarizedCallingConventionLimits {
 
     private static String commaSeparated(int count, IntFunction<String> element) {
         return IntStream.range(0, count).mapToObj(element).collect(Collectors.joining(", "));
-    }
-
-    private static List<ScopeToken> loop(int limit, IntFunction<ScopeToken> function) {
-        return IntStream.range(0, limit)
-                        .mapToObj(function)
-                        .toList();
     }
 }
 

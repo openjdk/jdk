@@ -46,6 +46,7 @@
 // the C++ compiler from potentially inserting random values in unused gaps.
 
 class InstanceKlass;
+class fieldDescriptor;
 
 class ResolvedFieldEntry {
   friend class VMStructs;

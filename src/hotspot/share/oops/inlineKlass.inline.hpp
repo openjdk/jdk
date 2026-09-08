@@ -115,30 +115,47 @@ inline address InlineKlass::payload_addr(oop o) const {
   return cast_from_oop<address>(o) + payload_offset();
 }
 
-template <typename T, class OopClosureType>
-void InlineKlass::oop_iterate_specialized(const address oop_addr, OopClosureType* closure) {
+template <typename T, typename Function>
+void InlineKlass::oop_iterate_value_payload_f(address payload, Function function) {
   OopMapBlock* map = start_of_nonstatic_oop_maps();
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
+  // OopMap offsets are relative to an object header, but we are iterating over
+  // inlined value payloads, which often don't have an object header. Set up a
+  // synthetic object base that can be used by the oop map offset calculations.
+  const address synthetic_object_base = payload - payload_offset();
+
   for (; map < end_map; map++) {
-    T* p = (T*) (oop_addr + map->offset());
+    T* p = (T*) (synthetic_object_base + map->offset());
     T* const end = p + map->count();
     for (; p < end; ++p) {
-      Devirtualizer::do_oop(closure, p);
+      function(p);
     }
   }
 }
 
 template <typename T, class OopClosureType>
-inline void InlineKlass::oop_iterate_specialized_bounded(const address oop_addr, OopClosureType* closure, uintptr_t lo, uintptr_t hi) {
+void InlineKlass::oop_iterate_value_payload(address payload, OopClosureType* closure) {
+  oop_iterate_value_payload_f<T>(payload, [&](T* p) {
+    Devirtualizer::do_oop(closure, p);
+  });
+}
+
+template <typename T, class OopClosureType>
+inline void InlineKlass::oop_iterate_value_payload_bounded(address payload, OopClosureType* closure, uintptr_t lo, uintptr_t hi) {
   OopMapBlock* map = start_of_nonstatic_oop_maps();
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   T* const l   = (T*) lo;
   T* const h   = (T*) hi;
 
+  // OopMap offsets are relative to an object header, but we are iterating over
+  // inlined value payloads, which often don't have an object header. Set up a
+  // synthetic object base that can be used by the oop map offset calculations.
+  const address synthetic_object_base = payload - payload_offset();
+
   for (; map < end_map; map++) {
-    T* p = (T*) (oop_addr + map->offset());
+    T* p = (T*) (synthetic_object_base + map->offset());
     T* end = p + map->count();
     if (p < l) {
       p = l;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1133,7 +1133,7 @@ namespace AccessInternal {
   // that the passed in types make sense.
 
   template <DecoratorSet decorators, typename T>
-  static void verify_types(){
+  inline void verify_types(){
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
     STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated

@@ -4236,11 +4236,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  load_klass(dst, src);
-  z_lg(dst, Address(dst, Klass::prototype_header_offset()));
-}
-
 void MacroAssembler::store_klass(Register klass, Register dst_oop, Register ck) {
   assert(!UseCompactObjectHeaders, "Don't use with compact headers");
   assert_different_registers(dst_oop, klass, Z_R0);
@@ -4265,15 +4260,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
   assert(test_bit <= 0xFFFF, "must fit in low 16 bits for z_tmll");
   // Load mark word
   z_lg(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // If unlocked bit is set we can directly use the mark word
-    z_tmll(temp_reg, markWord::unlocked_value);
-    z_brnaz(test_mark_word);
-    // Slow path: use klass prototype
-    load_prototype_header(temp_reg, oop);
-    bind(test_mark_word);
-  }
   z_tmll(temp_reg, test_bit);
   // Use branch_optimized to handle both near and far branches automatically
   branch_optimized(jmp_set ? Assembler::bcondNotAllZero : Assembler::bcondAllZero, jmp_label);
@@ -6357,11 +6343,9 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
   // instruction emitted as it is part of C1's null check semantics.
   z_lg(mark, Address(obj, mark_offset));
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
-    z_mvghi(om_cache_addr, 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  const Address om_cache_addr = Address(basic_lock, BasicObjectLock::lock_offset() + in_ByteSize((BasicLock::object_monitor_cache_offset_in_bytes())));
+  z_mvghi(om_cache_addr, 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(temp1, obj);
@@ -6388,7 +6372,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
 
   { // Try to lock. Transition lock bits 0b01 => 0b00
     const Register locked_obj = top;
-    z_oill(mark, markWord::unlocked_value);
+    z_oill(mark, markWord::lock_neutral_value);
     if (Arguments::is_valhalla_enabled()) {
       static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
                      "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
@@ -6397,7 +6381,7 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register temp1
     }
     z_lgr(locked_obj, mark);
     // Clear lock-bits from locked_obj (locked state)
-    z_xilf(locked_obj, markWord::unlocked_value);
+    z_xilf(locked_obj, markWord::lock_neutral_value);
     z_csg(mark, locked_obj, mark_offset, obj);
     branch_optimized(Assembler::bcondNotEqual, slow);
   }
@@ -6469,7 +6453,7 @@ void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, L
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   NearLabel not_unlocked;
-  z_tmll(mark, markWord::unlocked_value);
+  z_tmll(mark, markWord::lock_neutral_value);
   z_braz(not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -6478,7 +6462,7 @@ void MacroAssembler::fast_unlock(Register obj, Register temp1, Register temp2, L
   { // Try to unlock. Transition lock bits 0b00 => 0b01
     Register unlocked_obj = top;
     z_lgr(unlocked_obj, mark);
-    z_oill(unlocked_obj, markWord::unlocked_value);
+    z_oill(unlocked_obj, markWord::lock_neutral_value);
     z_csg(mark, unlocked_obj, mark_offset, obj);
     branch_optimized(Assembler::bcondEqual, unlocked);
   }
@@ -6506,10 +6490,8 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   NearLabel slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  z_mvghi(Address(box, BasicLock::object_monitor_cache_offset_in_bytes()), 0);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -6551,7 +6533,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     { // Try to lock. Transition lock bits 0b01 => 0b00
       assert(mark_offset == 0, "required to avoid a lea");
       const Register locked_obj = top;
-      z_oill(mark, markWord::unlocked_value);
+      z_oill(mark, markWord::lock_neutral_value);
       if (Arguments::is_valhalla_enabled()) {
         static_assert((uint32_t)markWord::inline_type_bit_in_place <= 0x7FFFFFFF,
                       "inline_type_bit_in_place must fit in low 32 bits for z_nilf");
@@ -6560,7 +6542,7 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
       }
       z_lgr(locked_obj, mark);
       // Clear lock-bits from locked_obj (locked state)
-      z_xilf(locked_obj, markWord::unlocked_value);
+      z_xilf(locked_obj, markWord::lock_neutral_value);
       z_csg(mark, locked_obj, mark_offset, obj);
       branch_optimized(Assembler::bcondNotEqual, slow_path);
     }
@@ -6587,61 +6569,57 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
     const ByteSize omc_obj_offset     = OMCache::obj_offset();
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == mark, "should be the same here");
-    } else {
-      const Register tmp1_bucket = tmp1;
-      const Register hash  = Z_R0_scratch;
-      NearLabel monitor_found;
+    const Register tmp1_bucket = tmp1;
+    const Register hash  = Z_R0_scratch;
+    NearLabel monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      z_lgr(hash, mark);
+    // Save the mark, we might need it to extract the hash.
+    z_lgr(hash, mark);
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      z_lg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
-      z_cg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
-      z_bre(monitor_found);
+    z_lg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+    z_cg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
+    z_bre(monitor_found);
 
-      // Get the hash code.
-      z_srlg(hash, hash, markWord::hash_shift);
+    // Get the hash code.
+    z_srlg(hash, hash, markWord::hash_shift);
 
-      // Get the table and calculate the bucket's address.
-      load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
-      z_lg(tmp2, Address(tmp2));
-      z_ng(hash, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
-      z_lg(tmp1_bucket, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
-      z_sllg(hash, hash, LogBytesPerWord);
-      z_agr(tmp1_bucket, hash);
+    // Get the table and calculate the bucket's address.
+    load_const_optimized(tmp2, ObjectMonitorTable::current_table_address());
+    z_lg(tmp2, Address(tmp2));
+    z_ng(hash, Address(tmp2, ObjectMonitorTable::table_capacity_mask_offset()));
+    z_lg(tmp1_bucket, Address(tmp2, ObjectMonitorTable::table_buckets_offset()));
+    z_sllg(hash, hash, LogBytesPerWord);
+    z_agr(tmp1_bucket, hash);
 
-      // Read the monitor from the bucket.
-      z_lg(tmp1_monitor, Address(tmp1_bucket));
+    // Read the monitor from the bucket.
+    z_lg(tmp1_monitor, Address(tmp1_bucket));
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      z_clgfi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      z_brl(slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    z_clgfi(tmp1_monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    z_brl(slow_path);
 
-      // Check if object matches.
-      z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
-      z_cgr(obj, tmp2);
-      z_brne(slow_path);
+    // Check if object matches.
+    z_lg(tmp2, Address(tmp1_monitor, ObjectMonitor::object_offset()));
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, tmp2, tmp2, Z_R0_scratch, slow_path);
+    z_cgr(obj, tmp2);
+    z_brne(slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      z_stg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
-      z_stg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
+    // Store the monitor in the current thread's object monitor cache (omc).
+    z_stg(tmp1_monitor, Address(Z_thread, thr_omc_offset + omc_monitor_offset));
+    z_stg(obj, Address(Z_thread, thr_omc_offset + omc_obj_offset));
 
-      bind(monitor_found);
-    }
+    bind(monitor_found);
+
     NearLabel monitor_locked;
     // lock the monitor
 
     const Register zero           = tmp2;
 
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset() - monitor_tag);
-    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset() - monitor_tag);
+    const Address owner_address(tmp1_monitor, ObjectMonitor::owner_offset());
+    const Address recursions_address(tmp1_monitor, ObjectMonitor::recursions_offset());
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     // If csg succeeds then CR=EQ, otherwise, register zero is filled
@@ -6659,10 +6637,8 @@ void MacroAssembler::compiler_fast_lock_object(Register obj, Register box, Regis
     z_agsi(recursions_address, 1ll);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock.
-      z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-    }
+    // Cache the monitor for unlock.
+    z_stg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
     // set the CC now
     z_cgr(obj, obj);
   }
@@ -6739,16 +6715,12 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
     // so that the runtime can fix any potential anonymous owner.
     z_lg(mark, Address(obj, mark_offset));
     z_tmll(mark, markWord::monitor_value);
-    if (!UseObjectMonitorTable) {
-      z_brnaz(inflated);
-    } else {
-      z_brnaz(push_and_slow_path);
-    }
+    z_brnaz(push_and_slow_path);
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
     NearLabel not_unlocked;
-    z_tmll(mark, markWord::unlocked_value);
+    z_tmll(mark, markWord::lock_neutral_value);
     z_braz(not_unlocked);
     stop("fast_unlock already unlocked");
     bind(not_unlocked);
@@ -6757,7 +6729,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
     { // Try to unlock. Transition lock bits 0b00 => 0b01
       Register unlocked_obj = top;
       z_lgr(unlocked_obj, mark);
-      z_oill(unlocked_obj, markWord::unlocked_value);
+      z_oill(unlocked_obj, markWord::lock_neutral_value);
       z_csg(mark, unlocked_obj, mark_offset, obj);
       branch_optimized(Assembler::bcondEqual, unlocked);
     }
@@ -6802,25 +6774,20 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
 
     const Register tmp1_monitor = tmp1;
 
-    if (!UseObjectMonitorTable) {
-      assert(tmp1_monitor == mark, "should be the same here");
-    } else {
-      // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
-      z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
-      // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
-      z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
+    // Uses ObjectMonitorTable.  Look for the monitor in our BasicLock on the stack.
+    z_lg(tmp1_monitor, Address(box, BasicLock::object_monitor_cache_offset_in_bytes()));
+    // null check with ZF == 0, no valid pointer below alignof(ObjectMonitor*)
+    z_cghi(tmp1_monitor, alignof(ObjectMonitor*));
 
-      z_brl(slow_path);
-    }
+    z_brl(slow_path);
 
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
 
-    const ByteSize monitor_tag = in_ByteSize(UseObjectMonitorTable ? 0 : checked_cast<int>(markWord::monitor_value));
-    const Address recursions_address{monitor, ObjectMonitor::recursions_offset() - monitor_tag};
-    const Address succ_address{monitor, ObjectMonitor::succ_offset() - monitor_tag};
-    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset() - monitor_tag};
-    const Address owner_address{monitor, ObjectMonitor::owner_offset() - monitor_tag};
+    const Address recursions_address{monitor, ObjectMonitor::recursions_offset()};
+    const Address succ_address{monitor, ObjectMonitor::succ_offset()};
+    const Address entry_list_address{monitor, ObjectMonitor::entry_list_offset()};
+    const Address owner_address{monitor, ObjectMonitor::owner_offset()};
 
     NearLabel not_recursive;
     const Register recursions = tmp2;
@@ -6856,9 +6823,6 @@ void MacroAssembler::compiler_fast_unlock_object(Register obj, Register box, Reg
 
     // Save the monitor pointer in the current thread, so we can try to
     // reacquire the lock in SharedRuntime::monitor_exit_helper().
-    if (!UseObjectMonitorTable) {
-      z_xilf(monitor, markWord::monitor_value);
-    }
     z_stg(monitor, Address(Z_thread, JavaThread::unlocked_inflated_monitor_offset()));
 
     z_ltgr(obj, obj); // Set flag = NE

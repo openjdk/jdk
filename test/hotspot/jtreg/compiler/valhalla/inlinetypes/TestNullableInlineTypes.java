@@ -38,15 +38,15 @@ import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
 import static compiler.lib.ir_framework.IRNode.CMP_N;
 import static compiler.lib.ir_framework.IRNode.CMP_P;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 /*
@@ -164,8 +164,8 @@ public class TestNullableInlineTypes {
     public static void main(String[] args) {
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck");
+        scenarios[3].addFlags("-XX:+UnlockDiagnosticVMOptions", "-XX:+UseArrayFlattening", "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
+        scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])
@@ -3018,7 +3018,6 @@ public class TestNullableInlineTypes {
     }
 
     // Test that the ConstraintCastNode::Ideal transformation propagates null-free information
-    /* TODO 8389088: Re-enable once fixed.
     @Test
     public MyValue1 test103() {
         Object obj = hide(null);
@@ -3029,7 +3028,6 @@ public class TestNullableInlineTypes {
     public void test103_verifier() {
         Asserts.assertEQ(test103(), null);
     }
-    */
 
     // Test null restricted fields
 

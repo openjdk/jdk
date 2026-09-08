@@ -2688,7 +2688,6 @@ void MacroAssembler::tlab_allocate(
 void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register obj, Register box,
                                                Register tmp1, Register tmp2, Register tmp3) {
   assert_different_registers(obj, box, tmp1, tmp2, tmp3);
-  assert(UseObjectMonitorTable || tmp3 == noreg, "tmp3 not needed");
   assert(flag == CR0, "bad condition register");
 
   // Handle inflated monitor.
@@ -2698,11 +2697,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
   // Finish fast lock unsuccessfully. MUST branch to with flag == EQ
   Label slow_path;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    li(tmp1, 0);
-    std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  li(tmp1, 0);
+  std(tmp1, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(tmp1, obj);
@@ -2737,7 +2734,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     // Check for monitor (0b10) or locked (0b00).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(R0, mark, markWord::lock_mask_in_place);
-    cmpldi(CR0, R0, markWord::unlocked_value);
+    cmpldi(CR0, R0, markWord::lock_neutral_value);
     bgt(CR0, inflated);
     bne(CR0, slow_path);
 
@@ -2760,9 +2757,9 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
     // mark contains the tagged ObjectMonitor*.
     const uintptr_t monitor_tag = markWord::monitor_value;
-    const Register monitor    = UseObjectMonitorTable ? tmp1 : noreg;
+    const Register monitor    = tmp1;
     const Register owner_addr = tmp2;
-    const Register thread_id  = UseObjectMonitorTable ? tmp3 : tmp1;
+    const Register thread_id  = tmp3;
     // Offsets into the current thread's object monitor cache (omc).
     const ByteSize thr_omc_offset     = JavaThread::om_cache_offset();
     const ByteSize omc_monitor_offset = OMCache::monitor_offset();
@@ -2770,61 +2767,55 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
 
     Label monitor_locked;
 
-    if (!UseObjectMonitorTable) {
-      // Compute owner address.
-      addi(owner_addr, mark, in_bytes(ObjectMonitor::owner_offset()) - monitor_tag);
-      mark = noreg;
-    } else {
-      const Register tmp3_bucket = tmp3;
-      const Register tmp2_hash = tmp2;
-      Label monitor_found;
+    const Register tmp3_bucket = tmp3;
+    const Register tmp2_hash = tmp2;
+    Label monitor_found;
 
-      // Save the mark, we might need it to extract the hash.
-      mr(tmp2_hash, mark);
+    // Save the mark, we might need it to extract the hash.
+    mr(tmp2_hash, mark);
 
-      // Look for the monitor in the current thread's object monitor cache (omc).
+    // Look for the monitor in the current thread's object monitor cache (omc).
 
-      ld(R0, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
-      ld(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
-      cmpd(CR0, R0, obj);
-      beq(CR0, monitor_found);
+    ld(R0, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
+    ld(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
+    cmpd(CR0, R0, obj);
+    beq(CR0, monitor_found);
 
-      // Look for the monitor in the table.
+    // Look for the monitor in the table.
 
-      // Get the hash code.
-      srdi(tmp2_hash, tmp2_hash, markWord::hash_shift);
+    // Get the hash code.
+    srdi(tmp2_hash, tmp2_hash, markWord::hash_shift);
 
-      // Get the table and calculate the bucket's address
-      int simm16_rest = load_const_optimized(tmp3, ObjectMonitorTable::current_table_address(), R0, true);
-      ld_ptr(tmp3, simm16_rest, tmp3);
-      ld(tmp1, in_bytes(ObjectMonitorTable::table_capacity_mask_offset()), tmp3);
-      andr(tmp2_hash, tmp2_hash, tmp1);
-      ld(tmp3_bucket, in_bytes(ObjectMonitorTable::table_buckets_offset()), tmp3);
+    // Get the table and calculate the bucket's address
+    int simm16_rest = load_const_optimized(tmp3, ObjectMonitorTable::current_table_address(), R0, true);
+    ld_ptr(tmp3, simm16_rest, tmp3);
+    ld(tmp1, in_bytes(ObjectMonitorTable::table_capacity_mask_offset()), tmp3);
+    andr(tmp2_hash, tmp2_hash, tmp1);
+    ld(tmp3_bucket, in_bytes(ObjectMonitorTable::table_buckets_offset()), tmp3);
 
-      // Read the monitor from the bucket.
-      sldi(tmp2_hash, tmp2_hash, LogBytesPerWord);
-      ldx(monitor, tmp3_bucket, tmp2_hash);
+    // Read the monitor from the bucket.
+    sldi(tmp2_hash, tmp2_hash, LogBytesPerWord);
+    ldx(monitor, tmp3_bucket, tmp2_hash);
 
-      // Check if the monitor in the bucket is special (empty, tombstone or removed).
-      cmpldi(CR0, monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
-      blt(CR0, slow_path);
+    // Check if the monitor in the bucket is special (empty, tombstone or removed).
+    cmpldi(CR0, monitor, ObjectMonitorTable::SpecialPointerValues::below_is_special);
+    blt(CR0, slow_path);
 
-      // Check if object matches.
-      ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
-      BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
-      bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
-      cmpd(CR0, tmp3, obj);
-      bne(CR0, slow_path);
+    // Check if object matches.
+    ld(tmp3, in_bytes(ObjectMonitor::object_offset()), monitor);
+    BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
+    bs_asm->try_peek_weak_handle_in_nmethod(this, tmp3, tmp3, tmp2, slow_path);
+    cmpd(CR0, tmp3, obj);
+    bne(CR0, slow_path);
 
-      // Store the monitor in the current thread's object monitor cache (omc).
-      std(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
-      std(obj, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
+    // Store the monitor in the current thread's object monitor cache (omc).
+    std(monitor, in_bytes(thr_omc_offset + omc_monitor_offset), R16_thread);
+    std(obj, in_bytes(thr_omc_offset + omc_obj_offset), R16_thread);
 
-      bind(monitor_found);
+    bind(monitor_found);
 
-      // Compute owner address.
-      addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
-    }
+    // Compute owner address.
+    addi(owner_addr, monitor, in_bytes(ObjectMonitor::owner_offset()));
 
     // Try to CAS owner (no owner => current thread's _monitor_owner_id).
     assert_different_registers(thread_id, monitor, owner_addr, box, R0);
@@ -2843,23 +2834,14 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     bne(CR0, slow_path);
 
     // Recursive.
-    if (!UseObjectMonitorTable) {
-      assert_different_registers(tmp1, owner_addr);
-      ld(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
-      addi(tmp1, tmp1, 1);
-      std(tmp1, in_bytes(ObjectMonitor::recursions_offset() - ObjectMonitor::owner_offset()), owner_addr);
-    } else {
-      assert_different_registers(tmp2, monitor);
-      ld(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-      addi(tmp2, tmp2, 1);
-      std(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
-    }
+    assert_different_registers(tmp2, monitor);
+    ld(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
+    addi(tmp2, tmp2, 1);
+    std(tmp2, in_bytes(ObjectMonitor::recursions_offset()), monitor);
 
     bind(monitor_locked);
-    if (UseObjectMonitorTable) {
-      // Cache the monitor for unlock.
-      std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
-    }
+    // Cache the monitor for unlock.
+    std(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
   }
 
   bind(locked);
@@ -2926,16 +2908,12 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     // Check for monitor (0b10).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(t, mark, markWord::monitor_value);
-    if (!UseObjectMonitorTable) {
-      bne(CR0, inflated);
-    } else {
-      bne(CR0, push_and_slow);
-    }
+    bne(CR0, push_and_slow);
 
 #ifdef ASSERT
     // Check header not unlocked (0b01).
     Label not_unlocked;
-    andi_(t, mark, markWord::unlocked_value);
+    andi_(t, mark, markWord::lock_neutral_value);
     beq(CR0, not_unlocked);
     stop("fast_unlock already unlocked");
     bind(not_unlocked);
@@ -2980,15 +2958,10 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
     const Register monitor = mark;
     const uintptr_t monitor_tag = markWord::monitor_value;
 
-    if (!UseObjectMonitorTable) {
-      // Untag the monitor.
-      subi(monitor, mark, monitor_tag);
-    } else {
-      ld(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
-      // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
-      cmpldi(CR0, monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
-      blt(CR0, slow_path);
-    }
+    ld(monitor, BasicLock::object_monitor_cache_offset_in_bytes(), box);
+    // null check with Flags == NE, no valid pointer below alignof(ObjectMonitor*)
+    cmpldi(CR0, monitor, checked_cast<uint8_t>(alignof(ObjectMonitor*)));
+    blt(CR0, slow_path);
 
     const Register recursions = tmp2;
     Label not_recursive;
@@ -3359,16 +3332,6 @@ void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int
                                             Label& jmp_label, bool maybe_far) {
   // load mark word
   ld(temp_reg, oopDesc::mark_offset_in_bytes(), oop);
-  if (!UseObjectMonitorTable) {
-    Label test_mark_word;
-    // if unlocked bit is set we can directly use the mark word
-    andi_(R0, temp_reg, markWord::unlocked_value);
-    bne(CR0, test_mark_word);
-    // slow path use klass prototype
-    load_prototype_header(temp_reg, oop);
-
-    bind(test_mark_word);
-  }
   andi_(R0, temp_reg, test_bit);
   if (maybe_far) {
     bc_far_optimized(jmp_set ? Assembler::bcondCRbiIs0 : Assembler::bcondCRbiIs1,
@@ -3409,11 +3372,6 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   } else {
     lwz(dst, oopDesc::klass_offset_in_bytes(), src);
   }
-}
-
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  load_klass(dst, src);
-  ld(dst, Klass::prototype_header_offset(), dst);
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info) {
@@ -4875,17 +4833,18 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 
   bind(retry);
-  STATIC_ASSERT(markWord::locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
-    xori(tmp, tmp, markWord::unlocked_value); // flip unlocked bit
+    xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit
     andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
-    bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0) or belongs to an inline type
+    bne(CR0, failed); // failed if new header doesn't contain fast_locked_value (which is 0) or belongs to an inline type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);
-    bne(CR0, failed); // failed if old header doesn't contain locked_value (which is 0)
-    ori(tmp, tmp, markWord::unlocked_value); // set unlocked bit
+    bne(CR0, failed); // failed if old header doesn't contain fast_locked_value (which is 0)
+    ori(tmp, tmp, markWord::lock_neutral_value); // set lock-neutral bit
   }
   stdcx_(tmp, obj);
   bne(CR0, retry);
@@ -4907,11 +4866,9 @@ void MacroAssembler::fast_lock(Register box, Register obj, Register t1, Register
   Label push;
   const Register t = R0;
 
-  if (UseObjectMonitorTable) {
-    // Clear cache in case fast locking succeeds or we need to take the slow-path.
-    li(t, 0);
-    std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
-  }
+  // Clear cache in case fast locking succeeds or we need to take the slow-path.
+  li(t, 0);
+  std(t, in_bytes(BasicObjectLock::lock_offset()) + BasicLock::object_monitor_cache_offset_in_bytes(), box);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(t1, obj);
@@ -4939,7 +4896,7 @@ void MacroAssembler::fast_lock(Register box, Register obj, Register t1, Register
 
   // Check header for monitor (0b10) or locked (0b00).
   ld(mark, oopDesc::mark_offset_in_bytes(), obj);
-  xori(t, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::lock_neutral_value);
   andi_(t, t, markWord::lock_mask_in_place);
   bne(CR0, slow);
 
@@ -5013,7 +4970,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  andi_(t, mark, markWord::unlocked_value);
+  andi_(t, mark, markWord::lock_neutral_value);
   beq(CR0, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);

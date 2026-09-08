@@ -822,38 +822,36 @@ const Type* CmpUNode::Value(PhaseGVN* phase) const {
     // Skip cases when input types are top or bottom.
     if ((t11 != Type::TOP) && (t11 != TypeInt::INT) &&
         (t12 != Type::TOP) && (t12 != TypeInt::INT)) {
-      const TypeInt *r0 = t11->is_int();
-      const TypeInt *r1 = t12->is_int();
-      jlong lo_r0 = r0->_lo;
-      jlong hi_r0 = r0->_hi;
-      jlong lo_r1 = r1->_lo;
-      jlong hi_r1 = r1->_hi;
+      const TypeInt *ti11 = t11->is_int();
+      const TypeInt *ti12 = t12->is_int();
+      jlong lo_ti11_range = ti11->_lo;
+      jlong hi_ti11_range = ti11->_hi;
+      jlong lo_ti12_range = ti12->_lo;
+      jlong hi_ti12_range = ti12->_hi;
       if (in1_op == Op_SubI) {
-        jlong tmp = hi_r1;
-        hi_r1 = -lo_r1;
-        lo_r1 = -tmp;
+        jlong tmp = hi_ti12_range;
+        hi_ti12_range = -lo_ti12_range;
+        lo_ti12_range = -tmp;
         // Note, for substructing [minint,x] type range
         // long arithmetic provides correct overflow answer.
         // The confusion come from the fact that in 32-bit
         // -minint == minint but in 64-bit -minint == maxint+1.
       }
-      jlong lo_long = lo_r0 + lo_r1;
-      jlong hi_long = hi_r0 + hi_r1;
-      int lo_tr1 = min_jint;
-      int hi_tr1 = (int)hi_long;
-      int lo_tr2 = (int)lo_long;
-      int hi_tr2 = max_jint;
-      bool underflow = lo_long != (jlong)lo_tr2;
-      bool overflow  = hi_long != (jlong)hi_tr1;
+      jlong lo_sum_range = lo_ti11_range + lo_ti12_range;
+      jlong hi_sum_range = hi_ti11_range + hi_ti12_range;
+      int hi_wrapped_range = (int)hi_sum_range;
+      int lo_wrapped_range = (int)lo_sum_range;
+      bool underflow = lo_sum_range != (jlong)lo_wrapped_range;
+      bool overflow  = hi_sum_range != (jlong)hi_wrapped_range;
       // Use sub(t1, t2) when there is no overflow (one type range)
       // or when both overflow and underflow (too complex).
-      if ((underflow != overflow) && (hi_tr1 < lo_tr2)) {
+      if ((underflow != overflow) && (hi_wrapped_range < lo_wrapped_range)) {
         // Overflow only on one boundary, compare 2 separate type ranges.
-        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
-        const TypeInt* tr1 = TypeInt::make(lo_tr1, hi_tr1, w);
-        const TypeInt* tr2 = TypeInt::make(lo_tr2, hi_tr2, w);
-        const TypeInt* cmp1 = sub(tr1, t2)->is_int();
-        const TypeInt* cmp2 = sub(tr2, t2)->is_int();
+        int w = MAX2(ti11->_widen, ti12->_widen); // _widen does not matter here
+        const TypeInt* wrapped_range1 = TypeInt::make(min_jint, hi_wrapped_range, w);
+        const TypeInt* wrapped_range2 = TypeInt::make(lo_wrapped_range, max_jint, w);
+        const TypeInt* cmp1 = sub(wrapped_range1, t2)->is_int();
+        const TypeInt* cmp2 = sub(wrapped_range2, t2)->is_int();
         // Compute union, so that cmp handles all possible results from the two cases
         const Type* t_cmp = cmp1->meet(cmp2);
         // Pick narrowest type, based on overflow computation and on immediate inputs
@@ -1070,12 +1068,6 @@ const Type *CmpPNode::sub( const Type *t1, const Type *t2 ) const {
 }
 
 static inline Node* isa_java_mirror_load(PhaseGVN* phase, Node* n, bool& might_be_an_array) {
-  // Return the klass node for (indirect load from OopHandle)
-  //   LoadBarrier?(LoadP(LoadP(AddP(foo:Klass, #java_mirror))))
-  //   or null if not matching.
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-    n = bs->step_over_gc_barrier(n);
-
   if (n->Opcode() != Op_LoadP) return nullptr;
 
   const TypeInstPtr* tp = phase->type(n)->isa_instptr();
@@ -2118,8 +2110,9 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
 Node* AbsNode::Identity(PhaseGVN* phase) {
   Node* in1 = in(1);
   // No need to do abs for non-negative values
-  if (phase->type(in1)->higher_equal(TypeInt::POS) ||
-      phase->type(in1)->higher_equal(TypeLong::POS)) {
+  const Type* in_type = phase->type(in1);
+  if ((in_type->isa_int() && in_type->is_int()->_lo >= 0) ||
+      (in_type->isa_long() && in_type->is_long()->_lo >= 0)) {
     return in1;
   }
   // Convert "abs(abs(x))" into "abs(x)"

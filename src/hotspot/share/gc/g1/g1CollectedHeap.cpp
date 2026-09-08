@@ -127,16 +127,6 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // apply to TLAB allocation, which is not part of this interface: it
 // is done by clients of this interface.)
 
-void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
-  G1HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
-}
-
-void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
-  // The from card cache is not the memory that is actually committed. So we cannot
-  // take advantage of the zero_filled parameter.
-  reset_from_card_cache(start_idx, num_regions);
-}
-
 // Collects commonly used scoped objects that are related to initial setup.
 class G1GCMark : StackObj {
   ResourceMark _rm;
@@ -1306,7 +1296,6 @@ G1CollectedHeap::G1CollectedHeap() :
   _old_set("Old Region Set", new OldRegionSetChecker()),
   _humongous_set("Humongous Region Set", new HumongousRegionSetChecker()),
   _bot(nullptr),
-  _listener(),
   _numa(G1NUMA::create()),
   _hrm(),
   _allocator(nullptr),
@@ -1332,7 +1321,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _rem_set(nullptr),
   _card_set_config(),
   _card_set_freelist_pool(G1CardSetConfiguration::num_mem_object_types()),
-  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungRegionId),
+  _young_regions_cset_group(card_set_config(), &_card_set_freelist_pool, G1CSetCandidateGroup::YoungId),
   _cm(nullptr),
   _cr(nullptr),
   _task_queues(nullptr),
@@ -1502,7 +1491,6 @@ jint G1CollectedHeap::initialize() {
                        heap_rs.base(),
                        heap_rs.size(),
                        page_size);
-  heap_storage->set_mapping_changed_listener(&_listener);
 
   // Create storage for the BOT, card table and the bitmap.
   G1RegionToSpaceMapper* bot_storage =
@@ -1541,10 +1529,6 @@ jint G1CollectedHeap::initialize() {
   const uint max_region_idx = (1U << (sizeof(RegionIdx_t)*BitsPerByte-1)) - 1;
   guarantee((max_num_regions() - 1) <= max_region_idx, "too many regions");
 
-  // The G1FromCardCache reserves card with value 0 as "invalid", so the heap must not
-  // start within the first card.
-  guarantee((uintptr_t)(heap_rs.base()) >= G1CardTable::card_size(), "Java heap must not start within the first card.");
-  G1FromCardCache::initialize(max_num_regions());
   // Also create a G1 rem set.
   _rem_set = new G1RemSet(this);
   _rem_set->initialize(max_num_regions());

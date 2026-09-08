@@ -34,8 +34,6 @@ import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 
 import static compiler.lib.ir_framework.IRNode.*;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_UNKNOWN_INLINE;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_UNKNOWN_INLINE;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 /*

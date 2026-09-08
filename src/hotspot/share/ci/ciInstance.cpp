@@ -235,6 +235,13 @@ ciConstant ciInstance::field_value_by_offset(int field_offset) {
   return field_value(field);
 }
 
+intptr_t ciInstance::hash() const {
+  VM_ENTRY_MARK;
+  oop obj = get_oop();
+  markWord mark = obj->mark();
+  if (mark.is_marked()) return markWord::no_hash;
+  return mark.hash();
+}
 // ------------------------------------------------------------------
 // ciInstance::print_impl
 //

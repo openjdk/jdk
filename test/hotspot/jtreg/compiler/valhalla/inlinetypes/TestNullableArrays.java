@@ -26,19 +26,19 @@ package compiler.valhalla.inlinetypes;
 import jdk.test.lib.Asserts;
 import compiler.lib.ir_framework.*;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_UNKNOWN_INLINE;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_UNKNOWN_INLINE;
 import static compiler.valhalla.inlinetypes.InlineTypes.rI;
 import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 import static compiler.valhalla.inlinetypes.InlineTypes.rD;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
+import static compiler.lib.ir_framework.IRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.LOAD_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.LOOP;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_UNKNOWN_INLINE;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 import jdk.internal.value.ValueClass;
@@ -136,10 +136,10 @@ public class TestNullableArrays {
     public static void main(String[] args) {
 
         Scenario[] scenarios = InlineTypes.DEFAULT_SCENARIOS;
-        scenarios[2].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
-        scenarios[3].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
-        scenarios[4].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
-        scenarios[5].addFlags("-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[2].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
+        scenarios[3].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[4].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast");
+        scenarios[5].addFlags("-XX:+IgnoreUnrecognizedVMOptions", "-XX:-MonomorphicArrayCheck", "-XX:-UncommonNullCast", "-XX:+StressArrayCopyMacroNode");
 
         InlineTypes.getFramework()
                    .addScenarios(scenarios[Integer.parseInt(args[0])])
@@ -979,7 +979,7 @@ public class TestNullableArrays {
     }
 
     @Test
-    @IR(failOn = {ALLOC_ARRAY_OF_MYVALUE_KLASS, LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
+    @IR(failOn = {LOOP, UNSTABLE_IF_TRAP, PREDICATE_TRAP})
     @IR(failOn = LOAD_OF_ANY_KLASS, applyIf = {"InlineTypeReturnedAsFields", "false"})
     @IR(counts = {LOAD_OF_ANY_KLASS, "4"}, applyIf = {"InlineTypeReturnedAsFields", "true"})
     public MyValue2 test29(MyValue2[] src) {

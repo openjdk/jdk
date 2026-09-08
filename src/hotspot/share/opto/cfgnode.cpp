@@ -2417,7 +2417,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    DEBUG_ONLY(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = phase->apply_identity(this));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {

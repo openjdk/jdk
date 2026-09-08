@@ -34,10 +34,11 @@ import java.lang.reflect.Method;
 
 import jdk.internal.vm.annotation.NullRestricted;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_INLINE_FIELDS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.ALLOC_ARRAY_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_INLINE_FIELDS;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
+
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.STATIC_CALL;

@@ -814,7 +814,6 @@ OopMapSet* Runtime1::generate_patching(StubAssembler* sasm, address target) {
 OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
   // for better readability
-  const bool must_gc_arguments = true;
   const bool dont_gc_arguments = false;
 
   // default value; overwritten for some optimized stubs that are called from methods that do not use the fpu

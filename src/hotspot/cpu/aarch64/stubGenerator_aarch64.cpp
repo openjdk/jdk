@@ -827,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ mov(rscratch1, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
     __ blr(rscratch1);
     __ hlt(0);
 
@@ -12826,7 +12826,7 @@ class StubGenerator: public StubCodeGenerator {
     // Native caller has no idea how to handle exceptions,
     // so we just crash here. Up to callee to catch exceptions.
     __ verify_oop(r0);
-    __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
     __ blr(rscratch1);
     __ should_not_reach_here();
 

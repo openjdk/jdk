@@ -81,10 +81,10 @@ public value class ClassPrintLayoutDcmd {
     }
 
     public static void main(String args[]) throws Exception {
-        testCmd("foo/bar", 0, "");
+        testCmd("foo.bar", 0, "");
         testCmd("", 1, "IllegalArgumentException", "mandatory");
-        testCmd("java/lang/Object", 0, "java/lang/Object", "@bootstrap");
-        testCmd("java/lang/Class", 0, "java/lang/Class", "@bootstrap");
-        testCmd("runtime/valhalla/inlinetypes/ClassPrintLayoutDcmd$Line", 0, "@app", "p1", "p2");
+        testCmd("java.lang.Object", 0, "java.lang.Object", "@bootstrap");
+        testCmd("java.lang.Class", 0, "java.lang.Class", "@bootstrap");
+        testCmd("runtime.valhalla.inlinetypes.ClassPrintLayoutDcmd$Line", 0, "@app", "p1", "p2");
     }
 }

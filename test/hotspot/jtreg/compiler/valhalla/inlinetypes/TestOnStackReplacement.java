@@ -30,9 +30,10 @@ import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.LooselyConsistentValue;
 import jdk.internal.vm.annotation.NullRestricted;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
+
 import static compiler.valhalla.inlinetypes.InlineTypes.rI;
 import static compiler.valhalla.inlinetypes.InlineTypes.rL;
 

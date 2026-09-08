@@ -135,6 +135,10 @@ public:
   static bool can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, Node* rhs);
   static Node* emit_substitutability_check(GraphKit* kit, Node* lhs, Node* rhs);
 
+  // Implementation of identityHashCode for value classes with restrictions (e.g. no oops)
+  static bool can_emit_identity_hash_code(const PhaseIterGVN& igvn, Node* arg, intptr_t& klass_hash);
+  static Node* emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t klass_hash);
+
   // Allocates the inline type (if not yet allocated)
   InlineTypeNode* buffer(GraphKit* kit, bool safe_for_replace = true);
   bool is_allocated(PhaseGVN* phase) const;

@@ -310,8 +310,9 @@ static Klass* get_refined_array_klass(Klass* k, frame* fr, RegisterMap* map, Obj
     assert(k->is_unrefined_objArray_klass(), "Expected unrefined array klass");
     nmethod* nm = fr->cb()->as_nmethod_or_null();
     assert(sv->has_properties(), "Property information is missing");
-    ArrayProperties props(checked_cast<ArrayProperties::Type>(StackValue::create_stack_value(fr, map, sv->properties())->get_jint()));
-    k = ObjArrayKlass::cast(k)->klass_with_properties(props, THREAD);
+    uint32_t value = checked_cast<uint32_t>(StackValue::create_stack_value(fr, map, sv->properties())->get_jint());
+    ArrayDescription description = ArrayDescription::from_value(value);
+    k = ObjArrayKlass::cast(k)->klass_from_description(description, THREAD);
   }
   return k;
 }
@@ -1481,15 +1482,7 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
             ObjectMonitor* waiting_monitor = deoptee_thread->current_waiting_monitor();
             if (waiting_monitor != nullptr && waiting_monitor->object() == obj()) {
               assert(fr.is_deoptimized_frame(), "frame must be scheduled for deoptimization");
-              if (UseObjectMonitorTable) {
-                mon_info->lock()->clear_object_monitor_cache();
-              }
-#ifdef ASSERT
-              else {
-                assert(!UseObjectMonitorTable, "must be");
-                mon_info->lock()->set_bad_monitor_deopt();
-              }
-#endif
+              mon_info->lock()->clear_object_monitor_cache();
               JvmtiDeferredUpdates::inc_relock_count_after_wait(deoptee_thread);
               continue;
             }
@@ -1499,21 +1492,17 @@ bool Deoptimization::relock_objects(JavaThread* thread, GrowableArray<MonitorInf
         // We have lost information about the correct state of the lock stack.
         // Entering may create an invalid lock stack. Inflate the lock if it
         // was fast_locked to restore the valid lock stack.
-        if (UseObjectMonitorTable) {
-          // UseObjectMonitorTable expects the BasicLock cache to be either a
-          // valid ObjectMonitor* or nullptr. Right now it is garbage, set it
-          // to nullptr.
-          lock->clear_object_monitor_cache();
-        }
+        // The BasicLock cache is expected to be either a valid ObjectMonitor*
+        // or nullptr. Right now it is garbage, hence we set it to nullptr.
+        lock->clear_object_monitor_cache();
         ObjectSynchronizer::enter_for(obj, lock, deoptee_thread);
         if (deoptee_thread->lock_stack().contains(obj())) {
             ObjectSynchronizer::inflate_fast_locked_object(obj(), ObjectSynchronizer::InflateCause::inflate_cause_vm_internal,
                                                            deoptee_thread, thread);
         }
-        assert(mon_info->owner()->is_locked(), "object must be locked now");
         assert(obj->mark().has_monitor(), "must be");
         assert(!deoptee_thread->lock_stack().contains(obj()), "must be");
-        assert(ObjectSynchronizer::read_monitor(obj(), obj->mark())->has_owner(deoptee_thread), "must be");
+        assert(ObjectSynchronizer::read_monitor(obj())->has_owner(deoptee_thread), "must be");
       }
     }
   }

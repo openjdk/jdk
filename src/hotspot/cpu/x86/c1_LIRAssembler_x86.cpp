@@ -262,7 +262,6 @@ void LIR_Assembler::osr_entry() {
   //
 
   // build frame
-  ciMethod* m = compilation()->method();
   __ build_frame(initial_frame_size_in_bytes(), bang_size_in_bytes());
 
   // OSR buffer is
@@ -1339,7 +1338,6 @@ void LIR_Assembler::type_profile_helper(Register mdo,
 
 void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, Label* failure, Label* obj_is_null) {
   // we always need a stub for the failure case.
-  CodeStub* stub = op->stub();
   Register obj = op->object()->as_register();
   Register k_RInfo = op->tmp1()->as_register();
   Register klass_RInfo = op->tmp2()->as_register();
@@ -1375,12 +1373,16 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+  Register mdo = noreg;
+  if (op->should_profile()) {
+    mdo = klass_RInfo;
+    __ mov_metadata(mdo, md->constant_encoding());
+  }
+
   if (op->need_null_check()) {
     __ testptr(obj, obj);
     if (op->should_profile()) {
       Label not_null;
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
       __ jccb(Assembler::notEqual, not_null);
       // Object is null; update MDO and exit
       Address data_addr(mdo, md->byte_offset_of_slot(data, DataLayout::flags_offset()));
@@ -1388,13 +1390,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ orb(data_addr, header_bits);
       __ jmp(*obj_is_null);
       __ bind(not_null);
-
-    Register recv = k_RInfo;
-    __ load_klass(recv, obj, tmp_load_klass);
-    type_profile_helper(mdo, md, data, recv);
     } else {
       __ jcc(Assembler::equal, *obj_is_null);
     }
+  }
+
+  if (op->should_profile()) {
+    Register recv = k_RInfo;
+    __ load_klass(recv, obj, tmp_load_klass);
+    type_profile_helper(mdo, md, data, recv);
   }
 
   if (!k->is_loaded()) {
@@ -1577,13 +1581,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ movptr(tmp, Address(op->array()->as_register(), oopDesc::mark_offset_in_bytes()));
-  __ testl(tmp, markWord::unlocked_value);
-  __ jccb(Assembler::notZero, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register(), rscratch1);
-  __ bind(test_mark_word);
   __ testl(tmp, markWord::null_free_array_bit_in_place);
 }
 
@@ -1628,12 +1627,8 @@ void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op
   } else {
     Register tmp1 = op->tmp1()->as_register();
     Register tmp2 = op->tmp2()->as_register();
-    if (left == right) { // same operand, so clearly the same klasses, let's save the check
-      __ jmp (*op->stub()->entry());  //  -> do slow check
-    } else {
-      __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
-      __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
-    }
+    __ cmp_klasses_from_objects(left, right, tmp1, tmp2);
+    __ jcc(Assembler::equal, *op->stub()->entry()); // same klass -> do slow check
     // fall through to L_oops_not_equal
   }
 
@@ -2345,7 +2340,7 @@ void LIR_Assembler::emit_static_call_stub() {
     return;
   }
 
-  int start = __ offset();
+  DEBUG_ONLY(int start = __ offset();)
 
   // make sure that the displacement word of the call ends up word aligned
   __ align(BytesPerWord, __ offset() + NativeMovConstReg::instruction_size_rex + NativeCall::displacement_offset);
@@ -2941,7 +2936,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
-  ciMethod* callee = op->profiled_callee();
   Register tmp_load_klass = rscratch1;
 
   // Update counter for all call types

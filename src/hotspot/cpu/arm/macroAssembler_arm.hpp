@@ -449,7 +449,7 @@ public:
   int should_not_call_this() {
     raw_push(FP, LR);
     should_not_reach_here();
-    flush();
+    invalidate_icache();
     return 2; // frame_size_in_words (FP+LR)
   }
 

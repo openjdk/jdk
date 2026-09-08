@@ -96,7 +96,6 @@ const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
 bool   Arguments::_executing_unit_tests         = false;
 
 // These parameters are reset in method parse_vm_init_args()
-bool   Arguments::_AlwaysCompileLoopMethods     = AlwaysCompileLoopMethods;
 bool   Arguments::_UseOnStackReplacement        = UseOnStackReplacement;
 bool   Arguments::_BackgroundCompilation        = BackgroundCompilation;
 bool   Arguments::_ClipInlining                 = ClipInlining;
@@ -401,7 +400,9 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("jdk.debug", VM_Version::jdk_debug_level(),  false));
 
   // Initialize the vm.info now, but it will need updating after argument parsing.
-  _vm_info = new SystemProperty("java.vm.info", VM_Version::vm_info_string(), true);
+  const char* vm_info_str = VM_Version::vm_info_string();
+  _vm_info = new SystemProperty("java.vm.info", vm_info_str, true);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   // Following are JVMTI agent writable properties.
   // Properties values are set to nullptr and they are
@@ -536,7 +537,6 @@ static SpecialFlag const special_jvm_flags[] = {
   // --- Deprecated alias flags (see also aliased_jvm_flags) - sorted by obsolete_in then expired_in:
   { "CreateMinidumpOnCrash",        JDK_Version::jdk(9),  JDK_Version::undefined(), JDK_Version::undefined() },
   { "InitiatingHeapOccupancyPercent", JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
-  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
@@ -547,6 +547,7 @@ static SpecialFlag const special_jvm_flags[] = {
 #ifdef _LP64
   { "UseCompressedClassPointers",   JDK_Version::jdk(25),  JDK_Version::jdk(27), JDK_Version::undefined() },
 #endif
+  { "AlwaysCompileLoopMethods",     JDK_Version::jdk(27),  JDK_Version::jdk(28), JDK_Version::jdk(29) },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1348,8 +1349,10 @@ void Arguments::set_mode_flags(Mode mode) {
 
   // Ensure Agent_OnLoad has the correct initial values.
   // This may not be the final mode; mode may change later in onload phase.
+  const char* vm_info_str = VM_Version::vm_info_string();
   PropertyList_unique_add(&_system_properties, "java.vm.info",
-                          VM_Version::vm_info_string(), AddProperty, UnwriteableProperty, ExternalProperty);
+                          vm_info_str, AddProperty, UnwriteableProperty, ExternalProperty);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   UseInterpreter             = true;
   UseCompiler                = true;
@@ -1358,7 +1361,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
-  AlwaysCompileLoopMethods   = Arguments::_AlwaysCompileLoopMethods;
   UseOnStackReplacement      = Arguments::_UseOnStackReplacement;
   BackgroundCompilation      = Arguments::_BackgroundCompilation;
 
@@ -1370,7 +1372,6 @@ void Arguments::set_mode_flags(Mode mode) {
   case _int:
     UseCompiler              = false;
     UseLoopCounter           = false;
-    AlwaysCompileLoopMethods = false;
     UseOnStackReplacement    = false;
     break;
   case _mixed:
@@ -1676,7 +1677,6 @@ Arguments::ArgsRange Arguments::parse_memory_size(const char* s,
 
 jint Arguments::parse_vm_init_args(GrowableArrayCHeap<VMInitArgsGroup, mtArguments>* all_args) {
   // Save default settings for some mode flags
-  Arguments::_AlwaysCompileLoopMethods = AlwaysCompileLoopMethods;
   Arguments::_UseOnStackReplacement    = UseOnStackReplacement;
   Arguments::_ClipInlining             = ClipInlining;
   Arguments::_BackgroundCompilation    = BackgroundCompilation;
@@ -3442,17 +3442,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   return JNI_OK;
 }
 
-void Arguments::set_compact_headers_flags() {
-#ifdef _LP64
-  if (UseCompactObjectHeaders && !UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      warning("-UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
-#endif
-}
-
 jint Arguments::apply_ergo() {
   // Set flags based on ergonomics.
   jint result = set_ergonomics_flags();
@@ -3462,8 +3451,6 @@ jint Arguments::apply_ergo() {
   GCConfig::arguments()->set_heap_size();
 
   GCConfig::arguments()->initialize();
-
-  set_compact_headers_flags();
 
   CompressedKlassPointers::pre_initialize();
 
@@ -3535,9 +3522,9 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseHashcodeFastPath);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);
     WARN_IF_NOT_DEFAULT_FLAG(FlatArrayElementMaxOops);
     WARN_IF_NOT_DEFAULT_FLAG(ForceNonTearable);
 #ifdef ASSERT
@@ -3617,6 +3604,37 @@ jint Arguments::apply_ergo() {
   if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+
+  bool any_parse_predicate_flag_enabled = UseLoopLimitCheckPredicate ||
+                                          UseAutoVectorizationPredicate ||
+                                          UseLoopPredicate ||
+                                          UseProfiledLoopPredicate ||
+                                          ShortRunningLongLoop;
+
+  if (!UseParsePredicates && any_parse_predicate_flag_enabled) {
+    // Disable any Parse Predicate enabling flag when UseParsePredicates is not set.
+    FLAG_SET_ERGO(UseLoopLimitCheckPredicate, false);
+    FLAG_SET_ERGO(UseLoopPredicate, false);
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+    FLAG_SET_ERGO(UseAutoVectorizationPredicate, false);
+    FLAG_SET_ERGO(ShortRunningLongLoop, false);
+
+    if ((!FLAG_IS_DEFAULT(UseLoopLimitCheckPredicate) && UseLoopLimitCheckPredicate) ||
+        (!FLAG_IS_DEFAULT(UseAutoVectorizationPredicate) && UseAutoVectorizationPredicate) ||
+        (!FLAG_IS_DEFAULT(UseLoopPredicate) && UseLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(UseProfiledLoopPredicate) && UseProfiledLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(ShortRunningLongLoop) && ShortRunningLongLoop)) {
+      warning("Disabling UseParsePredicates disables all Parse Predicate enabling flags: UseLoopLimitCheckPredicate,"
+              " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    }
+
+  }
+
+  if (UseParsePredicates && !any_parse_predicate_flag_enabled) {
+    warning("Disabling UseParsePredicates because all Parse Predicate flags are disabled: UseLoopLimitCheckPredicate,"
+            " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    FLAG_SET_ERGO(UseParsePredicates, false);
   }
 #endif // COMPILER2
 

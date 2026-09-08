@@ -109,7 +109,12 @@ void G1HeapRegion::handle_evacuation_failure(bool retain) {
   move_to_old();
 
   _rem_set->clean_code_roots(this);
-  _rem_set->clear(true /* only_cardset */, retain /* keep_tracked */);
+  assert(!_rem_set->has_cset_group(), "must not have a cset group");
+  if (retain) {
+    assert(_rem_set->is_tracked(), "must be");
+  } else {
+    _rem_set->set_state_untracked();
+  }
 }
 
 void G1HeapRegion::unlink_from_list() {
@@ -263,7 +268,7 @@ G1HeapRegion::G1HeapRegion(uint hrm_index,
   assert(Universe::on_page_boundary(mr.start()) && Universe::on_page_boundary(mr.end()),
          "invalid space boundaries");
 
-  _rem_set = new G1HeapRegionRemSet(this);
+  _rem_set = new G1HeapRegionRemSet();
   initialize();
 }
 
@@ -391,7 +396,7 @@ bool G1HeapRegion::verify_code_roots(VerifyOption vo) const {
   }
 
   G1HeapRegionRemSet* hrrs = rem_set();
-  size_t code_roots_length = hrrs->code_roots_list_length();
+  size_t code_roots_length = hrrs->code_roots_length();
 
   // if this region is empty then there should be no entries
   // on its code root list

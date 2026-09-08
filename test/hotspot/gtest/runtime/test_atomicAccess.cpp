@@ -351,3 +351,182 @@ TEST_VM(AtomicAccessBitopsTest, int64) {
 TEST_VM(AtomicAccessBitopsTest, uint64) {
   AtomicAccessBitopsTestSupport<uint64_t>()();
 }
+
+// The following tests verify that atomic operations produce correct results for
+// each atomic_memory_order value.  They don't verify the actual ordering
+// semantics (which would require multi-threaded stress tests).
+
+static const atomic_memory_order memory_orders[] = {
+  memory_order_relaxed,
+  memory_order_acquire,
+  memory_order_release,
+  memory_order_acq_rel,
+  memory_order_seq_cst,
+  memory_order_conservative,
+};
+
+template<typename T>
+struct AtomicAccessOrderedAddTestSupport {
+  volatile T _test_value;
+
+  AtomicAccessOrderedAddTestSupport() : _test_value{} {}
+
+  void test_add(atomic_memory_order order) {
+    T zero = 0;
+    T five = 5;
+    AtomicAccess::store(&_test_value, zero);
+    T value = AtomicAccess::add(&_test_value, five, order);
+    EXPECT_EQ(five, value);
+    EXPECT_EQ(five, AtomicAccess::load(&_test_value));
+  }
+
+  void test_fetch_add(atomic_memory_order order) {
+    T zero = 0;
+    T five = 5;
+    AtomicAccess::store(&_test_value, zero);
+    T value = AtomicAccess::fetch_then_add(&_test_value, five, order);
+    EXPECT_EQ(zero, value);
+    EXPECT_EQ(five, AtomicAccess::load(&_test_value));
+  }
+};
+
+TEST_VM(AtomicAccessOrderedAddTest, int32) {
+  using Support = AtomicAccessOrderedAddTestSupport<int32_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test_add(order);
+    Support().test_fetch_add(order);
+  }
+}
+
+TEST_VM(AtomicAccessOrderedAddTest, int64) {
+  using Support = AtomicAccessOrderedAddTestSupport<int64_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test_add(order);
+    Support().test_fetch_add(order);
+  }
+}
+
+template<typename T>
+struct AtomicAccessOrderedXchgTestSupport {
+  volatile T _test_value;
+
+  AtomicAccessOrderedXchgTestSupport() : _test_value{} {}
+
+  void test(atomic_memory_order order) {
+    T zero = 0;
+    T five = 5;
+    AtomicAccess::store(&_test_value, zero);
+    T res = AtomicAccess::xchg(&_test_value, five, order);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(five, AtomicAccess::load(&_test_value));
+  }
+};
+
+TEST_VM(AtomicAccessOrderedXchgTest, int32) {
+  using Support = AtomicAccessOrderedXchgTestSupport<int32_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
+TEST_VM(AtomicAccessOrderedXchgTest, int64) {
+  using Support = AtomicAccessOrderedXchgTestSupport<int64_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
+template<typename T>
+struct AtomicAccessOrderedCmpxchgTestSupport {
+  volatile T _test_value;
+
+  AtomicAccessOrderedCmpxchgTestSupport() : _test_value{} {}
+
+  void test(atomic_memory_order order) {
+    T zero = 0;
+    T five = 5;
+    T ten = 10;
+
+    // Failed cmpxchg: compare_value does not match.
+    AtomicAccess::store(&_test_value, zero);
+    T res = AtomicAccess::cmpxchg(&_test_value, five, ten, order);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(zero, AtomicAccess::load(&_test_value));
+
+    // Successful cmpxchg: compare_value matches.
+    res = AtomicAccess::cmpxchg(&_test_value, zero, ten, order);
+    EXPECT_EQ(zero, res);
+    EXPECT_EQ(ten, AtomicAccess::load(&_test_value));
+  }
+};
+
+TEST_VM(AtomicAccessOrderedCmpxchgTest, int8) {
+  using Support = AtomicAccessOrderedCmpxchgTestSupport<int8_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
+TEST_VM(AtomicAccessOrderedCmpxchgTest, int32) {
+  using Support = AtomicAccessOrderedCmpxchgTestSupport<int32_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
+TEST_VM(AtomicAccessOrderedCmpxchgTest, int64) {
+  using Support = AtomicAccessOrderedCmpxchgTestSupport<int64_t>;
+  for (atomic_memory_order order : memory_orders) {
+    Support().test(order);
+  }
+}
+
+template<typename T>
+struct AtomicAccessOrderedLoadStoreTestSupport {
+  volatile T _test_value;
+
+  AtomicAccessOrderedLoadStoreTestSupport() : _test_value{} {}
+
+  void test_release_store_load_acquire(T value) {
+    AtomicAccess::release_store(&_test_value, value);
+    T loaded = AtomicAccess::load_acquire(&_test_value);
+    EXPECT_EQ(value, loaded);
+  }
+
+  void test_release_store_fence(T value) {
+    AtomicAccess::release_store_fence(&_test_value, value);
+    T loaded = AtomicAccess::load_acquire(&_test_value);
+    EXPECT_EQ(value, loaded);
+  }
+};
+
+TEST_VM(AtomicAccessOrderedLoadStoreTest, int8) {
+  using Support = AtomicAccessOrderedLoadStoreTestSupport<int8_t>;
+  Support().test_release_store_load_acquire(42);
+  Support().test_release_store_fence(42);
+}
+
+TEST_VM(AtomicAccessOrderedLoadStoreTest, int16) {
+  using Support = AtomicAccessOrderedLoadStoreTestSupport<int16_t>;
+  Support().test_release_store_load_acquire(1234);
+  Support().test_release_store_fence(1234);
+}
+
+TEST_VM(AtomicAccessOrderedLoadStoreTest, int32) {
+  using Support = AtomicAccessOrderedLoadStoreTestSupport<int32_t>;
+  Support().test_release_store_load_acquire(123456);
+  Support().test_release_store_fence(123456);
+}
+
+TEST_VM(AtomicAccessOrderedLoadStoreTest, int64) {
+  using Support = AtomicAccessOrderedLoadStoreTestSupport<int64_t>;
+  Support().test_release_store_load_acquire(1234567890LL);
+  Support().test_release_store_fence(1234567890LL);
+}
+
+TEST_VM(AtomicAccessOrderedLoadStoreTest, ptr) {
+  int dummy[10] = {};
+  using Support = AtomicAccessOrderedLoadStoreTestSupport<int*>;
+  Support().test_release_store_load_acquire(&dummy[5]);
+  Support().test_release_store_fence(&dummy[7]);
+}

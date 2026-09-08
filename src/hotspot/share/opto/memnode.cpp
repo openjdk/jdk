@@ -563,7 +563,6 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
 
   if (mem != old_mem) {
     set_req_X(MemNode::Memory, mem, phase);
-    if (phase->type(mem) == Type::TOP) return NodeSentinel;
     return this;
   }
 
@@ -807,9 +806,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
           mb->in(0)->in(0) != nullptr && mb->in(0)->in(0)->is_ArrayCopy()) {
         ac = mb->in(0)->in(0)->as_ArrayCopy();
       } else {
-        // Step over GC barrier when ReduceInitialCardMarks is disabled
-        BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-        Node* control_proj_ac = bs->step_over_gc_barrier(mb->in(0));
+        Node* control_proj_ac = mb->in(0);
 
         if (control_proj_ac->is_Proj() && control_proj_ac->in(0)->is_ArrayCopy()) {
           ac = control_proj_ac->in(0)->as_ArrayCopy();
@@ -1250,8 +1247,19 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     Node* ctl = ac->in(0);
     Node* src = ac->in(ArrayCopyNode::Src);
 
-    if (!ac->as_ArrayCopy()->is_clonebasic() && !phase->type(src)->isa_aryptr()) {
+    const TypeAryPtr* dst_arytype = phase->type(ac->in(ArrayCopyNode::Dest))->isa_aryptr();
+    const TypeAryPtr* src_arytype = phase->type(src)->isa_aryptr();
+    if (src_arytype == nullptr && !ac->as_ArrayCopy()->is_clonebasic()) {
       return nullptr;
+    }
+
+    if (src_arytype != nullptr && dst_arytype != nullptr) {
+      // Cannot transform if the layouts are different
+      bool may_transform = (src_arytype->is_not_flat() && dst_arytype->is_not_flat()) ||
+                           (src_arytype->klass_is_exact() && dst_arytype->klass_is_exact() && src_arytype->exact_klass() == dst_arytype->exact_klass());
+      if (!may_transform) {
+        return nullptr;
+      }
     }
 
     // load depends on the tests that validate the arraycopy
@@ -1260,9 +1268,6 @@ Node* LoadNode::can_see_arraycopy_value(Node* st, PhaseGVN* phase) const {
     if (ac->as_ArrayCopy()->is_clonebasic()) {
       assert(ld_alloc != nullptr, "need an alloc");
       assert(addp->is_AddP(), "address must be addp");
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Base)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)), "strange pattern");
-      assert(bs->step_over_gc_barrier(addp->in(AddPNode::Address)) == bs->step_over_gc_barrier(ac->in(ArrayCopyNode::Dest)), "strange pattern");
       addp->set_req(AddPNode::Base, src);
       addp->set_req(AddPNode::Address, src);
     } else {
@@ -1533,8 +1538,6 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
         (tp != nullptr) && tp->is_ptr_to_boxed_value()) {
       intptr_t ignore = 0;
       Node* base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ignore);
-      BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-      base = bs->step_over_gc_barrier(base);
       if (base != nullptr && base->is_Proj() &&
           base->as_Proj()->_con == TypeFunc::Parms &&
           base->in(0)->is_CallStaticJava() &&
@@ -1994,7 +1997,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
 
   // Do nothing here if Identity will find a value
   // (to avoid infinite chain of value phis generation).
-  if (this != Identity(phase)) {
+  if (this != phase->apply_identity(this)) {
     return nullptr;
   }
 
@@ -2109,7 +2112,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase, bool ignore_missing_instance_
       // otherwise it will be not updated during igvn->transform since
       // igvn->type(x) is set to x->Value() already.
       x->raise_bottom_type(t);
-      Node* y = x->Identity(igvn);
+      Node* y = igvn->apply_identity(x);
       if (y != x) {
         x = y;
       } else {
@@ -2211,7 +2214,6 @@ Node* LoadNode::Ideal_load_common(PhaseGVN* phase, bool can_reshape) {
     Node* opt_mem = MemNode::optimize_memory_chain(mem, addr_t, this, phase);
     if (opt_mem != mem) {
       set_req_X(MemNode::Memory, opt_mem, phase);
-      if (phase->type(opt_mem) == Type::TOP) { return NodeSentinel; }
       return this;
     }
     const TypeOopPtr* t_oop = addr_t->isa_oopptr();
@@ -2339,6 +2341,10 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
   assert(off != Type::OffsetTop, "case covered by TypePtr::empty");
   Compile* C = phase->C;
 
+  if (is_mismatched_access()) {
+    return _type;
+  }
+
   // If load can see a previous constant store, use that.
   Node* value = can_see_stored_value_through_membars(mem, phase);
   if (value != nullptr && value->is_Con()) {
@@ -2395,7 +2401,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     // expression (LShiftL quux 3) independently optimized to the constant 8.
     if ((t->isa_int() == nullptr) && (t->isa_long() == nullptr)
         && (_type->isa_vect() == nullptr)
-        && !ary->is_flat()
+        && ary->is_not_flat()
         && Opcode() != Op_LoadKlass && Opcode() != Op_LoadNKlass) {
       // t might actually be lower than _type, if _type is a unique
       // concrete subclass of abstract class t.
@@ -2929,12 +2935,6 @@ Node* LoadNode::find_known_klass(PhaseGVN* phase) const {
   if (base == nullptr) { return nullptr; }
   const TypeOopPtr* toop = phase->type(adr)->isa_oopptr();
   if (toop == nullptr) { return nullptr; }
-
-  // Step over potential GC barrier for OopHandle resolve
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  if (bs->is_gc_barrier_node(base)) {
-    base = bs->step_over_gc_barrier(base);
-  }
 
   // We can fetch the klass directly through an AllocateNode.
   // This works even if the klass is not constant (clone or newArray).
@@ -4767,6 +4767,36 @@ void MemBarNode::remove(PhaseIterGVN *igvn) {
   }
 }
 
+#ifndef PRODUCT
+void MemBarNode::dump_spec(outputStream* st) const {
+  switch (_kind) {
+  case Standalone:
+    st->print(" Standalone");
+    break;
+  case TrailingLoad:
+    st->print(" TrailingLoad");
+    break;
+  case TrailingStore:
+    st->print(" TrailingStore");
+    break;
+  case LeadingStore:
+    st->print(" LeadingStore");
+    break;
+  case TrailingLoadStore:
+    st->print(" TrailingLoadStore");
+    break;
+  case LeadingLoadStore:
+    st->print(" LeadingLoadStore");
+    break;
+  case TrailingExpandedArrayCopy:
+    st->print(" TrailingExpandedArrayCopy");
+    break;
+  default:
+    fatal("Unimplemented MemBar kind: %d", _kind);
+  }
+}
+#endif // !PRODUCT
+
 //------------------------------Ideal------------------------------------------
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
@@ -6208,7 +6238,7 @@ Node* MergeMemNode::Identity(PhaseGVN* phase) {
 //------------------------------Ideal------------------------------------------
 // This method is invoked recursively on chains of MergeMem nodes
 Node *MergeMemNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  if (Identity(phase) != this) {
+  if (phase->apply_identity(this) != this) {
     // Let Identity handle this case
     return nullptr;
   }

@@ -2363,6 +2363,17 @@ public final class System {
             public void finishInit(StackTraceElement[] stackTrace) {
                 StackTraceElement.finishInit(stackTrace);
             }
+
+            @Override
+            public long[] getConfinedMemoryPools(Thread thread) {
+                return thread.confinedMemoryPools();
+            }
+
+            @Override
+            public long[] getOrCreateConfinedMemoryPools(Thread thread, int poolSlots) {
+                return thread.getOrCreateConfinedMemoryPools(poolSlots);
+            }
+
         });
     }
 }

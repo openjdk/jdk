@@ -1422,7 +1422,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ verify_sve_vector_length();
 
   // change thread state
-  __ mov(rscratch1, _thread_in_native_trans);
+  __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
@@ -1447,17 +1447,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ mov(rscratch1, _thread_in_Java);
-  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-  __ stlrw(rscratch1, rscratch2);
 
   // Check preemption for Object.wait()
   Label not_preempted;

@@ -31,7 +31,7 @@
  * @library /test/lib
  * @enablePreview
  * @compile --source 28 DirectMethodTest.java
- * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.inlinetypes.DirectMethodTest
+ * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseArrayFlattening -XX:+UseFieldFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.inlinetypes.DirectMethodTest flat
  */
 
 /*
@@ -44,7 +44,7 @@
  * @library /test/lib
  * @enablePreview
  * @compile --source 28 DirectMethodTest.java
- * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:-UseArrayFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.inlinetypes.DirectMethodTest
+ * @run main/othervm -Djdk.reflect.useNativeAccessorOnly=true -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:-UseArrayFlattening -XX:+UseNullFreeAtomicValueFlattening -XX:+UseNullableAtomicValueFlattening runtime.valhalla.inlinetypes.DirectMethodTest noflat
  */
 
 package runtime.valhalla.inlinetypes;
@@ -52,20 +52,17 @@ package runtime.valhalla.inlinetypes;
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import jdk.internal.value.ValueClass;
-
+import jdk.test.lib.Asserts;
 public class DirectMethodTest {
+    static boolean expectFlat = false;
 
     public int method1(int i, int j, int k) {
-        System.out.println("i = " + i + " j = " + j + " k = " + k);
         return i + j * k;
     }
 
-    public static void printFlat(Object[] array) {
-        if (!ValueClass.isFlatArray(array)) {
-            System.out.println("not flat " + array);
-        } else {
-            System.out.println("yay flat " + array);
-        }
+    public static void checkFlat(Object[] array) {
+        boolean isFlat = ValueClass.isFlatArray(array);
+        Asserts.assertEquals(expectFlat, isFlat);
     }
 
     static value class SmallValue {
@@ -76,30 +73,34 @@ public class DirectMethodTest {
     }
 
     public int method2(SmallValue i, SmallValue j, SmallValue k) {
-        System.out.println("i = " + i + " j = " + j + " k = " + k);
         return i.s + j.s * k.s;
     }
 
     static final int ARRAY_SIZE = 3;
 
-    public static void main(java.lang.String[] unused) throws Exception {
+    public static void main(String[] args) throws Exception {
+        expectFlat = args[0].equals("flat");
         DirectMethodTest d = new DirectMethodTest();
 
         Method m = DirectMethodTest.class.getMethod("method1", int.class, int.class, int.class);
         Integer[] intarray = new Integer[]{1, 2, 3};  // is this flattened?
-        printFlat(intarray);
+        checkFlat(intarray);
         Object[] array = (Object[])Array.newInstance(Integer.class, 3);
-        printFlat(array);
+        checkFlat(array);
         array = ValueClass.newNullableAtomicArray(Integer.class, ARRAY_SIZE);
-        printFlat(array);
-        System.out.println("value is " + m.invoke(d, 1, 2, 3));
+        checkFlat(array);
+        if (!m.invoke(d, 1, 2, 3).equals(7)) {
+            throw new RuntimeException("Unexpected method1 result");
+        }
 
         Method m2 = DirectMethodTest.class.getMethod("method2", SmallValue.class, SmallValue.class, SmallValue.class);
         Object[] smallValueArray = (Object[])Array.newInstance(SmallValue.class, ARRAY_SIZE);
-        printFlat(smallValueArray);
+        checkFlat(smallValueArray);
         smallValueArray = ValueClass.newNullableAtomicArray(SmallValue.class, ARRAY_SIZE);
-        printFlat(smallValueArray);
-        System.out.println("value is " + m2.invoke(d, new SmallValue((short)1), new SmallValue((short)2), new SmallValue((short)3)));
+        checkFlat(smallValueArray);
+        if (!m2.invoke(d, new SmallValue((short)1), new SmallValue((short)2), new SmallValue((short)3)).equals(7)) {
+            throw new RuntimeException("Unexpected method1 result");
+        }
     }
 }
 

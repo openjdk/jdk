@@ -312,7 +312,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
   // Helper function for inlining native object hash method
+  Node* get_hashcode_from_header(Node* header, RegionNode* unset_region);
   bool inline_native_hashcode(bool is_virtual, bool is_static);
+public:
+  static IfNode* hashcode_fast_path_if_from_identity_hash_code_call(PhaseGVN* phase, CallJavaNode* call);
+private:
   bool inline_native_getClass();
 
   // Helper functions for inlining arraycopy

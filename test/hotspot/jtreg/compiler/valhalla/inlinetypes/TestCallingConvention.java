@@ -32,14 +32,14 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.ALLOC_OF_MYVALUE_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.LOAD_OF_ANY_KLASS;
-import static compiler.valhalla.inlinetypes.InlineTypeIRNode.STORE_OF_ANY_KLASS;
 import static compiler.valhalla.inlinetypes.InlineTypes.*;
 
 import static compiler.lib.ir_framework.IRNode.ALLOC;
+import static compiler.lib.ir_framework.IRNode.ALLOC_OF_MYVALUE_KLASS;
 import static compiler.lib.ir_framework.IRNode.CALL_OF_METHOD;
+import static compiler.lib.ir_framework.IRNode.LOAD_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.PREDICATE_TRAP;
+import static compiler.lib.ir_framework.IRNode.STORE_OF_ANY_KLASS;
 import static compiler.lib.ir_framework.IRNode.UNSTABLE_IF_TRAP;
 
 import jdk.internal.value.ValueClass;

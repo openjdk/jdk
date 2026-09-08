@@ -115,10 +115,30 @@ void oopDesc::verify(oopDesc* oop_desc) {
   verify_on(tty, oop_desc);
 }
 
-intptr_t oopDesc::slow_identity_hash() {
-  // slow case; we have to acquire the micro lock in order to locate the header
-  Thread* current = Thread::current();
-  return ObjectSynchronizer::FastHashCode(current, this);
+intptr_t oopDesc::slow_identity_hash(markWord current_mark, Thread* current) {
+  precond(!current_mark.has_hash());
+
+  assert(!is_inline(), "slow_identity_hash should not be called for value objects");
+
+  // Calculate the new hash
+  const intptr_t new_hash = ObjectSynchronizer::get_next_hash(current, this);
+
+  markWord mark = current_mark;
+  while (true) {
+    const markWord old_mark = mark;
+    const markWord new_mark = mark.copy_set_hash(new_hash);
+
+    // Try to install the hash
+    mark = cas_set_mark(new_mark, old_mark, memory_order_relaxed);
+    if (old_mark == mark) {
+      // CAS succeded, return the installed hash
+      return new_hash;
+    } else if (mark.has_hash()) {
+      // Another thread installed a hash, return the installed hash
+      return mark.hash();
+    }
+    // CAS failed, retry
+  }
 }
 
 // used only for asserts and guarantees

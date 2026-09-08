@@ -1371,10 +1371,14 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
 
   assert_different_registers(obj, k_RInfo, klass_RInfo);
 
+  Register mdo = noreg;
+  if (should_profile) {
+    mdo = klass_RInfo;
+    __ mov_metadata(mdo, md->constant_encoding());
+  }
+
   if (op->need_null_check()) {
     if (should_profile) {
-      Register mdo  = klass_RInfo;
-      __ mov_metadata(mdo, md->constant_encoding());
       Label not_null;
       __ cbnz(obj, not_null);
       // Object is null; update MDO and exit
@@ -1387,13 +1391,15 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
       __ strb(rscratch1, data_addr);
       __ b(*obj_is_null);
       __ bind(not_null);
-
-      Register recv = k_RInfo;
-      __ load_klass(recv, obj, rscratch1);
-      type_profile_helper(mdo, md, data, recv);
     } else {
       __ cbz(obj, *obj_is_null);
     }
+  }
+
+  if (should_profile) {
+      Register recv = k_RInfo;
+      __ load_klass(recv, obj, rscratch1);
+      type_profile_helper(mdo, md, data, recv);
   }
 
   if (!k->is_loaded()) {
@@ -1569,13 +1575,8 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
   // We are storing into an array that *may* be null-free (the declared type is
   // Object[], abstract[], interface[] or VT.ref[]).
-  Label test_mark_word;
   Register tmp = op->tmp()->as_register();
   __ ldr(tmp, Address(op->array()->as_register(), oopDesc::mark_offset_in_bytes()));
-  __ tst(tmp, markWord::unlocked_value);
-  __ br(Assembler::NE, test_mark_word);
-  __ load_prototype_header(tmp, op->array()->as_register());
-  __ bind(test_mark_word);
   __ tst(tmp, markWord::null_free_array_bit_in_place);
 }
 

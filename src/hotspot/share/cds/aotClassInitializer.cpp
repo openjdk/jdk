@@ -36,7 +36,7 @@
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
 
-DEBUG_ONLY(InstanceKlass* _aot_init_class = nullptr;)
+DEBUG_ONLY(InstanceKlass* _aot_init_test_class = nullptr;)
 
 bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   assert(!ArchiveBuilder::is_active() || !ArchiveBuilder::current()->is_in_buffer_space(ik), "must be source klass");
@@ -65,10 +65,10 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   //
   // Check that no user code is executed during the assembly phase. Otherwise the user
   // code may introduce undesirable environment dependencies into the heap image.
-  // If any of these two flags are set, we allow user code to be executed
+  // If AOTInitTestClass is set, we allow user code to be executed
   // in the assembly phase. Note that these flags are strictly for the purpose
   // of testing HotSpot and are not available in product builds.
-  if (AOTInitTestClass == nullptr && ArchiveHeapTestClass == nullptr) {
+  if (AOTInitTestClass == nullptr) {
     if (ik->defined_by_boot_loader()) {
       // We allow boot classes to be AOT-initialized, except for classes from
       // -Xbootclasspath (cp index >= 1) be AOT-initialized, as such classes may be
@@ -258,7 +258,7 @@ bool AOTClassInitializer::can_archive_initialized_mirror(InstanceKlass* ik) {
   }
 
 #ifdef ASSERT
-  if (ik == _aot_init_class) {
+  if (ik == _aot_init_test_class) {
     return true;
   }
 #endif
@@ -356,12 +356,12 @@ void AOTClassInitializer::init_test_class(TRAPS) {
       vm_exit_during_initialization("Invalid name for AOTInitTestClass", AOTInitTestClass);
     }
 
-    _aot_init_class = InstanceKlass::cast(k);
-    _aot_init_class->initialize(CHECK);
+    _aot_init_test_class = InstanceKlass::cast(k);
+    _aot_init_test_class->initialize(CHECK);
   }
 }
 
 bool AOTClassInitializer::has_test_class() {
-  return _aot_init_class != nullptr;
+  return _aot_init_test_class != nullptr;
 }
 #endif

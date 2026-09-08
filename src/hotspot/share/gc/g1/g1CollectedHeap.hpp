@@ -111,13 +111,6 @@ public:
   bool do_object_b(oop p) override;
 };
 
-class G1RegionMappingChangedListener : public G1MappingChangedListener {
- private:
-  void reset_from_card_cache(uint start_idx, size_t num_regions);
- public:
-  void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
-};
-
 // Helper to claim contiguous sets of JavaThread for processing by multiple threads.
 class G1JavaThreadsListClaimer : public StackObj {
   ThreadsListHandle _list;
@@ -222,9 +215,6 @@ private:
   // humongous set which was not torn down in the first place. If
   // free_list_only is true, it will only rebuild the free list.
   void rebuild_region_sets(bool free_list_only);
-
-  // Callback for region mapping changed events.
-  G1RegionMappingChangedListener _listener;
 
   // Handle G1 NUMA support.
   G1NUMA* _numa;

@@ -222,6 +222,11 @@ public class WhiteBox {
     return printMethods0(classNamePattern, methodPattern, flags);
   }
 
+  public native int getMarkWordOffset();
+  public native long getInlineTypePattern();
+  public native long getNullFreeArrayBitInPlace();
+  public native long getFlatArrayBitInPlace();
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){

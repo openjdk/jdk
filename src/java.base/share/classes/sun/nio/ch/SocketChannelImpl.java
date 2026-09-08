@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,10 @@ class SocketChannelImpl
 {
     // Used to make native read and write calls
     private static final NativeDispatcher nd = new SocketDispatcher();
+
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
 
     // The protocol family of the socket
     private final ProtocolFamily family;
@@ -484,13 +488,13 @@ class SocketChannelImpl
 
     @Override
     public int read(ByteBuffer buf) throws IOException {
-        if (!SocketReadEvent.enabled()) {
-            return implRead(buf);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            int nbytes = implRead(buf);
+            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            return nbytes;
         }
-        long start = SocketReadEvent.timestamp();
-        int nbytes = implRead(buf);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
-        return nbytes;
+        return implRead(buf);
     }
 
 
@@ -498,13 +502,13 @@ class SocketChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if (!SocketReadEvent.enabled()) {
-            return implRead(dsts, offset, length);
+        if (jfrTracing && SocketReadEvent.enabled()) {
+            long start = SocketReadEvent.timestamp();
+            long nbytes = implRead(dsts, offset, length);
+            SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
+            return nbytes;
         }
-        long start = SocketReadEvent.timestamp();
-        long nbytes = implRead(dsts, offset, length);
-        SocketReadEvent.offer(start, nbytes, remoteAddress(), 0);
-        return nbytes;
+        return implRead(dsts, offset, length);
     }
 
     /**
@@ -609,26 +613,26 @@ class SocketChannelImpl
 
     @Override
     public int write(ByteBuffer buf) throws IOException {
-        if (!SocketWriteEvent.enabled()) {
-            return implWrite(buf);
+        if (jfrTracing && SocketWriteEvent.enabled()) {
+            long start = SocketWriteEvent.timestamp();
+            int nbytes = implWrite(buf);
+            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            return nbytes;
         }
-        long start = SocketWriteEvent.timestamp();
-        int nbytes = implWrite(buf);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
-        return nbytes;
+        return implWrite(buf);
     }
 
     @Override
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if (!SocketWriteEvent.enabled()) {
-            return implWrite(srcs, offset, length);
+        if (jfrTracing && SocketWriteEvent.enabled()) {
+            long start = SocketWriteEvent.timestamp();
+            long nbytes = implWrite(srcs, offset, length);
+            SocketWriteEvent.offer(start, nbytes, remoteAddress());
+            return nbytes;
         }
-        long start = SocketWriteEvent.timestamp();
-        long nbytes = implWrite(srcs, offset, length);
-        SocketWriteEvent.offer(start, nbytes, remoteAddress());
-        return nbytes;
+        return implWrite(srcs, offset, length);
     }
 
     /**

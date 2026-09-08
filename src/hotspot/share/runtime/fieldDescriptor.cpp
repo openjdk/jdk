@@ -195,7 +195,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
         bool is_null = false;
         InlineKlass* vk = InlineKlass::cast(field_holder()->get_inline_type_field_klass(index()));
         int field_offset = offset() - vk->payload_offset();
-        int nm_offset;
+        int nm_offset = 0;
 
         if (!is_null_free_inline_type()) {
           assert(has_null_marker(), "should have null marker");
@@ -220,6 +220,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
 
         if (this->field_flags().has_null_marker()) {
           for (int i = 0; i < indent + 1; i++) st->print("  ");
+          assert(nm_offset > 0, "must be");
           st->print_cr(" - [null_marker] @%d %s",
                     base_offset + nm_offset,
                     is_null ? "Field marked as null" : "Field marked as non-null");

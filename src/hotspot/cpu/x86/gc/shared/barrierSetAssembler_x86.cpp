@@ -24,6 +24,7 @@
 
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
@@ -363,11 +364,23 @@ void BarrierSetAssembler::c2i_entry_barrier(MacroAssembler* masm) {
 }
 
 void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, error);
 

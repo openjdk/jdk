@@ -698,6 +698,28 @@ bool ciInstanceKlass::has_object_fields() const {
     );
 }
 
+int ciInstanceKlass::number_of_nonoop_entries_in_acmp_map() const {
+  VM_ENTRY_MARK;
+  return get_instanceKlass()->acmp_maps_array()->at(0);
+}
+int ciInstanceKlass::number_of_oop_entries_in_acmp_map() const {
+  VM_ENTRY_MARK;
+  const Array<int>* acmp_maps = get_instanceKlass()->acmp_maps_array();
+  int number_of_nonoop_entries = acmp_maps->at(0);
+  return acmp_maps->length() - number_of_nonoop_entries * 2 - 1;
+}
+AcmpMapSegment ciInstanceKlass::get_nonoop_segment_of_acmp_map(int i) const {
+  VM_ENTRY_MARK;
+  const Array<int>* acmp_maps = get_instanceKlass()->acmp_maps_array();
+#ifdef ASSERT
+  int number_of_nonoop_entries = acmp_maps->at(0);
+  assert(0 <= i && i < number_of_nonoop_entries, "illegal index, should be in range [0, %d)", number_of_nonoop_entries);
+#endif
+  int offset = acmp_maps->at(2 * i + 1);
+  int size = acmp_maps->at(2 * i + 2);
+  return AcmpMapSegment(offset, size);
+}
+
 bool ciInstanceKlass::compute_has_trusted_loader() {
   ASSERT_IN_VM;
   oop loader_oop = loader();

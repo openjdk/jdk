@@ -1549,8 +1549,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     if (fi.field_flags().is_contended()) {
       _has_contended_fields = true;
     }
-    if (access_flags.is_strict() && access_flags.is_static()) {
-      _has_strict_static_fields = true;
+    if (access_flags.is_strict()) {
+      if (access_flags.is_static()) {
+        _has_strict_static_fields = true;
+      } else {
+        _has_strict_instance_fields = true;
+      }
     }
     _temp_field_info->append(fi);
   }
@@ -2080,7 +2084,7 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
-  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+  if (ik->is_identity_class() && has_annotation(_jdk_internal_vm_annotation_Contended)) {
     ik->set_is_contended(is_contended());
   }
   if (has_annotation(_jdk_internal_ValueBased)) {
@@ -4636,10 +4640,9 @@ void ClassFileParser:: verify_legal_field_modifiers(jint flags,
   const char* error_msg = "";
 
   // There is some overlap in the checks that apply, for example interface fields
-  // must be static, static fields can't be strict, and therefore interfaces can't
-  // have strict fields. So we don't have to check every possible invalid combination
-  // individually as long as all are covered. Once we have found an illegal combination
-  // we can stop checking.
+  // must be static, therefore interfaces can't have strict instance fields.
+  // We don't have to check every possible invalid combination individually as long as
+  // all are covered. Once we have found an illegal combination we can stop checking.
 
   if (!is_illegal) {
     if (is_interface) {
@@ -5483,6 +5486,34 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
 #endif // VM_LITTLE_ENDIAN
 }
 
+// See the declarations of _fast_hashcode_offset and _fast_hashcode_shift in InlineKlass::Members
+// for details about the fast path logic, and the meaning of these values.
+void ClassFileParser::set_fast_hashcode_members(InlineKlass* vk) const {
+  if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
+    return;
+  }
+  if (_layout_info->_nonoop_acmp_map->length() >= 2) {  // We handle at most one segment...
+    return;
+  }
+
+  if (_layout_info->_nonoop_acmp_map->length() == 0) {
+    vk->set_fast_hashcode_offset(0);
+    vk->set_fast_hashcode_shift(0);
+    return;
+  }
+
+  assert(_layout_info->_nonoop_acmp_map->length() == 1, "trivially");
+
+  int piece_size = _layout_info->_nonoop_acmp_map->at(0)._size;
+  if (piece_size != 1 && piece_size != 2 && piece_size != 4 && piece_size != 8) {  // ...and it must have a convenient size
+    return;
+  }
+
+  int piece_start = _layout_info->_nonoop_acmp_map->at(0)._offset;
+  vk->set_fast_hashcode_offset(piece_start - (BytesPerLong - piece_size));
+  vk->set_fast_hashcode_shift(BitsPerByte * (BytesPerLong - piece_size));
+}
+
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
                                           bool changed_by_loadhook,
                                           const ClassInstanceInfo& cl_inst_info,
@@ -5517,6 +5548,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_nonstatic_field_size(_layout_info->_nonstatic_field_size);
   ik->set_has_nonstatic_fields(_layout_info->_has_nonstatic_fields);
   ik->set_has_strict_static_fields(_has_strict_static_fields);
+  ik->set_has_strict_instance_fields(_has_strict_instance_fields);
 
   if (_layout_info->_is_naturally_atomic) {
     ik->set_is_naturally_atomic();
@@ -5648,8 +5680,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     oop_map_blocks->copy(ik->start_of_nonstatic_oop_maps());
   }
 
-  if (_has_contended_fields || _parsed_annotations->is_contended() ||
-      ( _super_klass != nullptr && _super_klass->has_contended_annotations())) {
+  if (ik->is_identity_class() &&
+      (_has_contended_fields || _parsed_annotations->is_contended() ||
+       (_super_klass != nullptr && _super_klass->has_contended_annotations()))) {
     ik->set_has_contended_annotations(true);
   }
 
@@ -5720,6 +5753,10 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
 
     if (UseAcmpFastPath) {
       set_fast_acmp_members(vk);
+    }
+
+    if (UseHashcodeFastPath) {
+      set_fast_hashcode_members(vk);
     }
 
     vk->initialize_calling_convention(CHECK);
@@ -5857,6 +5894,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_contended_fields(false),
   _has_aot_runtime_setup_method(false),
   _has_strict_static_fields(false),
+  _has_strict_instance_fields(false),
   _has_null_restricted_static_fields(false),
   _must_be_atomic(true),
   _has_finalizer(false),
@@ -6377,7 +6415,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   _layout_info = new FieldLayoutInfo();
   FieldLayoutBuilder lb(class_name(), loader_data(), super_klass(), _cp, /*_fields*/ _temp_field_info,
-      _parsed_annotations->is_contended(), is_inline_type(),
+      access_flags().is_identity_class() && _parsed_annotations->is_contended(), is_inline_type(),
       access_flags().is_abstract() && !access_flags().is_identity_class() && !access_flags().is_interface(),
       _must_be_atomic, _layout_info, _inline_layout_info_array);
   lb.build_layout();
