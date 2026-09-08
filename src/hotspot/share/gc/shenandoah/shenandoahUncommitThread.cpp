@@ -55,16 +55,20 @@ void ShenandoahUncommitThread::run_service() {
   // ShenandoahUncommitDelay is in millis, but shrink_delay is in seconds.
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
 
-  while (!should_terminate()) {
+  while (true) {
     {
       MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
       locker.wait(poll_interval);
-    }
 
-    if (_uncommit_allowed.is_unset()) {
-      // Wake up for disallowing commits or terminating.
-      // Do not consume anything, just circle back.
-      continue;
+      if (_terminating.is_set()) {
+        // Wake up for terminating, exit.
+        break;
+      }
+
+      if (_uncommit_allowed.is_unset()) {
+        // Wake up for disallowing commits, go back to sleep.
+        continue;
+      }
     }
 
     bool soft_max_changed = _soft_max_changed.try_unset();
