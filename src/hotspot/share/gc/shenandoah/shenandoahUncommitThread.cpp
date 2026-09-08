@@ -105,11 +105,6 @@ int ShenandoahUncommitThread::compare_uncommit_priority(Candidate& a, Candidate&
 bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_until) {
   _candidates_count = 0;
 
-  if (!_heap->is_idle() || !is_uncommit_allowed()) {
-    // Uncommits are not welcome.
-    return false;
-  }
-
   if (_heap->committed() <= shrink_until) {
     // Do not uncommit below target.
     return false;
