@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8387594
+ * @bug 8387594 8390044
  * @key randomness
  * @library /test/lib /
  * @summary IR tests for Vector API lanewise DIV
@@ -111,7 +111,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VB, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testDivByte() {
         ByteVector va = ByteVector.fromArray(B_SPECIES, ba, 0);
         ByteVector vb = ByteVector.fromArray(B_SPECIES, bb, 0);
@@ -120,7 +120,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VS, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testDivShort() {
         ShortVector va = ShortVector.fromArray(S_SPECIES, sa, 0);
         ShortVector vb = ShortVector.fromArray(S_SPECIES, sb, 0);
@@ -129,7 +129,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VI, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testDivInt() {
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector vb = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -138,7 +138,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VL, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testDivLong() {
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector vb = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -165,11 +165,13 @@ public class VectorDivTest {
 
     // Masked lanewise DIV. On AArch64, BYTE/SHORT have no native predicated
     // divide, so they are lowered to an unpredicated divide combined with a
-    // VectorBlend.
+    // VectorBlend. RVV has native predicated integer division for all element
+    // sizes.
 
     @Test
-    @IR(counts = { IRNode.DIV_VB, ">= 1",
-                   IRNode.VECTOR_BLEND_B, ">= 1" },
+    @IR(counts = { IRNode.DIV_VB, ">= 1" },
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_BLEND_B, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskedDivByte() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, mask_arr, 0);
@@ -179,8 +181,9 @@ public class VectorDivTest {
     }
 
     @Test
-    @IR(counts = { IRNode.DIV_VS, ">= 1",
-                   IRNode.VECTOR_BLEND_S, ">= 1" },
+    @IR(counts = { IRNode.DIV_VS, ">= 1" },
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
+    @IR(counts = { IRNode.VECTOR_BLEND_S, ">= 1" },
         applyIfCPUFeature = { "sve", "true" })
     public static void testMaskedDivShort() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, mask_arr, 0);
@@ -191,7 +194,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VI, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testMaskedDivInt() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, mask_arr, 0);
         IntVector va = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -201,7 +204,7 @@ public class VectorDivTest {
 
     @Test
     @IR(counts = { IRNode.DIV_VL, ">= 1" },
-        applyIfCPUFeature = { "sve", "true" })
+        applyIfCPUFeatureOr = { "sve", "true", "rvv", "true" })
     public static void testMaskedDivLong() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, mask_arr, 0);
         LongVector va = LongVector.fromArray(L_SPECIES, la, 0);

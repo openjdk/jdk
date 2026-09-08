@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ public class TestDockerMemoryMetrics {
             }
             testOomKillFlag("100m", true);
 
-            testMemoryFailCount("128m");
+            testMemoryFailCount("128m" /*memory*/, "768m" /*max_heap*/, "1024m" /*memory_n_swap*/);
 
             testMemorySoftLimit("500m","200m");
 
@@ -105,36 +105,47 @@ public class TestDockerMemoryMetrics {
         DockerTestUtils.dockerRunJava(opts).shouldHaveExitValue(0).shouldContain("TEST PASSED!!!");
     }
 
-    private static void testMemoryFailCount(String value) throws Exception {
-        Common.logNewTestCase("testMemoryFailCount" + value);
+    private static void testMemoryFailCount(String memory, String heap, String memoryAndSwap) throws Exception {
+        Common.logNewTestCase("testMemoryFailCount, memory = " + memory
+                + ", heap = " + heap
+                + ", memory + swap = " + memoryAndSwap);
 
         // Check whether swapping really works for this test
         // On some systems there is no swap space enabled. And running
-        // 'java -Xms{mem-limit} -Xmx{mem-limit} -XX:+AlwaysPreTouch -version'
+        // 'java -Xms{heap} -Xmx{heap} -XX:+AlwaysPreTouch -version'
         // would fail due to swap space size being 0. Note that when swap is
-        // properly enabled on the system the container gets the same amount
-        // of swap as is configured for memory. Thus, 2x{mem-limit} is the actual
-        // memory and swap bound for this pre-test.
+        // properly enabled, the explicit memory-and-swap limit gives the JVM
+        // enough headroom to exceed the physical memory limit without being
+        // killed by the OOM killer.
         DockerRunOptions preOpts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "-version");
         preOpts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
-                .addDockerOpts("--memory=" + value)
+                .addDockerOpts("--memory=" + memory)
+                .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-XX:+AlwaysPreTouch")
-                .addJavaOpts("-Xms" + value)
-                .addJavaOpts("-Xmx" + value);
+                .addJavaOptsAppended("-XX:InitialHeapSize=" + heap)
+                .addJavaOptsAppended("-XX:MaxHeapSize=" + heap);
         OutputAnalyzer oa = DockerTestUtils.dockerRunJava(preOpts);
         String output = oa.getOutput();
         if (!output.contains("version")) {
             throw new SkippedException("Swapping doesn't work for this test.");
         }
 
+        //  0                   128                                                       1024
+        //  |---o----------------|---------------------------X--------------)-------------|
+        //      START            memory.max                  growth target  MaxHeapSize   memory+swap limit
+        //      o~~~~~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>~>  (growth)                          OOM
+        //  failcount: 0          1 2 3 . . . N
+        //
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "MetricsMemoryTester");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
-                .addDockerOpts("--memory=" + value)
-                .addJavaOpts("-Xmx" + value)
+                .addDockerOpts("--memory=" + memory)
+                .addDockerOpts("--memory-swap=" + memoryAndSwap)
                 .addJavaOpts("-cp", "/test-classes/")
                 .addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED")
+                // set the required heap size *after* inherited jtreg options
+                .addJavaOptsAppended("-XX:MaxHeapSize=" + heap)
                 .addClassOptions("failcount");
         oa = DockerTestUtils.dockerRunJava(opts);
         output = oa.getOutput();

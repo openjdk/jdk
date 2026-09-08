@@ -39,6 +39,7 @@
 #include "gc/shared/gcConfig.hpp"
 #include "logging/logStream.hpp"
 #include "memory/memoryReserver.hpp"
+#include "oops/klass.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/upcallLinker.hpp"
 #include "runtime/deoptimization.hpp"
@@ -204,7 +205,7 @@ uint AOTCodeCache::max_aot_code_size() {
 // At this point all AOT class linking seetings are finilized
 // and AOT cache is open so we can map AOT code region.
 void AOTCodeCache::initialize() {
-#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64))
+#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
   log_info(aot, codecache, init)("AOT Code Cache is not supported on this platform.");
   disable_caching();
   return;
@@ -215,8 +216,8 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
-  if (VerifyOops && InlineTypePassFieldsAsArgs) {
-    log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
+  if (VerifyOops && ValueTypePassFieldsAsArgs) {
+    log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
     FLAG_SET_ERGO(AOTAdapterCaching, false);
   }
 
@@ -263,7 +264,7 @@ void AOTCodeCache::initialize() {
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
   FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
-#endif // defined(AMD64) || defined(AARCH64)
+#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
 }
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache
@@ -471,7 +472,7 @@ void AOTCodeCache::Config::record(uint cpu_features_offset) {
   _useUnalignedLoadStores = UseUnalignedLoadStores;
 #endif
 
-#if defined(AARCH64)  && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   _avoidUnalignedAccesses = AvoidUnalignedAccesses;
 #endif
 
@@ -601,14 +602,14 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // defined(X86) && !defined(ZERO)
 
-#if defined(AARCH64) && !defined(ZERO)
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   // switching on AvoidUnalignedAccesses may affect validity of array
   // copy stubs and nmethods
   if (!_avoidUnalignedAccesses && AvoidUnalignedAccesses) {
     log_config_mismatch(_avoidUnalignedAccesses, AvoidUnalignedAccesses, "AvoidUnalignedAccesses");
     return false;
   }
-#endif // defined(AARCH64) && !defined(ZERO)
+#endif // (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
 
   return true;
 }
@@ -1928,8 +1929,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_count_addr()); // used by generate_verify_oop()
     ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_subroutine_entry_address());
-    if (InlineTypeReturnedAsFields) {
-      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_inline_type_fields_to_buf);
+    if (ValueTypeReturnedAsFields) {
+      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_value_type_fields_to_buf);
     }
   }
 
@@ -1938,9 +1939,11 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_abstract);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
-  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_inline_types);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_value_types);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
+#endif
+#if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(BarrierSetAssembler::patching_epoch_addr());
 #endif
 
@@ -2061,8 +2064,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::load_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::store_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::substitutability_check);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args_no_receiver);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args_no_receiver);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
     // already added
@@ -2090,16 +2093,17 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::rethrow_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::slow_arraycopy_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::register_finalizer_C);
-    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_inline_C);
-    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_inline_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_value_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_value_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_first_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_transition_C);
-    // already added for
 #if defined(AARCH64) && ! defined(PRODUCT)
     ADD_EXTERNAL_ADDRESS(JavaThread::verify_cross_modify_fence_failure);
 #endif // AARCH64 && !PRODUCT
+    // Used by lookup_secondary_supers_table
+    ADD_EXTERNAL_ADDRESS(Klass::on_secondary_supers_verification_failure);
   }
 #endif // COMPILER2
 

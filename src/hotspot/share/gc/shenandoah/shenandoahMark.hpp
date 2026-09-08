@@ -50,7 +50,7 @@ protected:
   ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
-  template<class T, ShenandoahGenerationType GENERATION>
+  template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>
   ALWAYSINLINE
   static void mark_through_ref(T* p, ShenandoahObjToScanQueue* q, ShenandoahObjToScanQueue* old_q, ShenandoahMarkingContext* const mark_context, bool weak);
 
@@ -108,10 +108,6 @@ private:
   template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
   NOINLINE // Main hot loop, start inlining from here
   void mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *t, StringDedup::Requests* const req);
-
-  template <bool CANCELLABLE>
-  NOINLINE // Utility loop, maybe hot, start inlining from here
-  void mark_drain_extra_queues(ShenandoahObjToScanQueueSet* queues, ShenandoahObjToScanQueue* local_q);
 
 protected:
   template<bool CANCELLABLE, bool STRING_DEDUP>

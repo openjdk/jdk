@@ -2091,6 +2091,7 @@ protected:
   template<bool check_stub>
   int remove_top_compiled_frame_from_chunk(stackChunkOop chunk, int &argsize);
   int remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& scfs, int &argsize);
+  void check_top_for_deoptimization(stackChunkOop chunk);
   void copy_from_chunk(intptr_t* from, intptr_t* to, int size);
 
   void thaw_lockstack(stackChunkOop chunk);
@@ -2201,6 +2202,23 @@ public:
 inline void ThawBase::clear_chunk(stackChunkOop chunk) {
   chunk->set_sp(chunk->bottom());
   chunk->set_max_thawing_size(0);
+}
+
+void ThawBase::check_top_for_deoptimization(stackChunkOop chunk) {
+  StackChunkFrameStream<ChunkFrames::CompiledOnly> f(chunk);
+  if (f.is_stub()) {
+    f.next(SmallRegisterMap::instance_no_args(), true /* stop */);
+    assert(!f.is_done(), "");
+
+    f.get_cb();
+    assert(f.is_compiled(), "");
+    if (f.cb()->as_nmethod()->is_marked_for_deoptimization()) {
+      // The caller of the runtime stub when the continuation is preempted is not at a
+      // Java call instruction, and so cannot rely on nmethod patching for deopt.
+      log_develop_trace(continuations)("Deoptimizing runtime stub caller");
+      f.to_frame().deoptimize(nullptr); // the null thread simply avoids the assertion in deoptimize which we're not set up for
+    }
+  }
 }
 
 int ThawBase::remove_scalarized_frames(StackChunkFrameStream<ChunkFrames::CompiledOnly>& f, int &argsize) {
@@ -2340,6 +2358,9 @@ NOINLINE intptr_t* Thaw<ConfigT>::thaw_fast(stackChunkOop chunk) {
   if (LIKELY(!ForceSingleFrameThaw && (full_chunk_size < threshold))) {
     prefetch_chunk_pd(chunk->start_address(), full_chunk_size); // prefetch anticipating memcpy starting at highest address
 
+    if (check_stub) {
+      check_top_for_deoptimization(chunk);
+    }
     partial = false;
     argsize = chunk->argsize(); // must be called *before* clearing the chunk
     clear_chunk(chunk);
@@ -2633,14 +2654,14 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   if (bottom) {
     ContinuationHelper::Frame::patch_pc(caller, _cont.is_empty() ? caller.pc()
                                                                  : StubRoutines::cont_returnBarrier());
-  } else if (_should_patch_caller_pc || caller.is_compiled_frame()) {
+  } else if (_should_patch_caller_pc) {
     // Caller was deoptimized during thaw but we've overwritten the return address when copying f from the heap.
     // Also, on some platforms, if the caller is interpreted but the callee not we also need to patch.
 
 #if defined(PPC64) || defined(S390)
-    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame() || caller.is_interpreted_frame(), "");
+    assert(caller.is_deoptimized_frame() || caller.is_interpreted_frame(), "");
 #else
-    assert(!_should_patch_caller_pc || caller.is_deoptimized_frame(), "");
+    assert(caller.is_deoptimized_frame(), "");
 #endif
 
     ContinuationHelper::Frame::patch_pc(caller, caller.raw_pc());

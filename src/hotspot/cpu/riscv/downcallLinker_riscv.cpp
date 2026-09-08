@@ -227,9 +227,9 @@ void DowncallLinker::StubGenerator::generate() {
     _oop_maps->add_gc_map(the_pc - start, map);
 
     // State transition
-    __ mv(t0, _thread_in_native);
+    __ mv(t1, _thread_in_native);
     __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+    __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
     __ block_comment("} thread java2native");
   }
 
@@ -304,12 +304,14 @@ void DowncallLinker::StubGenerator::generate() {
   Label L_reguard;
   Label L_after_reguard;
   if (_needs_transition) {
+     __ block_comment("{ thread native2java");
     // Restore cpu control state after JNI call
     __ restore_cpu_control_state_after_jni(t0);
 
-    __ block_comment("{ thread native2java");
-    __ mv(t0, _thread_in_native_trans);
-    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+    // change thread state
+    __ mv(t1, _thread_in_Java);
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+    __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
     // Force this write out before the read below
     if (!UseSystemMemoryBarrier) {
@@ -321,11 +323,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ bnez(t0, L_safepoint_poll_slow_path);
 
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ mv(t0, _thread_in_Java);
-    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
     __ block_comment("reguard stack check");
     __ lbu(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
@@ -353,7 +350,7 @@ void DowncallLinker::StubGenerator::generate() {
 
     __ mv(c_rarg0, xthread);
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, out_spill_offset);
@@ -383,5 +380,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 }

@@ -51,6 +51,7 @@ class outputStream;
   SHENANDOAH_WORKER_PHASE_DO(NAME_PREFIX, DESC_PREFIX, f)
 
 #define SHENANDOAH_PHASE_DO(f)                                                                                       \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_gc,                                         "Concurrent GC")                   \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_reset,                                      "Concurrent Reset")                \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_mark_gross,                                 "Pause Init Mark (G)")             \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, init_mark,                                       "Pause Init Mark (N)")             \
@@ -66,11 +67,13 @@ class outputStream;
                                                                                   "  CMR: ")                         \
   SHENANDOAH_WORKER_PHASE_DEF(f, conc_mark,                                       "Concurrent Marking",              \
                                                                                   "  CM: ")                          \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_rebalance_queues,                      "  Rebalance Queues")              \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, conc_mark_satb_flush,                            "  Flush SATB")                    \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_gross,                                "Pause Final Mark (G)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark,                                      "Pause Final Mark (N)")            \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_verify,                               "  Verify")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_flush_satb_roots,                     "  Flush SATB and Roots")          \
+  SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_rebalance_queues,                     "  Rebalance Queues")              \
   SHENANDOAH_WORKER_PHASE_DEF(f, finish_mark,                                     "  Finish Mark",                   \
                                                                                   "    FM: ")                        \
   SHENANDOAH_SIMPLE_PHASE_DEF(f, final_mark_propagate_gc_state,                   "  Propagate GC State")            \

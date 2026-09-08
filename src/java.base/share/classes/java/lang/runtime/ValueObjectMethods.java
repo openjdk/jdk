@@ -127,7 +127,7 @@ final class ValueObjectMethods {
         if (VERBOSE) {
             System.out.println("valueObjectHashCode: obj.getClass:" + obj.getClass().getName());
         }
-        // This method assumes a is not null and is an instance of a value class
+        // This method assumes obj is not null and is an instance of a value class
         Class<?> type = obj.getClass();
         final Unsafe U = UNSAFE;
         int[] map = U.getFieldMap(type);
