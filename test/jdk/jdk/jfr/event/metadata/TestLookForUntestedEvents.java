@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package jdk.jfr.event.metadata;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,7 +31,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import jdk.jfr.EventType;
 import jdk.jfr.Experimental;
@@ -119,11 +117,11 @@ public class TestLookForUntestedEvents {
         Set<String> eventsNotCoveredByTest = new HashSet<>(jfrEventTypes);
         Set<String> checkedEvents = new HashSet<>(jfrEventTypes);
         checkedEvents.addAll(experimentalButTestedEvents);
-        for (String event : checkedEvents) {
-            for (Path p : paths) {
-                if (findStringInFile(p, event)) {
+        for (Path p : paths) {
+            List<String> lines = Files.readAllLines(p);
+            for (String event : checkedEvents) {
+                if (findStringInFile(lines, event)) {
                     eventsNotCoveredByTest.remove(event);
-                    break;
                 }
             }
         }
@@ -198,14 +196,8 @@ public class TestLookForUntestedEvents {
         return "java".equals(fileName.substring(i+1));
     }
 
-    private static boolean findStringInFile(Path p, String searchTerm) throws IOException {
-        long c = 0;
-        try (Stream<String> stream = Files.lines(p)) {
-            c = stream
-                .filter(line -> line.contains(searchTerm))
-                .count();
-        }
-        return (c != 0);
+    private static boolean findStringInFile(List<String> lines, String searchTerm) {
+        return lines.stream().filter(line -> line.contains(searchTerm)).count() != 0;
     }
 
     private static void printSetDiff(Set<String> a, Set<String> b,
