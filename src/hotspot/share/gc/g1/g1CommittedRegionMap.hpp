@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class G1HeapRegionRange : public StackObj {
 
   uint start() const { return _start; }
   uint end() const { return _end; }
-  uint length() const { return _end - _start; }
+  uint num_regions() const { return _end - _start; }
 };
 
 // The G1CommittedRegionMap keeps track of which regions are currently committed.
@@ -64,12 +64,12 @@ class G1CommittedRegionMap : public CHeapObj<mtGC> {
   // The union of these two bitmaps are the regions that are currently committed.
 
   // The number of regions active and available for use.
-  uint _num_active;
+  uint _num_active_regions;
 
   // The number of regions ready to be uncommitted.
-  uint _num_inactive;
+  uint _num_inactive_regions;
 
-  uint max_length() const;
+  uint max_num_regions() const;
 
   // Helpers to mark and do accounting for the bitmaps. Depending on when called
   // these helpers require to own different locks. See guarantee_mt_safety_* for
@@ -83,13 +83,13 @@ public:
   G1CommittedRegionMap();
   void initialize(uint num_regions);
 
-  uint num_active() const;
-  uint num_inactive() const;
+  uint num_active_regions() const;
+  uint num_inactive_regions() const;
 
   // Check if a region is marked active.
-  inline bool active(uint index) const;
+  inline bool is_active(uint index) const;
   // Check if a region is marked inactive.
-  inline bool inactive(uint index) const;
+  inline bool is_inactive(uint index) const;
 
   // Mark a range of regions as active.
   void activate(uint start, uint end);

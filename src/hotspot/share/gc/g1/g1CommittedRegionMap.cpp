@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,23 +38,23 @@ G1HeapRegionRange::G1HeapRegionRange(uint start, uint end) :
 G1CommittedRegionMap::G1CommittedRegionMap() :
   _active(mtGC),
   _inactive(mtGC),
-  _num_active(0),
-  _num_inactive(0) { }
+  _num_active_regions(0),
+  _num_inactive_regions(0) { }
 
 void G1CommittedRegionMap::initialize(uint num_regions) {
   _active.initialize(num_regions);
   _inactive.initialize(num_regions);
 }
 
-uint G1CommittedRegionMap::num_active() const {
-  return _num_active;
+uint G1CommittedRegionMap::num_active_regions() const {
+  return _num_active_regions;
 }
 
-uint G1CommittedRegionMap::num_inactive() const {
-  return _num_inactive;
+uint G1CommittedRegionMap::num_inactive_regions() const {
+  return _num_inactive_regions;
 }
 
-uint G1CommittedRegionMap::max_length() const {
+uint G1CommittedRegionMap::max_num_regions() const {
   return (uint) _active.size();
 }
 
@@ -99,9 +99,9 @@ void G1CommittedRegionMap::uncommit(uint start, uint end) {
 G1HeapRegionRange G1CommittedRegionMap::next_active_range(uint offset) const {
   // Find first active index from offset.
   uint start = (uint) _active.find_first_set_bit(offset);
-  if (start == max_length()) {
+  if (start == max_num_regions()) {
     // Early out when no active regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
   uint end = (uint) _active.find_first_clear_bit(start);
@@ -116,9 +116,9 @@ G1HeapRegionRange G1CommittedRegionMap::next_committable_range(uint offset) cons
 
   // Find first free region from offset.
   uint start = (uint) _active.find_first_clear_bit(offset);
-  if (start == max_length()) {
+  if (start == max_num_regions()) {
     // Early out when no free regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
   uint end = (uint) _active.find_first_set_bit(start);
@@ -131,9 +131,9 @@ G1HeapRegionRange G1CommittedRegionMap::next_inactive_range(uint offset) const {
   // Find first inactive region from offset.
   uint start = (uint) _inactive.find_first_set_bit(offset);
 
-  if (start == max_length()) {
+  if (start == max_num_regions()) {
     // Early when no inactive regions are found.
-    return G1HeapRegionRange(max_length(), max_length());
+    return G1HeapRegionRange(max_num_regions(), max_num_regions());
   }
 
   uint end = (uint) _inactive.find_first_clear_bit(start);
@@ -146,28 +146,28 @@ void G1CommittedRegionMap::active_set_range(uint start, uint end) {
   guarantee_mt_safety_active();
 
   _active.par_set_range(start, end, BitMap::unknown_range);
-  _num_active += (end - start);
+  _num_active_regions += (end - start);
 }
 
 void G1CommittedRegionMap::active_clear_range(uint start, uint end) {
   guarantee_mt_safety_active();
 
   _active.par_clear_range(start, end, BitMap::unknown_range);
-  _num_active -= (end - start);
+  _num_active_regions -= (end - start);
 }
 
 void G1CommittedRegionMap::inactive_set_range(uint start, uint end) {
   guarantee_mt_safety_inactive();
 
   _inactive.par_set_range(start, end, BitMap::unknown_range);
-  _num_inactive += (end - start);
+  _num_inactive_regions += (end - start);
 }
 
 void G1CommittedRegionMap::inactive_clear_range(uint start, uint end) {
   guarantee_mt_safety_inactive();
 
   _inactive.par_clear_range(start, end, BitMap::unknown_range);
-  _num_inactive -= (end - start);
+  _num_inactive_regions -= (end - start);
 }
 
 void G1CommittedRegionMap::guarantee_mt_safety_active() const {
@@ -214,20 +214,20 @@ void G1CommittedRegionMap::guarantee_mt_safety_inactive() const {
 
 #ifdef ASSERT
 void G1CommittedRegionMap::verify_active_range(uint start, uint end) const {
-  assert(active(start), "First region (%u) is not active", start);
-  assert(active(end - 1), "Last region (%u) is not active", end - 1);
-  assert(end == _active.size() || !active(end), "Region (%u) is active but not included in range", end);
+  assert(is_active(start), "First region (%u) is not active", start);
+  assert(is_active(end - 1), "Last region (%u) is not active", end - 1);
+  assert(end == _active.size() || !is_active(end), "Region (%u) is active but not included in range", end);
 }
 
 void G1CommittedRegionMap::verify_inactive_range(uint start, uint end) const {
-  assert(inactive(start), "First region (%u) is not inactive", start);
-  assert(inactive(end - 1), "Last region (%u) in range is not inactive", end - 1);
-  assert(end == _inactive.size() || !inactive(end), "Region (%u) is inactive but not included in range", end);
+  assert(is_inactive(start), "First region (%u) is not inactive", start);
+  assert(is_inactive(end - 1), "Last region (%u) in range is not inactive", end - 1);
+  assert(end == _inactive.size() || !is_inactive(end), "Region (%u) is inactive but not included in range", end);
 }
 
 void G1CommittedRegionMap::verify_free_range(uint start, uint end) const {
-  assert(!active(start), "First region (%u) is active", start);
-  assert(!active(end - 1), "Last region (%u) in range is active", end - 1);
+  assert(!is_active(start), "First region (%u) is active", start);
+  assert(!is_active(end - 1), "Last region (%u) in range is active", end - 1);
 }
 
 void G1CommittedRegionMap::verify_no_inactive_regons() const {
