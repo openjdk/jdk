@@ -239,6 +239,7 @@ public:
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
+  bool is_dead_phi();
   int is_diamond_phi() const;
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
@@ -259,13 +260,13 @@ public:
            type()->higher_equal(tp);
   }
 
-  bool can_be_inline_type() const {
+  bool can_be_value_type() const {
     const Type* type = _type->make_oopptr();
     return Arguments::is_valhalla_enabled() && type != nullptr && type->isa_instptr() && type->is_instptr()->can_be_inline_type();
   }
 
-  Node* try_push_inline_types_down(PhaseGVN* phase, bool can_reshape);
-  DEBUG_ONLY(bool can_push_inline_types_down(PhaseGVN* phase);)
+  Node* try_push_value_types_down(PhaseGVN* phase, bool can_reshape);
+  DEBUG_ONLY(bool can_push_value_types_down(PhaseGVN* phase);)
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);

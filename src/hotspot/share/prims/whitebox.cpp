@@ -2045,7 +2045,7 @@ class CollectObjectOops : public BasicOopIterateClosure {
 
   void add_oop(oop o) {
     Handle oh = Handle(Thread::current(), o);
-    if (oh != nullptr && oh->is_inline_type()) {
+    if (oh != nullptr && oh->is_value_type()) {
       oh->oop_iterate(this);
     } else {
       _array->append(oh);
@@ -2191,8 +2191,8 @@ WB_ENTRY(jint, WB_GetMarkWordOffset(JNIEnv* env, jobject o))
   return oopDesc::mark_offset_in_bytes();
 WB_END
 
-WB_ENTRY(jlong, WB_GetInlineTypePattern(JNIEnv* env, jobject o))
-  return markWord::inline_type_pattern;
+WB_ENTRY(jlong, WB_GetValueTypePattern(JNIEnv* env, jobject o))
+  return markWord::value_type_pattern;
 WB_END
 
 WB_ENTRY(jlong, WB_GetNullFreeArrayBitInPlace(JNIEnv* env, jobject o))
@@ -3120,7 +3120,7 @@ static JNINativeMethod methods[] = {
   {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
   {CC"printMethods0",      CC"(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printMethods},
   {CC"getMarkWordOffset",          CC"()I",           (void*)&WB_GetMarkWordOffset},
-  {CC"getInlineTypePattern",       CC"()J",           (void*)&WB_GetInlineTypePattern},
+  {CC"getValueTypePattern",        CC"()J",           (void*)&WB_GetValueTypePattern},
   {CC"getNullFreeArrayBitInPlace", CC"()J",           (void*)&WB_GetNullFreeArrayBitInPlace},
   {CC"getFlatArrayBitInPlace",     CC"()J",           (void*)&WB_GetFlatArrayBitInPlace},
   {CC"getMethodBooleanOption",

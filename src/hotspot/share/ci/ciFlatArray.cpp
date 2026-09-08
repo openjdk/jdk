@@ -26,8 +26,8 @@
 #include "ci/ciConstant.hpp"
 #include "ci/ciField.hpp"
 #include "ci/ciFlatArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "oops/oop.inline.hpp"
 
 // Current value of an element.
@@ -67,7 +67,7 @@ ciConstant ciFlatArray::element_value_by_offset(intptr_t element_offset) {
 }
 
 ciConstant ciFlatArray::field_value_by_offset(intptr_t field_offset) {
-  ciInlineKlass* elt_type = element_type()->as_inline_klass();
+  ciValueKlass* elt_type = element_type()->as_value_klass();
   FlatArrayKlass* faklass;
   GUARDED_VM_ENTRY(faklass = FlatArrayKlass::cast(get_arrayOop()->klass());)
   int lh = faklass->layout_helper();
