@@ -204,12 +204,6 @@ class PollsetSelectorImpl
             while ((ski = updateKeys.pollFirst()) != null) {
                 if (ski.isValid()) {
                     int fd = ski.getFDVal();
-                    if (!ski.isValid()) {
-                        enqueuePollCtl(Pollset.PS_DELETE, fd, 0);
-                        fdToKey.remove(fd);
-                        ski.registeredEvents(0);
-                        continue;
-                    }
                     SelectionKeyImpl previous = fdToKey.putIfAbsent(fd, ski);
                     assert (previous == null) || (previous == ski);
                     int newEvents = ski.translateInterestOps();
@@ -283,6 +277,7 @@ class PollsetSelectorImpl
         synchronized (interruptLock) {
             interruptTriggered = true;
         }
+        Pollset.freePollArray(pollArrayAddress);
         Pollset.freePollArray(pollCtlAddress);
 
         Pollset.close0(fd0);
