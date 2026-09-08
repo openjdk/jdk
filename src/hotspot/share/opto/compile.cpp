@@ -2087,7 +2087,7 @@ void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
     for (uint i = 0; i < wq.size(); ++i) {
       Node* n = wq.at(i);
       if (n->is_Phi()) {
-        assert(!n->as_Phi()->can_push_inline_types_down(&igvn), "should have been processed by igvn");
+        assert(!n->as_Phi()->can_push_value_types_down(&igvn), "should have been processed by igvn");
       }
       for (uint j = 0; j < n->req(); j++) {
         Node* in = n->in(j);

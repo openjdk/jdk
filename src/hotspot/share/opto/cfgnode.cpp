@@ -3220,7 +3220,7 @@ private:
           n = _phase->transform(do_transform(n->as_Phi()));
         }
       }
-      assert(n->is_top() || n->is_InlineType(), "Only InlineType or top at this point.");
+      assert(n->is_top() || n->is_ValueType(), "Only InlineType or top at this point.");
       while (casts.size() != 0) {
         // Push the cast(s) through the ValueTypeNode
         Node *cast = casts.pop()->clone();

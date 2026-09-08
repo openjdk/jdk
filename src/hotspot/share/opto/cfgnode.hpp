@@ -262,7 +262,7 @@ public:
 
   bool can_be_value_type() const {
     const Type* type = _type->make_oopptr();
-    return Arguments::is_valhalla_enabled() && type != nullptr && type->isa_instptr() && type->is_instptr()->can_be_inline_type();
+    return Arguments::is_valhalla_enabled() && type != nullptr && type->isa_instptr() && type->is_instptr()->can_be_value_type();
   }
 
   Node* try_push_value_types_down(PhaseGVN* phase, bool can_reshape);
