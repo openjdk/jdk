@@ -25,8 +25,8 @@
  * @test
  * @bug 8391308
  * @library /test/lib
- * @summary The test verifies heap walking API (FollowReferences) doesn't report classes
- *          when starting from the class loader. This is a change in behavior from 8391308.
+ * @summary The test verifies heap walking API (FollowReferences) reports classes
+ *          when starting from the class loader.
  * @run main/othervm/native -agentlib:ClassLoaderTest ClassLoaderTest
  */
 
@@ -63,6 +63,7 @@ public class ClassLoaderTest {
     }
 
     private static native boolean targetReachedFrom(ClassLoader loader, Class<?> target);
+    private static native boolean targetKindIsArrayElement();
 
     public static void main(String[] args) {
         MyLoader ldr = new MyLoader();
@@ -75,6 +76,8 @@ public class ClassLoaderTest {
 
         Asserts.assertTrue(targetReachedFrom(ldr, test),
                            "FollowReferences starting at MyLoader reached Test.class");
+
+        Asserts.assertTrue(targetKindIsArrayElement(), "FollowReferences target kind is an array element");
 
         Reference.reachabilityFence(ldr);
         Reference.reachabilityFence(test);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
 }
 
 static constexpr jlong TARGET_TAG = 0x1234;
+static long target_kind;
 static bool target_seen;
 
 static jint JNICALL reference_callback(
@@ -66,6 +67,7 @@ static jint JNICALL reference_callback(
         void* user_data) {
     if (*tag_ptr == TARGET_TAG) {
         target_seen = true;
+        target_kind = kind;
         printf("Reached tagged Test.class, reference kind: %d\n", kind);
     }
     return JVMTI_VISIT_OBJECTS;
@@ -91,6 +93,11 @@ Java_ClassLoaderTest_targetReachedFrom(
 
     check_jvmti_error(jvmti->SetTag(target, 0), "clear target tag");
     return target_seen;
+}
+
+JNIEXPORT jboolean JNICALL
+Java_ClassLoaderTest_targetKindIsArrayElement(JNIEnv* env, jclass) {
+    return target_kind == JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT;
 }
 
 }
