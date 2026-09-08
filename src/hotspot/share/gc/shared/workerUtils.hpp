@@ -61,7 +61,7 @@ public:
 
   // Set the number of workers that will use the barrier.
   // Must be called before any of the workers start running.
-  void set_n_workers(uint n_workers);
+  void set_num_workers(uint n_workers);
 
   // Enter the barrier. A worker that enters the barrier will
   // not be allowed to leave until all other threads have

@@ -34,7 +34,7 @@ WorkerThreadsBarrierSync::WorkerThreadsBarrierSync()
     _n_workers(0), _n_completed(0), _should_reset(false), _aborted(false) {
 }
 
-void WorkerThreadsBarrierSync::set_n_workers(uint n_workers) {
+void WorkerThreadsBarrierSync::set_num_workers(uint n_workers) {
   _n_workers    = n_workers;
   _n_completed  = 0;
   _should_reset = false;
