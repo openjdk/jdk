@@ -199,8 +199,9 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     _heap->notify_heap_changed();
   }
 
-  log_info(gc)("%s " PROPERFMT " (" PROPERFMT ") %.3fms",
-               msg, PROPERFMTARGS(uncommitted_count * ShenandoahHeapRegion::region_size_bytes()), PROPERFMTARGS(_heap->capacity()),
+  log_info(gc)("%s %zuM (%zuM) %.3fms",
+               msg, uncommitted_count * ShenandoahHeapRegion::region_size_bytes() / M,
+               _heap->capacity() / M,
                elapsed * MILLIUNITS);
 }
 
