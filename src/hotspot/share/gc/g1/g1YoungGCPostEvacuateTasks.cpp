@@ -337,7 +337,7 @@ public:
     _evac_failure_regions(evac_failure_regions),
     _chunk_bitmap(mtGC) {
 
-    _num_evac_fail_regions = _evac_failure_regions->num_regions_evac_failed();
+    _num_evac_fail_regions = _evac_failure_regions->num_evac_failed_regions();
     _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
 
     _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
@@ -349,10 +349,10 @@ public:
   }
 
   double worker_cost() const override {
-    assert(_evac_failure_regions->has_regions_evac_failed(), "Should not call this if there were no evacuation failures");
+    assert(_evac_failure_regions->has_evac_failed_regions(), "Should not call this if there were no evacuation failures");
 
     double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region_for_scan() / G1RestoreRetainedRegionChunksPerWorker;
-    return workers_per_region * _evac_failure_regions->num_regions_evac_failed();
+    return workers_per_region * _evac_failure_regions->num_evac_failed_regions();
   }
 
   void do_work(uint worker_id) override {
@@ -373,8 +373,8 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
-  bool evac_failed = evac_failure_regions->has_regions_evac_failed();
-  bool alloc_failed = evac_failure_regions->has_regions_alloc_failed();
+  bool evac_failed = evac_failure_regions->has_evac_failed_regions();
+  bool alloc_failed = evac_failure_regions->has_alloc_failed_regions();
 
   add_serial_task(new FlushPssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evac_failed, alloc_failed));
@@ -587,7 +587,7 @@ public:
   }
 
   double worker_cost() const override {
-    return _evac_failure_regions->num_regions_evac_failed();
+    return _evac_failure_regions->num_evac_failed_regions();
   }
 
   void do_work(uint worker_id) override {
@@ -625,7 +625,7 @@ public:
   }
 
   void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
-    evacuation_info->set_regions_freed(_regions_freed);
+    evacuation_info->add_to_freed_regions(_regions_freed);
     evacuation_info->set_collection_set_used_before(_before_used_bytes + _after_used_bytes);
     evacuation_info->increment_collection_set_used_after(_after_used_bytes);
 
@@ -804,7 +804,7 @@ public:
     }
   }
 
-  bool num_retained_regions() const { return _num_retained_regions; }
+  uint num_retained_regions() const { return _num_retained_regions; }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
@@ -952,7 +952,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
   }
   add_serial_task(new DestroyPssTask(per_thread_states));
 
-  if (evac_failure_regions->has_regions_evac_failed()) {
+  if (evac_failure_regions->has_evac_failed_regions()) {
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
 
