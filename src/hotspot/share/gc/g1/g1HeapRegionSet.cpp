@@ -340,7 +340,7 @@ void G1FreeRegionList::verify_list() {
 
     actual_num_regions++;
     guarantee(actual_num_regions < _unrealistically_large_num_regions,
-              "[%s] the calculated number of regions: %u seems very long, cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " num_regions: %u",
+              "[%s] the calculated number of regions: %u seems unrealistically large, cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " num_regions: %u",
               name(), actual_num_regions, p2i(curr), p2i(prev0), p2i(prev1), num_regions());
 
     if (curr->next() != nullptr) {
