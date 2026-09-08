@@ -250,7 +250,10 @@ final class TestConfinedSegmentPool {
                 seedArena.allocate(1);
             }
             Arena displacedArena = Arena.ofConfined();
-            long displacedAddress = displacedArena.allocate(1).address();
+            MemorySegment displacedSegment = displacedArena.allocate(ValueLayout.JAVA_BYTE);
+            long displacedAddress = displacedSegment.address();
+            // Make sure this is cleared later on
+            displacedSegment.set(ValueLayout.JAVA_BYTE, 0, (byte) 42);
 
             // No cached pool remains, so occupyingArena allocates a detached pool.
             // Its generic release occupies displacedArena's remembered slot.
@@ -267,7 +270,10 @@ final class TestConfinedSegmentPool {
                 // Only do this test if we have more than a single pool slot
                 if (THREAD_POOL_COUNT > 1) {
                     try (Arena displacedPoolVerificationArena = Arena.ofConfined()) {
-                        assertEquals(displacedAddress, displacedPoolVerificationArena.allocate(1).address());
+                        MemorySegment displacedPoolVerificationSegment = displacedPoolVerificationArena.allocate(ValueLayout.JAVA_BYTE);
+                        assertEquals(displacedAddress, displacedPoolVerificationSegment.address());
+                        // Assert the 42 is cleared
+                        assertEquals((byte) 0, displacedPoolVerificationSegment.get(ValueLayout.JAVA_BYTE, 0));
                     }
                 }
             }
