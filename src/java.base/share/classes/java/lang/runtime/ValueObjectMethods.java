@@ -173,6 +173,6 @@ final class ValueObjectMethods {
         // Use an alternative non-zero value when the computed hash is zero,
         // to enable caching. The identity hash of the value class distinguishes
         // different value classes and is easy for the compiler to fetch.
-        return result == 0 ? typeHash : result;
+        return (result & 0x7fffffff) == 0 ? typeHash : result;
     }
 }
