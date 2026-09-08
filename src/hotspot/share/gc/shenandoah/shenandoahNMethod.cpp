@@ -156,9 +156,7 @@ void ShenandoahNMethod::handle_oops(nmethod* nm, ICacheInvalidationContext* icic
     ShenandoahKeepAliveClosure cl;
     data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
   } else {
-    // There is possibility that GC is cancelled when it arrives final mark.
-    // In this case, concurrent root phase is skipped and degenerated GC should be
-    // followed, where nmethods are disarmed.
+    // No other phases need oop fixups or scans.
   }
 }
 
