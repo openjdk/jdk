@@ -120,7 +120,7 @@ public class TestLookForUntestedEvents {
         for (Path p : paths) {
             List<String> lines = Files.readAllLines(p);
             for (String event : checkedEvents) {
-                if (findStringInFile(lines, event)) {
+                if (findStringInLines(lines, event)) {
                     eventsNotCoveredByTest.remove(event);
                 }
             }
@@ -196,7 +196,7 @@ public class TestLookForUntestedEvents {
         return "java".equals(fileName.substring(i+1));
     }
 
-    private static boolean findStringInFile(List<String> lines, String searchTerm) {
+    private static boolean findStringInLines(List<String> lines, String searchTerm) {
         return lines.stream().filter(line -> line.contains(searchTerm)).count() != 0;
     }
 
