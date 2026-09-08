@@ -123,11 +123,12 @@ public final class ConfinedSegmentPool {
      * Acquires and removes a pool from the appropriate cache for an arena owned
      * by the current thread. A platform-thread arena uses its owner's cache, while
      * a virtual-thread arena uses the current carrier's cache.
-     *
+     * @param confinedArena the confined arena to which we shall "remember" pool cache
+     *                      and pool slot upon successful platform-thread acquisition
      * @return a non-zero native address, or zero if no pool is available
      */
     @ForceInline
-    static long acquire() {
+    static long acquire(ArenaImpl.OfConfined confinedArena) {
         if (POOLING_DISABLED) {
             return 0;
         }
@@ -135,12 +136,12 @@ public final class ConfinedSegmentPool {
         if (ContinuationSupport.isSupported() && thread.isVirtual()) {
             Continuation.pin();
             try {
-                return acquireFromCache(JLA.currentCarrierThread());
+                return acquireFromCache(JLA.currentCarrierThread(), null);
             } finally {
                 Continuation.unpin();
             }
         } else {
-            return acquireFromCache(thread);
+            return acquireFromCache(thread, confinedArena);
         }
     }
 
@@ -172,6 +173,30 @@ public final class ConfinedSegmentPool {
         }
     }
 
+
+    /**
+     * Clears the used prefix and returns a platform-thread arena's pool directly
+     * to the cache slot from which it was acquired. If another arena, including one
+     * created during reentrant cleanup, has occupied that slot, the generic cache search
+     * preserves the usual release semantics.
+     */
+    @ForceInline
+    static void releaseToRememeberedPoolSlot(long[] pools, int poolIndex, long pool, long usedSize) {
+        checkRelease(pool, usedSize);
+        if (poolIndex < 0 || poolIndex >= pools.length) {
+            throw cannotReleasePooledMemory(pool, usedSize);
+        }
+        final long entry = pools[poolIndex];
+        if (entry == 0) {
+            zeroOutMemory(pool, usedSize);
+            pools[poolIndex] = pool;
+        } else {
+            // Cleanup can reenter allocation and release another arena into our
+            // remembered slot before this arena closes.
+            releaseToCacheOrFree(pools, pool, usedSize);
+        }
+    }
+
     /**
      * Frees all available pools recorded in the terminating platform thread's
      * cache. Pools owned by open arenas are detached from the cache and are not
@@ -188,7 +213,7 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static long acquireFromCache(Thread cacheOwner) {
+    private static long acquireFromCache(Thread cacheOwner, ArenaImpl.OfConfined confinedArena) {
         final long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
             return 0;
@@ -197,6 +222,9 @@ public final class ConfinedSegmentPool {
             final long pool = pools[i];
             if (pool != 0) {
                 pools[i] = 0; // available -> arena-owned and detached
+                if (confinedArena != null) {
+                    confinedArena.rememberPoolCacheAndIndex(pools, i);
+                }
                 return pool;
             }
         }
@@ -217,9 +245,7 @@ public final class ConfinedSegmentPool {
     @ForceInline
     private static void releaseToCache(Thread cacheOwner, long pool, long usedSize) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
-        if (pool == 0 || usedSize < 0 || usedSize > POOLED_MEMORY_SIZE) {
-            throw cannotReleasePooledMemory(pool, usedSize);
-        }
+        checkRelease(pool, usedSize);
 
         long[] pools = JLA.getConfinedMemoryPools(cacheOwner);
         if (pools == null) {
@@ -229,6 +255,11 @@ public final class ConfinedSegmentPool {
             }
         }
 
+        releaseToCacheOrFree(pools, pool, usedSize);
+    }
+
+    @ForceInline
+    private static void releaseToCacheOrFree(long[] pools, long pool, long usedSize) {
         for (int i = 0; i < pools.length; i++) {
             final long entry = pools[i];
             if (entry == pool) {
@@ -289,6 +320,14 @@ public final class ConfinedSegmentPool {
             for (long i = 0; i < size; i += Long.BYTES) {
                 U.putLong(address + i, 0L);
             }
+        }
+    }
+
+    @ForceInline
+    private static void checkRelease(long pool, long usedSize) {
+        // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
+        if (pool == 0 || usedSize < 0 || usedSize > POOLED_MEMORY_SIZE) {
+            throw cannotReleasePooledMemory(pool, usedSize);
         }
     }
 
