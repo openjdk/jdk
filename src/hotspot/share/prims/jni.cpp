@@ -2225,7 +2225,7 @@ JNI_ENTRY_NO_PRESERVE(const jchar*, jni_GetStringChars(
   if (s_value != nullptr) {
     int s_len = java_lang_String::length(s, s_value);
     bool is_latin1 = java_lang_String::is_latin1(s);
-    buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+    buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtJNI);  // add one for zero termination
     /* JNI Specification states return null on OOM */
     if (buf != nullptr) {
       if (s_len > 0) {
@@ -2304,7 +2304,7 @@ JNI_ENTRY(const char*, jni_GetStringUTFChars(JNIEnv *env, jstring string, jboole
     size_t length = java_lang_String::utf8_length(java_string, s_value);
     // JNI Specification states return null on OOM.
     // The resulting sequence doesn't have to be NUL-terminated but we do.
-    result = AllocateHeap(length + 1, mtInternal, AllocFailStrategy::RETURN_NULL);
+    result = AllocateHeap(length + 1, mtJNI, AllocFailStrategy::RETURN_NULL);
     if (result != nullptr) {
       java_lang_String::as_utf8_string(java_string, s_value, result, length + 1);
       if (isCopy != nullptr) {
@@ -2469,7 +2469,7 @@ static char* get_bad_address() {
   static char* bad_address = nullptr;
   if (bad_address == nullptr) {
     size_t size = os::vm_allocation_granularity();
-    bad_address = os::reserve_memory(size, mtInternal);
+    bad_address = os::reserve_memory(size, mtJNI);
     if (bad_address != nullptr) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
@@ -2500,7 +2500,7 @@ JNI_ENTRY_NO_PRESERVE(ElementType*, \
     result = (ElementType*)get_bad_address(); \
   } else { \
     /* JNI Specification states return null on OOM */                    \
-    result = NEW_C_HEAP_ARRAY_RETURN_NULL(ElementType, len, mtInternal); \
+    result = NEW_C_HEAP_ARRAY_RETURN_NULL(ElementType, len, mtJNI);      \
     if (result != nullptr) {                                             \
       /* copy the array to the c chunk */                                \
       ArrayAccess<>::arraycopy_to_native(a, typeArrayOopDesc::element_offset<ElementType>(0), \
@@ -2924,7 +2924,7 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
     // Inflate latin1 encoded string to UTF16
     typeArrayOop s_value = java_lang_String::value(s);
     int s_len = java_lang_String::length(s, s_value);
-    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtJNI);  // add one for zero termination
     /* JNI Specification states return null on OOM */
     if (ret != nullptr) {
       for (int i = 0; i < s_len; i++) {
