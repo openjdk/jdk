@@ -507,6 +507,49 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   _max_used_index = 0;
 }
 
+const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index) const {
+  AllClassLocationStreams all_css;
+  ClassLocationStream runtime_css = all_css.boot_and_app_cp();
+
+  const AOTClassLocation* cs = class_location_at(shared_path_index);
+  const char* effective_dumptime_path = cs->path();
+
+  const char* runtime_lcp = nullptr;
+  size_t runtime_lcp_len = 0;
+  bool use_lcp_match = need_lcp_match(all_css);
+
+  if (use_lcp_match && _dumptime_lcp_len > 0) {
+    runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
+    effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+  }
+
+  const char* runtime_path = get_runtime_path_helper(cs, effective_dumptime_path, runtime_css);
+
+  if (use_lcp_match && runtime_lcp != nullptr) {
+    os::free((void*)runtime_lcp);
+  }
+  return runtime_path;
+}
+
+const char* AOTClassLocationConfig::get_runtime_path_helper(const AOTClassLocation* cs, const char* effective_dumptime_path,
+                                                            ClassLocationStream& runtime_css) const {
+  if (!cs->from_cpattr()) {
+    runtime_css.start();
+    const char* runtime_path = nullptr;
+
+    while (runtime_css.has_next()) {
+      runtime_path = runtime_css.get_next();
+      if (file_exists(runtime_path) && os::same_files(effective_dumptime_path, runtime_path)) {
+        return runtime_path;
+      }
+    }
+    // The file was not found, fall back to the dumptime path
+    return cs->path();
+  } else {
+    return effective_dumptime_path;
+  }
+}
+
 // Find the longest common prefix of two paths, up to max_lcp_len.
 // E.g.   p1 = "/a/b/foo"
 //        p2 = "/a/b/bar"

@@ -221,6 +221,10 @@ public:
     return _runtime_instance;
   }
 
+  const char* get_runtime_path(int shared_path_index) const;
+  const char* get_runtime_path_helper(const AOTClassLocation* cs, const char* effective_dumptime_path,
+                                      ClassLocationStream& runtime_css) const;
+
   // Common accessors
   int boot_cp_start_index()          const { return 1; }
   int boot_cp_end_index()            const { return _boot_classpath_end; }
