@@ -29,8 +29,8 @@
 #include "classfile/classLoaderData.hpp"
 #include "memory/allocation.hpp"
 #include "oops/fieldStreams.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "utilities/growableArray.hpp"
 
 // Classes below are used to compute the field layout of classes.
@@ -61,7 +61,7 @@ class LayoutRawBlock : public ResourceObj {
     EMPTY,         // empty slot, space is taken from this to allocate fields
     RESERVED,      // reserved for JVM usage (for instance object header)
     PADDING,       // padding (because of alignment constraints or @Contended)
-    REGULAR,       // primitive or oop field (including not flat inline type fields)
+    REGULAR,       // primitive or oop field (including not flat value type fields)
     FLAT,          // flat field
     INHERITED,     // field(s) inherited from super classes
     NULL_MARKER    // stores the null marker for a flat field
@@ -70,7 +70,7 @@ class LayoutRawBlock : public ResourceObj {
  private:
   LayoutRawBlock* _next_block;
   LayoutRawBlock* _prev_block;
-  InlineKlass* _inline_klass;
+  ValueKlass* _value_klass;
   Kind _block_kind;
   LayoutKind _layout_kind;
   int _offset;
@@ -104,11 +104,11 @@ class LayoutRawBlock : public ResourceObj {
     assert(_field_index == -1, "Must not be initialized");
     _field_index = field_index;
   }
-  InlineKlass* inline_klass() const {
-    assert(_inline_klass != nullptr, "Must be initialized");
-    return _inline_klass;
+  ValueKlass* value_klass() const {
+    assert(_value_klass != nullptr, "Must be initialized");
+    return _value_klass;
   }
-  void set_inline_klass(InlineKlass* inline_klass) { _inline_klass = inline_klass; }
+  void set_value_klass(ValueKlass* value_klass) { _value_klass = value_klass; }
 
   LayoutKind layout_kind() const { return _layout_kind; }
   void set_layout_kind(LayoutKind kind) { _layout_kind = kind; }
@@ -158,7 +158,7 @@ class FieldGroup : public ResourceObj {
 
   void add_primitive_field(int idx, BasicType type);
   void add_oop_field(int idx);
-  void add_flat_field(int idx, InlineKlass* vk, LayoutKind lk);
+  void add_flat_field(int idx, ValueKlass* vk, LayoutKind lk);
   void add_block(LayoutRawBlock** list, LayoutRawBlock* block);
   void sort_by_size();
  private:
@@ -185,7 +185,7 @@ class FieldGroup : public ResourceObj {
 class FieldLayout : public ResourceObj {
  private:
   GrowableArray<FieldInfo>* _field_info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   ConstantPool* _cp;
   LayoutRawBlock* _blocks;  // the layout being computed
   LayoutRawBlock* _start;   // points to the first block where a field can be inserted
@@ -193,13 +193,13 @@ class FieldLayout : public ResourceObj {
   int _super_first_field_offset;
   int _super_alignment;
   int _super_min_align_required;
-  int _null_reset_value_offset;    // offset of the reset value in class mirror, only for static layout of inline classes
+  int _null_reset_value_offset;    // offset of the reset value in class mirror, only for static layout of value classes
   int _acmp_maps_offset;
   bool _super_has_nonstatic_fields;
   bool _has_inherited_fields;
 
  public:
-  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<InlineLayoutInfo>* inline_layout_info_array, ConstantPool* cp);
+  FieldLayout(GrowableArray<FieldInfo>* field_info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array, ConstantPool* cp);
   void initialize_static_layout();
   void initialize_instance_layout(const InstanceKlass* ik, bool& super_ends_with_oop);
 
@@ -242,13 +242,13 @@ class FieldLayout : public ResourceObj {
   void shift_fields(int shift);
   LayoutRawBlock* find_null_marker();
   void remove_null_marker();
-  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<InlineLayoutInfo>* inline_fields, bool dummy_field_is_reused_as_null_marker);
+  void print(outputStream* output, bool is_static, const InstanceKlass* super, Array<ValueFieldLayoutInfo>* value_fields, bool dummy_field_is_reused_as_null_marker);
 };
 
 
 // FieldLayoutBuilder is the main entry point for layout computation.
 // This class has two methods to generate layout: one for identity classes
-// and one for inline classes. The rationale for having two methods
+// and one for value classes. The rationale for having two methods
 // is that each kind of class has a different set of goals regarding
 // its layout, so instead of mixing two layout strategies into a
 // single method, each kind has its own method (see comments below
@@ -258,7 +258,7 @@ class FieldLayout : public ResourceObj {
 //   1 - Prologue: preparation of data structure and gathering of
 //       layout information inherited from super classes
 //   2 - Field sorting: fields are sorted according to their
-//       kind (oop, primitive, inline class) and their contention
+//       kind (oop, primitive, value class) and their contention
 //       annotation (if any)
 //   3 - Layout is computed from the set of lists generated during
 //       step 2
@@ -267,7 +267,7 @@ class FieldLayout : public ResourceObj {
 //       static field size, non-static field size, etc.)
 //
 //  Steps 1 and 4 are common to all layout computations. Step 2 and 3
-//  differ for inline classes and identity classes.
+//  differ for value classes and identity classes.
 //
 class FieldLayoutBuilder : public ResourceObj {
 
@@ -278,7 +278,7 @@ class FieldLayoutBuilder : public ResourceObj {
   ConstantPool* _constant_pool;
   GrowableArray<FieldInfo>* _field_info;
   FieldLayoutInfo* _info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   FieldGroup* _root_group;
   GrowableArray<FieldGroup*> _contended_groups;
   FieldGroup* _static_fields;
@@ -307,16 +307,16 @@ class FieldLayoutBuilder : public ResourceObj {
   bool _has_inlined_fields;
   bool _is_contended;
   bool _super_ends_with_oop;
-  bool _is_inline_type;
+  bool _is_concrete_value;
   bool _is_abstract_value;
-  bool _is_empty_inline_class;
+  bool _is_empty_value_class;
 
   FieldGroup* get_or_create_contended_group(int g);
 
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
-                     GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_inline_type, bool is_abstract_value,
-                     bool must_be_atomic, FieldLayoutInfo* info, Array<InlineLayoutInfo>* inline_layout_info_array);
+                     GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
+                     bool must_be_atomic, FieldLayoutInfo* info, Array<ValueFieldLayoutInfo>* value_field_layout_info_array);
 
   int  payload_offset() const                  { assert(_payload_offset != -1, "Uninitialized"); return _payload_offset; }
   int  payload_layout_size_in_bytes() const    { return _payload_size_in_bytes; }
@@ -331,11 +331,11 @@ class FieldLayoutBuilder : public ResourceObj {
   bool has_nullable_non_atomic_layout() const  { return _nullable_non_atomic_layout_size_in_bytes != -1; }
   int  nullable_non_atomic_layout_size_in_bytes() const { return _nullable_non_atomic_layout_size_in_bytes; }
   int  null_marker_offset() const              { return _null_marker_offset; }
-  bool is_empty_inline_class() const           { return _is_empty_inline_class; }
+  bool is_empty_value_class() const            { return _is_empty_value_class; }
 
   void build_layout();
   void compute_regular_layout();
-  void compute_inline_class_layout();
+  void compute_value_class_layout();
   LayoutRawBlock* insert_contended_padding(LayoutRawBlock* slot);
 
  protected:
@@ -343,8 +343,8 @@ class FieldLayoutBuilder : public ResourceObj {
   void epilogue();
   int add_field_to_group(FieldInfo fieldinfo, int idx, FieldGroup* group);
   void regular_field_sorting();
-  void inline_class_field_sorting();
-  void add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_map, InlineKlass* vk, int offset);
+  void value_class_field_sorting();
+  void add_flat_field_oopmap(OopMapBlocksBuilder* nonstatic_oop_map, ValueKlass* vk, int offset);
   void register_embedded_oops_from_list(OopMapBlocksBuilder* nonstatic_oop_maps, GrowableArray<LayoutRawBlock*>* list);
   void register_embedded_oops(OopMapBlocksBuilder* nonstatic_oop_maps, FieldGroup* group);
   void generate_acmp_maps();

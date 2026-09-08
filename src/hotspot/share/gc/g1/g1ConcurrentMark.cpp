@@ -3157,9 +3157,9 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_group_id     = r->rem_set()->has_cset_group()
-                         ? r->rem_set()->cset_group_id()
-                         : G1CSetCandidateGroup::NoGroupId;
+  uint card_set_group_id  = r->rem_set()->has_card_set_group()
+                          ? r->rem_set()->card_set_group_id()
+                          : G1CardSetGroup::NoGroupId;
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -3179,7 +3179,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_group_id);
+                        card_set_group_id);
 
   return false;
 }
@@ -3194,7 +3194,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
 
-  log_cset_candidate_groups();
+  log_card_set_groups();
 
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
@@ -3214,7 +3214,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGroup* group, const char* type) {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
@@ -3231,15 +3231,15 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSet
   _total_remset_bytes += group->card_set()->mem_size();
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
-  for (G1CSetCandidateGroup* group : gl) {
-    log_cset_candidate_group_add_total(group, type);
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_list(G1CardSetGroupList& gl, const char* type) {
+  for (G1CardSetGroup* group : gl) {
+    log_card_set_group_add_total(group, type);
   }
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
+void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Card Set Groups");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young, M=From Marking Regions, R=Retained Regions");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_H_FORMAT
@@ -3248,7 +3248,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
-                          "groud-id", "num-regions",
+                          "group-id", "num-regions",
                           "gc-eff", "liveness",
                           "remset", "type");
 
@@ -3265,9 +3265,9 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
+  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
-  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
-  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
+  log_card_set_group_list(candidates->from_marking_groups(), "M");
+  log_card_set_group_list(candidates->retained_groups(), "R");
 }
