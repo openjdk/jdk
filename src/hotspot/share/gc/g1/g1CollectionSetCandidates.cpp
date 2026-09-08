@@ -170,7 +170,7 @@ void G1CSetCandidateGroupList::remove(G1CSetCandidateGroupList* other) {
     return;
   }
 
-  // Must be sorted by gc efficiency
+  // Must be sorted by GC efficiency.
   other->verify();
 
   // Create a list from scratch, copying over the elements from the candidate

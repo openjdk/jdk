@@ -52,7 +52,6 @@ class G1ConcurrentRefineStats;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
-class G1Policy;
 class G1YoungGenPredictor;
 class GCPolicyCounters;
 class STWGCTimer;
@@ -102,11 +101,11 @@ class G1Policy: public CHeapObj<mtGC> {
   Atomic<uint> _reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
-
-  // Baseline free regions used for sizing the young gen.
-  // This is updated at the end of GC or after successful humongous allocation.
-  // Eden allocations are accounted for separately by the sizing logic.
-  Atomic<uint> _free_regions_for_young_sizing;
+  // Region budget for Eden allocation during the current mutator phase. It
+  // includes regions already allocated to Eden and free regions available for
+  // Eden allocation. Humongous allocations, Remark reclamation, and heap
+  // resizing modify this value.
+  Atomic<uint> _eden_region_allocation_budget;
 
   // Tracks the number of cards marked as dirty (only) during garbage collection
   // (evacuation) on the card table.
@@ -125,9 +124,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double pending_cards_processing_time() const;
 
-  uint free_regions_for_young_sizing() const {
-    return _free_regions_for_young_sizing.load_relaxed();
+  uint eden_region_allocation_budget() const {
+    return _eden_region_allocation_budget.load_relaxed();
   }
+
+  void reset_eden_region_allocation_budget();
 
 public:
   const G1Predictions& predictor() const { return _predictor; }
@@ -137,7 +138,7 @@ public:
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
-  void update_free_regions_for_young_sizing();
+  void adjust_eden_region_allocation_budget(uint num_free_before, uint num_free_after);
 
   void set_region_eden(G1HeapRegion* hr) {
     hr->install_surv_rate_group(_eden_surv_rate_group);
@@ -313,7 +314,7 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  void record_concurrent_mark_remark_end();
+  void record_concurrent_mark_remark_end(uint free_regions_before_remark);
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);

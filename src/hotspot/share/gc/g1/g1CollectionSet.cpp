@@ -374,8 +374,8 @@ G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegi
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
                             "predicted Eden time: %1.2fms, predicted base time: %1.2fms, "
-                            "target pause time: %1.2fms, old CSet time budget: %1.2fms "
-                            "Eden bytes to copy: %zu Survivor bytes to copy: %zu "
+                            "target pause time: %1.2fms, old CSet time budget: %1.2fms, "
+                            "Eden bytes to copy: %zu, Survivor bytes to copy: %zu, "
                             "old CSet copy budget: %zuB",
                             num_eden_regions, num_survivor_regions,
                             predicted_eden_time, predicted_base_time_ms, target_pause_time_ms,
@@ -744,7 +744,9 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
                             "Min %u regions, max %u regions, available %u regions (%u groups), "
                             "time budget %1.2fms, optional threshold %1.2fms, "
                             "old CSet copy budget %zuB",
-                            min_num_old_cset_regions, max_num_old_cset_regions, from_marking_groups->num_regions(), from_marking_groups->length(),
+                            min_num_old_cset_regions, max_num_old_cset_regions,
+                            from_marking_groups->num_regions(),
+                            from_marking_groups->length(),
                             candidate_selection.time_budget_ms(), optional_threshold_ms,
                             candidate_selection.copy_budget_bytes());
 
@@ -917,7 +919,7 @@ void G1CollectionSet::RetainedCandidateSelection::age_and_remove_unreclaimable_c
   uint num_retained_groups = retained_groups.length();
 
   if (retained_groups.length() == 0) {
-    log_debug(gc, ergo, cset)("No Retained Candidates.");
+    log_debug(gc, ergo, cset)("No retained candidates.");
     return;
   }
 
@@ -997,7 +999,7 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
     selected.append(group);
   }
 
-  log_debug(gc, ergo, cset)("Completed with groups, selected %u region in %u groups, "
+  log_debug(gc, ergo, cset)("Completed with groups, selected %u regions in %u groups, "
                             "predicted copy bytes: %zuB, old CSet copy budget: %zuB",
                             num_regions_selected, selected.length(), total_bytes_to_copy,
                             copy_budget_bytes);
