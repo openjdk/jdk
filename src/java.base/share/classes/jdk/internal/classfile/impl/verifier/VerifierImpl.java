@@ -322,7 +322,8 @@ public final class VerifierImpl {
 
         // Collect the initial strict instance fields
         Set<NameAndTypeEntry> strict_fields = new HashSet<>();
-        if (m.name().equals(ConstantDescs.INIT_NAME)) {
+        // Hotspot runtime filters STRICT_INIT flag by classfile version, ClassFile API needs extra check
+        if (m.name().equals(ConstantDescs.INIT_NAME) && supports_strict_fields(_klass)) {
             for (var fs : current_class().clm.fields()) {
                 if (fs.flags().has(AccessFlag.STRICT_INIT) && !fs.flags().has(AccessFlag.STATIC)) {
                     var new_field = TemporaryConstantPool.INSTANCE.nameAndTypeEntry(fs.fieldName(), fs.fieldType());
@@ -331,6 +332,7 @@ public final class VerifierImpl {
             }
         }
 
+        Set<NameAndTypeEntry> read_only_strict_fields = new HashSet<>(strict_fields);
         VerificationFrame current_frame = new VerificationFrame(max_locals, max_stack, strict_fields, this);
         VerificationType return_type = current_frame.set_locals_from_arg(m, current_type());
         int stackmap_index = 0;
@@ -345,7 +347,7 @@ public final class VerifierImpl {
         verify_local_variable_table(code_length, code_data);
 
         var reader = new VerificationTable.StackMapReader(stackmap_data, code_data, code_length, current_frame,
-                (char) max_locals, (char) max_stack, strict_fields, cp, this);
+                (char) max_locals, (char) max_stack, read_only_strict_fields, cp, this);
         VerificationTable stackmap_table = new VerificationTable(reader, cp, this);
 
         var bcs = code.start();
@@ -361,7 +363,6 @@ public final class VerifierImpl {
             boolean verified_exc_handlers = false;
             {
                 int index;
-                int target;
                 VerificationType type, type2 = null;
                 VerificationType atype;
                 if (bcs.isWide()) {
@@ -1069,9 +1070,8 @@ public final class VerifierImpl {
                     case IFLE:
                         current_frame.pop_stack(
                             VerificationType.integer_type);
-                        target = bcs.dest();
                         stackmap_table.check_jump_target(
-                            current_frame, target);
+                            current_frame, bcs.bci(), bcs.getOffsetS2());
                         no_control_flow = false; break;
                     case IF_ACMPEQ :
                     case IF_ACMPNE :
@@ -1080,19 +1080,16 @@ public final class VerifierImpl {
                     case IFNULL :
                     case IFNONNULL :
                         current_frame.pop_stack(object_type());
-                        target = bcs.dest();
                         stackmap_table.check_jump_target
-                            (current_frame, target);
+                            (current_frame, bcs.bci(), bcs.getOffsetS2());
                         no_control_flow = false; break;
                     case GOTO :
-                        target = bcs.dest();
                         stackmap_table.check_jump_target(
-                            current_frame, target);
+                            current_frame, bcs.bci(), bcs.getOffsetS2());
                         no_control_flow = true; break;
                     case GOTO_W :
-                        target = bcs.destW();
                         stackmap_table.check_jump_target(
-                            current_frame, target);
+                            current_frame, bcs.bci(), bcs.getOffsetS4());
                         no_control_flow = true; break;
                     case TABLESWITCH :
                     case LOOKUPSWITCH :
@@ -1154,11 +1151,9 @@ public final class VerifierImpl {
                     case INVOKEVIRTUAL :
                     case INVOKESPECIAL :
                     case INVOKESTATIC :
-                        this_uninit = verify_invoke_instructions(bcs, code_length, current_frame, (bci >= ex_minmax[0] && bci < ex_minmax[1]), this_uninit, return_type, cp, stackmap_table);
-                        no_control_flow = false; break;
                     case INVOKEINTERFACE :
                     case INVOKEDYNAMIC :
-                        this_uninit = verify_invoke_instructions(bcs, code_length, current_frame, (bci >= ex_minmax[0] && bci < ex_minmax[1]), this_uninit, return_type, cp, stackmap_table);
+                        this_uninit = verify_invoke_instructions(bcs, code_length, current_frame, (bci >= ex_minmax[0] && bci < ex_minmax[1]), this_uninit, cp, stackmap_table);
                         no_control_flow = false; break;
                     case NEW :
                     {
@@ -1475,12 +1470,11 @@ public final class VerifierImpl {
                 }
             }
         }
-        int target = bci + default_offset;
-        stackmap_table.check_jump_target(current_frame, target);
+        stackmap_table.check_jump_target(current_frame, bci, default_offset);
         for (int i = 0; i < keys; i++) {
             aligned_bci = VerificationBytecodes.align(bcs.bci() + 1);
-            target = bci + bcs.getIntUnchecked(aligned_bci + (3+i*delta)*4);
-            stackmap_table.check_jump_target(current_frame, target);
+            int offset = bcs.getIntUnchecked(aligned_bci + (3+i*delta)*4);
+            stackmap_table.check_jump_target(current_frame, bci, offset);
         }
     }
 
@@ -1533,7 +1527,8 @@ public final class VerifierImpl {
                         // Set the type to the current type so the is_assignable check passes.
                         stack_object_type = current_type();
 
-                        if (fd.flags().has(AccessFlag.STRICT_INIT)) {
+                        // Hotspot runtime filters STRICT_INIT flag by classfile version, ClassFile API needs extra check
+                        if (fd.flags().has(AccessFlag.STRICT_INIT) && supports_strict_fields(_klass)) {
                             current_frame.satisfy_unset_field(fd.fieldName(), fd.fieldType());
                         }
                     }
@@ -1607,7 +1602,7 @@ public final class VerifierImpl {
         return false;
     }
 
-    boolean verify_invoke_instructions(RawBytecodeHelper bcs, int code_length, VerificationFrame current_frame, boolean in_try_block, boolean this_uninit, VerificationType return_type, ConstantPoolWrapper cp, VerificationTable stackmap_table) {
+    boolean verify_invoke_instructions(RawBytecodeHelper bcs, int code_length, VerificationFrame current_frame, boolean in_try_block, boolean this_uninit, ConstantPoolWrapper cp, VerificationTable stackmap_table) {
         // Make sure the constant pool item is the right type
         int index = bcs.getIndexU2();
         int opcode = bcs.opcode();

@@ -1139,17 +1139,31 @@ const char *InstructForm::mach_base_class(FormDict &globals)  const {
   return nullptr;
 }
 
-// Compare the instruction predicates for textual equality
-bool equivalent_predicates( const InstructForm *instr1, const InstructForm *instr2 ) {
-  const Predicate *pred1  = instr1->_predicate;
-  const Predicate *pred2  = instr2->_predicate;
-  if( pred1 == nullptr && pred2 == nullptr ) {
+// Do the instruction predicates allow target_instr to be replaced by replacement_instr for cisc-spill optimzation.
+static bool has_predicate_subset( const InstructForm *target_instr, const InstructForm *replacement_instr ) {
+  const Predicate *target_p  = target_instr->_predicate;
+  const Predicate *replacement_p  = replacement_instr->_predicate;
+  if( target_p == nullptr && replacement_p == nullptr ) {
     // no predicates means they are identical
     return true;
   }
-  if( pred1 != nullptr && pred2 != nullptr ) {
+
+  #ifdef AMD64
+  // A replacement_instr with no predicate handles a superset of the cases that target_instr handles.
+  // *Except* when target_instr has "predicate(false)", which shouldn't match anything.
+  // This is safe for x86 which only uses such predicates for instructions that should only be expanded
+  // as part of peephole optimizations. It's unclear if this is safe for s390 due to more complex predicates
+  // like "predicate(false && <more expressions>)". For now only enable for x86 (AMD64)
+  #define PREDICATE_FALSE_EXPR "#line 9\nfalse\n#line 9\n"
+
+  if( replacement_p == nullptr && !ADLParser::equivalent_expressions(target_p->_pred, PREDICATE_FALSE_EXPR) ) {
+    return true;
+  }
+  #endif /* AMD64 */
+
+  if( target_p != nullptr && replacement_p != nullptr ) {
     // compare the predicates
-    if (ADLParser::equivalent_expressions(pred1->_pred, pred2->_pred)) {
+    if (ADLParser::equivalent_expressions(target_p->_pred, replacement_p->_pred)) {
       return true;
     }
   }
@@ -1169,8 +1183,8 @@ bool InstructForm::cisc_spills_to(ArchDesc &AD, InstructForm *instr) {
   const char *op_name            = nullptr;
   const char *reg_type           = nullptr;
   FormDict   &globals            = AD.globalNames();
-  cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type);
-  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && equivalent_predicates(this, instr) ) {
+  cisc_spill_operand = _matrule->matchrule_cisc_spill_match(globals, AD.get_registers(), instr->_matrule, op_name, reg_type, this, instr);
+  if( (cisc_spill_operand != Not_cisc_spillable) && (op_name != nullptr) && has_predicate_subset(this, instr) ) {
     cisc_spill_operand = operand_position(op_name, Component::USE);
     int def_oper  = operand_position(op_name, Component::DEF);
     if( def_oper == NameList::Not_in_list && instr->num_opnds() == num_opnds()) {
@@ -3699,7 +3713,8 @@ bool static root_ops_match(FormDict &globals, const char *op1, const char *op2) 
 
 //-------------------------cisc_spill_match_node-------------------------------
 // Recursively check two MatchRules for legal conversion via cisc-spilling
-int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, MatchNode* mRule2, const char* &operand, const char* &reg_type) {
+int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, MatchNode* mRule2, const char* &operand, const char* &reg_type,
+                                InstructForm *from_instr, InstructForm *to_instr) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3715,7 +3730,14 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
   const Form *form  = globals[_opType];
   const Form *form2 = globals[mRule2->_opType];
   if( form == form2 ) {
-    cisc_spillable = Maybe_cisc_spillable;
+    if (form->is_operand()) {
+      // Disallow cisc-spilling if only 1 operand is a DEF, or both are DEFs but at different positions.
+      //     from_instr: andI_rReg_ndd, MatchRule: ( Set dst (AndI  src1 src2) ).       src1: (position(DEF) = -1, position(USE) = 1)
+      //     to_instr: andI_rReg_mem, MatchRule:   ( Set dst (AndI  dst (LoadI  src)) ). dst: (position(DEF) = 0,  position(USE) = 1)
+      if (from_instr->operand_position(this->_name, Component::DEF) != to_instr->operand_position(mRule2->_name, Component::DEF)) {
+        cisc_spillable = Not_cisc_spillable;
+      }
+    }
   } else {
     const InstructForm *form2_inst = form2 ? form2->is_instruction() : nullptr;
     const char *name_left  = mRule2->_lChild ? mRule2->_lChild->_opType : nullptr;
@@ -3762,14 +3784,14 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
     if( (_lChild == nullptr) && (mRule2->_lChild == nullptr) ) {
       left_spillable = Maybe_cisc_spillable;
     } else  if (_lChild != nullptr) {
-      left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type);
+      left_spillable = _lChild->cisc_spill_match(globals, registers, mRule2->_lChild, operand, reg_type, from_instr, to_instr);
     }
 
     // Check right operands
     if( (_rChild == nullptr) && (mRule2->_rChild == nullptr) ) {
       right_spillable =  Maybe_cisc_spillable;
     } else if (_rChild != nullptr) {
-      right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type);
+      right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type, from_instr, to_instr);
     }
 
     // Combine results of left and right checks
@@ -3785,7 +3807,7 @@ int MatchNode::cisc_spill_match(FormDict& globals, RegisterForm* registers, Matc
 // general recursive checks done in MatchNode
 int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* registers,
                                            MatchRule* mRule2, const char* &operand,
-                                           const char* &reg_type) {
+                                           const char* &reg_type, InstructForm *from_instr, InstructForm *to_instr) {
   int cisc_spillable  = Maybe_cisc_spillable;
   int left_spillable  = Maybe_cisc_spillable;
   int right_spillable = Maybe_cisc_spillable;
@@ -3815,7 +3837,7 @@ int  MatchRule::matchrule_cisc_spill_match(FormDict& globals, RegisterForm* regi
       assert(0, "_rChild should not be null");
     }
   } else {
-    right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type);
+    right_spillable = _rChild->cisc_spill_match(globals, registers, mRule2->_rChild, operand, reg_type, from_instr, to_instr);
   }
 
   // Combine results of left and right checks
@@ -3905,15 +3927,14 @@ void MatchNode::count_commutative_op(int& count) {
     "MaxI","MinI","MaxHF","MinHF","MaxF","MinF","MaxD","MinD",
     "MulI","MulL","MulHF","MulF","MulD",
     "OrI","OrL",
-    "XorI","XorL"
-    "UMax","UMin"
+    "XorI","XorL",
   };
 
   static const char *commut_vector_op_list[] = {
     "AddVB", "AddVS", "AddVI", "AddVL", "AddVHF", "AddVF", "AddVD",
     "MulVB", "MulVS", "MulVI", "MulVL", "MulVHF", "MulVF", "MulVD",
     "AndV", "OrV", "XorV", "AndVMask", "OrVMask", "XorVMask",
-    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMax","UMin"
+    "MaxVHF", "MinVHF", "MaxV", "MinV", "UMaxV", "UMinV",
   };
 
   if (_lChild && _rChild && (_lChild->_lChild || _rChild->_lChild)) {

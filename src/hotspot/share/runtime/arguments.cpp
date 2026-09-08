@@ -3513,8 +3513,8 @@ jint Arguments::apply_ergo() {
     WARN_IF_NOT_DEFAULT_FLAG(flag)                  \
     FLAG_SET_DEFAULT(flag, false);
 
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypePassFieldsAsArgs);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(InlineTypeReturnedAsFields);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(ValueTypePassFieldsAsArgs);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(ValueTypeReturnedAsFields);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseArrayFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseFieldFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullFreeNonAtomicValueFlattening);
@@ -3523,15 +3523,14 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseNullableNonAtomicValueFlattening);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseAcmpFastPath);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(UseHashcodeFastPath);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintInlineLayout);
+    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintValueLayout);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PrintFlatArrayLayout);
-    DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(IgnoreAssertUnsetFields);
     WARN_IF_NOT_DEFAULT_FLAG(FlatArrayElementMaxOops);
     WARN_IF_NOT_DEFAULT_FLAG(ForceNonTearable);
 #ifdef ASSERT
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(StressCallingConvention);
     DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(PreloadClasses);
-    WARN_IF_NOT_DEFAULT_FLAG(PrintInlineKlassFields);
+    WARN_IF_NOT_DEFAULT_FLAG(PrintValueKlassFields);
 #endif
 #ifdef COMPILER1
     DEBUG_ONLY(DISABLE_FLAG_AND_WARN_IF_NOT_DEFAULT(C1UseDelayedFlattenedFieldReads);)
@@ -3557,11 +3556,11 @@ jint Arguments::apply_ergo() {
     DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING(FlatteningBudget, 0);
 #undef DISABLE_FLAG_AND_WARN_IF_NO_FLATTENING
     if (is_interpreter_only() && !CDSConfig::is_dumping_archive() && !UseSharedSpaces) {
-      // Disable calling convention optimizations if inline types are not supported.
+      // Disable calling convention optimizations if value types are not supported.
       // Also these aren't useful in -Xint. However, don't disable them when dumping or using
       // the CDS archive, as the values must match between dumptime and runtime.
-      FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
-      FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+      FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+      FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
     }
     if (!UseNullFreeNonAtomicValueFlattening &&
         !UseNullableAtomicValueFlattening &&
@@ -3605,6 +3604,37 @@ jint Arguments::apply_ergo() {
   if (!FLAG_IS_DEFAULT(UseLoopPredicate) && !UseLoopPredicate && UseProfiledLoopPredicate) {
     warning("Disabling UseProfiledLoopPredicate since UseLoopPredicate is turned off.");
     FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+  }
+
+  bool any_parse_predicate_flag_enabled = UseLoopLimitCheckPredicate ||
+                                          UseAutoVectorizationPredicate ||
+                                          UseLoopPredicate ||
+                                          UseProfiledLoopPredicate ||
+                                          ShortRunningLongLoop;
+
+  if (!UseParsePredicates && any_parse_predicate_flag_enabled) {
+    // Disable any Parse Predicate enabling flag when UseParsePredicates is not set.
+    FLAG_SET_ERGO(UseLoopLimitCheckPredicate, false);
+    FLAG_SET_ERGO(UseLoopPredicate, false);
+    FLAG_SET_ERGO(UseProfiledLoopPredicate, false);
+    FLAG_SET_ERGO(UseAutoVectorizationPredicate, false);
+    FLAG_SET_ERGO(ShortRunningLongLoop, false);
+
+    if ((!FLAG_IS_DEFAULT(UseLoopLimitCheckPredicate) && UseLoopLimitCheckPredicate) ||
+        (!FLAG_IS_DEFAULT(UseAutoVectorizationPredicate) && UseAutoVectorizationPredicate) ||
+        (!FLAG_IS_DEFAULT(UseLoopPredicate) && UseLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(UseProfiledLoopPredicate) && UseProfiledLoopPredicate) ||
+        (!FLAG_IS_DEFAULT(ShortRunningLongLoop) && ShortRunningLongLoop)) {
+      warning("Disabling UseParsePredicates disables all Parse Predicate enabling flags: UseLoopLimitCheckPredicate,"
+              " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    }
+
+  }
+
+  if (UseParsePredicates && !any_parse_predicate_flag_enabled) {
+    warning("Disabling UseParsePredicates because all Parse Predicate flags are disabled: UseLoopLimitCheckPredicate,"
+            " UseLoopPredicate, UseProfiledLoopPredicate, UseAutoVectorizationPredicate, and ShortRunningLongLoop");
+    FLAG_SET_ERGO(UseParsePredicates, false);
   }
 #endif // COMPILER2
 
