@@ -244,6 +244,11 @@ void CompilerConfig::set_legacy_emulation_flags() {
   }
 }
 
+static bool can_segment_code_cache() {
+  // Segmented code cache requires ReservedCodeCacheSize >= 240M and at least 8 pages
+  // (segmentation disables advantage of huge pages).
+  return ReservedCodeCacheSize >= 240*M && 8 * CodeCache::page_size() <= ReservedCodeCacheSize;
+}
 
 void CompilerConfig::set_compilation_policy_flags() {
   if (is_tiered()) {
@@ -252,10 +257,9 @@ void CompilerConfig::set_compilation_policy_flags() {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
-    // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
-    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
-    if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
-        8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
+
+    // Enable SegmentedCodeCache if ReservedCodeCacheSize is large enough
+    if (FLAG_IS_DEFAULT(SegmentedCodeCache) && can_segment_code_cache()) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
     if (Arguments::is_compiler_only()) { // -Xcomp
@@ -286,6 +290,8 @@ void CompilerConfig::set_compilation_policy_flags() {
       warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.";
     } else if (!NMethodRelocation && !FLAG_IS_DEFAULT(NMethodRelocation)) {
       warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because NMethodRelocation is disabled.";
+    } else if (!SegmentedCodeCache && !can_segment_code_cache()) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled and cannot be enabled.";
     }
 
     if (warn != nullptr) {
@@ -293,13 +299,8 @@ void CompilerConfig::set_compilation_policy_flags() {
       FLAG_SET_ERGO(HotCodeHeap, false);
       FLAG_SET_ERGO(HotCodeHeapSize, 0);
     } else {
-      if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
-        FLAG_SET_ERGO(SegmentedCodeCache, true);
-      }
-
-      if (FLAG_IS_DEFAULT(NMethodRelocation)) {
-        FLAG_SET_ERGO(NMethodRelocation, true);
-      }
+      FLAG_SET_ERGO_IF_DEFAULT(SegmentedCodeCache, true);
+      FLAG_SET_ERGO_IF_DEFAULT(NMethodRelocation, true);
     }
   } else if (HotCodeHeapSize > 0) {
     vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled.");

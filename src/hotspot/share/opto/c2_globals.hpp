@@ -981,7 +981,7 @@
                                                                             \
   product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
           "Maximum sampling interval in milliseconds")                      \
-          range(0, max_juint)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
