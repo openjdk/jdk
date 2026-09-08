@@ -3055,13 +3055,18 @@ bool Matcher::match_rule_supported(int opcode) {
       }  // fallthrough
     case Op_AddHF:
     case Op_DivHF:
-    case Op_FmaHF:
     case Op_MulHF:
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
     case Op_SubHF:
     case Op_SqrtHF:
       if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      break;
+    case Op_FmaHF:
+      // UseFMA also needs to be checked along with AVX512-FP16.
+      if (!UseFMA || !VM_Version::supports_avx512_fp16()) {
         return false;
       }
       break;
@@ -3178,6 +3183,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaD:
     case Op_FmaVD:
     case Op_FmaVF:
+    case Op_FmaVHF:
       if (!UseFMA) {
         return false;
       }
@@ -25249,6 +25255,7 @@ instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
   match(Set dst (FmaHF dst (Binary src1 src2)));
   format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ vfmadd231sh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
@@ -25315,6 +25322,7 @@ instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
   match(Set dst (FmaVHF dst (Binary src1 src2)));
   format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
@@ -25327,6 +25335,7 @@ instruct vector_fma_HF_mem(vec dst, vec src1, memory src2)
   match(Set dst (FmaVHF dst (Binary src1 (VectorReinterpret (LoadVector src2)))));
   format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
     __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
   %}
