@@ -3776,14 +3776,6 @@ operand immN_0() %{
 %}
 
 // Compressed klass constants
-operand immNKlass() %{
-  match(ConNKlass);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immNKlass_no_mask() %{
   predicate(Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass*)n->bottom_type()->is_narrowklass()->get_con()), 31));
   match(ConNKlass);
