@@ -33,7 +33,7 @@
 /*
  * @test id=osr
  * @bug 8391146
- * @summary Verify failure to check for array type in OSR compilation
+ * @summary Verify array type check in OSR compilation
  * @modules java.base/jdk.internal.util:+open
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=50 compiler.intrinsics.TestArraysHashCode

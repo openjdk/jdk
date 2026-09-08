@@ -1928,9 +1928,10 @@ void GraphKit::access_clone(Node* src, Node* dst, Node* size, bool is_array) {
 Node* GraphKit::array_element_address(Node* ary, Node* idx, BasicType elembt,
                                       const TypeInt* sizetype, Node* ctrl) {
   const TypeAryPtr* arytype = _gvn.type(ary)->isa_aryptr();
+  precond(arytype != nullptr);
   uint shift;
   uint header;
-  if (arytype != nullptr && arytype->is_flat() && arytype->klass_is_exact()) {
+  if (arytype->is_flat() && arytype->klass_is_exact()) {
     // We can only determine the flat array layout statically if the klass is exact. Otherwise, we could have different
     // value classes at runtime with a potentially different layout. The caller needs to fall back to call
     // load/store_unknown_value_Type() at runtime. We could return a sentinel node for the non-exact case but that
