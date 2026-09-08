@@ -73,6 +73,7 @@ public class SuspendResume5 {
             synchronized(lock) {
                 final CountDownLatch started = new CountDownLatch(1);
                 suspendee = Thread.ofVirtual().start(() -> worker(started));
+                suspendee.setName("Suspendee");
                 started.await();
                 await(suspendee, Thread.State.BLOCKED);
                 JVMTIUtils.suspendThread(suspendee);
@@ -92,6 +93,7 @@ public class SuspendResume5 {
                 // Now let a second thread block on the lock
                 final CountDownLatch started = new CountDownLatch(1);
                 thread2 = Thread.ofVirtual().start(() -> worker(started));
+                thread2.setName("Thread-2");
                 started.await();
                 await(thread2,Thread.State.BLOCKED);
             }
@@ -147,6 +149,7 @@ public class SuspendResume5 {
                     for (int i = 0; i < nThreads; i++) {
                         final CountDownLatch started = new CountDownLatch(1);
                         threads[i] = Thread.ofVirtual().start(() -> worker(started));
+                        threads[i].setName("Thread-" + i);
                         started.await();
                         await(threads[i], Thread.State.BLOCKED);
                         boolean suspend = (mask & (1 << (nThreads - 1 - i))) != 0;
@@ -225,6 +228,7 @@ public class SuspendResume5 {
                     for (int i = 0; i < nThreads; i++) {
                         final CountDownLatch started = new CountDownLatch(1);
                         threads[i] = Thread.ofVirtual().start(() -> worker(started));
+                        threads[i].setName("Thread-" + i);
                         started.await();
                         await(threads[i], Thread.State.BLOCKED);
                         JVMTIUtils.suspendThread(threads[i]);

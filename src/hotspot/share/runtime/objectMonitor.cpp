@@ -1550,7 +1550,7 @@ ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
   ObjectWaiter* w;
   // fast-path: expected normal case
   // We scan the current entry queue, from the tail, looking for an eligible
-  // successor.
+  // successor. If the entry-queue is not in DLL form then this will be a short loop.
   for (w = tail; w != nullptr; w = w->prev()) {
     if (!w->is_vthread() || !JvmtiVTSuspender::is_vthread_suspended(w->vthread())) {
       found = true;
@@ -1568,12 +1568,10 @@ ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
       do_vthread_unpark |= java_lang_VirtualThread::set_onWaitingList(w->vthread(), vthread_list_head());
     }
 
-    // Do one more check before giving up on a valid successor.
+    // The entry queue may not have been in DLL form, or may have had new entries
+    // enqueued since we checked, so reform the DLL and check again. If subsequent
+    // new waiters enqueue themselves we will not process those.
     if (last != AtomicAccess::load(&_entry_list)) {
-      // The entry queue has grown since we started processing it. There may
-      // be a valid successor now waiting, but we need to convert to full DLL
-      // to continue the scan. Note we only do this once - as soon as this is done
-      // there could be another new waiter.
       entry_list_build_dll(current);
       for (w = last; w != nullptr; w = w->prev()) {
         if (!w->is_vthread()) {
