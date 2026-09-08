@@ -30,7 +30,8 @@ import jdk.incubator.json.impl.JsonNullImpl;
 /**
  * The interface that represents JSON null.
  * <p>
- * A {@code JsonNull} can be produced by {@link Json#parse(String)}.
+ * A {@code JsonNull} can be created by parsing JSON text using either
+ * {@link Json#parse(String)} or {@link Json#parse(char[])}.
  * <p> Alternatively, {@link #of()} can be used to obtain a {@code JsonNull}.
  *
  * @since 28

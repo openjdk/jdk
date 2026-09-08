@@ -31,7 +31,8 @@ import jdk.incubator.json.impl.JsonNumberImpl;
  * The interface that represents JSON number, an arbitrary-precision
  * number represented in base 10 using decimal digits.
  * <p>
- * A {@code JsonNumber} can be produced by {@link Json#parse(String)}.
+ * A {@code JsonNumber} can be created by parsing JSON text using either
+ * {@link Json#parse(String)} or {@link Json#parse(char[])}.
  * When a JSON number is parsed, a {@code JsonNumber} object is created
  * as long as the input number text adheres to the JSON number
  * <a href="https://datatracker.ietf.org/doc/html/rfc8259#section-6">
