@@ -31,8 +31,8 @@ public:
   static const uint TestRegions = 512;
 
   void verify_counts() {
-    verify_active_count(0, TestRegions, num_active_regions());
-    verify_inactive_count(0, TestRegions, num_inactive_regions());
+    verify_num_active_regions(0, TestRegions, num_active_regions());
+    verify_num_inactive_regions(0, TestRegions, num_inactive_regions());
   }
 
 protected:

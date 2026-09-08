@@ -235,12 +235,12 @@ void G1CommittedRegionMap::verify_no_inactive_regons() const {
   assert(first_inactive == _inactive.size(), "Should be no inactive regions, but was at index: %zu", first_inactive);
 }
 
-void G1CommittedRegionMap::verify_active_count(uint start, uint end, uint expected) const {
+void G1CommittedRegionMap::verify_num_active_regions(uint start, uint end, uint expected) const {
   uint found = (uint) _active.count_one_bits(start, end);
   assert(found == expected, "Unexpected number of active regions, found: %u, expected: %u", found, expected);
 }
 
-void G1CommittedRegionMap::verify_inactive_count(uint start, uint end, uint expected) const {
+void G1CommittedRegionMap::verify_num_inactive_regions(uint start, uint end, uint expected) const {
   uint found = (uint) _inactive.count_one_bits(start, end);
   assert(found == expected, "Unexpected number of inactive regions, found: %u, expected: %u", found, expected);
 }
