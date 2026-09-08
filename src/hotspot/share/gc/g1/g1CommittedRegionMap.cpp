@@ -59,8 +59,8 @@ uint G1CommittedRegionMap::max_num_regions() const {
 }
 
 void G1CommittedRegionMap::activate(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, 0);
+  verify_num_active_regions(start, end, 0);
+  verify_num_inactive_regions(start, end, 0);
 
   log_debug(gc, heap, region)("Activate regions [%u, %u)", start, end);
 
@@ -68,8 +68,8 @@ void G1CommittedRegionMap::activate(uint start, uint end) {
 }
 
 void G1CommittedRegionMap::reactivate(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, (end - start));
+  verify_num_active_regions(start, end, 0);
+  verify_num_inactive_regions(start, end, (end - start));
 
   log_debug(gc, heap, region)("Reactivate regions [%u, %u)", start, end);
 
@@ -78,8 +78,8 @@ void G1CommittedRegionMap::reactivate(uint start, uint end) {
 }
 
 void G1CommittedRegionMap::deactivate(uint start, uint end) {
-  verify_active_count(start, end, (end - start));
-  verify_inactive_count(start, end, 0);
+  verify_num_active_regions(start, end, (end - start));
+  verify_num_inactive_regions(start, end, 0);
 
   log_debug(gc, heap, region)("Deactivate regions [%u, %u)", start, end);
 
@@ -88,8 +88,8 @@ void G1CommittedRegionMap::deactivate(uint start, uint end) {
 }
 
 void G1CommittedRegionMap::uncommit(uint start, uint end) {
-  verify_active_count(start, end, 0);
-  verify_inactive_count(start, end, (end-start));
+  verify_num_active_regions(start, end, 0);
+  verify_num_inactive_regions(start, end, (end-start));
 
   log_debug(gc, heap, region)("Uncommit regions [%u, %u)", start, end);
 

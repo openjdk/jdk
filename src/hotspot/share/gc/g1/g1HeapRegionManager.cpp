@@ -439,8 +439,8 @@ void G1HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) 
   for (uint i = start; i < (start + num_regions); i++) {
     G1HeapRegion* hr = _regions.get_by_index(i);
     assert(!is_available(i) || hr->is_free(),
-           "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
-           " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
+           "Found region sequence starting at %u, num regions %u"
+           " that is not free at %u. Hr is " PTR_FORMAT ", type is %s",
            start, num_regions, i, p2i(hr), hr->get_type_str());
   }
 }

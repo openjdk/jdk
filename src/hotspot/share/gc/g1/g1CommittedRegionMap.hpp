@@ -117,8 +117,8 @@ protected:
   void verify_free_range(uint start, uint end) const NOT_DEBUG_RETURN;
   void verify_inactive_range(uint start, uint end) const NOT_DEBUG_RETURN;
   void verify_no_inactive_regons() const NOT_DEBUG_RETURN;
-  void verify_active_count(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
-  void verify_inactive_count(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
+  void verify_num_active_regions(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
+  void verify_num_inactive_regions(uint start, uint end, uint expected) const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_GC_G1_G1COMMITTEDREGIONMAP_HPP
