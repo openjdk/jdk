@@ -162,38 +162,60 @@ bool ShenandoahUncommitThread::is_uncommit_allowed() const {
 }
 
 void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until) {
-  assert(ShenandoahUncommit, "should be enabled");
+  assert(ShenandoahUncommit, "Should be enabled");
   assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
+  assert(_candidates_count > 0, "Should be");
 
-  {
-    // Final check, under the lock, if uncommit is allowed.
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    if (is_uncommit_allowed()) {
-      _uncommit_in_progress.set();
-    }
-  }
-
-  // If not allowed to start, do nothing.
-  if (!_uncommit_in_progress.is_set()) {
-    return;
-  }
-
-  // From here on, uncommit is in progress. Attempts to stop the uncommit must wait
-  // until the cancellation request is acknowledged and uncommit is no longer in progress.
   const char* msg = "Concurrent uncommit";
   EventMark em("%s", msg);
   log_info(gc, start)("%s", msg);
 
-  double elapsed = 0.0;
+  double start = os::elapsedTime();
+  double ms_time_budget = ShenandoahUncommitGrace;
+  double ms_per_candidate = ms_time_budget / _candidates_count;
+
   size_t uncommitted_count = 0;
 
-  do_uncommit_work(shrink_delay, shrink_until, uncommitted_count, elapsed);
+  for (size_t i = 0; i < _candidates_count; i++) {
+    ShenandoahHeapRegion* r = _candidates[i]._region;
+    double cur_time = os::elapsedTime();
+    double shrink_before = cur_time - shrink_delay;
 
-  {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    _uncommit_in_progress.unset();
-    locker.notify_all();
+    if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
+      // Do not uncommit below the target.
+      break;
+    }
+
+    if (!r->is_empty_committed() || (r->empty_time() >= shrink_before)) {
+      // Not a viable candidate anymore, try next one.
+      continue;
+    }
+
+    // Try to claim progress, gracefully waiting. This allows allocators to proceed
+    // taking the heap lock and start using the region. We are not in a hurry to uncommit,
+    // otherwise, we will just trip through uncommit-commit wastefully.
+    int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * MILLIUNITS));
+    if (!try_set_progress(delay_ms)) {
+      // Termination asserted.
+      break;
+    }
+
+    // Go for uncommit!
+    {
+      SuspendibleThreadSetJoiner sts_joiner;
+      ShenandoahHeapLocker heap_locker(_heap->lock());
+      if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+        log_trace(gc)("Uncommitting region %zu, empty_time=%.2f", r->index(), r->empty_time());
+        r->make_uncommitted();
+        uncommitted_count++;
+      }
+    }
+
+    // All done, turn the flag down.
+    unset_progress();
   }
+
+  double elapsed = os::elapsedTime() - start;
 
   if (uncommitted_count > 0) {
     _heap->notify_heap_changed();
@@ -203,65 +225,43 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
                msg, uncommitted_count * ShenandoahHeapRegion::region_size_bytes() / M,
                _heap->capacity() / M,
                elapsed * MILLIUNITS);
+
+  assert(_uncommit_in_progress.is_unset(), "Uncommit should not be in progress");
 }
 
-void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed) {
-  assert(_candidates_count > 0, "Should be");
+bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  assert(_uncommit_in_progress.is_unset(), "Should be unset before checks");
 
-  uncommitted_count = 0;
-  elapsed = 0;
+  // Optimistic: uncommits are allowed, just wait a bit, if requested.
+  if (_uncommit_allowed.is_set() && (delay_ms > 0)) {
+    locker.wait(delay_ms);
+  }
 
-  double start = os::elapsedTime();
-
-  double ms_time_budget = ShenandoahUncommitGrace;
-  double ms_per_candidate = ms_time_budget / _candidates_count;
-
-  for (size_t i = 0; i < _candidates_count; i++) {
-    ShenandoahHeapRegion* r = _candidates[i]._region;
-    double cur_time = os::elapsedTime();
-    double shrink_before = cur_time - shrink_delay;
-
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      // Do not uncommit below the target.
-      if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
-        break;
-      }
-
-      // Before we go for uncommits, stall here and allow allocators to proceed
-      // taking the heap lock and start using the region. We are not in a hurry to uncommit,
-      // otherwise, we will just trip through uncommit-commit wastefully.
-      // Terminate early if we detect that GC wants to start.
-      int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * MILLIUNITS));
-      if (!check_uncommit_or_delay(delay_ms)) {
-        break;
-      }
-
-      SuspendibleThreadSetJoiner sts_joiner;
-      ShenandoahHeapLocker heap_locker(_heap->lock());
-      if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-        log_trace(gc)("Uncommitting region %zu, empty_time=%.2f", r->index(), r->empty_time());
-        r->make_uncommitted();
-        uncommitted_count++;
-      }
+  // Pessimistic: uncommits are disallowed. Wait until allowed again or terminated.
+  while (_uncommit_allowed.is_unset()) {
+    locker.wait();
+    if (_terminating.is_set()) {
+      assert(_uncommit_in_progress.is_unset(), "Should remain unset");
+      return false;
     }
   }
 
-  elapsed = os::elapsedTime() - start;
+  // We are good to enable uncommits.
+  _uncommit_in_progress.set();
+  return true;
 }
 
-
-void ShenandoahUncommitThread::stop_service() {
-  MonitorLocker locker(&_uncommit_lock, Mutex::_safepoint_check_flag);
-  _uncommit_allowed.unset();
+void ShenandoahUncommitThread::unset_progress() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  _uncommit_in_progress.unset();
   locker.notify_all();
 }
 
-bool ShenandoahUncommitThread::check_uncommit_or_delay(int delay_ms) {
-  if (delay_ms > 0) {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-    locker.wait(delay_ms);
-  }
-  return _uncommit_allowed.is_set();
+void ShenandoahUncommitThread::stop_service() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_safepoint_check_flag);
+  _terminating.set();
+  locker.notify_all();
 }
 
 void ShenandoahUncommitThread::forbid_uncommit() {
@@ -275,6 +275,6 @@ void ShenandoahUncommitThread::forbid_uncommit() {
 
 void ShenandoahUncommitThread::allow_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-  locker.notify_all();
   _uncommit_allowed.set();
+  locker.notify_all();
 }

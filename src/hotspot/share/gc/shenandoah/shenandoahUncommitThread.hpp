@@ -54,6 +54,9 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
+  // Indicates that termination is in progress
+  ShenandoahSharedFlag _terminating;
+
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
@@ -66,11 +69,11 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
-  // Stall uncommit thread to allow allocator progress
-  bool check_uncommit_or_delay(int delay_ms);
+  // Try to set progress, potentially stalling until uncommits are allowed
+  bool try_set_progress(int delay_ms);
 
-  // Iterate over and uncommit eligible regions
-  void do_uncommit_work(double shrink_delay, size_t shrink_until, size_t& uncommitted_count, double& elapsed);
+  // Unset progress
+  void unset_progress();
 
   static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
