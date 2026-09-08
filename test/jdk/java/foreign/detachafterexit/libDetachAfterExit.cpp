@@ -36,7 +36,8 @@ static void proc(void* ctxt) {
     callback();
     puts("[proc] waiting for flag...");
     FLAG_WAITING.store(true);
-    while (!FLAG_JOINING.load()) {} // keep the thread alive until we can call join
+    // keep this thread alive until after we've shut down the VM
+    while (!FLAG_JOINING.load()) {}
     puts("[proc] done waiting for flag");
 }
 
