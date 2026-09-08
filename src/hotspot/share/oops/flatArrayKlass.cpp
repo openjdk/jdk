@@ -428,7 +428,7 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
   int print_len = MIN2(fa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
-    st->print_cr(" - Index %3d offset %3d: ", index, off);
+    st->print_cr(" - Index %3d offset %3d:", index, off);
     if (!fa->is_null_free_array() && fa->obj_at_is_null(index)) {
       st->print_cr(" - (null)");
     } else {

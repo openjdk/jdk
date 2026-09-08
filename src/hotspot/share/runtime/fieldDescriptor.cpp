@@ -255,13 +255,9 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
         }
 
         if (field_flags().has_null_marker()) {
-          ValueFieldLayoutInfo* li = field_holder()->value_field_layout_info_adr(index());
-          int nm_offset = li->null_marker_offset();
-
           for (int i = 0; i < indent + 1; i++) st->print("  ");
-          assert(nm_offset > 0, "must be");
           st->print_cr(" - [null_marker] @%d %s",
-                    field_offset_in_obj + nm_offset,
+                    field_offset_in_obj + vk->null_marker_offset_in_payload(),
                     is_null ? "Field marked as null" : "Field marked as non-null");
         }
         return; // No need to print underlying representation again (already printed by FieldPrinter above)

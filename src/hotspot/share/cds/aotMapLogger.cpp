@@ -859,7 +859,7 @@ public:
 
           if (!fd->is_null_free_value_type()) {
             assert(fd->has_null_marker(), "should have null marker");
-            _st->print("Flat inline type field '%s':", vk->name()->as_C_string());
+            _st->print("Flat value type field '%s':", vk->name()->as_C_string());
           } else {
             precond(!is_null);
             _st->print("Flat value null-free type field '%s':", vk->name()->as_C_string());
@@ -876,7 +876,7 @@ public:
           if (fd->field_flags().has_null_marker()) {
             for (int i = 0; i < _indent + 1; i++) _st->print("  ");
             _st->print_cr(" - [null_marker] @%d %s",
-                          field_offset_in_obj + vk->null_marker_offset(),
+                          field_offset_in_obj + vk->null_marker_offset_in_payload(),
                           is_null ? "Field marked as null" : "Field marked as non-null");
           }
         } else {
@@ -1034,11 +1034,11 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
 
       if (!real_klass->is_null_free_array_klass()) {
         is_null = elem_k->is_payload_marked_as_null(fake_flat_array.buffered_addr() + elem_offset);
-        st->print(" - Flat inline type element '%s':", elem_k->name()->as_C_string());
+        st->print(" - Flat value type element '%s':", elem_k->name()->as_C_string());
       } else {
         st->print(" - Flat value null-free type element '%s':", elem_k->name()->as_C_string());
       }
-      st->print(" - Index %3d offset %3d: ", i, elem_offset);
+      st->print(" - Index %3d offset %3d:", i, elem_offset);
 
       if (!is_null) {
         st->cr();
@@ -1052,7 +1052,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
       if (!real_klass->is_null_free_array_klass()) {
         st->print_cr("   - [null_marker] @%d %s",
                      elem_offset + elem_k->null_marker_offset_in_payload(),
-                     is_null ? "Field marked as null" : "Field marked as non-null");
+                     is_null ? "Element marked as null" : "Element marked as non-null");
       }
     }
   } else if (real_klass->is_refArray_klass()) {

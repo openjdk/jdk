@@ -230,7 +230,7 @@ public class AOTMapReader {
     static Pattern flatNullFreeFieldPattern = Pattern.compile(" - Flat value null-free type field '([^']+)':\\s*$");
     static Pattern flatNullFreeElementPattern = Pattern.compile(" - Flat value null-free type element '([^']+)':\\s*- Index\\s+(\\d+)\\s+offset\\s+(\\d+):\\s*$");
 
-    static Pattern nullMarkerPattern = Pattern.compile(" - \\[null_marker\\] @[0-9]+ Field marked as (.*)");
+    static Pattern nullMarkerPattern = Pattern.compile(" - \\[null_marker\\] @[0-9]+ ((Field)|(Element)) marked as (.*)");
 
     // (injected module_entry)
     //  - injected 'module_entry' 'J' @16 0 (0x0000000000000000)
@@ -285,7 +285,7 @@ public class AOTMapReader {
             nextLine();
         }
 
-        String nullMarker = m.group(1);
+        String nullMarker = m.group(4);
         if (nullMarker == null) {
             throw new RuntimeException("missing null_marker: " + line);
         } else {

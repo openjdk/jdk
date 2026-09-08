@@ -35,10 +35,11 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ValueObjectPrinting
  */
 
-import jdk.test.whitebox.WhiteBox;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.internal.vm.annotation.NullRestricted;
 import jdk.internal.value.ValueClass;
+import jdk.test.whitebox.WhiteBox;
 
 public class ValueObjectPrinting {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
@@ -63,11 +64,11 @@ public class ValueObjectPrinting {
     }
 
     static void checkNullFree(String s, String fieldName, String type) {
-        checkMatch(s, "final value flat '" + fieldName + "' .* Flat inline null-free type field '" + type + "'");
+        checkMatch(s, "final value flat '" + fieldName + "' .* Flat value null-free type field '" + type + "'");
     }
 
     static void checkNonNullFree(String s, String fieldName, String type) {
-        checkMatch(s, "final value flat '" + fieldName + "' .* Flat inline type field '" + type + "'");
+        checkMatch(s, "final value flat '" + fieldName + "' .* Flat value type field '" + type + "'");
     }
 
     public static void main(String[] args) {
@@ -76,6 +77,28 @@ public class ValueObjectPrinting {
                 checkNullFree(s, "y", "java/lang/Integer");
                 checkMatch(s, "'value'.*0x00000011");
                 checkMatch(s, "'value'.*0x00000022");
+            });
+
+        test(new NullablePoint(1, 2) , (s) -> {
+                // Check for null markers: we should have 2 null markers. They should
+                // be located immediately after the payload of the Integer fields "x" and "y".
+                Pattern pattern = Pattern.compile("Flat value type field 'java/lang/Integer'.*\n" +
+                                                  ".*final value 'value'.*@([0-9]+).*\n" +
+                                                  ".*null_marker.*@([0-9]+)");
+                Matcher matcher = pattern.matcher(s);
+
+                int found = 0;
+                while (matcher.find()) {
+                    int value_offset = Integer.parseInt(matcher.group(1));
+                    int marker_offset = Integer.parseInt(matcher.group(2));
+                    if (marker_offset != value_offset + 4) { // An Integer payload occupies 4 bytes.
+                        throw new RuntimeException("marker offset (" + marker_offset + ") should be value_offset (" + value_offset + ") + 4");
+                    }
+                    found ++;
+                }
+                if (found != 2) {
+                    throw new RuntimeException("Expected 2 null markers but found " + found);
+                }
             });
 
         test(new Rectangle(0x1111, 0x2222, 0x3333, 0x4444), (s) -> {
@@ -170,6 +193,21 @@ value class Point {
         this.y = new Integer(y);
     }
 
+}
+
+value class NullablePoint {
+    Integer x;
+    Integer y;
+
+    NullablePoint(int x, int y) {
+        if (x != 0 && y != 0) {
+            this.x = new Integer(x);
+            this.y = new Integer(y);
+        } else {
+            this.x = null;
+            this.y = null;
+        }
+    }
 }
 
 value class Rectangle {
