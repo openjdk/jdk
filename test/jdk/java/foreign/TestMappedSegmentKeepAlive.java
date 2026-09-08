@@ -39,6 +39,7 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 import java.util.stream.Stream;
 
@@ -67,11 +68,19 @@ public class TestMappedSegmentKeepAlive {
         try (Arena arena = Arena.ofConfined();
             FileChannel fileChannel = FileChannel.open(tempPath, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
+            AtomicReference<Throwable> throwableRef = new AtomicReference<>();
             Thread t = Thread.ofPlatform()
+                .uncaughtExceptionHandler((_, throwable) -> throwableRef.set(throwable))
+                .start(() -> {
                     // Provoke a WrongThreadException when acquiring the session
                     // Make sure we properly release the session again
-                    .start(() -> assertThrows(WrongThreadException.class, () -> op.accept(segment)));
+                    assertThrows(WrongThreadException.class, () -> op.accept(segment));
+                });
             t.join();
+            // propagate any exceptions from the nested thread
+            if (throwableRef.get() != null) {
+                throw throwableRef.get();
+            }
         } // close should succeed
     }
 
