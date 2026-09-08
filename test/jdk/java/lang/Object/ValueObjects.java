@@ -75,6 +75,32 @@ class ValueObjects {
     }
 
     /**
+     * Test the Object.clone method on a value object read from a flattened
+     * field. The read materializes the value from the embedded payload and
+     * clone returns it.
+     */
+    @Test
+    void testCloneValueFromField() throws Exception {
+        value class V implements Cloneable {
+            int i;
+            V(int i) { this.i = i; }
+            @Override
+            protected V clone() throws CloneNotSupportedException {
+                return (V) super.clone();
+            }
+        }
+        class Holder {
+            V v = new V(42);
+        }
+        var holder = new Holder();
+        V read = holder.v;
+        V copy = read.clone();
+        assertSame(read, copy);
+        assertEquals(42, copy.i);
+        assertSame(holder.v, holder.v.clone());
+    }
+
+    /**
      * Test that the finalize method on a value class is not invoked by the GC.
      */
     @Test

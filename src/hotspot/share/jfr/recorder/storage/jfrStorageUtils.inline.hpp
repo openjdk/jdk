@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,7 @@ inline bool ConcurrentWriteOp<Operation>::process(typename Operation::Type* t) {
   const size_t unflushed_size = get_unflushed_size(top, t);
   assert((intptr_t)unflushed_size >= 0, "invariant");
   if (unflushed_size == 0) {
-    if (is_retired) {
-      t->set_top(top);
-    } else {
+    if (!is_retired) {
       t->release_critical_section_top(top);
     }
     return true;
@@ -91,7 +89,7 @@ inline bool MutexedWriteOp<Operation>::process(typename Operation::Type* t) {
 }
 
 template <typename Type>
-static void retired_sensitive_acquire(Type* t, Thread* thread) {
+inline void retired_sensitive_acquire(Type* t, Thread* thread) {
   assert(t != nullptr, "invariant");
   assert(thread != nullptr, "invariant");
   assert(thread == Thread::current(), "invariant");

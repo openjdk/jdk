@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -435,32 +435,36 @@ Java_sun_nio_ch_FileDispatcherImpl_isOther0(JNIEnv *env, jobject this, jobject f
     HANDLE handle = (HANDLE)(handleval(env, fdo));
 
     BY_HANDLE_FILE_INFORMATION finfo;
-    if (!GetFileInformationByHandle(handle, &finfo))
+    if (!GetFileInformationByHandle(handle, &finfo)) {
         JNU_ThrowIOExceptionWithLastError(env, "isOther failed");
-    DWORD fattr = finfo.dwFileAttributes;
+        return JNI_FALSE;
+    }
 
+    DWORD fattr = finfo.dwFileAttributes;
     if ((fattr & FILE_ATTRIBUTE_DEVICE) != 0)
         return (jboolean)JNI_TRUE;
 
     if ((fattr & FILE_ATTRIBUTE_REPARSE_POINT) != 0) {
         int size = MAXIMUM_REPARSE_DATA_BUFFER_SIZE;
         void* lpOutBuffer = (void*)malloc(size*sizeof(char));
-        if (lpOutBuffer == NULL)
+        if (lpOutBuffer == NULL) {
             JNU_ThrowOutOfMemoryError(env, "isOther failed");
+            return JNI_FALSE;
+        }
 
         DWORD bytesReturned;
         if (!DeviceIoControl(handle, FSCTL_GET_REPARSE_POINT, NULL, 0,
                              lpOutBuffer, (DWORD)size, &bytesReturned, NULL)) {
             free(lpOutBuffer);
             JNU_ThrowIOExceptionWithLastError(env, "isOther failed");
+            return JNI_FALSE;
         }
         ULONG reparseTag = (*((PULONG)lpOutBuffer));
         free(lpOutBuffer);
-        return reparseTag == IO_REPARSE_TAG_SYMLINK ?
-            (jboolean)JNI_FALSE : (jboolean)JNI_TRUE;
+        return reparseTag == IO_REPARSE_TAG_SYMLINK ? JNI_FALSE : JNI_TRUE;
     }
 
-    return (jboolean)JNI_FALSE;
+    return JNI_FALSE;
 }
 
 JNIEXPORT jint JNICALL

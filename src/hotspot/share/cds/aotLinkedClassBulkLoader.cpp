@@ -87,6 +87,9 @@ void AOTLinkedClassBulkLoader::preload_classes_impl(TRAPS) {
   initiate_loading(THREAD, "app", h_system_loader, table->platform());
   preload_classes_in_table(table->app(), "app", h_system_loader, CHECK);
 
+  // Do this after all boot/platform/app classes are loaded, but before bytecode execution.
+  HeapShared::load_cached_resolved_methods();
+
   if (CDSConfig::is_redumping_aot_configuration()) {
    SystemDictionaryShared::copy_unregistered_classes_for_retraining(THREAD);
   }

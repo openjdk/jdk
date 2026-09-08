@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,9 @@
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
  * @build NativeTestHelper
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestNested
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestNested
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -45,13 +43,19 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNested extends NativeTestHelper {
 
     static {
         System.loadLibrary("Nested");
     }
 
-    @Test(dataProvider = "nestedLayouts")
+    @ParameterizedTest
+    @MethodSource("nestedLayouts")
     public void testNested(GroupLayout layout) throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
             Random random = new Random(0);
@@ -73,7 +77,6 @@ public class TestNested extends NativeTestHelper {
         }
     }
 
-    @DataProvider
     public static Object[][] nestedLayouts() {
         List<GroupLayout> layouts = List.of(
                 S1, U1, U17, S2, S3, S4, S5, S6, U2, S7, U3, U4, U5, U6, U7, S8, S9, U8, U9, U10, S10,

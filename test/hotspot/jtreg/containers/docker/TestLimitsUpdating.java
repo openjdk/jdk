@@ -84,7 +84,7 @@ public class TestLimitsUpdating {
         started.delete();
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "LimitUpdateChecker");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
-        opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp");
+        opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp:z");
         opts.addDockerOpts("--cpu-period", Integer.toString(CPU_PERIOD));
         opts.addDockerOpts("--cpu-quota", Integer.toString(INITIAL_CPU_COUNT * CPU_PERIOD));
         opts.addDockerOpts("--memory", "500m");

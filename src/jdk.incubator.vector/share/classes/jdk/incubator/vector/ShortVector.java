@@ -2021,6 +2021,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2052,6 +2053,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
