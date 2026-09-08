@@ -5677,16 +5677,16 @@ instruct loadConN_hi(iRegIdst dst, immN src) %{
 %}
 
 // Add lo part of compressed oop constant to already loaded hi part.
-instruct loadConN_lo(iRegIdst dst, iRegIsrc src1, immN src2) %{
-  effect(DEF dst, USE src1, USE src2);
+instruct loadConN_lo(iRegIdst dst, immN src) %{
+  effect(USE_DEF dst, USE src);
   ins_cost(DEFAULT_COST);
 
-  format %{ "ORI     $dst, $src1, $src2 \t// narrow oop lo" %}
+  format %{ "ORI     $dst, $dst, $src \t// narrow oop lo" %}
   size(4);
   ins_encode %{
-    AddressLiteral addrlit = __ constant_oop_address((jobject)$src2$$constant);
+    AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
     __ relocate(addrlit.rspec(), /*compressed format*/ 1);
-    __ ori($dst$$Register, $src1$$Register, 0); // Will get patched.
+    __ ori($dst$$Register, $dst$$Register, 0); // Will get patched.
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -5735,11 +5735,10 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
   ins_cost(DEFAULT_COST*2);
 
   expand %{
-    iRegIdst tmp1;
-    iRegIdst tmp2;
-    loadConN_hi(tmp1, src);
-    loadConN_lo(tmp2, tmp1, src);
-    clearMs32b(dst, tmp2);
+    iRegIdst tmp;
+    loadConN_hi(tmp, src);
+    loadConN_lo(tmp, src);
+    clearMs32b(dst, tmp);
   %}
 %}
 
