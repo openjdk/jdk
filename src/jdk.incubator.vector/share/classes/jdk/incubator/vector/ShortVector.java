@@ -33,9 +33,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -3359,8 +3358,6 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         return vsp.vOp(m, n -> (short) a[offset + indexMap[mapOffset + n]]);
     }
 
-    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
-
     /**
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as 16-bit
      * code units in the specified {@link Charset}}
@@ -3403,8 +3400,8 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
-        byte coder = LANG_ACCESS.stringCoder(string);
-        MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
+        byte coder = StringSupport.stringCoder(string);
+        MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
         if (coder == 0) {
             VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
             ByteVector byteVector;
@@ -3447,8 +3444,8 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
-        byte coder = LANG_ACCESS.stringCoder(string);
-        MemorySegment segment = LANG_ACCESS.asReadOnlyMemorySegment(string);
+        byte coder = StringSupport.stringCoder(string);
+        MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
         if (coder == 0) {
             VectorSpecies<Byte> byteSpecies = species.withLanes(byte.class);
             VectorMask<Byte> byteMask = VectorMask.fromLong(byteSpecies, m.toLong());

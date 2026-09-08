@@ -33,9 +33,8 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
-import jdk.internal.access.JavaLangAccess;
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
@@ -3790,8 +3789,6 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
              });
     }
 
-    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
-
     /**
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} using the
      * specified single-byte {@link Charset}}
@@ -3806,7 +3803,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     public static boolean compatibleWith(String string, Charset charset) {
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
-        return LANG_ACCESS.stringCoder(string) == 0 && charset == StandardCharsets.ISO_8859_1;
+        return StringSupport.stringCoder(string) == 0 && charset == StandardCharsets.ISO_8859_1;
     }
 
     /**
@@ -3833,7 +3830,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
-        return fromMemorySegment(species, LANG_ACCESS.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
+        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
     }
 
     /**
@@ -3862,7 +3859,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
-        return fromMemorySegment(species, LANG_ACCESS.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder(), m);
+        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder(), m);
     }
 
     /**
