@@ -318,15 +318,6 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
             ret = getValueInRegistry(hSubKey, STD_NAME, &valueType,
                                      szValue, &size);
             if (ret != ERROR_SUCCESS) {
-                /*
-                 * NT 4.0 SP3 fails here since it doesn't have the "Std"
-                 * entry in the Time Zones registry.
-                 */
-                RegCloseKey(hSubKey);
-                ret = RegOpenKeyExW(hKey, stdNamePtr, 0, KEY_READ, (PHKEY)&hSubKey);
-                if (ret != ERROR_SUCCESS) {
-                    goto err;
-                }
                 RegCloseKey(hSubKey);
                 break;
             }
