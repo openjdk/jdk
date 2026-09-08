@@ -1393,10 +1393,17 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   }
 
   const TypePtr* addr_type = gvn().type(addr)->isa_ptr();
-  const TypeAryPtr* arr_type = addr_type->isa_aryptr();
+  const TypeAryPtr* arr_type = addr_type != nullptr ? addr_type->isa_aryptr() : nullptr;
 
-  // The array must be consistent with vector type
-  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, false))) {
+  // Gather and scatter address an array, and the array must be consistent with
+  // the vector type.
+  if (arr_type == nullptr) {
+    log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=not an array",
+                    is_scatter, is_scatter ? "scatter" : "gather",
+                    num_elem, type2name(elem_bt));
+    return false;
+  }
+  if (!elem_consistent_with_arr(elem_bt, arr_type, false)) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
