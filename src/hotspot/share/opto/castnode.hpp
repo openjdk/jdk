@@ -195,7 +195,7 @@ protected:
 
 private:
   virtual Node* pin_node_under_control_impl() const;
-  Node* ideal_cast_of_inline_type_node(PhaseGVN* phase);
+  Node* ideal_cast_of_value_type_node(PhaseGVN* phase);
 };
 
 //------------------------------CastIINode-------------------------------------

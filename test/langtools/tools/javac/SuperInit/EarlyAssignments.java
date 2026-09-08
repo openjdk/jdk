@@ -21,9 +21,9 @@ public class EarlyAssignments {
         }
 
         public Inner1(int y) {
-            y = x;                          // OK - "x" belongs to this class
-            y = this.x;                     // OK - "x" belongs to this class
-            y = Inner1.this.x;              // OK - "x" belongs to this class
+            y = x;                          // OK - "x" belongs to this class, simple access
+            y = this.x;                     // FAIL - "x" belongs to this class, but qualified access
+            y = Inner1.this.x;              // FAIL - "x" belongs to this class, but qualified access
             super();
         }
 
@@ -104,13 +104,17 @@ public class EarlyAssignments {
 
         public Inner4(int a) {
             this.x = 0;                         // OK
-            this.x = this.x + 1;                // OK
+            this.x = x + 1;                     // OK, simple access
+            this.x = this.x + 1;                // FAIL, qualified access
+            this.x = Inner4.this.x + 1;         // FAIL, qualified access
             super();
         }
 
         public Inner4(char a) {
             Inner4.this.x = 0;                  // OK
-            Inner4.this.x = Inner4.this.x + 1;  // OK
+            Inner4.this.x = x + 1;              // OK, simple access
+            Inner4.this.x = this.x + 1;         // FAIL, qualified access
+            Inner4.this.x = Inner4.this.x + 1;  // FAIL, qualified access
             super();
         }
     }
