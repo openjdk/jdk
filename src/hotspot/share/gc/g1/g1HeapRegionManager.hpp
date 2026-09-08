@@ -293,25 +293,25 @@ public:
 // The G1HeapRegionClaimer is used during parallel iteration over heap regions,
 // allowing workers to claim heap regions, gaining exclusive rights to these regions.
 class G1HeapRegionClaimer : public StackObj {
-  uint           _n_workers;
-  uint           _n_regions;
+  uint           _num_workers;
+  uint           _num_regions;
   Atomic<uint>*  _claims;
 
   static const uint Unclaimed = 0;
   static const uint Claimed   = 1;
 
  public:
-  G1HeapRegionClaimer(uint n_workers);
+  G1HeapRegionClaimer(uint num_workers);
   ~G1HeapRegionClaimer();
 
-  inline uint n_regions() const {
-    return _n_regions;
+  inline uint num_regions() const {
+    return _num_regions;
   }
 
-  void set_n_workers(uint n_workers) {
-    assert(_n_workers == 0, "already set");
-    assert(n_workers > 0, "must be");
-    _n_workers = n_workers;
+  void set_num_workers(uint num_workers) {
+    assert(_num_workers == 0, "already set");
+    assert(num_workers > 0, "must be");
+    _num_workers = num_workers;
   }
   // Return a start offset given a worker id.
   uint offset_for_worker(uint worker_id) const;

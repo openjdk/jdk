@@ -67,7 +67,7 @@ public:
   }
 
   // Sets up the bitmap and failed regions array for addition.
-  void pre_collection(uint max_regions);
+  void pre_collection(uint max_num_regions);
   // Drops memory for internal data structures, but keep counts.
   void post_collection();
 

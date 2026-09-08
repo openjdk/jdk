@@ -229,7 +229,7 @@ G1CollectionSetCandidates::G1CollectionSetCandidates() :
   _contains_map(nullptr),
   _from_marking_groups(),
   _retained_groups(),
-  _max_regions(0),
+  _max_num_regions(0),
   _last_marking_candidates_length(0)
 { }
 
@@ -244,17 +244,17 @@ bool G1CollectionSetCandidates::is_from_marking(G1HeapRegion* r) const {
   return _contains_map[r->hrm_index()] == CandidateOrigin::Marking;
 }
 
-void G1CollectionSetCandidates::initialize(uint max_regions) {
+void G1CollectionSetCandidates::initialize(uint max_num_regions) {
   assert(_contains_map == nullptr, "already initialized");
-  _max_regions = max_regions;
-  _contains_map = NEW_C_HEAP_ARRAY(CandidateOrigin, max_regions, mtGC);
+  _max_num_regions = max_num_regions;
+  _contains_map = NEW_C_HEAP_ARRAY(CandidateOrigin, max_num_regions, mtGC);
   clear();
 }
 
 void G1CollectionSetCandidates::clear() {
   _retained_groups.clear(true /* uninstall_card_set_group */);
   _from_marking_groups.clear(true /* uninstall_card_set_group */);
-  for (uint i = 0; i < _max_regions; i++) {
+  for (uint i = 0; i < _max_num_regions; i++) {
     _contains_map[i] = CandidateOrigin::Invalid;
   }
   _last_marking_candidates_length = 0;
@@ -409,8 +409,8 @@ void G1CollectionSetCandidates::verify_helper(G1CardSetGroupList* list, uint& fr
 void G1CollectionSetCandidates::verify() {
   uint from_marking = 0;
 
-  CandidateOrigin* verify_map = NEW_C_HEAP_ARRAY(CandidateOrigin, _max_regions, mtGC);
-  for (uint i = 0; i < _max_regions; i++) {
+  CandidateOrigin* verify_map = NEW_C_HEAP_ARRAY(CandidateOrigin, _max_num_regions, mtGC);
+  for (uint i = 0; i < _max_num_regions; i++) {
     verify_map[i] = CandidateOrigin::Invalid;
   }
 
@@ -424,7 +424,7 @@ void G1CollectionSetCandidates::verify() {
   assert(length() >= marking_regions_length(), "must be");
 
   // Check whether the _contains_map is consistent with the list.
-  for (uint i = 0; i < _max_regions; i++) {
+  for (uint i = 0; i < _max_num_regions; i++) {
     assert(_contains_map[i] == verify_map[i] ||
            (_contains_map[i] != CandidateOrigin::Invalid && verify_map[i] == CandidateOrigin::Verify),
            "Candidate origin does not match for region %u, is %u but should be %u",
@@ -439,7 +439,7 @@ void G1CollectionSetCandidates::verify() {
 
 bool G1CollectionSetCandidates::contains(const G1HeapRegion* r) const {
   const uint index = r->hrm_index();
-  assert(index < _max_regions, "must be");
+  assert(index < _max_num_regions, "must be");
   return _contains_map[index] != CandidateOrigin::Invalid;
 }
 

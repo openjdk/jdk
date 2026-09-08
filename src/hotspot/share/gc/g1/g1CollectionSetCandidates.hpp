@@ -221,7 +221,7 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   // should contain only one region each, making it easier to evacuate retained regions
   // in any young collection.
   G1CardSetGroupList _retained_groups;
-  uint _max_regions;
+  uint _max_num_regions;
 
   // The number of regions from the last merge of candidates from the marking.
   uint _last_marking_candidates_length;
@@ -235,7 +235,7 @@ public:
   G1CardSetGroupList& from_marking_groups() { return _from_marking_groups; }
   G1CardSetGroupList& retained_groups() { return _retained_groups; }
 
-  void initialize(uint max_regions);
+  void initialize(uint max_num_regions);
 
   void clear();
 

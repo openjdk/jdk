@@ -133,10 +133,10 @@ public:
   // Add code roots serially to avoid lock and resize contention.
   void do_work(uint worker_id) override {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    uint max_regions = g1h->max_num_regions();
+    uint max_num_regions = g1h->max_num_regions();
 
-    uint* counts = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
-    memset(counts, 0, max_regions * sizeof(uint));
+    uint* counts = NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC);
+    memset(counts, 0, max_num_regions * sizeof(uint));
 
     // Pass 1: count the number of nmethods to add per region across all workers.
     for (uint i = 0; i < _psss->num_workers(); i++) {
@@ -583,7 +583,7 @@ public:
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   double worker_cost() const override {
@@ -874,7 +874,7 @@ public:
     _active_workers = max_workers;
     _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
     ::new (_worker_stats) FreeCSetStats[_active_workers]{};
-    _claimer.set_n_workers(_active_workers);
+    _claimer.set_num_workers(_active_workers);
   }
 
   void do_work(uint worker_id) override {

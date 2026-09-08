@@ -941,11 +941,11 @@ public:
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
     const double regions_per_thread = 1000;
-    return _claimer.n_regions() / regions_per_thread;
+    return _claimer.num_regions() / regions_per_thread;
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   void do_work(uint worker_id) override {
