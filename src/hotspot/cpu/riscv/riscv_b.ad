@@ -349,6 +349,40 @@ instruct shaddP_reg_reg_ext_b(iRegPNoSp dst, iRegP src1, iRegI src2, immIScale i
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct addP_reg_reg_uxtw_b(iRegPNoSp dst, iRegP src1, iRegIorL2I src2, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AddP src1 (AndL (ConvI2L src2) mask)));
+
+  ins_cost(ALU_COST);
+  format %{ "add.uw $dst, $src2, $src1\t# ptr, #@addP_reg_reg_uxtw_b" %}
+
+  ins_encode %{
+    __ add_uw(as_Register($dst$$reg),
+              as_Register($src2$$reg),
+              as_Register($src1$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct shaddP_reg_reg_uxtw_b(iRegPNoSp dst, iRegP src1, iRegIorL2I src2, immL_32bits mask, immIScale imm) %{
+  predicate(UseZba);
+  match(Set dst (AddP src1 (LShiftL (AndL (ConvI2L src2) mask) imm)));
+
+  ins_cost(ALU_COST);
+  format %{ "shadd.uw $dst, $src2, $src1, $imm\t# ptr, #@shaddP_reg_reg_uxtw_b" %}
+
+  ins_encode %{
+    __ shadd_uw(as_Register($dst$$reg),
+                as_Register($src2$$reg),
+                as_Register($src1$$reg),
+                t0,
+                $imm$$constant);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
 // Shift Add Long
 instruct shaddL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) %{
   predicate(UseZba);
@@ -363,6 +397,42 @@ instruct shaddL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) 
              as_Register($src1$$reg),
              t0,
              $imm$$constant);
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct addL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AddL src1 (AndL (ConvI2L src2) mask)));
+  match(Set dst (AddL (AndL (ConvI2L src2) mask) src1));
+
+  ins_cost(ALU_COST);
+  format %{ "add.uw $dst, $src2, $src1\t#@addL_reg_reg_uxtw_b" %}
+
+  ins_encode %{
+    __ add_uw(as_Register($dst$$reg),
+              as_Register($src2$$reg),
+              as_Register($src1$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct shaddL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_32bits mask, immIScale imm) %{
+  predicate(UseZba);
+  match(Set dst (AddL src1 (LShiftL (AndL (ConvI2L src2) mask) imm)));
+  match(Set dst (AddL (LShiftL (AndL (ConvI2L src2) mask) imm) src1));
+
+  ins_cost(ALU_COST);
+  format %{ "shadd.uw $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_uxtw_b" %}
+
+  ins_encode %{
+    __ shadd_uw(as_Register($dst$$reg),
+                as_Register($src2$$reg),
+                as_Register($src1$$reg),
+                t0,
+                $imm$$constant);
   %}
 
   ins_pipe(ialu_reg_reg);
