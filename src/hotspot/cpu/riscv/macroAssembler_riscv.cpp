@@ -6752,6 +6752,17 @@ void MacroAssembler::zero_memory(Register addr, Register len, Register tmp) {
   bnez(len, loop);
 }
 
+void MacroAssembler::add_uw(Register Rd, Register Rs1, Register Rs2, Register tmp) {
+  if (UseZba) {
+    _add_uw(Rd, Rs1, Rs2);
+    return;
+  }
+
+  assert_different_registers(tmp, Rs2);
+  zext(tmp, Rs1, 32);
+  add(Rd, tmp, Rs2);
+}
+
 // shift left by shamt and add
 // Rd = (Rs1 << shamt) + Rs2
 void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt) {
