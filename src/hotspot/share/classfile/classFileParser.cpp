@@ -53,7 +53,6 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
@@ -63,6 +62,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/recordComponent.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -158,6 +158,8 @@
 #define JAVA_27_VERSION                   71
 
 #define JAVA_28_VERSION                   72
+
+#define JDK_VERSION                       (7 + (JVM_CLASSFILE_MAJOR_VERSION - JAVA_7_VERSION))
 
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
@@ -1392,10 +1394,8 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
   assert(nullptr == _fields_annotations, "invariant");
   assert(nullptr == _fields_type_annotations, "invariant");
 
-  // "inline type" means concrete value class
-  bool is_inline_type = !class_access_flags.is_identity_class() && !class_access_flags.is_abstract();
-  // "value class" can be either abstract or concrete value class
-  bool is_value_class = !class_access_flags.is_identity_class() && !class_access_flags.is_interface();
+  bool is_concrete_value_class = !class_access_flags.is_identity_class() && !class_access_flags.is_abstract();
+  bool is_concrete_or_abstract_value_class = !class_access_flags.is_identity_class() && !class_access_flags.is_interface();
   cfs->guarantee_more(2, CHECK);  // length
   const u2 length = cfs->get_u2_fast();
   *java_fields_count_ptr = length;
@@ -1404,16 +1404,16 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
   const InjectedField* const injected = JavaClasses::get_injected(_class_name,
                                                                   &num_injected);
 
-  // Two more slots are required for inline classes:
+  // Two more slots are required for concrete value classes:
   //   - The static field ".null_reset" which carries the nullable flat layout
   //     representation of null, added below
   //   - The nonstatic field ".empty" the JVM injects when detecting an empty
-  //     inline class, added in FieldLayoutBuilder::compute_inline_class_layout
-  // One more slot is required for both abstract value class and inline classes:
+  //     value class, added in FieldLayoutBuilder::compute_value_class_layout
+  // One more slot is required for both concrete and abstract value classes:
   //   - The static field ".acmp_maps" for acmp and identity hash, tracks
   //     nonstatic fields both inherited or declared, added below
-  const int total_fields = length + num_injected + (is_inline_type ? 2 : 0)
-                           + (is_value_class ? 1 : 0);
+  const int total_fields = length + num_injected + (is_concrete_value_class ? 2 : 0)
+                           + (is_concrete_or_abstract_value_class ? 1 : 0);
 
   // Allocate a temporary resource array to collect field data.
   // After parsing all fields, data are stored in a UNSIGNED5 compressed stream.
@@ -1425,7 +1425,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     cfs->guarantee_more(8, CHECK);
 
     jint recognized_modifiers = JVM_RECOGNIZED_FIELD_MODIFIERS;
-    if (!supports_inline_types()) {
+    if (!supports_value_types()) {
       recognized_modifiers &= ~JVM_ACC_STRICT_INIT;
     }
 
@@ -1486,7 +1486,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
               class_name()->as_C_string(), name->as_C_string(), sig->as_C_string());
             return;
           }
-          if (!supports_inline_types()) {
+          if (!supports_value_types()) {
             Exceptions::fthrow(
               THREAD_AND_LOCATION,
               vmSymbols::java_lang_ClassFormatError(),
@@ -1525,7 +1525,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     }
 
     if (is_null_restricted) {
-      fieldFlags.update_null_free_inline_type(true);
+      fieldFlags.update_null_free_value_type(true);
       if (is_static) {
         _has_null_restricted_static_fields = true;
       }
@@ -1547,8 +1547,12 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     if (fi.field_flags().is_contended()) {
       _has_contended_fields = true;
     }
-    if (access_flags.is_strict() && access_flags.is_static()) {
-      _has_strict_static_fields = true;
+    if (access_flags.is_strict()) {
+      if (access_flags.is_static()) {
+        _has_strict_static_fields = true;
+      } else {
+        _has_strict_instance_fields = true;
+      }
     }
     _temp_field_info->append(fi);
   }
@@ -1586,7 +1590,7 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
     }
   }
 
-  if (is_inline_type) {
+  if (is_concrete_value_class) {
     // Inject static ".null_reset" field. This is an all-zero value with its null-channel set to zero.
     // It should never be seen by user code, it is used when writing "null" to a nullable flat field
     // The all-zero value ensure that any embedded oop will be set to null, to avoid keeping dead objects
@@ -2078,7 +2082,7 @@ void MethodAnnotationCollector::apply_to(const methodHandle& m) {
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
-  if (has_annotation(_jdk_internal_vm_annotation_Contended)) {
+  if (ik->is_identity_class() && has_annotation(_jdk_internal_vm_annotation_Contended)) {
     ik->set_is_contended(is_contended());
   }
   if (has_annotation(_jdk_internal_ValueBased)) {
@@ -3149,7 +3153,7 @@ u2 ClassFileParser::parse_classfile_inner_classes_attribute(const ClassFileStrea
       flags |= JVM_ACC_ABSTRACT;
     }
 
-    if (!supports_inline_types()) {
+    if (!supports_value_types()) {
       const bool is_module = (flags & JVM_ACC_MODULE) != 0;
       const bool is_interface = (flags & JVM_ACC_INTERFACE) != 0;
       if (!is_module && !is_interface) {
@@ -3969,7 +3973,7 @@ void ClassFileParser::apply_parsed_class_metadata(
   this_klass->set_annotations(_combined_annotations);
   this_klass->set_permitted_subclasses(_permitted_subclasses);
   this_klass->set_record_components(_record_components);
-  this_klass->set_inline_layout_info_array(_inline_layout_info_array);
+  this_klass->set_value_field_layout_info_array(_value_field_layout_info_array);
 
   DEBUG_ONLY(FieldInfoStream::validate_search_table(_cp, _fieldinfo_stream, _fieldinfo_search_table));
 
@@ -4201,8 +4205,8 @@ void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   }
 }
 
-bool ClassFileParser::supports_inline_types() const {
-  // Inline types are only supported by class file version 71.65535 and later
+bool ClassFileParser::supports_value_types() const {
+  // Value types are only supported by class file version 71.65535 and later
   return _major_version > JAVA_28_VERSION ||
          (_major_version == JAVA_28_VERSION && _minor_version == JAVA_PREVIEW_MINOR_VERSION);
 }
@@ -4509,7 +4513,7 @@ void ClassFileParser::verify_legal_class_modifiers(jint flags, Symbol* inner_nam
   const bool is_enum       = (flags & JVM_ACC_ENUM)       != 0;
   const bool is_annotation = (flags & JVM_ACC_ANNOTATION) != 0;
   const bool major_gte_1_5 = _major_version >= JAVA_1_5_VERSION;
-  const bool valid_value_class = is_identity || is_interface || (supports_inline_types() && (is_abstract || is_final));
+  const bool valid_value_class = is_identity || is_interface || (supports_value_types() && (is_abstract || is_final));
 
   if ((is_abstract && is_final) ||
       (is_interface && !is_abstract) ||
@@ -4576,9 +4580,10 @@ void ClassFileParser::verify_class_version(u2 major, u2 minor, Symbol* class_nam
     Exceptions::fthrow(
       THREAD_AND_LOCATION,
       vmSymbols::java_lang_UnsupportedClassVersionError(),
-      "%s has been compiled by a more recent version of the Java Runtime (class file version %u.%u), "
-      "this version of the Java Runtime only recognizes class file versions up to %u.0",
-      class_name->as_C_string(), major, minor, JVM_CLASSFILE_MAJOR_VERSION);
+      "%s requires a newer Java runtime. The runtime in use, Java %u, supports class file versions up "
+      "to %u.0, but the class file version of %s is %u.%u.",
+      class_name->as_C_string(), JDK_VERSION, JVM_CLASSFILE_MAJOR_VERSION,
+      class_name->as_C_string(), major, minor);
     return;
   }
 
@@ -4633,10 +4638,9 @@ void ClassFileParser:: verify_legal_field_modifiers(jint flags,
   const char* error_msg = "";
 
   // There is some overlap in the checks that apply, for example interface fields
-  // must be static, static fields can't be strict, and therefore interfaces can't
-  // have strict fields. So we don't have to check every possible invalid combination
-  // individually as long as all are covered. Once we have found an illegal combination
-  // we can stop checking.
+  // must be static, therefore interfaces can't have strict instance fields.
+  // We don't have to check every possible invalid combination individually as long as
+  // all are covered. Once we have found an illegal combination we can stop checking.
 
   if (!is_illegal) {
     if (is_interface) {
@@ -4653,7 +4657,7 @@ void ClassFileParser:: verify_legal_field_modifiers(jint flags,
       } else if (is_final && is_volatile) {
         is_illegal = true;
         error_msg = "fields cannot be final and volatile";
-      } else if (supports_inline_types()) {
+      } else if (supports_value_types()) {
         if (!is_identity_class && !is_static && (!is_strict || !is_final)) {
           is_illegal = true;
           error_msg = "value class fields must be either non-static final and strict, or static";
@@ -5362,21 +5366,66 @@ void ClassFileParser::create_acmp_maps(InstanceKlass* ik, TRAPS) {
   ik->set_acmp_maps_array(acmp_maps_array);
 }
 
-// See the declarations of _fast_acmp_offset and _fast_acmp_mask in InlineKlass::Members
+// See the declarations of _fast_acmp_offset and _fast_acmp_mask in ValueKlass::Members
 // for details about the fast path logic, and the meaning of these values.
-void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
+void ClassFileParser::set_fast_acmp_members(ValueKlass* vk) const {
   if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
     return;
   }
 
   int64_t mask = 0;
 #ifndef VM_LITTLE_ENDIAN
-  // Leaving the mask and offset to default values (that is just "return;") is a correct and easy way to implement
-  // this for other endianness, but it will have a runtime cost in do_acmp, without the benefit. It is better, and
-  // probably easy with access to such an architecture, to adapt the logic below
-  // for big-endian architectures, but filling the mask from the other end. I prefer not to do it blindly.
-  vk->set_fast_acmp_offset(0);
-  vk->set_fast_acmp_mask(mask);
+
+  // Big-endian: the byte at the lowest address (closest to header) is the most significant byte
+  // in a 64-bit load. We build the mask filling from the most-significant end.
+  //                              Value                    Memory layout (address increases left to right)
+  // make_mask_piece(0, 1) = 0xff00 0000 0000 0000 => [ff]| 00 | 00 | 00 | 00 | 00 | 00 | 00
+  // make_mask_piece(0, 2) = 0xffff 0000 0000 0000 => [ff | ff]| 00 | 00 | 00 | 00 | 00 | 00
+  // make_mask_piece(1, 1) = 0x00ff 0000 0000 0000 => 00 |[ff]| 00 | 00 | 00 | 00 | 00 | 00
+  // make_mask_piece(1, 3) = 0x00ff ffff 0000 0000 => 00 |[ff | ff | ff]| 00 | 00 | 00 | 00
+  auto make_mask_piece = [](int start, int size) -> int64_t {
+    return right_n_bits<int64_t>(size * BitsPerByte) << ((BytesPerLong - start - size) * BitsPerByte);
+  };
+
+  // We build the mask for a 64-bit load from the start of the payload. For each contiguous piece of memory
+  // we build the mask containing 1's where it would be in the loaded long.
+  for (int i = 0; i < _layout_info->_nonoop_acmp_map->length(); i++) {
+    int piece_start = _layout_info->_nonoop_acmp_map->at(i)._offset - _layout_info->_payload_offset;
+    int piece_size = _layout_info->_nonoop_acmp_map->at(i)._size;
+    int piece_end = piece_start + piece_size - 1;
+    if (piece_end >= BytesPerLong) {  // Too far! Can't fit in an 8-byte load, fast path will not be taken
+      return;
+    }
+    int64_t mask_piece = make_mask_piece(piece_start, piece_size);
+    mask |= mask_piece;
+  }
+
+  // If the payload is smaller than 64 bits, reading a long after the header can lead to an over-read. To avoid that, we can move the
+  // load to a lower offset (toward the beginning of the object), and adjust the mask accordingly, even if it means reading (part of)
+  // the header: the mask will filter that out.
+  // Since an object cannot be less than 8 bytes, it's surely safe.
+  if (mask == 0) {
+    // Special case: empty object. There is nothing to compare, and no payload. We can just read from the start
+    // of the header to ensure we load within the object.
+    // Note: we can't use the general case below because count_trailing_zeros doesn't accept a null argument.
+    vk->set_fast_acmp_offset(0);
+    vk->set_fast_acmp_mask(mask);
+  } else {
+    // In big endian, if the payload is not a full 64 bits, the mask will have trailing 0s (least significant bytes
+    // correspond to higher addresses, i.e., further from the header). We shift the mask right so that there aren't
+    // trailing 0s anymore, and decrease the offset by the same byte count.
+    // For example, if _payload_offset is 16 and the mask is 0xffff ffff 00ff 0000 (16 trailing zeros),
+    // we shift right 16 bits → mask becomes 0x0000 ffff ffff 00ff, and subtract 2 from the offset.
+    // The leading 16 zeros introduced by the shift will filter out the 2 bytes of header we now read.
+    int trailing_zeroes = static_cast<int>(count_trailing_zeros(static_cast<uint64_t>(mask)));
+    assert(trailing_zeroes % BitsPerByte == 0, "we should mask full bytes");
+    mask = (int64_t)((uint64_t)mask >> trailing_zeroes);
+    assert(count_trailing_zeros(static_cast<uint64_t>(mask)) == 0, "fast acmp mask can be moved further!");
+    int offset = _layout_info->_payload_offset - trailing_zeroes / BitsPerByte;
+    assert(offset >= 0, "fast acmp path shouldn't load before the object");
+    vk->set_fast_acmp_offset(offset);
+    vk->set_fast_acmp_mask(mask);
+  }
 
 #else
 
@@ -5385,7 +5434,7 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
   // will be the least significant byte.
   //                         Value                    Memory layout
   // make_mask_piece(0, 1) = 0x0000 0000 0000 00ff => ff | 00 | 00 | 00 | 00 | 00 | 00 | 00
-  // make_mask_piece(0, 1) = 0x0000 0000 0000 ffff => ff | ff | 00 | 00 | 00 | 00 | 00 | 00
+  // make_mask_piece(0, 2) = 0x0000 0000 0000 ffff => ff | ff | 00 | 00 | 00 | 00 | 00 | 00
   // make_mask_piece(1, 1) = 0x0000 0000 0000 ff00 => 00 | ff | 00 | 00 | 00 | 00 | 00 | 00
   // make_mask_piece(1, 3) = 0x0000 0000 ffff ff00 => 00 | ff | ff | ff | 00 | 00 | 00 | 00
   auto make_mask_piece = [](int start, int size) -> int64_t { return right_n_bits<int64_t>(size * BitsPerByte) << (start * BitsPerByte); };
@@ -5423,8 +5472,6 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     // after the end of the payload. To avoid that, we are going to shift the payload by 16 bits, and remove 2 bytes
     // from the offset we should load from. At the end, fast_acmp_offset will be 14 and the mask 0xffff ffff 00ff 0000.
     // The lowest 16 0s introduced by the shift will filter out the 2 bytes we read from the header.
-    // Big endian architectures probably need to look at count_trailing_zeros, and shift right until the last bit is 1.
-    // The offset still needs to be decreased.
     int leading_zeroes = static_cast<int>(count_leading_zeros(mask));
     assert(leading_zeroes % BitsPerByte == 0, "we should mask full bytes");
     mask <<= leading_zeroes;
@@ -5435,6 +5482,34 @@ void ClassFileParser::set_fast_acmp_members(InlineKlass* vk) const {
     vk->set_fast_acmp_mask(mask);
   }
 #endif // VM_LITTLE_ENDIAN
+}
+
+// See the declarations of _fast_hashcode_offset and _fast_hashcode_shift in ValueKlass::Members
+// for details about the fast path logic, and the meaning of these values.
+void ClassFileParser::set_fast_hashcode_members(ValueKlass* vk) const {
+  if (_layout_info->_oop_acmp_map->length() > 0) {  // Oops are not allowed in the fast path
+    return;
+  }
+  if (_layout_info->_nonoop_acmp_map->length() >= 2) {  // We handle at most one segment...
+    return;
+  }
+
+  if (_layout_info->_nonoop_acmp_map->length() == 0) {
+    vk->set_fast_hashcode_offset(0);
+    vk->set_fast_hashcode_shift(0);
+    return;
+  }
+
+  assert(_layout_info->_nonoop_acmp_map->length() == 1, "trivially");
+
+  int piece_size = _layout_info->_nonoop_acmp_map->at(0)._size;
+  if (piece_size != 1 && piece_size != 2 && piece_size != 4 && piece_size != 8) {  // ...and it must have a convenient size
+    return;
+  }
+
+  int piece_start = _layout_info->_nonoop_acmp_map->at(0)._offset;
+  vk->set_fast_hashcode_offset(piece_start - (BytesPerLong - piece_size));
+  vk->set_fast_hashcode_shift(BitsPerByte * (BytesPerLong - piece_size));
 }
 
 void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
@@ -5471,6 +5546,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   ik->set_nonstatic_field_size(_layout_info->_nonstatic_field_size);
   ik->set_has_nonstatic_fields(_layout_info->_has_nonstatic_fields);
   ik->set_has_strict_static_fields(_has_strict_static_fields);
+  ik->set_has_strict_instance_fields(_has_strict_instance_fields);
 
   if (_layout_info->_is_naturally_atomic) {
     ik->set_is_naturally_atomic();
@@ -5486,15 +5562,15 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     ik->set_has_null_restricted_static_fields();
     for (int i = 0; i < _temp_field_info->length(); i++) {
       FieldInfo& fieldinfo = _temp_field_info->at(i);
-      if (fieldinfo.access_flags().is_static() && fieldinfo.field_flags().is_null_free_inline_type()) {
+      if (fieldinfo.access_flags().is_static() && fieldinfo.field_flags().is_null_free_value_type()) {
         Symbol* sig = fieldinfo.signature(_cp);
         assert(Signature::has_envelope(sig), "Must already have been checked");
         TempNewSymbol name = Signature::strip_envelope(sig);
         if (name == _class_name) {
           // Replace the nullptr previously stored now that we have the InstanceKlass for this klass.
-          _inline_layout_info_array->adr_at(fieldinfo.index())->set_klass(InlineKlass::cast(ik));
+          _value_field_layout_info_array->adr_at(fieldinfo.index())->set_klass(ValueKlass::cast(ik));
         }
-        assert(_inline_layout_info_array->adr_at(fieldinfo.index())->klass()->is_inline_klass(), "Must be");
+        assert(_value_field_layout_info_array->adr_at(fieldinfo.index())->klass()->is_value_klass(), "Must be");
       }
     }
   }
@@ -5520,7 +5596,7 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
   assert(nullptr == _combined_annotations, "invariant");
   assert(nullptr == _record_components, "invariant");
   assert(nullptr == _permitted_subclasses, "invariant");
-  assert(nullptr == _inline_layout_info_array, "invariant");
+  assert(nullptr == _value_field_layout_info_array, "invariant");
 
   if (_has_localvariable_table) {
     ik->set_has_localvariable_table(true);
@@ -5602,8 +5678,9 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     oop_map_blocks->copy(ik->start_of_nonstatic_oop_maps());
   }
 
-  if (_has_contended_fields || _parsed_annotations->is_contended() ||
-      ( _super_klass != nullptr && _super_klass->has_contended_annotations())) {
+  if (ik->is_identity_class() &&
+      (_has_contended_fields || _parsed_annotations->is_contended() ||
+       (_super_klass != nullptr && _super_klass->has_contended_annotations()))) {
     ik->set_has_contended_annotations(true);
   }
 
@@ -5658,8 +5735,8 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     }
   }
 
-  if (is_inline_type()) {
-    InlineKlass* vk = InlineKlass::cast(ik);
+  if (is_concrete_value_class()) {
+    ValueKlass* vk = ValueKlass::cast(ik);
     vk->set_payload_alignment(_layout_info->_payload_alignment);
     vk->set_payload_offset(_layout_info->_payload_offset);
     vk->set_payload_size_in_bytes(_layout_info->_payload_size_in_bytes);
@@ -5670,10 +5747,14 @@ void ClassFileParser::fill_instance_klass(InstanceKlass* ik,
     vk->set_nullable_non_atomic_size_in_bytes(_layout_info->_nullable_non_atomic_layout_size_in_bytes);
     vk->set_null_marker_offset(_layout_info->_null_marker_offset);
     vk->set_null_reset_value_offset(_layout_info->_null_reset_value_offset);
-    if (_layout_info->_is_empty_inline_klass) vk->set_is_empty_inline_type();
+    if (_layout_info->_is_empty_value_klass) vk->set_is_empty_value_type();
 
     if (UseAcmpFastPath) {
       set_fast_acmp_members(vk);
+    }
+
+    if (UseHashcodeFastPath) {
+      set_fast_hashcode_members(vk);
     }
 
     vk->initialize_calling_convention(CHECK);
@@ -5781,7 +5862,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _klass_to_deallocate(nullptr),
   _parsed_annotations(nullptr),
   _layout_info(nullptr),
-  _inline_layout_info_array(nullptr),
+  _value_field_layout_info_array(nullptr),
   _temp_field_info(nullptr),
   _method_ordering(nullptr),
   _all_mirandas(nullptr),
@@ -5811,6 +5892,7 @@ ClassFileParser::ClassFileParser(ClassFileStream* stream,
   _has_contended_fields(false),
   _has_aot_runtime_setup_method(false),
   _has_strict_static_fields(false),
+  _has_strict_instance_fields(false),
   _has_null_restricted_static_fields(false),
   _must_be_atomic(true),
   _has_finalizer(false),
@@ -5855,7 +5937,7 @@ void ClassFileParser::clear_class_metadata() {
   _class_annotations = _class_type_annotations = nullptr;
   _fields_annotations = _fields_type_annotations = nullptr;
   _record_components = nullptr;
-  _inline_layout_info_array = nullptr;
+  _value_field_layout_info_array = nullptr;
 }
 
 // Destructor to clean up
@@ -5875,8 +5957,8 @@ ClassFileParser::~ClassFileParser() {
     MetadataFactory::free_array<FieldStatus>(_loader_data, _fields_status);
   }
 
-  if (_inline_layout_info_array != nullptr) {
-    MetadataFactory::free_array<InlineLayoutInfo>(_loader_data, _inline_layout_info_array);
+  if (_value_field_layout_info_array != nullptr) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
   }
 
   if (_methods != nullptr) {
@@ -6005,7 +6087,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
   }
 
   // Fixing ACC_SUPER/ACC_IDENTITY for old class files
-  if (!supports_inline_types()) {
+  if (!supports_value_types()) {
     const bool is_module = (flags & JVM_ACC_MODULE) != 0;
     const bool is_interface = (flags & JVM_ACC_INTERFACE) != 0;
     if (!is_module && !is_interface) {
@@ -6331,17 +6413,17 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   _layout_info = new FieldLayoutInfo();
   FieldLayoutBuilder lb(class_name(), loader_data(), super_klass(), _cp, /*_fields*/ _temp_field_info,
-      _parsed_annotations->is_contended(), is_inline_type(),
+      access_flags().is_identity_class() && _parsed_annotations->is_contended(), is_concrete_value_class(),
       access_flags().is_abstract() && !access_flags().is_identity_class() && !access_flags().is_interface(),
-      _must_be_atomic, _layout_info, _inline_layout_info_array);
+      _must_be_atomic, _layout_info, _value_field_layout_info_array);
   lb.build_layout();
 
   // If it turned out that we didn't inline any of the fields, we deallocate
-  // the array of InlineLayoutInfo since it isn't needed, and so it isn't
+  // the array of ValueFieldLayoutInfo since it isn't needed, and so it isn't
   // transferred to the allocated InstanceKlass.
-  if (_inline_layout_info_array != nullptr && !(_layout_info->_has_inlined_fields || _has_null_restricted_static_fields)) {
-    MetadataFactory::free_array<InlineLayoutInfo>(_loader_data, _inline_layout_info_array);
-    _inline_layout_info_array = nullptr;
+  if (_value_field_layout_info_array != nullptr && !(_layout_info->_has_inlined_fields || _has_null_restricted_static_fields)) {
+    MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
+    _value_field_layout_info_array = nullptr;
   }
 
   int injected_fields_count = _temp_field_info->length() - _java_fields_count;
@@ -6392,17 +6474,17 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
   for (int i = 0; i < _temp_field_info->length(); i++) {
     FieldInfo& fieldinfo = _temp_field_info->at(i);
-    if (fieldinfo.access_flags().is_static() && !fieldinfo.field_flags().is_null_free_inline_type()) continue;
+    if (fieldinfo.access_flags().is_static() && !fieldinfo.field_flags().is_null_free_value_type()) continue;
     Symbol* sig = fieldinfo.signature(cp);
     if (Signature::has_envelope(sig)) {
       TempNewSymbol name = Signature::strip_envelope(sig);
       if (name == _class_name) {
-        if (fieldinfo.field_flags().is_null_free_inline_type() && !is_inline_type()) {
-          fieldinfo.field_flags_addr()->update_null_free_inline_type(false);
+        if (fieldinfo.field_flags().is_null_free_value_type() && !is_concrete_value_class()) {
+          fieldinfo.field_flags_addr()->update_null_free_value_type(false);
         } else {
-          // Dummy setting to trigger the allocation of the inline_layout_info array -
-          // the real pointer will be set later in ::fill_instance_klass, once the InlineKlass has been allocated.
-          set_inline_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
+          // Dummy setting to trigger the allocation of the value_field_layout_info array -
+          // the real pointer will be set later in ::fill_instance_klass, once the ValueKlass has been allocated.
+          set_value_field_layout_info_klass(fieldinfo.index(), nullptr, CHECK);
         }
         continue;
       }
@@ -6419,8 +6501,8 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
         assert((klass == nullptr) == HAS_PENDING_EXCEPTION, "Must be the same");
 
         if (klass != nullptr) {
-          if (klass->is_inline_klass()) {
-            set_inline_layout_info_klass(fieldinfo.index(), InlineKlass::cast(klass), CHECK);
+          if (klass->is_value_klass()) {
+            set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
             log_info(class, preload)("Preloading of class %s during loading of class %s "
                                      "(cause: field type in LoadableDescriptors attribute) succeeded",
                                      name->as_C_string(), _class_name->as_C_string());
@@ -6429,12 +6511,12 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
             log_info(class, preload)("Preloading of class %s during loading of class %s "
                                      "(cause: field type in LoadableDescriptors attribute) but loaded class is not a value class",
                                      name->as_C_string(), _class_name->as_C_string());
-            if (fieldinfo.field_flags().is_null_free_inline_type()) {
+            if (fieldinfo.field_flags().is_null_free_value_type()) {
               log_warning(class, preload)("After preloading of class %s during loading of class %s "
                                           "field was annotated with @NullRestricted but loaded class is not a value class, "
                                           "the annotation is ignored",
                                           name->as_C_string(), _class_name->as_C_string());
-              fieldinfo.field_flags_addr()->update_null_free_inline_type(false);
+              fieldinfo.field_flags_addr()->update_null_free_value_type(false);
             }
           }
         } else {
@@ -6442,12 +6524,12 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
                                    "(cause: field type in LoadableDescriptors attribute) failed : %s",
                                    name->as_C_string(), _class_name->as_C_string(),
                                    PENDING_EXCEPTION->klass()->name()->as_C_string());
-          if (fieldinfo.field_flags().is_null_free_inline_type()) {
+          if (fieldinfo.field_flags().is_null_free_value_type()) {
             log_warning(class, preload)("After preloading of class %s during loading of class %s failed,"
                                         "field was annotated with @NullRestricted but class is unknown, "
                                         "the annotation is ignored",
                                         name->as_C_string(), _class_name->as_C_string());
-            fieldinfo.field_flags_addr()->update_null_free_inline_type(false);
+            fieldinfo.field_flags_addr()->update_null_free_value_type(false);
           }
 
           // Loads triggered by the LoadableDescriptors attribute are speculative, failures must not
@@ -6457,13 +6539,13 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
       } else {
         oop loader = loader_data()->class_loader();
         InstanceKlass* klass = SystemDictionary::find_instance_klass(THREAD, name, Handle(THREAD, loader));
-        if (klass != nullptr && klass->is_inline_klass()) {
-          set_inline_layout_info_klass(fieldinfo.index(), InlineKlass::cast(klass), CHECK);
+        if (klass != nullptr && klass->is_value_klass()) {
+          set_value_field_layout_info_klass(fieldinfo.index(), ValueKlass::cast(klass), CHECK);
           ResourceMark rm(THREAD);
           log_info(class, preload)("During loading of class %s , class %s found in local system dictionary"
                                    "(field type not in LoadableDescriptors attribute)",
                                    _class_name->as_C_string(), name->as_C_string());
-        } else if (fieldinfo.field_flags().is_null_free_inline_type()) {
+        } else if (fieldinfo.field_flags().is_null_free_value_type()) {
           ResourceMark rm(THREAD);
           if (klass == nullptr) {
             log_warning(class, preload)("During loading of class %s, class %s is unknown, "
@@ -6476,7 +6558,7 @@ void ClassFileParser::fetch_field_classes(ConstantPool* cp, TRAPS) {
                                         "@NullRestricted, the annotation is ignored",
                                         _class_name->as_C_string(), name->as_C_string());
           }
-          fieldinfo.field_flags_addr()->update_null_free_inline_type(false);
+          fieldinfo.field_flags_addr()->update_null_free_value_type(false);
         }
       }
     }
@@ -6494,19 +6576,19 @@ void ClassFileParser::set_klass(InstanceKlass* klass) {
   _klass = klass;
 }
 
-void ClassFileParser::set_inline_layout_info_klass(int field_index, InlineKlass* ik, TRAPS) {
+void ClassFileParser::set_value_field_layout_info_klass(int field_index, ValueKlass* vk, TRAPS) {
   assert(field_index >= 0 && field_index < java_fields_count(), "IOOB: 0 <= %d < %d", field_index, (int)java_fields_count());
 
-  // The array of InlineLayoutInfo is allocated on demand. This way the array is
+  // The array of ValueFieldLayoutInfo is allocated on demand. This way the array is
   // never allocated for an InstanceKlass which has no need for this information.
-  if (_inline_layout_info_array == nullptr) {
-    _inline_layout_info_array = MetadataFactory::new_array<InlineLayoutInfo>(_loader_data,
-                                                                             java_fields_count(),
-                                                                             CHECK);
+  if (_value_field_layout_info_array == nullptr) {
+    _value_field_layout_info_array = MetadataFactory::new_array<ValueFieldLayoutInfo>(_loader_data,
+                                                                                      java_fields_count(),
+                                                                                      CHECK);
   }
 
   // Set the Klass for the field's index
-  _inline_layout_info_array->adr_at(field_index)->set_klass(ik);
+  _value_field_layout_info_array->adr_at(field_index)->set_klass(vk);
 }
 
 void ClassFileParser::set_klass_to_deallocate(InstanceKlass* klass) {

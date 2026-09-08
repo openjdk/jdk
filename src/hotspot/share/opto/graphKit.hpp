@@ -33,11 +33,11 @@
 #include "opto/cfgnode.hpp"
 #include "opto/compile.hpp"
 #include "opto/divnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/deoptimization.hpp"
 
 class BarrierSetC2;
@@ -345,6 +345,7 @@ class GraphKit : public Phase {
   Node* DivI(Node* ctl, Node* l, Node* r)     { return _gvn.transform(new DivINode(ctl, l, r));  }
 
   Node* AndI(Node* l, Node* r)                { return _gvn.transform(new AndINode(l, r));       }
+  Node* AndL(Node* l, Node* r)                { return _gvn.transform(new AndLNode(l, r));       }
   Node* OrI(Node* l, Node* r)                 { return _gvn.transform(new OrINode(l, r));        }
   Node* XorI(Node* l, Node* r)                { return _gvn.transform(new XorINode(l, r));       }
 
@@ -352,13 +353,20 @@ class GraphKit : public Phase {
   Node* MinI(Node* l, Node* r)                { return _gvn.transform(new MinINode(l, r));       }
 
   Node* LShiftI(Node* l, Node* r)             { return _gvn.transform(new LShiftINode(l, r));    }
+  Node* LShiftL(Node* l, Node* r)             { return _gvn.transform(new LShiftLNode(l, r));    }
   Node* RShiftI(Node* l, Node* r)             { return _gvn.transform(new RShiftINode(l, r));    }
+  Node* RShiftL(Node* l, Node* r)             { return _gvn.transform(new RShiftLNode(l, r));    }
   Node* URShiftI(Node* l, Node* r)            { return _gvn.transform(new URShiftINode(l, r));   }
+  Node* URShiftL(Node* l, Node* r)            { return _gvn.transform(new URShiftLNode(l, r));   }
+  Node* URShiftX(Node* l, Node* r)            { return _gvn.transform(new URShiftXNode(l, r));   }
 
   Node* CmpI(Node* l, Node* r)                { return _gvn.transform(new CmpINode(l, r));       }
   Node* CmpL(Node* l, Node* r)                { return _gvn.transform(new CmpLNode(l, r));       }
   Node* CmpP(Node* l, Node* r)                { return _gvn.transform(new CmpPNode(l, r));       }
   Node* Bool(Node* cmp, BoolTest::mask relop) { return _gvn.transform(new BoolNode(cmp, relop)); }
+  Node* BoolCmpI(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpI(l, r), relop); }
+  Node* BoolCmpL(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpL(l, r), relop); }
+  Node* BoolCmpP(Node* l, BoolTest::mask relop, Node* r)       { return Bool(CmpP(l, r), relop); }
 
   Node* AddP(Node* b, Node* a, Node* o)       { return _gvn.transform(AddPNode::make_with_base(b, a, o)); }
 
@@ -595,7 +603,7 @@ class GraphKit : public Phase {
                         BasicType bt,
                         DecoratorSet decorators,
                         bool safe_for_replace = true,
-                        const InlineTypeNode* vt = nullptr);
+                        const ValueTypeNode* vt = nullptr);
 
   Node* access_load_at(Node* obj,   // containing obj
                        Node* adr,   // actual address to load val at
@@ -656,8 +664,8 @@ class GraphKit : public Phase {
                               const TypeInt* sizetype = nullptr,
                               // Optional control dependency (for example, on range check)
                               Node* ctrl = nullptr);
-  Node* cast_to_flat_array(Node* array, ciInlineKlass* elem_vk);
-  Node* cast_to_flat_array_exact(Node* array, ciInlineKlass* elem_vk, bool is_null_free, bool is_atomic);
+  Node* cast_to_flat_array(Node* array, ciValueKlass* elem_vk);
+  Node* cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, bool is_null_free, bool is_atomic);
 
   // Return a load of array element at idx.
   Node* load_array_element(Node* ary, Node* idx, const TypeAryPtr* arytype, bool set_ctrl);
@@ -835,14 +843,14 @@ class GraphKit : public Phase {
                       SafePointNode** new_cast_failure_map = nullptr, bool null_free = false,
                       bool maybe_larval = false);
 
-  // Inline types
-  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq, bool check_lock = true);
-  Node* inline_type_test(Node* obj, bool is_inline = true);
+  // Value types
+  Node* mark_word_test(Node* obj, uintptr_t mask_val, bool eq);
+  Node* value_type_test(Node* obj, bool is_value = true);
   Node* flat_array_test(Node* array_or_klass, bool flat = true);
   Node* null_free_array_test(Node* array, bool null_free = true);
-  Node* null_free_atomic_array_test(Node* array, ciInlineKlass* vk);
+  Node* null_free_atomic_array_test(Node* array, ciValueKlass* vk);
   Node* atomic_layout_array_test_and_get_layout_kind(Node* array, RegionNode* atomic_region);
-  Node* inline_array_null_guard(Node* ary, Node* val, int nargs, bool safe_for_replace = false);
+  Node* value_array_null_guard(Node* ary, Node* val, int nargs);
 
   Node* gen_subtype_check(Node* obj, Node* superklass);
 
@@ -866,7 +874,7 @@ class GraphKit : public Phase {
                      Node* slow_test = nullptr,
                      Node* *return_size_val = nullptr,
                      bool deoptimize_on_exception = false,
-                     InlineTypeNode* inline_type_node = nullptr);
+                     ValueTypeNode* value_type_node = nullptr);
   Node* new_array(Node* klass_node, Node* count_val, int nargs,
                   Node* *return_size_val = nullptr,
                   bool deoptimize_on_exception = false,

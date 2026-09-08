@@ -24,6 +24,7 @@
 
 #include "cds/aotThread.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -1137,7 +1138,7 @@ class JvmtiObjectAllocEventMark : public JvmtiClassEventMark  {
    jlong    _size;
  public:
    JvmtiObjectAllocEventMark(JavaThread *thread, oop obj) : JvmtiClassEventMark(thread, oop_to_klass(obj)) {
-     _jobj = obj->is_inline() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
+     _jobj = obj->is_value() ? nullptr : (jobject)to_jobject(obj); // nullptr for non-identity objects
      _size = obj->size() * wordSize;
    };
    jobject jni_jobject() { return _jobj; }
@@ -2968,7 +2969,7 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
-  const bool is_inline = object->is_inline();
+  const bool is_inline = object->is_value();
   if (is_inline && !JvmtiExport::can_support_value_objects()) {
     return;
   }
@@ -3010,7 +3011,7 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
-  const bool is_inline = object->is_inline();
+  const bool is_inline = object->is_value();
   if (is_inline && !JvmtiExport::can_support_value_objects()) {
     return;
   }

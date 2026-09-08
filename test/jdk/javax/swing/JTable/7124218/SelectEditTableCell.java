@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,10 @@
  * @key headful
  * @bug 7124218
  * @summary verifies different behaviour of SPACE and ENTER in JTable
- * @library ../../regtesthelpers
- * @build Util
  * @run main SelectEditTableCell
  */
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -99,13 +98,16 @@ public class SelectEditTableCell {
     }
 
     private static void runTestCase() throws Exception {
-        Point centerPoint;
-        centerPoint = Util.getCenterPoint(table);
-        LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
+        Rectangle cellRect = table.getCellRect(0, 0, true);
+        Point centerPoint = new Point(cellRect.x + cellRect.width / 2,cellRect.y + cellRect.height / 2);
+        SwingUtilities.convertPointToScreen(centerPoint, table);
+
         robot.mouseMove(centerPoint.x, centerPoint.y);
-        robot.mousePress(InputEvent.BUTTON1_MASK);
-        robot.mouseRelease(InputEvent.BUTTON1_MASK);
+        robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+        robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
+        robot.delay(500);
+
         SwingUtilities.invokeAndWait(new Runnable() {
             @Override
             public void run() {
@@ -120,7 +122,7 @@ public class SelectEditTableCell {
         });
 
         int fetchKeyCode;
-        keyTap(fetchKeyCode = isMac(lookAndFeel)
+        keyTap(fetchKeyCode = isMac(UIManager.getLookAndFeel())
                 ? KeyEvent.VK_ENTER : KeyEvent.VK_SPACE);
         final int keyCode = fetchKeyCode;
         robot.waitForIdle();

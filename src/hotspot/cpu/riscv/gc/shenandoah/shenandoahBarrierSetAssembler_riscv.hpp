@@ -52,7 +52,7 @@ private:
                     Register tmp1,
                     Register tmp2);
 
-  void card_barrier(MacroAssembler* masm, Register obj);
+  void card_barrier(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2);
 
   void load_reference_barrier(MacroAssembler* masm, Register dst, Address load_addr, DecoratorSet decorators);
 

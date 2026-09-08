@@ -36,6 +36,7 @@ import java.awt.FocusTraversalPolicy;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -90,6 +91,7 @@ import javax.swing.event.AncestorEvent;
 import javax.swing.event.AncestorListener;
 import javax.swing.event.EventListenerList;
 import javax.swing.plaf.ComponentUI;
+import javax.swing.text.JTextComponent;
 
 import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
@@ -3254,7 +3256,7 @@ public abstract class JComponent extends Container implements Serializable,
      * locations). If you do not wish for this component to respond in any way
      * to drops, you can disable drop support entirely either by removing the
      * drop target ({@code setDropTarget(null)}) or by de-activating it
-     * ({@code getDropTaget().setActive(false)}).
+     * ({@code getDropTarget().setActive(false)}).
      * <p>
      * If the new {@code TransferHandler} is {@code null}, this method removes
      * the drop target.
@@ -4191,6 +4193,15 @@ public abstract class JComponent extends Container implements Serializable,
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             BACKWARD_TRAVERSAL_KEYS,
                                             strokeSet);
+            }
+        } else if ("dragEnabled".equals(propertyName)
+                && this instanceof JTextComponent textComponent) {
+            if (!GraphicsEnvironment.isHeadless()) {
+                var accessor = SwingAccessor.getJTextComponentAccessor();
+                if (!accessor.isDragEnabledSet(textComponent)) {
+                    accessor.setDragEnabledUIResource(textComponent,
+                                                      (Boolean) value);
+                }
             }
         } else {
             throw new IllegalArgumentException("property \""+

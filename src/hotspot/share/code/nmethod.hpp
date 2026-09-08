@@ -209,9 +209,9 @@ class nmethod : public CodeBlob {
   address  _osr_entry_point;       // entry point for on stack replacement
   uint16_t _entry_offset;          // entry point with class check
   uint16_t _verified_entry_offset; // entry point without class check
-  uint16_t _inline_entry_offset;             // inline type entry point (unpack all inline type args) with class check
-  uint16_t _verified_inline_entry_offset;    // inline type entry point (unpack all inline type args) without class check
-  uint16_t _verified_inline_ro_entry_offset; // inline type entry point (unpack receiver only) without class check
+  uint16_t _value_entry_offset;             // value type entry point (unpack all value type args) with class check
+  uint16_t _verified_value_entry_offset;    // value type entry point (unpack all value type args) without class check
+  uint16_t _verified_value_ro_entry_offset; // value type entry point (unpack receiver only) without class check
   int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
   int      _immutable_data_size;
 
@@ -259,17 +259,19 @@ public:
 
     enum : uint8_t {
       UNSAFE_ACCESS = 1 << 0,
-      WIDE_VECTORS  = 1 << 1,
-      MONITORS      = 1 << 2,
-      SCOPED_ACCESS = 1 << 3
+      WIDE_VECTORS = 1 << 1,
+      MONITORS = 1 << 2,
+      SCOPED_ACCESS = 1 << 3,
+      NEEDS_STACK_REPAIR = 1 << 4,
     };
 
     Flags() : _bits(0) {}
-    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access) :
+    Flags(bool has_unsafe_access, bool has_wide_vectors, bool has_monitors, bool has_scoped_access, bool needs_stack_repair) :
       _bits((has_unsafe_access ? UNSAFE_ACCESS : 0) |
-            (has_wide_vectors  ? WIDE_VECTORS  : 0) |
-            (has_monitors      ? MONITORS      : 0) |
-            (has_scoped_access ? SCOPED_ACCESS : 0))
+            (has_wide_vectors ? WIDE_VECTORS : 0) |
+            (has_monitors ? MONITORS : 0) |
+            (has_scoped_access ? SCOPED_ACCESS : 0) |
+            (needs_stack_repair ? NEEDS_STACK_REPAIR : 0))
     {}
 
     // May fault due to unsafe access
@@ -283,6 +285,9 @@ public:
 
     // Used by shared scope closure (scopedMemoryAccess.cpp)
     bool has_scoped_access() const { return (_bits & SCOPED_ACCESS) != 0; }
+
+    // Stack has been extended and needs repair. See comment in MacroAssembler::remove_frame
+    bool needs_stack_repair() const { return (_bits & NEEDS_STACK_REPAIR) != 0; }
   };
 
 private:
@@ -678,9 +683,9 @@ public:
   // entry points
   address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
   address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
-  address inline_entry_point() const              { return code_begin() + _inline_entry_offset; }             // inline type entry point (unpack all inline type args)
-  address verified_inline_entry_point() const     { return code_begin() + _verified_inline_entry_offset; }    // inline type entry point (unpack all inline type args) without class check
-  address verified_inline_ro_entry_point() const  { return code_begin() + _verified_inline_ro_entry_offset; } // inline type entry point (only unpack receiver) without class check
+  address value_entry_point() const              { return code_begin() + _value_entry_offset; }             // value type entry point (unpack all value type args)
+  address verified_value_entry_point() const     { return code_begin() + _verified_value_entry_offset; }    // value type entry point (unpack all value type args) without class check
+  address verified_value_ro_entry_point() const  { return code_begin() + _verified_value_ro_entry_offset; } // value type entry point (only unpack receiver) without class check
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -739,16 +744,7 @@ public:
   bool  has_monitors() const                      { return _flags.has_monitors(); }
   bool  has_scoped_access() const                 { return _flags.has_scoped_access(); }
   bool  has_wide_vectors() const                  { return _flags.has_wide_vectors(); }
-
-  bool  needs_stack_repair() const {
-    if (is_compiled_by_c1()) {
-      return method()->c1_needs_stack_repair();
-    } else if (is_compiled_by_c2()) {
-      return method()->c2_needs_stack_repair();
-    } else {
-      return false;
-    }
-  }
+  bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {
@@ -829,7 +825,7 @@ public:
   const char* state() const;
 
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_inline_entry_point()));
+    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_value_entry_point()));
   }
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);

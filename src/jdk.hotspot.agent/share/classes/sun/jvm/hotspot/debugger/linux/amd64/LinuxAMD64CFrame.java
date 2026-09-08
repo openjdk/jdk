@@ -79,6 +79,12 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
      };
    }
 
+   // In SysV AMD64, SP should be less than sender SP because return address should be
+   // pushed onto the stack.
+   protected boolean isValidFrame(Address senderCFA, Address senderFP, Address senderSP) {
+     return super.isValidFrame(senderCFA, senderFP) && sp().lessThan(senderSP);
+   }
+
    @Override
    public CFrame sender(ThreadProxy th, Address senderSP, Address senderFP, Address senderPC) {
      if (linuxDbg().isSignalTrampoline(pc())) {
@@ -124,7 +130,7 @@ public final class LinuxAMD64CFrame extends DwarfCFrame {
 
      try {
        Address senderCFA = getSenderCFA(senderDwarf, senderSP, senderFP);
-       return isValidFrame(senderCFA, senderFP)
+       return isValidFrame(senderCFA, senderFP, senderSP)
          ? new LinuxAMD64CFrame(linuxDbg(), senderSP, senderFP, senderCFA, senderPC, senderDwarf, fallback)
          : null;
      } catch (DebuggerException e) {

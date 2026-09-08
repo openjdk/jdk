@@ -23,6 +23,7 @@
 
 package nsk.jdb.exclude.exclude001;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -62,7 +63,7 @@ public class exclude001a {
         Thread holder [] = new Thread[numThreads];
 
         for (int i = 0; i < numThreads ; i++) {
-            holder[i] = new MyThread(MYTHREAD + "-" + i);
+            holder[i] = new MyThread(MYTHREAD + "-" + i).getThread();
             holder[i].start();
             try {
                 holder[i].join();
@@ -80,7 +81,7 @@ public class exclude001a {
 }
 
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
     String name;
 
     public MyThread (String s) {

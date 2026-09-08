@@ -28,6 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/classLoadInfo.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/klassFactory.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stackMapTable.hpp"

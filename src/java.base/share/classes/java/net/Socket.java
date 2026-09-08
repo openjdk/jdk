@@ -118,6 +118,11 @@ public class Socket implements java.io.Closeable {
     private static final int CLOSED         = 1 << 3;
     private static final int SHUT_IN        = 1 << 9;
     private static final int SHUT_OUT       = 1 << 10;
+
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket reads and writes should be traced by JFR.
+    private static boolean jfrTracing;
+
     private volatile int state;
 
     // used to coordinate creating and closing underlying socket
@@ -970,13 +975,13 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (!SocketReadEvent.enabled()) {
-                return implRead(b, off, len);
+            if (jfrTracing && SocketReadEvent.enabled()) {
+                long start = SocketReadEvent.timestamp();
+                int nbytes = implRead(b, off, len);
+                SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
+                return nbytes;
             }
-            long start = SocketReadEvent.timestamp();
-            int nbytes = implRead(b, off, len);
-            SocketReadEvent.offer(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
-            return nbytes;
+            return implRead(b, off, len);
         }
 
         private int implRead(byte[] b, int off, int len) throws IOException {
@@ -1083,13 +1088,13 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
-            if (!SocketWriteEvent.enabled()) {
+            if (jfrTracing && SocketWriteEvent.enabled()) {
+                long start = SocketWriteEvent.timestamp();
                 implWrite(b, off, len);
+                SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
                 return;
             }
-            long start = SocketWriteEvent.timestamp();
             implWrite(b, off, len);
-            SocketWriteEvent.offer(start, len, parent.getRemoteSocketAddress());
         }
 
         private void implWrite(byte[] b, int off, int len) throws IOException {

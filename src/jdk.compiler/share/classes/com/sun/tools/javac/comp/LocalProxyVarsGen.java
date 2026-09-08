@@ -26,18 +26,18 @@
 package com.sun.tools.javac.comp;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.tree.JCTree.JCAssign;
 import com.sun.tools.javac.tree.JCTree.JCExpression;
 import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
 import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
@@ -51,6 +51,8 @@ import com.sun.tools.javac.util.Names;
 
 import static com.sun.tools.javac.code.Flags.FINAL;
 import static com.sun.tools.javac.code.Flags.HASINIT;
+import static com.sun.tools.javac.code.Flags.LOCAL_CAPTURE_FIELD;
+import static com.sun.tools.javac.code.Flags.OUTER_THIS_FIELD;
 import static com.sun.tools.javac.code.Flags.STRICT;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.TypeTag.BOT;
@@ -59,6 +61,7 @@ import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCStatement;
 import com.sun.tools.javac.tree.TreeInfo;
+import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Options;
 
@@ -91,6 +94,8 @@ public class LocalProxyVarsGen {
     private final Target target;
     private TreeMaker make;
     private final Map<Symbol, Set<Symbol>> fieldsReadInPrologue = new HashMap<>();
+    private final Map<JCMethodDecl, Map<JCTree, JCTree>> rollbackTrees = new HashMap<>();
+    private final Map<JCMethodDecl, Map<JCTree, Symbol>> rollbackSymbols = new HashMap<>();
 
     private final boolean noLocalProxyVars;
 
@@ -114,6 +119,8 @@ public class LocalProxyVarsGen {
     }
 
     public void patchConstructor(JCMethodDecl tree, TreeMaker make) {
+        rewriteEarlyInitializersIfNeeded(tree);
+
         /* if some fields have initializers those probably were added using the enclosing class as their map key
          * we need to recover those now and add them to this constructor
          */
@@ -136,7 +143,58 @@ public class LocalProxyVarsGen {
         }
     }
 
-    public void allFieldNormalized(Symbol.ClassSymbol csym) {
+    /**
+     * Some early field initializer might contain references to synthetic Lower symbols,
+     * such as 'this$0' or local var proxies. Since these are effectively "early reads",
+     * we need to replace such reference with a reference to the corresponding
+     * (synthetic) constructor parameter.
+     */
+    private void rewriteEarlyInitializersIfNeeded(JCMethodDecl md) {
+        class EarlyInitializerVisitor extends TreeScanner {
+            private boolean prologue = true;
+            private Map<JCTree, Symbol> currentRollbackSymbols = new HashMap<>();
+            @Override
+            public void scan(JCTree tree) {
+                if (!prologue) {
+                    return ;
+                }
+                super.scan(tree);
+            }
+            @Override
+            public void visitIdent(JCTree.JCIdent tree) {
+                Symbol newSymbol = null;
+                if ((tree.sym.flags() & OUTER_THIS_FIELD) != 0) {
+                    newSymbol = md.sym.extraParams.head;
+                } else if ((tree.sym.flags() & LOCAL_CAPTURE_FIELD) != 0) {
+                    Symbol capturedSym = tree.sym.baseSymbol();
+                    newSymbol = md.sym.capturedLocals.stream()
+                            .filter(l -> l.baseSymbol() == capturedSym)
+                            .findAny().orElseThrow();
+                }
+                if (newSymbol != null) {
+                    currentRollbackSymbols.put(tree, tree.sym);
+                    tree.sym = newSymbol;
+                }
+            }
+            @Override
+            public void visitExec(JCTree.JCExpressionStatement tree) {
+                if (TreeInfo.isSuperCall(tree)) {
+                    prologue = false;
+                 } else {
+                    super.visitExec(tree);
+                 }
+             }
+        }
+        if (md.sym.capturedLocals.nonEmpty() || md.sym.extraParams.nonEmpty()) {
+            EarlyInitializerVisitor initializerVisitor = new EarlyInitializerVisitor();
+            initializerVisitor.scan(md.body);
+            if (!initializerVisitor.currentRollbackSymbols.isEmpty()) {
+                rollbackSymbols.put(md, initializerVisitor.currentRollbackSymbols);
+            }
+        }
+    }
+
+    public void classGenerated(ClassSymbol csym) {
         fieldsReadInPrologue.remove(csym);
     }
 
@@ -164,6 +222,7 @@ public class LocalProxyVarsGen {
         for (JCStatement st : constructor.body.stats) {
             newBody = newBody.append(fieldRewriter.translate(st));
         }
+        rollbackTrees.put(constructor, fieldRewriter.rollback);
         localDeclarations.addAll(newBody);
         ListBuffer<JCStatement> assigmentsBeforeSuper = new ListBuffer<>();
         for (Symbol vsym : fieldToLocalMap.keySet()) {
@@ -207,7 +266,33 @@ public class LocalProxyVarsGen {
         return names.fromString("local" + target.syntheticNameChar() + name);
     }
 
+    public void unpatchConstructor(JCMethodDecl tree, TreeMaker make) {
+        Map<JCTree, JCTree> thisMethodRollback = rollbackTrees.remove(tree);
+
+        if (thisMethodRollback != null) {
+            new TreeTranslator() {
+                @Override
+                @SuppressWarnings("unchecked")
+                public <T extends JCTree> T translate(T tree) {
+                    if (tree != null && thisMethodRollback.containsKey(tree)) {
+                        return (T) thisMethodRollback.get(tree);
+                    }
+                    return super.translate(tree);
+                }
+            }.translate(tree.body);
+        }
+
+        Map<JCTree, Symbol> thisMethodRollbackSymbols = rollbackSymbols.remove(tree);
+
+        if (thisMethodRollbackSymbols != null) {
+            for (Entry<JCTree, Symbol> e : thisMethodRollbackSymbols.entrySet()) {
+                TreeInfo.setSymbol(e.getKey(), e.getValue());
+            }
+        }
+    }
+
     class FieldRewriter extends TreeTranslator {
+        Map<JCTree, JCTree> rollback = new HashMap<>();
         JCMethodDecl md;
         Map<Symbol, Symbol> fieldToLocalMap;
         boolean ctorPrologue = true;
@@ -221,6 +306,7 @@ public class LocalProxyVarsGen {
         public void visitIdent(JCTree.JCIdent tree) {
             if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null) {
                 result = make.at(md).Ident(fieldToLocalMap.get(tree.sym));
+                rollback.put(result, tree);
             } else {
                 result = tree;
             }
@@ -231,6 +317,7 @@ public class LocalProxyVarsGen {
             super.visitSelect(tree);
             if (ctorPrologue && fieldToLocalMap.get(tree.sym) != null) {
                 result = make.at(md).Ident(fieldToLocalMap.get(tree.sym));
+                rollback.put(result, tree);
             } else {
                 result = tree;
             }

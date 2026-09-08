@@ -32,17 +32,18 @@
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
+#include "opto/node.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/regalloc.hpp"
 #include "opto/regmask.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/vmError.hpp"
 
@@ -964,16 +965,54 @@ bool RegionNode::optimize_trichotomy(PhaseIterGVN* igvn) {
   bool commute = false;
   if (!cmp1->is_Cmp() || !cmp2->is_Cmp()) {
     return false; // No comparison
-  } else if (cmp1->Opcode() == Op_CmpF || cmp1->Opcode() == Op_CmpD ||
-             cmp2->Opcode() == Op_CmpF || cmp2->Opcode() == Op_CmpD ||
-             cmp1->Opcode() == Op_CmpP || cmp1->Opcode() == Op_CmpN ||
-             cmp2->Opcode() == Op_CmpP || cmp2->Opcode() == Op_CmpN ||
-             cmp1->is_SubTypeCheck() || cmp2->is_SubTypeCheck() ||
-             cmp1->is_FlatArrayCheck() || cmp2->is_FlatArrayCheck()) {
-    // Floats and pointers don't exactly obey trichotomy. To be on the safe side, don't transform their tests.
-    // SubTypeCheck is not commutative
+  }
+  if (cmp1->Opcode() != cmp2->Opcode()) {
+    // The Bool test codes are merged below, that only makes sense
+    // if the semantics of the CmpNode is the same.
     return false;
-  } else if (cmp1 != cmp2) {
+  }
+  switch (cmp1->Opcode()) {
+    // The following integer comparisons can be optimized.
+    case Op_CmpI:
+    case Op_CmpU:
+    case Op_CmpL:
+    case Op_CmpUL:
+      break;
+    default:
+      // If the assert below fails, consider if it is safe
+      // for optimization (add above), or should also be
+      // excluded (add below).
+      //
+      // Floats and pointers don't exactly obey trichotomy.
+      // To be on the safe side, don't transform their tests.
+      assert(cmp1->Opcode() == Op_CmpF ||
+             cmp1->Opcode() == Op_CmpD ||
+             cmp1->Opcode() == Op_CmpP ||
+             cmp1->Opcode() == Op_CmpN ||
+      // SubTypeCheck is not commutative.
+             cmp1->is_SubTypeCheck() ||
+      // FlatArrayCheck does not represent an ordering relation
+      // and therefore does not obey trichotomy.
+             cmp1->is_FlatArrayCheck() ||
+      // OverflowNode only use Bool[of], that should be rejected
+      // by mask merge anyway.
+             cmp1->Opcode() == Op_OverflowAddI ||
+             cmp1->Opcode() == Op_OverflowSubI ||
+             cmp1->Opcode() == Op_OverflowMulI ||
+             cmp1->Opcode() == Op_OverflowAddL ||
+             cmp1->Opcode() == Op_OverflowSubL ||
+             cmp1->Opcode() == Op_OverflowMulL ||
+      // VectorTestNode has an internal _predicate flag that
+      // would not be taken into account below.
+             cmp1->Opcode() == Op_VectorTest ||
+      // Locking nodes probably cannot create trichotomy
+      // shapes anyway.
+             cmp1->Opcode() == Op_FastUnlock ||
+             cmp1->Opcode() == Op_FastLock,
+             "unexpected: %s", NodeClassNames[cmp1->Opcode()]);
+      return false;
+  }
+  if (cmp1 != cmp2) {
     if (cmp1->in(1) == cmp2->in(2) &&
         cmp1->in(2) == cmp2->in(1)) {
       commute = true; // Same but swapped inputs, commute the test
@@ -2096,6 +2135,34 @@ bool PhiNode::is_unsafe_data_reference(Node *in) const {
   return false; // The phi is not reachable from its inputs
 }
 
+// A Phi may only have other Phis as its transitive outputs, it is dead then. We may not be able to
+// remove it normally because a Phi can be a transitive output of itself.
+bool PhiNode::is_dead_phi() {
+  // Early return before we create the worklist
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
+    if (!fast_out(i)->is_Phi()) {
+      return false;
+    }
+  }
+
+  ResourceMark rm;
+  Unique_Node_List worklist;
+  worklist.push(this);
+  for (uint wl_idx = 0; wl_idx < worklist.size(); wl_idx++) {
+    Node* n = worklist.at(wl_idx);
+    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
+      Node* out = n->fast_out(i);
+      if (out->is_Phi()) {
+        worklist.push(out);
+      } else {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 // Is this Phi's region or some inputs to the region enqueued for IGVN
 // and so could cause the region to be optimized out?
 bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
@@ -2379,7 +2446,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     // One unique input.
-    DEBUG_ONLY(Node* ident = Identity(phase));
+    DEBUG_ONLY(Node* ident = phase->apply_identity(this));
     // The unique input must eventually be detected by the Identity call.
 #ifdef ASSERT
     if (ident != uin && !ident->is_top() && !must_wait_for_region_in_irreducible_loop(phase)) {
@@ -2810,9 +2877,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif
 
-  Node* inline_type = try_push_inline_types_down(phase, can_reshape);
-  if (inline_type != this) {
-    return inline_type;
+  Node* value_type = try_push_value_types_down(phase, can_reshape);
+  if (value_type != this) {
+    return value_type;
   }
 
   // Try to convert a Phi with two duplicated convert nodes into a phi of the pre-conversion type and the convert node
@@ -2877,28 +2944,28 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return progress;              // Return any progress
 }
 
-// If an InlineType node references itself through a Phi (oop input):
+// If an ValueType node references itself through a Phi (oop input):
 //
 //        /------ |
-//   InlineType   |
+//   ValueType    |
 // \   /          |
 //  Phi           |
 //   ^____________|
 //
-// and is pushed down through the Phi, the result is a new InlineType node that can be pushed down through the Phi
+// and is pushed down through the Phi, the result is a new ValueType node that can be pushed down through the Phi
 // etc.
 //
-// To solve that problem, the code below finds InlineType nodes that are reachable from another InlineType node by
-// following the inline type node's oop inputs through Phis and casts such as, for instance:
-// (InlineType (Cast (Phi (InlineType oop
+// To solve that problem, the code below finds ValueType nodes that are reachable from another ValueType node by
+// following the value type node's oop inputs through Phis and casts such as, for instance:
+// (ValueType (Cast (Phi (ValueType oop
 // and replaces it with:
-// (InlineType (Cast (Phi oop
-// which requires cloning every Phi and cast nodes in the subgraph between the root InlineType and the leaf
-// InlineType node in this example.
-class PushInlineTypeDown {
+// (ValueType (Cast (Phi oop
+// which requires cloning every Phi and cast nodes in the subgraph between the root ValueType and the leaf
+// ValueType node in this example.
+class PushValueTypeDown {
 private:
-  // Find the inlineType nodes that can be reached from this Phi without going through another InlineType (those that
-  // must not reference another inline type node from their oop input through Phis and cast nodes)
+  // Find the ValueType nodes that can be reached from this Phi without going through another ValueType (those that
+  // must not reference another value type node from their oop input through Phis and cast nodes)
   void collect_nodes_from_phi() {
     _nodes_from_phi.push(_root_phi);
     for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
@@ -2919,16 +2986,16 @@ private:
     }
   }
 
-  void collect_nodes_from_inline_types() {
-    // Only keep InlineType nodes
+  void collect_nodes_from_value_types() {
+    // Only keep ValueType nodes
     for (int i = _nodes_from_phi.size() - 1; i >= 0; i--) {
       Node* n = _nodes_from_phi.at(i);
-      if (!n->is_InlineType()) {
+      if (!n->is_ValueType()) {
         _nodes_from_phi.remove(i);
       }
     }
     DEBUG_ONLY(_init_nodes = _nodes_from_phi.size());
-    // Find the InlineType nodes reachable from the current set of inline type nodes.
+    // Find the ValueType nodes reachable from the current set of value type nodes.
     for (uint i = 0; i < _nodes_from_phi.size(); ++i) {
       Node* n = _nodes_from_phi.at(i);
       if (n->is_Phi()) {
@@ -2943,8 +3010,8 @@ private:
         if (in != nullptr) {
           _nodes_from_phi.push(in);
         }
-      } else if (n->is_InlineType()) {
-        Node* buf = n->as_InlineType()->get_oop();
+      } else if (n->is_ValueType()) {
+        Node* buf = n->as_ValueType()->get_oop();
         if (buf != nullptr) {
           _nodes_from_phi.push(buf);
           _subgraph_to_clone.push(n);
@@ -2954,9 +3021,9 @@ private:
   }
 
   void collect_nodes_to_clone() {
-    collect_nodes_from_inline_types();
+    collect_nodes_from_value_types();
 
-    // Find the subgraph that must be cloned by following uses from inline types.
+    // Find the subgraph that must be cloned by following uses from value types.
     for (uint i = 0; i < _subgraph_to_clone.size(); ++i) {
       Node* n = _subgraph_to_clone.at(i);
       for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
@@ -2972,8 +3039,8 @@ private:
     for (uint i = 0; i < _subgraph_to_clone.size(); ++i) {
       Node* n = _subgraph_to_clone.at(i);
       assert(_clones[n->_idx] == nullptr, "shouldn't be cloned yet");
-      if (n->is_InlineType()) {
-        _clones.map(n->_idx, n->as_InlineType()->get_oop());
+      if (n->is_ValueType()) {
+        _clones.map(n->_idx, n->as_ValueType()->get_oop());
       } else {
         Node* clone = n->clone();
         _phase->is_IterGVN()->register_new_node_with_optimizer(clone);
@@ -3014,12 +3081,12 @@ private:
         Node* in_clone = get_clone(in);
         assert(in_clone != nullptr, "must be cloned");
         n_clone->set_req(1, in_clone);
-      } else if (n->is_InlineType()) {
-        Node* in = n->as_InlineType()->get_oop();
+      } else if (n->is_ValueType()) {
+        Node* in = n->as_ValueType()->get_oop();
         Node* in_clone = get_clone(in);
         if (in_clone != nullptr) {
           _phase->is_IterGVN()->rehash_node_delayed(n);
-          n->as_InlineType()->set_oop(*_phase, in_clone);
+          n->as_ValueType()->set_oop(*_phase, in_clone);
         }
       }
     }
@@ -3041,8 +3108,8 @@ private:
         before_phis++;
       } else if (n->is_ConstraintCast()) {
         before_casts++;
-      } else if (n->is_InlineType()) {
-        Node* buf = n->as_InlineType()->get_oop();
+      } else if (n->is_ValueType()) {
+        Node* buf = n->as_ValueType()->get_oop();
         if (buf != nullptr && i >= _init_nodes) {
           vts_to_skip++;
         }
@@ -3069,7 +3136,7 @@ private:
     }
     for (int i = after.size() - 1; i >= 0; i--) {
       Node* n = after.at(i);
-      if (!n->is_InlineType()) {
+      if (!n->is_ValueType()) {
         after.remove(i);
       }
     }
@@ -3092,9 +3159,9 @@ private:
         if (in != nullptr) {
           after.push(in);
         }
-      } else if (n->is_InlineType()) {
+      } else if (n->is_ValueType()) {
         assert(i < init_nodes, "");
-        Node* buf = n->as_InlineType()->get_oop();
+        Node* buf = n->as_ValueType()->get_oop();
         if (buf != nullptr) {
           after.push(buf);
         }
@@ -3107,10 +3174,10 @@ private:
 #endif
 
   Node* do_transform(PhiNode* phi) {
-    assert(_inline_klass != nullptr, "must be");
-    InlineTypeNode* vt = InlineTypeNode::make_null(*_phase, _inline_klass, /* transform = */ false)->clone_with_phis(
+    assert(_value_klass != nullptr, "must be");
+    ValueTypeNode* vt = ValueTypeNode::make_null(*_phase, _value_klass, /* transform = */ false)->clone_with_phis(
       _phase, phi->in(0), nullptr, !phi->type()->maybe_null(), true);
-    // Record that vt was created to replace phi to be able to use the inline type node when reaching the phi again
+    // Record that vt was created to replace phi to be able to use the value type node when reaching the phi again
     // through data loops.
     _clones.map(phi->_idx, vt);
     Node_List casts;
@@ -3125,7 +3192,7 @@ private:
         n = n->in(1);
       }
       if (_phase->type(n)->is_zero_type()) {
-        n = InlineTypeNode::make_null(*_phase, _inline_klass);
+        n = ValueTypeNode::make_null(*_phase, _value_klass);
       } else if (n->is_Phi()) {
         assert(_can_reshape, "can only handle phis during IGVN");
         Node* clone = get_clone(n);
@@ -3136,11 +3203,11 @@ private:
         }
       }
       while (casts.size() != 0) {
-        // Push the cast(s) through the InlineTypeNode
+        // Push the cast(s) through the ValueTypeNode
         Node *cast = casts.pop()->clone();
-        cast->set_req_X(1, n->as_InlineType()->get_oop(), _phase);
+        cast->set_req_X(1, n->as_ValueType()->get_oop(), _phase);
         n = n->clone();
-        n->as_InlineType()->set_oop(*_phase, _phase->transform(cast));
+        n->as_ValueType()->set_oop(*_phase, _phase->transform(cast));
         n = _phase->transform(n);
         if (n->is_top()) {
           if (casts.size() > 0) {
@@ -3151,9 +3218,9 @@ private:
         }
       }
       bool transform = !_can_reshape && (i == (phi->req() - 1)); // Transform phis on last merge
-      assert(n->is_top() || n->is_InlineType(), "Only InlineType or top at this point.");
-      if (n->is_InlineType()) {
-        vt->merge_with(_phase, n->as_InlineType(), i, transform);
+      assert(n->is_top() || n->is_ValueType(), "Only ValueType or top at this point.");
+      if (n->is_ValueType()) {
+        vt->merge_with(_phase, n->as_ValueType(), i, transform);
       } // else nothing to do: phis above vt created by clone_with_phis are initialized to top already.
     }
     return vt;
@@ -3163,7 +3230,7 @@ private:
   PhiNode* _root_phi;
   PhaseGVN* _phase;
   bool _can_reshape;
-  ciInlineKlass* _inline_klass;
+  ciValueKlass* _value_klass;
   Unique_Node_List _nodes_from_phi;
   Unique_Node_List _subgraph_to_clone;
   Node_List _clones;
@@ -3171,8 +3238,8 @@ private:
 
 public:
 
-  PushInlineTypeDown(PhiNode *root_phi, PhaseGVN *phase, bool can_reshape)
-    : _root_phi(root_phi), _phase(phase), _can_reshape(can_reshape), _inline_klass(nullptr) {
+  PushValueTypeDown(PhiNode *root_phi, PhaseGVN *phase, bool can_reshape)
+    : _root_phi(root_phi), _phase(phase), _can_reshape(can_reshape), _value_klass(nullptr) {
     collect_nodes_from_phi();
   }
 
@@ -3199,10 +3266,10 @@ public:
         continue;
       }
       const Type* type = _phase->type(n);
-      if (n->is_InlineType()) {
-        if (_inline_klass == nullptr) {
-          _inline_klass = type->inline_klass();
-        } else if (_inline_klass != type->inline_klass()) {
+      if (n->is_ValueType()) {
+        if (_value_klass == nullptr) {
+          _value_klass = type->value_klass();
+        } else if (_value_klass != type->value_klass()) {
           return false;
         }
         continue;
@@ -3212,12 +3279,12 @@ public:
       }
     }
 
-    if (_inline_klass == nullptr) {
+    if (_value_klass == nullptr) {
       return false;
     }
 
     // Check if cast nodes can be pushed through
-    const Type* t = Type::get_const_type(_inline_klass);
+    const Type* t = Type::get_const_type(_value_klass);
     for (uint next = 0; next < _nodes_from_phi.size(); next++) {
       Node* n = _nodes_from_phi.at(next);
       if (n->is_ConstraintCast()) {
@@ -3242,31 +3309,31 @@ public:
 };
 
 
-// Check recursively if inputs are either an inline type, constant null
+// Check recursively if inputs are either a value type, constant null
 // or another Phi (including self references through data loops). If so,
-// push the inline types down through the phis to enable folding of loads.
-Node* PhiNode::try_push_inline_types_down(PhaseGVN* phase, const bool can_reshape) {
-  if (!can_be_inline_type()) {
+// push the value types down through the phis to enable folding of loads.
+Node* PhiNode::try_push_value_types_down(PhaseGVN* phase, const bool can_reshape) {
+  if (!can_be_value_type()) {
     return this;
   }
 
   ResourceMark rm;
-  PushInlineTypeDown push_inline_type_down(this, phase, can_reshape);
-  if (push_inline_type_down.can_do_it()) {
-    return push_inline_type_down.do_it();
+  PushValueTypeDown push_value_type_down(this, phase, can_reshape);
+  if (push_value_type_down.can_do_it()) {
+    return push_value_type_down.do_it();
   }
   return this;
 }
 
 #ifdef ASSERT
-bool PhiNode::can_push_inline_types_down(PhaseGVN* phase) {
-  if (!can_be_inline_type()) {
+bool PhiNode::can_push_value_types_down(PhaseGVN* phase) {
+  if (!can_be_value_type()) {
     return false;
   }
 
   ResourceMark rm;
-  PushInlineTypeDown push_inline_type_down(this, phase, false);
-  return push_inline_type_down.can_do_it();
+  PushValueTypeDown push_value_type_down(this, phase, false);
+  return push_value_type_down.can_do_it();
 }
 #endif // ASSERT
 
@@ -3660,7 +3727,7 @@ Node* CreateExNode::Identity(PhaseGVN* phase) {
   // If the CatchProj is optimized away, then we just carry the
   // exception oop through.
 
-  // CheckCastPPNode::Ideal() for inline types reuses the exception
+  // CheckCastPPNode::Ideal() for value types reuses the exception
   // paths of a call to perform an allocation: we can see a Phi here.
   if (in(1)->is_Phi()) {
     return this;

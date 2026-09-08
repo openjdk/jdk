@@ -65,6 +65,9 @@ inline void refArrayOopDesc::obj_at_put(int index, oop value, TRAPS) {
   if (is_null_free_array() && value == nullptr) {
     THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted array");
   }
+  if (value != nullptr && !value->klass()->is_subtype_of(this->element_klass())) {
+    THROW(vmSymbols::java_lang_ArrayStoreException());
+  }
   obj_at_put(index, value);
 }
 

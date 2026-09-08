@@ -521,10 +521,10 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
-  product(uint64_t, ErrorLogTimeout, 2 * 60,                                \
+  product(uint, ErrorLogTimeout, 2 * 60,                                    \
           "Timeout, in seconds, to limit the time spent on writing an "     \
-          "error log in case of a crash.")                                  \
-          range(0, (uint64_t)max_jlong/1000)                                \
+          "error log in case of a crash. A value of 0 disables the "        \
+          "timeout.")                                                       \
                                                                             \
   product(bool, ErrorLogSecondaryErrorDetails, false, DIAGNOSTIC,           \
           "If enabled, show details on secondary crashes in the error log") \
@@ -806,7 +806,7 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintFieldLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each class")                              \
                                                                             \
-  product(bool, PrintInlineLayout, false, DIAGNOSTIC,                       \
+  product(bool, PrintValueLayout, false, DIAGNOSTIC,                        \
           "Print field layout for each value class or class containing "    \
           "inlined value fields")                                           \
                                                                             \
@@ -840,8 +840,9 @@ const int ObjectAlignmentInBytes = 8;
   product(uint, FlatteningBudget, 1024, EXPERIMENTAL,                       \
           "Maximum size (in bytes) dedicated to flat fields in an instance")\
           range(0, 1024 * 1024)                                             \
-  develop(ccstrlist, PrintInlineKlassFields, "",                            \
-          "Print fields collected by InlineKlass::collect_fields")          \
+                                                                            \
+  develop(ccstrlist, PrintValueKlassFields, "",                             \
+          "Print fields collected by ValueKlass::collect_fields")           \
                                                                             \
   /* Need to limit the extent of the padding to reasonable size.          */\
   /* 8K is well beyond the reasonable HW cache line size, even with       */\
@@ -1224,10 +1225,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseCompiler, true,                                          \
           "Use Just-In-Time compilation")                                   \
                                                                             \
-  product(bool, AlwaysCompileLoopMethods, false,                            \
-          "(Deprecated) When using recompilation, never interpret methods " \
-          "containing loops")                                               \
-                                                                            \
   product(int,  AllocatePrefetchStyle, 1,                                   \
           "0 = no prefetch, "                                               \
           "1 = generate prefetch instructions for each allocation, "        \
@@ -1257,16 +1254,6 @@ const int ObjectAlignmentInBytes = 8;
   product(intx,  AllocatePrefetchInstr, 0,                                  \
           "Select instruction to prefetch ahead of allocation pointer")     \
           constraint(AllocatePrefetchInstrConstraintFunc, AfterMemoryInit)  \
-                                                                            \
-  /* deoptimization */                                                      \
-  product(bool, TraceDeoptimization, false, DIAGNOSTIC,                     \
-          "Trace deoptimization")                                           \
-                                                                            \
-  develop(bool, PrintDeoptimizationDetails, false,                          \
-          "Print more information about deoptimization")                    \
-                                                                            \
-  develop(bool, DebugDeoptimization, false,                                 \
-          "Tracing various information while debugging deoptimization")     \
                                                                             \
   product(double, SelfDestructTimer, 0.0,                                   \
           "Will cause VM to terminate after a given time "                  \
@@ -1796,8 +1783,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, VerifyMethodHandles, trueInDebug, DIAGNOSTIC,               \
           "perform extra checks when constructing method handles")          \
                                                                             \
-  product(bool, IgnoreAssertUnsetFields, false, DIAGNOSTIC,                           \
-          "Ignore assert_unset_fields")                                     \
                                                                             \
   product(bool, ShowHiddenFrames, false, DIAGNOSTIC,                        \
           "show method handle implementation frames (usually hidden)")      \
@@ -1970,11 +1955,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, UseFastUnorderedTimeStamps, false, EXPERIMENTAL,            \
           "Use platform unstable time where supported for timestamps only") \
                                                                             \
-  product_pd(bool, InlineTypePassFieldsAsArgs, DIAGNOSTIC,                  \
-          "Pass each inline type field as an argument at calls")            \
+  product_pd(bool, ValueTypePassFieldsAsArgs, DIAGNOSTIC,                  \
+          "Pass each value type field as an argument at calls")            \
                                                                             \
-  product_pd(bool, InlineTypeReturnedAsFields, DIAGNOSTIC,                  \
-          "Return fields instead of an inline type reference")              \
+  product_pd(bool, ValueTypeReturnedAsFields, DIAGNOSTIC,                  \
+          "Return fields instead of a value type reference")              \
                                                                             \
   develop(bool, StressCallingConvention, false,                             \
           "Stress the scalarized calling convention.")                      \
@@ -1983,7 +1968,7 @@ const int ObjectAlignmentInBytes = 8;
           "Preloading all classes from the LoadableDescriptors attribute")  \
                                                                             \
   product(ccstrlist, ForceNonTearable, "", DIAGNOSTIC,                      \
-          "List of inline classes which are forced to be atomic "           \
+          "List of value classes which are forced to be atomic "            \
           "(whitespace and commas separate names, "                         \
           "and leading and trailing stars '*' are wildcards)")              \
                                                                             \
@@ -1994,10 +1979,6 @@ const int ObjectAlignmentInBytes = 8;
           false AARCH64_ONLY(DEBUG_ONLY(||true)),                           \
              "Mark all threads after a safepoint, and clear on a modify "   \
              "fence. Add cleanliness checks.")                              \
-                                                                            \
-  product(bool, UseObjectMonitorTable, true, DIAGNOSTIC,                    \
-          "Use a table to record inflated monitors rather than the first "  \
-          "word of the object.")                                            \
                                                                             \
   product(int, FastLockingSpins, 8, DIAGNOSTIC,                             \
           "Specifies the number of times fast locking will attempt to "     \
@@ -2047,6 +2028,9 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, UseAcmpFastPath, true, DIAGNOSTIC,                          \
           "Use fast path for acmp.")                                        \
+                                                                            \
+  product(bool, UseHashcodeFastPath, true, DIAGNOSTIC,                      \
+          "Use fast path for identityHashCode.")                            \
 
 // end of RUNTIME_FLAGS
 

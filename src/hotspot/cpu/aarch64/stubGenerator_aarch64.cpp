@@ -504,9 +504,9 @@ class StubGenerator: public StubCodeGenerator {
     // T_OBJECT, T_LONG, T_FLOAT or T_DOUBLE is treated as T_INT)
     // n.b. this assumes Java returns an integral result in r0
     // and a floating result in j_farg0
-    // All of j_rargN may be used to return inline type fields so be careful
+    // All of j_rargN may be used to return value type fields so be careful
     // not to clobber those.
-    // SharedRuntime::generate_buffered_inline_type_adapter() knows the register
+    // SharedRuntime::generate_buffered_value_type_adapter() knows the register
     // assignment of Rresult below.
     Register Rresult = r14, Rresult_type = r15;
     __ ldr(Rresult, result);
@@ -575,13 +575,13 @@ class StubGenerator: public StubCodeGenerator {
 
     // handle return types different from T_INT
     __ BIND(check_prim);
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       // Check for scalarized return value
       __ tbz(r0, 0, is_long);
       // Load pack handler address
       __ andr(rscratch1, r0, -2);
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::adr_members_offset()));
-      __ ldr(rscratch1, Address(rscratch1, InlineKlass::pack_handler_jobject_offset()));
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::adr_members_offset()));
+      __ ldr(rscratch1, Address(rscratch1, ValueKlass::pack_handler_jobject_offset()));
       __ blr(rscratch1);
       __ b(exit);
     }
@@ -729,9 +729,6 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address,
                          SharedRuntime::exception_handler_for_return_address),
                     rthread, c_rarg1);
-    // Reinitialize the ptrue predicate register, in case the external runtime
-    // call clobbers ptrue reg, as we may return to SVE compiled code.
-    __ reinitialize_ptrue();
 
     // we should not really care that lr is no longer the callee
     // address. we saved the value the handler needs in r19 so we can
@@ -830,7 +827,7 @@ class StubGenerator: public StubCodeGenerator {
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
     BLOCK_COMMENT("call MacroAssembler::debug");
-    __ mov(rscratch1, CAST_FROM_FN_PTR(address, MacroAssembler::debug64));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, MacroAssembler::debug64)));
     __ blr(rscratch1);
     __ hlt(0);
 
@@ -2624,10 +2621,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cbnz(rscratch2, L_failed);
 
     if (Arguments::is_valhalla_enabled()) {
-      // Check for flat inline type array -> return -1
+      // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, rscratch2, L_failed);
 
-      // Check for null-free (non-flat) inline type array -> handle as object array
+      // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, rscratch2, L_objArray);
     }
 
@@ -12423,7 +12420,7 @@ class StubGenerator: public StubCodeGenerator {
 #endif // LINUX
 
   static void save_return_registers(MacroAssembler* masm) {
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       masm->push(RegSet::range(r0, r7), sp);
       masm->sub(sp, sp, 4 * wordSize);
       masm->st1(v0, v1, v2, v3, masm->T1D, Address(sp));
@@ -12436,7 +12433,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   static void restore_return_registers(MacroAssembler* masm) {
-    if (InlineTypeReturnedAsFields) {
+    if (ValueTypeReturnedAsFields) {
       masm->ld1(v4, v5, v6, v7, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
       masm->ld1(v0, v1, v2, v3, masm->T1D, Address(masm->post(sp, 4 * wordSize)));
       masm->pop(RegSet::range(r0, r7), sp);
@@ -12516,9 +12513,6 @@ class StubGenerator: public StubCodeGenerator {
       __ mov(r19, r0);
 
       __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), rthread, c_rarg1);
-
-      // Reinitialize the ptrue predicate register, in case the external runtime call clobbers ptrue reg, as we may return to SVE compiled code.
-      // __ reinitialize_ptrue();
 
       // see OptoRuntime::generate_exception_blob: r0 -- exception oop, r3 -- exception pc
 
@@ -12832,7 +12826,7 @@ class StubGenerator: public StubCodeGenerator {
     // Native caller has no idea how to handle exceptions,
     // so we just crash here. Up to callee to catch exceptions.
     __ verify_oop(r0);
-    __ movptr(rscratch1, CAST_FROM_FN_PTR(uint64_t, UpcallLinker::handle_uncaught_exception));
+    __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::handle_uncaught_exception)));
     __ blr(rscratch1);
     __ should_not_reach_here();
 

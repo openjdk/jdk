@@ -75,6 +75,14 @@ class WindowsConstants {
     public static final int IO_REPARSE_TAG_AF_UNIX              = 0x80000023;
     public static final int IO_REPARSE_TAG_MOUNT_POINT          = 0xA0000003;
     public static final int IO_REPARSE_TAG_SYMLINK              = 0xA000000C;
+    public static final int IO_REPARSE_TAG_DEDUP                = 0x80000013;
+    public static final int IO_REPARSE_TAG_CLOUD                = 0x9000001A;
+    public static final int IO_REPARSE_TAG_CLOUD_MASK           = 0x0000F000;
+
+    // DeviceIoControl control codes
+    public static final int FSCTL_GET_REPARSE_POINT         = 0x000900A8;
+    public static final int FSCTL_SET_SPARSE                = 0x000900C4;
+
     public static final int MAXIMUM_REPARSE_DATA_BUFFER_SIZE    = 16 * 1024;
     public static final int SYMBOLIC_LINK_FLAG_DIRECTORY        = 0x1;
     public static final int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;

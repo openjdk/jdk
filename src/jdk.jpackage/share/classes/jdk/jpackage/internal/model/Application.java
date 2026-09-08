@@ -101,6 +101,15 @@ public non-sealed interface Application extends BundleSpec {
     Collection<RootedPath> contentDirSources();
 
     /**
+     * Gets the source paths that should be copied into
+     * {@link ApplicationLayout#resourcesDirectory()} directory of the image of this
+     * application.
+     *
+     * @return the source paths
+     */
+    Collection<RootedPath> resourcesDirSources();
+
+    /**
      * Gets the unresolved app image layout of this application.
      *
      * @return the unresolved app image layout of this application
@@ -252,6 +261,7 @@ public non-sealed interface Application extends BundleSpec {
             String copyright,
             Collection<RootedPath> appDirSources,
             Collection<RootedPath> contentDirSources,
+            Collection<RootedPath> resourcesDirSources,
             AppImageLayout imageLayout,
             Optional<RuntimeBuilder> runtimeBuilder,
             List<Launcher> launchers,

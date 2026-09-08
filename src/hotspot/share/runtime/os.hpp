@@ -233,8 +233,7 @@ class os: AllStatic {
   static char*  pd_attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc);
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, bool read_only = false,
-                           bool allow_exec = false);
+                              char *addr, size_t bytes, bool read_only, bool allow_exec);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
@@ -588,8 +587,7 @@ class os: AllStatic {
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag, bool read_only = false,
-                           bool allow_exec = false);
+                           char *addr, size_t bytes, bool read_only, MemTag mem_tag, bool allow_exec);
   static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

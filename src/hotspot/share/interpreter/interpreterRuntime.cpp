@@ -23,6 +23,7 @@
  */
 
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -48,7 +49,6 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -58,6 +58,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
@@ -253,7 +254,7 @@ JRT_ENTRY(void, InterpreterRuntime::write_flat_field(JavaThread* current, oopDes
   assert(oopDesc::is_oop_or_null(value), "Sanity check");
 
   FlatFieldPayload payload(instanceOop(obj), entry);
-  payload.write(inlineOop(value), CHECK);
+  payload.write(valueOop(value), CHECK);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::newarray(JavaThread* current, BasicType type, jint size))
@@ -797,14 +798,6 @@ JRT_END
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
   assert(Universe::heap()->is_in(obj), "must be an object");
-  // The object could become unlocked through a JNI call, which we have no other checks for.
-  // Give a fatal message if CheckJNICalls. Otherwise we ignore it.
-  if (obj->is_unlocked()) {
-    if (CheckJNICalls) {
-      fatal("Object has been unlocked by JNI");
-    }
-    return;
-  }
   ObjectSynchronizer::exit(obj, elem->lock(), JavaThread::current());
   // Free entry. If it is not cleared, the exception handling code will try to unlock the monitor
   // again at method exit or in the case of an exception.
