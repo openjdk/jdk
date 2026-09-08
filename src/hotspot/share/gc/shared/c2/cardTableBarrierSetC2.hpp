@@ -47,7 +47,6 @@ protected:
 
 public:
   virtual void eliminate_gc_barrier(PhaseIterGVN* igvn, Node* node) const;
-  virtual bool is_gc_barrier(Node* node) const;
   virtual bool array_copy_requires_gc_barriers(bool tightly_coupled_alloc, BasicType type, bool is_clone, bool is_clone_instance, ArrayCopyPhase phase) const;
 
   static bool use_ReduceInitialCardMarks();

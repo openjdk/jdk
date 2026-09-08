@@ -800,7 +800,6 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
     }
   }
 
-  bool safepoint_uses_inline_type = false;
   while (can_eliminate && worklist.size() > 0) {
     res = worklist.pop();
     for (DUIterator_Fast jmax, j = res->fast_outs(jmax); j < jmax && can_eliminate; j++) {
@@ -850,6 +849,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
           can_eliminate = false;
         }
+        assert(!use->is_LoadFlat() || use->find_edge(res) > TypeFunc::Parms + 1, "only used in debug info of LoadFlat");
+        assert(!use->is_StoreFlat() || use->find_edge(res) >= TypeFunc::Parms + 2, "used as stored value or debug info in StoreFlat");
         Node* sfptMem = sfpt->memory();
         if (sfptMem == nullptr || sfptMem->is_top()) {
           DEBUG_ONLY(disq_node = use;)
@@ -872,14 +873,8 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                 break;
               }
             }
-          } else if (u->is_SafePoint()) {
-            safepoint_uses_inline_type = true;
-            worklist.push(use);
-            // ShouldNotReachHere();
-            // DEBUG_ONLY(disq_node = u;)
-            // NOT_PRODUCT(fail_eliminate = "InlineType use at safepoint";)
-            // can_eliminate = false;
           } else {
+            // Add other uses to the worklist to process individually
             worklist.push(use);
           }
         }
@@ -893,7 +888,7 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
                   use->Opcode() == Op_MemBarRelease ||
                   (UseStoreStoreForCtor && use->Opcode() == Op_MemBarStoreStore))) {
         // Nothing to do
-      } else if (use->Opcode() != Op_CastP2X || !BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier(use)) { // CastP2X is used by card mark
+      } else if (use->Opcode() != Op_CastP2X) { // CastP2X is used by card mark
         if (use->is_Phi()) {
           if (use->outcnt() == 1 && use->unique_out()->Opcode() == Op_Return) {
             NOT_PRODUCT(fail_eliminate = "Object is return value";)
@@ -910,12 +905,11 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
         }
         can_eliminate = false;
+      } else {
+        assert(use->Opcode() == Op_CastP2X, "should be");
+        assert(!use->has_out_with(Op_OrL), "should have been removed because oop is never null");
       }
     }
-  }
-  if (can_eliminate && safepoint_uses_inline_type && alloc->_is_scalar_replaceable) {
-    // ShouldNotReachHere();
-    tty->print_cr("XXXX");
   }
 
 #ifndef PRODUCT
