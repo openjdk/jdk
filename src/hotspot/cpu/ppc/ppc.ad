@@ -9541,8 +9541,8 @@ instruct castP2X(iRegLdst dst, iRegP_N2P src) %{
 
 instruct castI2N(iRegNdst dst, iRegIsrc src) %{
   match(Set dst (CastI2N src));
-  format %{ "MR      $dst, $src \t// int->Narrow Ptr" %}
-  // variable size, 0 or 4
+  format %{ "CLRLDI  $dst, $src, #32 \t// int->Narrow Ptr" %}
+  size(4);
   ins_encode %{
     __ clrldi($dst$$Register, $src$$Register, 32); // zero high word
   %}
