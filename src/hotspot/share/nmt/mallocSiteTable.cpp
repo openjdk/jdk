@@ -83,7 +83,7 @@ bool MallocSiteTable::initialize() {
   // Add the allocation site to hashtable.
   int index = hash_to_index(entry.hash());
   _table[index].store_relaxed(const_cast<MallocSiteHashtableEntry*>(&entry));
-  _entry_count.add_then_fetch(1ul, memory_order_relaxed);
+  _entry_count.add_then_fetch(1, memory_order_relaxed);
 
   return true;
 }
