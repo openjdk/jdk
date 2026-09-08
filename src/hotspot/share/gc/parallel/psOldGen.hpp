@@ -30,7 +30,6 @@
 #include "gc/parallel/psHeapVirtualSpace.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/hSpaceCounters.hpp"
-#include "runtime/safepoint.hpp"
 
 class ReservedSpace;
 

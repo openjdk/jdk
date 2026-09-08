@@ -326,7 +326,7 @@ void MutableNUMASpace::initialize(MemRegion mr,
                                                          mr.byte_size(), page_size());
   if (previous_num_active_lgrps != num_active_lgrps) {
     if (!mr.is_empty() && num_pages < (size_t)all_lgrp_spaces()->length()) {
-      log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #CPU (%d); space-size: %zu, page-size: %zu",
+      log_warning(gc)("Degraded NUMA config: #os-pages (%zu) < #lgrp (%d); space-size: %zu, page-size: %zu",
                       num_pages, all_lgrp_spaces()->length(), mr.byte_size(), page_size());
     }
 

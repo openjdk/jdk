@@ -846,7 +846,7 @@ bool PSParallelCompact::invoke(bool clear_all_soft_refs,
     {
       if (heap->young_gen()->reserved_size() > 0 && heap->young_gen()->is_from_to_layout()) {
         static_assert(to_space_id < from_space_id, "inv");
-        // Ensure to-from layout so that all objs are slided to lower address,
+        // Ensure to-from layout so that all objs are slid to lower address,
         // according to the order in SpaceId.
         heap->young_gen()->swap_spaces();
       }

@@ -36,7 +36,9 @@ PSHeapVirtualSpace::PSHeapVirtualSpace(ReservedSpace rs, size_t alignment, char*
   _old_gen_committed_high_addr(rs.base()),
   _gen_boundary(gen_boundary),
   _young_gen_committed_high_addr(gen_boundary),
-  _special(rs.special()) {}
+  _special(rs.special()) {
+  assert(is_aligned(rs.size(), alignment), "precondition");
+}
 
 PSHeapVirtualSpace::~PSHeapVirtualSpace() {
   _reserved_low_addr = _reserved_high_addr = nullptr;

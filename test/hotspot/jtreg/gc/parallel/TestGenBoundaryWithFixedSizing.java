@@ -83,7 +83,7 @@ public class TestGenBoundaryWithFixedSizing {
         // 4. Genuine old pressure must borrow some, but not all, young reservation.
         List<Long> borrowed = reservations(stdout, "BORROW");
         if (borrowed.getLast() <= 0
-         || borrowed.getLast() >= GenBoundaryWithFixedSizingWorkload.MAX_NEW_SIZE) {
+                || borrowed.getLast() >= GenBoundaryWithFixedSizingWorkload.MAX_NEW_SIZE) {
             throw new RuntimeException("Old pressure did not partially borrow young reservation:\n"
                     + output.getOutput());
         }
@@ -91,7 +91,7 @@ public class TestGenBoundaryWithFixedSizing {
         // 5. Removing old pressure must restore the full reservation.
         List<Long> recovery = reservations(stdout, "RECOVER");
         if (recovery.getFirst() >= GenBoundaryWithFixedSizingWorkload.MAX_NEW_SIZE
-         || recovery.getLast() != GenBoundaryWithFixedSizingWorkload.MAX_NEW_SIZE) {
+                || recovery.getLast() != GenBoundaryWithFixedSizingWorkload.MAX_NEW_SIZE) {
             throw new RuntimeException("Young reservation did not recover to MaxNewSize:\n" + output.getOutput());
         }
 

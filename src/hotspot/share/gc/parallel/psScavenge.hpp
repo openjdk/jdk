@@ -26,7 +26,6 @@
 #define SHARE_GC_PARALLEL_PSSCAVENGE_HPP
 
 #include "gc/parallel/psCardTable.hpp"
-#include "gc/parallel/psVirtualspace.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/referenceProcessor.hpp"

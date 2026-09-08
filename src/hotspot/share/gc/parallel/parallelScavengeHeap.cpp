@@ -1065,10 +1065,13 @@ void ParallelScavengeHeap::resize_young_gen_after_young_gc(bool is_survivor_over
 }
 
 void ParallelScavengeHeap::resize_after_young_gc(bool is_survivor_overflowing) {
-  // Old-gen is expanded when it's actually needed; we perform only shrinking in this context to reduce footprint.
-  shrink_old_gen_after_young_gc(is_survivor_overflowing);
-
+  // Resize young-gen before shrinking old-gen so that free old-gen space
+  // is not immediately uncommitted and recommitted for young-gen.
   resize_young_gen_after_young_gc(is_survivor_overflowing);
+
+  // Old-gen is expanded when it's actually needed;
+  // we perform only shrinking in this context to reduce footprint.
+  shrink_old_gen_after_young_gc(is_survivor_overflowing);
 }
 
 void ParallelScavengeHeap::resize_after_full_gc() {

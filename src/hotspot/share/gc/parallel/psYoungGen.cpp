@@ -485,7 +485,7 @@ bool PSYoungGen::try_resize(bool is_survivor_overflowing,
 void PSYoungGen::reinit_to_from_layout(size_t desired_eden_size, size_t desired_survivor_size) {
   assert(desired_eden_size != 0, "precondition");
   assert(desired_survivor_size != 0, "precondition");
-  assert(_heap_vs->gen_boundary() + desired_survivor_size ==  (void*) from_space()->bottom(), "precondition");
+  assert(_heap_vs->gen_boundary() + desired_survivor_size == (void*)from_space()->bottom(), "precondition");
   assert(_heap_vs->gen_boundary() == (char*) reserved().start(), "precondition");
 
   const size_t new_gen_size = desired_eden_size + 2 * desired_survivor_size;
@@ -629,7 +629,6 @@ void PSYoungGen::reinit_to_from_layout_inner(size_t requested_eden_size,
                       from_space()->capacity_in_bytes(),
                       to_space()->capacity_in_bytes());
 }
-
 
 void PSYoungGen::resize_spaces(size_t requested_eden_size,
                                size_t requested_survivor_size) {

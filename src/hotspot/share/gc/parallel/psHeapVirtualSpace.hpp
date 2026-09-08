@@ -26,8 +26,8 @@
 #define SHARE_GC_PARALLEL_PSHEAPVIRTUALSPACE_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/reservedSpace.hpp"
-#include "memory/virtualspace.hpp"
+
+class ReservedSpace;
 
 // Manages the heap reservation shared by the old and young generations. The
 // generations are separated by a movable boundary and committed independently.
@@ -35,7 +35,7 @@ class PSHeapVirtualSpace : public CHeapObj<mtGC> {
   friend class VMStructs;
 
   // The space is committed/uncommitted in chunks of size _alignment.  The
-  // ReservedSpace passed to initialize() must be aligned to this value.
+  // ReservedSpace passed to the constructor must be aligned to this value.
   const size_t _alignment;
 
   // OS page size used. If using Transparent Huge Pages, it's the desired large page-size.

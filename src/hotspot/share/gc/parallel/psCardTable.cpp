@@ -471,7 +471,7 @@ void PSCardTable::commit_delta_excluding(MemRegion delta, MemRegion already_comm
 
 void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
                                            MemRegion new_region1) {
-  // Preconditions – the whole heap must contain both regions and region0 always starts at heap base.
+  // Preconditions - the whole heap must contain both regions and region0 always starts at heap base.
   assert(_whole_heap.contains(new_region0), "precondition");
   assert(_whole_heap.contains(new_region1), "precondition");
   assert(new_region0.start() == _whole_heap.start(), "region0 must start at heap start");
@@ -481,7 +481,7 @@ void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
   MemRegion old_region0 = _covered[0];
   MemRegion old_region1 = _covered[1];
 
-  // In a right‑shift, the old generation (region0) expands and the young generation (region1)
+  // In a right-shift, the old generation (region0) expands and the young generation (region1)
   // moves its low address rightwards.
   MemRegion old_committed0 = committed_for(old_region0);
   MemRegion old_committed1 = committed_for(old_region1);
@@ -500,7 +500,7 @@ void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
   // before: |ooo   |yyyy    |
   // after:  |oooooooo|yyyy  |
   //
-  // case B - old-gen extend beyond before-young-gen end
+  // case B - old-gen extends beyond before-young-gen end
   // before: |ooo   |yyyy    |
   // after:  |oooooooooooo|yy|
   //
@@ -515,7 +515,7 @@ void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
   // -----------------------------------------------------------------
   if (new_committed0.end() > old_committed0.end()) {
     MemRegion delta{old_committed0.end(), new_committed0.end()};
-    // The newly added part may overlap the old young‑gen committed range; avoid double‑commit.
+    // The newly added part may overlap the old young-gen committed range; avoid double-commit.
     commit_delta_excluding(delta, old_committed1);
   }
 
@@ -548,7 +548,7 @@ void PSCardTable::right_shift_gen_boundary(MemRegion new_region0,
 
 void PSCardTable::left_shift_gen_boundary(MemRegion new_region0,
                                           MemRegion new_region1) {
-  // Preconditions – the whole heap must contain both regions and region0 always starts at heap base.
+  // Preconditions - the whole heap must contain both regions and region0 always starts at heap base.
   assert(_whole_heap.contains(new_region0), "precondition");
   assert(_whole_heap.contains(new_region1), "precondition");
   assert(new_region0.start() == _whole_heap.start(), "region0 must start at heap start");
