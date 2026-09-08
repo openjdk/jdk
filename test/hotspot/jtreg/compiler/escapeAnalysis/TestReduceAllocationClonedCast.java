@@ -105,7 +105,7 @@ public class TestReduceAllocationClonedCast {
 
     static A fieldA = new A(42);
     static int field;
-    
+
     static int test3(boolean flag, boolean flag2) {
         A a = null;
         if (flag) {
@@ -131,7 +131,7 @@ public class TestReduceAllocationClonedCast {
 
     }
 
-    
+
     static class A1 {
         final Integer a1;
 
@@ -184,4 +184,3 @@ public class TestReduceAllocationClonedCast {
         }
     }
 }
-
