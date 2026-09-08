@@ -3517,7 +3517,6 @@ bool LibraryCallKit::inline_native_classID() {
     assert(C->get_alias_index(gvn().type(signaled_flag_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
     Node* signaled = ideal.load(ideal.ctrl(), signaled_flag_address, TypeInt::BOOL, T_BOOLEAN, true, MemNode::acquire);
     __ if_then(signaled, BoolTest::ne, ideal.ConI(1)); {
-      assert(C->get_alias_index(gvn().type(signaled_flag_address)->isa_ptr()) == Compile::AliasIdxRaw, "Computed slice mismatch");
       ideal.store(ideal.ctrl(), signaled_flag_address, ideal.ConI(1), T_BOOLEAN, MemNode::release, true);
     } __ end_if();
   } __ end_if();

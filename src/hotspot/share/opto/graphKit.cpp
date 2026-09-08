@@ -44,7 +44,6 @@
 #include "opto/idealKit.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/locknode.hpp"
-#include "opto/machnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/multnode.hpp"
 #include "opto/narrowptrnode.hpp"
@@ -62,7 +61,6 @@
 #include "runtime/deoptimization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/bitMap.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -3404,6 +3402,7 @@ void GraphKit::guard_klass_being_initialized(Node* klass) {
     uncommon_trap(Deoptimization::Reason_initialized, Deoptimization::Action_reinterpret);
   }
 }
+
 void GraphKit::guard_init_thread(Node* klass) {
   int init_thread_off = in_bytes(InstanceKlass::init_thread_offset());
   Node* adr = off_heap_plus_addr(klass, init_thread_off);

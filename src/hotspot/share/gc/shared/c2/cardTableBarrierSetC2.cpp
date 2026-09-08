@@ -213,7 +213,7 @@ void CardTableBarrierSetC2::post_barrier(GraphKit* kit,
     // UseCondCardMark enables MP "polite" conditional card mark
     // stores.  In theory we could relax the load from ctrl() to
     // no_ctrl, but that doesn't buy much latitude.
-    Node* card_val = __ load( __ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
+    Node* card_val = __ load(__ ctrl(), card_adr, TypeInt::BYTE, T_BYTE);
     __ if_then(card_val, BoolTest::ne, dirty);
   }
 

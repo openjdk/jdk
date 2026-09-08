@@ -892,7 +892,6 @@ private:
 #endif // ASSERT
 public:
   LoadStoreNode( Node *c, Node *mem, Node *adr, Node *val, const Type* rt, uint required );
-  virtual bool depends_only_on_test() const { return false; }
   virtual uint match_edge(uint idx) const { return idx == MemNode::Address || idx == MemNode::ValueIn; }
 
   virtual const Type *bottom_type() const { return _type; }

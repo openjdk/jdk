@@ -40,7 +40,6 @@
 #include "opto/locknode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
-#include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/regalloc.hpp"
@@ -52,7 +51,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
 // Portions of code courtesy of Clifford Click
