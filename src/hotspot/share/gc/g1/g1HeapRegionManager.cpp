@@ -708,8 +708,8 @@ void G1HeapRegionManager::verify_optional() {
 }
 #endif // PRODUCT
 
-G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
-    _num_workers(n_workers), _num_regions(G1CollectedHeap::heap()->_hrm._next_highest_used_hrm_index), _claims(nullptr) {
+G1HeapRegionClaimer::G1HeapRegionClaimer(uint num_workers) :
+    _num_workers(num_workers), _num_regions(G1CollectedHeap::heap()->_hrm._next_highest_used_hrm_index), _claims(nullptr) {
   Atomic<uint>* new_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, _num_regions, mtGC);
   for (uint i = 0; i < _num_regions; i++) {
     new_claims[i].store_relaxed(Unclaimed);
