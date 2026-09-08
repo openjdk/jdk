@@ -102,10 +102,10 @@ public class SSLEngineNegotiatedSupportedNamedGroup extends SSLEngineTemplate {
                 + "; Received: "
                 + Arrays.toString(engine.getSupportedNamedGroups()));
 
-        // Check ExtendedSSLSession.getNegotiatedNamedGroup() call
+        // Check ExtendedSSLSession.getNamedGroup() call
         ExtendedSSLSession session =
                 (ExtendedSSLSession) engine.getSession();
-        assertEquals(negotiatedNamedGroup, session.getNegotiatedNamedGroup());
+        assertEquals(negotiatedNamedGroup, session.getNamedGroup());
     }
 
     private static String[] getDefaultSupportedGroups() {

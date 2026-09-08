@@ -95,7 +95,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
     public abstract String[] getPeerSupportedSignatureAlgorithms();
 
     /**
-     * Returns the key exchange named group name negotiated for this session.
+     * Returns the key exchange named group negotiated for this session.
      * <p>
      * The standard named groups are defined in the
      * <a href="{@docRoot}/../specs/security/standard-names.html#named-groups">
@@ -104,8 +104,8 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * returned.
      *
      * @implSpec The default implementation throws
-     *           {@code UnsupportedOperationException}
-     * @return The negotiated key exchange named group name, or {@code null}
+     *           {@code UnsupportedOperationException}.
+     * @return the negotiated key exchange named group, or {@code null}
      *         if no named group was negotiated or the handshake has not
      *         completed
      * @throws UnsupportedOperationException if the underlying provider does
@@ -113,7 +113,7 @@ public abstract class ExtendedSSLSession implements SSLSession {
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @since 28
      */
-    public String getNegotiatedNamedGroup() {
+    public String getNamedGroup() {
         throw new UnsupportedOperationException(
                 "Underlying provider does not implement the method");
     }

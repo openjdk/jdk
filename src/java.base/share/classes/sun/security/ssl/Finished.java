@@ -1162,8 +1162,7 @@ final class Finished {
     private static void completeHandshakeState(HandshakeContext hc) {
         hc.conContext.conSession = hc.handshakeSession.finish();
         hc.conContext.protocolVersion = hc.negotiatedProtocol;
-        hc.conContext.conSession.setNegotiatedNamedGroup(
-                hc.getNegotiatedNamedGroup());
+        hc.conContext.conSession.setNamedGroup(hc.getNegotiatedNamedGroup());
         hc.handshakeFinished = true;
     }
 
@@ -1182,7 +1181,7 @@ final class Finished {
             }
             long peerCertificateId = Integer.toUnsignedLong(hash);
 
-            String namedGroup = session.getNegotiatedNamedGroup();
+            String namedGroup = session.getNamedGroup();
             if (namedGroup == null) {
                 namedGroup = "N/A";
             }

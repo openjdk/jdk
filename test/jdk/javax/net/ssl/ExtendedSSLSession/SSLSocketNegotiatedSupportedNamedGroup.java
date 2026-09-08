@@ -159,17 +159,16 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
                 + "; Received: "
                 + Arrays.toString(socket.getSupportedNamedGroups()));
 
-        // Check ExtendedSSLSession.getNegotiatedNamedGroup() call
+        // Check ExtendedSSLSession.getNamedGroup() call
         ExtendedSSLSession session =
                 (ExtendedSSLSession) socket.getSession();
-        assertEquals(negotiatedNamedGroup, session.getNegotiatedNamedGroup());
+        assertEquals(negotiatedNamedGroup, session.getNamedGroup());
     }
 
     // Resumption test entry point.
     private void testResumption() throws Exception {
         // Key exchange is not performed in TLSv1.2 resumption unlike in TLSv1.3,
-        // so getNegotiatedNamedGroup() returns null for a resumed TLSv1.2
-        // session.
+        // so getNamedGroup() returns null for a resumed TLSv1.2 session.
         String resumedNamedGroup = protocol.equals("TLSv1.3") ?
                 RESUMED_GROUP : null;
 
@@ -234,7 +233,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
                         (ExtendedSSLSession) socket.getSession();
 
                 assertEquals(expectedNamedGroups[i],
-                        session.getNegotiatedNamedGroup());
+                        session.getNamedGroup());
 
                 if (i == 0) {
                     initialCreationTime = session.getCreationTime();
@@ -272,7 +271,7 @@ public class SSLSocketNegotiatedSupportedNamedGroup extends SSLSocketTemplate {
             socket.startHandshake();
 
             ExtendedSSLSession session = (ExtendedSSLSession) socket.getSession();
-            assertEquals(expectedNamedGroup, session.getNegotiatedNamedGroup());
+            assertEquals(expectedNamedGroup, session.getNamedGroup());
 
             socket.getOutputStream().write(85);
             socket.getOutputStream().flush();
