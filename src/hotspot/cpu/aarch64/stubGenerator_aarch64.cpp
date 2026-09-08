@@ -10317,8 +10317,8 @@ class StubGenerator: public StubCodeGenerator {
 
     Label L_loop, L_tail_setup, L_tail_lt8, L_done;
 
-    int  elem_bytes = 0;
-    bool widen_signed = false;
+    const int elem_bytes = type2aelembytes(eltype);
+    const bool widen_signed = is_signed_subword_type(eltype);
 
     auto widen = [this](FloatRegister dst1,
                         FloatRegister dst2,
@@ -10347,15 +10347,6 @@ class StubGenerator: public StubCodeGenerator {
         __ uxtl(dst, dst_arr, src, src_arr);
       }
     };
-
-    switch (eltype) {
-      case T_BOOLEAN: elem_bytes = 1; widen_signed = false; break;
-      case T_BYTE:    elem_bytes = 1; widen_signed = true;  break;
-      case T_CHAR:    elem_bytes = 2; widen_signed = false; break;
-      case T_SHORT:   elem_bytes = 2; widen_signed = true;  break;
-      case T_INT:     elem_bytes = 4; widen_signed = false; break;
-      default:        ShouldNotReachHere();
-    }
 
     __ align(CodeEntryAlignment);
 
