@@ -58,6 +58,11 @@ void ShenandoahUncommitThread::run_service() {
   while (true) {
     {
       MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+      if (_terminating.is_set()) {
+        // Terminating already, exit.
+        break;
+      }
+
       locker.wait(poll_interval);
 
       if (_terminating.is_set()) {
