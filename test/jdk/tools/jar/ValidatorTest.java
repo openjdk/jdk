@@ -33,12 +33,17 @@ import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertLinesMatch;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 import java.io.IOException;
 import java.io.FileInputStream;
@@ -309,64 +314,53 @@ class ValidatorTest {
         }
     }
 
-    @Test
-    public void testClassWithDifferentExtendsClause() throws Exception {
-        var foo21 = Path.of("21", "Foo.java");
+    @ParameterizedTest
+    @MethodSource("superTypeApiCompatCases")
+    public void testSuperTypeApiCompat(String source21, String source25) throws Exception {
+        Path scratch = Path.of("testSuperTypeApiCompat");
+
+        Path foo21 = scratch.resolve("21", "Foo.java");
         Files.createDirectories(foo21.getParent());
-        Files.writeString(foo21,
-                """
-                abstract class Foo extends java.util.AbstractCollection {}
-                """);
-        var foo25 = Path.of("25", "Foo.java");
+        Files.writeString(foo21, source21);
+
+        Path foo25 = scratch.resolve("25", "Foo.java");
         Files.createDirectories(foo25.getParent());
-        Files.writeString(foo25,
-                """
-                abstract class Foo extends java.util.AbstractList {}
-                """);
+        Files.writeString(foo25, source25);
+
         JAVAC_TOOL.run(System.out, System.err, "--release", "21", "-d", "21", foo21.toString());
         JAVAC_TOOL.run(System.out, System.err, "--release", "25", "-d", "25", foo25.toString());
-        try {
-            jar("--create --file mr.jar -C 21 . --release 25 -C 25 .");
-            fail("Expecting non-zero exit code");
-        } catch (IOException e) {
-            var err = e.getMessage();
-            System.out.println(err);
-            assertLinesMatch(
-                    """
-                    entry: META-INF/versions/25/Foo.class, contains a class with different api from earlier version
-                    invalid multi-release jar file mr.jar deleted
-                    """.lines(), err.lines());
-        }
+
+        IOException e = assertThrows(IOException.class,
+                () -> jar("--create --file mr.jar -C 21 . --release 25 -C 25 ."));
+        assertLinesMatch("""
+                entry: META-INF/versions/25/Foo.class, contains a class with different api from earlier version
+                invalid multi-release jar file mr.jar deleted
+                """.lines(), e.getMessage().lines());
     }
 
-    @Test
-    public void testInterfaceWithDifferentExtendsClause() throws Exception {
-        var foo21 = Path.of("21", "Foo.java");
-        Files.createDirectories(foo21.getParent());
-        Files.writeString(foo21,
+    static Stream<Arguments> superTypeApiCompatCases() {
+        return Stream.of(
+            arguments(
+                """
+                abstract class Foo extends java.util.AbstractCollection {}
+                """,
+                """
+                abstract class Foo extends java.util.AbstractList {}
+                """),
+            arguments(
+                """
+                abstract class Foo implements java.util.List<String> {}
+                """,
+                """
+                abstract class Foo implements java.util.Set<String> {}
+                """),
+            arguments(
                 """
                 interface Foo<E> extends java.util.Collection<E> {}
-                """);
-        var foo25 = Path.of("25", "Foo.java");
-        Files.createDirectories(foo25.getParent());
-        Files.writeString(foo25,
+                """,
                 """
                 interface Foo<E> extends java.util.SequencedCollection<E> {}
-                """);
-        JAVAC_TOOL.run(System.out, System.err, "--release", "21", "-d", "21", foo21.toString());
-        JAVAC_TOOL.run(System.out, System.err, "--release", "25", "-d", "25", foo25.toString());
-        try {
-            jar("--create --file mr.jar -C 21 . --release 25 -C 25 .");
-            fail("Expecting non-zero exit code");
-        } catch (IOException e) {
-            var err = e.getMessage();
-            System.out.println(err);
-            assertLinesMatch(
-                    """
-                    entry: META-INF/versions/25/Foo.class, contains a class with different api from earlier version
-                    invalid multi-release jar file mr.jar deleted
-                    """.lines(), err.lines());
-        }
+                """));
     }
 
     @Test
