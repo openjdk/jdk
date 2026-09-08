@@ -181,11 +181,6 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
       break;
     }
 
-    if (!r->is_empty_committed() || (r->empty_time() >= shrink_before)) {
-      // Not a viable candidate anymore, try next one.
-      continue;
-    }
-
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
@@ -196,7 +191,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     }
 
     // Go for uncommit!
-    {
+    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
