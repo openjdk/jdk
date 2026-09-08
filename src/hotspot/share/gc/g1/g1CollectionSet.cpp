@@ -809,7 +809,7 @@ void G1CollectionSet::RetainedCandidateSelection::select_required(SelectionBudge
 
     assert(group->length() == 1, "Retained groups should have only 1 region");
 
-     G1CardSetGroupItem* ci = group->at(0);
+    G1CardSetGroupItem* ci = group->at(0);
     if (ci->_r->has_pinned_objects()) {
       continue;
     }
@@ -932,7 +932,7 @@ void G1CollectionSet::RetainedCandidateSelection::age_and_remove_unreclaimable_c
   for (G1CardSetGroup* group : retained_groups) {
     assert(group->length() == 1, "Retained groups should have only 1 region");
 
-     G1CardSetGroupItem* ci = group->at(0);
+    G1CardSetGroupItem* ci = group->at(0);
     G1HeapRegion* r = ci->_r;
 
     // If we cannot reclaim that region, advance the pinned-region age
@@ -956,7 +956,7 @@ void G1CollectionSet::RetainedCandidateSelection::age_and_remove_unreclaimable_c
                             num_retained_groups, _num_pinned_regions, groups_to_abandon.length());
 
   _collection_set->candidates()->remove(&groups_to_abandon);
-  groups_to_abandon.clear(true /* uninstall_group_cardset */);
+  groups_to_abandon.clear(true /* uninstall_card_set_group */);
 }
 
 uint G1CollectionSet::select_optional_groups(double time_budget_ms) {

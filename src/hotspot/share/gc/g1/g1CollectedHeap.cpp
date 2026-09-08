@@ -386,7 +386,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   _verifier->verify_region_sets_optional();
 
-  const uint free_regions_before = num_free_regions();
+  uint free_regions_before = num_free_regions();
 
   uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
   if (obj_regions > num_available_regions()) {
@@ -575,7 +575,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   HeapWord* last_address = range.last();
 
   size_t commits = 0;
-  const bool allocated = _hrm.allocate_containing_regions(range, &commits, workers());
+  bool allocated = _hrm.allocate_containing_regions(range, &commits, workers());
 
   policy()->adjust_eden_region_allocation_budget(free_regions_before, num_free_regions());
 

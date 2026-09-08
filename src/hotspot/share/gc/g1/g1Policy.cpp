@@ -288,13 +288,13 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   // mutator phase we might have already allocated more than either of those, in
   // which case use that.
   _min_num_young_regions = MAX3(min_num_young_regions_by_sizer,
-                                         _num_survivor_regions + 1,
-                                         _num_young_regions);
+                                _num_survivor_regions + 1,
+                                _num_young_regions);
   // Calculate the absolute max bounds. After evac failure or when revising the
   // number of young regions we might have exceeded absolute min or max_num_young_regions,
   // so adjust the result accordingly.
   _max_num_young_regions = MAX2(max_num_young_regions_by_sizer,
-                                         _min_num_young_regions);
+                                _min_num_young_regions);
 
   _use_adaptive_sizing = _policy->use_adaptive_num_young_regions();
 
@@ -359,7 +359,7 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
                               max_num_young_regions_by_evacuation_space,
                               num_young_regions);
   } else {
-    // Now look at how many free regions are there currently, and the heap reserve.
+    // Now look at Eden region allocation budget, and the heap reserve.
     // We will try our best not to "eat" into the reserve as long as we can. If we
     // do, we at most eat the sizer's minimum regions into the reserve or half the
     // reserve rounded up (if possible; this is an arbitrary value).
@@ -374,10 +374,10 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
                                         (reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Target young regions: Common "
-                              "max eden regions by free space %u "
+                              "eden region allocation budget %u "
                               "desired number of young regions %u "
                               "max young regions by evacuation space %u "
-                              "reserve region %u "
+                              "reserve regions %u "
                               "max to eat into reserve %u",
                               eden_region_allocation_budget,
                               desired_num_young,
