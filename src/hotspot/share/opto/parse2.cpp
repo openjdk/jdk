@@ -183,7 +183,7 @@ public:
       decorator_set |= C2_UNKNOWN_CONTROL_LOAD;
     }
     const TypeInt*    sizetype = array_type->size();
-    if (element_ptr != nullptr && element_ptr->can_be_inline_type() && !array_type->is_null_free()) {
+    if (element_ptr != nullptr && element_ptr->can_be_value_type() && !array_type->is_null_free()) {
       ciArrayLoadData* array_load = profile_data();
       Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
       if (array_type->speculative() != nullptr &&
@@ -221,9 +221,9 @@ public:
     Node* adr = _parse.array_element_address(array, _array_index, _bt, sizetype, _parse.control());
     assert(adr != _parse.top(), "top should go hand-in-hand with stopped");
     Node* ld = _parse.access_load_at(array, adr, adr_type, _elemtype, _bt, decorator_set);
-    if (element_ptr != nullptr && element_ptr->is_inlinetypeptr()) {
-      assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "inline type array elements should never be null");
-      ld = InlineTypeNode::make_from_oop(&_parse, ld, element_ptr->inline_klass());
+    if (element_ptr != nullptr && element_ptr->is_valueklassptr()) {
+      assert(!array_type->is_null_free() || !element_ptr->maybe_null(), "value type array elements should never be null");
+      ld = ValueTypeNode::make_from_oop(&_parse, ld, element_ptr->value_klass());
     }
     if (safe_for_replace_in_map) {
       pop_stack();
@@ -264,8 +264,8 @@ public:
       _parse.set_i_o(_io);
       return;
     }
-    InlineTypeNode* vt = InlineTypeNode::make_from_flat_array(
-      &_parse, klass->as_flat_array_klass()->element_klass()->as_inline_klass(), casted_array, _array_index);
+    ValueTypeNode* vt = ValueTypeNode::make_from_flat_array(
+      &_parse, klass->as_flat_array_klass()->element_klass()->as_value_klass(), casted_array, _array_index);
     Node* null_ctl = _parse.top();
 
     _parse.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
@@ -294,7 +294,7 @@ public:
     Node* ld = nullptr;
 
     Node* array = _array;
-    if (element_ptr->is_inlinetypeptr()) {
+    if (element_ptr->is_valueklassptr()) {
       ciArrayLoadData* array_load = profile_data();
       float null_free_prob = PROB_FAIR;
       float null_free_atomic_prob = PROB_FAIR;
@@ -336,17 +336,17 @@ public:
         }
       }
 
-      ciInlineKlass* vk = element_ptr->inline_klass();
+      ciValueKlass* vk = element_ptr->value_klass();
       Node* flat_array = _parse.cast_to_flat_array(array, vk);
 
       // It may be the case that array is only known to be not flat when we try to cast it to a
       // flat array. For example, array is a not-null-free array and vk does not have a
       // nullable layout.
-      InlineTypeNode* vt = nullptr;
+      ValueTypeNode* vt = nullptr;
       if (!flat_array->is_top()) {
-         vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
+         vt = ValueTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index, null_free_prob, null_free_atomic_prob);
       } else {
-        vt  = InlineTypeNode::make_null(_gvn, vk);
+        vt  = ValueTypeNode::make_null(_gvn, vk);
       }
       ld = vt;
     } else {
@@ -509,19 +509,19 @@ public:
       return;
     }
 
-    if (array_type->is_flat() && element_ptr->is_inlinetypeptr()) {
+    if (array_type->is_flat() && element_ptr->is_valueklassptr()) {
       pop_stack();
-      ciInlineKlass* vk = element_ptr->inline_klass();
+      ciValueKlass* vk = element_ptr->value_klass();
       Node* flat_array = _array;
-      Node* vt = InlineTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
+      Node* vt = ValueTypeNode::make_from_flat_array(&_parse, vk, flat_array, _array_index);
       Node* ld = _gvn.transform(vt);
       _parse.push_node(_bt, ld);
       return;
     }
 
     // Cannot statically determine if array is a flat array, emit runtime check
-    assert(UseArrayFlattening && is_reference_type(_bt) && element_ptr->can_be_inline_type() &&
-           (!element_ptr->is_inlinetypeptr() || element_ptr->inline_klass()->maybe_flat_in_array()),
+    assert(UseArrayFlattening && is_reference_type(_bt) && element_ptr->can_be_value_type() &&
+           (!element_ptr->is_valueklassptr() || element_ptr->value_klass()->maybe_flat_in_array()),
            "array can't be flat");
 
     ciArrayLoadData* array_load = profile_data();

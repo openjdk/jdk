@@ -1549,7 +1549,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_impl(GraphKit* kit, ciValueKlass* v
   return LoadFlatNode::load(kit, vk, base, ptr, null_free, trust_null_free_oop, decorators);
 }
 
-InlineTypeNode* InlineTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx, float null_free_prob,float null_free_atomic_prob) {
+ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* vk, Node* base, Node* idx, float null_free_prob,float null_free_atomic_prob) {
   assert(vk->maybe_flat_in_array(), "element type %s cannot be flat in array", vk->name()->as_utf8());
   PhaseGVN& gvn = kit->gvn();
   // The flat field loads are dependent on both the array layout checks as well as the range check.
@@ -1640,7 +1640,7 @@ InlineTypeNode* InlineTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass
         } else {
           Node *cast = kit->cast_to_flat_array_exact(base, vk, true, false);
           Node *ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
-          vt_non_atomic = ValueeTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
+          vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
 
           region->init_req(3, kit->control());
           mem->set_req(3, kit->reset_memory());

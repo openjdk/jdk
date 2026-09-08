@@ -2563,7 +2563,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   Unimplemented();
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileInlineType* op) {
   Unimplemented();
 }
 

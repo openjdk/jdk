@@ -262,7 +262,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
     // Nullable arrays are not exact because the null-free array is a subtype while the element type being a
     // concrete value class (i.e. final) is always exact.
     // If we don't know if an array is atomic of not, then a null free array is not exact.
-    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_valuetypeptr() && (!null_free || !arytype->is_atomic()),
+    assert(!array_klass->is_Con() && a_e_klass->is_Con() && elem_ptr->is_valueklassptr() && (!null_free || !arytype->is_atomic()),
            "a constant element type either matches a constant array type or a non-constant nullable value class array");
   }
 

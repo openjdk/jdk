@@ -3105,7 +3105,7 @@ void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArray
   __ bind(done);
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileInlineType* op) {
   Register obj = op->obj()->as_register();
   Register tmp = op->tmp()->as_pointer_register();
   LIR_Address* mdo_addr = op->mdp()->as_address_ptr();
