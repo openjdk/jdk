@@ -41,63 +41,50 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class TestDetachAfterExit extends NativeTestHelper  {
+public class TestDetachAfterExit {
 
     @Test
     public void testDetachAtExit() throws IOException, InterruptedException {
-        try {
-            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
-                    "--enable-native-access=ALL-UNNAMED",
-                    "-Djava.library.path=" + System.getProperty("java.library.path"),
-                    Runner.class.getName());
-            // note that it's important to use ProcessTools.startProcess here since this makes sure output streams of the
-            // fork don't fill up, which could make the process stall while writing to stdout/stderr
-            Process process = ProcessTools.startProcess(Runner.class.getName(), pb, null, null, 1L, TimeUnit.MINUTES);
-            OutputAnalyzer output = new OutputAnalyzer(process);
-            output.outputTo(System.out);
-            output.errorTo(System.err);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "--enable-native-access=ALL-UNNAMED",
+                "-Djava.library.path=" + System.getProperty("java.library.path"),
+                Runner.class.getName());
+        // note that it's important to use ProcessTools.startProcess here since this makes sure output streams of the
+        // fork don't fill up, which could make the process stall while writing to stdout/stderr
+        Process process = ProcessTools.startProcess(Runner.class.getName(), pb);
+        assertTrue(process.waitFor(1L, TimeUnit.MINUTES));
+        OutputAnalyzer output = new OutputAnalyzer(process);
+        output.outputTo(System.out);
+        output.errorTo(System.err);
 
-            output.shouldHaveExitValue(0)
-                  .stdoutShouldContain("[await_join] done joining");
-        } catch (TimeoutException e) {
-            fail("Timeout while waiting for forked process");
-        }
+        output.shouldHaveExitValue(0)
+              .stdoutShouldContain("[await_join] done joining");
     }
 
-    public static class Runner {
+    public static class Runner extends NativeTestHelper  {
         static {
             System.loadLibrary("DetachAfterExit");
         }
 
         public static void main(String[] args) throws Throwable {
-            MethodHandle mhCreate = Linker.nativeLinker().downcallHandle(
-                    SymbolLookup.loaderLookup().findOrThrow("create_thread_and_register_atexit"),
-                    FunctionDescriptor.ofVoid(ValueLayout.ADDRESS));
-            MethodHandle mhCB = MethodHandles.lookup().findStatic(Runner.class, "cb",
-                    MethodType.methodType(void.class, AtomicBoolean.class));
-            FunctionDescriptor fdCB = FunctionDescriptor.ofVoid();
+            MethodHandle mhCreate = downcallHandle("create_thread_and_register_atexit",
+                    FunctionDescriptor.ofVoid(C_POINTER));
 
-            AtomicBoolean flag = new AtomicBoolean();
             try (Arena arena = Arena.ofShared()) {
-                MemorySegment cb = Linker.nativeLinker().upcallStub(mhCB.bindTo(flag), fdCB, arena);
+                MemorySegment cb = upcallStub(Runner.class, "cb", FunctionDescriptor.ofVoid(), arena);
+                // will block until callback has finished executing
                 mhCreate.invokeExact(cb);
-
-                System.out.println("[main] Waiting for callback...");
-                while (!flag.get()) {
-                    Thread.onSpinWait();
-                }
-                System.out.println("[main] done waiting for callback");
             }
 
             System.out.println("[main] VM shutting down");
             System.exit(0);
         }
 
-        private static void cb(AtomicBoolean flag) {
+        public static void cb() {
             System.out.println("[cb] Inside cb");
-            flag.set(true);
         }
     }
 }

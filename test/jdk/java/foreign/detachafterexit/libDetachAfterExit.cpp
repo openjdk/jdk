@@ -24,22 +24,25 @@
 #include "export.h"
 #include "testlib_threads.hpp"
 
+#include <atomic>
 #include <stdbool.h>
 
 static TestThread THREAD;
-static volatile bool FLAG = false;
+static std::atomic<bool> FLAG_WAITING;
+static std::atomic<bool> FLAG_JOINING;
 
 static void proc(void* ctxt) {
     void (*callback)(void) = (void (*)(void)) ctxt;
     callback();
     puts("[proc] waiting for flag...");
-    while (!FLAG) {} // keep the thread alive until we can call join
+    FLAG_WAITING.store(true);
+    while (!FLAG_JOINING.load()) {} // keep the thread alive until we can call join
     puts("[proc] done waiting for flag");
 }
 
 static void await_join() {
     puts("[await_join] joining...");
-    FLAG = true;
+    FLAG_JOINING.store(true);
     THREAD.join();
     puts("[await_join] done joining");
 }
@@ -49,4 +52,8 @@ EXPORT void create_thread_and_register_atexit(void (*callback)(void)) {
     puts("[create_thread_and_register_atexit] creating native thread");
     THREAD = TestThread::start(proc, (void*) callback);
     atexit(&await_join);
+    // wait for the thread to finish executing the callback
+    // so that we don't terminate the VM while it's still
+    // in progress
+    while (!FLAG_WAITING.load()) {}
 }
