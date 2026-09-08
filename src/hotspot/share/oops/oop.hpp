@@ -117,7 +117,7 @@ class oopDesc {
 
   // type test operations (inlined in oop.inline.hpp)
   inline bool is_instance()         const;
-  inline bool is_inline()           const;
+  inline bool is_value()            const;
   inline bool is_instanceRef()      const;
   inline bool is_stackChunk()       const;
   inline bool is_array()            const;
@@ -128,7 +128,7 @@ class oopDesc {
   inline bool is_refined_objArray() const;
   inline bool is_array_with_oops()  const;
 
-  inline bool is_inline_type()      const;
+  inline bool is_value_type()      const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
   bool is_instance_noinline()         const;
@@ -260,10 +260,6 @@ class oopDesc {
   // verification operations
   static void verify_on(outputStream* st, oopDesc* oop_desc);
   static void verify(oopDesc* oopDesc);
-
-  // locking operations
-  inline bool is_locked()   const;
-  inline bool is_unlocked() const;
 
   // asserts and guarantees
   static bool is_oop(oop obj);

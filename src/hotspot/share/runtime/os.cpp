@@ -2135,7 +2135,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // goal without. In that case, we optimize probing by sorting the attach
       // points: We attempt outermost points first, then work ourselves up to
       // the middle. That reduces address space fragmentation. We also alternate
-      // hemispheres, which increases the chance of successfull mappings if the
+      // hemispheres, which increases the chance of successful mappings if the
       // previous mapping had been blocked by large maps.
       hemi_split(points, num_attempts);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8154556
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestByteArrayAsChar
  * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestByteArrayAsChar
  * @run junit/othervm/timeout=360 -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:-TieredCompilation  VarHandleTestByteArrayAsChar
@@ -59,9 +59,9 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
     public List<VarHandleSource> setupVarHandleSources(boolean same) {
         // Combinations of VarHandle byte[] or ByteBuffer
         List<VarHandleSource> vhss = new ArrayList<>();
-        for (MemoryMode endianess : List.of(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
+        for (MemoryMode endianness : List.of(MemoryMode.BIG_ENDIAN, MemoryMode.LITTLE_ENDIAN)) {
 
-            ByteOrder bo = endianess == MemoryMode.BIG_ENDIAN
+            ByteOrder bo = endianness == MemoryMode.BIG_ENDIAN
                     ? ByteOrder.BIG_ENDIAN : ByteOrder.LITTLE_ENDIAN;
 
             Class<?> arrayType;
@@ -73,12 +73,12 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
             }
             VarHandleSource aeh = new VarHandleSource(
                     MethodHandles.byteArrayViewVarHandle(arrayType, bo), false,
-                    endianess, MemoryMode.READ_WRITE);
+                    endianness, MemoryMode.READ_WRITE);
             vhss.add(aeh);
 
             VarHandleSource bbh = new VarHandleSource(
                     MethodHandles.byteBufferViewVarHandle(arrayType, bo), true,
-                    endianess, MemoryMode.READ_WRITE);
+                    endianness, MemoryMode.READ_WRITE);
             vhss.add(bbh);
         }
         return vhss;
@@ -820,7 +820,7 @@ public class VarHandleTestByteArrayAsChar extends VarHandleBaseByteArrayTest {
                 // Lazy
                 {
                     char x = (char) vh.getAcquire(array, i);
-                    assertEquals(v, x, "getRelease char value");
+                    assertEquals(v, x, "getAcquire char value");
                 }
 
                 // Opaque

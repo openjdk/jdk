@@ -1020,25 +1020,25 @@ static void patch_callers_callsite(MacroAssembler *masm, int adapter_size, int t
   __ bind(L);
 }
 
-// For each inline type argument, sig includes the list of fields of
-// the inline type. This utility function computes the number of
-// arguments for the call if inline types are passed by reference (the
+// For each value type argument, sig includes the list of fields of
+// the value type. This utility function computes the number of
+// arguments for the call if value types are passed by reference (the
 // calling convention the interpreter expects).
 static int compute_total_args_passed_int(const GrowableArray<SigEntry>* sig_extended) {
   int total_args_passed = 0;
-  if (InlineTypePassFieldsAsArgs) {
+  if (ValueTypePassFieldsAsArgs) {
     for (int i = 0; i < sig_extended->length(); i++) {
       BasicType bt = sig_extended->at(i)._bt;
       if (bt == T_METADATA) {
-        // In sig_extended, an inline type argument starts with:
+        // In sig_extended, a value type argument starts with:
         // T_METADATA, followed by the types of the fields of the
-        // inline type and T_VOID to mark the end of the value
-        // type. Inline types are flattened so, for instance, in the
-        // case of an inline type with an int field and an inline type
+        // value type and T_VOID to mark the end of the value
+        // type. Value types are flattened so, for instance, in the
+        // case of a value type with an int field and a value type
         // field that itself has 2 fields, an int and a long:
         // T_METADATA T_INT T_METADATA T_INT T_LONG T_VOID (second
-        // slot for the T_LONG) T_VOID (inner inline type) T_VOID
-        // (outer inline type)
+        // slot for the T_LONG) T_VOID (inner value type) T_VOID
+        // (outer value type)
         total_args_passed++;
         int vt = 1;
         do {
@@ -1116,14 +1116,14 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
   __ bind(skip_fixup);
 
-  if (InlineTypePassFieldsAsArgs) {
-    // Is there an inline type argument?
-    bool has_inline_argument = false;
-    for (int i = 0; i < sig_extended->length() && !has_inline_argument; i++) {
-      has_inline_argument = (sig_extended->at(i)._bt == T_METADATA);
+  if (ValueTypePassFieldsAsArgs) {
+    // Is there a value type argument?
+    bool has_value_argument = false;
+    for (int i = 0; i < sig_extended->length() && !has_value_argument; i++) {
+      has_value_argument = (sig_extended->at(i)._bt == T_METADATA);
     }
-    if (has_inline_argument) {
-      __ unimplemented("c2i has_inline_argument");
+    if (has_value_argument) {
+      __ unimplemented("c2i has_value_argument");
     }
   }
 
@@ -1145,7 +1145,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   int st_off = adapter_size - wordSize;
 
   // Write the args into the outgoing interpreter space.
-  // TODO: support for InlineTypePassFieldsAsArgs
+  // TODO: support for ValueTypePassFieldsAsArgs
   for (int i = 0; i < total_args_passed; i++) {
     BasicType bt = sig_extended->at(i)._bt;
 
@@ -1389,7 +1389,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   // compiled code, which relies solely on SP and not FP, get sick).
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
-  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
   Label skip_fixup;
 
   gen_inline_cache_check(masm, skip_fixup);
@@ -1400,10 +1400,10 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
   // Scalarized c2i adapter with non-scalarized receiver (i.e., don't pack receiver)
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+  entry_address[AdapterBlob::C2I_Value_RO] = __ pc();
   if (regs_cc != regs_cc_ro) {
     // No class init barrier needed because method is guaranteed to be non-static
-    __ unimplemented("C2I_Inline_RO");
+    __ unimplemented("C2I_Value_RO");
 #if 0
     gen_c2i_adapter(masm, sig_cc_ro, regs_cc_ro, /* requires_clinit_barrier = */ false, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                     skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
@@ -1412,25 +1412,25 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   }
 
   // Scalarized c2i adapter
-  entry_address[AdapterBlob::C2I]        = __ pc();
-  entry_address[AdapterBlob::C2I_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I]       = __ pc();
+  entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                   skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);
 
   // Non-scalarized c2i adapter
   if (regs != regs_cc) {
-    entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
-    Label inline_entry_skip_fixup;
-    __ unimplemented("C2I_Unverified_Inline");
+    entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
+    Label value_entry_skip_fixup;
+    __ unimplemented("C2I_Unverified_Value");
 #if 0
-    gen_inline_cache_check(masm, inline_entry_skip_fixup);
+    gen_inline_cache_check(masm, value_entry_skip_fixup);
 #endif
 
-    entry_address[AdapterBlob::C2I_Inline] = __ pc();
-    __ unimplemented("C2I_Inline2");
+    entry_address[AdapterBlob::C2I_Value] = __ pc();
+    __ unimplemented("C2I_Value2");
 #if 0
     gen_c2i_adapter(masm, sig, regs, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    inline_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
 #endif
   }
   // The c2i adapters might safepoint and trigger a GC. The caller must make sure that
@@ -2617,8 +2617,8 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   }
 
   // Publish thread state
-  // Transition from _thread_in_native to _thread_in_vm.
-  __ li(R0, _thread_in_vm);
+  // Transition from _thread_in_native.
+  __ li(R0, _thread_in_Java);
   __ release();
   // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
   __ stw(R0, thread_(thread_state));
@@ -2642,7 +2642,6 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     Register suspend_flags   = r_temp_6;
 
     // No synchronization in progress nor yet synchronized
-    // (cmp-br-isync on one path, release (same as acquire on PPC64) on the other path).
     __ safepoint_poll(sync, sync_state, true /* at_return */, false /* in_nmethod */);
 
     // Not suspended.
@@ -2656,27 +2655,14 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     // lets us share the oopMap we used when we went native rather than create
     // a distinct one for this pc.
     __ bind(sync);
-    __ isync();
 
     address entry_point =
-      CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans);
+      CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans);
     save_native_result(masm, ret_type, workspace_slot_offset);
     __ call_VM_leaf(entry_point, R16_thread);
     restore_native_result(masm, ret_type, workspace_slot_offset);
 
     __ bind(no_block);
-
-    // Publish thread state.
-    // --------------------------------------------------------------------------
-
-    // Thread state is _thread_in_vm. Any safepoint blocking has
-    // already happened so we can now change state to _thread_in_Java.
-
-    // Transition from _thread_in_vm to _thread_in_Java.
-    __ li(R0, _thread_in_Java);
-    __ lwsync(); // Acquire safepoint and suspend state, release thread state.
-    // TODO: PPC port assert(4 == JavaThread::sz_thread_state(), "unexpected field size");
-    __ stw(R0, thread_(thread_state));
 
     // Check preemption for Object.wait()
     if (method->is_object_wait0()) {
@@ -3878,13 +3864,13 @@ void SharedRuntime::montgomery_square(jint *a_ints, jint *n_ints,
   reverse_words(m, (unsigned long *)m_ints, longwords);
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;
