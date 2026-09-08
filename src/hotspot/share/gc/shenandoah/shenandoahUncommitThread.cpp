@@ -231,7 +231,7 @@ void ShenandoahUncommitThread::do_uncommit_work(double shrink_delay, size_t shri
       // taking the heap lock and start using the region. We are not in a hurry to uncommit,
       // otherwise, we will just trip through uncommit-commit wastefully.
       // Terminate early if we detect that GC wants to start.
-      int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * 1000));
+      int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * MILLIUNITS));
       if (!check_uncommit_or_delay(delay_ms)) {
         break;
       }
