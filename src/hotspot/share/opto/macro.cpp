@@ -849,8 +849,9 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
           can_eliminate = false;
         }
-        assert(!use->is_LoadFlat() || use->find_edge(res) > TypeFunc::Parms + 1, "only used in debug info of LoadFlat");
-        assert(!use->is_StoreFlat() || use->find_edge(res) >= TypeFunc::Parms + 2, "used as stored value or debug info in StoreFlat");
+        assert(!use->is_LoadFlat() || !use->as_LoadFlat()->has_non_debug_use(res), "only used in debug info of LoadFlat");
+        assert(!use->is_StoreFlat() || !use->as_StoreFlat()->has_non_debug_use(res) ||
+               use->as_StoreFlat()->value() == res, "used as stored value or debug info in StoreFlat");
         Node* sfptMem = sfpt->memory();
         if (sfptMem == nullptr || sfptMem->is_top()) {
           DEBUG_ONLY(disq_node = use;)
@@ -1414,6 +1415,13 @@ void PhaseMacroExpand::process_users_of_allocation(CallNode *alloc, bool inline_
         // Process users
         for (DUIterator_Fast kmax, k = use->fast_outs(kmax); k < kmax; k++) {
           Node* u = use->fast_out(k);
+          // If u is a SafePoint either:
+          // - "use" is a debug info input an is removed by Compile::process_inline_types()
+          // - "use" is the value stored by StoreFlat and is removed when StoreFlat is expanded
+          assert(!u->is_SafePoint() ||
+                 (u->is_Call() && !u->as_Call()->has_non_debug_use(use)) ||
+                 (u->is_LoadFlat() && !u->as_LoadFlat()->has_non_debug_use(use)) ||
+                 (u->is_StoreFlat() && (!u->as_StoreFlat()->has_non_debug_use(use) || u->as_StoreFlat()->value() == use)), "unexpected InlineType use at safepoint");
           if (!u->is_InlineType() && !u->is_SafePoint()) {
             worklist.push(u);
           }

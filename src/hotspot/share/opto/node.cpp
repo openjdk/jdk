@@ -886,7 +886,7 @@ void Node::ins_req( uint idx, Node *n ) {
 }
 
 //-----------------------------find_edge---------------------------------------
-int Node::find_edge(Node* n) {
+int Node::find_edge(const Node* n) const {
   for (uint i = 0; i < len(); i++) {
     if (_in[i] == n)  return i;
   }
@@ -3049,6 +3049,12 @@ bool Node::has_non_debug_uses() const {
     Node* u = fast_out(i);
     if (u->is_SafePoint()) {
       if (u->is_Call() && u->as_Call()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_StoreFlat() && u->as_StoreFlat()->has_non_debug_use(this)) {
+        return true;
+      }
+      if (u->is_LoadFlat() && u->as_LoadFlat()->has_non_debug_use(this)) {
         return true;
       }
       // Non-call safepoints have only debug uses.
