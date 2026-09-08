@@ -896,7 +896,7 @@ class    LIR_OpCompareAndSwap;
 class    LIR_OpLoadKlass;
 class    LIR_OpProfileCall;
 class    LIR_OpProfileType;
-class    LIR_OpProfileInlineType;
+class    LIR_OpProfileValueType;
 class    LIR_OpProfileMultipleArrayTypes;
 #ifdef ASSERT
 class    LIR_OpAssert;
@@ -1012,7 +1012,7 @@ enum LIR_Code {
   , begin_opMDOProfile
     , lir_profile_call
     , lir_profile_type
-    , lir_profile_inline_type
+    , lir_profile_value_type
     , lir_profile_multiple_array_types
   , end_opMDOProfile
   , begin_opAssert
@@ -1159,7 +1159,7 @@ class LIR_Op: public CompilationResourceObj {
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return nullptr; }
   virtual LIR_OpProfileCall* as_OpProfileCall() { return nullptr; }
   virtual LIR_OpProfileType* as_OpProfileType() { return nullptr; }
-  virtual LIR_OpProfileInlineType* as_OpProfileInlineType() { return nullptr; }
+  virtual LIR_OpProfileValueType* as_OpProfileValueType() { return nullptr; }
   virtual LIR_OpProfileMultipleArrayTypes* as_OpProfileMultipleArrayTypes() { return nullptr; }
 #ifdef ASSERT
   virtual LIR_OpAssert* as_OpAssert() { return nullptr; }
@@ -1231,7 +1231,7 @@ class LIR_OpJavaCall: public LIR_OpCall {
   virtual LIR_OpJavaCall* as_OpJavaCall() { return this; }
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 
-  bool maybe_return_as_fields(ciInlineKlass** vk = nullptr) const;
+  bool maybe_return_as_fields(ciValueKlass** vk = nullptr) const;
 };
 
 // --------------------------------------------------
@@ -1284,8 +1284,8 @@ public:
     src_objarray           = 1 << 10,
     dst_objarray           = 1 << 11,
     always_slow_path       = 1 << 12,
-    src_inlinetype_check   = 1 << 13,
-    dst_inlinetype_check   = 1 << 14,
+    src_valuetype_check    = 1 << 13,
+    dst_valuetype_check    = 1 << 14,
     all_flags              = (1 << 15) - 1
   };
 
@@ -2117,8 +2117,8 @@ class LIR_OpProfileType : public LIR_Op {
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
-// LIR_OpProfileInlineType
-class LIR_OpProfileInlineType : public LIR_Op {
+// LIR_OpProfileValueType
+class LIR_OpProfileValueType : public LIR_Op {
  friend class LIR_OpVisitState;
 
  private:
@@ -2130,8 +2130,8 @@ class LIR_OpProfileInlineType : public LIR_Op {
 
  public:
   // Destroys recv
-  LIR_OpProfileInlineType(LIR_Opr mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null)
-    : LIR_Op(lir_profile_inline_type, LIR_OprFact::illegalOpr, nullptr)  // no result, no info
+  LIR_OpProfileValueType(LIR_Opr mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null)
+    : LIR_Op(lir_profile_value_type, LIR_OprFact::illegalOpr, nullptr)  // no result, no info
     , _mdp(mdp)
     , _obj(obj)
     , _flag(flag)
@@ -2145,7 +2145,7 @@ class LIR_OpProfileInlineType : public LIR_Op {
   bool         not_null()         const             { return _not_null;         }
 
   virtual void emit_code(LIR_Assembler* masm);
-  virtual LIR_OpProfileInlineType* as_OpProfileInlineType() { return this; }
+  virtual LIR_OpProfileValueType* as_OpProfileValueType() { return this; }
   virtual void print_instr(outputStream* out) const PRODUCT_RETURN;
 };
 
@@ -2475,8 +2475,8 @@ class LIR_List: public CompilationResourceObj {
   void profile_type(LIR_Address* mdp, LIR_Opr obj, ciKlass* exact_klass, intptr_t current_klass, LIR_Opr tmp, bool not_null, bool no_conflict) {
     append(new LIR_OpProfileType(LIR_OprFact::address(mdp), obj, exact_klass, current_klass, tmp, not_null, no_conflict));
   }
-  void profile_inline_type(LIR_Address* mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null) {
-    append(new LIR_OpProfileInlineType(LIR_OprFact::address(mdp), obj, flag, tmp, not_null));
+  void profile_value_type(LIR_Address* mdp, LIR_Opr obj, int flag, LIR_Opr tmp, bool not_null) {
+    append(new LIR_OpProfileValueType(LIR_OprFact::address(mdp), obj, flag, tmp, not_null));
   }
   void profile_multiple_array_types(ciMethodData* md, ciArrayLoadData* load, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2) {
     append(new LIR_OpProfileMultipleArrayTypes(md, load, array, tmp1, tmp2));

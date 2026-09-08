@@ -791,7 +791,12 @@ public class ClassReader {
             bounds = bounds.prepend(sigToType());
         }
         if (!sigEnterPhase) {
-            types.setBounds(tvar, bounds.reverse(), allInterfaces);
+            bounds = bounds.reverse();
+            if (bounds.head.hasTag(ARRAY)) {
+                throw badClassFile("illegal.tvar.bound", bounds.head);
+            } else {
+                types.setBounds(tvar, bounds, allInterfaces);
+            }
         }
         return tvar;
     }

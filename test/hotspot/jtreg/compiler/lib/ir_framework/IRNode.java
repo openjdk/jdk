@@ -533,6 +533,11 @@ public class IRNode {
         callOfNodes(irNodePlaceholder, "CallLeafNoFP", calleeRegex);
     }
 
+    public static final String VECTORAPI_INSERT_OP = PREFIX + "VECTORAPI_INSERT_OP" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(VECTORAPI_INSERT_OP, "CallStaticJava(?=.*VectorSupport::insert instptr:)");
+    }
+
     public static final String CAST_II = PREFIX + "CAST_II" + POSTFIX;
     static {
         beforeMatchingNameRegex(CAST_II, "CastII");
@@ -982,9 +987,9 @@ public class IRNode {
         beforeMatchingNameRegex(IF, "If\\b");
     }
 
-    public static final String INLINE_TYPE = PREFIX + "INLINE_TYPE" + POSTFIX;
+    public static final String VALUE_TYPE = PREFIX + "VALUE_TYPE" + POSTFIX;
     static {
-        beforeMatchingNameRegex(INLINE_TYPE, "InlineType");
+        beforeMatchingNameRegex(VALUE_TYPE, "ValueType");
     }
 
     public static final String INTRINSIC_TRAP = PREFIX + "INTRINSIC_TRAP" + POSTFIX;
@@ -1883,6 +1888,11 @@ public class IRNode {
     public static final String AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE = PREFIX + "AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE" + POSTFIX;
     static {
         parsePredicateNodes(AUTO_VECTORIZATION_CHECK_PARSE_PREDICATE, "Auto_Vectorization_Check");
+    }
+
+    public static final String SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE = PREFIX + "SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE" + POSTFIX;
+    static {
+        parsePredicateNodes(SHORT_RUNNING_LONG_LOOP_PARSE_PREDICATE, "Short_Running_Long_Loop");
     }
 
     public static final String PREDICATE_TRAP = PREFIX + "PREDICATE_TRAP" + POSTFIX;
@@ -2808,6 +2818,56 @@ public class IRNode {
         machOnlyNameRegex(VMASK_AND_NOT_L, "vmask_and_notL");
     }
 
+    public static final String RISCV_VMASK_OR_NOT_I = PREFIX + "RISCV_VMASK_OR_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_OR_NOT_I, "vmask_or_notI");
+    }
+
+    public static final String RISCV_VMASK_OR_NOT_L = PREFIX + "RISCV_VMASK_OR_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_OR_NOT_L, "vmask_or_notL");
+    }
+
+    public static final String RISCV_VMASK_NAND_I = PREFIX + "RISCV_VMASK_NAND_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NAND_I, "vmask_nandI");
+    }
+
+    public static final String RISCV_VMASK_NAND_L = PREFIX + "RISCV_VMASK_NAND_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NAND_L, "vmask_nandL");
+    }
+
+    public static final String RISCV_VMASK_NOR_I = PREFIX + "RISCV_VMASK_NOR_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOR_I, "vmask_norI");
+    }
+
+    public static final String RISCV_VMASK_NOR_L = PREFIX + "RISCV_VMASK_NOR_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOR_L, "vmask_norL");
+    }
+
+    public static final String RISCV_VMASK_XNOR_I = PREFIX + "RISCV_VMASK_XNOR_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_XNOR_I, "vmask_xnorI");
+    }
+
+    public static final String RISCV_VMASK_XNOR_L = PREFIX + "RISCV_VMASK_XNOR_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_XNOR_L, "vmask_xnorL");
+    }
+
+    public static final String RISCV_VMASK_NOT_I = PREFIX + "RISCV_VMASK_NOT_I" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOT_I, "vmask_notI");
+    }
+
+    public static final String RISCV_VMASK_NOT_L = PREFIX + "RISCV_VMASK_NOT_L" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VMASK_NOT_L, "vmask_notL");
+    }
+
     public static final String VMLA = PREFIX + "VMLA" + POSTFIX;
     static {
         machOnlyNameRegex(VMLA, "vmla");
@@ -3361,7 +3421,7 @@ public class IRNode {
     }
 
     /*
-     * Inline type nodes.
+     * Value type nodes.
      */
 
     public static final String CALL_UNSAFE = PREFIX + "CALL_UNSAFE" + POSTFIX;
@@ -3369,19 +3429,19 @@ public class IRNode {
         staticCallOfMethodNodes(CALL_UNSAFE, "# Static  jdk.internal.misc.Unsafe::");
     }
 
-    public static final String STORE_INLINE_FIELDS = PREFIX + "STORE_INLINE_FIELDS" + POSTFIX;
+    public static final String STORE_VALUE_FIELDS = PREFIX + "STORE_VALUE_FIELDS" + POSTFIX;
     static {
-        staticCallOfMethodNodes(STORE_INLINE_FIELDS, "store_inline_type_fields");
+        staticCallOfMethodNodes(STORE_VALUE_FIELDS, "store_value_type_fields");
     }
 
-    public static final String LOAD_UNKNOWN_INLINE = PREFIX + "LOAD_UNKNOWN_INLINE" + POSTFIX;
+    public static final String LOAD_UNKNOWN_VALUE = PREFIX + "LOAD_UNKNOWN_VALUE" + POSTFIX;
     static {
-        staticCallOfMethodNodes(LOAD_UNKNOWN_INLINE, "load_unknown_inline_blob \\(C2 runtime\\)");
+        staticCallOfMethodNodes(LOAD_UNKNOWN_VALUE, "load_unknown_value_blob \\(C2 runtime\\)");
     }
 
-    public static final String STORE_UNKNOWN_INLINE = PREFIX + "STORE_UNKNOWN_INLINE" + POSTFIX;
+    public static final String STORE_UNKNOWN_VALUE = PREFIX + "STORE_UNKNOWN_VALUE" + POSTFIX;
     static {
-        staticCallOfMethodNodes(STORE_UNKNOWN_INLINE, "store_unknown_inline_blob \\(C2 runtime\\)");
+        staticCallOfMethodNodes(STORE_UNKNOWN_VALUE, "store_unknown_value_blob \\(C2 runtime\\)");
     }
 
     public static final String INLINE_ARRAY_NULL_GUARD = PREFIX + "INLINE_ARRAY_NULL_GUARD" + POSTFIX;
@@ -3399,8 +3459,8 @@ public class IRNode {
         callLeafNoFpOfMethodNodes(JLONG_ARRAYCOPY, "jlong_disjoint_arraycopy");
     }
 
-    // The following nodes are specific to tests in in compiler/valhalla/inlinetypes using one of the MyValue classes.
-    private static final String MYVALUE_KLASS = "compiler/valhalla/inlinetypes/.*MyValue\\w*";
+    // The following nodes are specific to tests in in compiler/valhalla/valuetypes using one of the MyValue classes.
+    private static final String MYVALUE_KLASS = "compiler/valhalla/valuetypes/.*MyValue\\w*";
     public static final String ALLOC_OF_MYVALUE_KLASS = PREFIX + "ALLOC_OF_MYVALUE_KLASS" + POSTFIX;
     static {
         allocateOfNodes(ALLOC_OF_MYVALUE_KLASS, MYVALUE_KLASS);
@@ -3411,7 +3471,7 @@ public class IRNode {
         allocateArrayOfNodes(ALLOC_ARRAY_OF_MYVALUE_KLASS, MYVALUE_KLASS);
     }
 
-    private static final String ANY_KLASS = "compiler/valhalla/inlinetypes/[\\w/]*";
+    private static final String ANY_KLASS = "compiler/valhalla/valuetypes/[\\w/]*";
 
     // TODO: Revisit with JDK-8380875
     public static final String LOAD_OF_ANY_KLASS = PREFIX + "LOAD_OF_ANY_KLASS" + POSTFIX;

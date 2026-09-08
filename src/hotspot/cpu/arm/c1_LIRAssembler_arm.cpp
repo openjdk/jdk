@@ -2872,7 +2872,7 @@ void LIR_Assembler::check_orig_pc() {
   Unimplemented();
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
   Unimplemented();
   return 0;
 }

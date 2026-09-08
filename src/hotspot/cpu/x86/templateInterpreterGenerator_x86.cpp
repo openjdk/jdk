@@ -38,9 +38,9 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/continuation.hpp"
@@ -182,8 +182,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // and null it as marker that esp is now tos until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
 
-  if (state == atos && InlineTypeReturnedAsFields) {
-    __ store_inline_type_fields_to_buf(nullptr);
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ store_value_type_fields_to_buf(nullptr);
   }
 
   __ restore_bcp();
@@ -955,8 +955,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()),
-          _thread_in_native_trans);
+  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -987,14 +986,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
     __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
     __ andptr(rsp, -16); // align stack as required by ABI
-    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ mov(rsp, r12); // restore sp
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
   // Check preemption for Object.wait()
   Label not_preempted;
