@@ -234,12 +234,13 @@ bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
   }
 
   // Pessimistic: uncommits are disallowed. Wait until allowed again or terminated.
-  while (_uncommit_allowed.is_unset()) {
+  while (_uncommit_allowed.is_unset() && _terminating.is_unset()) {
     locker.wait();
-    if (_terminating.is_set()) {
-      assert(_uncommit_in_progress.is_unset(), "Should remain unset");
-      return false;
-    }
+  }
+
+  if (_terminating.is_set()) {
+    assert(_uncommit_in_progress.is_unset(), "Should remain unset");
+    return false;
   }
 
   // We are good to enable uncommits.
