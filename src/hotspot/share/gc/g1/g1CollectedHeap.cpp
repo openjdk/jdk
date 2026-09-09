@@ -2467,7 +2467,7 @@ G1HeapSummary G1CollectedHeap::create_g1_heap_summary() {
 G1EvacSummary G1CollectedHeap::create_g1_evac_summary(G1EvacStats* stats) {
   return G1EvacSummary(stats->allocated(), stats->wasted(), stats->undo_wasted(),
                        stats->unused(), stats->used(), stats->region_end_waste(),
-                       stats->regions_filled(), stats->num_plab_filled(),
+                       stats->num_filled_regions(), stats->num_plab_filled(),
                        stats->direct_allocated(), stats->num_direct_allocated(),
                        stats->failure_used(), stats->failure_waste());
 }
@@ -2861,11 +2861,11 @@ void G1CollectedHeap::set_young_gen_card_set_stats(const G1MonotonicArenaMemoryS
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
   size_t total_old_allocated = _old_evac_stats.allocated() + _old_evac_stats.direct_allocated();
-  uint total_allocated = _survivor_evac_stats.regions_filled() + _old_evac_stats.regions_filled();
+  uint num_allocated_regions = _survivor_evac_stats.num_filled_regions() + _old_evac_stats.num_filled_regions();
 
   log_debug(gc)("Allocated %u survivor %u old percent total %1.2f%% (%u%%)",
-                _survivor_evac_stats.regions_filled(), _old_evac_stats.regions_filled(),
-                percent_of(total_allocated, num_committed_regions() - total_allocated),
+                _survivor_evac_stats.num_filled_regions(), _old_evac_stats.num_filled_regions(),
+                percent_of(num_allocated_regions, num_committed_regions() - num_allocated_regions),
                 G1ReservePercent);
 
   policy()->old_gen_alloc_tracker()->
@@ -2913,12 +2913,12 @@ void G1CollectedHeap::free_humongous_region(G1HeapRegion* hr,
   free_region(hr, free_list);
 }
 
-void G1CollectedHeap::remove_from_old_gen_sets(const uint old_regions_removed,
-                                               const uint humongous_regions_removed) {
-  if (old_regions_removed > 0 || humongous_regions_removed > 0) {
+void G1CollectedHeap::remove_from_old_gen_sets(const uint num_old_regions_removed,
+                                               const uint num_humongous_regions_removed) {
+  if (num_old_regions_removed > 0 || num_humongous_regions_removed > 0) {
     MutexLocker x(G1OldSets_lock, Mutex::_no_safepoint_check_flag);
-    _old_set.bulk_remove(old_regions_removed);
-    _humongous_set.bulk_remove(humongous_regions_removed);
+    _old_set.bulk_remove(num_old_regions_removed);
+    _humongous_set.bulk_remove(num_humongous_regions_removed);
   }
 
 }
