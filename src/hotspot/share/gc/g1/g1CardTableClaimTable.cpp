@@ -64,12 +64,12 @@ void G1CardTableClaimTable::reset_all_to_claimed() {
 void G1CardTableClaimTable::heap_region_iterate_from_worker_offset(G1HeapRegionClosure* cl, uint worker_id, uint max_workers) {
   // Every worker will actually look at all regions, skipping over regions that
   // are completed.
-  const size_t n_regions = _max_reserved_regions;
-  const uint start_index = (uint)(worker_id * n_regions / max_workers);
+  const size_t max_num_regions = _max_reserved_regions;
+  const uint start_index = (uint)(worker_id * max_num_regions / max_workers);
 
-  for (uint count = 0; count < n_regions; count++) {
-    const uint index = (start_index + count) % n_regions;
-    assert(index < n_regions, "sanity");
+  for (uint count = 0; count < max_num_regions; count++) {
+    const uint index = (start_index + count) % max_num_regions;
+    assert(index < max_num_regions, "sanity");
     // Skip over fully processed regions
     if (!has_unclaimed_cards(index)) {
       continue;
