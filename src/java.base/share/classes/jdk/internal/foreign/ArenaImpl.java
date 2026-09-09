@@ -72,14 +72,15 @@ public sealed class ArenaImpl implements Arena {
         // This field is set at most once but its content can change arbitarly so it
         // cannot be @Stable
         private long[] poolCache;
-        // This field is set at most once so it can be @Stable
+        // This field is set at most once so it can be @Stable. Use a plus-one strategy
+        // to unlock stability for the common zero case.
         @Stable
-        private int poolCacheIndex;
+        private byte poolCacheIndexPlusOne;
 
         // Set at most once: an arena never switches backing pools.
         @Stable
         private long pool;
-        private long poolSp;
+        private int poolSp;
 
         OfConfined(ConfinedSession session) {
             super(session);
@@ -96,7 +97,7 @@ public sealed class ArenaImpl implements Arena {
                 // cleanup segments, so clear and release the pool only after they have run.
                 if (pool != 0) {
                     if (poolCache != null) {
-                        ConfinedSegmentPool.releaseToRememeberedPoolSlot(poolCache, poolCacheIndex, pool, poolSp);
+                        ConfinedSegmentPool.releaseToRememeberedPoolSlot(poolCache, poolCacheIndexPlusOne - 1, pool, poolSp);
                     } else {
                         ConfinedSegmentPool.release(pool, poolSp);
                     }
@@ -148,7 +149,9 @@ public sealed class ArenaImpl implements Arena {
             final long start = Utils.alignUp(pool + poolSp, byteAlignment) - pool;
             if (start + byteSize <= POOL_SIZE) {
                 // The backing memory is zeroed on initial allocation and on each pool release.
-                poolSp = start + byteSize;
+                // The (int) cast is safe because the preceding bounds check limits it to
+                // "small" configured pool sizes.
+                poolSp = (int) (start + byteSize);
                 return pool + start;
             }
             return 0;
@@ -157,7 +160,7 @@ public sealed class ArenaImpl implements Arena {
         @ForceInline
         void rememberPoolCacheAndIndex(long[] poolCache, int poolCacheIndex) {
             this.poolCache = poolCache;
-            this.poolCacheIndex = poolCacheIndex;
+            this.poolCacheIndexPlusOne = (byte) (poolCacheIndex + 1);
         }
 
     }

@@ -97,7 +97,7 @@ public final class ConfinedSegmentPool {
     // 2^3, 2^4, ..., 2^20 bytes, defaulting to 2^6 = 64 bytes.
     private static final String POOLED_MEMORY_SIZE_PROPERTY = PROPERTY_PATH + "size";
 
-    private static final long POOLED_MEMORY_SIZE =
+    private static final int POOLED_MEMORY_SIZE =
             clampedPowerOfPropertyOr(POOLED_MEMORY_SIZE_PROPERTY, 3, 20, 6);
 
     // Unsupported implementation-specific tuning knob; no behavioral or compatibility
@@ -115,7 +115,7 @@ public final class ConfinedSegmentPool {
     /**
      * Returns the size of the native memory pool, or {@code -1} if pooling is disabled.
      */
-    public static long pooledMemorySize() {
+    public static int pooledMemorySize() {
         return POOLING_DISABLED ? -1 : POOLED_MEMORY_SIZE;
     }
 
@@ -159,7 +159,7 @@ public final class ConfinedSegmentPool {
      * return pools to the current carrier.
      */
     @ForceInline
-    static void release(long pool, long usedSize) {
+    static void release(long pool, int usedSize) {
         final Thread thread = Thread.currentThread();
         if (ContinuationSupport.isSupported() && thread.isVirtual()) {
             Continuation.pin();
@@ -181,7 +181,7 @@ public final class ConfinedSegmentPool {
      * preserves the usual release semantics.
      */
     @ForceInline
-    static void releaseToRememeberedPoolSlot(long[] pools, int poolIndex, long pool, long usedSize) {
+    static void releaseToRememeberedPoolSlot(long[] pools, int poolIndex, long pool, int usedSize) {
         checkRelease(pool, usedSize);
         if (poolIndex < 0 || poolIndex >= pools.length) {
             throw cannotReleasePooledMemory(pool, usedSize);
@@ -243,7 +243,7 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static void releaseToCache(Thread cacheOwner, long pool, long usedSize) {
+    private static void releaseToCache(Thread cacheOwner, long pool, int usedSize) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
         checkRelease(pool, usedSize);
 
@@ -259,7 +259,7 @@ public final class ConfinedSegmentPool {
     }
 
     @ForceInline
-    private static void releaseToCacheOrFree(long[] pools, long pool, long usedSize) {
+    private static void releaseToCacheOrFree(long[] pools, long pool, int usedSize) {
         for (int i = 0; i < pools.length; i++) {
             final long entry = pools[i];
             if (entry == pool) {
@@ -288,13 +288,13 @@ public final class ConfinedSegmentPool {
     }
 
     @DontInline
-    private static IllegalStateException cannotReleasePooledMemory(long pool, long size) {
+    private static IllegalStateException cannotReleasePooledMemory(long pool, int size) {
         return new IllegalStateException("Cannot release pooled memory owned by " + JLA.currentCarrierThread() + ", pool = " + pool + ", size = " + size);
     }
 
     @SuppressWarnings("fallthrough")
     @ForceInline
-    private static void zeroOutMemory(long address, long size) {
+    private static void zeroOutMemory(long address, int size) {
         // Pools are always at least `long` aligned so we can use aligned Unsafe access
         // below.
         // We are first checking `POOLED_MEMORY_SIZE` here rather than
@@ -302,7 +302,7 @@ public final class ConfinedSegmentPool {
         if (POOLED_MEMORY_SIZE <= 64 || size <= 64) {
             // Deliberate fall-through clears the required number of 8-byte buckets
             // without a loop branch. The validated size guarantees writes remain in-pool.
-            switch ((int) ((size + Long.BYTES - 1) >>> 3)) {
+            switch (((size + Long.BYTES - 1) >>> 3)) {
                 case 8: U.putLong(address + 0x38, 0L);
                 case 7: U.putLong(address + 0x30, 0L);
                 case 6: U.putLong(address + 0x28, 0L);
@@ -317,14 +317,15 @@ public final class ConfinedSegmentPool {
         } else {
             // This is safe because the underlying pool is guaranteed to be of a size
             // that is a multiple of a `long`.
-            for (long i = 0; i < size; i += Long.BYTES) {
+            final long sizeL = size; // Use all-long loop template
+            for (long i = 0; i < sizeL; i += Long.BYTES) {
                 U.putLong(address + i, 0L);
             }
         }
     }
 
     @ForceInline
-    private static void checkRelease(long pool, long usedSize) {
+    private static void checkRelease(long pool, int usedSize) {
         // Reject invalid prefixes before zeroOutMemory performs unchecked writes.
         if (pool == 0 || usedSize < 0 || usedSize > POOLED_MEMORY_SIZE) {
             throw cannotReleasePooledMemory(pool, usedSize);

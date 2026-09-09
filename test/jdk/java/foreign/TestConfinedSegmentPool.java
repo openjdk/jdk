@@ -605,7 +605,7 @@ final class TestConfinedSegmentPool {
         }
     }
 
-    static long confinedSessionSp(Arena arena) {
+    static int confinedSessionSp(Arena arena) {
 
         final class Holder {
 
@@ -626,7 +626,7 @@ final class TestConfinedSegmentPool {
         }
 
         try {
-            return Holder.getOrSet(arena).getLong(arena);
+            return Holder.getOrSet(arena).getInt(arena);
         } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
