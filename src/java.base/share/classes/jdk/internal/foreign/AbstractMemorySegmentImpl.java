@@ -651,7 +651,12 @@ public abstract sealed class AbstractMemorySegmentImpl
         if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
             throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
         }
-        long size = elementCount * srcElementLayout.byteSize();
+        final long size;
+        try {
+            size = Math.multiplyExact(elementCount, srcElementLayout.byteSize());
+        } catch (ArithmeticException _) {
+            throw new IndexOutOfBoundsException("Illegal elementCount for " + srcElementLayout + ": " + elementCount);
+        }
         srcImpl.checkAccess(srcOffset, size, true);
         dstImpl.checkAccess(dstOffset, size, false);
         if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
