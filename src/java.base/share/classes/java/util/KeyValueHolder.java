@@ -53,9 +53,7 @@ import jdk.internal.vm.annotation.TrustFinalFields;
 @jdk.internal.ValueBased
 @TrustFinalFields
 final class KeyValueHolder<K,V> implements Map.Entry<K,V> {
-
     final K key;
-
     final V value;
 
     KeyValueHolder(K k, V v) {
