@@ -1360,15 +1360,15 @@ G1CollectedHeap::G1CollectedHeap() :
   // Override the default _stack_chunk_max_size so that no humongous stack chunks are created
   _stack_chunk_max_size = _humongous_object_threshold_in_words;
 
-  uint n_queues = ParallelGCThreads;
-  _task_queues = new G1ScannerTasksQueueSet(n_queues);
+  uint num_queues = ParallelGCThreads;
+  _task_queues = new G1ScannerTasksQueueSet(num_queues);
 
-  for (uint i = 0; i < n_queues; i++) {
+  for (uint i = 0; i < num_queues; i++) {
     G1ScannerTasksQueue* q = new G1ScannerTasksQueue();
     _task_queues->register_queue(i, q);
   }
 
-  _partial_array_state_manager = new PartialArrayStateManager(n_queues);
+  _partial_array_state_manager = new PartialArrayStateManager(num_queues);
 
   _gc_tracer_stw->initialize();
 }

@@ -688,8 +688,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers(active_tasks);
-  _second_overflow_barrier_sync.set_n_workers(active_tasks);
+  _first_overflow_barrier_sync.set_num_workers(active_tasks);
+  _second_overflow_barrier_sync.set_num_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -838,10 +838,10 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint num_workers, bool suspendible) :
     WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
-    _hr_claimer(n_workers),
+    _hr_claimer(num_workers),
     _suspendible(suspendible)
   { }
 
