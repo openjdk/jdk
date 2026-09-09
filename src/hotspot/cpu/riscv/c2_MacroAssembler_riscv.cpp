@@ -210,8 +210,30 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
-    // Check if recursive.
-    bne(tmp3_owner, tid, slow_path);
+    if (UseZawrs) {
+      Label recursive;
+      beq(tmp3_owner, tid, recursive);
+      // Values below the first valid thread id are ObjectMonitor protocol
+      // markers and must be handled by the runtime. In particular, do not
+      // wait on a monitor that may be reclaimed by async deflation.
+      mv(t0, (uint64_t)ThreadIdentifier::initial());
+      bltu(tmp3_owner, t0, slow_path);
+      // Wait once for a short-lived owner to release the monitor before
+      // paying the cost of entering the runtime slow path.
+      Label retry;
+      lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
+      beqz(tmp3_owner, retry);
+      bltu(tmp3_owner, t0, slow_path);
+      wrs_sto();
+      bind(retry);
+      cmpxchg(/*addr*/ tmp2_owner_addr, /*expected*/ zr, /*new*/ tid, Assembler::int64,
+              /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
+      beqz(tmp3_owner, monitor_locked);
+      bne(tmp3_owner, tid, slow_path);
+      bind(recursive);
+    } else {
+      bne(tmp3_owner, tid, slow_path);
+    }
 
     // Recursive.
     increment(recursions_address, 1, tmp2, tmp3);

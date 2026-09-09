@@ -367,6 +367,7 @@ void VM_Version::xuantie_features() {
   ext_Zicboz.enable_feature();
   ext_Zicond.enable_feature();
   ext_Ztso.enable_feature();
+  ext_Zawrs.enable_feature();
 #endif
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
