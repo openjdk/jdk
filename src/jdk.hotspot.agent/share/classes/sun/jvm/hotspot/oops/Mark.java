@@ -129,12 +129,6 @@ public class Mark extends VMObject {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) == markedValue);
   }
 
-  // Special temporary state of the markWord while being inflated.
-  // Code that looks at mark outside a lock need to take this into account.
-  public boolean isBeingInflated() {
-    return (value() == 0);
-  }
-
   // Should this header be preserved during GC?
   public boolean mustBePreserved() {
     return (isNonNeutral() || !hasNoHash());
@@ -148,7 +142,6 @@ public class Mark extends VMObject {
     return ((value() & lockMaskInPlace) == fastLockedValue);
   }
   public boolean hasMonitor() {
-    // Align SA’s decoding with markWord::has_monitor().
     return (value() & lockMaskInPlace) == monitorValue;
   }
   public ObjectMonitor monitor() {
