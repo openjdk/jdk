@@ -3160,7 +3160,7 @@ bool G1CollectedHeap::has_more_regions(G1HeapRegionAttr dest) {
   if (dest.is_old()) {
     return true;
   } else {
-    return num_survivor_regions() < policy()->max_survivor_regions();
+    return num_survivor_regions() < policy()->max_num_survivor_regions();
   }
 }
 
