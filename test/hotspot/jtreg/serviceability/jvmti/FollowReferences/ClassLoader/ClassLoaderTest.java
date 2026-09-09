@@ -77,7 +77,7 @@ public class ClassLoaderTest {
         Asserts.assertTrue(targetReachedFrom(ldr, test),
                            "FollowReferences starting at MyLoader reached Test.class");
 
-        Asserts.assertTrue(targetKindIsOther(), "FollowReferences target kind is other (special root reference)");
+        Asserts.assertTrue(targetKindIsOther(), "FollowReferences reports Test.class as target kind OTHER");
 
         Reference.reachabilityFence(ldr);
         Reference.reachabilityFence(test);
