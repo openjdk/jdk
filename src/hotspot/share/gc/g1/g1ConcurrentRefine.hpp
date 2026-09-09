@@ -155,7 +155,7 @@ class G1ConcurrentRefineSweepState {
   void snapshot_heap_inner();
 
 public:
-  G1ConcurrentRefineSweepState(uint max_reserved_regions);
+  G1ConcurrentRefineSweepState(uint max_num_regions);
   ~G1ConcurrentRefineSweepState();
 
   bool swap_global_card_table();
