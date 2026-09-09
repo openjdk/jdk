@@ -1958,13 +1958,7 @@ class LIR_OpIncrementCounter : public LIR_Op {
     , _md_op(md_op)
     , _md_offset_op(md_offset_op)
     , _overflow_stub(overflow_stub) {
-    assert(dest->type() ==
-#ifdef _LP64
-           T_LONG
-#else
-           T_INT
-#endif
-           , "must be");
+    assert(dest->type() == NOT_LP64(T_INT) LP64_ONLY(T_LONG), "must be a pointer type");
   }
 
   LIR_Opr   step()          const            { return _step;          }
