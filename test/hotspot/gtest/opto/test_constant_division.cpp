@@ -113,7 +113,7 @@ static void test_division(UT d, UT N_neg, UT N_pos, juint min_s) {
     if (!c_ovf) {
       return ((l * U(c)) >> s) + (l < 0 ? U(1) : U(0));
     } else {
-      if (sizeof(U) > sizeof(UT) * 2) {
+      if constexpr (sizeof(U) > sizeof(UT) * 2) {
         constexpr U wrap_amount = U(UT(-1)) + 1;
         return (l * (U(c) + wrap_amount)) >> s;
       } else {

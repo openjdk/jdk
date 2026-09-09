@@ -96,7 +96,7 @@ static bool uint128_t_mul_no_ovf(julong hi, julong c_wrapped) {
   return mul_hi_wrapped >= mul_hi_c_wrapped;
 }
 
-// magic_divide_constants in divconstants.cpp calculates the constant c, s
+// magic_divide_constants in divconstants.cpp calculates the constants c, s
 // such that division(x / d) = floor(x * c / 2**s) + (x < 0 ? 1 : 0) for every integer x in
 // the input range. The functions in this file try to derive from the formula in real
 // arithmetic to arrive at a formula in int/long arithmetic. More details can be found in
@@ -148,16 +148,16 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
     if (needs_rounding) {
       // Divide-by-power-of-2 can be made into a shift, but you have to do
       // more math for the rounding.  You need to add 0 for positive
-      // numbers, and "i-1" for negative numbers.  Example: i=4, so the
+      // numbers, and "d-1" for negative numbers.  Example: d=4, so the
       // shift is by 2.  You need to add 3 to negative dividends and 0 to
       // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
       // (-2+3)>>2 becomes 0, etc.
 
-      constexpr int N = 32;
+      constexpr int W = 32;
       // Compute 0 or -1, based on sign bit
-      Node* sign = phase->transform(new RShiftINode(dividend, phase->intcon(N - 1)));
+      Node* sign = phase->transform(new RShiftINode(dividend, phase->intcon(W - 1)));
       // Mask sign bit to the low sign bits
-      Node* round = phase->transform(new URShiftINode(sign, phase->intcon(N - l)));
+      Node* round = phase->transform(new URShiftINode(sign, phase->intcon(W - l)));
       // Round up before shifting
       dividend = phase->transform(new AddINode(dividend, round));
     }
@@ -195,8 +195,8 @@ static Node* transform_int_divide(PhaseGVN* phase, Node* dividend, jint divisor)
   }
 
   // q = (x * c) >> s + (x < 0 ? 1 : 0) = (x * c) >> s - (x >> (W - 1))
-  constexpr int N = 32;
-  Node* addend1 = phase->transform(new RShiftINode(dividend, phase->intcon(N - 1)));
+  constexpr int W = 32;
+  Node* addend1 = phase->transform(new RShiftINode(dividend, phase->intcon(W - 1)));
 
   // If the divisor is negative, swap the order of the input addends;
   // this has the effect of negating the quotient
@@ -242,8 +242,8 @@ static Node* transform_int_udivide(PhaseGVN* phase, Node* dividend, juint diviso
     // If x * c can fit into a u64, use long multiplication
 
     // Java shifts are modular so we need this special case
-    constexpr int N = 32;
-    if (shift_const == N * 2) {
+    constexpr int W = 32;
+    if (shift_const == W * 2) {
       return new ConINode(TypeInt::ZERO);
     }
 
@@ -384,18 +384,13 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     }
 
     if (needs_rounding) {
-      // Divide-by-power-of-2 can be made into a shift, but you have to do
-      // more math for the rounding.  You need to add 0 for positive
-      // numbers, and "i-1" for negative numbers.  Example: i=4, so the
-      // shift is by 2.  You need to add 3 to negative dividends and 0 to
-      // positive ones.  So (-7+3)>>2 becomes -1, (-4+3)>>2 becomes -1,
-      // (-2+3)>>2 becomes 0, etc.
-
-      constexpr int N = 64;
+      // See transform_int_divide. The short explanation is that >> rounds the division result
+      // towards negative infinity, while / rounds the result towards 0.
+      constexpr int W = 64;
       // Compute 0 or -1, based on sign bit
-      Node* sign = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
+      Node* sign = phase->transform(new RShiftLNode(dividend, phase->intcon(W - 1)));
       // Mask sign bit to the low sign bits
-      Node* round = phase->transform(new URShiftLNode(sign, phase->intcon(N - l)));
+      Node* round = phase->transform(new URShiftLNode(sign, phase->intcon(W - l)));
       // Round up before shifting
       dividend = phase->transform(new AddLNode(dividend, round));
     }
@@ -420,11 +415,11 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     Node* mul = phase->transform(new MulLNode(dividend, phase->longcon(magic_const)));
     addend0 = phase->transform(new RShiftLNode(mul, phase->intcon(shift_const)));
   } else {
-    constexpr int N = 64;
-    if (shift_const < N) {
+    constexpr int W = 64;
+    if (shift_const < W) {
       // We need i128 arithmetic here, if s < 64 we need to combine the high and low half of the full
       // product, force s to be >= 64 so we only need to use the high half
-      magic_divide_constants<julong>(d, min_neg, max_pos, N, magic_const, magic_const_ovf, shift_const);
+      magic_divide_constants<julong>(d, min_neg, max_pos, W, magic_const, magic_const_ovf, shift_const);
       assert(!magic_const_ovf, "signed magic constant cannot overflow");
     }
 
@@ -438,12 +433,12 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
     }
 
     // Shift over the (adjusted) mulhi
-    addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - N)));
+    addend0 = phase->transform(new RShiftLNode(mul_hi, phase->intcon(shift_const - W)));
   }
 
   // q = (mul_hi(x, c) >> (s - 64)) + (x < 0 ? 1 : 0) = (mul_hi(x, c) >> (s - 64)) - (x >> 63)
-  constexpr int N = 64;
-  Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(N - 1)));
+  constexpr int W = 64;
+  Node *addend1 = phase->transform(new RShiftLNode(dividend, phase->intcon(W - 1)));
 
   // If the divisor is negative, swap the order of the input addends;
   // this has the effect of negating the quotient.
@@ -457,7 +452,7 @@ static Node* transform_long_divide(PhaseGVN* phase, Node* dividend, jlong diviso
 // Return null if no transformation occurs.
 static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divisor) {
   assert(divisor > 1, "invalid constant divisor");
-  constexpr int N = 64;
+  constexpr int W = 64;
   const TypeLong* i1 = phase->type(dividend)->is_long();
   julong max_pos = i1->_uhi;
 
@@ -485,15 +480,15 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
     return new URShiftLNode(mul, phase->intcon(shift_const));
   }
 
-  if (shift_const < N) {
+  if (shift_const < W) {
     // We need i128 arithmetic here, if s < 64 we need to combine the high and low half of the full
     // product, force s to be >= 64 so we only need to use the high half
-    magic_divide_constants<julong>(divisor, 0, max_pos, N, magic_const, magic_const_ovf, shift_const);
+    magic_divide_constants<julong>(divisor, 0, max_pos, W, magic_const, magic_const_ovf, shift_const);
   }
 
   if (!magic_const_ovf || uint128_t_mul_no_ovf(max_pos, magic_const)) {
     // Java shifts are modular so we need this special case
-    if (shift_const == N * 2) {
+    if (shift_const == W * 2) {
       return new ConLNode(TypeLong::ZERO);
     }
 
@@ -504,10 +499,10 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
       // it down by 2^64, but have to add 1 dividend back in after the multiplication.
       mul_hi = phase->transform(new AddLNode(dividend, mul_hi));
     }
-    return new URShiftLNode(mul_hi, phase->intcon(shift_const - N));
+    return new URShiftLNode(mul_hi, phase->intcon(shift_const - W));
   }
 
-  if ((divisor & 1) == 0) {
+  if (divisor % 2 == 0) {
     // x / (2 * d) = (x / 2) / d. This helps decrease the upper bound of the dividend,
     // guarantee that the product of the new dividend and the new magic constant does not
     // overflow
@@ -529,7 +524,7 @@ static Node* transform_long_udivide(PhaseGVN* phase, Node* dividend, julong divi
   Node* diff = phase->transform(new SubLNode(dividend, mul_hi));
   diff = phase->transform(new URShiftLNode(diff, phase->intcon(1)));
   Node* p = phase->transform(new AddLNode(diff, mul_hi));
-  return new URShiftLNode(p, phase->intcon(shift_const - N - 1));
+  return new URShiftLNode(p, phase->intcon(shift_const - W - 1));
 }
 
 static Node* divModIdealCommon(Node* n, BasicType bt, PhaseGVN* phase, bool need_const_divisor) {
@@ -896,7 +891,6 @@ const Type* UDivLNode::Value(PhaseGVN* phase) const {
     return TypeLong::make(julong(i1->get_con()) / julong(i2->get_con()));
   }
 
-  // Otherwise we give up all hope
   return TypeLong::LONG;
 }
 
@@ -1183,7 +1177,7 @@ Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
 Node* ModINode::Ideal(PhaseGVN* phase, bool can_reshape) {
   // Check for dead control input
-  if(in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
+  if (in(0) != nullptr && remove_dead_region(phase, can_reshape)) {
     return this;
   }
 
@@ -1367,11 +1361,10 @@ const Type* ModINode::Value(PhaseGVN* phase) const {
   return mod_value(phase, in(1), in(2), T_INT);
 }
 
-//=============================================================================
-//------------------------------Idealize---------------------------------------
-Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Check for dead control input
-  if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
+Node* ModLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (in(0) && remove_dead_region(phase, can_reshape)) {
+    return this;
+  }
 
   Node* q = divModIdealCommon(this, T_LONG, phase, true);
   if (q != NodeSentinel) {

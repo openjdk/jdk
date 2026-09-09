@@ -29,7 +29,7 @@
 // Compute magic multiplier and shift constant for converting a 32/64 bit
 // division by constant into a multiply/shift series.
 //
-// (1) Theory:
+// (1) Theorem:
 // Motivated by Henry S. Warren. 2012. Hacker's Delight (2nd. ed.). Addison-Wesley Professional.
 //
 // Given positive integers d <= N, call v the largest integer not larger than
@@ -66,22 +66,26 @@
 // x / d <= x * c / m < (x + 1) / d, which implies floor(x / d) = floor(x * c / m) since
 // there can be no integer in (x / d, (x + 1) / d)
 //
-// For v + 1 <= x <= v + d - 1, since v >= d - 1, we have x <= 2v
+// For v + 1 <= x
+//
+// Since v + d > N, x <= N <= v + d - 1
+// In addition, since v >= d - 1, we have x <= 2v
 // As a result, x * ((v + 1) / v) <= x * ((x + 2) / x)
 //
 // floor(x / d) = (v + 1) / d
 // x * c / m < x * ((v + 1) / v) / d) <= x * ((x + 2) / x) / d = (x + 2) / d
 //           <= (v + d - 1 + 2) / d = (v + 1) / d + 1
 // Which means (v + 1) / d <= floor(x * c / m) < (v + 1) / d + 1 with (v + 1) / d being an integer
-// This implies floor(x / d) = floor(x * c / m) for v + 1 <= x <= v + d - 1
+// This implies floor(x / d) = floor(x * c / m) for v + 1 <= x
 //
-// Combining all the cases gives us the conclusion.
+// Combining all the cases x = 0, 0 < x <= v, and v + 1 <= x, we see that
+// floor(x / d) = floor(x * c / m) for every integer x in [0, N].
 //
 // (b) Since ceil(a / b) = floor((a - 1) / b) + 1, we need to prove:
 //
 // floor((x - 1) / d) = floor(x * c / m)
 //
-// For 0 > x >= -v
+// For -v <= x < 0
 //
 // Since 1 / d < c / m <= (1 / d) * ((v + 1) / v)
 //
@@ -91,7 +95,10 @@
 // x / d > x * c / m >= (x - 1) / d, which implies floor((x - 1) / d) = floor(x * c / m) since
 // there can be no integer in ((x - 1) / d, x / d)
 //
-// For -v - d + 1 <= x <= -v - 1, since v >= d - 1, we have x >= -2v
+// For x <= -v - 1,
+//
+// Since v + d > N, x >= -N >= -v - d + 1
+// In addition, since v >= d - 1, we have x >= -2v
 // As a result, x * ((v + 1) / v) >= x * ((x - 2) / x) = x - 2
 //
 // x / d <= (-v - 1) / d
@@ -99,13 +106,14 @@
 // x * c / m >= x * ((v + 1) / v) / d) >= (x - 2) / d
 //           >= (-v - d + 1 - 2) / d = (-v - 1) / d - 1
 // which means (-v - 1) / d >= x / d > x * c / m >= (-v - 1) / d - 1
-// This implies floor((x - 1) / d) = floor(x * c / m) for -v - 1 >= x >= -v - d + 1
+// This implies floor((x - 1) / d) = floor(x * c / m) for x <= -v - 1
 //
-// Combining all the cases gives us the conclusion.
+// Combining all the cases -v <= x < 0 and x <= -v - 1, we see that
+// floor((x - 1) / d) = floor(x * c / m) for every integer x in [-N, 0)
 //
 // (3) Discussion:
 //
-// Let x be v, v - d + 1, -v, -v + d - 1, it can be seen that these bounds are indeed optimal
+// Let x be v, v - d + 1, -v, -v + d - 1, it can be seen that these bounds are indeed tight
 //
 // (4) Implementation:
 //
@@ -128,7 +136,7 @@
 //                     2**s by v)
 template <class T>
 void magic_divide_constants(T d, T N_neg, T N_pos, juint min_s, T& c, bool& c_ovf, juint& s) {
-  static_assert(std::is_unsigned<T>::value, "calculations must be done in the unsigned domain");
+  static_assert(std::is_unsigned_v<T>, "calculations must be done in the unsigned domain");
   assert(!is_power_of_2(d), "this case should be handled separately");
   assert(d <= N_neg || d <= N_pos, "this should just be idealized to 0");
   constexpr T min_signed = std::numeric_limits<std::make_signed_t<T>>::min();
