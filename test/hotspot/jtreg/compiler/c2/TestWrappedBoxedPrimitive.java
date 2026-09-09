@@ -25,10 +25,15 @@
  * @test
  * @bug 8384101
  * @summary Test that references to boxed primitives are not considered final.
+ * @requires vm.compiler2.enabled
  * @library /test/lib /
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
  *                   -XX:+StressIncrementalInlining -XX:StressSeed=2
+ *                   ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test*
+ *                   -XX:+StressIncrementalInlining
  *                   ${test.main.class}
  * @run main ${test.main.class}
  */
@@ -38,20 +43,24 @@ package compiler.c2;
 import jdk.test.lib.Asserts;
 
 public class TestWrappedBoxedPrimitive {
-    private static class Holder {
+    private static final class Holder {
+        Integer notZero = 0xbad;
+
+        private void touch() {
+            notZero = 123456;
+        }
+    }
+
+    private static class BaseHolder {
         Integer notZero = 0xbad;
         Integer value = 42;
 
         Integer get() {
             return value;
         }
-
-        private void touch () {
-            notZero = 1234;
-        }
     }
 
-    private static final class EvilHolder extends Holder {
+    private static final class EvilHolder extends BaseHolder {
         @Override
         Integer get() {
             notZero = 1234;
@@ -59,18 +68,17 @@ public class TestWrappedBoxedPrimitive {
         }
     }
 
-    private static final class FooHolder extends Holder { }
-    private static final class BarHolder extends Holder { }
+    private static final class FooHolder extends BaseHolder { }
+    private static final class BarHolder extends BaseHolder { }
 
-    static Holder make(boolean evil, int i) {
+    static BaseHolder make(boolean evil, int i) {
         if (evil) {
             return new EvilHolder();
         }
-
         return switch (i % 3) {
-            case 0   -> new FooHolder();
+            case 0  -> new FooHolder();
             case 1  -> new BarHolder();
-            default -> new Holder();
+            default -> new BaseHolder();
         };
     }
 
@@ -92,7 +100,7 @@ public class TestWrappedBoxedPrimitive {
     }
 
     private static int testGetter(boolean evil, int i) {
-        Holder holder = make(evil, i);
+        BaseHolder holder = make(evil, i);
         holder.get();
         return holder.notZero;
     }
@@ -103,15 +111,19 @@ public class TestWrappedBoxedPrimitive {
         int intHolderGetter = testGetter(true, 0);
         for (int i = 0; i < 10_000; i++) {
             testHolderKlass();
+        }
+        for (int i = 0; i < 10_000; i++) {
             testArray();
+        }
+        for (int i = 0; i < 10_000; i++) {
             testGetter(i % 2 == 0, i);
         }
         int c2HolderKlass = testHolderKlass();
         int c2HolderArray = testArray();
         int c2HolderGetter = testGetter(true, 0);
 
-        Asserts.assertEQ(intHolderKlass, c2HolderKlass);
-        Asserts.assertEQ(intHolderArray, c2HolderArray);
-        Asserts.assertEQ(intHolderGetter, c2HolderGetter);
+        Asserts.assertEQ(intHolderKlass, c2HolderKlass, "unexpected value from holder class:");
+        Asserts.assertEQ(intHolderArray, c2HolderArray, "unexpected value from array:");
+        Asserts.assertEQ(intHolderGetter, c2HolderGetter, "unexpected value from getter:");
     }
 }
