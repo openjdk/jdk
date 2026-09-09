@@ -128,10 +128,10 @@ class G1HeapRegionManager: public CHeapObj<mtGC> {
 
   void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = nullptr);
 
-  // G1RegionCommittedMap helpers. These functions do the work that comes with
+  // G1CommittedRegionMap helpers. These functions do the work that comes with
   // the state changes tracked by G1CommittedRegionMap. To make sure this is
   // safe from a multi-threading point of view there are two lock protocols in
-  // G1RegionCommittedMap::guarantee_mt_safety_* that are enforced. The lock
+  // G1CommittedRegionMap::guarantee_mt_safety_* that are enforced. The lock
   // needed should have been acquired before calling these functions.
   void activate_regions(uint index, uint num_regions);
   void deactivate_regions(uint start, uint num_regions);
@@ -237,7 +237,7 @@ public:
   uint num_inactive_regions() const { return max_num_regions() - num_committed_regions(); }
 
   // Return the number of regions currently active and available for use.
-  uint num_committed_regions() const { return _committed_map.num_active(); }
+  uint num_committed_regions() const { return _committed_map.num_active_regions(); }
 
   // The number of regions reserved for the heap.
   uint max_num_regions() const { return (uint)_regions.length(); }
