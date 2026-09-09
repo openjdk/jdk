@@ -236,6 +236,8 @@ class LIR_Assembler: public CompilationResourceObj {
   void align_call(LIR_Code code);
 
   void save_profile_rng();
+  Address metadata_address(Register md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                           uintptr_t *contents);
   void increment_profile_ctr(LIR_Opr incr, LIR_Opr dest,
                              LIR_Opr freq_op,
                              LIR_Opr md_reg, LIR_Opr md_op, LIR_Opr md_offset_op,
