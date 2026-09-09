@@ -25,6 +25,7 @@
  * @summary Unit test for java.net.URI
  * @bug 4464135 4505046 4503239 4438319 4991359 4866303 7023363 7041800
  *      7171415 6339649 6933879 8037396 8272072 8051627 8297687 8353013
+ *      8391603
  * @author Mark Reinhold
  * @run main/othervm Test
  */
@@ -1042,7 +1043,14 @@ public class Test {
         test("http://[1:2:3:4:5:6:7:8:9]").x().z();
         test("http://[1:2:3:4:5:6:7:8%]").x().z();
         test("http://[1:2:3:4:5:6:7:8%!/]").x().z();
+        // Oversized IPv4 octet
         test("http://[::1.2.3.300]").x().z();
+        // Oversized IPv4 octet, stressing NFE
+        test("http://[::1.2.3.4" + Long.MAX_VALUE + "]").x().z();
+        // Oversized IPv4 octet in IPv4-mapped IPv6 address
+        test("http://[::FFFF:1.2.3.300]").x().z();
+        // Oversized IPv4 octet in IPv4-mapped IPv6 address, stressing NFE
+        test("http://[::FFFF:1.2.3.4" + Long.MAX_VALUE + "]").x().z();
         test("http://1.2.3").psa().x().z();
         test("http://1.2.3.300").psa().x().z();
         test("http://1.2.3.4.5").psa().x().z();
