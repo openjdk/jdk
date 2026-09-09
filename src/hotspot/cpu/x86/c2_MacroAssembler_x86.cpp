@@ -137,20 +137,11 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
     movptr(Address(rsp, framesize - wordSize), sp_inc + framesize);
   }
 
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
 #ifdef ASSERT
-  if (VerifyStackAtCalls) {
+  {
     Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
+    testptr(rsp, StackAlignmentInBytes-1);
+    jcc(Assembler::zero, L);
     STOP("Stack is not properly aligned!");
     bind(L);
   }

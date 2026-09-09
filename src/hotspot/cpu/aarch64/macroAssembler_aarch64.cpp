@@ -7012,10 +7012,6 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   if (C->needs_stack_repair()) {
     save_stack_increment(sp_inc, framesize);
   }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
-  }
 }
 #endif // COMPILER2
 

@@ -1866,15 +1866,6 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     }
   }
 
-  if (VerifyStackAtCalls) {
-    st->print("\n\t");
-    framesize -= wordSize;
-    st->print("movq    [rsp + #%d], 0xbadb100d\t# Majik cookie for stack depth check",framesize);
-#ifdef ASSERT
-    st->print("\n\t");
-    st->print("# stack alignment check");
-#endif
-  }
   if (C->stub_function() != nullptr) {
     st->print("\n\t");
     st->print("cmpl    [r15_thread + #disarmed_guard_value_offset], #disarmed_guard_value\t");
@@ -4611,16 +4602,6 @@ encode %{
   %}
 
   enc_class call_epilog %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3*VMRegImpl::slots_per_word));
-      Label L;
-      __ cmpptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-      __ jccb(Assembler::equal, L);
-      // Die if stack mismatch
-      __ int3();
-      __ bind(L);
-    }
     if (tf()->returns_value_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
       // The last return value is not set by the callee but used to pass the null marker to compiled code.
       // Search for the corresponding projection, get the register and emit code that initializes it.
