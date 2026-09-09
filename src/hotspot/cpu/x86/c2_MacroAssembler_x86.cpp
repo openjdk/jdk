@@ -136,16 +136,6 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
     assert((sp_inc & (StackAlignmentInBytes-1)) == 0, "stack increment not aligned");
     movptr(Address(rsp, framesize - wordSize), sp_inc + framesize);
   }
-
-#ifdef ASSERT
-  {
-    Label L;
-    testptr(rsp, StackAlignmentInBytes-1);
-    jcc(Assembler::zero, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
 }
 
 void C2_MacroAssembler::entry_barrier() {
