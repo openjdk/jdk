@@ -689,8 +689,8 @@ void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map
       has_appendix = false;
       signature    = callee->signature();
 
-      // If inline types are passed as fields, use the extended signature
-      // which contains the types of all (oop) fields of the inline type.
+      // If value types are passed as fields, use the extended signature
+      // which contains the types of all (oop) fields of the value type.
       if (is_compiled_by_c2() && callee->has_scalarized_args()) {
         const GrowableArray<SigEntry>* sig = callee->adapter()->get_sig_cc();
         assert(sig != nullptr, "sig should never be null");
@@ -1200,9 +1200,9 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
   CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
 
-  _inline_entry_offset             = _entry_offset;
-  _verified_inline_entry_offset    = _verified_entry_offset;
-  _verified_inline_ro_entry_offset = _verified_entry_offset;
+  _value_entry_offset             = _entry_offset;
+  _verified_value_entry_offset    = _verified_entry_offset;
+  _verified_value_ro_entry_offset = _verified_entry_offset;
 
   _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
 }
@@ -1388,7 +1388,6 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
 
   _exception_cache              = nullptr;
   _gc_data                      = nullptr;
-  _oops_do_mark_nmethods        = nullptr;
   _oops_do_mark_link            = nullptr;
   _compiled_ic_data             = nullptr;
 
@@ -1403,9 +1402,9 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   }
   _entry_offset                 = nm._entry_offset;
   _verified_entry_offset        = nm._verified_entry_offset;
-  _inline_entry_offset             = nm._inline_entry_offset;
-  _verified_inline_entry_offset    = nm._verified_inline_entry_offset;
-  _verified_inline_ro_entry_offset = nm._verified_inline_ro_entry_offset;
+  _value_entry_offset             = nm._value_entry_offset;
+  _verified_value_entry_offset    = nm._verified_value_entry_offset;
+  _verified_value_ro_entry_offset = nm._verified_value_ro_entry_offset;
 
   _entry_bci                    = nm._entry_bci;
   _immutable_data_size          = nm._immutable_data_size;
@@ -1681,14 +1680,14 @@ nmethod::nmethod(
     }
 
     int metadata_size = align_up(code_buffer->total_metadata_size(), wordSize);
-    if (offsets->value(CodeOffsets::Inline_Entry) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_inline_entry_offset            , uint16_t, offsets->value(CodeOffsets::Inline_Entry));
+    if (offsets->value(CodeOffsets::Value_Entry) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_value_entry_offset            , uint16_t, offsets->value(CodeOffsets::Value_Entry));
     }
-    if (offsets->value(CodeOffsets::Verified_Inline_Entry) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_verified_inline_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Inline_Entry));
+    if (offsets->value(CodeOffsets::Verified_Value_Entry) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_verified_value_entry_offset   , uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry));
     }
-    if (offsets->value(CodeOffsets::Verified_Inline_Entry_RO) != CodeOffsets::no_such_entry_point) {
-      CHECKED_CAST(_verified_inline_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Inline_Entry_RO));
+    if (offsets->value(CodeOffsets::Verified_Value_Entry_RO) != CodeOffsets::no_such_entry_point) {
+      CHECKED_CAST(_verified_value_ro_entry_offset, uint16_t, offsets->value(CodeOffsets::Verified_Value_Entry_RO));
     }
 
     assert(_mutable_data_size == _relocation_size + metadata_size,
@@ -3912,10 +3911,10 @@ const char* nmethod::nmethod_section_label(address pos) const {
   const char* label = nullptr;
   if (pos == code_begin())                                              label = "[Instructions begin]";
   if (pos == entry_point())                                             label = "[Entry Point]";
-  if (pos == inline_entry_point())                                      label = "[Inline Entry Point]";
+  if (pos == value_entry_point())                                       label = "[Value Entry Point]";
   if (pos == verified_entry_point())                                    label = "[Verified Entry Point]";
-  if (pos == verified_inline_entry_point())                             label = "[Verified Inline Entry Point]";
-  if (pos == verified_inline_ro_entry_point())                          label = "[Verified Inline Entry Point (RO)]";
+  if (pos == verified_value_entry_point())                              label = "[Verified Value Entry Point]";
+  if (pos == verified_value_ro_entry_point())                           label = "[Verified Value Entry Point (RO)]";
   if (pos == consts_begin() && pos != insts_begin())                    label = "[Constants]";
   // Check stub_code before checking exception_handler or deopt_handler.
   if (pos == this->stub_begin())                                        label = "[Stub Code]";
@@ -3939,10 +3938,10 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
     int n = 0;
     // Multiple entry points may be at the same position. Print them all.
     n += maybe_print_entry_label(stream, block_begin, entry_point(),                    "[Entry Point]");
-    n += maybe_print_entry_label(stream, block_begin, inline_entry_point(),             "[Inline Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, value_entry_point(),              "[Value Entry Point]");
     n += maybe_print_entry_label(stream, block_begin, verified_entry_point(),           "[Verified Entry Point]");
-    n += maybe_print_entry_label(stream, block_begin, verified_inline_entry_point(),    "[Verified Inline Entry Point]");
-    n += maybe_print_entry_label(stream, block_begin, verified_inline_ro_entry_point(), "[Verified Inline Entry Point (RO)]");
+    n += maybe_print_entry_label(stream, block_begin, verified_value_entry_point(),     "[Verified Value Entry Point]");
+    n += maybe_print_entry_label(stream, block_begin, verified_value_ro_entry_point(),  "[Verified Value Entry Point (RO)]");
     if (n == 0) {
       const char* label = nmethod_section_label(block_begin);
       if (label != nullptr) {
@@ -3960,15 +3959,15 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   // Print the name of the method (only once)
   address low = MIN3(entry_point(),
                      verified_entry_point(),
-                     inline_entry_point());
-  // The verified inline entry point and verified inline RO entry point are not always
-  // used. When they are unused. CodeOffsets::Verified_Inline_Entry(_RO) is -1. Hence,
+                     value_entry_point());
+  // The verified value entry point and verified value RO entry point are not always
+  // used. When they are unused. CodeOffsets::Verified_Value_Entry(_RO) is -1. Hence,
   // the calculated entry point is smaller than the block they are offsetting into.
-  if (verified_inline_entry_point() >= block_begin) {
-    low = MIN2(low, verified_inline_entry_point());
+  if (verified_value_entry_point() >= block_begin) {
+    low = MIN2(low, verified_value_entry_point());
   }
-  if (verified_inline_ro_entry_point() >= block_begin) {
-    low = MIN2(low, verified_inline_ro_entry_point());
+  if (verified_value_ro_entry_point() >= block_begin) {
+    low = MIN2(low, verified_value_ro_entry_point());
   }
   assert(low != nullptr, "sanity");
   if (block_begin == low) {
@@ -3985,10 +3984,10 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   if (block_begin == verified_entry_point()) {
     sig_cc = ces.sig_cc();
     regs = ces.regs_cc();
-  } else if (block_begin == verified_inline_entry_point()) {
+  } else if (block_begin == verified_value_entry_point()) {
     sig_cc = ces.sig();
     regs = ces.regs();
-  } else if (block_begin == verified_inline_ro_entry_point()) {
+  } else if (block_begin == verified_value_ro_entry_point()) {
     sig_cc = ces.sig_cc_ro();
     regs = ces.regs_cc_ro();
   } else {
@@ -3996,7 +3995,7 @@ void nmethod::print_nmethod_labels(outputStream* stream, address block_begin, bo
   }
 
   bool has_this = !m->is_static();
-  if (ces.has_inline_recv() && block_begin == verified_entry_point()) {
+  if (ces.has_value_recv() && block_begin == verified_entry_point()) {
     // <this> argument is scalarized for verified_entry_point()
     has_this = false;
   }

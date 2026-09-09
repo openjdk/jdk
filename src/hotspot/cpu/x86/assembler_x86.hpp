@@ -2569,7 +2569,7 @@ private:
   void vmulsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vdivsh(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vsqrtsh(XMMRegister dst, XMMRegister src);
-  void vfmadd132sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
+  void vfmadd231sh(XMMRegister dst, XMMRegister src1, XMMRegister src2);
 
   // Saturating packed insturctions.
   void vpaddsb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -2757,8 +2757,8 @@ private:
   void evminph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evmaxph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evmaxph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-  void evfmadd132ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void evfmadd132ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evfmadd231ph(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void evsqrtph(XMMRegister dst, XMMRegister src1, int vector_len);
   void evsqrtph(XMMRegister dst, Address src1, int vector_len);
 

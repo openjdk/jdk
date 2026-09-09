@@ -48,7 +48,6 @@ bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_preimage_static_archive = false;
 bool CDSConfig::_is_dumping_final_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
-bool CDSConfig::_is_using_optimized_module_handling = true;
 bool CDSConfig::_is_dumping_full_module_graph = true;
 bool CDSConfig::_is_using_full_module_graph = true;
 bool CDSConfig::_has_aot_linked_classes = false;
@@ -325,8 +324,8 @@ void CDSConfig::ergo_init_classic_archive_paths() {
 
 void CDSConfig::check_internal_module_property(const char* key, const char* value) {
   if (Arguments::is_incompatible_cds_internal_module_property(key)) {
-    stop_using_optimized_module_handling();
-    aot_log_info(aot)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
+    disable_full_module_graph();
+    aot_log_info(aot)("full mmodule graph: disabled due to incompatible property: %s=%s", key, value);
   }
 }
 
@@ -580,9 +579,8 @@ void CDSConfig::check_aotmode_record() {
   _is_dumping_static_archive = true;
   _is_dumping_preimage_static_archive = true;
 
-  // At VM exit, the module graph may be contaminated with program states.
+  // At the end of the training run, the module graph may be contaminated with program states.
   // We will rebuild the module graph when dumping the CDS final image.
-  _is_using_optimized_module_handling = false;
   _is_using_full_module_graph = false;
   _is_dumping_full_module_graph = false;
 }
@@ -769,11 +767,20 @@ void CDSConfig::setup_compiler_args() {
 void CDSConfig::prepare_for_dumping() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
+  if (is_dumping_classic_static_archive() && AOTClassLinking) {
+    if (FLAG_IS_CMDLINE(AOTClassLinking)) {
+      log_warning(cds)("AOTClassLinking is not supported for classic CDS archive");
+    }
+    FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
+
   if (is_dumping_dynamic_archive() && AOTClassLinking) {
     if (FLAG_IS_CMDLINE(AOTClassLinking)) {
       log_warning(cds)("AOTClassLinking is not supported for dynamic CDS archive");
     }
     FLAG_SET_ERGO(AOTClassLinking, false);
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
   }
 
   if (is_dumping_dynamic_archive() && !is_using_archive()) {
@@ -863,13 +870,6 @@ bool CDSConfig::is_dumping_regenerated_lambdaform_invokers() {
   }
 }
 
-void CDSConfig::stop_using_optimized_module_handling() {
-  _is_using_optimized_module_handling = false;
-  _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
-  _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
-}
-
-
 CDSConfig::DumperThreadMark::DumperThreadMark(JavaThread* current) {
   assert(_dumper_thread == nullptr, "sanity");
   _dumper_thread = current;
@@ -958,7 +958,7 @@ bool CDSConfig::is_preserving_verification_constraints() {
   } else if (is_dumping_final_static_archive()) { // writing AOT cache
     return is_dumping_aot_linked_classes();
   } else if (is_dumping_classic_static_archive()) {
-    return is_dumping_aot_linked_classes();
+    return false;
   } else {
     return false;
   }
@@ -1018,6 +1018,12 @@ bool CDSConfig::is_using_klass_subgraphs() {
           !CDSConfig::is_dumping_final_static_archive());
 }
 
+// Prevent the JVM from dumping or using the archived full module graph
+void CDSConfig::disable_full_module_graph() {
+  _is_dumping_full_module_graph = false;
+  _is_using_full_module_graph = false;
+}
+
 bool CDSConfig::is_using_full_module_graph() {
   if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
     return true;
@@ -1058,7 +1064,7 @@ void CDSConfig::stop_using_full_module_graph(const char* reason) {
 }
 
 bool CDSConfig::is_dumping_aot_linked_classes() {
-  if (is_dumping_classic_static_archive() || is_dumping_final_static_archive()) {
+  if (is_dumping_final_static_archive()) {
     // FMG is required to guarantee that all cached boot/platform/app classes
     // are visible in the production run, so they can be unconditionally
     // loaded during VM bootstrap.

@@ -28,7 +28,6 @@
  * @bug 8298420
  * @library /test/lib
  * @summary Testing basic PEM API encoding
- * @enablePreview
  * @modules java.base/sun.security.util
  * @run main PEMEncoderTest PBEWithHmacSHA256AndAES_128
  * @run main/othervm -Djava.security.properties=${test.src}/java.security-anotherAlgo

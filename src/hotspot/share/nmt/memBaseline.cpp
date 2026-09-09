@@ -28,6 +28,7 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/memTracker.hpp"
 #include "nmt/regionsTree.inline.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 
 /*
  * Sizes are sorted in descenting order for reporting
@@ -41,7 +42,6 @@ int compare_malloc_size(const MallocSite& s1, const MallocSite& s2) {
     return 1;
   }
 }
-
 
 int compare_virtual_memory_size(const VirtualMemoryAllocationSite& s1,
   const VirtualMemoryAllocationSite& s2) {
@@ -138,8 +138,6 @@ bool MemBaseline::baseline_allocation_sites() {
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
   }
-  // Virtual memory allocation sites are aggregrated in call stack order
-  _virtual_memory_sites_order = by_address;
 
   return true;
 }
@@ -162,31 +160,26 @@ void MemBaseline::baseline(bool summaryOnly) {
   }
 }
 
-int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
-  const VirtualMemoryAllocationSite& s2) {
-  return s1.call_stack()->compare(*s2.call_stack());
-}
-
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
-
-  SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
-
+  auto hash = [](const VirtualMemoryAllocationSite& vmas) { return vmas.call_stack()->calculate_hash(); };
+  auto equals = [](const VirtualMemoryAllocationSite& a, const VirtualMemoryAllocationSite& b) { return a.equals(b); };
+  using VirtualMemorySiteTable = OpenAddressedHashTable<VirtualMemoryAllocationSite,
+                                                        decltype(hash),
+                                                        decltype(equals),
+                                                        mtNMT, AllocFailStrategy::RETURN_NULL,
+                                                        75>;
+  VirtualMemorySiteTable vht(hash, equals);
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
   _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
     VirtualMemoryAllocationSite tmp(*rgn.reserved_call_stack(), rgn.mem_tag());
-    site = allocation_sites.find(tmp);
+    bool found;
+    site = vht.put_if_absent(tmp, &found);
     if (site == nullptr) {
-      LinkedListNode<VirtualMemoryAllocationSite>* node =
-        allocation_sites.add(tmp);
-      if (node == nullptr) {
-        failed_oom = true;
-        return false;
-      }
-      site = node->data();
+      failed_oom = true;
+      return false;
     }
     site->reserve_memory(rgn.size());
-
     site->commit_memory(_vma_allocations->committed_size(rgn));
     return true;
   });
@@ -194,8 +187,11 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
   if (failed_oom) {
     return false;
   }
-
-  _virtual_memory_sites.move(&allocation_sites);
+  _virtual_memory_sites = vht.detach(&_virtual_memory_sites_length);
+  if (_virtual_memory_sites == nullptr) {
+    return false;
+  }
+  sort_virtual_memory_sites(by_site);
   return true;
 }
 
@@ -211,15 +207,14 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
     case by_site_and_tag:
       malloc_sites_to_allocation_site_and_tag_order();
       break;
-    case by_address:
     default:
       ShouldNotReachHere();
   }
   return MallocSiteIterator(_malloc_sites.head());
 }
 
-VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) {
-  assert(!_virtual_memory_sites.is_empty(), "Not detail baseline");
+void MemBaseline::sort_virtual_memory_sites(SortingOrder order) {
+  assert(_virtual_memory_sites_length != 0, "Not detail baseline");
   switch(order) {
     case by_size:
       virtual_memory_sites_to_size_order();
@@ -227,11 +222,9 @@ VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) 
     case by_site:
       virtual_memory_sites_to_reservation_site_order();
       break;
-    case by_address:
     default:
       ShouldNotReachHere();
   }
-  return VirtualMemorySiteIterator(_virtual_memory_sites.head());
 }
 
 
@@ -272,26 +265,22 @@ void MemBaseline::malloc_sites_to_allocation_site_and_tag_order() {
 
 void MemBaseline::virtual_memory_sites_to_size_order() {
   if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_size> tmp;
-
-    tmp.move(&_virtual_memory_sites);
-
-    _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
+    ::qsort(_virtual_memory_sites, _virtual_memory_sites_length, sizeof(VirtualMemoryAllocationSite),
+          [](const void* a, const void* b) {
+            return compare_virtual_memory_size(*static_cast<const VirtualMemoryAllocationSite*>(a),
+                                               *static_cast<const VirtualMemoryAllocationSite*>(b));
+          });
     _virtual_memory_sites_order = by_size;
   }
 }
 
 void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
-  if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_site> tmp;
-
-    tmp.move(&_virtual_memory_sites);
-
-    _virtual_memory_sites.set_head(tmp.head());
-    tmp.set_head(nullptr);
-
-    _virtual_memory_sites_order = by_size;
+  if (_virtual_memory_sites_order != by_site) {
+    ::qsort(_virtual_memory_sites, _virtual_memory_sites_length, sizeof(VirtualMemoryAllocationSite),
+            [](const void* a, const void* b) {
+              return compare_virtual_memory_site(*static_cast<const VirtualMemoryAllocationSite*>(a),
+                                                 *static_cast<const VirtualMemoryAllocationSite*>(b));
+            });
+    _virtual_memory_sites_order = by_site;
   }
 }
-

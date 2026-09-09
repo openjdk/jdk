@@ -3411,6 +3411,9 @@ public final class Class<T> implements java.io.Serializable,
      * otherwise, if this class is not a system class (i.e., it has a
      * class loader) its class loader's default assertion status is returned;
      * otherwise, the system class default assertion status is returned.
+     * <p>
+     * If this {@code Class} object represents an array type, a primitive type,
+     * or void, this method returns {@code false}.
      *
      * @apiNote
      * Few programmers will have any need for this method; it is provided
@@ -3424,6 +3427,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see    java.lang.ClassLoader#setClassAssertionStatus
      * @see    java.lang.ClassLoader#setPackageAssertionStatus
      * @see    java.lang.ClassLoader#setDefaultAssertionStatus
+     * @jls 14.10 The {@code assert} Statement
      * @since  1.4
      */
     public boolean desiredAssertionStatus() {

@@ -224,8 +224,8 @@ public:
   RegionState state()              const { return _state.load_acquire(); }
   int  state_ordinal()             const { return region_state_to_ordinal(state()); }
 
-  void record_pin();
-  void record_unpin();
+  inline void record_pin(size_t value = 1);
+  inline void record_unpin(size_t value = 1);
   size_t pin_count() const;
 
 private:
@@ -368,6 +368,10 @@ public:
 
   inline size_t index() const {
     return _index;
+  }
+
+  static bool is_in_same_region(const void* p, oop obj) {
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> region_size_bytes_shift()) == 0;
   }
 
   inline void save_top_before_promote();
@@ -514,6 +518,7 @@ public:
   }
 
   void reset_age() {
+    assert(get_top_before_promote() == nullptr, "Cannot reset age on region (%zu) scheduled for promotion", index());
     CENSUS_NOISE(_youth += _age;)
     _age = 0;
   }
