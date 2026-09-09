@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -91,10 +91,14 @@ class AsyncExceptionHandshakeClosure : public AsyncHandshakeClosure {
   }
 
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handle_async_exception(exception());
+    PRAGMA_DIAG_POP
   }
   oop exception() {
     assert(!_exception.is_empty(), "invariant");
@@ -107,10 +111,14 @@ class UnsafeAccessErrorHandshakeClosure : public AsyncHandshakeClosure {
  public:
   UnsafeAccessErrorHandshakeClosure() : AsyncHandshakeClosure("UnsafeAccessErrorHandshakeClosure") {}
   void do_thread(Thread* thr) {
+    PRAGMA_DIAG_PUSH
+    PRAGMA_NONNULL_IGNORED
+    // Suppress GCC warning for nonnull as it doesn't recognize that `thr` is always the current thread.
     JavaThread* self = JavaThread::cast(thr);
     assert(self == JavaThread::current(), "must be");
 
     self->handshake_state()->handle_unsafe_access_error();
+    PRAGMA_DIAG_POP
   }
   bool is_async_exception()   { return true; }
 };
@@ -134,25 +142,15 @@ inline JavaThread::NoAsyncExceptionDeliveryMark::~NoAsyncExceptionDeliveryMark()
 }
 
 inline JavaThreadState JavaThread::thread_state() const    {
-#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
-  // Use membars when accessing volatile _thread_state. See
-  // Threads::create_vm() for size checks.
+  // Use membars when accessing volatile _thread_state.
   return AtomicAccess::load_acquire(&_thread_state);
-#else
-  return AtomicAccess::load(&_thread_state);
-#endif
 }
 
 inline void JavaThread::set_thread_state(JavaThreadState s) {
   assert(current_or_null() == nullptr || current_or_null() == this,
          "state change should only be called by the current thread");
-#if defined(PPC64) || defined (AARCH64) || defined(RISCV64)
-  // Use membars when accessing volatile _thread_state. See
-  // Threads::create_vm() for size checks.
+  // Use membars when accessing volatile _thread_state.
   AtomicAccess::release_store(&_thread_state, s);
-#else
-  AtomicAccess::store(&_thread_state, s);
-#endif
 }
 
 inline void JavaThread::set_thread_state_fence(JavaThreadState s) {
@@ -190,6 +188,14 @@ void JavaThread::enter_critical() {
          SafepointSynchronize::is_synchronizing()),
          "this must be current thread or synchronizing");
   _jni_active_critical++;
+}
+
+void JavaThread::enter_jni_deferred_suspension() {
+  precond(JavaThread::current() == this);
+  assert(_thread_state != _thread_in_native && _thread_state != _thread_blocked,
+         "Must not defer suspension when handshake-safe");
+  int sc = AtomicAccess::load(&_jni_deferred_suspension_count);
+  AtomicAccess::store(&_jni_deferred_suspension_count, sc + 1);
 }
 
 inline void JavaThread::set_done_attaching_via_jni() {
@@ -246,7 +252,6 @@ inline InstanceKlass* JavaThread::class_being_initialized() const {
 }
 
 inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
-  assert(UseObjectMonitorTable, "must be");
   assert(monitor != nullptr, "use om_clear_monitor_cache to clear");
   assert(this == current() || monitor->has_owner(this), "only add owned monitors for other threads");
   assert(this == current() || is_obj_deopt_suspend(), "thread must not run concurrently");
@@ -255,9 +260,7 @@ inline void JavaThread::om_set_monitor_cache(ObjectMonitor* monitor) {
 }
 
 inline void JavaThread::om_clear_monitor_cache() {
-  if (UseObjectMonitorTable) {
-    _om_cache.clear();
-  }
+  _om_cache.clear();
 }
 
 inline ObjectMonitor* JavaThread::om_get_from_monitor_cache(oop obj) {

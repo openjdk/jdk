@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,9 @@ public class InstanceKlass extends Klass {
   static int FIELD_FLAG_IS_GENERIC;
   static int FIELD_FLAG_IS_STABLE;
   static int FIELD_FLAG_IS_CONTENDED;
+  static int FIELD_FLAG_IS_NULL_FREE_INLINE;
+  static int FIELD_FLAG_IS_FLAT;
+  static int FIELD_FLAG_IS_NULL_MARKER;
 
   // ClassState constants
   private static int CLASS_STATE_ALLOCATED;
@@ -72,6 +75,10 @@ public class InstanceKlass extends Klass {
   public boolean isAbstract()               { return getAccessFlagsObj().isAbstract(); }
   public boolean isSuper()                  { return getAccessFlagsObj().isSuper(); }
   public boolean isSynthetic()              { return getAccessFlagsObj().isSynthetic(); }
+
+  public boolean supportsInlineTypes() {
+      return majorVersion() >= VALUE_TYPES_MAJOR_VERSION && minorVersion() == JAVA_PREVIEW_MINOR_VERSION;
+  }
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
@@ -106,6 +113,9 @@ public class InstanceKlass extends Klass {
     FIELD_FLAG_IS_GENERIC          = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_generic");
     FIELD_FLAG_IS_STABLE           = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_stable");
     FIELD_FLAG_IS_CONTENDED        = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_contended");
+    FIELD_FLAG_IS_NULL_FREE_INLINE = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_free_inline_type");
+    FIELD_FLAG_IS_FLAT             = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_flat");
+    FIELD_FLAG_IS_NULL_MARKER      = db.lookupIntConstant("FieldInfo::FieldFlags::_ff_null_marker");
 
 
     // read ClassState constants

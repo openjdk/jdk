@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,7 @@ class SystemDictionary : AllStatic {
   static oop get_platform_class_loader_impl(TRAPS);
 
  public:
+
   // Resolve either a hidden or normal class from a stream of bytes, based on ClassLoadInfo
   static InstanceKlass* resolve_from_stream(ClassFileStream* st,
                                             Symbol* class_name,
@@ -284,7 +285,7 @@ public:
   static const char* find_nest_host_error(const constantPoolHandle& pool, int which);
 
   static void add_to_initiating_loader(JavaThread* current, InstanceKlass* k,
-                                       ClassLoaderData* loader_data) NOT_CDS_RETURN;
+                                       ClassLoaderData* loader_data);
 
   static OopHandle  _java_system_loader;
   static OopHandle  _java_platform_loader;
@@ -317,7 +318,7 @@ private:
                                            InstanceKlass* ik,
                                            PackageEntry* pkg_entry,
                                            Handle class_loader);
-  static bool check_shared_class_super_type(InstanceKlass* klass, InstanceKlass* super,
+  static bool check_shared_class_dependency(InstanceKlass* klass, InstanceKlass* dependency,
                                             Handle class_loader,
                                             bool is_superclass, TRAPS);
   static bool check_shared_class_super_types(InstanceKlass* ik, Handle class_loader, TRAPS);
@@ -330,6 +331,8 @@ protected:
 
   static bool add_loader_constraint(Symbol* name, Klass* klass_being_linked,  Handle loader1,
                                     Handle loader2);
+  static bool preload_from_required_inline_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
+  static void try_preload_from_loadable_descriptors(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS);
   static InstanceKlass* load_shared_class(InstanceKlass* ik,
                                           Handle class_loader,
                                           Handle protection_domain,
@@ -341,10 +344,6 @@ protected:
   static InstanceKlass* find_or_define_instance_class(Symbol* class_name,
                                                       Handle class_loader,
                                                       InstanceKlass* k, TRAPS);
-  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
-                                             const InstanceKlass* k,
-                                             const ClassLoaderData* init_cld);)
-
 public:
   static bool is_system_class_loader(oop class_loader);
   static bool is_platform_class_loader(oop class_loader);
@@ -359,6 +358,10 @@ public:
 
   // Return Symbol or throw exception if name given is can not be a valid Symbol.
   static Symbol* class_name_symbol(const char* name, Symbol* exception, TRAPS);
+
+  JFR_ONLY(static void post_class_load_event(EventClassLoad* event,
+                                             const InstanceKlass* k,
+                                             const ClassLoaderData* init_cld);)
 };
 
 #endif // SHARE_CLASSFILE_SYSTEMDICTIONARY_HPP

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_PARALLEL_PSADAPTIVESIZEPOLICY_HPP
 #define SHARE_GC_PARALLEL_PSADAPTIVESIZEPOLICY_HPP
 
+#include "gc/parallel/psYoungGen.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "utilities/align.hpp"
@@ -45,6 +46,10 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // old gen space for promotion with these value which decay
   // with increasing collections.
   uint _young_gen_size_increment_supplement;
+
+  // Count eligible (where eden is not squeezed by survivors) young GCs before
+  // raising the tenuring threshold.
+  uint _tenuring_threshold_gc_count;
 
   size_t decrease_eden_for_minor_pause_time(size_t current_eden_size);
 
@@ -85,10 +90,10 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
   size_t compute_desired_survivor_size(size_t current_survivor_size, size_t max_gen_size);
 
-  size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);
-
-  uint compute_tenuring_threshold(bool is_survivor_overflowing,
+  uint compute_tenuring_threshold(PSYoungGen::SizingState sizing_state,
                                   uint tenuring_threshold);
+
+  size_t compute_old_gen_shrink_bytes(size_t old_gen_free_bytes, size_t max_shrink_bytes);
 
   // Return the maximum size of a survivor space if the young generation were of
   // size gen_size.

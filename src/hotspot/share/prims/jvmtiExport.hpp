@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,6 +95,7 @@ class JvmtiExport : public AllStatic {
   JVMTI_SUPPORT_FLAG(can_pop_frame)
   JVMTI_SUPPORT_FLAG(can_force_early_return)
   JVMTI_SUPPORT_FLAG(can_support_virtual_threads)
+  JVMTI_SUPPORT_FLAG(can_support_value_objects)
 
   JVMTI_SUPPORT_FLAG(early_vmstart_recorded)
   JVMTI_SUPPORT_FLAG(can_get_owned_monitor_info) // includes can_get_owned_monitor_stack_depth_info
@@ -319,6 +320,9 @@ class JvmtiExport : public AllStatic {
   static void at_single_stepping_point(JavaThread *thread, Method* method, address location) NOT_JVMTI_RETURN;
   static void expose_single_stepping(JvmtiThreadState* state) NOT_JVMTI_RETURN;
   static JvmtiThreadState* hide_single_stepping(JavaThread *thread) NOT_JVMTI_RETURN_(nullptr);
+
+  // frame pop management
+  static bool has_frame_pop_for_top_frame(JavaThread *current) NOT_JVMTI_RETURN_(false);
 
   // Methods that notify the debugger that something interesting has happened in the VM.
   static void post_early_vm_start        () NOT_JVMTI_RETURN;

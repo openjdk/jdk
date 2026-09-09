@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8196830 8235351 8257874
+ * @bug 8196830 8235351 8257874 8327639
  * @modules java.base/jdk.internal.reflect
  * @run junit/othervm CallerSensitiveAccess
  * @summary Check Lookup findVirtual, findStatic and unreflect behavior with
@@ -51,20 +51,27 @@ import java.util.stream.Stream;
 import jdk.internal.reflect.CallerSensitive;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 public class CallerSensitiveAccess {
+    // Cache the list of Caller Sensitive Methods
+    private static List<Method> CALLER_SENSITIVE_METHODS;
+
+    @BeforeAll
+    public static void setupCallerSensitiveMethods() {
+        CALLER_SENSITIVE_METHODS = callerSensitiveMethods(Object.class.getModule());
+    }
 
     /**
      * Caller sensitive methods in APIs exported by java.base.
      */
     static Object[][] callerSensitiveMethods() {
-        try (Stream<Method> stream = callerSensitiveMethods(Object.class.getModule())) {
-            return stream.map(m -> new Object[]{m, shortDescription(m)})
-                    .toArray(Object[][]::new);
-        }
+        return CALLER_SENSITIVE_METHODS.stream()
+                .map(m -> new Object[]{m, shortDescription(m)})
+                .toArray(Object[][]::new);
     }
 
     /**
@@ -101,13 +108,11 @@ public class CallerSensitiveAccess {
      * public accessible caller sensitive methods in APIs exported by java.base.
      */
     static Object[][] accessibleCallerSensitiveMethods() {
-        try (Stream<Method> stream = callerSensitiveMethods(Object.class.getModule())) {
-            return stream
+        return CALLER_SENSITIVE_METHODS.stream()
                 .filter(m -> Modifier.isPublic(m.getModifiers()))
                 .map(m -> { m.setAccessible(true); return m; })
                 .map(m -> new Object[] { m, shortDescription(m) })
                 .toArray(Object[][]::new);
-        }
     }
 
     /**
@@ -390,10 +395,11 @@ public class CallerSensitiveAccess {
     // -- supporting methods --
 
     /**
-     * Returns a stream of all caller sensitive methods on public classes in packages
+     * Returns a List of all caller sensitive methods on public classes in packages
      * exported by a named module.
+     * Returns a List instead of a stream so the ModuleReader can be closed before returning.
      */
-    static Stream<Method> callerSensitiveMethods(Module module) {
+    static List<Method> callerSensitiveMethods(Module module) {
         assertTrue(module.isNamed());
         ModuleReference mref = module.getLayer().configuration()
                 .findModule(module.getName())
@@ -413,7 +419,7 @@ public class CallerSensitiveAccess {
                     .filter(refc -> refc != null
                                     && Modifier.isPublic(refc.getModifiers()))
                     .map(refc -> callerSensitiveMethods(refc))
-                    .flatMap(List::stream);
+                    .flatMap(List::stream).toList();
         } catch (IOException ioe) {
             throw new UncheckedIOException(ioe);
         }

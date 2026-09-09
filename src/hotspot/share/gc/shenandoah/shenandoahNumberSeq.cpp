@@ -39,10 +39,10 @@ HdrSeq::~HdrSeq() {
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
-      FREE_C_HEAP_ARRAY(int, sub);
+      FREE_C_HEAP_ARRAY(sub);
     }
   }
-  FREE_C_HEAP_ARRAY(int*, _hdr);
+  FREE_C_HEAP_ARRAY(_hdr);
 }
 
 void HdrSeq::add(double val) {
@@ -191,7 +191,7 @@ BinaryMagnitudeSeq::BinaryMagnitudeSeq() {
 }
 
 BinaryMagnitudeSeq::~BinaryMagnitudeSeq() {
-  FREE_C_HEAP_ARRAY(size_t, _mags);
+  FREE_C_HEAP_ARRAY(_mags);
 }
 
 void BinaryMagnitudeSeq::clear() {

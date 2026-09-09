@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/vector.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 static bool is_vector_mask(ciKlass* klass) {
@@ -204,9 +205,25 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       // Adjust JVMS from post-call to pre-call state: put args on stack
       uint nargs = call->method()->arg_size();
       kit.ensure_stack(kit.sp() + nargs);
-      for (uint i = TypeFunc::Parms; i < call->tf()->domain()->cnt(); i++) {
-        kit.push(call->in(i));
+      uint in_idx = TypeFunc::Parms;  // The index of the call input, using scalarized calling convention.
+      int parm_idx = 0;  // The index of the Java parameter: double/long take one slot
+      for (uint i = 0; i < nargs; i++) {  // The index of the argument on the JVM stack: double/long take two slots
+        const Type* arg_type = call->tf()->domain_sig()->field_at(TypeFunc::Parms + i);
+        if (arg_type->is_inlinetypeptr() && !call->method()->mismatch() && call->method()->is_scalarized_arg(parm_idx)) {
+          bool nullable = arg_type->maybe_null();
+          ciInlineKlass* vk = arg_type->inline_klass();
+          InlineTypeNode* it = InlineTypeNode::make_from_multi(&kit, call, vk, in_idx, true, !nullable);
+          kit.push(gvn.transform(it));
+        } else {
+          kit.push(call->in(in_idx));
+          in_idx++;
+        }
+        if (arg_type != Type::HALF) {
+          parm_idx++;
+        }
       }
+      assert(in_idx == call->tf()->domain_cc()->cnt(), "should have processed exactly as many input as the scalarized calling convention; %d vs %d", in_idx, call->tf()->domain_cc()->cnt());
+      assert(parm_idx == (call->method()->is_static() ? 0 : 1) + call->method()->signature()->count(), "should have processed all the parameters; %d vs %d", parm_idx, (call->method()->is_static() ? 0 : 1) + call->method()->signature()->count());
       jvms = kit.sync_jvms();
 
       Node* new_vbox = nullptr;
@@ -365,7 +382,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   // If boxed mask value is present in a predicate register, it must be
   // spilled to a vector though a VectorStoreMaskOperation before actual StoreVector
   // operation to vector payload field.
-  if (is_mask && (value->bottom_type()->isa_vectmask() || bt != T_BOOLEAN)) {
+  if (is_mask && (value->bottom_type()->isa_pvectmask() || bt != T_BOOLEAN)) {
     value = gvn.transform(VectorStoreMaskNode::make(gvn, value, bt, num_elem));
     // Although type of mask depends on its definition, in terms of storage everything is stored in boolean array.
     bt = T_BOOLEAN;
@@ -455,14 +472,13 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
       gvn.record_for_igvn(local_mem);
       BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
       C2OptAccess access(gvn, ctrl, local_mem, decorators, T_OBJECT, obj, addr);
-      const Type* type = TypeOopPtr::make_from_klass(field->type()->as_klass());
-      vec_field_ld = bs->load_at(access, type);
-    }
+      vec_field_ld = bs->load_at(access, Type::get_const_basic_type(T_OBJECT));
 
-    // For proper aliasing, attach concrete payload type.
-    ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
-    const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
-    vec_field_ld = gvn.transform(new CastPPNode(nullptr, vec_field_ld, payload_type));
+      // For proper aliasing, attach concrete payload type.
+      ciKlass* payload_klass = ciTypeArrayKlass::make(bt);
+      const Type* payload_type = TypeAryPtr::make_from_klass(payload_klass)->cast_to_ptr_type(TypePtr::NotNull);
+      vec_field_ld = gvn.transform(new CheckCastPPNode(ctrl, vec_field_ld, payload_type, ConstraintCastNode::DependencyType::NonFloatingNarrowing));
+    }
 
     Node* adr = kit.array_element_address(vec_field_ld, gvn.intcon(0), bt);
     const TypePtr* adr_type = adr->bottom_type()->is_ptr();

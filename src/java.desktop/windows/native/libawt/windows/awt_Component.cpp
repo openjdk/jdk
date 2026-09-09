@@ -229,7 +229,6 @@ AwtComponent::AwtComponent()
     m_backgroundColorSet = FALSE;
     m_penForeground = NULL;
     m_brushBackground = NULL;
-    m_DefWindowProc = NULL;
     m_nextControlID = 1;
     m_childList = NULL;
     m_myControlID = 0;
@@ -394,7 +393,7 @@ LRESULT CALLBACK AwtComponent::WndProc(HWND hWnd, UINT message,
     if (self == NULL || self->GetHWnd() != hWnd ||
         message == WM_UNDOCUMENTED_CLIENTSHUTDOWN) // handle log-off gracefully
     {
-        return ComCtl32Util::GetInstance().DefWindowProc(NULL, hWnd, message, wParam, lParam);
+        return ComCtl32Util::GetInstance().DefWindowProc(hWnd, message, wParam, lParam);
     } else {
         return self->WindowProc(message, wParam, lParam);
     }
@@ -682,7 +681,7 @@ void AwtComponent::SubclassHWND()
         return;
     }
     const WNDPROC wndproc = WndProc; // let compiler type check WndProc
-    m_DefWindowProc = ComCtl32Util::GetInstance().SubclassHWND(GetHWnd(), wndproc);
+    ComCtl32Util::GetInstance().SubclassHWND(GetHWnd(), wndproc);
     m_bSubclassed = TRUE;
 }
 
@@ -694,7 +693,7 @@ void AwtComponent::UnsubclassHWND()
     if (!m_bSubclassed) {
         return;
     }
-    ComCtl32Util::GetInstance().UnsubclassHWND(GetHWnd(), WndProc, m_DefWindowProc);
+    ComCtl32Util::GetInstance().UnsubclassHWND(GetHWnd(), WndProc);
     m_bSubclassed = FALSE;
 }
 
@@ -1981,7 +1980,7 @@ LRESULT AwtComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam)
  */
 LRESULT AwtComponent::DefWindowProc(UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    return ComCtl32Util::GetInstance().DefWindowProc(m_DefWindowProc, GetHWnd(), msg, wParam, lParam);
+    return ComCtl32Util::GetInstance().DefWindowProc(GetHWnd(), msg, wParam, lParam);
 }
 
 /*

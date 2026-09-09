@@ -46,7 +46,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 /*
  * @test
  * @summary Direct test for HttpResponse.BodySubscriber.buffering() cancellation
- * @run junit/othervm BufferingSubscriberCancelTest
+ * @run junit/othervm ${test.main.class}
  */
 
 public class BufferingSubscriberCancelTest {

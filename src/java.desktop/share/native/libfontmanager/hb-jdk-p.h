@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,20 +53,16 @@ extern "C" {
 
 hb_font_t* jdk_font_create_hbp(
                hb_face_t* face,
-               float ptSize, float devScale,
-               hb_destroy_func_t destroy,
+               float xPtSize, float yPtSize,
                hb_font_funcs_t* font_funcs);
-
 
 typedef void (*store_layoutdata_func_t)
    (int slot, int baseIndex, int offset,
-    float startX, float startY, float devScale,
+    float startX, float startY,
     int charCount, int glyphCount,
     hb_glyph_info_t *glyphInfo, hb_glyph_position_t *glyphPos);
 
 JDKEXPORT void jdk_hb_shape(
-
-     float ptSize,
      float *matrix,
      void* pFace,
      unsigned short* chars,

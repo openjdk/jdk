@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryNotEmptyException;
@@ -71,6 +72,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.converter.SimpleArgumentConverter;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -213,10 +216,23 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(I18N.format("ERR_InvalidInstallerType", name), ex.getMessage());
     }
 
-    @Test
-    public void test_APP_CONTENT_valid(@TempDir Path workDir) throws IOException {
+    private static Stream<Arguments> pathOptionsValid() {
+        return Stream.of(
+            Arguments.of(StandardOption.APP_CONTENT, ","),
+            Arguments.of(StandardOption.APP_RESOURCES, File.pathSeparator)
+        );
+    }
 
-        var spec = StandardOption.APP_CONTENT.getSpec();
+    @ParameterizedTest
+    @CsvSource({
+        "app-content,COMMA",
+        "app-resources,PATH_SEPARATOR",
+    })
+    public void test_AppContent_valid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<List<Collection<RootedPath>>> option,
+            Delimiter delimiter, @TempDir Path workDir) throws IOException {
+
+        var spec = option.getSpec();
 
         var contentDir = workDir.resolve("a");
         var emptyDir = contentDir.resolve("b/empty-dir");
@@ -228,10 +244,10 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         Object convertedValue = spec.convert(
                 spec.name(),
-                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(",")))
+                StringToken.of(Stream.of(contentDir, file).map(Path::toString).collect(joining(delimiter.value)))
         ).orElseThrow();
 
-        var paths = StandardOption.APP_CONTENT.getFrom(Options.of(Map.of(StandardOption.APP_CONTENT, convertedValue)));
+        var paths = option.getFrom(Options.of(Map.of(option, convertedValue)));
         var sortedPathList = paths.stream().flatMap(Collection::stream).map(RootedPath::branch).sorted().toList();
 
         var expectedPathList = Stream.of(
@@ -245,9 +261,27 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         assertEquals(expectedPathList, sortedPathList);
     }
 
-    @Test
-    public void test_APP_CONTENT_invalid(@TempDir Path workDir) throws IOException {
-        var spec = StandardOption.APP_CONTENT.getSpec();
+    enum Delimiter {
+        COMMA(","),
+        PATH_SEPARATOR(File.pathSeparator),
+        ;
+
+        Delimiter(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        private final String value;
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "app-content",
+        "app-resources",
+    })
+    public void test_AppContent_invalid(
+            @ConvertWith(OptionValueConverter.class) OptionValue<?> option,
+            @TempDir Path workDir) throws IOException {
+        var spec = option.getSpec();
 
         var token = StringToken.of(workDir.resolve("nonexistent").toString());
         var result = spec.convert(spec.name(), token);
@@ -949,6 +983,30 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
                 Set.copyOf(StandardBundlingOperation.CREATE_BUNDLE), "bundle",
                 Set.of(StandardBundlingOperation.values()), "all"
         );
+    }
+
+    static final class OptionValueConverter extends SimpleArgumentConverter {
+
+        @Override
+        protected Object convert(Object source, Class<?> targetType) {
+            if (!OptionValue.class.isAssignableFrom(targetType)) {
+                throw new IllegalArgumentException();
+            }
+
+            if (source == null) {
+                return null;
+            }
+
+            if (source instanceof String optionName) {
+                return Utils.getOptionsWithSpecs(StandardOption.class).filter(op -> {
+                    return op.getOption().spec().names().contains(OptionName.of(optionName));
+                }).findFirst().orElseThrow(() -> {
+                    throw new IllegalArgumentException("Failed to find standard option with the name=[" + optionName + "]");
+                });
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     private static final Path GOLDEN_JPACKAGE_OPTIONS_MD = TKit.TEST_SRC_ROOT.resolve(

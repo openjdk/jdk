@@ -578,13 +578,13 @@ void os::init_system_properties_values() {
   char *ld_library_path = NEW_C_HEAP_ARRAY(char, pathsize, mtInternal);
   os::snprintf_checked(ld_library_path, pathsize, "%s%s" DEFAULT_LIBPATH, v, v_colon);
   Arguments::set_library_path(ld_library_path);
-  FREE_C_HEAP_ARRAY(char, ld_library_path);
+  FREE_C_HEAP_ARRAY(ld_library_path);
 
   // Extensions directories.
   os::snprintf_checked(buf, bufsize, "%s" EXTENSIONS_DIR, Arguments::get_java_home());
   Arguments::set_ext_dirs(buf);
 
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 
 #undef DEFAULT_LIBPATH
 #undef EXTENSIONS_DIR
@@ -1897,7 +1897,11 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     }
   }
 
-  assert(rc == true, "mprotect failed.");
+  if (!rc) {
+    // Reporting success via mprotect but failing to mprotect is a symptom of calling mprotect
+    // on SystemV-memory. It should not happen for mmap-mode.
+    assert(!g_multipage_support.can_use_64K_mmap_pages, "Should only happen in old-style shmat mode");
+  }
 
   return rc;
 }

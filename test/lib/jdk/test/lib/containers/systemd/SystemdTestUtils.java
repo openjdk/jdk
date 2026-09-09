@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024, Red Hat, Inc.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,7 +249,7 @@ public class SystemdTestUtils {
 
     private static String getMemoryDSliceContent(SystemdRunOptions runOpts) {
         String format = "[Slice]\n" + basicMemoryContentFormat();
-        return String.format(format, runOpts.sliceDMemoryLimit);
+        return String.format(format, runOpts.sliceDMemoryLimit, runOpts.sliceDMemoryLimit);
     }
 
     private static String getCPUDSliceContent(SystemdRunOptions runOpts) {
@@ -267,13 +268,14 @@ public class SystemdTestUtils {
         return """
                 MemoryAccounting=true
                 MemoryLimit=%s
+                MemoryMax=%s
                 """;
     }
 
     private static String getMemorySliceContent(SystemdRunOptions runOpts) {
         String format = basicMemoryContentFormat();
 
-        return String.format(format, runOpts.memoryLimit);
+        return String.format(format, runOpts.memoryLimit, runOpts.memoryLimit);
     }
 
     private static String getBasicSliceFormat() {
@@ -291,6 +293,18 @@ public class SystemdTestUtils {
         return String.format("%s.slice", sliceName);
     }
 
+    private static void addScopeMemoryProperties(List<String> javaCmd, SystemdRunOptions opts) {
+        if (opts.memoryLow != null || opts.memoryHigh != null) {
+            javaCmd.add("--property=MemoryAccounting=true");
+        }
+        if (opts.memoryLow != null) {
+            javaCmd.add("--property=MemoryLow=" + opts.memoryLow);
+        }
+        if (opts.memoryHigh != null) {
+            javaCmd.add("--property=MemoryHigh=" + opts.memoryHigh);
+        }
+    }
+
     /**
      * Build the java command to run inside a systemd slice
      *
@@ -304,6 +318,7 @@ public class SystemdTestUtils {
         List<String> javaCmd = systemdRun();
         javaCmd.add("--slice");
         javaCmd.add(sliceFileName(sliceNameCpu(opts)));
+        addScopeMemoryProperties(javaCmd, opts);
         javaCmd.add("--scope");
         javaCmd.add(Path.of(Utils.TEST_JDK, "bin", "java").toString());
         javaCmd.addAll(opts.javaOpts);

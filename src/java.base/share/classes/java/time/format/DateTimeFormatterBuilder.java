@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -125,7 +125,6 @@ import java.util.regex.Pattern;
 import jdk.internal.util.DateTimeHelper;
 import jdk.internal.util.DecimalDigits;
 
-import sun.text.spi.JavaTimeDateTimePatternProvider;
 import sun.util.locale.provider.CalendarDataUtility;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleResources;
@@ -223,10 +222,10 @@ public final class DateTimeFormatterBuilder {
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Either dateStyle or timeStyle must be non-null");
         }
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, locale);
-        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        return provider.getJavaTimeDateTimePattern(convertStyle(timeStyle),
-                         convertStyle(dateStyle), chrono.getCalendarType(),
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateTimeFormatterPatternProvider.class, locale);
+        DateTimeFormatterPatternProvider provider = adapter.getDateTimeFormatterPatternProvider();
+        return provider.getDateTimeFormatterPattern(dateStyle, timeStyle,
+                         chrono.getCalendarType(),
                          CalendarDataUtility.findRegionOverride(locale));
     }
 
@@ -259,9 +258,9 @@ public final class DateTimeFormatterBuilder {
         Objects.requireNonNull(chrono, "chrono");
         Objects.requireNonNull(locale, "locale");
         Locale override = CalendarDataUtility.findRegionOverride(locale);
-        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(JavaTimeDateTimePatternProvider.class, override);
-        JavaTimeDateTimePatternProvider provider = adapter.getJavaTimeDateTimePatternProvider();
-        return provider.getJavaTimeDateTimePattern(requestedTemplate,
+        LocaleProviderAdapter adapter = LocaleProviderAdapter.getAdapter(DateTimeFormatterPatternProvider.class, override);
+        DateTimeFormatterPatternProvider provider = adapter.getDateTimeFormatterPatternProvider();
+        return provider.getDateTimeFormatterPattern(requestedTemplate,
                 chrono.getCalendarType(),
                 override);
     }
@@ -4513,7 +4512,11 @@ public final class DateTimeFormatterBuilder {
                 TemporalAccessor dt = context.getTemporal();
                 int type = GENERIC;
                 if (!isGeneric) {
-                    if (dt.isSupported(ChronoField.INSTANT_SECONDS)) {
+                    // Check if an explicit metazone DST offset exists
+                    String dstOffset = TimeZoneNameUtility.explicitDstOffset(zname);
+                    if (dt.isSupported(OFFSET_SECONDS) && dstOffset != null) {
+                        type = ZoneOffset.from(dt).equals(ZoneOffset.of(dstOffset)) ? DST : STD;
+                    } else if (dt.isSupported(ChronoField.INSTANT_SECONDS)) {
                         type = zone.getRules().isDaylightSavings(Instant.from(dt)) ? DST : STD;
                     } else if (dt.isSupported(ChronoField.EPOCH_DAY) &&
                                dt.isSupported(ChronoField.NANO_OF_DAY)) {

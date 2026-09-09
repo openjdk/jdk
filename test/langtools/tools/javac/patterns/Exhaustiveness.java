@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8366968 8364991
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038 8311815 8325215 8333169 8327368 8366968 8364991 8383414
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -63,6 +62,7 @@ public class Exhaustiveness extends TestRunner {
         tb = new ToolBox();
     }
 
+    @Override
     public void runTests() throws Exception {
         runTests(m -> new Object[] { Paths.get(m.getName()) });
     }
@@ -1486,9 +1486,7 @@ public class Exhaustiveness extends TestRunner {
                        }
                    }
                }
-               """,
-               "Test.java:11:9: compiler.err.not.exhaustive.statement",
-               "1 error");
+               """);
     }
 
     @Test
@@ -1548,7 +1546,7 @@ public class Exhaustiveness extends TestRunner {
         variants.add("C _");
         variants.add("R(I _, I _, I _)");
         for (int n = 0; n < NESTING_CONSTANT; n++) {
-            Set<String> newVariants = new HashSet<>();
+            Set<String> newVariants = new LinkedHashSet<>();
             for (String variant : variants) {
                 if (variant.contains(", I _")) {
                     newVariants.add(variant.replaceFirst(", I _", ", C _"));
@@ -1560,7 +1558,7 @@ public class Exhaustiveness extends TestRunner {
             variants = newVariants;
         }
         for (int n = 0; n < NESTING_CONSTANT; n++) {
-            Set<String> newVariants = new HashSet<>();
+            Set<String> newVariants = new LinkedHashSet<>();
             for (String variant : variants) {
                 if (variant.contains("I _")) {
                     newVariants.add(variant.replaceFirst("I _", "C _"));
@@ -2485,6 +2483,96 @@ public class Exhaustiveness extends TestRunner {
                """,
                "Test.java:4:16: compiler.err.not.exhaustive",
                "1 error");
+    }
+
+    @Test //JDK-8383414
+    public void testVerifyCoverageCheckWithApplicablePermittedSubTypes(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<Long>, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //deeper hierarchy:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits Med, B2 {}
+                   static sealed interface Med extends II<Long> {}
+                   static final class A2 implements Med, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //even deeper hierarchy:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits Med1, B2 {}
+                   static sealed interface Med1 extends II<Long> {}
+                   static sealed interface Med2 extends Med1 {}
+                   static sealed interface Med3 extends Med2 {}
+                   static sealed interface Med4 extends Med3 {}
+                   static sealed interface Med5 extends Med4 {}
+                   static final class A2 implements Med5, J {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        //a class that does not implement J, but is not applicable:
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<String> {}
+                   static final class B2 implements II<Long>, J {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J j -> {}
+                       }
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               class Test {
+                   interface J1 {}
+                   interface J2 {}
+                   static sealed interface II<T> permits A2, B2 {}
+                   static final class A2 implements II<Long>, J1 {}
+                   static final class B2 implements II<Long>, J2 {}
+                   static void f(II<Long> i) {
+                       switch (i) {
+                           case J1 j -> {}
+                           case J2 j -> {}
+                       }
+                   }
+               }
+               """);
     }
 
     private void doTest(Path base, String[] libraryCode, String testCode, String... expectedErrors) throws IOException {

@@ -46,7 +46,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
                             Register last_java_sp,
                             address  entry_point,
                             bool allow_relocation,
-                            bool check_exceptions);
+                            bool check_exceptions,
+                            Label *last_java_pc);
 
   // Base routine for all dispatches.
   void dispatch_base(TosState state, address* table, bool generate_poll = false);
@@ -55,8 +56,13 @@ class InterpreterMacroAssembler: public MacroAssembler {
   InterpreterMacroAssembler(CodeBuffer* c)
     : MacroAssembler(c) {}
 
+  void restore_after_resume();
   virtual void check_and_handle_popframe(Register java_thread);
   virtual void check_and_handle_earlyret(Register java_thread);
+
+  // Use for vthread preemption
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, bool check_exceptions = true);
+  void call_VM_preemptable(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions = true);
 
   void jump_to_entry(address entry, Register Rscratch);
 
@@ -109,7 +115,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   // Generate a subtype check: branch to ok_is_subtype if sub_klass is
   // a subtype of super_klass. Blows registers tmp1, tmp2 and tmp3.
-  void gen_subtype_check(Register sub_klass, Register super_klass, Register tmp1, Register tmp2, Label &ok_is_subtype);
+  void gen_subtype_check(Register sub_klass, Register super_klass, Register tmp1, Register tmp2, Label &ok_is_subtype, bool profile = true);
 
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry (Register cache, Register index, int bcp_offset = 1);
@@ -263,6 +269,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void lock_object  (Register lock_reg, Register obj_reg);
   void unlock_object(Register lock_reg, Register obj_reg=noreg);
 
+  // Valhalla support for flat fields
+  void read_flat_field(Register entry, Register obj);
+  void write_flat_field(Register entry, Register field_offset,
+                        Register tmp1, Register tmp2,
+                        Register obj);
+
   // Interpreter profiling operations
   void set_method_data_pointer_for_bcp();
   void test_method_data_pointer(Register mdp, Label& zero_continue);
@@ -280,19 +292,14 @@ class InterpreterMacroAssembler: public MacroAssembler {
                         Register test_value_out,
                         Label& not_equal_continue);
 
-  void record_klass_in_profile(Register receiver, Register mdp,
-                               Register reg2);
-  void record_klass_in_profile_helper(Register receiver, Register mdp,
-                                      Register reg2, int start_row,
-                                      Label& done);
-
   void update_mdp_by_offset(Register mdp_in, int offset_of_offset);
   void update_mdp_by_offset(Register mdp_in, Register dataidx, int offset_of_disp);
   void update_mdp_by_constant(Register mdp_in, int constant);
   void update_mdp_for_ret(Register return_bci);
 
   void profile_taken_branch(Register mdp, Register bumped_count);
-  void profile_not_taken_branch(Register mdp);
+  void profile_not_taken_branch(Register mdp, bool acmp = false);
+  void profile_acmp(Register mdp, Register left, Register right, Register tmp);
   void profile_call(Register mdp);
   void profile_final_call(Register mdp);
   void profile_virtual_call(Register receiver, Register mdp,
@@ -308,6 +315,9 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_arguments_type(Register mdp, Register callee, Register tmp, bool is_virtual);
   void profile_return_type(Register mdp, Register ret, Register tmp);
   void profile_parameters_type(Register mdp, Register tmp1, Register tmp2);
+  template <class ArrayData> void profile_array_type(Register array, Register tmp1, Register tmp2);
+  void profile_element_type(Register element, Register tmp1, Register tmp2);
+  void profile_multiple_element_types(Register element, Register tmp1, Register tmp2, Register tmp3);
 
   // Debugging
   void verify_oop(Register reg, TosState state = atos);    // Only if +VerifyOops && state == atos.

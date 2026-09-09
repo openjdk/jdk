@@ -58,7 +58,7 @@ import org.junit.jupiter.api.Test;
  * @build java.net.http/jdk.internal.net.http.Http3ConnectionAccess
  * @run junit/othervm
  *              -Djdk.internal.httpclient.debug=true
- *              -Djdk.httpclient.HttpClient.log=requests,responses,errors H3HeaderSizeLimitTest
+ *              -Djdk.httpclient.HttpClient.log=requests,responses,errors ${test.main.class}
  */
 public class H3HeaderSizeLimitTest implements HttpServerAdapters {
 

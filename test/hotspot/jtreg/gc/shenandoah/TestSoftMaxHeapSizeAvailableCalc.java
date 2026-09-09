@@ -35,6 +35,7 @@
  *      -XX:ShenandoahGCMode=satb
  *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:ShenandoahLearningSteps=0
  *      TestSoftMaxHeapSizeAvailableCalc
  */
 
@@ -60,6 +61,7 @@
  *      -XX:+UseShenandoahGC -Xlog:gc=info
  *      -XX:ShenandoahGCMode=generational
  *      -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:ShenandoahLearningSteps=0
  *      TestSoftMaxHeapSizeAvailableCalc
  *
  */
@@ -87,12 +89,13 @@ public class TestSoftMaxHeapSizeAvailableCalc {
     // Soft max: 512M, ShenandoahMinFreeThreshold: 10 (default), ShenandoahEvacReserve: 5 (default)
     // Soft max for mutator: 512M * (100.0 - 5) / 100 = 486.4M
     // Threshold to trigger gc: 486.4M - 512 * 10 / 100.0 = 435.2M, just above (300 + 100)M.
-    // Expect gc count to be less than 1 / sec.
+    // Expect gc count to be less than 1 / sec, but to allow for other trigger conditions (like allocation rate),
+    // we bump the max allowed gc count to 35.
     public static class Allocate {
         static final List<byte[]> longLived = new ArrayList<>();
 
         public static void test() throws Exception {
-            final int expectedMaxGcCount = Integer.getInteger("expectedMaxGcCount", 30);
+            final int expectedMaxGcCount = Integer.getInteger("expectedMaxGcCount", 35);
             List<java.lang.management.GarbageCollectorMXBean> collectors = ManagementFactory.getGarbageCollectorMXBeans();
             java.lang.management.GarbageCollectorMXBean cycleCollector = null;
             for (java.lang.management.GarbageCollectorMXBean bean : collectors) {

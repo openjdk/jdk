@@ -62,7 +62,7 @@ CollectorCounters::CollectorCounters(const char* name, int ordinal) {
 }
 
 CollectorCounters::~CollectorCounters() {
-  FREE_C_HEAP_ARRAY(char, _name_space);
+  FREE_C_HEAP_ARRAY(_name_space);
 }
 
 TraceCollectorStats::TraceCollectorStats(CollectorCounters* c) :

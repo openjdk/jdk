@@ -247,7 +247,7 @@ static void vm_exit(const JvmtiAgent* agent, const char* sub_msg1, const char* s
     jio_snprintf(buf, len, "%s%s%s%s", not_found_error_msg, agent->name(), sub_msg1, &ebuf[0]);
   }
   vm_exit_during_initialization(buf, nullptr);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 }
 
 #ifdef ASSERT

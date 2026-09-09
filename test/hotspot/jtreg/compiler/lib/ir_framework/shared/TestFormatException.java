@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.shared;
 /**
  * Exception that is thrown if a JTreg test violates the supported format by the test framework.
  */
+@SuppressWarnings("serial")
 public class TestFormatException extends RuntimeException {
     public TestFormatException(String message) {
         super(message);

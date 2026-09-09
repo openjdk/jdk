@@ -886,29 +886,59 @@ int MachNode::compute_padding(int current_offset) const {
   return 0;
 }
 
-int MachCallStaticJavaNode::ret_addr_offset() {
+int MachCallStaticJavaNode::ret_addr_offset() const {
   if (_method) {
-    return 8;
+    return MacroAssembler::call_far_pcrelative_size();
   } else {
     return MacroAssembler::call_far_patchable_ret_addr_offset();
   }
 }
 
-int MachCallDynamicJavaNode::ret_addr_offset() {
+int MachCallDynamicJavaNode::ret_addr_offset() const {
   // Consider size of receiver type profiling (C2 tiers).
-  int profile_receiver_type_size = 0;
 
   int vtable_index = this->_vtable_index;
   if (vtable_index == -4) {
-    return 14 + profile_receiver_type_size;
+    return MacroAssembler::load_const_from_toc_size()
+         + MacroAssembler::call_far_pcrelative_size();
   } else {
     assert(!UseInlineCaches, "expect vtable calls only if not using ICs");
-    return 36 + profile_receiver_type_size;
+    // This should return the size of instructions in vtable dispatch
+    // branch of z_enc_java_dynamic_call
+    int offset = 0;
+
+    //     __ load_klass(Z_method, Z_R2);
+    if (UseCompactObjectHeaders) {
+      // load_narrow_klass_compact (z_lg z_srlg)
+      offset += 6 // z_lg
+              + 6; // z_srlg;
+    } else {
+      offset += 6; // z_llgf
+    }
+    offset += MacroAssembler::instr_size_for_decode_klass_not_null();
+
+    // check if displacement is valid, as it will generate different
+    // instructions:
+    int entry_offset = in_bytes(Klass::vtable_start_offset()) +
+                       vtable_index * vtableEntry::size_in_bytes();
+    int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
+    if (!Displacement::is_validDisp(v_off)) {
+        offset += MacroAssembler::load_const_size(); // emits iihf + iilf
+    }
+    // both generate z_lg
+    offset += 6; // z_lg (z_method, v_off | Address(Z_method, Z_R1_scratch))
+    // common footer
+    offset += 6; // z_lg(Z_R1_scratch, Method::from_compiled_offset())
+    offset += 2; // z_basr
+
+    return offset;
   }
 }
 
-int MachCallRuntimeNode::ret_addr_offset() {
-  return 12 + MacroAssembler::call_far_patchable_ret_addr_offset();
+int MachCallRuntimeNode::ret_addr_offset() const {
+  return 6 // get_PC()  (LARL)
+    + 6 // save_return_pc() (STG)
+    + MacroAssembler::call_far_patchable_ret_addr_offset();
 }
 
 // Compute padding required for nodes which need alignment
@@ -994,7 +1024,6 @@ static inline void z_assert_aligned(C2_MacroAssembler *masm, int disp, Register 
 int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, relocInfo::relocType rtype,
                     PhaseRegAlloc* ra_, bool is_native_call = false) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
-  address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
 
   if (is_native_call) {
@@ -1024,7 +1053,6 @@ int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, relocInfo::re
 
 static int emit_call_reloc(C2_MacroAssembler *masm, intptr_t entry_point, RelocationHolder const& rspec) {
   __ set_inst_mark(); // Used in z_enc_java_static_call() and emit_java_to_interp().
-  address old_mark = __ inst_mark();
   unsigned int start_off = __ offset();
 
   relocInfo::relocType rtype = rspec.type();
@@ -1159,12 +1187,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
 
   C->output()->set_frame_complete(__ offset());
 }
-
-uint MachPrologNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. Determine dynamically.
-  return MachNode::size(ra_);
-}
-
 int MachPrologNode::reloc() const {
   // Return number of relocatable values contained in this instruction.
   return 1; // One reloc entry for load_const(toc).
@@ -1205,11 +1227,6 @@ void MachEpilogNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
     __ relocate(relocInfo::poll_return_type);
     __ load_from_polling_page(Z_R1_scratch);
   }
-}
-
-uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  // Variable size. determine dynamically.
-  return MachNode::size(ra_);
 }
 
 int MachEpilogNode::reloc() const {
@@ -1616,6 +1633,18 @@ class CallStubImpl {
 
 source %{
 
+#ifndef PRODUCT
+void MachVEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
+{
+  Unimplemented();
+}
+#endif
+
+void MachVEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc* ra_) const
+{
+  Unimplemented();
+}
+
 #if !defined(PRODUCT)
 void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
   os->print_cr("---- MachUEPNode ----");
@@ -1633,11 +1662,6 @@ void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 void MachUEPNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   // This is Unverified Entry Point
   __ ic_check(CodeEntryAlignment);
-}
-
-uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  // Determine size dynamically.
-  return MachNode::size(ra_);
 }
 
 //=============================================================================
@@ -1929,23 +1953,23 @@ uint Matcher::float_pressure_limit()
   return (FLOATPRESSURE == -1) ? 15 : FLOATPRESSURE;
 }
 
-// Register for DIVI projection of divmodI
-const RegMask& Matcher::divI_proj_mask() {
+// Register for the first projection of an int pair
+const RegMask& Matcher::firstI_proj_mask() {
   return _Z_RARG4_INT_REG_mask;
 }
 
-// Register for MODI projection of divmodI
-const RegMask& Matcher::modI_proj_mask() {
+// Register for the second projection of an int pair
+const RegMask& Matcher::secondI_proj_mask() {
   return _Z_RARG3_INT_REG_mask;
 }
 
-// Register for DIVL projection of divmodL
-const RegMask& Matcher::divL_proj_mask() {
+// Register for the first projection of a long pair
+const RegMask& Matcher::firstL_proj_mask() {
   return _Z_RARG4_LONG_REG_mask;
 }
 
-// Register for MODL projection of divmodL
-const RegMask& Matcher::modL_proj_mask() {
+// Register for the second projection of a long pair
+const RegMask& Matcher::secondL_proj_mask() {
   return _Z_RARG3_LONG_REG_mask;
 }
 
@@ -2344,8 +2368,7 @@ encode %{
     // callee doesn't.
     unsigned int start_off = __ offset();
     // Compute size of "larl + stg + call_c_opt".
-    const int size_of_code = 6 + 6 + MacroAssembler::call_far_patchable_size();
-    __ get_PC(Z_R14, size_of_code);
+    __ get_PC(Z_R14, ret_addr_offset());
     __ save_return_pc();
     assert(__ offset() - start_off == 12, "bad prelude len: %d", __ offset() - start_off);
 
@@ -2356,29 +2379,28 @@ encode %{
       return;
     }
 
-#ifdef ASSERT
-    // Plausibility check for size_of_code assumptions.
-    unsigned int actual_ret_off = __ offset();
-    assert(start_off + size_of_code == actual_ret_off, "wrong return_pc");
-#endif
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_to_runtime_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
+    __ post_call_nop();
   %}
 
   enc_class z_enc_java_static_call(method meth) %{
+    unsigned int start_off = __ offset();
     // Call to fixup routine. Fixup routine uses ScopeDesc info to determine
     // whom we intended to call.
-    int ret_offset = 0;
 
     if (!_method) {
-      ret_offset = emit_call_reloc(masm, $meth$$method,
-                                   relocInfo::runtime_call_w_cp_type, ra_);
+      emit_call_reloc(masm, $meth$$method,
+                      relocInfo::runtime_call_w_cp_type, ra_);
     } else {
       int method_index = resolved_method_index(masm);
       if (_optimized_virtual) {
-        ret_offset = emit_call_reloc(masm, $meth$$method,
-                                     opt_virtual_call_Relocation::spec(method_index));
+        emit_call_reloc(masm, $meth$$method,
+                        opt_virtual_call_Relocation::spec(method_index));
       } else {
-        ret_offset = emit_call_reloc(masm, $meth$$method,
-                                     static_call_Relocation::spec(method_index));
+        emit_call_reloc(masm, $meth$$method,
+                        static_call_Relocation::spec(method_index));
       }
     }
     assert(__ inst_mark() != nullptr, "emit_call_reloc must set_inst_mark()");
@@ -2393,6 +2415,10 @@ encode %{
     }
 
     __ clear_inst_mark();
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_static_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
+    __ post_call_nop();
   %}
 
   // Java dynamic call
@@ -2416,9 +2442,8 @@ encode %{
       // to determine who we intended to call.
       int method_index = resolved_method_index(masm);
       __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
-      unsigned int ret_off = __ offset();
       assert(__ offset() - start_off == 6, "bad prelude len: %d", __ offset() - start_off);
-      ret_off += emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
+      emit_call_reloc(masm, $meth$$method, relocInfo::none, ra_);
       __ clear_inst_mark();
       assert(_method, "lazy_constant may be wrong when _method==null");
     } else {
@@ -2447,8 +2472,12 @@ encode %{
       __ z_lg(Z_R1_scratch, Address(Z_method, Method::from_compiled_offset()));
       // Call target. Either compiled code or C2I adapter.
       __ z_basr(Z_R14, Z_R1_scratch);
-      unsigned int ret_off = __ offset();
     }
+    assert(__ offset() - start_off == (uint)ret_addr_offset(),
+            "z_enc_java_dynamic_call return offset mismatch: emitted %d bytes, ret_addr_offset()=%d",
+            __ offset() - start_off, ret_addr_offset());
+
+    __ post_call_nop();
   %}
 
   enc_class z_enc_cmov_reg(cmpOp cmp, iRegI dst, iRegI src) %{
@@ -2614,28 +2643,31 @@ frame %{
   // stack slot.
   return_addr(REG Z_R14);
 
-  // Location of native (C/C++) and interpreter return values. This
-  // is specified to be the same as Java. In the 32-bit VM, long
-  // values are actually returned from native calls in O0:O1 and
-  // returned to the interpreter in I0:I1. The copying to and from
-  // the register pairs is done by the appropriate call and epilog
-  // opcodes. This simplifies the register allocator.
-  //
-  // Use register pair for c return value.
-  c_return_value %{
-    assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
-  %}
-
   // Use register pair for return value.
   // Location of compiled Java return values. Same as C
   return_value %{
     assert(ideal_reg >= Op_RegI && ideal_reg <= Op_RegL, "only return normal values");
-    static int typeToRegLo[Op_RegL+1] = { 0, 0, Z_R2_num, Z_R2_num, Z_R2_num, Z_F0_num, Z_F0_num, Z_R2_num };
-    static int typeToRegHi[Op_RegL+1] = { 0, 0, OptoReg::Bad, OptoReg::Bad, Z_R2_H_num, OptoReg::Bad, Z_F0_H_num, Z_R2_H_num };
-    return OptoRegPair(typeToRegHi[ideal_reg], typeToRegLo[ideal_reg]);
+    static const int lo[Op_RegL + 1] = {
+      0,
+      0,
+      Z_R2_num,     // Op_RegN
+      Z_R2_num,     // Op_RegI
+      Z_R2_num,     // Op_RegP
+      Z_F0_num,     // Op_RegF
+      Z_F0_num,     // Op_RegD
+      Z_R2_num      // Op_RegL
+    };
+    static const int hi[Op_RegL + 1] = {
+      0,
+      0,
+      OptoReg::Bad, // Op_RegN
+      OptoReg::Bad, // Op_RegI
+      Z_R2_H_num,   // Op_RegP
+      OptoReg::Bad, // Op_RegF
+      Z_F0_H_num,   // Op_RegD
+      Z_R2_H_num    // Op_RegL
+    };
+    return OptoRegPair(hi[ideal_reg], lo[ideal_reg]);
   %}
 %}
 
@@ -2951,6 +2983,15 @@ operand SSlenDW() %{
 // Integer Immediate: the value 1
 operand immI_1() %{
   predicate(n->get_int() == 1);
+  match(ConI);
+  op_cost(1);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Integer Immediate: the value 4.
+operand immI_4() %{
+  predicate(n->get_int() == 4);
   match(ConI);
   op_cost(1);
   format %{ %}
@@ -4810,17 +4851,15 @@ instruct loadNKlass(iRegN dst, memory mem) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct loadNKlassCompactHeaders(iRegN dst, memory mem, flagsReg cr) %{
+instruct loadNKlassCompactHeaders(iRegN dst, memory mem) %{
   match(Set dst (LoadNKlass mem));
   predicate(UseCompactObjectHeaders);
-  effect(KILL cr);
   ins_cost(MEMORY_REF_COST);
   format %{ "load_narrow_klass_compact $dst,$mem \t# compressed class ptr" %}
-  // TODO: size()
+  // z_lg (6 bytes) + z_srlg (6 bytes); neither instruction modifies the CC.
+  size(12);
   ins_encode %{
-    __ block_comment("load_narrow_klass_compact_c2 {");
     __ load_narrow_klass_compact_c2($dst$$Register, $mem$$Address);
-    __ block_comment("} load_narrow_klass_compact");
   %}
   ins_pipe(pipe_class_dummy);
 %}
@@ -5312,6 +5351,24 @@ instruct castP2X(iRegL dst, iRegP_N2P src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
+// Cast Narrow Pointer to Long for unsafe natives.
+instruct castN2X(iRegL dst, iRegN src) %{
+  match(Set dst (CastP2X src));
+  size(4); // LLGFR is 4 bytes
+  format %{ "LLGFR  $dst,$src\t # CastN2X" %}
+  ins_encode %{ __ llgfr_if_needed($dst$$Register, $src$$Register); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Cast Integer to Narrow Pointer for inline types.
+instruct castI2N(iRegN dst, iRegI src) %{
+  match(Set dst (CastI2N src));
+  size(2); // LR is 2 bytes
+  format %{ "LR      $dst,$src\t # CastI2N" %}
+  ins_encode %{ __ lr_if_needed($dst$$Register, $src$$Register); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
 instruct stfSSD(stackSlotD stkSlot, regD src) %{
   // %%%% TODO: Tell the coalescer that this kind of node is a copy!
   match(Set stkSlot src);   // chain rule
@@ -5554,6 +5611,38 @@ instruct compareAndSwapN_bool(iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval,
   format %{ "$res = CompareAndSwapN $oldval,$newval,$mem_ptr" %}
   ins_encode(z_enc_casI(oldval, newval, mem_ptr),
              z_enc_cctobool(res));
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeN(iRegN res, iRegP mem_ptr, rarg5RegN oldval, iRegN_P2N newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeN mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeN $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lr(Rres, Rcomp);
+    __ z_cs(Rres, Rnew, 0, Raddr);
+  %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+instruct compareAndExchangeP(iRegP res, iRegP mem_ptr, rarg5RegP oldval, iRegP_N2P newval, flagsReg cr) %{
+  match(Set res (CompareAndExchangeP mem_ptr (Binary oldval newval)));
+  predicate(n->as_LoadStore()->barrier_data() == 0);
+  effect(TEMP_DEF res, USE mem_ptr, USE_KILL oldval, KILL cr);
+  format %{ "$res = CompareAndExchangeP $oldval,$newval,$mem_ptr" %}
+  ins_encode %{
+    Register Rcomp = reg_to_register_object($oldval$$reg);
+    Register Rnew  = reg_to_register_object($newval$$reg);
+    Register Raddr = reg_to_register_object($mem_ptr$$reg);
+    Register Rres  = reg_to_register_object($res$$reg);
+    __ z_lgr(Rres, Rcomp);
+    __ z_csg(Rres, Rnew, 0, Raddr);
+  %}
   ins_pipe(pipe_class_dummy);
 %}
 
@@ -8748,6 +8837,7 @@ instruct compP_decode_reg_imm0(flagsReg cr, iRegN op1, immP0 op2) %{
 
 instruct compP_reg_mem(iRegP dst, memory src, flagsReg cr)%{
   match(Set cr (CmpP dst (LoadP src)));
+  predicate(n->in(2)->as_Load()->barrier_data() == 0);
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "CLG     $dst, $src\t # ptr" %}
@@ -10167,8 +10257,8 @@ instruct cmpFastUnlock(flagsReg pcc, iRegP_N2P oop, iRegP_N2P box, iRegP tmp1, i
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArrayConst(SSlenDW cnt, iRegP_N2P base, Universe dummy, flagsReg cr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayConst(SSlenDW cnt, iRegP_N2P base, immL_0 zero, Universe dummy, flagsReg cr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(KILL cr);
   ins_cost(100);
   // TODO: s390 port size(VARIABLE_SIZE);       // Variable in size due to varying #instructions.
@@ -10177,8 +10267,8 @@ instruct inlineCallClearArrayConst(SSlenDW cnt, iRegP_N2P base, Universe dummy, 
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, immL_0 zero, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(200);
   // TODO: s390 port size(VARIABLE_SIZE);       // Variable in size due to optimized constant loader.
@@ -10187,13 +10277,24 @@ instruct inlineCallClearArrayConstBig(immL cnt, iRegP_N2P base, Universe dummy, 
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
-  match(Set dummy (ClearArray cnt base));
+instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, immL_0 zero, Universe dummy, allRoddRegL tmpL, flagsReg cr) %{
+  match(Set dummy (ClearArray (Binary cnt base) zero));
   effect(TEMP tmpL, KILL cr); // R0, R1 are killed, too.
   ins_cost(300);
   // TODO: s390 port size(FIXED_SIZE);  // z/Architecture: emitted code depends on PreferLAoverADD being on/off.
   format %{ "ClearArrayVar $cnt,$base" %}
   ins_encode %{ __ Clear_Array($cnt$$Register, $base$$Register, $tmpL$$Register); %}
+  ins_pipe(pipe_class_dummy);
+%}
+
+// Clear-array with dynamic array length and non-zero value.
+instruct inlineCallClearArrayWordFill(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, flagsReg cr) %{
+  predicate(((ClearArrayNode*)n)->requires_word_fill());
+  match(Set dummy (ClearArray (Binary cnt base) val));
+  effect(TEMP tmpL, KILL cr);
+  ins_cost(BRANCH_COST); // dynamic-length store loop
+  format %{ "ClearArrayWordCopy $cnt,$base,$val" %}
+  ins_encode %{ __ fill_words($base$$Register, $cnt$$Register, $val$$Register, $tmpL$$Register); %}
   ins_pipe(pipe_class_dummy);
 %}
 

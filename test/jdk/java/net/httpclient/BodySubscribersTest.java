@@ -25,7 +25,7 @@
  * @test
  * @summary Basic test for the standard BodySubscribers default behavior
  * @bug 8225583 8334028
- * @run junit BodySubscribersTest
+ * @run junit ${test.main.class}
  */
 
 import java.net.http.HttpResponse.BodySubscriber;

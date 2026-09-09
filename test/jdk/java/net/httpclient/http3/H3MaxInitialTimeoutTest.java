@@ -75,15 +75,15 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=1
- *                     H3MaxInitialTimeoutTest
+ *                     ${test.main.class}
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=2
- *                     H3MaxInitialTimeoutTest
+ *                     ${test.main.class}
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors,quic:controls
  *                     -Djdk.httpclient.quic.maxInitialTimeout=2147483647
- *                     H3MaxInitialTimeoutTest
+ *                     ${test.main.class}
  */
 public class H3MaxInitialTimeoutTest implements HttpServerAdapters {
 

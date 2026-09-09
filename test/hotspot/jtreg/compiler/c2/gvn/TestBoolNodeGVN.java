@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2024 Red Hat and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +27,11 @@ package compiler.c2.gvn;
 import compiler.lib.ir_framework.*;
 
 import java.util.Random;
+import jdk.test.lib.Utils;
 
 /**
  * @test
+ * @key randomness
  * @bug 8327381
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
@@ -139,7 +142,7 @@ public class TestBoolNodeGVN {
     private static void testCorrectness() {
         int[] values = {
                 -100, -42, -16, -8, -5, -1, 0, 1, 5, 8, 16, 42, 100,
-                new Random().nextInt(), Integer.MAX_VALUE, Integer.MIN_VALUE
+                Utils.getRandomInstance().nextInt(), Integer.MAX_VALUE, Integer.MIN_VALUE
         };
 
         for (int x : values) {

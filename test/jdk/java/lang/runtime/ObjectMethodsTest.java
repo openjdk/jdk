@@ -79,6 +79,7 @@ public class ObjectMethodsTest {
     }
 
     static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    static final MethodHandles.Lookup UNPRIVILEGED_LOOKUP = LOOKUP.dropLookupMode(MethodHandles.Lookup.PRIVATE);
 
     @Test
     public void testEqualsC() throws Throwable {
@@ -183,6 +184,9 @@ public class ObjectMethodsTest {
         assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, name, null, C.class, "x;y", C.ACCESSORS));
         assertThrows(NPE, () -> ObjectMethods.bootstrap(LOOKUP, null, type, C.class, "x;y", C.ACCESSORS));
         assertThrows(NPE, () -> ObjectMethods.bootstrap(null,   name, type, C.class, "x;y", C.ACCESSORS));
+
+        // Unprivileged lookup
+        assertThrows(IAE, () -> ObjectMethods.bootstrap(UNPRIVILEGED_LOOKUP, name, type, C.class, "x;y", C.ACCESSORS));
 
         // Bad indy call receiver type - change C to this test class
         assertThrows(IAE, () -> ObjectMethods.bootstrap(LOOKUP, name, type.changeParameterType(0, this.getClass()), C.class, "x;y", C.ACCESSORS));

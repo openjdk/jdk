@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,21 @@
  * @test
  * @bug 8005408 8079129 8048830
  * @summary KeyStore API enhancements
- * @run main StoreSecretKeyTest
  */
 
-import java.io.*;
-import java.security.*;
-import java.security.cert.*;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
-import java.util.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
+import java.security.cert.CertificateFactory;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import java.security.KeyStore;
 
 // Store a secret key in a keystore and retrieve it again.
 
@@ -59,13 +64,6 @@ public class StoreSecretKeyTest {
     }
     public static void main(String[] args) throws Exception {
         boolean isSecretkeyAlgSupported = false;
-        // Skip test if AES is unavailable
-        try {
-            SecretKeyFactory.getInstance("AES");
-        } catch (NoSuchAlgorithmException nsae) {
-            System.out.println("AES is unavailable. Skipping test...");
-            return;
-        }
 
         for (ALGORITHM alg : ALGORITHM.values()) {
             isSecretkeyAlgSupported |= testSecretKeyAlgorithm(alg);
@@ -137,7 +135,6 @@ public class StoreSecretKeyTest {
 
     private static Certificate loadCertificate(String certFile)
         throws Exception {
-        X509Certificate cert = null;
         try (FileInputStream certStream = new FileInputStream(certFile)) {
             CertificateFactory factory =
                 CertificateFactory.getInstance("X.509");

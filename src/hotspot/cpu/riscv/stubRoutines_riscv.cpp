@@ -42,8 +42,12 @@
 #define DEFINE_ARCH_ENTRY_INIT(arch, blob_name, stub_name, field_name, getter_name, init_function) \
   address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  = CAST_FROM_FN_PTR(address, init_function);
 
-STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT)
+#define DEFINE_ARCH_ENTRY_ARRAY(arch, blob_name, stub_name, field_name, getter_name, count) \
+  address StubRoutines:: arch :: STUB_FIELD_NAME(field_name)  [count] ;
 
+STUBGEN_ARCH_ENTRIES_DO(DEFINE_ARCH_ENTRY, DEFINE_ARCH_ENTRY_INIT, DEFINE_ARCH_ENTRY_ARRAY)
+
+#undef DEFINE_ARCH_ENTRY_ARRAY
 #undef DEFINE_ARCH_ENTRY_INIT
 #undef DEFINE_ARCH_ENTRY
 
@@ -501,3 +505,19 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
     0x751997d0UL, 0x00000001UL,
     0xccaa009eUL, 0x00000000UL,
 };
+
+#if INCLUDE_CDS
+extern void StubGenerator_init_AOTAddressTable(GrowableArray<address>& external_addresses);
+
+void StubRoutines::init_AOTAddressTable() {
+  ResourceMark rm;
+  GrowableArray<address> external_addresses;
+  // publish static addresses referred to by riscv generator
+  // n.b. we have to use an extern call here because class
+  // StubGenerator, which provides the static method that knows how to
+  // add the relevant addresses, is declared in a source file rather
+  // than in a separately includeable header.
+  StubGenerator_init_AOTAddressTable(external_addresses);
+  AOTCodeCache::publish_external_addresses(external_addresses);
+}
+#endif // INCLUDE_CDS

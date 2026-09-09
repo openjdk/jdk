@@ -55,7 +55,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
- * @run junit/othervm/timeout=480 -Djdk.internal.httpclient.debug=true BufferingSubscriberTest
+ * @run junit/othervm/timeout=480 -Djdk.internal.httpclient.debug=true ${test.main.class}
  */
 
 public class BufferingSubscriberTest {

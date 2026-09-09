@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6612102
+ * @bug 6612102 8336669
  * @summary Test Map implementations for mutual compatibility
  * @key randomness
  */
@@ -49,6 +49,23 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * It would be good to add more "Lockstep-style" tests to this file.
  */
 public class LockStep {
+    // An interned identity class holding an int (like non-Preview Integer)
+    // interned for IdentityHashMap
+    // identity for WeakHashMap
+    private record Int(int intValue) implements Comparable<Int> {
+        private static final Map<Integer, Int> interned = new HashMap<>(100);
+
+        // Return a unique Ini for each int.
+        static Int intern(int intValue) {
+            return interned.computeIfAbsent(intValue, (i) -> new Int(i));
+        }
+
+        @Override
+        public int compareTo(Int o) {
+            return Integer.compare(intValue, o.intValue);
+        }
+    }
+
     void mapsEqual(Map m1, Map m2) {
         equal(m1, m2);
         equal(m2, m1);
@@ -112,15 +129,15 @@ public class LockStep {
                 new TreeMap(),
                 new ConcurrentHashMap(16),
                 new ConcurrentSkipListMap(),
-                Collections.checkedMap(new HashMap(16), Integer.class, Integer.class),
-                Collections.checkedSortedMap(new TreeMap(), Integer.class, Integer.class),
-                Collections.checkedNavigableMap(new TreeMap(), Integer.class, Integer.class),
+                Collections.checkedMap(new HashMap(16), Int.class, Integer.class),
+                Collections.checkedSortedMap(new TreeMap(), Int.class, Integer.class),
+                Collections.checkedNavigableMap(new TreeMap(), Int.class, Integer.class),
                 Collections.synchronizedMap(new HashMap(16)),
                 Collections.synchronizedSortedMap(new TreeMap()),
                 Collections.synchronizedNavigableMap(new TreeMap()));
 
             for (int j = 0; j < 10; j++)
-                put(maps, r.nextInt(100), r.nextInt(100));
+                put(maps, Int.intern(r.nextInt(100)), r.nextInt(100));
             removeLastTwo(maps);
         }
     }

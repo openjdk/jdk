@@ -38,11 +38,11 @@ import java.lang.reflect.Method;
  */
 public class NotCompilableIRMethod implements IRMethodMatchable {
     private final Method method;
-    private final int ruleCount;
+    private final int irRuleCount;
 
-    public NotCompilableIRMethod(Method method, int ruleCount) {
+    public NotCompilableIRMethod(Method method, int irRuleCount) {
         this.method = method;
-        this.ruleCount = ruleCount;
+        this.irRuleCount = irRuleCount;
     }
 
     @Override
@@ -55,6 +55,6 @@ public class NotCompilableIRMethod implements IRMethodMatchable {
      */
     @Override
     public NotCompilableIRMethodMatchResult match() {
-        return new NotCompilableIRMethodMatchResult(method, ruleCount);
+        return new NotCompilableIRMethodMatchResult(method, irRuleCount);
     }
 }

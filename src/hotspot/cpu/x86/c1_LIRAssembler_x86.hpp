@@ -51,6 +51,9 @@
     _deopt_handler_size = 7
   };
 
+  void arraycopy_inlinetype_check(Register obj, Register tmp, CodeStub* slow_path, bool is_dest, bool null_check);
+  void move(LIR_Opr src, LIR_Opr dst);
+
 public:
 
   void store_parameter(Register r,  int offset_from_esp_in_words);
@@ -58,4 +61,7 @@ public:
   void store_parameter(jobject c,   int offset_from_esp_in_words);
   void store_parameter(Metadata* c, int offset_from_esp_in_words);
 
+#if INCLUDE_CDS
+  void static init_AOTAddressTable(GrowableArray<address>& external_addresses);
+#endif // INCLUDE_CDS
 #endif // CPU_X86_C1_LIRASSEMBLER_X86_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,12 +59,12 @@ public class TestStartupMessage {
          // Can't turn off log with -Xlog:jfr+startup=warning
 
          startJfrJvm()
-             .shouldContain("[info][jfr,startup")
+             .shouldMatch("\\[info *\\]\\[jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
 
          startJfrJvm("-Xlog:jfr+startup=info")
-             .shouldContain("[info][jfr,startup")
+             .shouldMatch("\\[info *\\]\\[jfr,startup")
              .shouldContain("Started recording")
              .shouldContain("Use jcmd");
     }

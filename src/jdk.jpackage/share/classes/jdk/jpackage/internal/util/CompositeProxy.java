@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,17 +31,17 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
-import java.util.function.BinaryOperator;
+import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -95,11 +95,9 @@ import java.util.stream.Stream;
  *     }
  * };
  *
- * Sloop sloop = CompositeProxy.create(Sloop.class, new Sailboat() {
- * }, withMain, withJib);
+ * Sloop sloop = CompositeProxy.create(Sloop.class, withMain, withJib);
  *
- * Catboat catboat = CompositeProxy.create(Catboat.class, new Sailboat() {
- * }, withMain);
+ * Catboat catboat = CompositeProxy.create(Catboat.class, withMain);
  *
  * sloop.trimSails();
  * catboat.trimSails();
@@ -137,20 +135,60 @@ public final class CompositeProxy {
          *         dispatching the interface method invocations to the given handlers
          */
         public <T> T create(Class<T> interfaceType, Object... slices) {
-            return CompositeProxy.createCompositeProxy(interfaceType, conflictResolver, invokeTunnel, slices);
+            return CompositeProxy.createCompositeProxy(
+                    interfaceType,
+                    Optional.ofNullable(methodConflictResolver).orElse(JPACKAGE_METHOD_CONFLICT_RESOLVER),
+                    Optional.ofNullable(objectConflictResolver).orElse(JPACKAGE_OBJECT_CONFLICT_RESOLVER),
+                    invokeTunnel,
+                    allowUnreferencedSlices,
+                    slices);
         }
 
         /**
          * Sets the method dispatch conflict resolver for this builder. The conflict
          * resolver is used by composite proxy to select a method call handler from
-         * multiple candidates.
+         * several candidates.
          *
-         * @param v the conflict resolver for this builder or <code>null</code> if the
-         *          default conflict resolver should be used
+         * @param v the method conflict resolver for this builder or <code>null</code>
+         *          if the default conflict resolver should be used
          * @return this
          */
-        public Builder conflictResolver(BinaryOperator<Method> v) {
-            conflictResolver = v;
+        public Builder methodConflictResolver(MethodConflictResolver v) {
+            methodConflictResolver = v;
+            return this;
+        }
+
+        /**
+         * Sets the object dispatch conflict resolver for this builder. The conflict
+         * resolver is used by the composite proxy to select an object from several
+         * candidates.
+         *
+         * @param v the object conflict resolver for this builder or <code>null</code>
+         *          if the default conflict resolver should be used
+         * @return this
+         */
+        public Builder objectConflictResolver(ObjectConflictResolver v) {
+            objectConflictResolver = v;
+            return this;
+        }
+
+        /**
+         * Configures if this builder allows unreferenced slices in the
+         * {@link #create(Class, Object...)}.
+         * <p>
+         * By default, if the builder happens to create such a composite proxy that one
+         * or more slices passed in the {@link #create(Class, Object...)} method happen
+         * to be unreferenced, it will throw {@code IllegalArgumentException}. Passing
+         * <code>true</code> disables this throw cause.
+         *
+         * @param v <code>true</code> to disable throwing of
+         *          {@code IllegalArgumentException} from
+         *          {@link #create(Class, Object...)} if some of the passed in slices
+         *          happen to be unreferenced and <code>false</code> otherwise
+         * @return this
+         */
+        public Builder allowUnreferencedSlices(boolean v) {
+            allowUnreferencedSlices = v;
             return this;
         }
 
@@ -168,8 +206,65 @@ public final class CompositeProxy {
 
         private Builder() {}
 
-        private BinaryOperator<Method> conflictResolver = STANDARD_CONFLICT_RESOLVER;
+        private MethodConflictResolver methodConflictResolver;
+        private ObjectConflictResolver objectConflictResolver;
         private InvokeTunnel invokeTunnel;
+        private boolean allowUnreferencedSlices;
+    }
+
+    /**
+     * Method conflict resolver. Used when the composite proxy needs to decide if
+     * the default method of the interface it implements should be overridden by an
+     * implementing object.
+     */
+    @FunctionalInterface
+    public interface MethodConflictResolver {
+
+        /**
+         * Returns {@code true} if the composite proxy should override the default
+         * method {@code method} in {@code interfaceType} type with the corresponding
+         * method form the {@code obj}.
+         *
+         * @param interfaceType the interface type composite proxy instance should
+         *                      implement
+         * @param slices        all objects passed to the calling composite proxy. The
+         *                      value is a copy of the last parameter passed in the
+         *                      {@link Builder#create(Class, Object...)}
+         * @param method        default method in {@code interfaceType} type
+         * @param obj           object providing a usable method with the same signature
+         *                      (the name and parameter types) as the signature of the
+         *                      {@code method} method
+         */
+        boolean isOverrideDefault(Class<?> interfaceType, Object[] slices, Method method, Object obj);
+    }
+
+    /**
+     * Object conflict resolver. Used when several objects have methods that are
+     * candidates to implement some method in an interface and the composite proxy
+     * needs to choose one of these objects.
+     */
+    @FunctionalInterface
+    public interface ObjectConflictResolver {
+
+        /**
+         * Returns the object that should be used in a composite proxy to implement
+         * abstract method {@code method}.
+         *
+         * @param interfaceType the interface type composite proxy instance should
+         *                      implement
+         * @param slices        all objects passed to the calling composite proxy. The
+         *                      value is a copy of the last parameter passed in the
+         *                      {@link Builder#create(Class, Object...)}
+         * @param method        abstract method
+         * @param candidates    objects with a method with the same signature (the name
+         *                      and parameter types) as the signature of the
+         *                      {@code method} method. The array is unordered, doesn't
+         *                      contain duplicates, and is a subset of the
+         *                      {@code slices} array
+         * @return either one of items from the {@code candidates} or {@code null} if
+         *         can't choose one
+         */
+        Object choose(Class<?> interfaceType, Object[] slices, Method method, Object[] candidates);
     }
 
     /**
@@ -263,233 +358,231 @@ public final class CompositeProxy {
     private CompositeProxy() {
     }
 
-    private static <T> T createCompositeProxy(Class<T> interfaceType, BinaryOperator<Method> conflictResolver,
-            InvokeTunnel invokeTunnel, Object... slices) {
+    private static <T> T createCompositeProxy(
+            Class<T> interfaceType,
+            MethodConflictResolver methodConflictResolver,
+            ObjectConflictResolver objectConflictResolver,
+            InvokeTunnel invokeTunnel,
+            boolean allowUnreferencedSlices,
+            Object... slices) {
 
-        validateTypeIsInterface(interfaceType);
+        Objects.requireNonNull(interfaceType);
+        Objects.requireNonNull(methodConflictResolver);
+        Objects.requireNonNull(objectConflictResolver);
+        Stream.of(slices).forEach(Objects::requireNonNull);
 
-        final var interfaces = interfaceType.getInterfaces();
-        List.of(interfaces).forEach(CompositeProxy::validateTypeIsInterface);
-
-        if (interfaces.length != slices.length) {
-            throw new IllegalArgumentException(
-                    String.format("type %s must extend %d interfaces", interfaceType.getName(), slices.length));
+        if (!interfaceType.isInterface()) {
+            throw new IllegalArgumentException(String.format("Type %s must be an interface", interfaceType.getName()));
         }
 
-        final Map<Class<?>, Object> interfaceDispatch = createInterfaceDispatch(interfaces, slices);
+        final var uniqueSlices = Stream.of(slices).map(IdentityWrapper::new).collect(toSet());
+
+        final var unreferencedSlicesBuilder = SetBuilder.<IdentityWrapper<Object>>build().emptyAllowed(true);
+
+        if (!allowUnreferencedSlices) {
+            unreferencedSlicesBuilder.add(uniqueSlices);
+        }
 
         final Map<Method, Handler> methodDispatch = getProxyableMethods(interfaceType).map(method -> {
-            var handler = createHandler(interfaceType, method, interfaceDispatch, conflictResolver, invokeTunnel);
-            if (handler != null) {
-                return Map.entry(method, handler);
-            } else {
-                return null;
+            return Map.entry(method, uniqueSlices.stream().flatMap(slice -> {
+                var sliceMethods = getImplementerMethods(slice.value()).filter(sliceMethod -> {
+                    return signatureEquals(sliceMethod, method);
+                }).toList();
+
+                if (sliceMethods.size() > 1) {
+                    throw new AssertionError();
+                }
+
+                return sliceMethods.stream().findFirst().map(sliceMethod -> {
+                    return Map.entry(slice, sliceMethod);
+                }).stream();
+            }).toList());
+        }).flatMap(e -> {
+            final Method method = e.getKey();
+            final List<Map.Entry<IdentityWrapper<Object>, Method>> slicesWithMethods = e.getValue();
+
+            final Map.Entry<IdentityWrapper<Object>, Method> sliceWithMethods;
+            switch (slicesWithMethods.size()) {
+                case 0 -> {
+                    if (!method.isDefault()) {
+                        throw new IllegalArgumentException(String.format("None of the slices can handle %s", method));
+                    } else {
+                        return Optional.ofNullable(createHandlerForDefaultMethod(method, invokeTunnel)).map(handler -> {
+                            return Map.entry(method, handler);
+                        }).stream();
+                    }
+                }
+                case 1 -> {
+                    sliceWithMethods = slicesWithMethods.getFirst();
+                }
+                default -> {
+                    var candidates = slicesWithMethods.stream().map(sliceEntry -> {
+                        return sliceEntry.getKey().value();
+                    }).toList();
+
+                    var candidate = objectConflictResolver.choose(
+                            interfaceType, Arrays.copyOf(slices, slices.length), method, candidates.toArray());
+                    if (candidate == null) {
+                        throw new IllegalArgumentException(String.format(
+                                "Ambiguous choice between %s for %s", candidates, method));
+                    }
+
+                    var candidateIdentity = IdentityWrapper.wrapIdentity(candidate);
+
+                    if (candidates.stream().map(IdentityWrapper::new).noneMatch(Predicate.isEqual(candidateIdentity))) {
+                        throw new UnsupportedOperationException();
+                    }
+
+                    sliceWithMethods = slicesWithMethods.stream().filter(v -> {
+                        return candidateIdentity.equals(v.getKey());
+                    }).findFirst().orElseThrow();
+                }
             }
-        }).filter(Objects::nonNull).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+            final var slice = sliceWithMethods.getKey().value();
+            final var sliceMethod = sliceWithMethods.getValue();
+            final Handler handler;
+            if (!method.isDefault()
+                    || (method.equals(sliceMethod)
+                            && getUnfilteredImplementerMethods(slice)
+                                    .map(FullMethodSignature::new)
+                                    .anyMatch(Predicate.isEqual(new FullMethodSignature(sliceMethod))))
+                    || (       method.getReturnType().equals(sliceMethod.getReturnType())
+                            && !sliceMethod.isDefault()
+                            && methodConflictResolver.isOverrideDefault(interfaceType, Arrays.copyOf(slices, slices.length), method, slice))) {
+                // Use implementation from the slice if one of the statements is "true":
+                // - The target method is abstract (not default)
+                // - The target method is default and it is the same method in the slice which overrides it.
+                //   This is a special case when default method must not be invoked via InvocationHandler.invokeDefault().
+                // - The target method is default and the matching slice method has the same return type,
+                //   is not default, and the method conflict resolver approves the use of the slice method
+                if (!allowUnreferencedSlices) {
+                    unreferencedSlicesBuilder.remove(sliceWithMethods.getKey());
+                }
+                handler = createHandlerForMethod(slice, sliceMethod, invokeTunnel);
+            } else {
+                handler = createHandlerForDefaultMethod(method, invokeTunnel);
+            }
+
+            return Optional.ofNullable(handler).map(h -> {
+                return Map.entry(method, h);
+            }).stream();
+
+        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        if (!allowUnreferencedSlices) {
+            var unreferencedSlices = unreferencedSlicesBuilder.create().stream().map(IdentityWrapper::value).toList();
+            if (!unreferencedSlices.isEmpty()) {
+                throw new IllegalArgumentException(String.format("Unreferenced slices: %s", unreferencedSlices));
+            }
+        }
 
         @SuppressWarnings("unchecked")
         T proxy = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(), new Class<?>[] { interfaceType },
-                new CompositeProxyInvocationHandler(methodDispatch));
+                new CompositeProxyInvocationHandler(Collections.unmodifiableMap(methodDispatch)));
 
         return proxy;
     }
 
-    private record InterfaceDispatchBuilder(Set<? extends Class<?>> interfaces, Collection<Object> slices) {
-
-        InterfaceDispatchBuilder {
-            Objects.requireNonNull(interfaces);
-            Objects.requireNonNull(slices);
-
-            if (interfaces.isEmpty()) {
-                throw new IllegalArgumentException("No interfaces to dispatch");
-            }
-
-            if (slices.isEmpty()) {
-                throw createInterfaceNotImplementedException(interfaces);
-            }
-        }
-
-        InterfaceDispatchBuilder(Result result) {
-            this(result.unservedInterfaces(), result.unusedSlices());
-        }
-
-        Map<? extends Class<?>, List<Object>> createDispatchGroups() {
-            return interfaces.stream().collect(toMap(x -> x, iface -> {
-                return slices.stream().filter(obj -> {
-                    return Stream.of(obj.getClass().getInterfaces()).flatMap(sliceIface -> {
-                        return unfoldInterface(sliceIface);
-                    }).anyMatch(Predicate.isEqual(iface));
-                }).toList();
-            }));
-        }
-
-        Result createDispatch() {
-            var groups = createDispatchGroups();
-
-            var dispatch = groups.entrySet().stream().filter(e -> {
-                return e.getValue().size() == 1;
-            }).collect(toMap(Map.Entry::getKey, e -> {
-                return e.getValue().getFirst();
-            }));
-
-            var unservedInterfaces = groups.entrySet().stream().filter(e -> {
-                return e.getValue().size() != 1;
-            }).map(Map.Entry::getKey).collect(toSet());
-
-            var usedSliceIdentities = dispatch.values().stream()
-                    .map(IdentityWrapper::new)
-                    .collect(toSet());
-
-            var unusedSliceIdentities = new HashSet<>(toIdentitySet(slices));
-            unusedSliceIdentities.removeAll(usedSliceIdentities);
-
-            return new Result(dispatch, unservedInterfaces, unusedSliceIdentities.stream().map(IdentityWrapper::value).toList());
-        }
-
-        private record Result(Map<? extends Class<?>, Object> dispatch, Set<? extends Class<?>> unservedInterfaces, Collection<Object> unusedSlices) {
-
-            Result {
-                Objects.requireNonNull(dispatch);
-                Objects.requireNonNull(unservedInterfaces);
-                Objects.requireNonNull(unusedSlices);
-
-                if (!Collections.disjoint(dispatch.keySet(), unservedInterfaces)) {
-                    throw new IllegalArgumentException();
-                }
-
-                if (!Collections.disjoint(toIdentitySet(dispatch.values()), toIdentitySet(unusedSlices))) {
-                    throw new IllegalArgumentException();
-                }
-            }
-        }
-
-        private static Collection<IdentityWrapper<Object>> toIdentitySet(Collection<Object> v) {
-            return v.stream().map(IdentityWrapper::new).collect(toSet());
-        }
-    }
-
-    private static Map<Class<?>, Object> createInterfaceDispatch(Class<?>[] interfaces, Object[] slices) {
-
-        if (interfaces.length == 0) {
-            return Collections.emptyMap();
-        }
-
-        Map<Class<?>, Object> dispatch = new HashMap<>();
-
-        var builder = new InterfaceDispatchBuilder(Set.of(interfaces), List.of(slices));
-        for (;;) {
-            var result = builder.createDispatch();
-            if (result.dispatch().isEmpty()) {
-                var unserved = builder.createDispatchGroups();
-                for (var e : unserved.entrySet()) {
-                    var iface = e.getKey();
-                    var ifaceSlices = e.getValue();
-                    if (ifaceSlices.size() > 1) {
-                        throw new IllegalArgumentException(
-                                String.format("multiple slices %s implement %s", ifaceSlices, iface));
-                    }
-                }
-
-                var unservedInterfaces = unserved.entrySet().stream().filter(e -> {
-                    return e.getValue().isEmpty();
-                }).map(Map.Entry::getKey).toList();
-                throw createInterfaceNotImplementedException(unservedInterfaces);
-            } else {
-                dispatch.putAll(result.dispatch());
-                if (result.unservedInterfaces().isEmpty()) {
-                    break;
-                }
-            }
-
-            builder = new InterfaceDispatchBuilder(result);
-        }
-
-        return dispatch.keySet().stream().flatMap(iface -> {
-            return unfoldInterface(iface).map(unfoldedIface -> {
-                return Map.entry(unfoldedIface, dispatch.get(iface));
-            });
-        }).collect(toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
     private static Stream<Class<?>> unfoldInterface(Class<?> interfaceType) {
-        return Stream.concat(Stream.of(interfaceType),
-                Stream.of(interfaceType.getInterfaces()).flatMap(CompositeProxy::unfoldInterface));
+        return Stream.concat(
+                Stream.of(interfaceType),
+                Stream.of(interfaceType.getInterfaces()
+        ).flatMap(CompositeProxy::unfoldInterface));
     }
 
-    private static IllegalArgumentException createInterfaceNotImplementedException(
-            Collection<? extends Class<?>> missingInterfaces) {
-        return new IllegalArgumentException(String.format("none of the slices implement %s", missingInterfaces));
-    }
+    private static List<Class<?>> getSuperclasses(Class<?> type) {
+        List<Class<?>> superclasses = new ArrayList<>();
 
-    private static void validateTypeIsInterface(Class<?> type) {
-        if (!type.isInterface()) {
-            throw new IllegalArgumentException(String.format("type %s must be an interface", type.getName()));
+        var current = type.getSuperclass();
+
+        while (current != null) {
+            superclasses.add(current);
+            current = current.getSuperclass();
         }
+
+        return superclasses;
     }
 
-    private static Handler createHandler(Class<?> interfaceType, Method method, Map<Class<?>, Object> interfaceDispatch,
-            BinaryOperator<Method> conflictResolver, InvokeTunnel invokeTunnel) {
-
-        final var methodDeclaringClass = method.getDeclaringClass();
-
-        if (!methodDeclaringClass.equals(interfaceType)) {
-            // The method is declared in one of the superinterfaces.
-            final var slice = interfaceDispatch.get(methodDeclaringClass);
-
-            if (isInvokeDefault(method, slice)) {
-                return createHandlerForDefaultMethod(method, invokeTunnel);
-            } else {
-                return createHandlerForMethod(slice, method, invokeTunnel);
-            }
-        } else if (method.isDefault()) {
-            return createHandlerForDefaultMethod(method, invokeTunnel);
-        } else {
-            // Find a slice handling the method.
-            var handler = interfaceDispatch.entrySet().stream().map(e -> {
-                try {
-                    Class<?> iface = e.getKey();
-                    Object slice = e.getValue();
-                    return createHandlerForMethod(slice, iface.getMethod(method.getName(), method.getParameterTypes()),
-                            invokeTunnel);
-                } catch (NoSuchMethodException ex) {
-                    return null;
-                }
-            }).filter(Objects::nonNull).reduce(new ConflictResolverAdapter(conflictResolver)).orElseThrow(() -> {
-                return new IllegalArgumentException(String.format("none of the slices can handle %s", method));
-            });
-
-            return handler;
-        }
+    private static Stream<Method> getUnfilteredProxyableMethods(Class<?> interfaceType) {
+        return unfoldInterface(interfaceType).flatMap(type -> {
+            return Stream.of(type.getMethods());
+        }).filter(method -> {
+            return     !Modifier.isStatic(method.getModifiers())
+                    && !method.isBridge();
+        });
     }
 
     private static Stream<Method> getProxyableMethods(Class<?> interfaceType) {
-        return Stream.of(interfaceType.getMethods()).filter(method -> !Modifier.isStatic(method.getModifiers()));
+        return removeRedundancy(getUnfilteredProxyableMethods(interfaceType));
     }
 
-    private static boolean isInvokeDefault(Method method, Object slice) {
-        if (!method.isDefault()) {
-            return false;
-        }
+    private static Stream<Method> getUnfilteredImplementerMethods(Object slice) {
+        var sliceType = slice.getClass();
 
-        // The "method" is default.
-        // See if is overridden by any non-abstract method in the "slice".
-        // If it is, InvocationHandler.invokeDefault() should not be used to call it.
+        return Stream.of(
+                Stream.of(sliceType),
+                getSuperclasses(sliceType).stream()
+        ).flatMap(x -> x).flatMap(type -> {
+            return Stream.of(type.getMethods());
+        }).filter(method -> {
+            return     !Modifier.isStatic(method.getModifiers())
+                    && !method.isBridge()
+                    && !method.isDefault()
+                    && !Modifier.isPrivate(method.getModifiers());
+        });
+    }
 
-        final var sliceClass = slice.getClass();
+    private static Stream<Method> getImplementerMethods(Object slice) {
+        var sliceType = slice.getClass();
 
-        final var methodOverriden = Stream.of(sliceClass.getMethods()).filter(Predicate.not(Predicate.isEqual(method)))
-                .filter(sliceMethod -> !Modifier.isAbstract(sliceMethod.getModifiers()))
-                .anyMatch(sliceMethod -> signatureEquals(sliceMethod, method));
+        var proxyableMethods = Stream.of(
+                Stream.of(sliceType),
+                getSuperclasses(sliceType).stream()
+        ).flatMap(x -> x)
+                .map(Class::getInterfaces)
+                .flatMap(Stream::of)
+                .flatMap(CompositeProxy::unfoldInterface)
+                .flatMap(CompositeProxy::getUnfilteredProxyableMethods)
+                .toList();
 
-        return !methodOverriden;
+        var proxyableMethodSignatures = proxyableMethods.stream()
+                .map(FullMethodSignature::new)
+                .collect(toSet());
+
+        var methods = getUnfilteredImplementerMethods(slice).filter(method -> {
+            return !proxyableMethodSignatures.contains(new FullMethodSignature(method));
+        });
+
+        return removeRedundancy(Stream.concat(methods, proxyableMethods.stream()));
+    }
+
+    private static Stream<Method> removeRedundancy(Stream<Method> methods) {
+        var groups = methods.distinct().collect(Collectors.groupingBy(MethodSignature::new)).values();
+        return groups.stream().map(group -> {
+            // All but a single method should be filtered out from the group.
+            return group.stream().reduce((a, b) -> {
+                var ac = a.getDeclaringClass();
+                var bc = b.getDeclaringClass();
+                if (ac.equals(bc)) {
+                    // Both methods don't fit: they are declared in the same class and have the same signatures.
+                    // That is possible only with code generation bypassing compiler checks.
+                    throw new AssertionError();
+                } else if (ac.isAssignableFrom(bc)) {
+                    return b;
+                } else if (bc.isAssignableFrom(ac)) {
+                    return a;
+                } else if (a.isDefault()) {
+                    return b;
+                } else {
+                    return a;
+                }
+            }).orElseThrow();
+        });
     }
 
     private static boolean signatureEquals(Method a, Method b) {
-        if (!Objects.equals(a.getName(), b.getName()) || !Arrays.equals(a.getParameterTypes(), b.getParameterTypes())) {
-            return false;
-        }
-
-        return Objects.equals(a.getReturnType(), b.getReturnType());
+        return Objects.equals(new MethodSignature(a), new MethodSignature(b));
     }
 
     private record CompositeProxyInvocationHandler(Map<Method, Handler> dispatch) implements InvocationHandler {
@@ -515,22 +608,14 @@ public final class CompositeProxy {
             return obj.getClass().getName() + '@' + Integer.toHexString(System.identityHashCode(obj));
         }
 
-        private static boolean objectEquals(Object obj, Object other) {
+        private static boolean objectIsSame(Object obj, Object other) {
             return obj == other;
         }
 
-        private static Method getMethod(Class<?> type, String methodName, Class<?>...paramaterTypes) {
-            try {
-                return type.getDeclaredMethod(methodName, paramaterTypes);
-            } catch (NoSuchMethodException|SecurityException ex) {
-                throw new InternalError(ex);
-            }
-        }
+        private record ObjectMethodHandler(Method method) implements Handler {
 
-        static class ObjectMethodHandler extends HandlerOfMethod {
-
-            ObjectMethodHandler(Method method) {
-                super(method);
+            ObjectMethodHandler {
+                Objects.requireNonNull(method);
             }
 
             @Override
@@ -546,43 +631,47 @@ public final class CompositeProxy {
             }
         }
 
-        private static final Map<Method, Handler> OBJECT_METHOD_DISPATCH = Map.of(
-                getMethod(Object.class, "toString"),
-                new ObjectMethodHandler(getMethod(CompositeProxyInvocationHandler.class, "objectToString", Object.class)),
-                getMethod(Object.class, "equals", Object.class),
-                new ObjectMethodHandler(getMethod(CompositeProxyInvocationHandler.class, "objectEquals", Object.class, Object.class)),
-                getMethod(Object.class, "hashCode"),
-                new ObjectMethodHandler(getMethod(System.class, "identityHashCode", Object.class))
-        );
+        private static final Map<Method, Handler> OBJECT_METHOD_DISPATCH;
+
+        static {
+            try {
+                OBJECT_METHOD_DISPATCH = Map.of(
+                        Object.class.getMethod("toString"),
+                        new ObjectMethodHandler(CompositeProxyInvocationHandler.class.getDeclaredMethod("objectToString", Object.class)),
+
+                        Object.class.getMethod("equals", Object.class),
+                        new ObjectMethodHandler(CompositeProxyInvocationHandler.class.getDeclaredMethod("objectIsSame", Object.class, Object.class)),
+
+                        Object.class.getMethod("hashCode"),
+                        new ObjectMethodHandler(System.class.getMethod("identityHashCode", Object.class))
+                );
+            } catch (NoSuchMethodException | SecurityException ex) {
+                throw new InternalError(ex);
+            }
+        }
     }
 
-    private static HandlerOfMethod createHandlerForDefaultMethod(Method method, InvokeTunnel invokeTunnel) {
+    private static Handler createHandlerForDefaultMethod(Method method, InvokeTunnel invokeTunnel) {
+        Objects.requireNonNull(method);
         if (invokeTunnel != null) {
-            return new HandlerOfMethod(method) {
-                @Override
-                public Object invoke(Object proxy, Object[] args) throws Throwable {
-                    return invokeTunnel.invokeDefault(proxy, this.method, args);
-                }
+            return (proxy, args) -> {
+                return invokeTunnel.invokeDefault(proxy, method, args);
             };
         } else {
             return null;
         }
     }
 
-    private static HandlerOfMethod createHandlerForMethod(Object obj, Method method, InvokeTunnel invokeTunnel) {
+    private static Handler createHandlerForMethod(Object obj, Method method, InvokeTunnel invokeTunnel) {
+        Objects.requireNonNull(obj);
+        Objects.requireNonNull(method);
         if (invokeTunnel != null) {
-            return new HandlerOfMethod(method) {
-                @Override
-                public Object invoke(Object proxy, Object[] args) throws Throwable {
-                    return invokeTunnel.invoke(obj, this.method, args);
-                }
+            return (proxy, args) -> {
+                return invokeTunnel.invoke(obj, method, args);
             };
         } else {
-            return new HandlerOfMethod(method) {
-                @Override
-                public Object invoke(Object proxy, Object[] args) throws Throwable {
-                    return this.method.invoke(obj, args);
-                }
+            return (proxy, args) -> {
+                return method.invoke(obj, args);
             };
         }
     }
@@ -593,37 +682,141 @@ public final class CompositeProxy {
         Object invoke(Object proxy, Object[] args) throws Throwable;
     }
 
-    private abstract static class HandlerOfMethod implements Handler {
-        HandlerOfMethod(Method method) {
-            this.method = method;
+    private record MethodSignature(String name, List<Class<?>> parameterTypes) {
+        MethodSignature {
+            Objects.requireNonNull(name);
+            parameterTypes.forEach(Objects::requireNonNull);
         }
 
-        protected final Method method;
+        MethodSignature(Method m) {
+            this(m.getName(), List.of(m.getParameterTypes()));
+        }
     }
 
-    private record ConflictResolverAdapter(BinaryOperator<Method> conflictResolver)
-            implements BinaryOperator<HandlerOfMethod> {
+    private record FullMethodSignature(MethodSignature signature, Class<?> returnType) {
+        FullMethodSignature {
+            Objects.requireNonNull(signature);
+            Objects.requireNonNull(returnType);
+        }
 
-        @Override
-        public HandlerOfMethod apply(HandlerOfMethod a, HandlerOfMethod b) {
-            var m = conflictResolver.apply(a.method, b.method);
-            if (m == a.method) {
-                return a;
-            } else if (m == b.method) {
-                return b;
-            } else {
-                throw new UnsupportedOperationException();
+        FullMethodSignature(Method m) {
+            this(new MethodSignature(m), m.getReturnType());
+        }
+    }
+
+    /**
+     * Returns the standard jpackage configuration if the values of
+     * {@code interfaceType} and {@code slices} parameters comprise such or an empty
+     * {@code Optional} otherwise.
+     * <p>
+     * Standard jpackage configuration is:
+     * <ul>
+     * <li>The proxy implements an interface comprised of two direct
+     * superinterfaces.
+     * <li>The superinterfaces are distinct, i.e. they are not superinterfaces of
+     * each other.
+     * <li>Each supplied slice implements one of the superinterfaces.
+     * </ul>
+     *
+     * @param interfaceType the interface type composite proxy instance should
+     *                      implement
+     * @param slices        all objects passed to the calling composite proxy. The
+     *                      value is a copy of the last parameter passed in the
+     *                      {@link Builder#create(Class, Object...)}
+     */
+    static Optional<Map<IdentityWrapper<Object>, Class<?>>> detectJPackageConfiguration(Class<?> interfaceType, Object... slices) {
+        var interfaces = interfaceType.getInterfaces();
+
+        if (interfaces.length != 2) {
+            return Optional.empty();
+        }
+
+        if (interfaces[0].isAssignableFrom(interfaces[1]) || interfaces[1].isAssignableFrom(interfaces[0])) {
+            return Optional.empty();
+        }
+
+        var uniqueSlices = Stream.of(slices).map(IdentityWrapper::new).distinct().toList();
+        if (uniqueSlices.size() != interfaces.length) {
+            return Optional.empty();
+        }
+
+        Map<Class<?>, List<IdentityWrapper<Object>>> dispatch = Stream.of(interfaces).collect(toMap(x -> x, iface -> {
+            return uniqueSlices.stream().filter(slice -> {
+                return iface.isInstance(slice.value());
+            }).toList();
+        }));
+
+        return dispatch.values().stream().filter(v -> {
+            return v.size() == 1;
+        }).findFirst().map(anambiguous -> {
+            return dispatch.entrySet().stream().collect(toMap(e -> {
+                var ifaceSlices = e.getValue();
+                if (ifaceSlices.size() == 1) {
+                    return ifaceSlices.getFirst();
+                } else {
+                    if (anambiguous.size() != 1) {
+                        throw new AssertionError();
+                    }
+                    return ifaceSlices.stream().filter(Predicate.isEqual(anambiguous.getFirst()).negate()).findFirst().orElseThrow();
+                }
+            }, Map.Entry::getKey));
+        });
+    }
+
+    // jpackage-specific object conflict resolver
+    private static final ObjectConflictResolver JPACKAGE_OBJECT_CONFLICT_RESOLVER = (interfaceType, slices, method, candidates) -> {
+        return detectJPackageConfiguration(interfaceType, slices).map(dispatch -> {
+            // In this configuration, if one slice contains matching default method and
+            // another contains matching implemented method,
+            // the latter slice is selected as a supplier of this method for the composite proxy.
+
+            var nonDefaultImplementations = new BitSet(candidates.length);
+            var defaultImplementations = new BitSet(candidates.length);
+            for (int i = 0; i != candidates.length; i++) {
+                var slice = candidates[i];
+
+                var limitSignatures = new Predicate<Method>() {
+
+                    @Override
+                    public boolean test(Method m) {
+                        return limitSignatures.contains(new MethodSignature(m));
+                    }
+
+                    private final Collection<MethodSignature> limitSignatures =
+                            getProxyableMethods(dispatch.get(IdentityWrapper.wrapIdentity(slice)))
+                                    .map(MethodSignature::new)
+                                    .toList();
+                };
+
+                int cur = i;
+
+                getImplementerMethods(slice).filter(limitSignatures).filter(sliceMethod -> {
+                    return signatureEquals(sliceMethod, method);
+                }).findFirst().ifPresent(sliceMethod -> {
+                    if (!sliceMethod.isDefault() ||
+                            getUnfilteredImplementerMethods(slice)
+                                    .filter(limitSignatures)
+                                    .map(FullMethodSignature::new)
+                                    .anyMatch(Predicate.isEqual(new FullMethodSignature(sliceMethod)))) {
+                        nonDefaultImplementations.set(cur);
+                    } else {
+                        defaultImplementations.set(cur);
+                    }
+                });
             }
-        }
-    }
 
-    private static final BinaryOperator<Method> STANDARD_CONFLICT_RESOLVER = (a, b) -> {
-        if (a.isDefault() == b.isDefault()) {
-            throw new IllegalArgumentException(String.format("ambiguous choice between %s and %s", a, b));
-        } else if (!a.isDefault()) {
-            return a;
-        } else {
-            return b;
-        }
+            if (nonDefaultImplementations.cardinality() == 1) {
+                return candidates[nonDefaultImplementations.nextSetBit(0)];
+            } else if (nonDefaultImplementations.cardinality() == 0 && defaultImplementations.cardinality() == 1) {
+                return candidates[defaultImplementations.nextSetBit(0)];
+            } else {
+                throw new AssertionError();
+            }
+        }).orElse(null);
+    };
+
+    // jpackage-specific method conflict resolver
+    private static final MethodConflictResolver JPACKAGE_METHOD_CONFLICT_RESOLVER = (interfaceType, slices, method, obj) -> {
+        return false;
     };
 }

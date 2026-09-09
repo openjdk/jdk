@@ -29,20 +29,21 @@
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 
 class G1CollectionSetCandidates;
-class G1CSetCandidateGroupList;
+class G1CardSetGroupList;
 class G1HeapRegion;
 class G1HeapRegionClosure;
 
-struct G1CollectionSetCandidateInfo {
+struct G1CardSetGroupItem {
   G1HeapRegion* _r;
   uint _num_unreclaimed;          // Number of GCs this region has been found unreclaimable.
 
-  G1CollectionSetCandidateInfo() : G1CollectionSetCandidateInfo(nullptr) { }
-  G1CollectionSetCandidateInfo(G1HeapRegion* r) : _r(r), _num_unreclaimed(0) { }
+  G1CardSetGroupItem() : G1CardSetGroupItem(nullptr) { }
+  G1CardSetGroupItem(G1HeapRegion* r) : _r(r), _num_unreclaimed(0) { }
 
   bool update_num_unreclaimed() {
     ++_num_unreclaimed;
@@ -50,54 +51,48 @@ struct G1CollectionSetCandidateInfo {
   }
 };
 
-using G1CSetCandidateGroupIterator = GrowableArrayIterator<G1CollectionSetCandidateInfo>;
+using G1CardSetGroupIterator = GrowableArrayIterator<G1CardSetGroupItem>;
 
-// G1CSetCandidateGroup groups candidate regions that will be selected for evacuation at the same time.
-// Grouping occurs both for candidates from marking or regions retained during evacuation failure, but a group
-// can not contain regions from both types of regions.
+// G1CardSetGroup groups regions that share a single G1CardSet.
 //
-// Humongous objects are excluded from the candidate groups because regions associated with these
-// objects are never selected for evacuation.
+// Applications of this grouping are
+// * all young gen regions
+// * candidate regions determined by marking
+// * regions retained due to evacuation failure
+// * regions covered by humongous start regions
 //
-// All regions in the group share a G1CardSet instance, which tracks remembered set entries for the
-// regions in the group. We do not have track to cross-region references for regions that are in the
-// same group saving memory.
-class G1CSetCandidateGroup : public CHeapObj<mtGCCardSet>{
-  GrowableArray<G1CollectionSetCandidateInfo> _candidates;
+// The shared card set records remembered set entries for all regions in the group
+// as a whole. No references between these regions are recorded. This saves memory,
+// but requires reclamation of multi-region card set groups together as a single unit.
+class G1CardSetGroup : public CHeapObj<mtGCCardSet>{
+  GrowableArray<G1CardSetGroupItem> _items;
 
   G1CardSetMemoryManager _card_set_mm;
 
-  // The set of cards in the Java heap
+  // The set of cards in the Java heap for this card set group.
   G1CardSet _card_set;
 
   size_t _reclaimable_bytes;
   double _gc_efficiency;
+  // The _group_id identifies the card set group for logging and for use in the
+  // FromCardCache. A group id must be unique among all currently used card set groups.
+  uint _group_id;
 
 public:
-  // The _group_id uniquely identifies a candidate group when printing, making it
-  // easier to associate regions with their assigned G1CSetCandidateGroup, if any.
-  // Special values for the id:
-  // * id 0 is reserved for regions that do not have a remembered set.
-  // * id 1 is reserved for the G1CollectionSetCandidate that contains all young regions.
-  // * other ids are handed out incrementally, starting from InitialId.
-  static const uint NoRemSetId = 0;
-  static const uint YoungRegionId = 1;
-  static const uint InitialId = 2;
+  static constexpr uint NoGroupId = 0;
+  static constexpr uint YoungId = NoGroupId + 1;
+  static constexpr uint FirstNonYoungId = YoungId + 1;
+  static constexpr uint InvalidId = UINT_MAX;
 
-private:
-  const uint _group_id;
-  static uint _next_group_id;
-
-public:
-  G1CSetCandidateGroup();
-  G1CSetCandidateGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
-  ~G1CSetCandidateGroup() {
+  G1CardSetGroup();
+  G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
+  ~G1CardSetGroup() {
     assert(length() == 0, "post condition!");
   }
 
   void add(G1HeapRegion* hr);
 
-  uint length() const { return (uint)_candidates.length(); }
+  uint length() const { return (uint)_items.length(); }
 
   G1CardSet* card_set() { return &_card_set; }
   const G1CardSet* card_set() const { return &_card_set; }
@@ -105,16 +100,16 @@ public:
   void calculate_efficiency();
 
   double liveness_percent() const;
-  // Comparison function to order regions in decreasing GC efficiency order. This
-  // will cause regions with a lot of live objects and large remembered sets to end
+  // Comparison function to order card set groups in decreasing GC efficiency order. This
+  // will cause card set groups with a lot of live objects and large card sets to end
   // up at the end of the list.
-  static int compare_gc_efficiency(G1CSetCandidateGroup** gr1, G1CSetCandidateGroup** gr2);
+  static int compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2);
 
   double gc_efficiency() const { return _gc_efficiency; }
 
-  G1HeapRegion* region_at(uint i) const { return _candidates.at(i)._r; }
+  G1HeapRegion* region_at(uint i) const { return _items.at(i)._r; }
 
-  G1CollectionSetCandidateInfo* at(uint i) { return &_candidates.at(i); }
+  G1CardSetGroupItem* at(uint i) { return &_items.at(i); }
 
   double predict_group_total_time_ms() const;
 
@@ -126,69 +121,72 @@ public:
     return _card_set.occupied();
   }
 
-  void clear(bool uninstall_group_cardset = false);
+  // Clear the group-owned card set.
+  void clear_card_set();
 
-  G1CSetCandidateGroupIterator begin() const {
-    return _candidates.begin();
+  void clear(bool uninstall_card_set_group = false);
+
+  G1CardSetGroupIterator begin() const {
+    return _items.begin();
   }
 
-  G1CSetCandidateGroupIterator end() const {
-    return _candidates.end();
+  G1CardSetGroupIterator end() const {
+    return _items.end();
   }
 
-  uint group_id() const { return _group_id; }
-
-  static void reset_next_group_id() {
-    _next_group_id = InitialId;
+  uint group_id() const {
+    assert(_group_id != InvalidId, "group must have an assigned id");
+    return _group_id;
   }
 };
 
-using G1CSetCandidateGroupListIterator = GrowableArrayIterator<G1CSetCandidateGroup*>;
+using G1CardSetGroupListIterator = GrowableArrayIterator<G1CardSetGroup*>;
 
-class G1CSetCandidateGroupList {
-  GrowableArray<G1CSetCandidateGroup*> _groups;
-  volatile uint _num_regions;
+class G1CardSetGroupList {
+  GrowableArray<G1CardSetGroup*> _groups;
+  Atomic<uint> _num_regions;
 
 public:
-  G1CSetCandidateGroupList();
-  void append(G1CSetCandidateGroup* group);
+  G1CardSetGroupList();
+  void append(G1CardSetGroup* group);
 
-  // Delete all groups from the list. The cardset cleanup for regions within the
-  // groups could have been done elsewhere (e.g. when adding groups to the
-  // collection set or to retained regions). The uninstall_group_cardset is set to
-  // true if cleanup needs to happen as we clear the groups from the list.
-  void clear(bool uninstall_group_cardset = false);
+  // Delete all groups from the list. The card set group uninstall for regions within
+  // the groups could have been done elsewhere (e.g. when adding groups to the
+  // collection set or to the retained card set group list). The uninstall_card_set_group
+  // parameter should be set to true if the card set groups must be uninstalled from
+  // the regions, and their state set to Untracked.
+  void clear(bool uninstall_card_set_group = false);
 
-  G1CSetCandidateGroup* at(uint index);
+  G1CardSetGroup* at(uint index);
 
   uint length() const { return (uint)_groups.length(); }
 
-  uint num_regions() const { return _num_regions; }
+  uint num_regions() const { return _num_regions.load_relaxed(); }
 
   void remove_selected(uint count, uint num_regions);
 
-  // Removes any candidate groups stored in this list and also in the other list. The other
-  // list may only contain candidate groups in this list, sorted by gc efficiency. It need
-  // not be a prefix of this list.
+  // Removes any card set groups stored in this and in the other list. The other
+  // list may only contain card set groups in this list, sorted by gc efficiency. The
+  // other list need not be a prefix of this list.
   // E.g. if this list is "A B G H", the other list may be "A G H", but not "F" (not in
   // this list) or "A H G" (wrong order).
-  void remove(G1CSetCandidateGroupList* other);
+  void remove(G1CardSetGroupList* other);
 
   void prepare_for_scan();
 
   void sort_by_efficiency();
 
-  GrowableArray<G1CSetCandidateGroup*>*  groups() {
+  GrowableArray<G1CardSetGroup*>*  groups() {
     return &_groups;
   }
 
   void verify() const PRODUCT_RETURN;
 
-  G1CSetCandidateGroupListIterator begin() const {
+  G1CardSetGroupListIterator begin() const {
     return _groups.begin();
   }
 
-  G1CSetCandidateGroupListIterator end() const {
+  G1CardSetGroupListIterator end() const {
     return _groups.end();
   }
 
@@ -196,35 +194,33 @@ public:
   void iterate(Func&& f) const;
 };
 
-// Tracks all collection set candidates, i.e. region groups that could/should be evacuated soon.
+// Tracks collection set candidate regions organized in two card set group lists. Their
+// groups are sorted by decreasing gc efficiency.
 //
-// These candidate groups are tracked in two list of region groups, sorted by decreasing
-// "gc efficiency".
-//
-// * from_marking_groups: the set of region groups selected by concurrent marking to be
+// * from_marking_groups: the set of card set groups selected by the concurrent cycle to be
 //                        evacuated to keep overall heap occupancy stable.
 //                        They are guaranteed to be evacuated and cleared out during
 //                        the mixed phase.
 //
-// * retained_groups: set of region groups selected for evacuation during evacuation
-//                    failure.
+// * retained_groups: contains the card set groups from regions whose evacuation in
+//                    previous garbage collections failed.
 //                    Any young collection will try to evacuate them.
 //
 class G1CollectionSetCandidates : public CHeapObj<mtGC> {
 
   enum class CandidateOrigin : uint8_t {
     Invalid,
-    Marking,                   // This region has been determined as candidate by concurrent marking.
+    Marking,                   // This region has been determined as candidate by the concurrent cycle.
     Retained,                  // This region has been added because it has been retained after evacuation.
     Verify                     // Special value for verification.
   };
 
   CandidateOrigin* _contains_map;
-  G1CSetCandidateGroupList _from_marking_groups; // Set of regions selected by concurrent marking.
+  G1CardSetGroupList _from_marking_groups; // Set of groups selected by the concurrent cycle.
   // Set of regions retained due to evacuation failure. Groups added to this list
   // should contain only one region each, making it easier to evacuate retained regions
   // in any young collection.
-  G1CSetCandidateGroupList _retained_groups;
+  G1CardSetGroupList _retained_groups;
   uint _max_regions;
 
   // The number of regions from the last merge of candidates from the marking.
@@ -236,15 +232,15 @@ public:
   G1CollectionSetCandidates();
   ~G1CollectionSetCandidates();
 
-  G1CSetCandidateGroupList& from_marking_groups() { return _from_marking_groups; }
-  G1CSetCandidateGroupList& retained_groups() { return _retained_groups; }
+  G1CardSetGroupList& from_marking_groups() { return _from_marking_groups; }
+  G1CardSetGroupList& retained_groups() { return _retained_groups; }
 
   void initialize(uint max_regions);
 
   void clear();
 
-  // Merge collection set candidates from marking into the current marking candidates
-  // (which needs to be empty).
+  // Merge collection set candidate regions from marking into the current from_marking candidate
+  // group list (which needs to be empty).
   void set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set
@@ -258,9 +254,9 @@ public:
   // Add the given region to the set of retained regions without regards to the
   // gc efficiency sorting. The retained regions must be re-sorted manually later.
   void add_retained_region_unsorted(G1HeapRegion* r);
-  // Remove the given groups from the candidates. All given regions must be part
+  // Remove the given groups from this list. All given card set groups must be part
   // of the candidates.
-  void remove(G1CSetCandidateGroupList* other);
+  void remove(G1CardSetGroupList* other);
 
   bool contains(const G1HeapRegion* r) const;
 
@@ -273,7 +269,7 @@ public:
   uint retained_regions_length() const;
 
 private:
-  void verify_helper(G1CSetCandidateGroupList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
+  void verify_helper(G1CardSetGroupList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
 
 public:
   void verify() PRODUCT_RETURN;

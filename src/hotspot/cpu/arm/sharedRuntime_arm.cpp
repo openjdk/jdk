@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,6 +351,80 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
   return slot;
 }
 
+// InlineTypeReturnedAsFields is disabled, so we need to only care about the single return value
+// in this calling convention.
+const uint SharedRuntime::java_return_convention_max_int = 1;
+const uint SharedRuntime::java_return_convention_max_float = 1;
+
+int SharedRuntime::java_return_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed) {
+  uint int_args = 0;
+#ifdef __ABI_HARD__
+  uint fp_args = 0;
+#endif // __ABI_HARD__
+  for (int i = 0; i < total_args_passed; i++) {
+    switch (sig_bt[i]) {
+      case T_BOOLEAN:
+      case T_CHAR:
+      case T_BYTE:
+      case T_SHORT:
+      case T_INT:
+      case T_OBJECT:
+      case T_ARRAY:
+      case T_ADDRESS:
+      case T_METADATA:
+#ifndef __ABI_HARD__
+      case T_FLOAT:
+#endif // !__ABI_HARD__
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set1(R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_LONG:
+#ifndef __ABI_HARD__
+      case T_DOUBLE:
+#endif // !__ABI_HARD__
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (int_args < java_return_convention_max_int) {
+          regs[i].set_pair(R1->as_VMReg(), R0->as_VMReg());
+          int_args++;
+        } else {
+          return -1;
+        }
+        break;
+#ifdef __ABI_HARD__
+      case T_FLOAT:
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set1(S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+      case T_DOUBLE:
+        assert((i + 1) < total_args_passed && sig_bt[i + 1] == T_VOID, "expecting half");
+        if (fp_args < java_return_convention_max_float) {
+          regs[i].set_pair(S1_reg->as_VMReg(), S0->as_VMReg());
+          fp_args++;
+        } else {
+          return -1;
+        }
+        break;
+#endif // !__ABI_HARD__
+      case T_VOID:
+        regs[i].set_bad();
+        break;
+      default:
+        ShouldNotReachHere();
+        break;
+    }
+  }
+
+  return int_args + fp_args;
+}
+
 int SharedRuntime::vector_calling_convention(VMRegPair *regs,
                                              uint num_bits,
                                              uint total_args_passed) {
@@ -464,9 +538,8 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ bind(skip);
 }
 
-void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
-                                    int total_args_passed, int comp_args_on_stack,
-                                    const BasicType *sig_bt, const VMRegPair *regs) {
+void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm, int comp_args_on_stack, const GrowableArray<SigEntry>* sig, const VMRegPair *regs) {
+
   // TODO: ARM - May be can use ldm to load arguments
   const Register tmp = Rtemp; // avoid erasing R5_mh
 
@@ -501,9 +574,11 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
   }
   __ bic(SP, SP, StackAlignmentInBytes - 1);
 
+  int total_args_passed = sig->length();
   for (int i = 0; i < total_args_passed; i++) {
-    if (sig_bt[i] == T_VOID) {
-      assert(i > 0 && (sig_bt[i-1] == T_LONG || sig_bt[i-1] == T_DOUBLE), "missing half");
+    BasicType bt = sig->at(i)._bt;
+    if (bt == T_VOID) {
+      assert(i > 0 && (sig->at(i - 1)._bt == T_LONG || sig->at(i - 1)._bt == T_DOUBLE), "missing half");
       continue;
     }
     assert(!regs[i].second()->is_valid() || regs[i].first()->next() == regs[i].second(), "must be ordered");
@@ -549,9 +624,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 
 }
 
-static void gen_c2i_adapter(MacroAssembler *masm,
-                            int total_args_passed,  int comp_args_on_stack,
-                            const BasicType *sig_bt, const VMRegPair *regs,
+static void gen_c2i_adapter(MacroAssembler *masm, int comp_args_on_stack, const GrowableArray<SigEntry>* sig, const VMRegPair *regs,
                             Label& skip_fixup) {
   // TODO: ARM - May be can use stm to deoptimize arguments
   const Register tmp = Rtemp;
@@ -562,14 +635,16 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   __ mov(Rsender_sp, SP); // not yet saved
 
 
+  int total_args_passed = sig->length();
   int extraspace = total_args_passed * Interpreter::stackElementSize;
   if (extraspace) {
     __ sub_slow(SP, SP, extraspace);
   }
 
   for (int i = 0; i < total_args_passed; i++) {
-    if (sig_bt[i] == T_VOID) {
-      assert(i > 0 && (sig_bt[i-1] == T_LONG || sig_bt[i-1] == T_DOUBLE), "missing half");
+    BasicType bt = sig->at(i)._bt;
+    if (bt == T_VOID) {
+      assert(i > 0 && (sig->at(i - 1)._bt == T_LONG || sig->at(i - 1)._bt == T_DOUBLE), "missing half");
       continue;
     }
     int stack_offset = (total_args_passed - 1 - i) * Interpreter::stackElementSize;
@@ -612,16 +687,27 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
 }
 
-void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
-                                            int total_args_passed,
+void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
                                             int comp_args_on_stack,
-                                            const BasicType *sig_bt,
-                                            const VMRegPair *regs,
-                                            address entry_address[AdapterBlob::ENTRY_COUNT]) {
+                                            const GrowableArray<SigEntry>* sig,
+                                            const VMRegPair* regs,
+                                            const GrowableArray<SigEntry>* sig_cc,
+                                            const VMRegPair* regs_cc,
+                                            const GrowableArray<SigEntry>* sig_cc_ro,
+                                            const VMRegPair* regs_cc_ro,
+                                            address entry_address[AdapterBlob::ENTRY_COUNT],
+                                            AdapterBlob*& new_adapter,
+                                            bool allocate_code_blob) {
+
+  OopMapSet* oop_maps = new OopMapSet();
+  int frame_complete = CodeOffsets::frame_never_safe;
+  int frame_size_in_words = 0;
+
   entry_address[AdapterBlob::I2C] = __ pc();
-  gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
+  gen_i2c_adapter(masm, comp_args_on_stack, sig, regs);
 
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
@@ -635,9 +721,21 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
   __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
 
   entry_address[AdapterBlob::C2I] = __ pc();
+  entry_address[AdapterBlob::C2I_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  gen_c2i_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs, skip_fixup);
-  return;
+  gen_c2i_adapter(masm, comp_args_on_stack, sig, regs, skip_fixup);
+
+  // The c2i adapters might safepoint and trigger a GC. The caller must make sure that
+  // the GC knows about the location of oop argument locations passed to the c2i adapter.
+  if (allocate_code_blob) {
+    bool caller_must_gc_arguments = (regs != regs_cc);
+    int entry_offset[AdapterHandlerEntry::ENTRIES_COUNT];
+    assert(AdapterHandlerEntry::ENTRIES_COUNT == 7, "sanity");
+    AdapterHandlerLibrary::address_to_offset(entry_address, entry_offset);
+    new_adapter = AdapterBlob::create(masm->code(), entry_offset, frame_complete, frame_size_in_words, oop_maps, caller_must_gc_arguments);
+  }
 }
 
 
@@ -752,7 +850,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
+    __ invalidate_icache();
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -840,8 +938,8 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
     __ ldr(Rtemp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
 
-    assert(markWord::unlocked_value == 1, "adjust this code");
-    __ tbz(Rtemp, exact_log2(markWord::unlocked_value), slow_case);
+    assert(markWord::lock_neutral_value == 1, "adjust this code");
+    __ tbz(Rtemp, exact_log2(markWord::lock_neutral_value), slow_case);
 
     __ bics(Rtemp, Rtemp, ~markWord::hash_mask_in_place);
     __ mov(R0, AsmOperand(Rtemp, lsr, markWord::hash_shift), ne);
@@ -1165,9 +1263,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ c2bool(R0);
   }
 
-  // Do a safepoint check while thread is in transition state
+  // Perform thread state transition
   Label call_safepoint_runtime, return_to_java;
-  __ mov(Rtemp, _thread_in_native_trans);
+  __ mov(Rtemp, _thread_in_Java);
   __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
 
   // make sure the store is observed before reading the SafepointSynchronize state and further mem refs
@@ -1175,6 +1273,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreLoad | MacroAssembler::StoreStore), Rtemp);
   }
 
+  // Do a safepoint check
   __ safepoint_poll(R2, call_safepoint_runtime);
   __ ldr_u32(R3, Address(Rthread, JavaThread::suspend_flags_offset()));
   __ cmp(R3, 0);
@@ -1182,18 +1281,18 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ bind(return_to_java);
 
-  // Perform thread state transition and reguard stack yellow pages if needed
+  // Reguard stack yellow pages if needed
   Label reguard, reguard_done;
-  __ mov(Rtemp, _thread_in_Java);
   __ ldr_s32(R2, Address(Rthread, JavaThread::stack_guard_state_offset()));
-  __ str_32(Rtemp, Address(Rthread, JavaThread::thread_state_offset()));
-
   __ cmp(R2, StackOverflow::stack_guard_yellow_reserved_disabled);
   __ b(reguard, eq);
   __ bind(reguard_done);
 
   Label slow_unlock, unlock_done;
   if (method->is_synchronized()) {
+    // Get locked oop from the handle we passed to jni
+    __ ldr(sync_obj, Address(sync_handle));
+
     log_trace(fastlock)("SharedRuntime unlock fast");
     __ fast_unlock(sync_obj, R2 /* t1 */, tmp /* t2 */, Rtemp /* t3 */,
                    7 /* savemask */, slow_unlock);
@@ -1235,7 +1334,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ bind(call_safepoint_runtime);
   push_result_registers(masm, ret_type);
   __ mov(R0, Rthread);
-  __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+  __ call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
   pop_result_registers(masm, ret_type);
   __ b(return_to_java);
 
@@ -1284,7 +1383,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ b(unlock_done);
   }
 
-  __ flush();
+  __ invalidate_icache();
   return nmethod::new_native_nmethod(method,
                                      compile_id,
                                      masm->code(),
@@ -1553,7 +1652,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ pop(RegisterSet(FP) | RegisterSet(PC));
 
-  __ flush();
+  __ invalidate_icache();
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
                                            reexecute_offset, frame_size_in_words);
@@ -1633,7 +1732,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
 
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
-  __ flush();
+  __ invalidate_icache();
 
   return SafepointBlob::create(&buffer, oop_maps, frame_size_words);
 }
@@ -1693,7 +1792,7 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ mov(Rexception_pc, LR);
   __ jump(StubRoutines::forward_exception_entry(), relocInfo::runtime_call_type, Rtemp);
 
-  __ flush();
+  __ invalidate_icache();
 
   return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_words, oop_maps, true);
 }
@@ -1843,3 +1942,15 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 }
 
 #endif // INCLUDE_JFR
+
+BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+  Unimplemented();
+  return nullptr;
+}
+
+// Call here from the interpreter or compiled code to store returned
+// values to a newly allocated inline type instance.
+RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
+  Unimplemented();
+  return nullptr;
+}

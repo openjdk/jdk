@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @run testng/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
- * @run testng/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
- * @run testng/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
- * @run testng/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
+ * @run junit/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
+ * @run junit/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
+ * @run junit/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAccessModes
+ * @run junit/othervm/timeout=480 -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAccessModes
  */
 
 import java.lang.foreign.*;
@@ -40,12 +40,15 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import org.testng.annotations.*;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestAccessModes {
 
-    @Test(dataProvider = "segmentsAndLayoutsAndModes")
+    @ParameterizedTest
+    @MethodSource("segmentsAndLayoutsAndModes")
     public void testAccessModes(MemorySegment segment, MemoryLayout layout, AccessMode mode) throws Throwable {
         VarHandle varHandle = layout instanceof ValueLayout ?
                 layout.varHandle() :
@@ -61,7 +64,7 @@ public class TestAccessModes {
             // access is unaligned
             assertTrue(segment.maxByteAlignment() < layout.byteAlignment());
         }
-        assertEquals(varHandle.isAccessModeSupported(mode), compatible);
+        assertEquals(compatible, varHandle.isAccessModeSupported(mode));
     }
 
     static ValueLayout accessLayout(MemoryLayout layout) {
@@ -171,7 +174,6 @@ public class TestAccessModes {
         };
     }
 
-    @DataProvider(name = "segmentsAndLayoutsAndModes")
     static Object[][] segmentsAndLayoutsAndModes() {
         List<Object[]> segmentsAndLayouts = new ArrayList<>();
         for (MemorySegment segment : segments()) {

@@ -633,7 +633,6 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 #error "Platform should define DEFAULT_PADDING_SIZE"
 #endif
 
-
 //----------------------------------------------------------------------------------------------------
 // Miscellaneous
 
@@ -712,11 +711,12 @@ enum BasicType : u1 {
   T_OBJECT      = 12,
   T_ARRAY       = 13,
   T_VOID        = 14,
-  T_ADDRESS     = 15,
-  T_NARROWOOP   = 16,
-  T_METADATA    = 17,
-  T_NARROWKLASS = 18,
-  T_CONFLICT    = 19, // for stack value type with conflicting contents
+  T_FLAT_ELEMENT = 15, // Not a true BasicType, only used in layout helpers of flat arrays
+  T_ADDRESS     = 16,
+  T_NARROWOOP   = 17,
+  T_METADATA    = 18,
+  T_NARROWKLASS = 19,
+  T_CONFLICT    = 20, // for stack value type with conflicting contents
   T_ILLEGAL     = 99
 };
 
@@ -738,7 +738,7 @@ inline bool is_java_type(BasicType t) {
   return T_BOOLEAN <= t && t <= T_VOID;
 }
 
-inline bool is_java_primitive(BasicType t) {
+constexpr inline bool is_java_primitive(BasicType t) {
   return T_BOOLEAN <= t && t <= T_LONG;
 }
 
@@ -760,6 +760,7 @@ inline bool is_double_word_type(BasicType t) {
 }
 
 inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
+  assert(t != T_FLAT_ELEMENT, "");  // Strong assert to detect misuses of T_FLAT_ELEMENT
   return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
 }
 
@@ -834,7 +835,8 @@ enum BasicTypeSize {
   T_ARRAY_size       = 1,
   T_NARROWOOP_size   = 1,
   T_NARROWKLASS_size = 1,
-  T_VOID_size        = 0
+  T_VOID_size        = 0,
+  T_FLAT_ELEMENT_size = 0
 };
 
 // this works on valid parameter types but not T_VOID, T_CONFLICT, etc.
@@ -870,7 +872,8 @@ enum ArrayElementSize {
 #endif
   T_NARROWOOP_aelem_bytes   = 4,
   T_NARROWKLASS_aelem_bytes = 4,
-  T_VOID_aelem_bytes        = 0
+  T_VOID_aelem_bytes        = 0,
+  T_FLAT_ELEMENT_aelem_bytes = 0
 };
 
 extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
@@ -960,7 +963,7 @@ enum TosState {         // describes the tos cache contents
   ftos = 6,             // float tos cached
   dtos = 7,             // double tos cached
   atos = 8,             // object cached
-  vtos = 9,             // tos not cached
+  vtos = 9,             // tos not cached,
   number_of_states,
   ilgl                  // illegal state: should not occur
 };
@@ -977,7 +980,7 @@ inline TosState as_TosState(BasicType type) {
     case T_FLOAT  : return ftos;
     case T_DOUBLE : return dtos;
     case T_VOID   : return vtos;
-    case T_ARRAY  : // fall through
+    case T_ARRAY  :   // fall through
     case T_OBJECT : return atos;
     default       : return ilgl;
   }
@@ -1015,25 +1018,14 @@ TosState as_TosState(BasicType type);
 //  _thread_in_vm       : Executing in the vm
 //  _thread_in_Java     : Executing either interpreted or compiled Java code (or could be in a stub)
 //
-// Each state has an associated xxxx_trans state, which is an intermediate state used when a thread is in
-// a transition from one state to another. These extra states makes it possible for the safepoint code to
-// handle certain thread_states without having to suspend the thread - making the safepoint code faster.
-//
-// Given a state, the xxxx_trans state can always be found by adding 1.
-//
 enum JavaThreadState {
   _thread_uninitialized     =  0, // should never happen (missing initialization)
-  _thread_new               =  2, // just starting up, i.e., in process of being initialized
-  _thread_new_trans         =  3, // corresponding transition state (not used, included for completeness)
-  _thread_in_native         =  4, // running in native code
-  _thread_in_native_trans   =  5, // corresponding transition state
-  _thread_in_vm             =  6, // running in VM
-  _thread_in_vm_trans       =  7, // corresponding transition state
-  _thread_in_Java           =  8, // running in Java or in stub code
-  _thread_in_Java_trans     =  9, // corresponding transition state (not used, included for completeness)
-  _thread_blocked           = 10, // blocked in vm
-  _thread_blocked_trans     = 11, // corresponding transition state
-  _thread_max_state         = 12  // maximum thread state+1 - used for statistics allocation
+  _thread_new                   , // just starting up, i.e., in process of being initialized
+  _thread_in_native             , // running in native code
+  _thread_in_vm                 , // running in VM
+  _thread_in_Java               , // running in Java or in stub code
+  _thread_blocked               , // blocked in vm
+  _thread_max_state               // maximum thread state+1 - used for statistics allocation
 };
 
 //----------------------------------------------------------------------------------------------------
@@ -1055,6 +1047,7 @@ const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
 const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
+const juint    badRegWordVal      = 0xDEADDA7A;             // value used to zap registers
 
 // (These must be implemented as #defines because C++ compilers are
 // not obligated to inline non-integral constants!)
@@ -1157,8 +1150,8 @@ inline T clamp(T value, T min, T max) {
   return MIN2(MAX2(value, min), max);
 }
 
-inline bool is_odd (intx x) { return x & 1;      }
-inline bool is_even(intx x) { return !is_odd(x); }
+constexpr bool is_odd (intx x) { return x & 1;      }
+constexpr bool is_even(intx x) { return !is_odd(x); }
 
 // abs methods which cannot overflow and so are well-defined across
 // the entire domain of integer types.
@@ -1203,7 +1196,7 @@ inline int build_int_from_shorts( u2 low, u2 high ) {
 }
 
 // swap a & b
-template<class T> static void swap(T& a, T& b) {
+template<class T> inline void swap(T& a, T& b) {
   T tmp = a;
   a = b;
   b = tmp;

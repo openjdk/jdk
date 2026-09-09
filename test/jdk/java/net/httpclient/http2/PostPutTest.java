@@ -29,7 +29,7 @@
  * @library /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm/timeout=50 -Djdk.httpclient.HttpClient.log=all
- *                      PostPutTest
+ *                      ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.http2.Http2Handler;

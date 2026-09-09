@@ -24,9 +24,11 @@
  /**
  * @test
  * @bug 8374862
- * @summary Regression test for -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails crash
+ * @summary Regression test for -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug crash
  * @requires vm.debug
- * @run main/othervm -XX:+Verbose -XX:+WizardMode -XX:+PrintDeoptimizationDetails compiler.uncommontrap.TestDeoptDetailsLockRank
+ * @run main/othervm -XX:-DisplayVMOutput
+ *                   -XX:+Verbose -XX:+WizardMode -Xlog:deoptimization=debug
+ *                   compiler.uncommontrap.TestDeoptDetailsLockRank
  */
 
 package compiler.uncommontrap;

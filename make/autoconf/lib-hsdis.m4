@@ -417,4 +417,9 @@ AC_DEFUN_ONCE([LIB_SETUP_HSDIS],
     AC_MSG_RESULT([no])
   fi
   AC_SUBST(ENABLE_HSDIS_BUNDLING)
+
+  UTIL_ARG_WITH(NAME: print-assembly-options, TYPE: string,
+      DEFAULT: [], RESULT: DEFAULT_PRINT_ASSEMBLY_OPTIONS,
+      DESC: [default value for the PrintAssemblyOptions diagnostic flag, passed verbatim to the disassembler])
+  AC_SUBST(DEFAULT_PRINT_ASSEMBLY_OPTIONS)
 ])

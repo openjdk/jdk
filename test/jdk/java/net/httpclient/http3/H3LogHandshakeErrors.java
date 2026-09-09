@@ -63,7 +63,7 @@ import org.junit.jupiter.api.Test;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm
  *              -Djdk.httpclient.HttpClient.log=errors
- *              H3LogHandshakeErrors
+ *              ${test.main.class}
  */
 // -Djava.security.debug=all
 public class H3LogHandshakeErrors implements HttpServerAdapters {

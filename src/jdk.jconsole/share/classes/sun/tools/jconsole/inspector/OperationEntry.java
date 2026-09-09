@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,8 +53,17 @@ public class OperationEntry extends JPanel {
             inputs = new XTextField[params.length];
             for (int i = 0; i < params.length; i++) {
                 if(params[i].getName() != null) {
-                    JLabel name =
-                        new JLabel(params[i].getName(), JLabel.CENTER);
+                    JLabel name = new JLabel() {
+                        @Override
+                        public JToolTip createToolTip() {
+                            JToolTip t = super.createToolTip();
+                            t.putClientProperty("html.disable", Boolean.TRUE);
+                            return t;
+                        }
+                    };
+                    name.putClientProperty("html.disable", Boolean.TRUE);
+                    name.setText(params[i].getName());
+                    name.setHorizontalAlignment(JLabel.CENTER);
                     name.setToolTipText(params[i].getDescription());
                     add(name);
                 }

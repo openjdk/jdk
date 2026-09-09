@@ -50,6 +50,8 @@ public:
   bool is_obj_array() { return true; }
 
   ciObject* obj_at(int index);
+
+  bool is_flat()      { return false; }
 };
 
 #endif // SHARE_CI_CIOBJARRAY_HPP

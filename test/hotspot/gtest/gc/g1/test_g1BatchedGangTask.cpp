@@ -87,7 +87,7 @@ public:
 
   ~G1TestSubTask() {
     check_and_inc_phase(3);
-    FREE_C_HEAP_ARRAY(Atomic<bool>, _do_work_called_by);
+    FREE_C_HEAP_ARRAY(_do_work_called_by);
   }
 
   double worker_cost() const override {

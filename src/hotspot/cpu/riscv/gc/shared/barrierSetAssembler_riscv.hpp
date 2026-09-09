@@ -75,6 +75,9 @@ public:
   virtual void store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                         Address dst, Register val, Register tmp1, Register tmp2, Register tmp3);
 
+  virtual void flat_field_copy(MacroAssembler* masm, DecoratorSet decorators,
+                               Register src, Register dst, Register inline_layout_info);
+
   virtual void try_resolve_jobject_in_native(MacroAssembler* masm, Register jni_env,
                                              Register obj, Register tmp, Label& slowpath);
 
@@ -107,11 +110,14 @@ public:
   static void clear_patching_epoch();
   static void increment_patching_epoch();
 
+  // See AS_NO_KEEPALIVE for peek semantics
+  // weak_handle and obj may alias
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj,
+                                               Register tmp, Label& slow_path);
+
 #ifdef COMPILER2
   OptoReg::Name refine_register(const Node* node,
                                 OptoReg::Name opto_reg);
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj,
-                                             Register tmp, Label& slow_path);
 #endif // COMPILER2
 };
 

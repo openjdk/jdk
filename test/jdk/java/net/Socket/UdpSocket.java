@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,13 @@
 import java.net.InetAddress;
 import java.net.Socket;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.fail;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /*
  * @test
  * @summary Basic test for the UDP sockets through the java.net.Socket constructors
- * @run testng UdpSocket
+ * @run junit ${test.main.class}
  */
 public class UdpSocket {
 

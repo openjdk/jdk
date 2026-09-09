@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,12 +72,12 @@ jboolean storeGVData(JNIEnv* env,
                      jobject gvdata, jint slot,
                      jint baseIndex, int offset, jobject startPt,
                      int charCount, int glyphCount, hb_glyph_info_t *glyphInfo,
-                     hb_glyph_position_t *glyphPos, float devScale) {
+                     hb_glyph_position_t *glyphPos) {
 
     int i, needToGrow;
     float x=0, y=0;
     float startX, startY, advX, advY;
-    float scale = 1.0f / HBFloatToFixedScale / devScale;
+    float scale = 1.0f / HBFloatToFixedScale;
     unsigned int* glyphs;
     float* positions;
     int initialCount, glyphArrayLen, posArrayLen, maxGlyphs, storeadv, maxStore;
@@ -197,7 +197,6 @@ JDKFontInfo*
      createJDKFontInfo(JNIEnv *env,
                        jobject font2D,
                        jobject fontStrike,
-                       jfloat ptSize,
                        jfloatArray matrix) {
 
 
@@ -209,17 +208,10 @@ JDKFontInfo*
     fi->font2D = font2D;
     fi->fontStrike = fontStrike;
     (*env)->GetFloatArrayRegion(env, matrix, 0, 4, fi->matrix);
-    fi->ptSize = ptSize;
     fi->xPtSize = euclidianDistance(fi->matrix[0], fi->matrix[1]);
     fi->yPtSize = euclidianDistance(fi->matrix[2], fi->matrix[3]);
-    if (getenv("HB_NODEVTX") != NULL) {
-        fi->devScale = fi->xPtSize / fi->ptSize;
-    } else {
-        fi->devScale = 1.0f;
-    }
     return fi;
 }
-
 
 #define TYPO_KERN 0x00000001
 #define TYPO_LIGA 0x00000002
@@ -229,7 +221,6 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
     (JNIEnv *env, jclass cls,
      jobject font2D,
      jobject fontStrike,
-     jfloat ptSize,
      jfloatArray matrix,
      jlong pFace,
      jcharArray text,
@@ -259,16 +250,13 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      unsigned int buflen;
 
      JDKFontInfo *jdkFontInfo =
-         createJDKFontInfo(env, font2D, fontStrike, ptSize, matrix);
+         createJDKFontInfo(env, font2D, fontStrike, matrix);
      if (!jdkFontInfo) {
         return JNI_FALSE;
      }
-     jdkFontInfo->env = env; // this is valid only for the life of this JNI call.
-     jdkFontInfo->font2D = font2D;
-     jdkFontInfo->fontStrike = fontStrike;
 
      hbface = (hb_face_t*) jlong_to_ptr(pFace);
-     hbfont = hb_jdk_font_create(hbface, jdkFontInfo, NULL);
+     hbfont = hb_jdk_font_create(hbface, jdkFontInfo);
 
      buffer = hb_buffer_create();
      hb_buffer_set_script(buffer, getHBScriptCode(script));
@@ -305,8 +293,7 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      glyphPos = hb_buffer_get_glyph_positions(buffer, &buflen);
 
      ret = storeGVData(env, gvdata, slot, baseIndex, offset, startPt,
-                       limit - offset, glyphCount, glyphInfo, glyphPos,
-                       jdkFontInfo->devScale);
+                       limit - offset, glyphCount, glyphInfo, glyphPos);
 
      hb_buffer_destroy (buffer);
      hb_font_destroy(hbfont);

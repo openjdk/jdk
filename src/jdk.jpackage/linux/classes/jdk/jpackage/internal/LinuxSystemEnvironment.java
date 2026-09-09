@@ -27,8 +27,10 @@ package jdk.jpackage.internal;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
+import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.PackageType;
 import jdk.jpackage.internal.model.StandardPackageType;
 import jdk.jpackage.internal.util.CompositeProxy;
@@ -38,11 +40,17 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
     boolean soLookupAvailable();
     PackageType nativePackageType();
     LinuxPackageArch packageArch();
+    DesktopEntryFileValidator desktopEntryFileValidator();
 
     static Result<LinuxSystemEnvironment> create() {
         return detectNativePackageType().map(LinuxSystemEnvironment::create).orElseGet(() -> {
             return Result.ofError(new RuntimeException("Unknown native package type"));
         });
+    }
+
+    static boolean isWithRequiredPackagesSearch(LinuxSystemEnvironment sysEnv, LinuxPackage pkg) {
+        Objects.requireNonNull(pkg);
+        return sysEnv.soLookupAvailable() && sysEnv.nativePackageType().equals(pkg.type());
     }
 
     static Optional<StandardPackageType> detectNativePackageType() {
@@ -57,7 +65,11 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
 
     static Result<LinuxSystemEnvironment> create(StandardPackageType nativePackageType) {
         return LinuxPackageArch.create(nativePackageType).map(arch -> {
-            return new Stub(LibProvidersLookup.supported(), nativePackageType, arch);
+            return new Stub(
+                    LibProvidersLookup.supported(),
+                    nativePackageType,
+                    arch,
+                    DesktopEntryFileValidator.createDefault());
         });
     }
 
@@ -80,7 +92,11 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
         }
     }
 
-    record Stub(boolean soLookupAvailable, PackageType nativePackageType, LinuxPackageArch packageArch) implements LinuxSystemEnvironment {
+    record Stub(
+            boolean soLookupAvailable,
+            PackageType nativePackageType,
+            LinuxPackageArch packageArch,
+            DesktopEntryFileValidator desktopEntryFileValidator) implements LinuxSystemEnvironment {
     }
 
     static final class Internal {
@@ -89,7 +105,7 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
             // we are just going to run "dpkg -s coreutils" and assume Debian
             // or derivative if no error is returned.
             try {
-                Executor.of("dpkg", "-s", "coreutils").executeExpectSuccess();
+                Executor.of("dpkg", "-s", "coreutils").quiet().executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru
@@ -101,7 +117,7 @@ interface LinuxSystemEnvironment extends SystemEnvironment {
             // we are just going to run "rpm -q rpm" and assume RPM
             // or derivative if no error is returned.
             try {
-                Executor.of("rpm", "-q", "rpm").executeExpectSuccess();
+                Executor.of("rpm", "-q", "rpm").quiet().executeExpectSuccess();
                 return true;
             } catch (IOException e) {
                 // just fall thru

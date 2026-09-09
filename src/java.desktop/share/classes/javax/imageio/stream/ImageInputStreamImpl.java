@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,10 +114,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    @Override
     public void setByteOrder(ByteOrder byteOrder) {
         this.byteOrder = byteOrder;
     }
 
+    @Override
     public ByteOrder getByteOrder() {
         return byteOrder;
     }
@@ -139,6 +141,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      *
      * @throws IOException if the stream has been closed.
      */
+    @Override
     public abstract int read() throws IOException;
 
     /**
@@ -154,6 +157,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
@@ -185,8 +189,10 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public abstract int read(byte[] b, int off, int len) throws IOException;
 
+    @Override
     public void readBytes(IIOByteBuffer buf, int len) throws IOException {
         if (len < 0) {
             throw new IndexOutOfBoundsException("len < 0!");
@@ -206,6 +212,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public boolean readBoolean() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -217,6 +224,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public byte readByte() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -228,6 +236,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public int readUnsignedByte() throws IOException {
         int ch = this.read();
         if (ch < 0) {
@@ -239,6 +248,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public short readShort() throws IOException {
         if (read(byteBuf, 0, 2) != 2) {
             throw new EOFException();
@@ -251,6 +261,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public int readUnsignedShort() throws IOException {
         return ((int)readShort()) & 0xffff;
     }
@@ -258,6 +269,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public char readChar() throws IOException {
         return (char)readShort();
     }
@@ -265,6 +277,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public int readInt() throws IOException {
         if (read(byteBuf, 0, 4) !=  4) {
             throw new EOFException();
@@ -278,6 +291,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public long readUnsignedInt() throws IOException {
         return ((long)readInt()) & 0xffffffffL;
     }
@@ -285,6 +299,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public long readLong() throws IOException {
         // REMIND: Once 6277756 is fixed, we should do a bulk read of all 8
         // bytes here as we do in readShort() and readInt() for even better
@@ -302,6 +317,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public float readFloat() throws IOException {
         return Float.intBitsToFloat(readInt());
     }
@@ -309,10 +325,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public double readDouble() throws IOException {
         return Double.longBitsToDouble(readLong());
     }
 
+    @Override
     public String readLine() throws IOException {
         StringBuilder input = new StringBuilder();
         int c = -1;
@@ -347,6 +365,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * @throws EOFException {@inheritDoc}
      * @throws java.io.UTFDataFormatException {@inheritDoc}
      */
+    @Override
     public String readUTF() throws IOException {
         this.bitOffset = 0;
 
@@ -372,6 +391,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(byte[] b, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > b.length || off + len < 0) {
@@ -392,6 +412,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(byte[] b) throws IOException {
         readFully(b, 0, b.length);
     }
@@ -399,6 +420,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(short[] s, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > s.length || off + len < 0) {
@@ -418,6 +440,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(char[] c, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > c.length || off + len < 0) {
@@ -437,6 +460,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(int[] i, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > i.length || off + len < 0) {
@@ -456,6 +480,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(long[] l, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > l.length || off + len < 0) {
@@ -475,6 +500,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(float[] f, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > f.length || off + len < 0) {
@@ -494,6 +520,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public void readFully(double[] d, int off, int len) throws IOException {
         // Fix 4430357 - if off + len < 0, overflow occurred
         if (off < 0 || len < 0 || off + len > d.length || off + len < 0) {
@@ -600,16 +627,19 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         }
     }
 
+    @Override
     public long getStreamPosition() throws IOException {
         checkClosed();
         return streamPos;
     }
 
+    @Override
     public int getBitOffset() throws IOException {
         checkClosed();
         return bitOffset;
     }
 
+    @Override
     public void setBitOffset(int bitOffset) throws IOException {
         checkClosed();
         if (bitOffset < 0 || bitOffset > 7) {
@@ -621,6 +651,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public int readBit() throws IOException {
         checkClosed();
 
@@ -646,6 +677,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     /**
      * @throws EOFException {@inheritDoc}
      */
+    @Override
     public long readBits(int numBits) throws IOException {
         checkClosed();
 
@@ -697,6 +729,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      *
      * @return -1L to indicate unknown length.
      */
+    @Override
     public long length() {
         return -1L;
     }
@@ -716,6 +749,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * throws an {@code IOException} when computing either
      * the starting or ending position.
      */
+    @Override
     public int skipBytes(int n) throws IOException {
         long pos = getStreamPosition();
         seek(pos + n);
@@ -737,12 +771,14 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * throws an {@code IOException} when computing either
      * the starting or ending position.
      */
+    @Override
     public long skipBytes(long n) throws IOException {
         long pos = getStreamPosition();
         seek(pos + n);
         return getStreamPosition() - pos;
     }
 
+    @Override
     public void seek(long pos) throws IOException {
         checkClosed();
 
@@ -759,6 +795,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * Pushes the current stream position onto a stack of marked
      * positions.
      */
+    @Override
     public void mark() {
         try {
             markByteStack.push(Long.valueOf(getStreamPosition()));
@@ -776,6 +813,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     public void reset() throws IOException {
         if (markByteStack.empty()) {
             return;
@@ -792,6 +830,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         setBitOffset(offset);
     }
 
+    @Override
     public void flushBefore(long pos) throws IOException {
         checkClosed();
         if (pos < flushedPos) {
@@ -804,10 +843,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
         flushedPos = pos;
     }
 
+    @Override
     public void flush() throws IOException {
         flushBefore(getStreamPosition());
     }
 
+    @Override
     public long getFlushedPosition() {
         return flushedPos;
     }
@@ -816,6 +857,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * Default implementation returns false.  Subclasses should
      * override this if they cache data.
      */
+    @Override
     public boolean isCached() {
         return false;
     }
@@ -824,6 +866,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * Default implementation returns false.  Subclasses should
      * override this if they cache data in main memory.
      */
+    @Override
     public boolean isCachedMemory() {
         return false;
     }
@@ -832,10 +875,12 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
      * Default implementation returns false.  Subclasses should
      * override this if they cache data in a temporary file.
      */
+    @Override
     public boolean isCachedFile() {
         return false;
     }
 
+    @Override
     public void close() throws IOException {
         checkClosed();
 

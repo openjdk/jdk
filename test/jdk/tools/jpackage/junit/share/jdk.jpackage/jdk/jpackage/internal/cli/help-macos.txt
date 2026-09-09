@@ -70,8 +70,35 @@ Generic Options:
           removed upon the task completion.
   --vendor <vendor string>
           Vendor of the application
-  --verbose
-          Enables verbose output
+  --verbose [<[-]category(,[-]category)*>]
+          Configures verbose output. Where "category" is one of
+              "all"
+              "console"
+              "log"
+              "errors"
+              "progress"
+              "resources"
+              "summary"
+              "tools"
+              "trace"
+              "warnings"
+
+          Suppress all console output, enable logging via System.Logger API:
+              --verbose log
+          Enable all message categories in the console:
+              --verbose console
+          Enable all message categories, but "trace" and "tools" in the console:
+              --verbose console,-trace,-tools
+          Enable "trace" and "tools" message categories in the console:
+              --verbose trace,tools
+          Enable "trace" and "tools" message categories in the console and
+          enable logging via System.Logger API:
+              --verbose log,trace,tools
+
+          If the option is specified without the value, it is equivalent to
+              --verbose console,-trace
+          If the option is not specified it is equivalent to
+              --verbose errors,warnings
   --version
           Print the product version to the output stream and exit.
 
@@ -108,12 +135,20 @@ Options for creating the application image:
   --app-content <additional content>[,<additional content>...]
           A comma separated list of paths to files and/or directories
           to add to the application payload.
+          --app-content is processed after --app-resources, independent
+          of command-line order.
           This option can be used more than once.
           Note: The value should be a directory with the "Resources"
           subdirectory (or any other directory that is valid in the "Contents"
           directory of the application bundle). Otherwise, jpackage may produce
           invalid application bundle which may fail code signing and/or
           notarization.
+  --app-resources <additional resources>[:<additional resources>...]
+          A colon-separated list of paths to files and/or directories
+          to add to the application's "Contents/Resources" directory.
+          If a file from --app-resources conflicts with one from
+          --app-content, the file from --app-content is used.
+          This option can be used more than once.
   --input -i <directory path>
           Path of the input directory that contains the files to be packaged
           (absolute path or relative to the current directory)

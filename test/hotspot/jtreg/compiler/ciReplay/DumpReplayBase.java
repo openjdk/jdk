@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 public abstract class DumpReplayBase extends CiReplayBase {
 
-    private static final String DUMP_REPLAY_PATTERN = "replay_pid";
+    protected static final String DUMP_REPLAY_PATTERN = "replay_pid";
     private List<File> replayFiles;
     private String replayFileName;
 

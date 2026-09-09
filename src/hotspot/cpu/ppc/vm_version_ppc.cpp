@@ -109,6 +109,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(SuperwordUseVSX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
+  } else if (SuperwordUseVSX) {
+    warning("SuperwordUseVSX specified, but needs at least Power9.");
+    FLAG_SET_DEFAULT(SuperwordUseVSX, false);
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
@@ -311,11 +314,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
     UseSquareToLenIntrinsic = true;
@@ -343,6 +341,23 @@ void VM_Version::initialize() {
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
+
+  if (InlineTypePassFieldsAsArgs) {
+    warning("InlineTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  }
+  if (InlineTypeReturnedAsFields) {
+    warning("InlineTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  }
+
+  // TODO: Valhalla optimizations
+  if (FLAG_IS_DEFAULT(UseArrayFlattening                 )) FLAG_SET_DEFAULT(UseArrayFlattening                 , false);
+  if (FLAG_IS_DEFAULT(UseFieldFlattening                 )) FLAG_SET_DEFAULT(UseFieldFlattening                 , false);
+  if (FLAG_IS_DEFAULT(UseNullFreeNonAtomicValueFlattening)) FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
+  if (FLAG_IS_DEFAULT(UseNullableAtomicValueFlattening   )) FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening   , false);
+  if (FLAG_IS_DEFAULT(UseNullFreeAtomicValueFlattening   )) FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening   , false);
+  if (FLAG_IS_DEFAULT(UseNullableNonAtomicValueFlattening)) FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
 
   check_virtualizations();
 }
@@ -499,7 +514,7 @@ void VM_Version::determine_features() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
   _features = VM_Version::unknown_m;
 
   // Print the detection code.
@@ -555,7 +570,7 @@ void VM_Version::config_dscr() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   // Print the detection code.
   if (PrintAssembly) {

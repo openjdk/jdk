@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,18 +28,10 @@
  * @bug 8183390 8332905
  * @summary Vectorization test on bug-prone shift operation
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayShiftOpTest
- *
  * @requires (os.simpleArch == "x64") | (os.simpleArch == "aarch64") | (os.simpleArch == "riscv64")
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -80,6 +72,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"avx512f", "true", "zvbb", "true"},
         counts = {IRNode.ROTATE_RIGHT_V, ">0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "<= 16"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public int[] intCombinedRotateShift() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -108,6 +103,9 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true", "rvv", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
     @IR(applyIfCPUFeatureOr = {"avx512f", "true", "zvbb", "true"},
+        counts = {IRNode.ROTATE_RIGHT_V, ">0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "<= 16"},
         counts = {IRNode.ROTATE_RIGHT_V, ">0"})
     public long[] longCombinedRotateShift() {
         long[] res = new long[SIZE];

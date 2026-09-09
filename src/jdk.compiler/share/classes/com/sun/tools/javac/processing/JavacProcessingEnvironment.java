@@ -1204,6 +1204,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         //where:
             private final Predicate<JCDiagnostic> ACCEPT_NON_RECOVERABLE_LINTS =
                     d -> !Optional.of(d)
+                            .filter(diag -> !diag.isFlagSet(SYNTAX))
                             .map(JCDiagnostic::getLintCategory)
                             .map(lc -> lc.annotationSuppression ||
                                        lc == Lint.LintCategory.INCUBATING)
@@ -1546,7 +1547,8 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
             public void visitMethodDef(JCMethodDecl node) {
                 // remove super constructor call that may have been added during attribution:
-                if (TreeInfo.isConstructor(node) && node.sym != null && node.sym.owner.isEnum() &&
+                if (TreeInfo.isConstructor(node) && node.sym != null &&
+                    (node.sym.owner.isEnum() || TreeInfo.isCanonicalConstructor(node)) &&
                     node.body != null && node.body.stats.nonEmpty() && TreeInfo.isSuperCall(node.body.stats.head) &&
                     node.body.stats.head.pos == node.body.pos) {
                     node.body.stats = node.body.stats.tail;

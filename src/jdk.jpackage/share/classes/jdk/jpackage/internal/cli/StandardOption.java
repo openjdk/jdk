@@ -69,6 +69,7 @@ import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.RootedPath;
 import jdk.jpackage.internal.model.SelfContainedException;
 import jdk.jpackage.internal.util.SetBuilder;
+import jdk.jpackage.internal.log.LogEnvironment;
 
 /**
  * jpackage command line options
@@ -109,7 +110,15 @@ public final class StandardOption {
 
     static final OptionValue<Boolean> VERSION = auxilaryOption("version").create();
 
-    public static final OptionValue<Boolean> VERBOSE = auxilaryOption("verbose").create();
+    static final OptionValue<LogEnvironment.Builder> VERBOSE = option("verbose", LogEnvironment.Builder.class)
+            .scope(StandardBundlingOperation.values())
+            .inScope(NOT_BUILDING_APP_IMAGE)
+            .converterExceptionFactory(ERROR_WITH_VALUE_AND_OPTION_NAME)
+            .converterExceptionFormatString("error.parameter-invalid-value")
+            .converter(LogConfigParser::valueOf)
+            .defaultOptionalValue(LogConfigParser.defaultVerbose())
+            .valuePattern("[<[-]category(,[-]category)*>]")
+            .create();
 
     static final OptionValue<BundleType> TYPE = option("type", BundleType.class).addAliases("t")
             .scope(StandardBundlingOperation.values()).inScope(NOT_BUILDING_APP_IMAGE)
@@ -210,6 +219,17 @@ public final class StandardOption {
                 if (context.os() == OperatingSystem.MACOS) {
                     b.description("help.option.app-content" + resourceKeySuffix(context.os()));
                 }
+            }))
+            .createArray(toExplodedPathList());
+
+    public static final OptionValue<List<Collection<RootedPath>>> APP_RESOURCES = existingPathOption("app-resources")
+            .tokenizer(pathSeparator())
+            .valuePattern("additional resources")
+            .description("help.option.app-resources" + resourceKeySuffix(OperatingSystem.current()))
+            .outOfScope(NOT_BUILDING_APP_IMAGE)
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                b.description("help.option.app-resources" + resourceKeySuffix(context.os()));
             }))
             .createArray(toExplodedPathList());
 
@@ -715,9 +735,8 @@ public final class StandardOption {
 
     private static UnaryOperator<Set<OptionScope>> nativeBundling() {
         return scope -> {
-            return new SetBuilder<OptionScope>()
-                    .set(scope)
-                    .remove(new SetBuilder<OptionScope>().set(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
+            return SetBuilder.build(scope)
+                    .remove(SetBuilder.<OptionScope>build(StandardBundlingOperation.values()).remove(CREATE_NATIVE).create())
                     .create();
         };
     }
