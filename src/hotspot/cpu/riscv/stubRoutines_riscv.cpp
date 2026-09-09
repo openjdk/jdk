@@ -60,7 +60,7 @@ bool StubRoutines::riscv::_completed = false;
 address StubRoutines::crc_table_addr()    { return (address)StubRoutines::riscv::_crc_table; }
 address StubRoutines::crc32c_table_addr() { return (address)StubRoutines::riscv::_crc32c_table; }
 
-ATTRIBUTE_ALIGNED(4096) juint StubRoutines::riscv::_crc_table[] =
+ATTRIBUTE_ALIGNED(4096) const juint StubRoutines::riscv::_crc_table[] =
 {
     // Table 0
     0x00000000UL, 0x77073096UL, 0xee0e612cUL, 0x990951baUL, 0x076dc419UL,

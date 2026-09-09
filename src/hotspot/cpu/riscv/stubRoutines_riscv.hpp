@@ -98,7 +98,7 @@ private:
   }
 
 private:
-  static juint    _crc_table[];
+  static const juint    _crc_table[];
   static const juint    _crc32c_table[];
 };
 
