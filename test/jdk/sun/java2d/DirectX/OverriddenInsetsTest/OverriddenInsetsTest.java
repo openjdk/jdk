@@ -51,6 +51,7 @@ public class OverriddenInsetsTest {
     public static final int PANEL_HEIGHT = 200;
     static Frame frame;
     static TestPanel p;
+    static Point point;
     public static void main(String[] args) throws Exception {
         if (GraphicsEnvironment.getLocalGraphicsEnvironment().
             getDefaultScreenDevice().getDefaultConfiguration().
@@ -75,7 +76,9 @@ public class OverriddenInsetsTest {
         robot.waitForIdle();
         robot.delay(500);
 
-        Point point = p.getLocationOnScreen();
+        EventQueue.invokeAndWait(() -> {
+            point = p.getLocationOnScreen();
+        });
         BufferedImage bi = robot.createScreenCapture(new Rectangle(point.x,
             point.y, PANEL_WIDTH / 2, PANEL_HEIGHT / 2));
         for (int y = 0; y < bi.getHeight(); y++) {
