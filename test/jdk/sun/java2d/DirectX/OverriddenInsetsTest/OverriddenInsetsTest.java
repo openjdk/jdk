@@ -29,7 +29,6 @@
  * @run main/othervm OverriddenInsetsTest
  */
 
-import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -43,6 +42,7 @@ import java.awt.Robot;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class OverriddenInsetsTest {
     public static final Insets INSETS1 = new Insets(25,25,0,0);
