@@ -1180,10 +1180,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #endif
 
   // Change state to native
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_native);
+  __ mv(t1, _thread_in_native);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   __ push_cont_fastpath();
 
