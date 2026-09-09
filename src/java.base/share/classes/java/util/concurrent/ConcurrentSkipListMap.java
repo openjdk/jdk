@@ -1133,6 +1133,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             clone.values = null;
             clone.descendingMap = null;
             clone.adder = null;
+            clone.head = null;
             clone.buildFromSorted(this);
             return clone;
         } catch (CloneNotSupportedException e) {
