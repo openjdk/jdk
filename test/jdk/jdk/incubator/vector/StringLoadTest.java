@@ -321,7 +321,7 @@ public class StringLoadTest {
     }
 
     private static String repeat(String string) {
-        return string.repeat((128 / string.length()) + 1);
+        return string.repeat((512 / string.length()) + 1);
     }
 
     @DataProvider

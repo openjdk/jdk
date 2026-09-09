@@ -3790,11 +3790,11 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     }
 
     /**
-     * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} using the
-     * specified single-byte {@link Charset}}
+     * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} as 8-bit
+     * code units in the specified {@link Charset}}
      *
      * @param string the string
-     * @param charset the charset representing the single-byte character encoding
+     * @param charset the charset representing the 8-bit character encoding
      * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
      * @see ByteVector#fromString(VectorSpecies, String, Charset, int)
      * @since 28
@@ -3807,18 +3807,19 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     }
 
     /**
-     * {@return a {@link ByteVector} loaded with bytes from the given {@link String},
-     * interpreted using the specified single-byte {@link Charset}}
+     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
      *
      * @param species the species of the desired vector
      * @param string the string to load from
-     * @param charset the single-byte charset
+     * @param charset the 8-bit charset
      * @param offset the character index in the string to begin loading from
      * @throws IllegalArgumentException if the string and charset are not
      *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
      *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
      * @throws NullPointerException if {@code species}, {@code string}, or {@code charset} is {@code null}
+     * @see #compatibleWith(String, Charset)
      * @since 28
      */
     @ForceInline
@@ -3826,20 +3827,20 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         Objects.requireNonNull(species);
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
-        offset = checkFromIndexSize(offset, species.length(), string.length());
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
+        offset = checkFromIndexSize(offset, species.length(), string.length());
         return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
     }
 
     /**
-     * {@return a {@link ByteVector} loaded with bytes from the given {@link String},
-     * interpreted using the specified single-byte {@link Charset}}
+     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
      *
      * @param species the species of the desired vector
      * @param string the string to load from
-     * @param charset the single-byte charset
+     * @param charset the 8-bit charset
      * @param offset the character index in the string to begin loading from
      * @param m the mask controlling lane selection
      * @throws IllegalArgumentException if the string and charset are not
@@ -3848,6 +3849,7 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
      *         for any lane {@code N} in the vector where the mask is set
      * @throws NullPointerException if {@code species}, {@code string}, {@code charset}, or {@code m} is {@code null}
+     * @see #compatibleWith(String, Charset)
      * @since 28
      */
     @ForceInline

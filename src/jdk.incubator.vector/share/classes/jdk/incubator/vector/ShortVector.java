@@ -3379,10 +3379,10 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
      * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
      * interpreted using the specified {@link Charset}}
      *
-     * @param species species of the desired vector
+     * @param species the species of the desired vector
      * @param string the string to load from
      * @param charset the 16-bit charset
-     * @param offset the character index in the string to load from
+     * @param offset the character index in the string to begin loading from
      * @throws IllegalArgumentException if the string and charset are not
      *         {@linkplain #compatibleWith(String, Charset) compatible}
      * @throws IndexOutOfBoundsException
@@ -3396,10 +3396,10 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         Objects.requireNonNull(species);
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
-        offset = checkFromIndexSize(offset, species.length(), string.length());
         if (!compatibleWith(string, charset)) {
             throw new IllegalArgumentException("String is not compatible with: " + charset);
         }
+        offset = checkFromIndexSize(offset, species.length(), string.length());
         byte coder = StringSupport.stringCoder(string);
         MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
         if (coder == 0) {
@@ -3421,10 +3421,10 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
      * {@return a {@link ShortVector} loaded with 16-bit code units from the given {@link String},
      * interpreted using the specified {@link Charset}}
      *
-     * @param species species of the desired vector
+     * @param species the species of the desired vector
      * @param string the string to load from
      * @param charset the 16-bit charset
-     * @param offset the character index in the string to load from
+     * @param offset the character index in the string to begin loading from
      * @param m the mask controlling lane selection
      * @throws IllegalArgumentException if the string and charset are not
      *         {@linkplain #compatibleWith(String, Charset) compatible}
