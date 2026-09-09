@@ -515,7 +515,7 @@ G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
                                retained_groups->num_regions());
 
   for (G1CardSetGroup* group : *retained_groups) {
-    assert(group->length() == 1, "We should only have one region in a retained group");
+    assert(group->num_regions() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
 
     if (min_regions_left == 0) {

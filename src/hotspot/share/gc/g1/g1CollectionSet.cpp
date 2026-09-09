@@ -737,7 +737,7 @@ void G1CollectionSet::select_candidates_from_marking(SelectionBudget& budget) {
   double optional_threshold_ms = candidate_selection.time_budget_ms() *
                                  _policy->optional_prediction_fraction();
 
-  uint min_num_old_cset_regions = _policy->calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length());
+  uint min_num_old_cset_regions = _policy->calc_min_num_old_cset_regions(candidates()->num_last_marking_candidate_regions());
   uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_num_old_cset_regions());
 
   G1CardSetGroupList* from_marking_groups = &candidates()->from_marking_groups();
@@ -850,7 +850,7 @@ void G1CollectionSet::RetainedCandidateSelection::select_additional_candidates(c
   G1CardSetGroupList selected_groups;
 
   for (G1CardSetGroup* group : retained_groups) {
-    assert(group->length() == 1, "Retained groups should have only 1 region");
+    assert(group->num_regions() == 1, "Retained groups should have only 1 region");
 
     G1CardSetGroupItem* ci = group->at(0); // We only have one region in the group.
     G1HeapRegion* r = ci->_r;

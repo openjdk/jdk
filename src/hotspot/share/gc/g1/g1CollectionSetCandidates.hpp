@@ -88,12 +88,12 @@ public:
   G1CardSetGroup();
   G1CardSetGroup(G1CardSetConfiguration* config, G1MonotonicArenaFreePool* card_set_freelist_pool, uint group_id);
   ~G1CardSetGroup() {
-    assert(length() == 0, "post condition!");
+    assert(num_regions() == 0, "post condition!");
   }
 
   void add(G1HeapRegion* hr);
 
-  uint length() const { return (uint)_items.length(); }
+  uint num_regions() const { return (uint)_items.length(); }
 
   G1CardSet* card_set() { return &_card_set; }
   const G1CardSet* card_set() const { return &_card_set; }
@@ -222,10 +222,10 @@ class G1CollectionSetCandidates : public CHeapObj<mtGC> {
   // should contain only one region each, making it easier to evacuate retained regions
   // in any young collection.
   G1CardSetGroupList _retained_groups;
-  uint _max_regions;
+  uint _max_num_regions;
 
   // The number of regions from the last merge of candidates from the marking.
-  uint _last_marking_candidates_length;
+  uint _num_last_marking_candidate_regions;
 
   bool is_from_marking(G1HeapRegion* r) const;
 
@@ -236,17 +236,16 @@ public:
   G1CardSetGroupList& from_marking_groups() { return _from_marking_groups; }
   G1CardSetGroupList& retained_groups() { return _retained_groups; }
 
-  void initialize(uint max_regions);
+  void initialize(uint max_num_regions);
 
   void clear();
 
   // Merge collection set candidate regions from marking into the current from_marking candidate
   // group list (which needs to be empty).
   void set_candidates_from_marking(GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected);
-  // The most recent length of the list that had been merged last via
-  // set_candidates_from_marking(). Used for calculating minimum collection set
-  // regions.
-  uint last_marking_candidates_length() const { return _last_marking_candidates_length; }
+  // The number of regions most recently merged using set_candidates_from_marking(). Used for calculating
+  // minimum collection set regions.
+  uint num_last_marking_candidate_regions() const { return _num_last_marking_candidate_regions; }
 
   void sort_by_efficiency();
 
@@ -266,8 +265,8 @@ public:
   bool is_empty() const;
 
   bool has_more_marking_candidates() const;
-  uint marking_regions_length() const;
-  uint retained_regions_length() const;
+  uint num_marking_regions() const;
+  uint num_retained_regions() const;
 
 private:
   void verify_helper(G1CardSetGroupList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
@@ -275,7 +274,7 @@ private:
 public:
   void verify() PRODUCT_RETURN;
 
-  uint length() const { return marking_regions_length() + retained_regions_length(); }
+  uint num_regions() const { return num_marking_regions() + num_retained_regions(); }
 
   template<typename Func>
   void iterate_regions(Func&& f) const;
