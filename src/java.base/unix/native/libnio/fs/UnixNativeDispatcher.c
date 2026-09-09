@@ -42,7 +42,20 @@
 #endif
 #include <sys/time.h>
 
-#if defined(__linux__) || defined(_ALLBSD_SOURCE)
+// macOS and NetBSD carry a Linux-shaped <sys/xattr.h>.  FreeBSD and
+// DragonFly keep extended attributes behind extattr_get_file(2) and its
+// namespaces in <sys/extattr.h> instead -- a different interface, not this
+// one -- and OpenBSD has neither.  So naming _ALLBSD_SOURCE here claims a
+// header three of the five do not ship.
+//
+// Measured on DragonFly 6.4, for whoever reaches for extattr next: the
+// header declares thirteen functions and libc defines three of them --
+// extattr_{get,set,delete}_file.  The _fd, _link and _list_* generations
+// are declared and absent, so a shared object naming one of those compiles,
+// links, and fails at dlopen.  On a UFS root the three that exist answer
+// EOPNOTSUPP, which is a filesystem without support rather than a system
+// without the interface.  FreeBSD's libc has all thirteen.
+#if defined(__linux__) || defined(__APPLE__) || defined(__NetBSD__)
 #include <sys/xattr.h>
 #endif
 
@@ -1396,9 +1409,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_fgetxattr0(JNIEnv* env, jclass clazz,
     const char* name = jlong_to_ptr(nameAddress);
     void* value = jlong_to_ptr(valueAddress);
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
     res = fgetxattr(fd, name, value, valueLen);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(__APPLE__)
     res = fgetxattr(fd, name, value, valueLen, 0, 0);
 #elif defined(_AIX)
     res = fgetea(fd, name, value, valueLen);
@@ -1419,9 +1432,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_fsetxattr0(JNIEnv* env, jclass clazz,
     const char* name = jlong_to_ptr(nameAddress);
     void* value = jlong_to_ptr(valueAddress);
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
     res = fsetxattr(fd, name, value, valueLen, 0);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(__APPLE__)
     res = fsetxattr(fd, name, value, valueLen, 0, 0);
 #elif defined(_AIX)
     res = fsetea(fd, name, value, valueLen, 0);
@@ -1440,9 +1453,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_fremovexattr0(JNIEnv* env, jclass clazz,
     int res = -1;
     const char* name = jlong_to_ptr(nameAddress);
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
     res = fremovexattr(fd, name);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(__APPLE__)
     res = fremovexattr(fd, name, 0);
 #elif defined(_AIX)
     res = fremoveea(fd, name);
@@ -1461,9 +1474,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_flistxattr(JNIEnv* env, jclass clazz,
     size_t res = -1;
     char* list = jlong_to_ptr(listAddress);
 
-#ifdef __linux__
+#if defined(__linux__) || defined(__NetBSD__)
     res = flistxattr(fd, list, (size_t)size);
-#elif defined(_ALLBSD_SOURCE)
+#elif defined(__APPLE__)
     res = flistxattr(fd, list, (size_t)size, 0);
 #elif defined(_AIX)
     res = flistea(fd, list, (size_t)size);

@@ -40,6 +40,11 @@
 #include <sys/sysctl.h>
 #endif
 
+#if defined(__OpenBSD__)
+// SB_MAX, the cap this file applies to SO_RCVBUF and SO_SNDBUF, lives here.
+#include <sys/socketvar.h>
+#endif
+
 #include "jvm.h"
 #include "net_util.h"
 
@@ -116,6 +121,43 @@ jint  IPv6_supported()
          *  for now we will assume that AF_INET6 is not available
          */
         return JNI_FALSE;
+    }
+
+    /*
+     * The rest of the networking code opens one AF_INET6 socket for
+     * everything and relies on it carrying IPv4 as well, which needs
+     * IPV6_V6ONLY off.  Two of the BSDs will not do this, and they say so
+     * differently: OpenBSD fails the request with EINVAL, while DragonFly
+     * accepts it and then refuses to bind an IPv4-mapped address with
+     * EADDRNOTAVAIL.  Asking the question is therefore not enough -- bind
+     * ::ffff:127.0.0.1 and see.
+     *
+     * A stack that will not carry IPv4 is no use to us here: report it as
+     * no IPv6 stack and run over AF_INET, which is what OpenBSD's own
+     * build of the JDK arranges by defaulting java.net.preferIPv4Stack to
+     * true.  The alternative is that every socket the VM opens throws.
+     */
+    {
+        int arg = 0;
+        struct sockaddr_in6 mapped;
+
+        if (setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, (char*)&arg,
+                       sizeof(arg)) < 0) {
+            close(fd);
+            return JNI_FALSE;
+        }
+
+        memset(&mapped, 0, sizeof(mapped));
+        mapped.sin6_family = AF_INET6;
+        /* ::ffff:127.0.0.1, port 0 */
+        mapped.sin6_addr.s6_addr[10] = 0xff;
+        mapped.sin6_addr.s6_addr[11] = 0xff;
+        mapped.sin6_addr.s6_addr[12] = 127;
+        mapped.sin6_addr.s6_addr[15] = 1;
+        if (bind(fd, (struct sockaddr*)&mapped, sizeof(mapped)) < 0) {
+            close(fd);
+            return JNI_FALSE;
+        }
     }
     close(fd);
 
