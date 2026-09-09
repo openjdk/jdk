@@ -246,7 +246,7 @@ void C1_MacroAssembler::build_frame_helper(int frame_size_in_bytes, int sp_offse
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes,
                                     int sp_offset_for_orig_pc,
                                     bool has_scalarized_args,
-                                    Label* verified_inline_entry_label) {
+                                    Label* verified_value_entry_label) {
   // Make sure there is enough stack space for this method's activation.
   // Note that we do this before doing an enter(). This matches the
   // ordering of C2's stack overflow check / rsp decrement and allows
@@ -261,9 +261,9 @@ void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_by
   // C1 code is not hot enough to micro optimize the nmethod entry barrier with an out-of-line stub
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
 
-  if (verified_inline_entry_label != nullptr) {
+  if (verified_value_entry_label != nullptr) {
     // Jump here from the scalarized entry points that already created the frame.
-    bind(*verified_inline_entry_label);
+    bind(*verified_value_entry_label);
   }
 }
 
@@ -273,20 +273,20 @@ void C1_MacroAssembler::verified_entry(bool breakAtEntry) {
   // build frame
 }
 
-int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_inline_entry_label, bool is_inline_ro_entry) {
-  assert(InlineTypePassFieldsAsArgs, "sanity");
+int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int frame_size_in_bytes, int bang_size_in_bytes, int sp_offset_for_orig_pc, Label& verified_value_entry_label, bool is_value_ro_entry) {
+  assert(ValueTypePassFieldsAsArgs, "sanity");
   // Make sure there is enough stack space for this method's activation.
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");
   generate_stack_overflow_check(bang_size_in_bytes);
 
   GrowableArray<SigEntry>* sig    = ces->sig();
-  GrowableArray<SigEntry>* sig_cc = is_inline_ro_entry ? ces->sig_cc_ro() : ces->sig_cc();
+  GrowableArray<SigEntry>* sig_cc = is_value_ro_entry ? ces->sig_cc_ro() : ces->sig_cc();
   VMRegPair* regs      = ces->regs();
-  VMRegPair* regs_cc   = is_inline_ro_entry ? ces->regs_cc_ro() : ces->regs_cc();
+  VMRegPair* regs_cc   = is_value_ro_entry ? ces->regs_cc_ro() : ces->regs_cc();
   int args_on_stack    = ces->args_on_stack();
-  int args_on_stack_cc = is_inline_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
+  int args_on_stack_cc = is_value_ro_entry ? ces->args_on_stack_cc_ro() : ces->args_on_stack_cc();
 
-  assert(sig->length() <= sig_cc->length(), "Zero-sized inline class not allowed!");
+  assert(sig->length() <= sig_cc->length(), "Zero-sized value class not allowed!");
   BasicType* sig_bt = NEW_RESOURCE_ARRAY(BasicType, sig_cc->length());
   int args_passed = sig->length();
   int args_passed_cc = SigEntry::fill_sig_bt(sig_cc, sig_bt);
@@ -300,10 +300,10 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
   bs->nmethod_entry_barrier(this, nullptr /* slow_path */, nullptr /* continuation */);
 
   movptr(rbx, (intptr_t)(ces->method()));
-  if (is_inline_ro_entry) {
-    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id)));
+  if (is_value_ro_entry) {
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id)));
   } else {
-    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_inline_args_id)));
+    call(RuntimeAddress(Runtime1::entry_for(StubId::c1_buffer_value_args_id)));
   }
   int rt_call_offset = offset();
 
@@ -313,16 +313,16 @@ int C1_MacroAssembler::scalarized_entry(const CompiledEntrySignature* ces, int f
 
   assert(args_on_stack <= args_on_stack_cc, "Sanity check");
 
-  shuffle_inline_args(true, is_inline_ro_entry, sig_cc,
-                      args_passed_cc, args_on_stack_cc, regs_cc, // from
-                      args_passed, args_on_stack, regs,          // to
-                      0, rax);
+  shuffle_value_args(true, is_value_ro_entry, sig_cc,
+                     args_passed_cc, args_on_stack_cc, regs_cc, // from
+                     args_passed, args_on_stack, regs,          // to
+                     0, rax);
 
   // Create the real frame. Below jump will then skip over the stack banging and frame
-  // setup code in the verified_inline_entry (which has a different real_frame_size).
+  // setup code in the verified_value_entry (which has a different real_frame_size).
   build_frame_helper(frame_size_in_bytes, sp_offset_for_orig_pc, false);
 
-  jmp(verified_inline_entry_label);
+  jmp(verified_value_entry_label);
   return rt_call_offset;
 }
 
