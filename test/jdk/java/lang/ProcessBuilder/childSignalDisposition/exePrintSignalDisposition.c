@@ -67,8 +67,12 @@ int main(int argc, char** argv) {
             printf("default ");
         } else if (handler == (void*)SIG_IGN) {
             printf("ignore ");
+#ifdef SIG_HOLD
+        // OpenBSD declares SIG_HOLD only in <sys/signalvar.h>, which is not
+        // for programs to include, and sigaction never reports it.
         } else if (handler == (void*)SIG_HOLD) {
             printf("hold ");
+#endif
         } else {
             printf("%p ", handler);
         }

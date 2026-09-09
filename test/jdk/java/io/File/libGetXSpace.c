@@ -30,9 +30,16 @@
 #else
 #include <errno.h>
 #include <string.h>
-#if __APPLE__
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__OpenBSD__) || \
+    defined(__DragonFly__)
 #include <sys/param.h>
 #include <sys/mount.h>
+#elif defined(__NetBSD__)
+// NetBSD does not expose struct statfs; statvfs answers the same question and
+// spells the fields the same way.  src/java.base/bsd reads it through the same
+// redirection.
+#include <sys/statvfs.h>
+#define statfs statvfs
 #else
 #include <sys/statfs.h>
 #endif
@@ -149,10 +156,16 @@ Java_GetXSpace_getSpace0
         return totalSpaceIsEstimated;
     }
 
-    array[0] = (jlong)(buf.f_blocks*buf.f_bsize);
+#ifdef __NetBSD__
+    // statvfs counts the blocks in units of f_frsize, not f_bsize.
+    const jlong unit = (jlong)buf.f_frsize;
+#else
+    const jlong unit = (jlong)buf.f_bsize;
+#endif
+    array[0] = (jlong)buf.f_blocks*unit;
     array[1] = array[0]; // number visible is the same as the total size
-    array[2] = (jlong)(buf.f_bfree*buf.f_bsize);
-    array[3] = (jlong)(buf.f_bavail*buf.f_bsize);
+    array[2] = (jlong)buf.f_bfree*unit;
+    array[3] = (jlong)buf.f_bavail*unit;
 #endif
     (*env)->SetLongArrayRegion(env, sizes, 0, 4, array);
     return totalSpaceIsEstimated;

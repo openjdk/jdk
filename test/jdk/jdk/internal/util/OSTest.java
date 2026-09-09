@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import jdk.internal.util.OperatingSystem;
 
 import static jdk.internal.util.OperatingSystem.AIX;
+import static jdk.internal.util.OperatingSystem.BSD;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
@@ -61,6 +62,9 @@ public class OSTest {
             case "lin" -> LINUX;
             case "mac" -> MACOS;
             case "aix" -> AIX;
+            // os.name is uname(2)'s sysname on the BSDs, so each one names
+            // itself; OperatingSystem folds them all into BSD.
+            case "net", "fre", "ope", "dra" -> BSD;
             default    -> fail("Unknown os.name: " + osName);
         };
         assertEquals(OperatingSystem.current(), os, "mismatch in OperatingSystem.current vs " + osName);
@@ -75,7 +79,8 @@ public class OSTest {
                 Arguments.of(LINUX, OperatingSystem.isLinux()),
                 Arguments.of(WINDOWS, OperatingSystem.isWindows()),
                 Arguments.of(MACOS, OperatingSystem.isMacOS()),
-                Arguments.of(AIX, OperatingSystem.isAix())
+                Arguments.of(AIX, OperatingSystem.isAix()),
+                Arguments.of(BSD, OperatingSystem.isBsd())
         );
     }
 
