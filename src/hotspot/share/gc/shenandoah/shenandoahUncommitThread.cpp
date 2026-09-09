@@ -179,11 +179,10 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   double ms_per_candidate = ms_time_budget / _candidates_count;
 
   size_t uncommitted_count = 0;
+  double shrink_before = os::elapsedTime() - shrink_delay;
 
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i]._region;
-    double cur_time = os::elapsedTime();
-    double shrink_before = cur_time - shrink_delay;
 
     if (_heap->committed() < shrink_until + ShenandoahHeapRegion::region_size_bytes()) {
       // Do not uncommit below the target.
@@ -193,7 +192,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
-    int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((cur_time - start) * MILLIUNITS));
+    int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((os::elapsedTime() - start) * MILLIUNITS));
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
       break;
