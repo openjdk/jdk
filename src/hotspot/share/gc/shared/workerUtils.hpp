@@ -70,7 +70,7 @@ public:
 
   // Aborts the barrier and wakes up any threads waiting for
   // the barrier to complete. The barrier will remain in the
-  // aborted state until the next call to set_n_workers().
+  // aborted state until the next call to set_num_workers().
   void abort();
 };
 
