@@ -1270,20 +1270,23 @@ public class ForkJoinPool extends AbstractExecutorService
          * @throws RejectedExecutionException if array could not be resized
          */
         final void push(ForkJoinTask<?> task, ForkJoinPool pool, boolean internal) {
-            int s = top++, m; ForkJoinTask<?>[] a;
-            if ((a = array) == null || (m = a.length - 1) < 0 ||
-                U.getReference(a, slotOffset(m & (s + 2))) != null)
-                growAndPush(task, pool, internal, s);
-            else {
-                long k = slotOffset(m & s), pk = slotOffset(m & (s - 1));
-                if (internal)
-                    U.getAndSetReference(a, k, task);
+            if (task != null) {
+                int nh = task.noUserHelp();
+                int s = top++, m; ForkJoinTask<?>[] a;
+                if ((a = array) == null || (m = a.length - 1) < 0 ||
+                    U.getReference(a, slotOffset(m & (s + 2))) != null)
+                    growAndPush(task, pool, internal, s);
                 else {
-                    U.putReferenceRelease(a, k, task);
-                    U.getAndAddInt(this, PHASE, IDLE);
+                    long k = slotOffset(m & s), pk = slotOffset(m & (s - (nh + 1)));
+                    if (internal)
+                        U.getAndSetReference(a, k, task);
+                    else {
+                        U.putReferenceRelease(a, k, task);
+                        U.getAndAddInt(this, PHASE, IDLE);
+                    }
+                    if (U.getReferenceAcquire(a, pk) == null && pool != null)
+                        pool.signalWork();
                 }
-                if (U.getReferenceAcquire(a, pk) == null && pool != null)
-                    pool.signalWork();
             }
         }
 
@@ -1413,8 +1416,8 @@ public class ForkJoinPool extends AbstractExecutorService
          * Runs the given task, as well as remaining local tasks and
          * those that can be taken without interference from q.
          */
-        final void topLevelExec(ForkJoinTask<?> task, WorkQueue q) {
-            int fifo = config & FIFO, taken = nsteals + 1;
+        final void topLevelExec(ForkJoinTask<?> task, int fifo, WorkQueue q) {
+            int taken = 1;
             while (task != null) {
                 task.doExec();
                 if ((task = (fifo == 0) ? localPop() : localPoll()) == null) {
@@ -1432,7 +1435,7 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                 }
             }
-            nsteals = taken;
+            nsteals += taken;
         }
 
         /**
@@ -2003,73 +2006,49 @@ public class ForkJoinPool extends AbstractExecutorService
      */
     final void runWorker(WorkQueue w) {
         if (w != null) {
-            int phase = w.phase, r = w.stackPred, src = UNSCANNED;
-            for (long e; ((e = runState) & STOP) == 0L; ) {
+            int phase = w.phase, r = w.stackPred, fifo = w.config & FIFO;
+            int src = -1;
+            for (int i = r;;) {
+                long e; WorkQueue[] qs; int n;
                 r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // xorshift
-                if ((src = scan(w, r, src)) == EMPTY_SCAN) {
-                    if (runState == e && (e & RS_LOCK) == 0L &&
-                        ((phase = deactivate(w, phase, r)) & IDLE) != 0)
-                        break;
-                    src = UNSCANNED;
-                }
-            }
-        }
-    }
-
-    /**
-     * Scans for and if found executes top-level tasks
-     * @param w the worker
-     * @param r random seed
-     * @param src if non-negative, index of last-taken source queue
-     * @return source or EMPTY_SCAN
-     */
-    private int scan(WorkQueue w, int r, int src) {
-        WorkQueue[] qs; int n;
-        if ((qs = queues) != null && w != null && (n = qs.length) > 0) {
-            int stride = (r >>> 16) | 1, polls, i;
-            if (src < 0) { i = r;   polls = n; }
-            else         { i = src; polls = n << 1; }
-            for (;;) {
-                WorkQueue q; ForkJoinTask<?>[] a; int cap;
-                int qid = i & (n - 1);
-                i = (i + stride) & SMASK;
-                if ((q = qs[qid]) != null && (a = q.array) != null &&
-                    (cap = a.length) > 0) {
-                    int m, b, nb; long bp; ForkJoinTask<?> t;
-                    if ((t = (ForkJoinTask<?>)U.getReferenceVolatile(
-                             a, bp = slotOffset((m = cap - 1) & (b = q.base)))) != null) {
-                        if (q.base != b)
-                            src = i;
-                        else {
-                            Object o = U.compareAndExchangeReference(a, bp, t, null);
-                            Object u = U.getReference(a, slotOffset(m & (nb = b + 1)));
-                            if (o == t) {
+                if (((e = runState) & STOP) != 0L || (qs = queues) == null ||
+                     (n = qs.length) <= 0)
+                    return;
+                for (int polls = n << 1, stride = (r | 1) & SMASK;;) {
+                    WorkQueue q; ForkJoinTask<?>[] a; int cap;
+                    int qid = i & (n - 1);
+                    i += stride;
+                    if ((q = qs[qid]) != null && (a = q.array) != null &&
+                        (cap = a.length) > 0) {
+                        int m, b, j, nb; ForkJoinTask<?> t;
+                        long bp = slotOffset(j = (m = cap - 1) & (b = q.base));
+                        if ((t = a[j]) != null) {
+                            if (q.base == b &&
+                                U.compareAndSetReference(a, bp, t, null)) {
+                                ForkJoinTask<?> u = a[m & (nb = b + 1)];
                                 q.base = nb;
-                                w.source = src = qid;
-                                if (u != null)
-                                    signalWork();
-                                w.topLevelExec(t, q);
-                            }
-                            else if (o != null)
+                                w.source = qid;
+                                int signal = (src - qid) | t.noUserHelp();
                                 src = qid;
-                            else
-                                src = i;
+                                if (u != null && signal != 0)
+                                    signalWork();
+                                w.topLevelExec(t, fifo, q);
+                            }
+                            break;
                         }
+                        else if (a[m & (b + 1)] != null || a[m & (b + 2)] != null)
+                            break;   // busy or stalled; reorder scan
+                    }
+                    if (--polls == 0) {
+                        src = -1;
+                        if (runState == e && (e & RS_LOCK) == 0L &&
+                            ((phase = deactivate(w, phase, r)) & IDLE) != 0)
+                            return;
                         break;
                     }
-                    else if (U.getReference(a, slotOffset(m & (b + 1))) != null ||
-                             U.getReference(a, slotOffset(m & (b + 2))) != null) {
-                        src = i;
-                        break;   // busy or stalled; reorder scan
-                    }
-                }
-                if (--polls == 0) {
-                    src = EMPTY_SCAN;
-                    break;
                 }
             }
         }
-        return src;
     }
 
     /**
