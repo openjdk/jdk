@@ -848,10 +848,12 @@ bool PhaseMacroExpand::can_eliminate_allocation(PhaseIterGVN* igvn, AllocateNode
           DEBUG_ONLY(disq_node = use;)
           NOT_PRODUCT(fail_eliminate = "Object is passed as argument";)
           can_eliminate = false;
+        } else if (sfpt->is_StoreFlat() && sfpt->as_StoreFlat()->has_non_debug_use(res) && sfpt->as_StoreFlat()->value() != res) {
+          DEBUG_ONLY(disq_node = use;)
+          NOT_PRODUCT(fail_eliminate = "Object is stored with StoreFlat";)
+          can_eliminate = false;
         }
-        assert(!use->is_LoadFlat() || !use->as_LoadFlat()->has_non_debug_use(res), "only used in debug info of LoadFlat");
-        assert(!use->is_StoreFlat() || !use->as_StoreFlat()->has_non_debug_use(res) ||
-               use->as_StoreFlat()->value() == res, "used as stored value or debug info in StoreFlat");
+
         Node* sfptMem = sfpt->memory();
         if (sfptMem == nullptr || sfptMem->is_top()) {
           DEBUG_ONLY(disq_node = use;)
