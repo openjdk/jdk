@@ -1,0 +1,156 @@
+#
+# Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+name: 'Build (bsd)'
+
+# There is no BSD runner, so the BSDs are cross-compiled from Linux against a
+# sysroot made of the operating system's own distribution sets.  That is
+# enough to catch what breaks a BSD port most often: a header that is
+# somewhere else, a function that is not there, a struct whose members are
+# spelled differently.  It cannot run a single line of what it produces --
+# that is what a machine running the OS is for.
+#
+# GhostBSD needs no entry of its own.  It is FreeBSD underneath, it reports
+# itself as FreeBSD, and it is the same target triple, so the freebsd job
+# covers it.
+
+on:
+  workflow_call:
+    inputs:
+      extra-conf-options:
+        required: false
+        type: string
+      configure-arguments:
+        required: false
+        type: string
+      make-arguments:
+        required: false
+        type: string
+      dry-run:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build-bsd:
+    name: build
+    runs-on: ubuntu-24.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        target-os:
+          - netbsd
+          - freebsd
+          - openbsd
+          - dragonfly
+        include:
+          - target-os: netbsd
+            target-triple: x86_64-unknown-netbsd
+            conf-name: bsd-x86_64-netbsd
+          - target-os: freebsd
+            target-triple: x86_64-unknown-freebsd15.1
+            conf-name: bsd-x86_64-freebsd
+          - target-os: openbsd
+            target-triple: x86_64-unknown-openbsd7.9
+            conf-name: bsd-x86_64-openbsd
+          - target-os: dragonfly
+            target-triple: x86_64-unknown-dragonfly
+            conf-name: bsd-x86_64-dragonfly
+
+    steps:
+      - name: 'Checkout the JDK source'
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: 'Get the BootJDK'
+        id: bootjdk
+        uses: ./.github/actions/get-bootjdk
+        with:
+          platform: linux-x64
+
+      - name: 'Get GTest'
+        id: gtest
+        uses: ./.github/actions/get-gtest
+
+      - name: 'Install toolchain and dependencies'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --only-upgrade apt
+          sudo apt-get install clang lld llvm autoconf zip unzip file \
+              libarchive-tools libcups2-dev libfontconfig1-dev
+
+      - name: 'Check cache for sysroot'
+        id: get-cached-sysroot
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
+        with:
+          path: sysroot
+          key: sysroot-${{ matrix.target-os }}-${{ hashFiles('./.github/scripts/gen-bsd-sysroot.sh') }}
+
+      - name: 'Create sysroot'
+        id: create-sysroot
+        run: bash .github/scripts/gen-bsd-sysroot.sh '${{ matrix.target-os }}' sysroot
+        if: steps.get-cached-sysroot.outputs.cache-hit != 'true'
+
+      - name: 'Prepare the cross compiler'
+        id: cross
+        run: >
+          bash .github/scripts/gen-bsd-crosstool.sh
+          '${{ matrix.target-os }}' '${{ matrix.target-triple }}'
+          "$PWD/sysroot" "$PWD/cross-bin"
+
+      - name: 'Configure'
+        run: >
+          PATH="$PWD/cross-bin:$PATH"
+          bash configure
+          --with-conf-name=${{ matrix.conf-name }}
+          --with-version-opt=${GITHUB_ACTOR}-${GITHUB_SHA}
+          --with-boot-jdk=${{ steps.bootjdk.outputs.path }}
+          --with-gtest=${{ steps.gtest.outputs.path }}
+          --openjdk-target=${{ matrix.target-triple }}
+          --with-sysroot=$PWD/sysroot
+          --with-toolchain-type=clang
+          --with-freetype=bundled
+          --enable-headless-only
+          --disable-dtrace
+          --disable-precompiled-headers
+          --with-jmod-compress=zip-1
+          --with-external-symbols-in-bundles=none
+          --with-native-debug-symbols-level=1
+          CC=${{ matrix.target-triple }}-clang
+          CXX=${{ matrix.target-triple }}-clang++
+          BUILD_CC=clang
+          BUILD_CXX=clang++
+          ${{ inputs.extra-conf-options }} ${{ inputs.configure-arguments }} || (
+          echo "Dumping config.log:" &&
+          cat config.log &&
+          exit 1)
+
+      - name: 'Build'
+        id: build
+        uses: ./.github/actions/do-build
+        with:
+          make-target: 'images ${{ inputs.make-arguments }}'
+          platform: ${{ matrix.conf-name }}
+        if: inputs.dry-run == false
