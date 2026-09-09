@@ -24,7 +24,6 @@
 
 #include "opto/callnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/multnode.hpp"
@@ -32,6 +31,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/regmask.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/vmError.hpp"
 
 //=============================================================================
@@ -134,7 +134,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr && call->is_boxing_method()) {
     // The result of autoboxing is always non-null on normal path.
-    if (call->tf()->returns_inline_type_as_fields()) {
+    if (call->tf()->returns_value_type_as_fields()) {
       // Last returned value is the null marker
       if (_con == call->tf()->range_cc()->cnt() - 1) {
         t = TypeInt::ONE;
@@ -214,9 +214,9 @@ Node* ProjNode::Identity(PhaseGVN* phase) {
 
   CallStaticJavaNode* call = in(0)->isa_CallStaticJava();
   if (call != nullptr) {
-    if (call->is_boxing_method() && call->method()->return_type()->is_inlinetype()) {
+    if (call->is_boxing_method() && call->method()->return_type()->is_value_klass()) {
       // Boxing (for example, via Integer.valueOf(int))
-      if (call->tf()->returns_inline_type_as_fields()) {
+      if (call->tf()->returns_value_type_as_fields()) {
         if (_con == TypeFunc::Parms) {
           // Oop projection: Keep it to avoid re-buffering. If unused,
           // it will go away and enable removal of the boxing call.
@@ -234,9 +234,9 @@ Node* ProjNode::Identity(PhaseGVN* phase) {
         return call->in(TypeFunc::Parms + 1);
       } else {
         Node* arg = call->in(TypeFunc::Parms);
-        if (arg->is_InlineType()) {
+        if (arg->is_ValueType()) {
           assert(!phase->type(arg)->maybe_null(), "missing receiver null check?");
-          return arg->as_InlineType()->field_value(0);
+          return arg->as_ValueType()->field_value(0);
         }
       }
     }
