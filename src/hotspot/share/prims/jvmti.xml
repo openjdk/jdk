@@ -5289,6 +5289,10 @@ class C2 extends C1 implements I2 {
             constant pool table of the class, starting at 1. See
             <vmspec chapter="4.4"/>.
           </constant>
+          <constant id="JVMTI_REFERENCE_OTHER" num="10">
+            Reference from a class loader to a class declared in this class loader.
+            For references of this kind the <code>referrer_index</code> is not used.
+          </constant>
         </constants>
 
         <constants id="jvmtiIterationControl" label="Iteration Control Enumeration" kind="enum">

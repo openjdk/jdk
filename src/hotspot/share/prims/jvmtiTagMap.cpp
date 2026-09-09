@@ -1863,6 +1863,7 @@ class CallbackInvoker : AllStatic {
 
   // functions to report references
   static inline bool report_array_element_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index);
+  static inline bool report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_loader_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_signers_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
@@ -2463,6 +2464,14 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
     return invoke_basic_object_reference_callback(JVMTI_REFERENCE_FIELD, referrer, referree, slot);
   } else {
     return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_FIELD, referrer, referree, slot);
+  }
+}
+
+inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
+  if (is_basic_heap_walk()) {
+    return invoke_basic_object_reference_callback(JVMTI_REFERENCE_OTHER, referrer, referree, -1);
+  } else {
+    return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
   }
 }
 
@@ -3123,8 +3132,9 @@ inline bool VM_HeapWalkOperation::iterate_over_class_loader(const JvmtiHeapwalkO
     for (int i = 0; i < klasses->length(); i++) {
       Klass* k = klasses->at(i);
       JvmtiHeapwalkObject m(k->java_mirror());
-      // Pretend the classes are in an array when it used to be a vector.
-      if (!CallbackInvoker::report_array_element_reference(o, m, i)) {
+      // Pretend the classes are referred indirectly by the class loader. They are
+      // root objects, so make them other references.
+      if (!CallbackInvoker::report_other_reference(o, m)) {
         return false;
       }
     }

@@ -96,8 +96,8 @@ Java_ClassLoaderTest_targetReachedFrom(
 }
 
 JNIEXPORT jboolean JNICALL
-Java_ClassLoaderTest_targetKindIsArrayElement(JNIEnv* env, jclass) {
-    return target_kind == JVMTI_HEAP_REFERENCE_ARRAY_ELEMENT;
+Java_ClassLoaderTest_targetKindIsOther(JNIEnv* env, jclass) {
+    return target_kind == JVMTI_HEAP_REFERENCE_OTHER;
 }
 
 }

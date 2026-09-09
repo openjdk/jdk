@@ -63,7 +63,7 @@ public class ClassLoaderTest {
     }
 
     private static native boolean targetReachedFrom(ClassLoader loader, Class<?> target);
-    private static native boolean targetKindIsArrayElement();
+    private static native boolean targetKindIsOther();
 
     public static void main(String[] args) {
         MyLoader ldr = new MyLoader();
@@ -77,7 +77,7 @@ public class ClassLoaderTest {
         Asserts.assertTrue(targetReachedFrom(ldr, test),
                            "FollowReferences starting at MyLoader reached Test.class");
 
-        Asserts.assertTrue(targetKindIsArrayElement(), "FollowReferences target kind is an array element");
+        Asserts.assertTrue(targetKindIsOther(), "FollowReferences target kind is other (special root reference)");
 
         Reference.reachabilityFence(ldr);
         Reference.reachabilityFence(test);
