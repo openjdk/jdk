@@ -287,7 +287,7 @@ MemoryUsage G1HeapRegionManager::get_auxiliary_data_memory_usage() const {
 }
 
 bool G1HeapRegionManager::has_inactive_regions() const {
-  return _committed_map.num_inactive() > 0;
+  return _committed_map.num_inactive_regions() > 0;
 }
 
 uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
@@ -300,12 +300,12 @@ uint G1HeapRegionManager::uncommit_inactive_regions(uint limit) {
     G1HeapRegionRange range = _committed_map.next_inactive_range(offset);
     // No more regions available for uncommit. Return the number of regions
     // already uncommitted or 0 if there were no longer any inactive regions.
-    if (range.length() == 0) {
+    if (range.num_regions() == 0) {
       return uncommitted;
     }
 
     uint start = range.start();
-    uint num_regions = MIN2(range.length(), limit - uncommitted);
+    uint num_regions = MIN2(range.num_regions(), limit - uncommitted);
     uncommitted += num_regions;
     uncommit_regions(start, num_regions);
   } while (uncommitted < limit);
@@ -320,12 +320,12 @@ uint G1HeapRegionManager::expand_inactive(uint num_regions) {
 
   do {
     G1HeapRegionRange regions = _committed_map.next_inactive_range(offset);
-    if (regions.length() == 0) {
+    if (regions.num_regions() == 0) {
       // No more unavailable regions.
       break;
     }
 
-    uint to_expand = MIN2(num_regions - expanded, regions.length());
+    uint to_expand = MIN2(num_regions - expanded, regions.num_regions());
     reactivate_regions(regions.start(), to_expand);
     expanded += to_expand;
     offset = regions.end();
@@ -342,12 +342,12 @@ uint G1HeapRegionManager::expand_any(uint num_regions, WorkerThreads* pretouch_w
 
   do {
     G1HeapRegionRange regions = _committed_map.next_committable_range(offset);
-    if (regions.length() == 0) {
+    if (regions.num_regions() == 0) {
       // No more unavailable regions.
       break;
     }
 
-    uint to_expand = MIN2(num_regions - expanded, regions.length());
+    uint to_expand = MIN2(num_regions - expanded, regions.num_regions());
     expand(regions.start(), to_expand, pretouch_workers);
     expanded += to_expand;
     offset = regions.end();
@@ -379,18 +379,18 @@ void G1HeapRegionManager::expand_exact(uint start, uint num_regions, WorkerThrea
   for (uint i = start; i < end; i++) {
     // First check inactive. If the regions is inactive, try to reactivate it
     // before it get uncommitted by the G1SeriveThread.
-    if (_committed_map.inactive(i)) {
+    if (_committed_map.is_inactive(i)) {
       // Need to grab the lock since this can be called by a java thread
       // doing humongous allocations.
       MutexLocker uc(G1Uncommit_lock, Mutex::_no_safepoint_check_flag);
       // State might change while getting the lock.
-      if (_committed_map.inactive(i)) {
+      if (_committed_map.is_inactive(i)) {
         reactivate_regions(i, 1);
       }
     }
     // Not else-if to catch the case where the inactive region was uncommitted
     // while waiting to get the lock.
-    if (!_committed_map.active(i)) {
+    if (!_committed_map.is_active(i)) {
       expand(i, 1, pretouch_workers);
     }
 
@@ -439,8 +439,8 @@ void G1HeapRegionManager::assert_contiguous_range(uint start, uint num_regions) 
   for (uint i = start; i < (start + num_regions); i++) {
     G1HeapRegion* hr = _regions.get_by_index(i);
     assert(!is_available(i) || hr->is_free(),
-           "Found region sequence starting at " UINT32_FORMAT ", length " UINT32_FORMAT
-           " that is not free at " UINT32_FORMAT ". Hr is " PTR_FORMAT ", type is %s",
+           "Found region sequence starting at %u, num regions %u"
+           " that is not free at %u. Hr is " PTR_FORMAT ", type is %s",
            start, num_regions, i, p2i(hr), hr->get_type_str());
   }
 }
