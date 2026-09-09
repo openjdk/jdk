@@ -533,7 +533,7 @@ static uint32_t encode_patchable_jump(address pc, address target_pc) {
 }
 
 void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
-  *((uint32_t*)pc) = encode_patchable_nop();
+  Assembler::sd_instr(pc, encode_patchable_nop());
   assert(nativeInstruction_at(pc)->is_nop(), "Sanity");
   if (!UseCtxFencei) {
     ICache::invalidate_word(pc);
@@ -541,18 +541,18 @@ void ShenandoahBarrierSetAssembler::insert_patchable_nop(address pc) {
 }
 
 void ShenandoahBarrierSetAssembler::insert_patchable_jump(address pc, address target_pc) {
-  *((uint32_t*)pc) = encode_patchable_jump(pc, target_pc);
+  Assembler::sd_instr(pc, encode_patchable_jump(pc, target_pc));
   if (!UseCtxFencei) {
     ICache::invalidate_word(pc);
   }
 }
 
 bool ShenandoahBarrierSetAssembler::is_patchable_nop(address pc) {
-  return *((uint32_t*)pc) == encode_patchable_nop();
+  return Assembler::ld_instr(pc) == encode_patchable_nop();
 }
 
 bool ShenandoahBarrierSetAssembler::is_patchable_jump(address pc, address target_pc) {
-  return *((uint32_t*)pc) == encode_patchable_jump(pc, target_pc);
+  return Assembler::ld_instr(pc) == encode_patchable_jump(pc, target_pc);
 }
 
 #ifdef COMPILER1
