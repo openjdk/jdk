@@ -184,8 +184,8 @@ This is not recommended. Instead, see the section on [Cross-compiling](
 
 ## Operating System Requirements
 
-The mainline JDK project supports Linux, macOS, AIX and Windows. Support for
-other operating system, e.g. BSD, exists in separate "port" projects.
+The mainline JDK project supports Linux, macOS, AIX, Windows, and the BSDs --
+FreeBSD, NetBSD, OpenBSD and DragonFly BSD -- on x86_64.
 
 In general, the JDK can be built on a wide range of versions of these operating
 systems, but the further you deviate from what is tested on a daily basis, the
@@ -205,6 +205,16 @@ time of writing.
 The double version numbers for Linux are due to the hybrid model used at
 Oracle, where header files and external libraries from an older version are
 used when building on a more modern version of the OS.
+
+Oracle does not build the BSDs.  These are the versions the port was last
+built and tested on.
+
+| Operating system  | Version used                       |
+| ----------------- | ---------------------------------- |
+| FreeBSD/x64       | 15.1-RELEASE                       |
+| NetBSD/x64        | 11.0                               |
+| OpenBSD/x64       | 7.9                                |
+| DragonFly BSD/x64 | 6.4-RELEASE                        |
 
 The Build Group has a wiki page with [Supported Build Platforms](
 https://wiki.openjdk.org/display/Build/Supported+Build+Platforms). From time to
@@ -391,6 +401,49 @@ programs:
 ```
 sudo apk add build-base bash grep zip
 ```
+
+### BSD
+
+The BSDs need a few things that Linux gets from its base system.
+
+The base compiler differs.  NetBSD ships gcc and builds with it as it comes;
+FreeBSD and OpenBSD ship clang and no gcc, so `--with-toolchain-type=clang`
+is needed to stop configure looking for the one that is not there; DragonFly
+BSD ships gcc but the JDK does not build with it, so install clang as a
+package and pass the same argument.  GNU Make and GNU Bash are packages
+everywhere, and the build wants them rather than the base `make` and `sh`.
+
+Packaged headers and libraries are not on the default search path.  FreeBSD,
+OpenBSD and DragonFly BSD put them under `/usr/local`, NetBSD under `/usr/pkg`,
+and X11 on OpenBSD lives in `/usr/X11R6`; configure has to be told, for
+instance `--with-cups=/usr/local`.
+
+For FreeBSD and DragonFly BSD:
+
+```
+pkg install autoconf bash gmake zip unzip cups fontconfig freetype2
+```
+
+For NetBSD:
+
+```
+pkgin install autoconf bash gmake zip unzip cups fontconfig freetype2
+```
+
+For OpenBSD:
+
+```
+pkg_add autoconf%2.71 bash gmake zip unzip cups fontconfig
+```
+
+OpenBSD has two more requirements.  The JVM writes and then executes its own
+code, so the filesystem holding the build has to be mounted `wxallowed`; and
+its default `datasize` limit is smaller than the heap some tests ask for, so
+raise it with `ulimit -d` before running them.
+
+DragonFly BSD's packaged bash builds process substitution on named pipes
+rather than `/dev/fd`, and a parallel build wedges on it; a bash configured
+with `bash_cv_dev_fd=standard` does not.
 
 ### AIX
 
