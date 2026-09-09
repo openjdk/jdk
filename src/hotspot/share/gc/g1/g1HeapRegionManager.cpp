@@ -558,10 +558,10 @@ void G1HeapRegionManager::par_iterate(G1HeapRegionClosure* blk, G1HeapRegionClai
   // are currently not committed.
   // This also (potentially) iterates over regions newly allocated during GC. This
   // is no problem except for some extra work.
-  const uint n_regions = hrclaimer->n_regions();
-  for (uint count = 0; count < n_regions; count++) {
-    const uint index = (start_index + count) % n_regions;
-    assert(index < n_regions, "sanity");
+  const uint num_regions = hrclaimer->num_regions();
+  for (uint cur_region_offset = 0; cur_region_offset < num_regions; cur_region_offset++) {
+    const uint index = (start_index + cur_region_offset) % num_regions;
+    assert(index < num_regions, "sanity");
     // Skip over unavailable regions
     if (!is_available(index)) {
       continue;
@@ -708,10 +708,10 @@ void G1HeapRegionManager::verify_optional() {
 }
 #endif // PRODUCT
 
-G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
-    _n_workers(n_workers), _n_regions(G1CollectedHeap::heap()->_hrm._next_highest_used_hrm_index), _claims(nullptr) {
-  Atomic<uint>* new_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, _n_regions, mtGC);
-  for (uint i = 0; i < _n_regions; i++) {
+G1HeapRegionClaimer::G1HeapRegionClaimer(uint num_workers) :
+    _num_workers(num_workers), _num_regions(G1CollectedHeap::heap()->_hrm._next_highest_used_hrm_index), _claims(nullptr) {
+  Atomic<uint>* new_claims = NEW_C_HEAP_ARRAY(Atomic<uint>, _num_regions, mtGC);
+  for (uint i = 0; i < _num_regions; i++) {
     new_claims[i].store_relaxed(Unclaimed);
   }
   _claims = new_claims;
@@ -722,18 +722,18 @@ G1HeapRegionClaimer::~G1HeapRegionClaimer() {
 }
 
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
-  assert(_n_workers > 0, "must be set");
-  assert(worker_id < _n_workers, "Invalid worker_id.");
-  return _n_regions * worker_id / _n_workers;
+  assert(_num_workers > 0, "must be set");
+  assert(worker_id < _num_workers, "Invalid worker_id.");
+  return _num_regions * worker_id / _num_workers;
 }
 
 bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
-  assert(region_index < _n_regions, "Invalid index.");
+  assert(region_index < _num_regions, "Invalid index.");
   return _claims[region_index].load_relaxed() == Claimed;
 }
 
 bool G1HeapRegionClaimer::claim_region(uint region_index) {
-  assert(region_index < _n_regions, "Invalid index.");
+  assert(region_index < _num_regions, "Invalid index.");
   return _claims[region_index].compare_set(Unclaimed, Claimed);
 }
 
