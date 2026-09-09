@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4742177 8019834
+ * @bug 4742177 8019834 8391603
  * @summary Re-test IPv6 (and specifically MulticastSocket) with latest Linux & USAGI code
  */
 import java.net.*;
@@ -56,6 +56,8 @@ public class BadIPv6Addresses {
             ":::ffff:192.168.0.1",      // with compressed ipv4, too many adjacent :
             "::fffff:192.168.0.1",      // with compressed ipv4, too many ipv6 digits
             "::ffff:1923.168.0.1",      // with compressed ipv4, too many ipv4 digits
+            "::ffff:192.256.0.1",       // with compressed ipv4, oversized ipv4 octet
+            "::ffff:192.168.0.1" + Long.MAX_VALUE,  // with compressed ipv4, oversized ipv4 octet stressing `NumberFormatException`
             ":ffff:192.168.0.1",        // with compressed ipv4, not enough :
             "::ffff:192.168.0.1.2",     // with compressed ipv4, too many .
             "::ffff:192.168.0",         // with compressed ipv4, not enough .
