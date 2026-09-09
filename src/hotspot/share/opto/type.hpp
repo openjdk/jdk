@@ -25,7 +25,7 @@
 #ifndef SHARE_OPTO_TYPE_HPP
 #define SHARE_OPTO_TYPE_HPP
 
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "opto/adlcVMDeps.hpp"
 #include "opto/compile.hpp"
 #include "opto/rangeinference.hpp"
@@ -360,8 +360,8 @@ public:
   virtual bool      is_finite() const;           // Has a finite value
   virtual bool      is_nan()    const;           // Is not a number (NaN)
 
-  bool is_inlinetypeptr() const;
-  virtual ciInlineKlass* inline_klass() const;
+  bool is_valueklassptr() const;
+  virtual ciValueKlass* value_klass() const;
 
   // Returns this ptr type or the equivalent ptr type for this compressed pointer.
   const TypePtr* make_ptr() const;
@@ -1033,7 +1033,7 @@ private:
   const TypeInt *_size;         // Elements in array
   const bool _stable;           // Are elements @Stable?
 
-  // Inline type array properties
+  // Value type array properties
   const bool _flat;             // Array is flat
   const bool _not_flat;         // Array is never flat
   const bool _null_free;        // Array is null-free
@@ -1330,7 +1330,7 @@ public:
   static FlatInArray compute_flat_in_array_if_unknown(ciInstanceKlass* instance_klass, bool is_exact,
                                                       FlatInArray old_flat_in_array);
 
-  virtual bool can_be_inline_type() const { return false; }
+  virtual bool can_be_value_type() const { return false; }
   virtual bool is_flat_in_array()     const { return flat_in_array() == Flat; }
   virtual bool is_not_flat_in_array() const { return flat_in_array() == NotFlat; }
   virtual FlatInArray flat_in_array() const { return NotFlat; }
@@ -1526,8 +1526,8 @@ public:
     return instance_id() == t->instance_id();
   }
 
-  virtual bool can_be_inline_type() const { return (_klass == nullptr || _klass->can_be_inline_klass(_klass_is_exact)); }
-  virtual bool can_be_inline_array() const { ShouldNotReachHere(); return false; }
+  virtual bool can_be_value_type() const { return (_klass == nullptr || _klass->can_be_value_klass(_klass_is_exact)); }
+  virtual bool can_be_value_array() const { ShouldNotReachHere(); return false; }
 
   virtual intptr_t get_con() const;
 
@@ -1675,7 +1675,7 @@ public:
 
   const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeInstPtr *NOTNULL;
@@ -1726,7 +1726,7 @@ class TypeAryPtr : public TypeOopPtr {
   virtual uint hash() const;    // Type specific hashing
   const TypeAry *_ary;          // Array we point into
   const bool     _is_autobox_cache;
-  // For flat inline type arrays, each field of the inline type in
+  // For flat value type arrays, each field of the value type in
   // the array has its own memory slice so we need to keep track of
   // which field is accessed
   const Offset _field_offset;
@@ -1757,7 +1757,7 @@ public:
   const TypeInt* size() const { return _ary->_size; }
   bool      is_stable() const { return _ary->_stable; }
 
-  // Inline type array properties
+  // Value type array properties
   bool is_flat()          const { return _ary->_flat; }
   bool is_not_flat()      const { return _ary->_not_flat; }
   bool is_null_free()     const { return _ary->_null_free; }
@@ -1804,7 +1804,7 @@ public:
   virtual const Type* xmeet_helper(const Type* t) const;
   virtual const Type* xjoin_helper(const Type* t) const;
 
-  // Inline type array properties
+  // Value type array properties
   const TypeAryPtr* cast_to_flat(bool flat) const;
   const TypeAryPtr* cast_to_not_flat(bool not_flat = true) const;
   const TypeAryPtr* cast_to_null_free(bool null_free) const;
@@ -1827,10 +1827,10 @@ public:
   const TypeAryPtr* with_field_offset(int offset) const;
   const TypePtr* add_field_offset_and_offset(intptr_t offset) const;
 
-  virtual bool can_be_inline_type() const { return false; }
+  virtual bool can_be_value_type() const { return false; }
   virtual const TypeKlassPtr* as_klass_type(bool try_for_exact = false) const;
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeAryPtr* BOTTOM;
@@ -1970,7 +1970,7 @@ public:
 
   virtual const TypeKlassPtr* with_offset(intptr_t offset) const { ShouldNotReachHere(); return nullptr; }
 
-  virtual bool can_be_inline_array() const { ShouldNotReachHere(); return false; }
+  virtual bool can_be_value_array() const { ShouldNotReachHere(); return false; }
 
   virtual const TypeKlassPtr* try_improve() const { return this; }
 
@@ -2018,7 +2018,7 @@ public:
   bool is_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
   bool maybe_java_subtype_of_helper(const TypeKlassPtr* other, bool this_exact, bool other_exact) const;
 
-  virtual bool can_be_inline_type() const { return (_klass == nullptr || _klass->can_be_inline_klass(klass_is_exact())); }
+  virtual bool can_be_value_type() const { return (_klass == nullptr || _klass->can_be_value_klass(klass_is_exact())); }
 
   static const TypeInstKlassPtr *make(ciKlass* k, InterfaceHandling interface_handling) {
     const TypeInterfaces* interfaces = TypePtr::interfaces(k, true, true, false, interface_handling);
@@ -2054,7 +2054,7 @@ public:
 
   virtual FlatInArray flat_in_array() const { return _flat_in_array; }
 
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeInstKlassPtr* OBJECT; // Not-null object klass or below
@@ -2142,7 +2142,7 @@ public:
   bool is_not_null_free() const { return _not_null_free; }
   bool is_atomic()        const { return _atomic; }
   bool is_refined_type()  const { return _refined_type; }
-  virtual bool can_be_inline_array() const;
+  virtual bool can_be_value_array() const;
 
   // Convenience common pre-built types.
   static const TypeAryKlassPtr* OBJECT_ARRAY;         // Not-null object array klass
@@ -2285,15 +2285,15 @@ class TypeFunc : public Type {
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
 
-  // Domains of inputs: inline type arguments are not passed by
-  // reference, instead each field of the inline type is passed as an
+  // Domains of inputs: value type arguments are not passed by
+  // reference, instead each field of the value type is passed as an
   // argument. We maintain 2 views of the argument list here: one
-  // based on the signature (with an inline type argument as a single
+  // based on the signature (with a value type argument as a single
   // slot), one based on the actual calling convention (with a value
   // type argument as a list of its fields).
   const TypeTuple* const _domain_sig;
   const TypeTuple* const _domain_cc;
-  // Range of results. Similar to domains: an inline type result can be
+  // Range of results. Similar to domains: a value type result can be
   // returned in registers in which case range_cc lists all fields and
   // is the actual calling convention.
   const TypeTuple* const _range_sig;
@@ -2325,7 +2325,7 @@ public:
 
   BasicType return_type() const;
 
-  bool returns_inline_type_as_fields() const {
+  bool returns_value_type_as_fields() const {
     // First condition is not sufficient because returned value class can be empty
     assert(_range_sig == _range_cc || _scalarized_return, "Only possible with scalarized return");
     return _scalarized_return;
@@ -2607,12 +2607,12 @@ inline bool Type::is_floatingpoint() const {
   return false;
 }
 
-inline bool Type::is_inlinetypeptr() const {
-  return isa_instptr() != nullptr && is_instptr()->instance_klass()->is_inlinetype();
+inline bool Type::is_valueklassptr() const {
+  return isa_instptr() != nullptr && is_instptr()->instance_klass()->is_value_klass();
 }
 
-inline ciInlineKlass* Type::inline_klass() const {
-  return make_ptr()->is_instptr()->instance_klass()->as_inline_klass();
+inline ciValueKlass* Type::value_klass() const {
+  return make_ptr()->is_instptr()->instance_klass()->as_value_klass();
 }
 
 template <>

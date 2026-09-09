@@ -411,7 +411,7 @@ void G1CollectionSet::add_optional_group(G1CardSetGroup* group,
                                          double predicted_time_ms) {
   _optional_groups.append(group);
   prepare_optional_group(group, num_optional_regions);
-  num_optional_regions += group->length();
+  num_optional_regions += group->num_regions();
   predicted_optional_time_ms += predicted_time_ms;
 }
 
@@ -428,8 +428,8 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
 
   double optional_threshold_ms = time_remaining_ms * _policy->optional_prediction_fraction();
 
-  uint min_num_old_cset_regions = _policy->calc_min_old_cset_length(candidates()->last_marking_candidates_length());
-  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_old_cset_length());
+  uint min_num_old_cset_regions = _policy->calc_min_num_old_cset_regions(candidates()->num_last_marking_candidate_regions());
+  uint max_num_old_cset_regions = MAX2(min_num_old_cset_regions, _policy->calc_max_num_old_cset_regions());
   bool check_time_remaining = _policy->use_adaptive_num_young_regions();
 
   G1CardSetGroupList* from_marking_groups = &candidates()->from_marking_groups();
@@ -471,12 +471,12 @@ double G1CollectionSet::select_candidates_from_marking(double time_remaining_ms)
       add_group_to_collection_set(group);
       selected_groups.append(group);
 
-      num_initial_regions += group->length();
+      num_initial_regions += group->num_regions();
 
       predicted_initial_time_ms += predicted_time_ms;
       // Record the number of regions added with no time remaining
       if (time_remaining_ms == 0.0) {
-        num_expensive_regions += group->length();
+        num_expensive_regions += group->num_regions();
       }
     } else if (!check_time_remaining) {
       // In the non-auto-tuning case, we'll finish adding regions
@@ -529,7 +529,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   double predicted_initial_time_ms = 0.0;
   double predicted_optional_time_ms = 0.0;
 
-  uint const min_num_regions = _policy->min_retained_old_cset_length();
+  uint const min_num_regions = _policy->min_num_retained_old_cset_regions();
   // We want to make sure that on the one hand we process the retained regions asap,
   // but on the other hand do not take too many of them as optional regions.
   // So we split the time budget into budget we will unconditionally take into the
@@ -550,7 +550,7 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
   G1CardSetGroupList groups_to_abandon;
 
   for (G1CardSetGroup* group : *retained_groups) {
-    assert(group->length() == 1, "Retained groups should have only 1 region");
+    assert(group->num_regions() == 1, "Retained groups should have only 1 region");
 
     double predicted_time_ms = group->predict_group_total_time_ms();
 
@@ -579,13 +579,13 @@ void G1CollectionSet::select_candidates_from_retained(double time_remaining_ms) 
     if (num_initial_regions < min_num_regions || fits_in_remaining_time) {
       predicted_initial_time_ms += predicted_time_ms;
       if (!fits_in_remaining_time) {
-        num_expensive_regions += group->length();
+        num_expensive_regions += group->num_regions();
       }
 
       add_group_to_collection_set(group);
       remove_from_retained.append(group);
 
-      num_initial_regions += group->length();
+      num_initial_regions += group->num_regions();
     } else if (predicted_time_ms <= optional_time_remaining_ms) {
       // Prepare optional collection region.
       add_optional_group(group,
@@ -637,14 +637,14 @@ double G1CollectionSet::select_candidates_from_optional_groups(double time_remai
 
     if (predicted_time_ms > time_remaining_ms) {
       log_debug(gc, ergo, cset)("Prediction %.3fms for group with %u regions does not fit remaining time: %.3fms.",
-                                predicted_time_ms, group->length(), time_remaining_ms);
+                                predicted_time_ms, group->num_regions(), time_remaining_ms);
       break;
     }
 
     total_prediction_ms += predicted_time_ms;
     time_remaining_ms -= predicted_time_ms;
 
-    num_regions_selected += group->length();
+    num_regions_selected += group->num_regions();
 
     add_group_to_collection_set(group);
     selected.append(group);
