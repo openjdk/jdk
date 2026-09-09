@@ -479,7 +479,7 @@ G1CollectionSet::CandidateSelection::CandidateSelection(G1CollectionSet* collect
 void G1CollectionSet::CandidateSelection::add_initial(G1CardSetGroup* group,
                                                       const G1EvacuationPrediction& prediction) {
   _collection_set->add_group_to_collection_set(group);
-  _num_initial_regions += group->length();
+  _num_initial_regions += group->num_regions();
   _initial_prediction._time_ms += prediction._time_ms;
   _initial_prediction._bytes_to_copy += prediction._bytes_to_copy;
 }
@@ -487,7 +487,7 @@ void G1CollectionSet::CandidateSelection::add_initial(G1CardSetGroup* group,
 void G1CollectionSet::CandidateSelection::add_optional(G1CardSetGroup* group,
                                                        const G1EvacuationPrediction& prediction) {
   _collection_set->add_optional_group(group);
-  _num_optional_regions += group->length();
+  _num_optional_regions += group->num_regions();
   _optional_prediction._time_ms += prediction._time_ms;
   _optional_prediction._bytes_to_copy += prediction._bytes_to_copy;
 }
@@ -498,14 +498,14 @@ void G1CollectionSet::CandidateSelection::add_for_minimum(G1CardSetGroup* group,
                                                           bool is_expensive_group,
                                                           const char* candidate_type) {
   if (is_expensive_group) {
-    _num_expensive_regions += group->length();
+    _num_expensive_regions += group->num_regions();
   }
 
   if (prediction._bytes_to_copy > budget._copy_budget_bytes) {
     log_debug(gc, ergo, cset)("Minimum %s card set group %u (%u regions) does not fit "
                               "old CSet copy budget: predicted %zuB, budget %zuB. "
                               "Adding to initial collection set anyway.",
-                              candidate_type, group->group_id(), group->length(),
+                              candidate_type, group->group_id(), group->num_regions(),
                               prediction._bytes_to_copy, budget._copy_budget_bytes);
   }
 
@@ -685,7 +685,7 @@ bool G1CollectionSet::MarkingCandidateSelection::add_initial_or_optional(G1CardS
     if (time_budget_after_group_ms > optional_threshold_ms) {
       log_debug(gc, ergo, cset)("Prediction %zuB for group with %u regions does not fit "
                                 "old CSet copy budget: %zuB. Preparing as optional.",
-                                prediction._bytes_to_copy, group->length(),
+                                prediction._bytes_to_copy, group->num_regions(),
                                 _budget._copy_budget_bytes);
     }
     _budget._time_budget_ms = time_budget_after_group_ms;
@@ -807,7 +807,7 @@ void G1CollectionSet::RetainedCandidateSelection::select_required(SelectionBudge
       break;
     }
 
-    assert(group->length() == 1, "Retained groups should have only 1 region");
+    assert(group->num_regions() == 1, "Retained groups should have only 1 region");
 
     G1CardSetGroupItem* ci = group->at(0);
     if (ci->_r->has_pinned_objects()) {
@@ -930,7 +930,7 @@ void G1CollectionSet::RetainedCandidateSelection::age_and_remove_unreclaimable_c
   G1CardSetGroupList groups_to_abandon;
 
   for (G1CardSetGroup* group : retained_groups) {
-    assert(group->length() == 1, "Retained groups should have only 1 region");
+    assert(group->num_regions() == 1, "Retained groups should have only 1 region");
 
     G1CardSetGroupItem* ci = group->at(0);
     G1HeapRegion* r = ci->_r;
@@ -981,13 +981,13 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
     if (predicted_time_ms > time_budget_ms) {
       log_debug(gc, ergo, cset)("Prediction %.3fms for group with %u regions does not fit "
                                 "time budget: %.3fms.",
-                                predicted_time_ms, group->length(), time_budget_ms);
+                                predicted_time_ms, group->num_regions(), time_budget_ms);
       break;
     }
     if (bytes_to_copy > copy_budget_bytes) {
       log_debug(gc, ergo, cset)("Prediction %zuB for group with %u regions does not fit "
                                 "old CSet copy budget: %zuB.",
-                                bytes_to_copy, group->length(), copy_budget_bytes);
+                                bytes_to_copy, group->num_regions(), copy_budget_bytes);
       break;
     }
 
@@ -997,7 +997,7 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
 
     copy_budget_bytes = available_copy_budget_bytes(copy_budget_bytes, bytes_to_copy);
 
-    num_selected_regions += group->length();
+    num_selected_regions += group->num_regions();
 
     add_group_to_collection_set(group);
     selected.append(group);

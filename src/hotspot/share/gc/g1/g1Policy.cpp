@@ -544,7 +544,7 @@ G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() con
   precond(next_gc_should_be_mixed());
 
   G1CardSetGroupList& marking_groups = candidates()->from_marking_groups();
-  uint min_marking_candidates = calc_min_num_old_cset_regions(candidates()->last_marking_candidates_length());
+  uint min_marking_candidates = calc_min_num_old_cset_regions(candidates()->num_last_marking_candidate_regions());
   uint min_regions = MIN2(min_marking_candidates, marking_groups.num_regions());
 
   uint selected_regions = 0;
@@ -559,7 +559,7 @@ G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() con
     G1EvacuationPrediction group_prediction = group->predict_group_evacuation();
     predicted_evac_time_ms += group_prediction._time_ms;
     predicted_bytes_to_copy += group_prediction._bytes_to_copy;
-    selected_regions += group->length();
+    selected_regions += group->num_regions();
     selected_groups++;
   }
 
