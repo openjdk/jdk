@@ -277,7 +277,7 @@ import jdk.internal.reflect.Reflection;
  * <p><a id="format">The provider-configuration file must be encoded in UTF-8. </a>
  * Space and tab characters surrounding each service provider's name, as well as
  * blank lines, are ignored. The comment character is {@code '#'}
- * ({@code U+0023} <span style="font-size:smaller;">NUMBER SIGN</span>);
+ * ({@code U+0023} <span style="font-size:smaller;">NUMBER SIGN</span>).
  * On each line, all characters following the first comment character are ignored.
  * If a service provider class name is listed more than once in a
  * provider-configuration file, then the duplicate is ignored. If a service
