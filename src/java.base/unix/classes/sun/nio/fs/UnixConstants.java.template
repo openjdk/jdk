@@ -30,7 +30,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#ifdef _ALLBSD_SOURCE
+// <sys/attr.h> and <sys/clonefile.h> are macOS headers; the other BSDs have
+// neither, and the code that uses them lives in src/java.base/macosx.
+#ifdef __APPLE__
 #include <sys/attr.h>
 #include <sys/clonefile.h>
 #endif
@@ -152,7 +154,7 @@ class UnixConstants {
     static final int PREFIX_AT_REMOVEDIR = 00;
 #endif
 
-#ifdef _ALLBSD_SOURCE
+#ifdef __APPLE__
     // flags used with clonefile
     static final int PREFIX_CLONE_NOFOLLOW = CLONE_NOFOLLOW;
     static final int PREFIX_CLONE_NOOWNERCOPY = CLONE_NOOWNERCOPY;

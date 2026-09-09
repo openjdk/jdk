@@ -45,7 +45,8 @@
 #define MAXNAMELEN           PATH_MAX
 #endif
 
-#ifdef _LP64
+/* Follows the jlong of jni_md.h, which is not long everywhere LP64 is. */
+#if defined(_LP64) && !defined(__OpenBSD__)
 #define JLONG_FORMAT_SPECIFIER "%ld"
 #else
 #define JLONG_FORMAT_SPECIFIER "%lld"
