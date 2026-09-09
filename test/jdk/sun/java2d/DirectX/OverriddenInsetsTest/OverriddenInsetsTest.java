@@ -96,6 +96,7 @@ public class OverriddenInsetsTest {
 
     private static void createAndShowGUI() {
         frame = new Frame("OverriddenInsetsTest");
+        frame.setUndecorated(true);
         frame.setSize(260,260);
         frame.setBackground(Color.gray);
         Panel p1 = new Panel() {
