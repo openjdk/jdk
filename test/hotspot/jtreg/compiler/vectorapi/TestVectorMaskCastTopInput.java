@@ -24,9 +24,8 @@
 /**
  * @test
  * @bug 8391418
- * @key randomness
  * @summary VectorMaskCastNode::Identity must handle the TOP input during IGVN
- * @requires vm.debug == true & vm.compiler2.enabled
+ * @requires vm.compiler2.enabled
  * @modules jdk.incubator.vector
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
