@@ -1087,10 +1087,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // Save result (push state before jvmti call and pop it afterwards) and notify jvmti.
   notify_method_exit(false, state, notify_jvmti ? NotifyJVMTI : SkipNotifyJVMTI);
 
-  if (UseArrayFlattening) {
-    stop("implement function InterpreterMacroAssembler::remove_activation #2");
-  }
-
   if (StackReservedPages > 0) {
     BLOCK_COMMENT("reserved_stack_check:");
     // Test if reserved zone needs to be enabled.
