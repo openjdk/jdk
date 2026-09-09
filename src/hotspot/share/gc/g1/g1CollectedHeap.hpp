@@ -1234,9 +1234,9 @@ public:
 
   inline uint target_num_eden_regions() const;
   uint num_eden_regions() const { return _eden.num_regions(); }
-  uint num_eden_regions(uint node_index) const { return _eden.regions_on_node(node_index); }
+  uint num_eden_regions(uint node_index) const { return _eden.num_regions_on_node(node_index); }
   uint num_survivor_regions() const { return _survivor.num_regions(); }
-  uint num_survivor_regions(uint node_index) const { return _survivor.regions_on_node(node_index); }
+  uint num_survivor_regions(uint node_index) const { return _survivor.num_regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint num_young_regions() const { return _eden.num_regions() + _survivor.num_regions(); }

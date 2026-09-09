@@ -1549,7 +1549,7 @@ jint G1CollectedHeap::initialize() {
 
   G1HeapRegionRemSet::initialize(_reserved);
 
-  G1FreeRegionList::set_unrealistically_long_length(max_num_regions() + 1);
+  G1FreeRegionList::set_unrealistically_large_num_regions(max_num_regions() + 1);
 
   _bot = new G1BlockOffsetTable(reserved(), bot_storage);
 
