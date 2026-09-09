@@ -100,7 +100,7 @@ markDescriptorsCloseOnExec(void)
     int dir_fd = dirfd(dp);
 
     while ((dirp = readdir(dp)) != NULL) {
-        if (!isdigit(dirp->d_name[0])) {
+        if (!isdigit((unsigned char)dirp->d_name[0])) {
             continue;
         }
         int fd = strtol(dirp->d_name, NULL, 10);

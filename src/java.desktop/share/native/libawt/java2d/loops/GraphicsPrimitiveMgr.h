@@ -26,6 +26,10 @@
 #ifndef GraphicsPrimitiveMgr_h_Included
 #define GraphicsPrimitiveMgr_h_Included
 
+// PtrAddBytes below casts through intptr_t, and nothing here declares it:
+// on OpenBSD no other header in this chain pulls in <stdint.h>.
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif

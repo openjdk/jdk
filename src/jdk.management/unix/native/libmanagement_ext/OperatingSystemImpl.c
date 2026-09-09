@@ -34,6 +34,10 @@
 #include <sys/stat.h>
 #if defined(_ALLBSD_SOURCE)
 #include <sys/sysctl.h>
+#ifdef __NetBSD__
+// vm.uvmexp2 answers both the free page count and the swap usage.
+#include <uvm/uvm_extern.h>
+#endif
 #ifdef __APPLE__
 #include <sys/param.h>
 #include <sys/mount.h>
@@ -103,7 +107,17 @@ static jlong get_total_or_available_swap_space_size(JNIEnv* env, jboolean availa
         throw_internal_error(env, "perfstat_memory_total failed");
     }
     return available ? (jlong)(memory_info.pgsp_free * 4L * 1024L) : (jlong)(memory_info.pgsp_total * 4L * 1024L);
-#else /* _ALLBSD_SOURCE */
+#elif defined(__NetBSD__)
+    struct uvmexp_sysctl uv;
+    size_t size = sizeof(uv);
+    int mib[2] = { CTL_VM, VM_UVMEXP2 };
+    if (sysctl(mib, 2, &uv, &size, NULL, 0) != 0) {
+        throw_internal_error(env, "sysctl vm.uvmexp2 failed");
+        return -1;
+    }
+    return available ? (jlong)(uv.swpages - uv.swpginuse) * uv.pagesize
+                     : (jlong)uv.swpages * uv.pagesize;
+#else /* the remaining BSDs */
     /*
      * XXXBSD: there's no way available to get swap info in
      *         FreeBSD.  Usage of libkvm is not an option here
@@ -217,6 +231,15 @@ Java_com_sun_management_internal_OperatingSystemImpl_getFreeMemorySize0
         return -1;
     }
     return (jlong)vm_stats.free_count * page_size;
+#elif defined(__NetBSD__)
+    struct uvmexp_sysctl uv;
+    size_t size = sizeof(uv);
+    int mib[2] = { CTL_VM, VM_UVMEXP2 };
+    if (sysctl(mib, 2, &uv, &size, NULL, 0) != 0) {
+        throw_internal_error(env, "sysctl vm.uvmexp2 failed");
+        return -1;
+    }
+    return (jlong)uv.free * uv.pagesize;
 #elif defined(_ALLBSD_SOURCE)
     /*
      * XXBSDL no way to do it in FreeBSD
@@ -245,7 +268,13 @@ Java_com_sun_management_internal_OperatingSystemImpl_getTotalMemorySize0
     size_t rlen;
 
     mib[0] = CTL_HW;
+#if defined(HW_MEMSIZE) // Apple
     mib[1] = HW_MEMSIZE;
+#elif defined(HW_PHYSMEM64) // NetBSD
+    mib[1] = HW_PHYSMEM64;
+#elif defined(HW_PHYSMEM) // FreeBSD, OpenBSD, DragonFly
+    mib[1] = HW_PHYSMEM;
+#endif
     rlen = sizeof(result);
     if (sysctl(mib, 2, &result, &rlen, NULL, 0) != 0) {
         throw_internal_error(env, "sysctl failed");
