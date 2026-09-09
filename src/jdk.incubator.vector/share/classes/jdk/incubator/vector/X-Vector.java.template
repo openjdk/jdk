@@ -2545,6 +2545,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             }
 #end[FP]
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m{#if[FP]?.cast(vsp)});
@@ -2599,6 +2600,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
             }
 #end[FP]
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m{#if[FP]?.cast(vsp)});

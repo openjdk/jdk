@@ -28,6 +28,7 @@
 
 #include "memory/resourceArea.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nmtHashTable.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -240,32 +241,23 @@ public:
   };
 
   class SummaryDiff {
-    enum class Marker { Empty, Occupied };
-    static_assert((int)Marker::Empty == 0, "We memset the array to 0, so this must be true");
-
     struct KVEntry {
-      Marker marker;
-      MemTag mem_tag;
+      MemTag mt;
       SingleDiff single_diff;
+      static int hash(const KVEntry& kv) { return (int)kv.mt; }
+      static bool equals(const KVEntry& a, const KVEntry& b) { return a.mt == b.mt; }
+      KVEntry(const KVEntry&) = default;
+      KVEntry() = default;
+      KVEntry(MemTag mt, SingleDiff sd) : mt(mt), single_diff(sd) {}
     };
 
-    static constexpr const int _init_size = 4;
-    KVEntry _small[_init_size];
-    KVEntry* _members;
-    int _length;
-    int _occupied;
-    KVEntry& hash_insert_or_get(const KVEntry& kv, bool* found);
-    void grow_and_rehash();
-    uint32_t hash_to_bucket(MemTag mt);
-
+    using Table = OpenAddressedHashTable<KVEntry,
+                                         decltype(&KVEntry::hash),
+                                         decltype(&KVEntry::equals),
+                                         mtNMT, AllocFailStrategy::EXIT_OOM, 100>;
+    Table _table;
   public:
-    SummaryDiff() : _small(), _members(_small), _length(_init_size), _occupied(0) {
-      clear();
-    }
-    ~SummaryDiff() {
-      if (_members != _small) {
-        FREE_C_HEAP_ARRAY(_members);
-      }
+    SummaryDiff() : _table(&KVEntry::hash, &KVEntry::equals) {
     }
 
     SingleDiff& tag(MemTag tag);
@@ -273,18 +265,9 @@ public:
 
     template<typename F>
     void visit(F f) const {
-      int hits = 0;
-      for (int i = 0; i < _length; i++) {
-        const KVEntry& kv = _members[i];
-        if (kv.marker == Marker::Occupied) {
-          f(kv.mem_tag, kv.single_diff);
-          hits++;
-        }
-        if (hits == _occupied) {
-          // Early exit
-          return;
-        }
-      }
+      _table.visit([&](const KVEntry& entry) {
+        f(entry.mt, entry.single_diff);
+      });
     }
 
     void add(const SummaryDiff& other);

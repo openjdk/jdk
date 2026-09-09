@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -732,8 +732,8 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment asSlice(long offset);
 
     /**
-     * Returns a new memory segment that has the same address and scope as this segment,
-     * but with the provided size.
+     * {@return a new memory segment that has the same address and scope as this segment,
+     *          but with the provided size}
      * <p>
      * If this segment is {@linkplain MemorySegment#isReadOnly() read-only},
      * the returned segment is also {@linkplain MemorySegment#isReadOnly() read-only}.
@@ -742,8 +742,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Hence, no memory will be allocated or freed by this method.
      *
      * @param newSize the size of the returned segment
-     * @return a new memory segment that has the same address and scope as
-     *         this segment, but the new provided size
      * @throws IllegalArgumentException if {@code newSize < 0}
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
@@ -755,11 +753,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment reinterpret(long newSize);
 
     /**
-     * Returns a new memory segment with the same address and size as this segment, but
-     * with the provided arena's scope. As such, the returned segment cannot be accessed
-     * after the provided arena has been closed. Moreover, the returned segment can be
-     * accessed compatibly with the confinement restrictions associated with the provided
-     * arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
+     * {@return a new memory segment with the same address and size as this segment, but
+     *          with the provided arena's scope}
+     * <p>
+     * As such, the returned segment cannot be accessed after the provided arena has been
+     * closed. Moreover, the returned segment can be accessed compatibly with
+     * the confinement restrictions associated with the provided arena: that is, if
+     * the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
@@ -799,7 +799,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param arena the arena to be associated with the returned segment
      * @param cleanup the cleanup action that should be executed when the provided arena
      *                is closed (can be {@code null})
-     * @return a new memory segment with unbounded size
      * @throws IllegalStateException if {@code arena.scope().isAlive() == false}
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
@@ -811,11 +810,13 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     MemorySegment reinterpret(Arena arena, Consumer<MemorySegment> cleanup);
 
     /**
-     * Returns a new segment with the same address as this segment, but with the provided
-     * size and the provided arena's scope. As such, the returned segment cannot be
-     * accessed after the provided arena has been closed. Moreover, if the returned
-     * segment can be accessed compatibly with the confinement restrictions associated
-     * with the provided arena: that is, if the provided arena is a {@linkplain Arena#ofConfined() confined arena},
+     * {@return a new segment with the same address as this segment, but with the provided
+     *          size and the provided arena's scope}
+     * <p>
+     * As such, the returned segment cannot be accessed after the provided arena has been
+     * closed. Moreover, if the returned segment can be accessed compatibly with
+     * the confinement restrictions associated with the provided arena: that is, if
+     * the provided arena is a {@linkplain Arena#ofConfined() confined arena},
      * the returned segment can only be accessed by the arena's owner thread, regardless
      * of the confinement restrictions associated with this segment. In other words, this
      * method returns a segment that can be used as any other segment allocated using the
@@ -856,8 +857,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * @param arena the arena to be associated with the returned segment
      * @param cleanup the cleanup action that should be executed when the provided arena
      *                is closed (can be {@code null}).
-     * @return a new segment that has the same address as this segment, but with the new
-     *         size and its scope set to that of the provided arena.
      * @throws UnsupportedOperationException if this segment is not a
      *         {@linkplain #isNative() native} segment
      * @throws IllegalArgumentException if {@code newSize < 0}
