@@ -50,7 +50,7 @@ void ShenandoahUncommitThread::run_service() {
   // Having an interval 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay. Poll interval
   // cannot be allowed to decay to zero, which would cause indefinite wait.
-  const int64_t poll_interval = MAX2<int64_t>(10, int64_t(ShenandoahUncommitDelay) / 10);
+  const int64_t poll_interval = MAX2<int64_t>(1, int64_t(ShenandoahUncommitDelay) / 10);
 
   // ShenandoahUncommitDelay is in millis, but shrink_delay is in seconds.
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
