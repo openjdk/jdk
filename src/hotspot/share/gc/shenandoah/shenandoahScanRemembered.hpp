@@ -928,55 +928,19 @@ struct ShenandoahRegionChunk {
 
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
-  // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
-  // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
-  static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
-  static const size_t _clusters_in_smallest_chunk = 4;
-
-  size_t _largest_chunk_size_words;
-
-  // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
-  // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-  static size_t smallest_chunk_size_words() {
-      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+  static const size_t _clusters_in_chunk = 8;
+  static size_t chunk_size_words() {
+      return _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   }
 
-  // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
-  // The chunks of assigned work are divided into groups, where the size of the typical group (_regular_group_size) is half the
-  // total number of regions.  The first group may be larger than
-  // _regular_group_size in the case that the first group's chunk
-  // size is less than the region size.  The last group may be larger
-  // than _regular_group_size because no group is allowed to
-  // have smaller assignments than _smallest_chunk_size, which is 128 KB.
-
-  // Under normal circumstances, no configuration needs more than _maximum_groups (default value of 16).
-  // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
-  // The last group processes chunks of size 128 KiB.  There are four groups total.
-
-  // group[ 0] is 4 MiB chunk size (_maximum_chunk_size_words)
-  // group[ 1] is 2 MiB chunk size
-  // group[ 2] is 1 MiB chunk size
-  // group[ 3] is 512 KiB chunk size
-  // group[ 4] is 256 KiB chunk size
-  // group[ 5] is 128 KiB chunk size
-  // group[ 6] is  64 KiB chunk size
-  // group[ 7] is  32 KiB chunk size
-  // group[ 8] is  16 KiB chunk size
-  // group[ 9] is   8 KiB chunk size
-  // group[10] is   4 KiB chunk size
-  //   Note: 4 KiB is smallest possible chunk_size, computed from:
-  //         _clusters_in_smallest_chunk * MinimumCardSizeInWords * ShenandoahCardCluster::CardsPerCluster, which is
-  //         4 * 16 * 64 = 4096
-
-  // We set aside arrays to represent the maximum number of groups that may be required for any heap configuration
-  static const size_t _maximum_groups = 11;
-
+  static const size_t _maximum_groups = 1;
   const ShenandoahHeap* _heap;
 
-  const size_t _regular_group_size;                        // Number of chunks in each group
-  const size_t _first_group_chunk_size_b4_rebalance;
-  const size_t _num_groups;                        // Number of groups in this configuration
-  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
+  // How many chunks in a group?
+  const size_t _group_size;
+  // All Chunks (assignments) are of the same size, and belong to a single group
+  const size_t _num_groups = 1;
+  // Total chunks is HeapSizeWords / chunk_size_in_words()
   const size_t _total_chunks;
 
   shenandoah_padding(0);
@@ -993,9 +957,6 @@ private:
 
   // Makes use of _heap.
   size_t calc_regular_group_size();
-
-  // Makes use of _regular_group_size, which must be initialized before call.
-  size_t calc_first_group_chunk_size_b4_rebalance();
 
   // Makes use of _regular_group_size and _first_group_chunk_size_b4_rebalance, both of which must be initialized before call.
   size_t calc_num_groups();
