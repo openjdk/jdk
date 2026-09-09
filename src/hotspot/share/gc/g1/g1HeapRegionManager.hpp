@@ -61,10 +61,10 @@ class G1HeapRegionTable : public G1BiasedMappedArray<G1HeapRegion*> {
 // region we retain the G1HeapRegion to be able to re-use it in the
 // future (in case we recommit it).
 //
-// We keep track of four lengths:
+// We keep track of three region counts:
 //
-// * _num_committed (returned by length()) is the number of currently
-//   committed regions. These may not be contiguous.
+// * num_committed_regions() is the number of currently committed regions using
+//   the committed map. These may not be contiguous.
 // * _next_highest_used_hrm_index (not exposed outside this class) is the
 //   highest heap region index +1 for which we have G1HeapRegions.
 // * max_num_regions() returns the maximum number of regions the heap has reserved.
@@ -226,7 +226,7 @@ public:
   uint num_used_regions() const { return num_committed_regions() - num_free_regions(); }
 
   uint num_free_regions(uint node_index) const {
-    return _free_list.length(node_index);
+    return _free_list.num_regions_on_node(node_index);
   }
 
   size_t total_free_bytes() const {

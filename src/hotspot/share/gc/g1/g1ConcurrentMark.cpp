@@ -3224,9 +3224,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGro
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(),
-                          group->length(),
-                          group->length() > 0 ? group->gc_efficiency() : 0.0,
-                          group->length() > 0 ? group->liveness_percent() : 0.0,
+                          group->num_regions(),
+                          group->num_regions() > 0 ? group->gc_efficiency() : 0.0,
+                          group->num_regions() > 0 ? group->liveness_percent() : 0.0,
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();
