@@ -27,6 +27,7 @@ package jdk.jpackage.internal;
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -38,6 +39,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.model.AppImageLayout;
+import jdk.jpackage.internal.model.AppImageLayout.DirectorySelector;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
 import jdk.jpackage.internal.model.ExternalApplication;
@@ -48,12 +50,13 @@ import jdk.jpackage.internal.model.LauncherStartupInfo;
 import jdk.jpackage.internal.model.ResourceDirLauncherIcon;
 import jdk.jpackage.internal.model.RuntimeBuilder;
 import jdk.jpackage.internal.model.RuntimeLayout;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.RuntimeReleaseFile;
 
 final class ApplicationBuilder {
 
     ApplicationBuilder() {
+        userContent = new ArrayList<>();
     }
 
     ApplicationBuilder(ApplicationBuilder other) {
@@ -62,9 +65,8 @@ final class ApplicationBuilder {
         version = other.version;
         vendor = other.vendor;
         copyright = other.copyright;
-        appDirSources = other.appDirSources;
+        userContent = new ArrayList<>(other.userContent);
         externalApp = other.externalApp;
-        contentDirSources = other.contentDirSources;
         appImageLayout = other.appImageLayout;
         runtimeBuilder = other.runtimeBuilder;
         launchers = other.launchers;
@@ -94,8 +96,7 @@ final class ApplicationBuilder {
                 validatedVersion(),
                 Optional.ofNullable(vendor).orElseGet(DEFAULTS::vendor),
                 Optional.ofNullable(copyright).orElseGet(DEFAULTS::copyright),
-                Optional.ofNullable(appDirSources).orElseGet(List::of),
-                Optional.ofNullable(contentDirSources).orElseGet(List::of),
+                List.copyOf(userContent),
                 appImageLayout,
                 Optional.ofNullable(runtimeBuilder),
                 launchersAsList,
@@ -169,13 +170,16 @@ final class ApplicationBuilder {
         return this;
     }
 
-    ApplicationBuilder appDirSources(Collection<RootedPath> v) {
-        appDirSources = v;
+    ApplicationBuilder addUserContent(ExplodedPath source, DirectorySelector dest) {
+        userContent.add(Map.entry(source, dest));
         return this;
     }
 
-    ApplicationBuilder contentDirSources(Collection<RootedPath> v) {
-        contentDirSources = v;
+    ApplicationBuilder addUserContent(List<ExplodedPath> sources, DirectorySelector dest) {
+        Objects.requireNonNull(dest);
+        sources.reversed().forEach(source -> {
+            addUserContent(source, dest);
+        });
         return this;
     }
 
@@ -337,8 +341,7 @@ final class ApplicationBuilder {
                 app.version(),
                 app.vendor(),
                 app.copyright(),
-                app.appDirSources(),
-                app.contentDirSources(),
+                app.userContent(),
                 Objects.requireNonNull(appImageLayout),
                 app.runtimeBuilder(),
                 app.launchers(),
@@ -385,9 +388,8 @@ final class ApplicationBuilder {
     private String version;
     private String vendor;
     private String copyright;
-    private Collection<RootedPath> appDirSources;
+    private Collection<Map.Entry<ExplodedPath, DirectorySelector>> userContent;
     private ExternalApplication externalApp;
-    private Collection<RootedPath> contentDirSources;
     private AppImageLayout appImageLayout;
     private RuntimeBuilder runtimeBuilder;
     private ApplicationLaunchers launchers;

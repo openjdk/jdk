@@ -66,26 +66,6 @@
  * @run driver VMOptionWarning Develop
  */
 
-/* @test VMOptionWarningCompactObjectHeaders
- * @bug 8360700
- * @summary Warn if -XX:+UseCompactObjectHeaders is used with -XX:-UseObjectMonitorTable
- * @requires vm.flagless
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver VMOptionWarning CompactObjectHeaders
- */
-
-/* @test VMOptionWarningUseObjectMonitorTable
- * @bug 8360700
- * @summary Warn if -XX:-UseObjectMonitorTable is used without -XX:-UseCompactObjectHeaders
- * @requires vm.flagless
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver VMOptionWarning UseObjectMonitorTable
- */
-
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Platform;
@@ -125,20 +105,6 @@ public class VMOptionWarning {
                 output = new OutputAnalyzer(pb.start());
                 output.shouldNotHaveExitValue(0);
                 output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
-                break;
-            }
-            case "CompactObjectHeaders": {
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompactObjectHeaders", "-XX:+UnlockDiagnosticVMOptions", "-XX:-UseObjectMonitorTable", "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldHaveExitValue(0);
-                output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
-                break;
-            }
-            case "UseObjectMonitorTable": {
-                pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions", "-XX:-UseObjectMonitorTable", "-version");
-                output = new OutputAnalyzer(pb.start());
-                output.shouldHaveExitValue(0);
-                output.shouldContain("warning: -UseObjectMonitorTable is incompatible with +UseCompactObjectHeaders; ignoring -UseObjectMonitorTable");
                 break;
             }
             default: {

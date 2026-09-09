@@ -155,6 +155,7 @@ LoadFlattenedArrayStub::LoadFlattenedArrayStub(LIR_Opr array, LIR_Opr index, LIR
 
 void LoadFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
   // Pass arguments on stack.
   __ std(_array->as_register(), -16, R1_SP);
   __ std(_index->as_register(), -8, R1_SP);
@@ -182,6 +183,7 @@ StoreFlattenedArrayStub::StoreFlattenedArrayStub(LIR_Opr array, LIR_Opr index, L
 
 void StoreFlattenedArrayStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
+  __ extsw(_index->as_register(), _index->as_register()); // see CCallingConventionRequiresIntsAsLongs
   // Pass arguments on stack.
   __ std(_array->as_register(), -24, R1_SP);
   __ std(_index->as_register(), -16, R1_SP);
@@ -338,7 +340,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
   if (_throw_ie_stub != nullptr) {
     // When we come here, _obj_reg has already been checked to be non-null.
-    const int is_value_mask = markWord::inline_type_pattern;
+    const int is_value_mask = markWord::value_type_pattern;
     __ ld(R0, oopDesc::mark_offset_in_bytes(), _obj_reg->as_register());
     __ andi(R0, R0, is_value_mask);
     __ cmpdi(CR0, R0, is_value_mask);

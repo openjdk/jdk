@@ -44,7 +44,6 @@ import java.util.Arrays;
  * @test
  * @bug 8242335
  * @summary OpenSSL generated compatibility test with RSASSA-PSS Java.
- * @enablePreview
  * @run main PSSKeyCompatibility
  */
 

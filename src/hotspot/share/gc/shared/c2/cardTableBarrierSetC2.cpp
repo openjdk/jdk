@@ -47,7 +47,7 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
   bool use_precise = is_array || anonymous;
   bool tightly_coupled_alloc = (decorators & C2_TIGHTLY_COUPLED_ALLOC) != 0;
 
-  const InlineTypeNode* vt = nullptr;
+  const ValueTypeNode* vt = nullptr;
   if (access.is_parse_access() && static_cast<C2ParseAccess&>(access).vt() != nullptr) {
     vt = static_cast<C2ParseAccess&>(access).vt();
   }
@@ -69,7 +69,7 @@ Node* CardTableBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue& 
       ciField* field = vt->field(i);
       ciType* type = field->type();
       if (!type->is_primitive_type()) {
-        ciInlineKlass* vk = vt->bottom_type()->inline_klass();
+        ciValueKlass* vk = vt->bottom_type()->value_klass();
         int field_offset = field->offset_in_bytes() - vk->payload_offset();
         Node* value = vt->field_value(i);
         Node* field_adr = kit->basic_plus_adr(access.base(), adr, field_offset);
