@@ -44,6 +44,12 @@ class OSThread : public OSThreadBase {
   // (e.g. pthread_kill).
   pthread_t _pthread_id;
 
+#ifdef __OpenBSD__
+  // The thread's CPU clock, taken while the thread is known to be alive.
+  // See os::thread_cpu_time() for why it cannot be asked for later.
+  clockid_t _cpu_clockid;
+#endif
+
   // This is the "thread_id" from struct thread_identifier_info. According to a
   // comment in thread_info.h, this is a "system-wide unique 64-bit thread id".
   // The value is used by SA to correlate threads.
@@ -71,7 +77,18 @@ class OSThread : public OSThreadBase {
   }
   void set_pthread_id(pthread_t tid) {
     _pthread_id = tid;
+#ifdef __OpenBSD__
+    if (pthread_getcpuclockid(tid, &_cpu_clockid) != 0) {
+      _cpu_clockid = (clockid_t)-1;
+    }
+#endif
   }
+
+#ifdef __OpenBSD__
+  clockid_t cpu_clockid() const {
+    return _cpu_clockid;
+  }
+#endif
 
   void set_unique_thread_id();
 
