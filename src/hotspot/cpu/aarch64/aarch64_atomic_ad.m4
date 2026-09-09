@@ -49,7 +49,8 @@ dnl
 define(`CAE_INSN1',
 `
 instruct compareAndExchange$1$7(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
+ifelse($7,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($7,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -68,10 +69,10 @@ define(`CAE_INSN2',
 instruct compareAndExchange$1$6(iReg$2NoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
 ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
        $1$6,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
-       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
-       $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $1,P,INDENT(predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,N,INDENT(predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
        $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
-       `dnl')
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res (CompareAndExchange$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(TEMP_DEF res, KILL cr);
@@ -106,7 +107,8 @@ dnl
 define(`CAS_INSN1',
 `
 instruct ifelse($7,Weak,'weakCompare`,'compare`)AndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
-ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),`dnl')
+ifelse($6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res ($7CompareAndSwap$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
@@ -126,10 +128,10 @@ define(`CAS_INSN2',
 instruct ifelse($7,Weak,'weakCompare`,'compare`)AndSwap$1$6(iRegINoSp res, indirect mem, iReg$2 oldval, iReg$2 newval, rFlagsReg cr) %{
 ifelse($1$6,PAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
        $1$6,NAcq,INDENT(predicate(needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
-       $1,P,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
-       $1,N,INDENT(predicate(n->as_LoadStore()->barrier_data() == 0);),
+       $1,P,INDENT(predicate(!needs_acquiring_load_exclusive(n) && (n->as_LoadStore()->barrier_data() == 0));),
+       $1,N,INDENT(predicate(!needs_acquiring_load_exclusive(n) && n->as_LoadStore()->barrier_data() == 0);),
        $6,Acq,INDENT(predicate(needs_acquiring_load_exclusive(n));),
-       `dnl')
+       INDENT(predicate(!needs_acquiring_load_exclusive(n));))
   match(Set res ($7CompareAndSwap$1 mem (Binary oldval newval)));
   ins_cost(`'ifelse($6,Acq,,2*)VOLATILE_REF_COST);
   effect(KILL cr);
