@@ -986,6 +986,16 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       do_temp(opProfileValueType->_tmp);
       break;
     }
+
+    case lir_profile_multiple_array_types: {
+      assert(op->as_OpProfileMultipleArrayTypes() != nullptr, "must be");
+      LIR_OpProfileMultipleArrayTypes* opProfileMultipleArrayTypes = (LIR_OpProfileMultipleArrayTypes*)op;
+      do_input(opProfileMultipleArrayTypes->_array); do_temp(opProfileMultipleArrayTypes->_array);
+      do_temp(opProfileMultipleArrayTypes->_tmp1);
+      do_temp(opProfileMultipleArrayTypes->_tmp2);
+
+      break;
+    }
 default:
     op->visit(this);
   }
@@ -1207,6 +1217,10 @@ void LIR_OpProfileType::emit_code(LIR_Assembler* masm) {
 
 void LIR_OpProfileValueType::emit_code(LIR_Assembler* masm) {
   masm->emit_profile_value_type(this);
+}
+
+void LIR_OpProfileMultipleArrayTypes::emit_code(LIR_Assembler* masm) {
+  masm->emit_profile_multiple_array_types(this);
 }
 
 // LIR_List
@@ -1930,6 +1944,7 @@ const char * LIR_Op::name() const {
      case lir_profile_type:          s = "profile_type";  break;
      // LIR_OpProfileValueType
      case lir_profile_value_type:    s = "profile_value_type"; break;
+     case lir_profile_multiple_array_types: s = "profile_multiple_array_types"; break;
      // LIR_OpAssert
 #ifdef ASSERT
      case lir_assert:                s = "assert";        break;
@@ -2266,6 +2281,9 @@ void LIR_OpProfileValueType::print_instr(outputStream* out) const {
   mdp()->print(out);          out->print(" ");
   obj()->print(out);          out->print(" ");
   tmp()->print(out);          out->print(" ");
+}
+
+void LIR_OpProfileMultipleArrayTypes::print_instr(outputStream* out) const {
 }
 
 #endif // PRODUCT

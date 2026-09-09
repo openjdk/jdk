@@ -111,6 +111,8 @@ public class TestLWorldProfiling {
     private static final MyValue1 testValue1 = MyValue1.createWithFieldsInline(rI, rL);
     @NullRestricted
     private static final MyValue2 testValue2 = MyValue2.createWithFieldsInline(rI, rD);
+    @NullRestricted
+    private static final MyValue3 testValue3 = MyValue3.create();
     private static final MyValue1[] testValue1Array = (MyValue1[])ValueClass.newNullRestrictedNonAtomicArray(MyValue1.class, 1, MyValue1.DEFAULT);
     static {
         testValue1Array[0] = testValue1;
@@ -118,6 +120,10 @@ public class TestLWorldProfiling {
     private static final MyValue2[] testValue2Array = (MyValue2[])ValueClass.newNullRestrictedNonAtomicArray(MyValue2.class, 1, MyValue2.DEFAULT);
     static {
         testValue2Array[0] = testValue2;
+    }
+    private static final MyValue3[] testValue3Array = (MyValue3[])ValueClass.newNullRestrictedNonAtomicArray(MyValue3.class, 1, MyValue3.DEFAULT);
+    static {
+        testValue3Array[0] = testValue3;
     }
 
     // Some non-value classes
@@ -256,6 +262,8 @@ public class TestLWorldProfiling {
         Asserts.assertEQ(testValue1, o);
         o = test3(testValue2Array);
         Asserts.assertEQ(testValue2, o);
+        o = test3(testValue3Array);
+        Asserts.assertEQ(testValue3, o);
     }
 
     @Test
@@ -294,6 +302,10 @@ public class TestLWorldProfiling {
         Asserts.assertEQ(testValue1, o);
         o = test5(testValue1NotFlatArray);
         Asserts.assertEQ(testValue1, o);
+        o = test5(testValue2Array);
+        Asserts.assertEQ(testValue2, o);
+        o = test5(testValue3Array);
+        Asserts.assertEQ(testValue3, o);
     }
 
     // Check that profile data that's useless at the aaload is
@@ -376,7 +388,7 @@ public class TestLWorldProfiling {
 
     @Test
     @IR(applyIf = {"UseArrayLoadStoreProfile", "true"},
-        counts = {STATIC_CALL, "= 5", CLASS_CHECK_TRAP, "= 1", NULL_CHECK_TRAP, "= 2",
+        counts = {STATIC_CALL, "= 7", CLASS_CHECK_TRAP, "= 2", NULL_CHECK_TRAP, "= 2",
                   RANGE_CHECK_TRAP, "= 1"})
     @IR(applyIf = {"UseArrayLoadStoreProfile", "false"},
         counts = {STATIC_CALL, "= 5", RANGE_CHECK_TRAP, "= 1", NULL_CHECK_TRAP, "= 2"})

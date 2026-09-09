@@ -865,7 +865,7 @@ void TemplateTable::aaload() {
   // Index is in Z_tos.
   Register index = Z_tos;
   index_check(Z_tmp_1, index, shift);
-  __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
+  __ profile_multiple_array_types(Z_tmp_1, Z_tmp_2, Z_ARG2);
 
   if (UseArrayFlattening) {
     __ stop("implement function TemplateTable::aaload");
@@ -1191,7 +1191,7 @@ void TemplateTable::aastore() {
   Register Rscratch2 = Z_tmp_2;
   Register Rarray_klass = Z_ARG4;
 
-  __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
+  __ profile_array_type(Rarray, Rscratch, Rscratch2);
   __ profile_multiple_element_types(Z_tos, Rscratch, Rscratch2, Rarray_klass);
 
   if (UseArrayFlattening) {

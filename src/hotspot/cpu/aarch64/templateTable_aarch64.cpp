@@ -818,7 +818,7 @@ void TemplateTable::aaload()
   // r0: array
   // r1: index
   index_check(r0, r1); // leaves index in r1, kills rscratch1
-  __ profile_array_type<ArrayLoadData>(r2, r0, r4);
+  __ profile_multiple_array_types(r2, r0, r4, rscratch1);
   if (UseArrayFlattening) {
     Label is_flat_array, done;
 
@@ -1130,7 +1130,7 @@ void TemplateTable::aastore() {
 
   index_check(r3, r2);     // kills r1
 
-  __ profile_array_type<ArrayStoreData>(r4, r3, r5);
+  __ profile_array_type(r4, r3, r5);
   __ profile_multiple_element_types(r4, r0, r5, r6);
 
   __ add(r4, r2, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);

@@ -2559,7 +2559,11 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
-void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
+void LIR_Assembler::emit_profile_multiple_array_types(LIR_OpProfileMultipleArrayTypes* op) {
+  Unimplemented();
+}
+
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileInlineType* op) {
   Unimplemented();
 }
 
