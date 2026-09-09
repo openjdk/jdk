@@ -49,7 +49,9 @@ else ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
-ifeq ($(call isTargetOs, linux), true)
+# The C++ driver, so that __cxa_demangle resolves.  macosx's OS is macosx
+# rather than bsd and keeps the C driver: its libsaproc does not demangle.
+ifeq ($(call isTargetOs, linux bsd), true)
   LIBSAPROC_LINK_TYPE := C++
 else
   LIBSAPROC_LINK_TYPE := C
@@ -62,6 +64,12 @@ ifneq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, x86_64 aarch64)
 endif
 ifneq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), true)
   LIBSAPROC_EXCLUDE_FILES += AARCH64DwarfParser.cpp aarch64Dwarf.cpp LinuxAARCH64DebuggerLocal.cpp
+endif
+# macosx's OS type is bsd, so bsd/native/libsaproc is on its source path as
+# well; both files define the same JNI entry points, and macosx wants its
+# own, which speaks mach_vm_read rather than ptrace.
+ifeq ($(call isTargetOs, macosx), true)
+  LIBSAPROC_EXCLUDE_FILES += BsdDebuggerLocal.c
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
@@ -81,6 +89,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSAPROC, \
     EXTRA_SRC := $(LIBSAPROC_EXTRA_SRC), \
     EXCLUDE_FILES := $(LIBSAPROC_EXCLUDE_FILES), \
     JDK_LIBS := java.base:libjava, \
+    LIBS_bsd := -lutil, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := \
         -framework CoreFoundation \
