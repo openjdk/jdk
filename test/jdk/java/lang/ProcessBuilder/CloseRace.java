@@ -162,10 +162,15 @@ public class CloseRace {
         }
     }
 
+    // NetBSD and OpenBSD keep true(1) in /usr/bin; Linux and macOS keep it
+    // in /bin.  Neither is required by anything, so look rather than assume.
+    private static final String TRUE =
+        new java.io.File("/bin/true").canExecute() ? "/bin/true" : "/usr/bin/true";
+
     static class ExecLoop implements Runnable {
         public void run() {
             threadsStarted.countDown();
-            ProcessBuilder builder = new ProcessBuilder("/bin/true");
+            ProcessBuilder builder = new ProcessBuilder(TRUE);
             while (!Thread.interrupted()) {
                 try {
                     // wait for OpenLoop to finish

@@ -39,7 +39,11 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <stdlib.h>
+#ifndef __OpenBSD__
+// OpenBSD has neither <sys/ucontext.h> nor <ucontext.h>; ucontext_t comes in
+// with <signal.h>.
 #include <sys/ucontext.h>
+#endif
 #include <setjmp.h>
 #include <unistd.h>
 #include <sys/syscall.h>

@@ -24,7 +24,11 @@
 #include <stdio.h>
 #include <jni.h>
 #include <signal.h>
+#ifndef __OpenBSD__
+// OpenBSD has no <sys/ucontext.h> and no <ucontext.h>; ucontext_t comes in
+// with <signal.h> above.
 #include <sys/ucontext.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
