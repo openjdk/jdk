@@ -244,11 +244,6 @@ void CompilerConfig::set_legacy_emulation_flags() {
   }
 }
 
-static bool can_segment_code_cache() {
-  // Segmented code cache requires ReservedCodeCacheSize >= 240M and at least 8 pages
-  // (segmentation disables advantage of huge pages).
-  return ReservedCodeCacheSize >= 240*M && 8 * CodeCache::page_size() <= ReservedCodeCacheSize;
-}
 
 void CompilerConfig::set_compilation_policy_flags() {
   if (is_tiered()) {
@@ -258,8 +253,10 @@ void CompilerConfig::set_compilation_policy_flags() {
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
 
-    // Enable SegmentedCodeCache if ReservedCodeCacheSize is large enough
-    if (FLAG_IS_DEFAULT(SegmentedCodeCache) && can_segment_code_cache()) {
+    // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
+    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+    if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
+        8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
     if (Arguments::is_compiler_only()) { // -Xcomp
@@ -290,8 +287,6 @@ void CompilerConfig::set_compilation_policy_flags() {
       warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.";
     } else if (!NMethodRelocation && !FLAG_IS_DEFAULT(NMethodRelocation)) {
       warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because NMethodRelocation is disabled.";
-    } else if (!SegmentedCodeCache && !can_segment_code_cache()) {
-      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled and cannot be enabled.";
     }
 
     if (warn != nullptr) {

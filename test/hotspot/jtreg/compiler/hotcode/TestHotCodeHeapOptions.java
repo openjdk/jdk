@@ -102,6 +102,15 @@ public class TestHotCodeHeapOptions {
                                                               "-version");
         passes(pb);
 
+        // Valid sampling periods (HotCodeMinSamplingMs = HotCodeMaxSamplingMs)
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
+                                                              "-XX:+UnlockExperimentalVMOptions",
+                                                              "-XX:+HotCodeHeap",
+                                                              "-XX:HotCodeMinSamplingMs=1",
+                                                              "-XX:HotCodeMaxSamplingMs=1",
+                                                              "-version");
+        passes(pb);
+
         // Invalid sampling periods
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
                                                               "-XX:+UnlockExperimentalVMOptions",
@@ -163,6 +172,14 @@ public class TestHotCodeHeapOptions {
                                                               "-version");
         passes(pb);
 
+        // TieredCompilation disabled with default code cache
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
+                                                              "-XX:+UnlockExperimentalVMOptions",
+                                                              "-XX:+HotCodeHeap",
+                                                              "-XX:-TieredCompilation",
+                                                              "-version");
+        passes(pb);
+
         // TieredCompilation disabled with large code cache
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
                                                               "-XX:+UnlockExperimentalVMOptions",
@@ -179,7 +196,7 @@ public class TestHotCodeHeapOptions {
                                                               "-XX:-TieredCompilation",
                                                               "-XX:ReservedCodeCacheSize=120m",
                                                               "-version");
-        warnsWith(pb, "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled and cannot be enabled.");
+        passes(pb);
 
         // C2 disabled with HotCodeHeapSize explicitly set
         pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+PrintFlagsFinal",
