@@ -411,4 +411,22 @@ public class TestParallelIvInIntCountedLoop {
         int s = RNG.nextInt(2, 1024);
         Asserts.assertEQ(s - 2, testIntCountedLoopWithDoubledIv(s));
     }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvAndNegativeStride(int stop) {
+        int a = 0, prev = 5;
+        for (int i = 0; i > stop; i -= 5) {
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvAndNegativeStride")
+    private static void runTestIntCountedLoopWithDoubledIvAndNegativeStride() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(10 - Math.ceilDiv(s, 5) * 5, testIntCountedLoopWithDoubledIvAndNegativeStride(-s));
+    }
 }
