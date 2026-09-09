@@ -169,7 +169,7 @@ abstract public class CDSAppTester {
     // optional
     public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {}
 
-    private Workflow workflow;
+    private Workflow workflow = Workflow.AOT; // Use this by default.
     private boolean checkExitValue = true;
 
     public final void setCheckExitValue(boolean b) {
@@ -268,7 +268,7 @@ abstract public class CDSAppTester {
         return cmdLine;
     }
 
-    private OutputAnalyzer recordAOTConfiguration() throws Exception {
+    public OutputAnalyzer recordAOTConfiguration() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -284,7 +284,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
     }
 
-    private OutputAnalyzer createAOTCacheOneStep() throws Exception {
+    public OutputAnalyzer createAOTCacheOneStep() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -302,7 +302,7 @@ abstract public class CDSAppTester {
         return out;
     }
 
-    private OutputAnalyzer createClassList() throws Exception {
+    public OutputAnalyzer createClassList() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -315,7 +315,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, classListFile, classListFileLog);
     }
 
-    private OutputAnalyzer dumpStaticArchive() throws Exception {
+    public OutputAnalyzer dumpStaticArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_STATIC;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -336,7 +336,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
     }
 
-    private OutputAnalyzer createAOTCache() throws Exception {
+    public OutputAnalyzer createAOTCache() throws Exception {
         RunMode runMode = RunMode.ASSEMBLY;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -395,7 +395,7 @@ abstract public class CDSAppTester {
         return this;
     }
 
-    private OutputAnalyzer dumpDynamicArchive() throws Exception {
+    public OutputAnalyzer dumpDynamicArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_DYNAMIC;
         String[] cmdLine = new String[0];
         String baseArchive = getBaseArchiveForDynamicArchive();

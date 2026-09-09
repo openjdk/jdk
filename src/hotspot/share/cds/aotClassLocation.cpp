@@ -187,9 +187,8 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
   while (cp_stream.has_next()) {
     const char* path = cp_stream.get_next();
     DIR* dirp = os::opendir(path);
-    if (dirp == nullptr && errno == ENOTDIR && has_jar_suffix(path)) {
-      add_one_path(path);
-    } else if (dirp != nullptr) {
+    if (dirp != nullptr) {
+      // Is a directory
       struct dirent* dentry;
       bool found_jar = false;
       while ((dentry = os::readdir(dirp)) != nullptr) {
@@ -204,7 +203,7 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
         } else if (strcmp(file_name, ".") != 0 && strcmp(file_name, "..") != 0) {
           // Found some non jar entries
           _has_non_jar_modules = true;
-          log_info(class, path)("Found non-jar path: '%s%s%s'", path, os::file_separator(), file_name);
+          log_info(class, path)("Found non-JAR path: '%s%s%s'", path, os::file_separator(), file_name);
         }
       }
       if (!found_jar) {
@@ -213,7 +212,21 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
       }
       os::closedir(dirp);
     } else {
-      _has_non_jar_modules = true;
+      // Not a directory
+      if (errno == ENOTDIR) {
+        if (has_jar_suffix(path)) {
+          log_info(class, path)("Module path points to a single JAR file: '%s'", path);
+          add_one_path(path);
+        } else {
+          log_info(class, path)("Module path points to a single non-JAR file: '%s'", path);
+          _has_non_jar_modules = true;
+        }
+      } else if (errno == ENOENT) {
+        log_info(class, path)("Found non-existent module path (ignored): '%s'", path);
+      }  else { 
+        aot_log_error(aot)("Unable to open file %s.", path);
+        AOTMetaspace::unrecoverable_loading_error();        
+      }
     }
   }
 
