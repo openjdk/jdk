@@ -759,7 +759,8 @@ void ShenandoahBarrierStubC2::patchable_jump(MacroAssembler& masm, const char gc
     // Avoid binding L_target and emitting more branches in scratch emits.
     // We know the patched check is exactly 1 instruction long in release,
     // and verification adds more instructions.
-    for (size_t c = 0; c < 1 DEBUG_ONLY(+ check_size); c++) {
+    const int nops = 1 DEBUG_ONLY(+ check_size);
+    for (size_t c = 0; c < nops; c++) {
       __ nop();
     }
     return;
