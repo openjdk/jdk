@@ -192,7 +192,9 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
-    int delay_ms = MAX2<int>(0, i * ms_per_candidate - ((os::elapsedTime() - start) * MILLIUNITS));
+    double expected_ts = i * ms_per_candidate;
+    double actual_ts = ((os::elapsedTime() - start) * MILLIUNITS);
+    int delay_ms = checked_cast<int>(MAX2<double>(0, expected_ts - actual_ts));
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
       break;
@@ -233,8 +235,10 @@ bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
   assert(_uncommit_in_progress.is_unset(), "Should be unset before checks");
 
   // Optimistic: uncommits are allowed, just wait a bit, if requested.
-  if (_uncommit_allowed.is_set() && (delay_ms > 0)) {
+  while (_uncommit_allowed.is_set() && (delay_ms > 0)) {
+    double started = os::elapsedTime();
     locker.wait(delay_ms);
+    delay_ms -= os::elapsedTime() - started;
   }
 
   // Pessimistic: uncommits are disallowed. Wait until allowed again or terminated.
@@ -260,6 +264,7 @@ void ShenandoahUncommitThread::unset_progress() {
 
 void ShenandoahUncommitThread::stop_service() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_safepoint_check_flag);
+  _uncommit_allowed.unset();
   _terminating.set();
   locker.notify_all();
 }

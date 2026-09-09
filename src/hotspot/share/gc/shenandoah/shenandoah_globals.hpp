@@ -313,7 +313,7 @@
           "milliseconds. Setting this delay to 0 effectively makes regions "\
           "eligible for uncommit immediately after they become unused.")    \
                                                                             \
-  product(uintx, ShenandoahUncommitGrace, 5*1000, EXPERIMENTAL,             \
+  product(uintx, ShenandoahUncommitGrace, 10*1000, EXPERIMENTAL,            \
           "Uncommit memory using this grace period. Allows regions to "     \
           "linger a bit, in case active allocation takes them back. "       \
           "Time is in milliseconds. Setting this grace to 0 effectively "   \
