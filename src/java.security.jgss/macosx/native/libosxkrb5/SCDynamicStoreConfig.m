@@ -65,28 +65,27 @@ void _SCDynamicStoreCallBack(SCDynamicStoreRef store, CFArrayRef changedKeys, vo
  * Method:    installNotificationCallback
  */
 JNIEXPORT void JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_installNotificationCallback(JNIEnv *env, jclass klass) {
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
-    @try {
-        (*env)->GetJavaVM(env, &localVM);
-        SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
-        if (store == NULL) {
-            return;
+    @autoreleasepool {
+        @try {
+            (*env)->GetJavaVM(env, &localVM);
+            SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java"), _SCDynamicStoreCallBack, NULL);
+            if (store == NULL) {
+                return;
+            }
+
+            NSArray *keys = [NSArray arrayWithObjects:KERBEROS_DEFAULT_REALMS, KERBEROS_DEFAULT_REALM_MAPPINGS, nil];
+            SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL);
+
+            CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, store, 0);
+            if (rls != NULL) {
+                CFRunLoopAddSource(CFRunLoopGetMain(), rls, kCFRunLoopDefaultMode);
+                CFRelease(rls);
+            }
+
+            CFRelease(store);
+        } @catch (NSException *e) {
+            NSLog(@"%@", [e callStackSymbols]);
         }
-
-        NSArray *keys = [NSArray arrayWithObjects:KERBEROS_DEFAULT_REALMS, KERBEROS_DEFAULT_REALM_MAPPINGS, nil];
-        SCDynamicStoreSetNotificationKeys(store, (CFArrayRef) keys, NULL);
-
-        CFRunLoopSourceRef rls = SCDynamicStoreCreateRunLoopSource(NULL, store, 0);
-        if (rls != NULL) {
-            CFRunLoopAddSource(CFRunLoopGetMain(), rls, kCFRunLoopDefaultMode);
-            CFRelease(rls);
-        }
-
-        CFRelease(store);
-    } @catch (NSException *e) {
-        NSLog(@"%@", [e callStackSymbols]);
-    } @finally {
-        [pool drain];
     }
 }
 
@@ -112,62 +111,62 @@ JNIEXPORT jobject JNICALL Java_sun_security_krb5_SCDynamicStoreConfig_getKerbero
     CFTypeRef realmMappings = NULL;
     CFTypeRef realmInfo = NULL;
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
-    @try {
-        SCDynamicStoreRef store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
-        if (store == NULL) {
-            return NULL;
-        }
-
-        CFTypeRef realms = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS);
-        if (realms == NULL || CFGetTypeID(realms) != CFArrayGetTypeID()) {
-            return NULL;
-        }
-
-        // This methods returns a ArrayList<String>:
-        // (realm kdc* null) null (mapping-domain mapping-realm)*
-        jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
-        CHECK_NULL_RETURN(jc_arrayListClass, NULL);
-        jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
-        CHECK_NULL_RETURN(jm_arrayListCons, NULL);
-        jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
-        CHECK_NULL_RETURN(jm_listAdd, NULL);
-        newList = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-        CHECK_NULL_RETURN(newList, NULL);
-
-        for (NSString *realm in (NSArray*)realms) {
-            if (realmInfo) CFRelease(realmInfo); // for the previous realm
-            realmInfo = SCDynamicStoreCopyValue(store, (CFStringRef) [NSString stringWithFormat:KERBEROS_REALM_INFO, realm]);
-            if (realmInfo == NULL || CFGetTypeID(realmInfo) != CFDictionaryGetTypeID()) {
-                continue;
+    @autorelasepool {
+        @try {
+            store = SCDynamicStoreCreate(NULL, CFSTR("java-kerberos"), NULL, NULL);
+            if (store == NULL) {
+                return NULL;
             }
 
-            ADD(newList, realm);
-            NSDictionary* ri = (NSDictionary*)realmInfo;
-            for (NSDictionary* k in (NSArray*)ri[@"kdc"]) {
-                ADD(newList, k[@"host"]);
+            realms = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALMS);
+            if (realms == NULL || CFGetTypeID(realms) != CFArrayGetTypeID()) {
+                return NULL;
+            }
+
+            // This methods returns a ArrayList<String>:
+            // (realm kdc* null) null (mapping-domain mapping-realm)*
+            jclass jc_arrayListClass = (*env)->FindClass(env, "java/util/ArrayList");
+            CHECK_NULL_RETURN(jc_arrayListClass, NULL);
+            jmethodID jm_arrayListCons = (*env)->GetMethodID(env, jc_arrayListClass, "<init>", "()V");
+            CHECK_NULL_RETURN(jm_arrayListCons, NULL);
+            jmethodID jm_listAdd = (*env)->GetMethodID(env, jc_arrayListClass, "add", "(Ljava/lang/Object;)Z");
+            CHECK_NULL_RETURN(jm_listAdd, NULL);
+            newList = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+            CHECK_NULL_RETURN(newList, NULL);
+
+            for (NSString *realm in (NSArray*)realms) {
+                if (realmInfo) CFRelease(realmInfo); // for the previous realm
+                realmInfo = SCDynamicStoreCopyValue(store, (CFStringRef) [NSString stringWithFormat:KERBEROS_REALM_INFO, realm]);
+                if (realmInfo == NULL || CFGetTypeID(realmInfo) != CFDictionaryGetTypeID()) {
+                    continue;
+                }
+
+                ADD(newList, realm);
+                NSDictionary* ri = (NSDictionary*)realmInfo;
+                for (NSDictionary* k in (NSArray*)ri[@"kdc"]) {
+                    ADD(newList, k[@"host"]);
+                }
+                ADDNULL(newList);
             }
             ADDNULL(newList);
-        }
-        ADDNULL(newList);
 
-        CFTypeRef realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
-        if (realmMappings != NULL && CFGetTypeID(realmMappings) == CFArrayGetTypeID()) {
-            for (NSDictionary* d in (NSArray *)realmMappings) {
-                for (NSString* s in d) {
-                    ADD(newList, s);
-                    ADD(newList, d[s]);
+            realmMappings = SCDynamicStoreCopyValue(store, (CFStringRef) KERBEROS_DEFAULT_REALM_MAPPINGS);
+            if (realmMappings != NULL && CFGetTypeID(realmMappings) == CFArrayGetTypeID()) {
+                for (NSDictionary* d in (NSArray *)realmMappings) {
+                    for (NSString* s in d) {
+                        ADD(newList, s);
+                        ADD(newList, d[s]);
+                    }
                 }
             }
+        } @catch (NSException *e) {
+            NSLog(@"%@", [e callStackSymbols]);
+        } @finally {
+            if (realmInfo) CFRelease(realmInfo);
+            if (realmMappings) CFRelease(realmMappings);
+            if (realms) CFRelease(realms);
+            if (store) CFRelease(store);
         }
-    } @catch (NSException *e) {
-        NSLog(@"%@", [e callStackSymbols]);
-    } @finally {
-        [pool drain];
-        if (realmInfo) CFRelease(realmInfo);
-        if (realmMappings) CFRelease(realmMappings);
-        if (realms) CFRelease(realms);
-        if (store) CFRelease(store);
     }
     return newList;
 }

@@ -359,65 +359,65 @@ static void AWT_NSUncaughtExceptionHandler(NSException *exception) {
 }
 
 + (void)starter:(BOOL)wasOnMainThread headless:(BOOL)headless {
-    NSAutoreleasePool *pool = [NSAutoreleasePool new];
-    // Add the exception handler of last resort
-    NSSetUncaughtExceptionHandler(AWT_NSUncaughtExceptionHandler);
+    @autoreleasepool {
+        // Add the exception handler of last resort
+        NSSetUncaughtExceptionHandler(AWT_NSUncaughtExceptionHandler);
 
-    // Headless mode trumps either ordinary AWT or SWT-in-AWT mode.  Declare us a daemon and return.
-    if (headless) {
-        // Note that we don't install run loop observers in headless mode
-        // because we don't need them (see 7174704)
-        if (!forceEmbeddedMode) {
-            setUpAWTAppKit(false);
+        // Headless mode trumps either ordinary AWT or SWT-in-AWT mode.  Declare us a daemon and return.
+        if (headless) {
+            // Note that we don't install run loop observers in headless mode
+            // because we don't need them (see 7174704)
+            if (!forceEmbeddedMode) {
+                setUpAWTAppKit(false);
+            }
+            [AWTStarter markAppAsDaemon];
+            return;
         }
-        [AWTStarter markAppAsDaemon];
-        return;
-    }
 
-    if (forceEmbeddedMode) {
-        AWT_STARTUP_LOG(@"in SWT or SWT/WebStart mode");
+        if (forceEmbeddedMode) {
+            AWT_STARTUP_LOG(@"in SWT or SWT/WebStart mode");
 
-        // Init a default NSApplication instance instead of the NSApplicationAWT.
-        // Note that [NSApp isRunning] will return YES after that, though
-        // this behavior isn't specified anywhere. We rely on that.
-        NSApplicationLoad();
-    }
+            // Init a default NSApplication instance instead of the NSApplicationAWT.
+            // Note that [NSApp isRunning] will return YES after that, though
+            // this behavior isn't specified anywhere. We rely on that.
+            NSApplicationLoad();
+        }
 
-    // This will create a NSApplicationAWT for standalone AWT programs, unless there is
-    //  already a NSApplication instance. If there is already a NSApplication instance,
-    //  and -[NSApplication isRunning] returns YES, AWT is embedded inside another
-    //  AppKit Application.
-    NSApplication *app = [NSApplicationAWT sharedApplication];
-    isEmbedded = ![NSApp isKindOfClass:[NSApplicationAWT class]];
+        // This will create a NSApplicationAWT for standalone AWT programs, unless there is
+        //  already a NSApplication instance. If there is already a NSApplication instance,
+        //  and -[NSApplication isRunning] returns YES, AWT is embedded inside another
+        //  AppKit Application.
+        NSApplication *app = [NSApplicationAWT sharedApplication];
+        isEmbedded = ![NSApp isKindOfClass:[NSApplicationAWT class]];
 
-    if (!isEmbedded) {
-        // Install run loop observers and set the AppKit Java thread name
-        setUpAWTAppKit(true);
-    }
+        if (!isEmbedded) {
+            // Install run loop observers and set the AppKit Java thread name
+            setUpAWTAppKit(true);
+        }
 
-    // AWT gets to this point BEFORE NSApplicationDidFinishLaunchingNotification is sent.
-    if (![app isRunning]) {
-        AWT_STARTUP_LOG(@"+[AWTStarter startAWT]: ![app isRunning]");
-        // This is where the AWT AppKit thread parks itself to process events.
-        [NSApplicationAWT runAWTLoopWithApp: app];
-    } else {
-        // We're either embedded, or showing a splash screen
-        if (isEmbedded) {
-            AWT_STARTUP_LOG(@"running embedded");
-
-            // We don't track if the runloop is busy, so set it free to let AWT finish when it needs
-            setBusy(NO);
+        // AWT gets to this point BEFORE NSApplicationDidFinishLaunchingNotification is sent.
+        if (![app isRunning]) {
+            AWT_STARTUP_LOG(@"+[AWTStarter startAWT]: ![app isRunning]");
+            // This is where the AWT AppKit thread parks itself to process events.
+            [NSApplicationAWT runAWTLoopWithApp: app];
         } else {
-            AWT_STARTUP_LOG(@"running after showing a splash screen");
+            // We're either embedded, or showing a splash screen
+            if (isEmbedded) {
+                AWT_STARTUP_LOG(@"running embedded");
+
+                // We don't track if the runloop is busy, so set it free to let AWT finish when it needs
+                setBusy(NO);
+            } else {
+                AWT_STARTUP_LOG(@"running after showing a splash screen");
+            }
+
+            // Signal so that JNI_OnLoad can proceed.
+            if (!wasOnMainThread) [AWTStarter appKitIsRunning:nil];
+
+            // Proceed to exit this call as there is no reason to run the NSApplication event loop.
         }
 
-        // Signal so that JNI_OnLoad can proceed.
-        if (!wasOnMainThread) [AWTStarter appKitIsRunning:nil];
-
-        // Proceed to exit this call as there is no reason to run the NSApplication event loop.
     }
-
-    [pool drain];
 }
 
 @end
