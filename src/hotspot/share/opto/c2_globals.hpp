@@ -743,14 +743,14 @@
           range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
-          "  F: verify IGVN method return invariants"                       \
-          "  E: verify node specific invariants"                            \
-          "  D: verify Node::Identity did not miss opportunities"           \
-          "  C: verify Node::Ideal did not miss opportunities"              \
-          "  B: verify that type(n) == n->Value() after IGVN"               \
-          "  A: verify Def-Use modifications during IGVN"                   \
-          "Each can be 0=off or 1=on")                                      \
+          "Verify Iterative Global Value Numbering. Set the corresponding"  \
+          "decimal place to 1 to enable a check, or 0 to disable it:"       \
+          "  100000: verify IGVN method return invariants"                  \
+          "   10000: verify node specific invariants"                       \
+          "    1000: verify Node::Identity did not miss opportunities"      \
+          "     100: verify Node::Ideal did not miss opportunities"         \
+          "      10: verify that type(n) == n->Value() after IGVN"          \
+          "       1: verify Def-Use modifications during IGVN")             \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
