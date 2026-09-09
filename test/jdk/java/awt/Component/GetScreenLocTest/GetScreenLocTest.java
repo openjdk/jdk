@@ -49,6 +49,7 @@ public class GetScreenLocTest {
     static Canvas canvas;
     static int state = 0; // there are three states - (-1,-1),(0,0),(1,1)
     static Robot robot;
+    static Point p;
 
     static void bigPause() {
         Toolkit.getDefaultToolkit().sync();
@@ -66,7 +67,9 @@ public class GetScreenLocTest {
         robot = new Robot();
         bigPause();
 
-        Point p = canvas.getLocationOnScreen();
+        EventQueue.invokeAndWait(() -> {
+            p = canvas.getLocationOnScreen();
+        });
         doPress(p);
         p.x += 1;
         p.y += 1;
