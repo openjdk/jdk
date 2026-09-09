@@ -743,7 +743,7 @@
           range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering. Set the corresponding"  \
+          "Verify Iterative Global Value Numbering. Set the corresponding " \
           "decimal place to 1 to enable a check, or 0 to disable it:"       \
           "  100000: verify IGVN method return invariants"                  \
           "   10000: verify node specific invariants"                       \
