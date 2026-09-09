@@ -76,13 +76,16 @@
 # include <fcntl.h>
 # include <fenv.h>
 # include <inttypes.h>
+#ifdef __APPLE__
 # include <mach/mach.h>
+#endif
 # include <poll.h>
 # include <pthread.h>
 # include <pwd.h>
 # include <signal.h>
 # include <stdint.h>
 # include <stdio.h>
+# include <stdlib.h>
 # include <string.h>
 # include <sys/ioctl.h>
 # include <sys/mman.h>
@@ -92,14 +95,33 @@
 # include <sys/stat.h>
 # include <sys/syscall.h>
 # include <sys/sysctl.h>
+#ifdef __FreeBSD__
+// FreeBSD keeps struct kinfo_proc here rather than in <sys/sysctl.h>.
+# include <sys/user.h>
+#endif
+#ifdef __DragonFly__
+// DragonFly keeps it somewhere else again.
+# include <sys/kinfo.h>
+#endif
 # include <sys/time.h>
 # include <sys/times.h>
 # include <sys/types.h>
 # include <time.h>
 # include <unistd.h>
 
-#if defined(__FreeBSD__) || defined(__NetBSD__)
+#if defined(__FreeBSD__) || defined(__NetBSD__) || defined(__DragonFly__)
   #include <elf.h>
+  // Link_map lives in <link_elf.h>, which <link.h> pulls in.
+  #include <link.h>
+#elif defined(__OpenBSD__)
+  // OpenBSD's <elf.h> is libelf's and declares none of the Elf32_* types;
+  // they live here.
+  #include <sys/exec_elf.h>
+  #include <link.h>
+#endif
+
+#ifdef __NetBSD__
+  #include <uvm/uvm_extern.h>
 #endif
 
 #ifdef __FreeBSD__
@@ -126,6 +148,12 @@
 
 #ifndef MAP_ANONYMOUS
   #define MAP_ANONYMOUS MAP_ANON
+#endif
+
+#ifndef MAP_NORESERVE
+  // FreeBSD never implemented it and dropped the name in 11; its
+  // <sys/mman.h> keeps the bit as MAP_RESERVED0040.
+  #define MAP_NORESERVE 0
 #endif
 
 #define MAX_PATH    (2 * K)
@@ -210,6 +238,16 @@ bool os::total_swap_space(physical_memory_size_type& value) {
   return Machine::total_swap_space(value);
 }
 
+#ifdef __NetBSD__
+// vm.uvmexp2 carries the swap figures NetBSD has in place of macOS's
+// vm.swapusage; the counts are in pages.
+static bool netbsd_uvmexp(struct uvmexp_sysctl& uv) {
+  size_t size = sizeof(uv);
+  int mib[2] = { CTL_VM, VM_UVMEXP2 };
+  return sysctl(mib, 2, &uv, &size, nullptr, 0) == 0;
+}
+#endif
+
 bool os::Machine::total_swap_space(physical_memory_size_type& value) {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
@@ -218,6 +256,13 @@ bool os::Machine::total_swap_space(physical_memory_size_type& value) {
     return false;
   }
   value = static_cast<physical_memory_size_type>(vmusage.xsu_total);
+  return true;
+#elif defined(__NetBSD__)
+  struct uvmexp_sysctl uv;
+  if (!netbsd_uvmexp(uv)) {
+    return false;
+  }
+  value = static_cast<physical_memory_size_type>(uv.swpages) * uv.pagesize;
   return true;
 #else
   return false;
@@ -236,6 +281,14 @@ bool os::Machine::free_swap_space(physical_memory_size_type& value) {
     return false;
   }
   value = static_cast<physical_memory_size_type>(vmusage.xsu_avail);
+  return true;
+#elif defined(__NetBSD__)
+  struct uvmexp_sysctl uv;
+  if (!netbsd_uvmexp(uv)) {
+    return false;
+  }
+  value = static_cast<physical_memory_size_type>(uv.swpages - uv.swpginuse)
+          * uv.pagesize;
   return true;
 #else
   return false;
@@ -309,19 +362,34 @@ void os::Bsd::initialize_system_info() {
   // since it returns a 64 bit value)
   mib[0] = CTL_HW;
 
+// mem_val below is 64 bits wide, and only some of these sysctls are.  macOS
+// has hw.memsize and NetBSD has hw.physmem64; FreeBSD, OpenBSD and DragonFly
+// have neither and answer hw.physmem, which is 64 bits wide on them but not
+// on NetBSD, where it wraps.  sysctl(3) writes only as much as the name is
+// wide and reports that length, so take the answer from the length rather
+// than assuming it filled the word.
 #if defined (HW_MEMSIZE) // Apple
   mib[1] = HW_MEMSIZE;
-#elif defined(HW_PHYSMEM) // Most of BSD
+#elif defined(HW_PHYSMEM64) // NetBSD
+  mib[1] = HW_PHYSMEM64;
+#elif defined(HW_PHYSMEM) // FreeBSD, OpenBSD, DragonFly
   mib[1] = HW_PHYSMEM;
-#elif defined(HW_REALMEM) // Old FreeBSD
-  mib[1] = HW_REALMEM;
 #else
   #error No ways to get physmem
 #endif
 
   len = sizeof(mem_val);
+  mem_val = 0;
   if (sysctl(mib, 2, &mem_val, &len, nullptr, 0) != -1) {
-    assert(len == sizeof(mem_val), "unexpected data size");
+    if (len == sizeof(unsigned int)) {
+      // The kernel answered with an int; mem_val's upper half was not
+      // written to and must not be read.
+      unsigned int mem32;
+      memcpy(&mem32, &mem_val, sizeof(mem32));
+      mem_val = mem32;
+    } else {
+      assert(len == sizeof(mem_val), "unexpected data size");
+    }
     _physical_memory = static_cast<physical_memory_size_type>(mem_val);
   } else {
     _physical_memory = 256 * 1024 * 1024;       // fallback (XXXBSD?)
@@ -421,14 +489,16 @@ void os::init_system_properties_values() {
     }
     Arguments::set_dll_dir(buf);
 
+    // The layout is <java_home>/lib/<variant>/libjvm.so.  It was
+    // <java_home>/jre/lib/<arch>/<variant>/libjvm.so until the modules came
+    // in, and the extra /<arch> strip below outlived that layout: it left
+    // java_home one directory too high, and the VM then stopped with
+    // "Failed setting boot class path".  Nothing noticed because macOS takes
+    // the branch above.
     if (pslash != nullptr) {
       pslash = strrchr(buf, '/');
       if (pslash != nullptr) {
-        *pslash = '\0';          // Get rid of /<arch>.
-        pslash = strrchr(buf, '/');
-        if (pslash != nullptr) {
-          *pslash = '\0';        // Get rid of /lib.
-        }
+        *pslash = '\0';          // Get rid of /lib.
       }
     }
     Arguments::set_java_home(buf);
@@ -601,10 +671,9 @@ static void *thread_native_entry(Thread *thread) {
 
   osthread->set_thread_id(os::Bsd::gettid());
 
-#ifdef __APPLE__
-  // Store unique OS X thread id used by SA
+  // The id the SA correlates threads by.  macosx has a second, mach one;
+  // the other BSDs answer with the same kernel id set just above.
   osthread->set_unique_thread_id();
-#endif
 
   // initialize signal mask for this thread
   PosixSignals::hotspot_sigmask(thread);
@@ -770,10 +839,9 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   osthread->set_thread_id(os::Bsd::gettid());
 
-#ifdef __APPLE__
-  // Store unique OS X thread id used by SA
+  // The id the SA correlates threads by.  macosx has a second, mach one;
+  // the other BSDs answer with the same kernel id set just above.
   osthread->set_unique_thread_id();
-#endif
 
   // Store pthread info into the OSThread
   osthread->set_pthread_id(::pthread_self());
@@ -887,6 +955,8 @@ pid_t os::Bsd::gettid() {
   retval = getthrid();
 #elif defined(__NetBSD__)
   retval = (pid_t) _lwp_self();
+#elif defined(__DragonFly__)
+  retval = (pid_t) lwp_gettid();
 #else
 #error "unsupported OS"
 #endif
@@ -899,6 +969,54 @@ pid_t os::Bsd::gettid() {
 
 // Returns the uid of a process or -1 on error.
 uid_t os::Bsd::get_process_uid(pid_t pid) {
+#ifdef __NetBSD__
+  // NetBSD declares struct kinfo_proc in <sys/sysctl.h> only under _KERNEL
+  // or _KMEMUSER, so it is an incomplete type here.  KERN_PROC2 returns
+  // struct kinfo_proc2 instead, which carries the uid directly rather than
+  // in a nested eproc.
+  struct kinfo_proc2 kp;
+  size_t size = sizeof kp;
+  int mib_kern[6] = {CTL_KERN, KERN_PROC2, KERN_PROC_PID, pid,
+                     (int)sizeof kp, 1};
+  if (sysctl(mib_kern, 6, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.p_pid == pid) {
+      return kp.p_uid;
+    }
+  }
+#elif defined(__FreeBSD__)
+  // FreeBSD's struct kinfo_proc is flat, and every field carries a ki_ prefix.
+  struct kinfo_proc kp;
+  size_t size = sizeof kp;
+  int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+  if (sysctl(mib_kern, 4, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.ki_pid == pid) {
+      return kp.ki_uid;
+    }
+  }
+#elif defined(__OpenBSD__)
+  // OpenBSD's struct kinfo_proc is flat like FreeBSD's but its fields carry
+  // a p_ prefix, and KERN_PROC there takes the size and count NetBSD's
+  // KERN_PROC2 takes.
+  struct kinfo_proc kp;
+  size_t size = sizeof kp;
+  int mib_kern[6] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid,
+                     (int)sizeof kp, 1};
+  if (sysctl(mib_kern, 6, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.p_pid == pid) {
+      return kp.p_uid;
+    }
+  }
+#elif defined(__DragonFly__)
+  // DragonFly's fields carry a kp_ prefix.
+  struct kinfo_proc kp;
+  size_t size = sizeof kp;
+  int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
+  if (sysctl(mib_kern, 4, &kp, &size, nullptr, 0) == 0) {
+    if (size > 0 && kp.kp_pid == pid) {
+      return kp.kp_uid;
+    }
+  }
+#elif defined(__APPLE__)
   struct kinfo_proc kp;
   size_t size = sizeof kp;
   int mib_kern[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PID, pid};
@@ -907,6 +1025,9 @@ uid_t os::Bsd::get_process_uid(pid_t pid) {
       return kp.kp_eproc.e_ucred.cr_uid;
     }
   }
+#else
+  #error "unsupported OS"
+#endif
   return (uid_t)-1;
 }
 
@@ -981,12 +1102,17 @@ int os::Bsd::get_user_tmp_dir_macos(const char* user, int vmid, char* output_pat
 }
 #endif
 
+// The kernel's own id for the thread, so that the number hotspot reports as
+// nid is the one ps(1), the core file's per-thread notes and ptrace(2) all
+// use.  os::Bsd::gettid() already answers with it on each of them.  A cast
+// pthread_self() is a pointer that names nothing outside the process: the
+// Serviceability Agent asks the kernel for a thread's registers by this
+// number, got ESRCH every time, and printed no frames at all for a thread
+// that was running Java code -- which only showed up under -Xcomp, because
+// a blocked thread is walked from its last Java frame anchor and never
+// needs the registers.
 intx os::current_thread_id() {
-#ifdef __APPLE__
   return (intx)os::Bsd::gettid();
-#else
-  return (intx)::pthread_self();
-#endif
 }
 
 int os::current_process_id() {
@@ -1056,6 +1182,30 @@ bool os::dll_address_to_function_name(address addr, char *buf,
   Dl_info dlinfo;
 
   if (local_dladdr((void*)addr, &dlinfo) != 0) {
+#ifndef __APPLE__
+    // The 6-parameter Decoder::decode() function is not implemented on macOS.
+    // The Mach-O binary format does not contain a "list of files" with address
+    // ranges like ELF. That makes sense since Mach-O can contain binaries for
+    // than one instruction set so there can be more than one address range for
+    // each "file".
+
+    // The ELF decoder is asked before dladdr's own answer, because the BSD
+    // dladdr(3) hands back the nearest preceding exported symbol however far
+    // off it is, where glibc's bounds the answer by the symbol's size and
+    // reports nothing when the address falls inside no symbol at all.  Taking
+    // its word names every frame in libjvm.so after whichever few symbols the
+    // version script exports: one hs_err stack came out as three consecutive
+    // frames called AsyncGetCallTrace+0x15d870, JNI_GetCreatedJavaVMs+0x184b3
+    // and JNI_GetCreatedJavaVMs+0x1aa59.  The decoder reads .symtab from the
+    // file and names the function the address is really in.
+    if (dlinfo.dli_fname != nullptr && dlinfo.dli_fbase != nullptr) {
+      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
+                          buf, buflen, offset, dlinfo.dli_fname, demangle)) {
+        return true;
+      }
+    }
+#endif
+
     // see if we have a matching symbol
     if (dlinfo.dli_saddr != nullptr && dlinfo.dli_sname != nullptr) {
       if (!(demangle && Decoder::demangle(dlinfo.dli_sname, buf, buflen))) {
@@ -1065,22 +1215,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
       return true;
     }
 
-#ifndef __APPLE__
-    // The 6-parameter Decoder::decode() function is not implemented on macOS.
-    // The Mach-O binary format does not contain a "list of files" with address
-    // ranges like ELF. That makes sense since Mach-O can contain binaries for
-    // than one instruction set so there can be more than one address range for
-    // each "file".
-
-    // no matching symbol so try for just file info
-    if (dlinfo.dli_fname != nullptr && dlinfo.dli_fbase != nullptr) {
-      if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
-                          buf, buflen, offset, dlinfo.dli_fname, demangle)) {
-        return true;
-      }
-    }
-
-#else  // __APPLE__
+#ifdef __APPLE__
     #define MACH_MAXSYMLEN 256
 
     char localbuf[MACH_MAXSYMLEN];
@@ -1227,6 +1362,10 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result != nullptr) {
     return result;
   }
+  const char* error_report = ::dlerror();
+  if (error_report == nullptr) {
+    error_report = "dlerror returned no error description";
+  }
   if (ebuf == nullptr || ebuflen < 1) {
     // no error reporting requested
     return nullptr;
@@ -1260,11 +1399,11 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   typedef struct {
-    Elf32_Half  code;         // Actual value as defined in elf.h
-    Elf32_Half  compat_class; // Compatibility of archs at VM's sense
-    char        elf_class;    // 32 or 64 bit
-    char        endianess;    // MSB or LSB
-    char*       name;         // String representation
+    Elf32_Half    code;         // Actual value as defined in elf.h
+    Elf32_Half    compat_class; // Compatibility of archs at VM's sense
+    unsigned char elf_class;    // 32 or 64 bit
+    unsigned char endianess;    // MSB or LSB
+    char*         name;         // String representation
   } arch_t;
 
   #ifndef EM_486
@@ -1399,6 +1538,43 @@ void os::print_dll_info(outputStream *st) {
   }
 }
 
+#ifdef __OpenBSD__
+struct loaded_modules_info_param {
+  os::LoadedModulesCallbackFunc callback;
+  void *param;
+};
+
+// The object's extent is the span of its PT_LOAD segments, as os_linux.cpp
+// takes it; dl_phdr_info carries nothing closer to a size.
+static int dl_iterate_callback(struct dl_phdr_info *info, size_t size, void *data) {
+  if ((info->dlpi_name == nullptr) || (*info->dlpi_name == '\0')) {
+    return 0;
+  }
+
+  struct loaded_modules_info_param *callback_param = reinterpret_cast<struct loaded_modules_info_param *>(data);
+  address base = nullptr;
+  address top = nullptr;
+  for (int idx = 0; idx < info->dlpi_phnum; idx++) {
+    const Elf_Phdr *phdr = info->dlpi_phdr + idx;
+    if (phdr->p_type == PT_LOAD) {
+      address raw_phdr_base = reinterpret_cast<address>(info->dlpi_addr + phdr->p_vaddr);
+
+      address phdr_base = align_down(raw_phdr_base, phdr->p_align);
+      if ((base == nullptr) || (base > phdr_base)) {
+        base = phdr_base;
+      }
+
+      address phdr_top = align_up(raw_phdr_base + phdr->p_memsz, phdr->p_align);
+      if ((top == nullptr) || (top < phdr_top)) {
+        top = phdr_top;
+      }
+    }
+  }
+
+  return callback_param->callback(info->dlpi_name, base, top, callback_param->param);
+}
+#endif
+
 int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
 #ifdef RTLD_DI_LINKMAP
   Dl_info dli;
@@ -1425,7 +1601,7 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
 
   while (map != nullptr) {
     // Value for top_address is returned as 0 since we don't have any information about module size
-    if (callback(map->l_name, (address)map->l_addr, (address)0, param)) {
+    if (callback(map->l_name, (address)map->l_addr, nullptr, param)) {
       dlclose(handle);
       return 1;
     }
@@ -1433,6 +1609,12 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
   }
 
   dlclose(handle);
+  return 0;
+#elif defined(__OpenBSD__)
+  // OpenBSD's dlinfo(3) has no RTLD_DI_LINKMAP; dl_iterate_phdr(3) is the
+  // way to walk the loaded objects there.
+  struct loaded_modules_info_param callback_param = {callback, param};
+  return dl_iterate_phdr(&dl_iterate_callback, &callback_param);
 #elif defined(__APPLE__)
   for (uint32_t i = 1; i < _dyld_image_count(); i++) {
     // Value for top_address is returned as 0 since we don't have any information about module size
@@ -1455,7 +1637,7 @@ void os::get_summary_os_info(char* buf, size_t buflen) {
   if (sysctl(mib_kern, 2, os, &size, nullptr, 0) < 0) {
 #ifdef __APPLE__
     strncpy(os, "Darwin", sizeof(os));
-#elif __OpenBSD__
+#elif defined(__OpenBSD__)
     strncpy(os, "OpenBSD", sizeof(os));
 #else
     strncpy(os, "BSD", sizeof(os));
@@ -1537,14 +1719,19 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  unsigned int mhz;
-  size_t size = sizeof(mhz);
+  size_t size;
+  // HW_CPU_FREQ is a macOS extension.  Elsewhere keep the value the
+  // failing sysctl would have left behind, which callers can divide by.
+  unsigned int mhz = 1;
+#ifdef __APPLE__
+  size = sizeof(mhz);
   int mib[] = { CTL_HW, HW_CPU_FREQ };
   if (sysctl(mib, 2, &mhz, &size, nullptr, 0) < 0) {
     mhz = 1;  // looks like an error but can be divided by
   } else {
     mhz /= 1000000;  // reported in millions
   }
+#endif
 
   char model[100];
   size = sizeof(model);
@@ -1574,9 +1761,6 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
 }
 
 void os::print_memory_info(outputStream* st) {
-  xsw_usage swap_usage;
-  size_t size = sizeof(swap_usage);
-
   st->print("Memory:");
   st->print(" %zuk page", os::vm_page_size()>>10);
   physical_memory_size_type phys_mem = os::physical_memory();
@@ -1587,6 +1771,11 @@ void os::print_memory_info(outputStream* st) {
   st->print("(" PHYS_MEM_TYPE_FORMAT "k free)",
             avail_mem >> 10);
 
+#ifdef __APPLE__
+  // struct xsw_usage and the vm.swapusage sysctl are macOS extensions; the
+  // BSDs have neither, and leave the swap figures out of the line.
+  xsw_usage swap_usage;
+  size_t size = sizeof(swap_usage);
   if((sysctlbyname("vm.swapusage", &swap_usage, &size, nullptr, 0) == 0) || (errno == ENOMEM)) {
     if (size >= offset_of(xsw_usage, xsu_used)) {
       st->print(", swap " UINT64_FORMAT "k",
@@ -1595,6 +1784,7 @@ void os::print_memory_info(outputStream* st) {
                 ((julong) swap_usage.xsu_avail) >> 10);
     }
   }
+#endif
 
   st->cr();
 }
@@ -1615,18 +1805,7 @@ static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
 //       problem.
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   int prot = exec ? PROT_READ|PROT_WRITE|PROT_EXEC : PROT_READ|PROT_WRITE;
-#if defined(__OpenBSD__)
-  // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
-  if (::mprotect(addr, size, prot) == 0) {
-    return true;
-  } else {
-    ErrnoPreserver ep;
-    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
-                       RANGEFMTARGS(addr, size),
-                       os::strerror(ep.saved_errno()));
-  }
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
   if (exec) {
     // Do not replace MAP_JIT mappings, see JDK-8234930
     if (::mprotect(addr, size, prot) == 0) {
@@ -1737,19 +1916,7 @@ bool os::numa_get_group_ids_for_range(const void** addresses, int* lgrp_ids, siz
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
-#if defined(__OpenBSD__)
-  // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
-  Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
-  if (::mprotect(addr, size, PROT_NONE) == 0) {
-    return true;
-  } else {
-    ErrnoPreserver ep;
-    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
-                       RANGEFMTARGS(addr, size),
-                       os::strerror(ep.saved_errno()));
-    return false;
-  }
-#elif defined(__APPLE__)
+#if defined(__APPLE__)
   if (exec) {
     if (::madvise(addr, size, MADV_FREE) != 0) {
       ErrnoPreserver ep;
@@ -1794,6 +1961,36 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
+#ifdef __FreeBSD__
+  // FreeBSD maps thread stacks with MAP_STACK, so only the part that has
+  // been touched is really mapped and the rest is a guard entry that
+  // vm_map_growstack() converts to stack when it is faulted on.  It will
+  // not grow to within security.bsd.stack_guard_page pages of whatever is
+  // mapped below, and the guard pages this function is about to commit are
+  // mapped below.  The pages immediately above them then become
+  // unreachable: touching one raises SIGSEGV with SEGV_ACCERR at an address
+  // the VM believes is usable stack, so it is not recognised as a stack
+  // overflow and every StackOverflowError becomes a crash instead.
+  //
+  // Map what has not been touched yet, up to the current frame.  There is
+  // then no guard entry left for growstack to refuse, and the only pages
+  // that fault are the ones this function guards.  Nothing below the stack
+  // pointer is live, and a failure here is not fatal -- it costs the pages
+  // above the guard, which is what would have happened anyway.
+  // pd_commit_memory rather than commit_memory: this is not a new
+  // commitment, only the mapping the thread stack was already reserved for,
+  // and os::commit_memory would record it with NMT.  NMT finds the boundary
+  // between a stack's guard pages and its usable part by looking for the
+  // committed region it recorded, so a record covering the whole stack makes
+  // it report the stack as fully committed whatever is resident -- which is
+  // what runtime/Thread/TestAlwaysPreTouchStacks measures.
+  char* const untouched = addr + size;
+  char* const sp = align_down((char*)os::current_stack_pointer() - os::vm_page_size(),
+                              os::vm_page_size());
+  if (sp > untouched) {
+    os::pd_commit_memory(untouched, sp - untouched, !ExecMem);
+  }
+#endif
   return os::commit_memory(addr, size, !ExecMem);
 }
 
@@ -1804,9 +2001,9 @@ void os::remove_stack_guard_pages(char* addr, size_t size) {
 // 'requested_addr' is only treated as a hint, the return value may or
 // may not start from the requested address. Unlike Bsd mmap(), this
 // function returns null to indicate failure.
-static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
+static char* anon_mmap(char* requested_addr, size_t bytes, bool exec, int extra_flags = 0) {
   // MAP_FIXED is intentionally left out, to leave existing mappings intact.
-  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS
+  const int flags = MAP_PRIVATE | MAP_NORESERVE | MAP_ANONYMOUS | extra_flags
       MACOS_ONLY(| (exec ? MAP_JIT : 0));
 
   // Map reserved/uncommitted pages PROT_NONE so we fail early if we
@@ -1843,6 +2040,31 @@ bool os::pd_release_memory(char* addr, size_t size) {
   return anon_munmap(addr, size);
 }
 
+#ifdef __OpenBSD__
+// OpenBSD keeps the primordial thread's stack under a guard of its own and
+// lets nobody change the protection of any of it: mprotect answers EPERM at
+// every depth, where a pthread's stack takes it -- measured on 7.9 with
+// pthread_main_np() telling the two apart.  The launcher never runs Java on
+// that thread, but an executable that creates the VM from main() does, and
+// the zones it then asks for are exactly what the kernel will not give.
+// Leave the guarding to the kernel there and report success, so that the
+// VM starts; the stack still ends in a fault, only not at the address the
+// VM chose.
+static bool openbsd_kernel_guards_this_stack(char* addr, size_t size, int err) {
+  if (err != EPERM || pthread_main_np() != 1) {
+    return false;
+  }
+  // ss_sp is the top of the stack, measured, and ss_size reaches down.
+  stack_t ss;
+  if (pthread_stackseg_np(pthread_self(), &ss) != 0) {
+    return false;
+  }
+  address top = (address)ss.ss_sp;
+  address low = top - ss.ss_size;
+  return (address)addr >= low && (address)addr + size <= top;
+}
+#endif
+
 static bool bsd_mprotect(char* addr, size_t size, int prot) {
   // Bsd wants the mprotect address argument to be page aligned.
   char* bottom = (char*)align_down((intptr_t)addr, os::vm_page_size());
@@ -1856,7 +2078,17 @@ static bool bsd_mprotect(char* addr, size_t size, int prot) {
 
   size = align_up(pointer_delta(addr, bottom, 1) + size, os::vm_page_size());
   Events::log_memprotect(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(bottom), p2i(bottom+size), prot);
-  return ::mprotect(bottom, size, prot) == 0;
+  if (::mprotect(bottom, size, prot) == 0) {
+    return true;
+  }
+#ifdef __OpenBSD__
+  if (openbsd_kernel_guards_this_stack(bottom, size, errno)) {
+    log_debug(os, map)("mprotect refused on the primordial stack " RANGEFMT
+                       "; leaving it to the kernel", RANGEFMTARGS(bottom, size));
+    return true;
+  }
+#endif
+  return false;
 }
 
 // Set protections specified
@@ -1931,6 +2163,28 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   // in one of the methods further up the call chain.  See bug 5044738.
   assert(bytes % os::vm_page_size() == 0, "reserving unexpected size block");
 
+#if defined(__FreeBSD__) || defined(__DragonFly__)
+  // Neither of these will place a mapping at a hint.  FreeBSD does not honour
+  // it at all: with ASLR on, a range it has just given back comes back
+  // somewhere else, three times out of three when measured.  DragonFly honours
+  // it only where nothing is in the way -- asked for a page inside a hole
+  // between two mappings it answers with the first free address above them
+  // instead, sixteen times out of sixteen -- so os::attempt_reserve_memory_at
+  // could never reserve inside a hole, and attempt_reserve_memory_between
+  // returned nothing at all.
+  //
+  // Both have a flag that means what Linux's MAP_FIXED_NOREPLACE means: the
+  // address asked for if it is free, and failure rather than a clobbered
+  // mapping if it is not.  They spell it differently, and DragonFly has no
+  // MAP_EXCL.
+  #ifdef __FreeBSD__
+    const int nonclobbering = MAP_FIXED | MAP_EXCL;
+  #else
+    const int nonclobbering = MAP_TRYFIXED;
+  #endif
+  char* addr = anon_mmap(requested_addr, bytes, exec, nonclobbering);
+  return addr == requested_addr ? addr : nullptr;
+#else
   // Bsd mmap allows caller to pass an address as hint; give it a try first,
   // if kernel honors the hint then we can return immediately.
   char * addr = anon_mmap(requested_addr, bytes, exec);
@@ -1944,6 +2198,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return nullptr;
+#endif
 }
 
 size_t os::vm_min_address() {
@@ -2414,21 +2669,50 @@ int os::open(const char *path, int oflag, int mode) {
 // current_thread_cpu_time() and thread_cpu_time(Thread*) returns
 // the fast estimate available on the platform.
 
+#ifndef __APPLE__
+// The BSDs have no mach thread_info(); pthread_getcpuclockid(3) gives a
+// per-thread CPU clock instead.  It does not separate user from system time,
+// so both callers get the total.
+static jlong bsd_cpu_time(clockid_t clockid) {
+  struct timespec tp;
+  if (clock_gettime(clockid, &tp) != 0) {
+    return -1;
+  }
+  return jlong(tp.tv_sec) * NANOSECS_PER_SEC + jlong(tp.tv_nsec);
+}
+
+static jlong bsd_thread_cpu_time(pthread_t tid) {
+  clockid_t clockid;
+  if (pthread_getcpuclockid(tid, &clockid) != 0) {
+    return -1;
+  }
+  return bsd_cpu_time(clockid);
+}
+#endif
+
 jlong os::current_thread_cpu_time() {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), true /* user + sys */);
 #else
-  Unimplemented();
-  return 0;
+  return bsd_thread_cpu_time(::pthread_self());
 #endif
 }
 
 jlong os::thread_cpu_time(Thread* thread) {
 #ifdef __APPLE__
   return os::thread_cpu_time(thread, true /* user + sys */);
+#elif defined(__OpenBSD__)
+  // OpenBSD's pthread_getcpuclockid(3) reads through the pthread_t instead of
+  // validating it, so asking about a thread that has already terminated
+  // faults rather than answering ESRCH as the manual says.  Measured on 7.9:
+  // a call on a joined thread is a SIGSEGV in pthread_getcpuclockid+0x17, and
+  // the VM took it whenever JMX asked the CPU time of a natively attached
+  // thread that had gone away without detaching.  The clock id recorded while
+  // the thread was alive stays usable; clock_gettime on it then answers ESRCH,
+  // which is the -1 the caller is looking for.
+  return bsd_cpu_time(thread->osthread()->cpu_clockid());
 #else
-  Unimplemented();
-  return 0;
+  return bsd_thread_cpu_time(thread->osthread()->pthread_id());
 #endif
 }
 
@@ -2436,13 +2720,14 @@ jlong os::current_thread_cpu_time(bool user_sys_cpu_time) {
 #ifdef __APPLE__
   return os::thread_cpu_time(Thread::current(), user_sys_cpu_time);
 #else
-  Unimplemented();
-  return 0;
+  return bsd_thread_cpu_time(::pthread_self());
 #endif
 }
 
 jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
-#ifdef __APPLE__
+#if defined(__OpenBSD__)
+  return os::thread_cpu_time(thread);
+#elif defined(__APPLE__)
   struct thread_basic_info tinfo;
   mach_msg_type_number_t tcount = THREAD_INFO_MAX;
   kern_return_t kr;
@@ -2463,8 +2748,7 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
     return ((jlong)tinfo.user_time.seconds * 1000000000) + ((jlong)tinfo.user_time.microseconds * (jlong)1000);
   }
 #else
-  Unimplemented();
-  return 0;
+  return bsd_thread_cpu_time(thread->osthread()->pthread_id());
 #endif
 }
 
@@ -2484,11 +2768,9 @@ void os::thread_cpu_time_info(jvmtiTimerInfo *info_ptr) {
 }
 
 bool os::is_thread_cpu_time_supported() {
-#ifdef __APPLE__
+  // macOS answers through mach thread_info(); the other BSDs through
+  // pthread_getcpuclockid(3).  G1 refuses to start without this.
   return true;
-#else
-  return false;
-#endif
 }
 
 // System loadavg support.  Returns -1 if load average cannot be obtained.
@@ -2496,6 +2778,76 @@ bool os::is_thread_cpu_time_supported() {
 // so just return the system wide load average.
 int os::loadavg(double loadavg[], int nelem) {
   return ::getloadavg(loadavg, nelem);
+}
+
+// /cores is a macOS directory and does not exist on the other BSDs, which
+// write the core into the process's own working directory under a name the
+// kernel builds from a pattern.  NetBSD keeps that pattern per process under
+// CTL_PROC and FreeBSD and DragonFly keep one for the system in
+// kern.corefile; both default to the program's name with ".core" appended.
+// Reporting /cores here sent every test that goes looking for a core file
+// hunting in a directory that was never there.
+static int get_default_core_path(char* buffer, size_t bufferSize) {
+  char pattern[PATH_MAX];
+  char expanded[PATH_MAX];
+  size_t sz = sizeof(pattern);
+  bool have_pattern = false;
+  size_t out = 0;
+
+#if defined(__NetBSD__)
+  int mib[3] = { CTL_PROC, (int)os::current_process_id(), PROC_PID_CORENAME };
+  have_pattern = (::sysctl(mib, 3, pattern, &sz, nullptr, 0) == 0);
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+  have_pattern = (::sysctlbyname("kern.corefile", pattern, &sz, nullptr, 0) == 0);
+#endif
+  if (!have_pattern) {
+    // OpenBSD has no such knob, and this is what every one of them falls
+    // back on anyway.
+    os::snprintf_checked(pattern, sizeof(pattern), "%%n.core");
+  }
+
+  // Only the escapes the defaults use are expanded.  Anything else is left
+  // to stand, which at worst names a file that is not there -- the same
+  // result as reporting nothing, and better than reporting a wrong path
+  // with confidence.
+  for (const char* p = pattern; *p != '\0' && out + 1 < sizeof(expanded); p++) {
+    if (*p != '%' || *(p + 1) == '\0') {
+      expanded[out++] = *p;
+      continue;
+    }
+    p++;
+    switch (*p) {
+      case 'n': case 'N':
+        out += os::snprintf(expanded + out, sizeof(expanded) - out, "%s", ::getprogname());
+        break;
+      case 'p': case 'P':
+        out += os::snprintf(expanded + out, sizeof(expanded) - out, "%d", os::current_process_id());
+        break;
+      case 'u': case 'U':
+        out += os::snprintf(expanded + out, sizeof(expanded) - out, "%d", (int)::getuid());
+        break;
+      default:
+        expanded[out++] = '%';
+        if (out + 1 < sizeof(expanded)) {
+          expanded[out++] = *p;
+        }
+        break;
+    }
+    if (out >= sizeof(expanded)) {
+      out = sizeof(expanded) - 1;
+      break;
+    }
+  }
+  expanded[out] = '\0';
+
+  if (expanded[0] == '/') {
+    return os::snprintf(buffer, bufferSize, "%s", expanded);
+  }
+  char cwd[PATH_MAX];
+  if (::getcwd(cwd, sizeof(cwd)) == nullptr) {
+    return os::snprintf(buffer, bufferSize, "%s", expanded);
+  }
+  return os::snprintf(buffer, bufferSize, "%s/%s", cwd, expanded);
 }
 
 // Get the kern.corefile setting, or otherwise the default path to the core file
@@ -2520,7 +2872,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   } else
 #endif
   {
-    n = jio_snprintf(buffer, bufferSize, "/cores/core.%d", os::current_process_id());
+    n = get_default_core_path(buffer, bufferSize);
   }
   // Truncate if theoretical string was longer than bufferSize
   n = MIN2(n, (int)bufferSize);
@@ -2716,6 +3068,9 @@ void os::print_open_file_descriptors(outputStream* st) {
 #ifdef __APPLE__
   char buf[1024 * sizeof(struct proc_fdinfo)];
   os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
+#elif defined(__NetBSD__)
+  char buf[1024 * sizeof(struct kinfo_file)];
+  os::Bsd::print_open_file_descriptors(st, buf, sizeof(buf));
 #else
   st->print_cr("Open File Descriptors: unknown");
 #endif
@@ -2749,6 +3104,27 @@ void os::Bsd::print_open_file_descriptors(outputStream* st, char* buf, size_t bu
     return;
   }
   st->print_cr("Open File Descriptors: %d", nfiles);
+#elif defined(__NetBSD__)
+  // KERN_FILE2 with KERN_FILE_BYPID lists this process's open files; the mib
+  // carries the size of one entry and how many will fit.
+  size_t max_fds = buflen / sizeof(struct kinfo_file);
+  precond(max_fds >= 1);
+  struct kinfo_file* fds = reinterpret_cast<struct kinfo_file*>(buf);
+
+  int mib[6] = { CTL_KERN, KERN_FILE2, KERN_FILE_BYPID, (int)::getpid(),
+                 (int)sizeof(struct kinfo_file), (int)max_fds };
+  size_t len = buflen;
+  if (sysctl(mib, 6, fds, &len, nullptr, 0) != 0) {
+    st->print_cr("Open File Descriptors: unknown");
+    return;
+  }
+
+  size_t nfiles = len / sizeof(struct kinfo_file);
+  if (nfiles >= max_fds) {
+    st->print_cr("Open File Descriptors: > %zu", max_fds);
+    return;
+  }
+  st->print_cr("Open File Descriptors: %zu", nfiles);
 #else
   st->print_cr("Open File Descriptors: unknown");
 #endif
