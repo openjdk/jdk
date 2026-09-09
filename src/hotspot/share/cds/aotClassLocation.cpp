@@ -525,7 +525,7 @@ const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index) cons
 
   const char* runtime_path = get_runtime_path_helper(cs, effective_dumptime_path, runtime_css);
 
-  if (use_lcp_match && runtime_lcp != nullptr) {
+  if (use_lcp_match && runtime_lcp_len > 0) {
     os::free((void*)runtime_lcp);
   }
   return runtime_path;

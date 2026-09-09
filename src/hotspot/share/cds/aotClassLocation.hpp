@@ -210,6 +210,9 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
   void print_on(outputStream* st) const;
   void log_locations(const char* cache_filename, bool is_writing) const;
 
+  const char* get_runtime_path_helper(const AOTClassLocation* cs, const char* effective_dumptime_path,
+                                      ClassLocationStream& runtime_css) const;
+
 public:
   static AOTClassLocationConfig* dumptime() {
     assert(_dumptime_instance != nullptr, "can only be called when dumping an AOT cache");
@@ -222,8 +225,6 @@ public:
   }
 
   const char* get_runtime_path(int shared_path_index) const;
-  const char* get_runtime_path_helper(const AOTClassLocation* cs, const char* effective_dumptime_path,
-                                      ClassLocationStream& runtime_css) const;
 
   // Common accessors
   int boot_cp_start_index()          const { return 1; }
