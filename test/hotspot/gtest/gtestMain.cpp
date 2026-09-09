@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 #include "unittest.hpp"
@@ -151,7 +152,7 @@ class RandomSeedListener : public ::testing::EmptyTestEventListener {
   }
 
   virtual void OnTestStart(const ::testing::TestInfo&) {
-    os::init_random(static_cast<unsigned int>(_seed));
+    GtestRandom::init(static_cast<unsigned int>(_seed));
   }
 
   virtual void OnTestEnd(const ::testing::TestInfo& test_info) {
@@ -310,7 +311,6 @@ static void runUnitTestsInner(int argc, char** argv) {
     jvm_listener = new JVMInitializerListener(argc, argv);
     listeners.Append(jvm_listener);
   }
-  // Seed after JVM initialization so it cannot consume the test's random sequence.
   listeners.Append(new RandomSeedListener());
 
   int result = RUN_ALL_TESTS();
