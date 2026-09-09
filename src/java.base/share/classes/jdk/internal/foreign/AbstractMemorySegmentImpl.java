@@ -48,11 +48,9 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.Charset;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -640,34 +638,56 @@ public abstract sealed class AbstractMemorySegmentImpl
         Utils.checkNonNegativeIndex(elementCount, "elementCount");
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         AbstractMemorySegmentImpl dstImpl = (AbstractMemorySegmentImpl)dstSegment;
-        if (srcElementLayout.byteSize() != dstElementLayout.byteSize()) {
-            throw new IllegalArgumentException("Source and destination layouts must have same size");
+        long elementSize = srcElementLayout.byteSize();
+        if (elementSize != dstElementLayout.byteSize()) {
+            throw illegalArgument("Source and destination layouts must have same size");
         }
-        Utils.checkElementAlignment(srcElementLayout, "Source layout alignment greater than its size");
-        Utils.checkElementAlignment(dstElementLayout, "Destination layout alignment greater than its size");
+        if (!Utils.isElementAligned(srcElementLayout)) {
+            throw illegalArgument("Source layout alignment greater than its size");
+        }
+        if (!Utils.isElementAligned(dstElementLayout)) {
+            throw illegalArgument("Destination layout alignment greater than its size");
+        }
         if (!srcImpl.isAlignedForElement(srcOffset, srcElementLayout)) {
-            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+            throw illegalArgument("Source segment incompatible with alignment constraints");
         }
         if (!dstImpl.isAlignedForElement(dstOffset, dstElementLayout)) {
-            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+            throw illegalArgument("Destination segment incompatible with alignment constraints");
         }
         final long size;
         try {
-            size = Math.multiplyExact(elementCount, srcElementLayout.byteSize());
+            size = Math.multiplyExact(elementCount, elementSize);
         } catch (ArithmeticException _) {
-            throw new IndexOutOfBoundsException("Illegal elementCount for " + srcElementLayout + ": " + elementCount);
+            throw overflowingElementCount(srcElementLayout, elementCount);
         }
         srcImpl.checkAccess(srcOffset, size, true);
         dstImpl.checkAccess(dstOffset, size, false);
-        if (srcElementLayout.byteSize() == 1 || srcElementLayout.order() == dstElementLayout.order()) {
-            ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
-        } else {
-            ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
-                    srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
-                    dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, srcElementLayout.byteSize());
+        if (elementSize != 1 && srcElementLayout.order() != dstElementLayout.order()) {
+            copySwapMemory(srcImpl, srcOffset, dstImpl, dstOffset, size, elementSize);
+            return;
         }
+        ScopedMemoryAccess.getScopedMemoryAccess().copyMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+                srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size);
+    }
+
+    @DontInline
+    private static IllegalArgumentException illegalArgument(String message) {
+        return new IllegalArgumentException(message);
+    }
+
+    @DontInline
+    private static IndexOutOfBoundsException overflowingElementCount(ValueLayout elementLayout, long elementCount) {
+        return new IndexOutOfBoundsException("Illegal elementCount for " + elementLayout + ": " + elementCount);
+    }
+
+    // Leave it up to C2 to decide inlining of this method.
+    private static void copySwapMemory(AbstractMemorySegmentImpl srcImpl, long srcOffset,
+                                       AbstractMemorySegmentImpl dstImpl, long dstOffset,
+                                       long size, long elementSize) {
+        ScopedMemoryAccess.getScopedMemoryAccess().copySwapMemory(srcImpl.sessionImpl(), dstImpl.sessionImpl(),
+                srcImpl.unsafeGetBase(), srcImpl.unsafeGetOffset() + srcOffset,
+                dstImpl.unsafeGetBase(), dstImpl.unsafeGetOffset() + dstOffset, size, elementSize);
     }
 
     @ForceInline
@@ -682,7 +702,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         AbstractMemorySegmentImpl srcImpl = (AbstractMemorySegmentImpl)srcSegment;
         Utils.checkElementAlignment(srcLayout, "Source layout alignment greater than its size");
         if (!srcImpl.isAlignedForElement(srcOffset, srcLayout)) {
-            throw new IllegalArgumentException("Source segment incompatible with alignment constraints");
+            throw illegalArgument("Source segment incompatible with alignment constraints");
         }
         srcImpl.checkAccess(srcOffset, elementCount * dstInfo.scale(), true);
         Objects.checkFromIndexSize(dstIndex, elementCount, Array.getLength(dstArray));
@@ -709,7 +729,7 @@ public abstract sealed class AbstractMemorySegmentImpl
         AbstractMemorySegmentImpl destImpl = (AbstractMemorySegmentImpl)dstSegment;
         Utils.checkElementAlignment(dstLayout, "Destination layout alignment greater than its size");
         if (!destImpl.isAlignedForElement(dstOffset, dstLayout)) {
-            throw new IllegalArgumentException("Destination segment incompatible with alignment constraints");
+            throw illegalArgument("Destination segment incompatible with alignment constraints");
         }
         destImpl.checkAccess(dstOffset, elementCount * srcInfo.scale(), false);
         if (srcInfo.scale() == 1 || dstLayout.order() == ByteOrder.nativeOrder()) {
