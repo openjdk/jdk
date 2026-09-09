@@ -34,7 +34,7 @@
 
 class InstanceKlass;
 class ValueKlass;
-struct ValuePayloadContext;
+class ValuePayloadContext;
 
 // A fieldDescriptor describes the attributes of a single field (instance or class variable).
 // It needs the class constant pool to work (because it only holds indices into the pool
@@ -162,9 +162,15 @@ class fieldDescriptor {
 //   Line::p1::y::value             Integer           12
 //   Line::p2::x::value             Integer           16
 //   Line::p2::y::value             Integer           20  -> p2.y is at offset 20 of the heap oop
-struct ValuePayloadContext {
-  ValueKlass* _klass;
-  int         _offset_in_obj; // in bytes
+class ValuePayloadContext {
+  DEBUG_ONLY(ValueKlass* _klass;) // this is used only in asserts for now ...
+  int _offset_in_obj; // in bytes
+public:
+  ValuePayloadContext(ValueKlass* klass, int offset_in_obj) :
+    DEBUG_ONLY(_klass(klass) COMMA) _offset_in_obj(offset_in_obj) {}
+
+  DEBUG_ONLY(ValueKlass* klass() const { return _klass; })
+  int offset_in_obj() const { return _offset_in_obj; }
 };
 
 // FieldPrinter

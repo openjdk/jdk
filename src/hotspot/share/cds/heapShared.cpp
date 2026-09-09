@@ -1753,7 +1753,7 @@ public:
   FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, const ValuePayloadContext* vpc = nullptr)
     : FieldClosure(), _subgraph_info(subgraph_info), _obj(obj), _vpc(vpc) {
     precond(obj != nullptr);
-    assert(vpc == nullptr || obj->klass() != vpc->_klass, "a value object cannot be flattened into itself");
+    assert(vpc == nullptr || obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
   }
 
   void do_field(fieldDescriptor* fd) override {

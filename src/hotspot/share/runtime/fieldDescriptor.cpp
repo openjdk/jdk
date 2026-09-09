@@ -117,8 +117,9 @@ int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
   if (vpc == nullptr) {
     return offset();
   } else {
-    precond(vpc->_klass != nullptr);
-    precond(vpc->_offset_in_obj != 0);
+    precond(vpc->klass() != nullptr);
+    precond(vpc->offset_in_obj() != 0);
+    precond(vpc->klass() == this->field_holder());
 
     // Compute the offset of the field represented by this fieldDescriptor from
     // the beginning of an heap oop.
@@ -126,17 +127,17 @@ int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
     // Using the example Point class from the comments above the declaration of
     // ValuePayloadContext, if we are looking at Point::y::value,
     //
-    //     this->field_holder()  : InstanceKlass java/lang/Integer (in other cases this could be an abstract value class)
-    //     vpc._klass            : ValueKlass java/lang/Integer (we are looking at a field in a flattened Integer)
-    //     vpc._offset_in_obj    : 12 (this flattened Integer starts at offset 12 of obj)
-    //     this->name()          : "value" (the field that we are looking at. Note: it's NOT "y")
-    //     this->field_type()    : T_INT
-    //     this->offset()        : 8 (the offset of the "value" field in a regular Integer heap object)
-    //     vpc._klass->payload_offset()  : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
+    //     this->field_holder()    : InstanceKlass java/lang/Integer
+    //     vpc->klass()            : ValueKlass java/lang/Integer (we are looking at a field in a flattened Integer)
+    //     vpc->_offset_in_obj     : 12 (this flattened Integer starts at offset 12 of obj)
+    //     this->name()            : "value" (the field that we are looking at. Note: it's NOT "y")
+    //     this->field_type()      : T_INT
+    //     this->offset()          : 8 (the offset of the "value" field in a regular Integer heap oop)
+    //     vpc->klass()->payload_offset() : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
     //   =>
     //     field_offset_in_obj() : 12 + (8 - 8) == 12 (offset inside a Point object)
-    int offset_in_value_payload = this->offset() - vpc->_klass->payload_offset();
-    return vpc->_offset_in_obj + offset_in_value_payload;
+    int offset_in_value_payload = this->offset() - ValueKlass::cast(this->field_holder())->payload_offset();
+    return vpc->offset_in_obj() + offset_in_value_payload;
   }
 }
 
@@ -312,7 +313,7 @@ FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, const ValuePay
     assert(vpc == nullptr, "flattening not supported for static fields");
   } else {
     if (vpc != nullptr) {
-      assert(obj->klass() != vpc->_klass, "a value object cannot be flattened into itself");
+      assert(obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
     }
   }
 }
