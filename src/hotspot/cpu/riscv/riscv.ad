@@ -1174,8 +1174,6 @@ bool is_CAS(int opcode, bool maybe_volatile)
   }
 }
 
-constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
-
 // predicate controlling translation of CAS
 //
 // returns true if CAS needs to use an acquiring load otherwise false
