@@ -104,36 +104,39 @@ ValueKlass* fieldDescriptor::flat_field_klass() {
   return field_holder()->get_value_type_field_klass(index());
 }
 
-bool fieldDescriptor::is_flat_field_marked_as_null(address obj, FieldClosure* fc) {
+bool fieldDescriptor::is_flat_field_marked_as_null(address obj, const ValuePayloadContext* vpc) {
   precond(is_flat());
   if (is_null_free_value_type()) {
     return false; // Cannot be marked as null.
   } else {
-    return flat_field_klass()->is_payload_marked_as_null(obj + field_offset_in_obj(fc));
+    return flat_field_klass()->is_payload_marked_as_null(obj + field_offset_in_obj(vpc));
   }
 }
 
-int fieldDescriptor::field_offset_in_obj(FieldClosure* fc) const {
-  if (fc->flat_field_offset() == 0) {
-    precond(fc->flat_field_klass() == nullptr);
+int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
+  if (vpc == nullptr) {
     return offset();
   } else {
-    ValueKlass* vk = fc->flat_field_klass();
-    int flat_field_offset = fc->flat_field_offset();
+    precond(vpc->_klass != nullptr);
+    precond(vpc->_offset_in_obj != 0);
+
     // Compute the offset of the field represented by this fieldDescriptor from
-    // the beginning of an heap oop. Using the example Point class from the comments
-    // above the declaration of FieldClosure, if we are looking at Point::y::value,
+    // the beginning of an heap oop.
     //
-    //     this->field_holder()  : InstanceKlass Point
-    //     vk                    : InstanceKlass java/lang/Integer (we are looking at a field in a flattened Integer)
-    //     flat_field_offset     : 12 (this flattened Integer starts at offset 16 of obj)
+    // Using the example Point class from the comments above the declaration of
+    // ValuePayloadContext, if we are looking at Point::y::value,
+    //
+    //     this->field_holder()  : InstanceKlass java/lang/Integer (in other cases this could be an abstract value class)
+    //     vpc._klass            : ValueKlass java/lang/Integer (we are looking at a field in a flattened Integer)
+    //     vpc._offset_in_obj    : 12 (this flattened Integer starts at offset 12 of obj)
     //     this->name()          : "value" (the field that we are looking at. Note: it's NOT "y")
     //     this->field_type()    : T_INT
-    //     this->offset()        : 8 (the offset of the "value" field in a regular Integer heap oop)
-    //     vk->payload_offset()  : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
+    //     this->offset()        : 8 (the offset of the "value" field in a regular Integer heap object)
+    //     vpc._klass->payload_offset()  : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
     //   =>
-    //     field_offset_in_obj() : 12 - 8 + 8 == 12 (offset inside a Point oop)
-    return flat_field_offset - vk->payload_offset() + this->offset();
+    //     field_offset_in_obj() : 12 + (8 - 8) == 12 (offset inside a Point object)
+    int offset_in_value_payload = this->offset() - vpc->_klass->payload_offset();
+    return vpc->_offset_in_obj + offset_in_value_payload;
   }
 }
 
@@ -167,7 +170,7 @@ void fieldDescriptor::print_access_flags(outputStream* st) const {
 }
 
 // Print information (such as type, name, offset) of this field.
-void fieldDescriptor::print_on(outputStream* st, FieldClosure* fc) const {
+void fieldDescriptor::print_on(outputStream* st, const ValuePayloadContext* vpc) const {
   print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
   bool flat = field_flags().is_flat();
@@ -175,7 +178,7 @@ void fieldDescriptor::print_on(outputStream* st, FieldClosure* fc) const {
   name()->print_value_on(st);
   st->print(" (fields 0x%08x) ", field_flags().as_uint());
   signature()->print_value_on(st);
-  st->print(" @%d ", (fc == nullptr) ? offset() : field_offset_in_obj(fc));
+  st->print(" @%d ", (vpc == nullptr) ? offset() : field_offset_in_obj(vpc));
   if (WizardMode && has_initial_value()) {
     st->print("(initval ");
     constantTag t = initial_value_tag();
@@ -195,10 +198,10 @@ void fieldDescriptor::print_on(outputStream* st, FieldClosure* fc) const {
 
 void fieldDescriptor::print() const { print_on(tty); }
 
-void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldClosure* fc) {
+void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) {
   BasicType ft = field_type();
-  int field_offset_in_obj = this->field_offset_in_obj(fc);
-  print_on(st, fc);
+  int field_offset_in_obj = this->field_offset_in_obj(vpc);
+  print_on(st, vpc);
   st->print(" ");
   jint as_int = 0;
   switch (ft) {
@@ -233,7 +236,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
     case T_OBJECT:
       if (is_flat()) {
         ValueKlass* vk = flat_field_klass();
-        bool is_null = is_flat_field_marked_as_null(obj, fc);
+        bool is_null = is_flat_field_marked_as_null(obj, vpc);
 
         if (!is_null_free_value_type()) {
           assert(has_null_marker(), "should have null marker");
@@ -250,7 +253,8 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
 
         if (!is_null) {
           // Print fields declared inside this flat field (which is a type of vk)
-          FieldPrinter print_field(st, obj, indent + 1, vk, field_offset_in_obj);
+          ValuePayloadContext field_vpc{vk, field_offset_in_obj};
+          FieldPrinter print_field(st, obj, indent + 1, &field_vpc);
           vk->do_nonstatic_fields(&print_field);
         }
 
@@ -302,13 +306,13 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, FieldC
   }
 }
 
-FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, ValueKlass* flat_field_klass, int flat_field_offset) :
-  FieldClosure(flat_field_klass, flat_field_offset), _obj(obj), _st(st), _indent(indent) {
+FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) :
+  FieldClosure(), _obj(obj), _st(st), _indent(indent), _vpc(vpc) {
   if (obj == nullptr) {
-    assert(flat_field_offset == 0, "flattening not supported for static fields");
+    assert(vpc == nullptr, "flattening not supported for static fields");
   } else {
-    if (flat_field_offset != 0) {
-      assert(obj->klass() != flat_field_klass, "a value object cannot be flattened into itself");
+    if (vpc != nullptr) {
+      assert(obj->klass() != vpc->_klass, "a value object cannot be flattened into itself");
     }
   }
 }
@@ -317,12 +321,11 @@ void FieldPrinter::do_field(fieldDescriptor* fd) {
   for (int i = 0; i < _indent; i++) _st->print("  ");
   _st->print(" - ");
   if (_obj == nullptr) {
-    precond(flat_field_offset() == 0);
-    precond(flat_field_klass() == nullptr);
+    precond(_vpc == nullptr);
     fd->print_on(_st);
     _st->cr();
   } else {
-    fd->print_on_for(_st, _obj, _indent, this);
+    fd->print_on_for(_st, _obj, _indent, _vpc);
     if (!fd->field_flags().is_flat()) _st->cr();
   }
 }

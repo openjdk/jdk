@@ -432,7 +432,8 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
     if (!fa->is_null_free_array() && fa->obj_at_is_null(index)) {
       st->print_cr(" - (null)");
     } else {
-      FieldPrinter print_field(st, fa, /*indent*/0, vk, fa->value_offset_as_int(index, layout_helper()));
+      ValuePayloadContext vpc{vk, fa->value_offset_as_int(index, layout_helper())};
+      FieldPrinter print_field(st, fa, /*indent*/0, &vpc);
       vk->do_nonstatic_fields(&print_field);
     }
     st->cr();

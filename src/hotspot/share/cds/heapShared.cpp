@@ -62,6 +62,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
@@ -1747,25 +1748,26 @@ void HeapShared::init_box_classes(TRAPS) {
 class HeapShared::FlatFieldKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
   oop _obj;
+  const ValuePayloadContext* _vpc;
 public:
-  FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, ValueKlass* flat_field_klass, int flat_field_offset)
-    : FieldClosure(flat_field_klass, flat_field_offset), _subgraph_info(subgraph_info),_obj(obj) {
+  FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _subgraph_info(subgraph_info), _obj(obj), _vpc(vpc) {
     precond(obj != nullptr);
-    assert(obj->klass() != flat_field_klass, "a value object cannot be flattened into itself");
+    assert(vpc == nullptr || obj->klass() != vpc->_klass, "a value object cannot be flattened into itself");
   }
 
   void do_field(fieldDescriptor* fd) override {
     if (fd->is_flat()) {
       precond(fd->field_type() == T_OBJECT);
 
-      if (!fd->is_flat_field_marked_as_null(_obj, this)) {
+      if (!fd->is_flat_field_marked_as_null(_obj, _vpc)) {
         // Found a non-null flat field of type vk. Let's record vk.
         ValueKlass* vk = fd->flat_field_klass();
         add_flat_field_klass(_subgraph_info, vk);
         if (vk->has_inlined_fields()) {
           // Scan the fields inside the flat field of type vk whose payload is at field_offset_in_obj.
-          int field_offset_in_obj = fd->field_offset_in_obj(this);
-          FlatFieldKlassFinder finder(_subgraph_info, _obj, vk, field_offset_in_obj);
+          ValuePayloadContext field_vpc{vk, fd->field_offset_in_obj(_vpc)};
+          FlatFieldKlassFinder finder(_subgraph_info, _obj, &field_vpc);
           vk->do_nonstatic_fields(&finder);
         }
       }
@@ -1816,7 +1818,8 @@ void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop o
         // Each element in fa may have different null flat fields, so we must scan
         // all elements to ensure discovery of all non-null flat fields.
         if (elem_k->has_inlined_fields()) {
-          FlatFieldKlassFinder finder(subgraph_info, orig_obj, elem_k, fa->value_offset_as_int(i, fak->layout_helper()));
+          ValuePayloadContext vpc{elem_k, fa->value_offset_as_int(i, fak->layout_helper())};
+          FlatFieldKlassFinder finder(subgraph_info, orig_obj, &vpc);
           elem_k->do_nonstatic_fields(&finder);
         }
       }
@@ -1824,7 +1827,7 @@ void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop o
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->has_inlined_fields()) {
-      FlatFieldKlassFinder finder(subgraph_info, orig_obj, nullptr, 0);
+      FlatFieldKlassFinder finder(subgraph_info, orig_obj);
       ik->do_nonstatic_fields(&finder);
     }
   }

@@ -32,8 +32,9 @@
 #include "utilities/accessFlags.hpp"
 #include "utilities/constantTag.hpp"
 
-class ValueKlass;
 class InstanceKlass;
+class ValueKlass;
+struct ValuePayloadContext;
 
 // A fieldDescriptor describes the attributes of a single field (instance or class variable).
 // It needs the class constant pool to work (because it only holds indices into the pool
@@ -116,20 +117,54 @@ class fieldDescriptor {
   inline void set_has_initialized_final_update(const bool value);
 
   ValueKlass* flat_field_klass();
-  bool is_flat_field_marked_as_null(address obj, FieldClosure* fc);
-  bool is_flat_field_marked_as_null(oop obj, FieldClosure* fc) {
-    return is_flat_field_marked_as_null(cast_from_oop<address>(obj), fc);
+  bool is_flat_field_marked_as_null(address obj, const ValuePayloadContext* vpc);
+  bool is_flat_field_marked_as_null(oop obj, const ValuePayloadContext* vpc) {
+    return is_flat_field_marked_as_null(cast_from_oop<address>(obj), vpc);
   }
-  int field_offset_in_obj(FieldClosure* fc) const;
+  int field_offset_in_obj(const ValuePayloadContext* vpc) const;
 
   // Initialization
   void reinitialize(const InstanceKlass* ik, const FieldInfo& fieldinfo);
 
   // Print
   void print() const;
-  void print_on(outputStream* st, FieldClosure* fc = nullptr) const;
-  void print_on_for(outputStream* st, oop obj, int indent = 0, FieldClosure* fc = nullptr);
+  void print_on(outputStream* st, const ValuePayloadContext* vpc = nullptr) const;
+  void print_on_for(outputStream* st, oop obj, int indent = 0, const ValuePayloadContext* vpc = nullptr);
   void print_access_flags(outputStream* st) const;
+};
+
+// Helper class to record iteration-relevant value payload context
+// needed for iterators that want to visit all fields of a klass
+// containing flattened values.
+//
+// For example, if we have a heap oop of the Line class:
+//
+//      value class Point {
+//          @NullRestricted Integer x;
+//          @NullRestricted Integer y;
+//      }
+//      value class Line {
+//          @NullRestricted Point p1;
+//          @NullRestricted Point p2;
+//      }
+//
+// Assuming that object header is 8 bytes and Line instance is buffered,
+// hence non-flattened instance:
+//
+// When do_field() is called on | vpc._klass | vpc._offset_in_obj:
+//   Line::p1                       -----             --  ValuePayloadContext not used
+//   Line::p2                       -----             --  ValuePayloadContext not used
+//   Line::p1::x                    Point              8  -> p1 is at offset 8 of the heap oop
+//   Line::p1::y                    Point              8
+//   Line::p2::x                    Point             16
+//   Line::p2::y                    Point             16
+//   Line::p1::x::value             Integer            8
+//   Line::p1::y::value             Integer           12
+//   Line::p2::x::value             Integer           16
+//   Line::p2::y::value             Integer           20  -> p2.y is at offset 20 of the heap oop
+struct ValuePayloadContext {
+  ValueKlass* _klass;
+  int         _offset_in_obj; // in bytes
 };
 
 // FieldPrinter
@@ -143,9 +178,9 @@ class FieldPrinter: public FieldClosure {
   oop _obj;
   outputStream* _st;
   int _indent;
+  const ValuePayloadContext* _vpc;
 public:
-  // See FieldClosure for the meaning of flat_field_klass and flat_field_offset
-  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, ValueKlass* flat_field_klass = nullptr, int flat_field_offset = 0);
+  FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, const ValuePayloadContext* vpc = nullptr);
   void do_field(fieldDescriptor* fd);
 };
 

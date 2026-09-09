@@ -38,6 +38,7 @@
 #include "logging/logStream.hpp"
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
@@ -640,9 +641,9 @@ public:
     }
   }
 
-  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, int indent, FieldClosure* fc) {
+  void print_non_oop_field(outputStream* st, fieldDescriptor* fd, int indent, const ValuePayloadContext* vpc) {
     precond(fd->field_type() != T_ARRAY && fd->field_type() != T_OBJECT);
-    fd->print_on_for(st, raw_oop(), indent, fc);
+    fd->print_on_for(st, raw_oop(), indent, vpc);
   }
 }; // AOTMapLogger::FakeOop
 
@@ -836,9 +837,10 @@ class AOTMapLogger::ArchivedFieldPrinter : public FieldClosure {
   FakeOop _fake_oop;
   outputStream* _st;
   int _indent;
+  const ValuePayloadContext* _vpc;
 public:
-  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, ValueKlass* flat_field_klass = nullptr, int flat_field_offset = 0)
-    : FieldClosure(flat_field_klass, flat_field_offset), _fake_oop(fake_oop), _st(st), _indent(indent) {
+  ArchivedFieldPrinter(FakeOop fake_oop, outputStream* st, int indent = 1, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _fake_oop(fake_oop), _st(st), _indent(indent), _vpc(vpc) {
     precond(_fake_oop.raw_oop() != nullptr);
   }
 
@@ -853,9 +855,9 @@ public:
       {
         if (fd->is_flat()) {
           // offset of the payload that represents this field, from the beginning of _fake_oop
-          int field_offset_in_obj = fd->field_offset_in_obj(this);
+          int field_offset_in_obj = fd->field_offset_in_obj(_vpc);
           ValueKlass* vk = fd->flat_field_klass();
-          bool is_null = fd->is_flat_field_marked_as_null(_fake_oop.buffered_addr(), this);
+          bool is_null = fd->is_flat_field_marked_as_null(_fake_oop.buffered_addr(), _vpc);
 
           if (!fd->is_null_free_value_type()) {
             assert(fd->has_null_marker(), "should have null marker");
@@ -867,7 +869,8 @@ public:
           // Print fields of flat field (recursively)
           if (!is_null) {
             _st->cr();
-            ArchivedFieldPrinter print_field(_fake_oop, _st, _indent + 1, vk, field_offset_in_obj);
+            ValuePayloadContext field_vpc{vk, field_offset_in_obj};
+            ArchivedFieldPrinter print_field(_fake_oop, _st, _indent + 1, &field_vpc);
             vk->do_nonstatic_fields(&print_field);
           } else {
             _st->print_cr(" null");
@@ -880,14 +883,15 @@ public:
                           is_null ? "Field marked as null" : "Field marked as non-null");
           }
         } else {
-          fd->print_on(_st); // print just the name and offset
-          FakeOop field_value = _fake_oop.obj_field(fd->offset());
+          // Was this a bug before this change?
+          fd->print_on(_st, _vpc); // print just the name and offset
+          FakeOop field_value = _fake_oop.obj_field(fd->field_offset_in_obj(_vpc));
           print_oop_info_cr(_st, field_value);
         }
       }
       break;
     default:
-      _fake_oop.print_non_oop_field(_st, fd, _indent, this);
+      _fake_oop.print_non_oop_field(_st, fd, _indent, _vpc);
       _st->cr();
     }
   }
@@ -1042,7 +1046,8 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
 
       if (!is_null) {
         st->cr();
-        ArchivedFieldPrinter print_field(fake_flat_array, st, 0, elem_k, elem_offset);
+        ValuePayloadContext vpc{elem_k, elem_offset};
+        ArchivedFieldPrinter print_field(fake_flat_array, st, 0, &vpc);
         elem_k->do_nonstatic_fields(&print_field);
       } else {
         assert(!real_klass->is_null_free_array_klass(), "must be");
