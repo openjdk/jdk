@@ -31,6 +31,7 @@
 #include "opto/predicates_enums.hpp"
 #include "opto/type.hpp"
 #include "runtime/arguments.hpp"
+#include "utilities/bitMap.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -165,6 +166,145 @@ class PhiNode : public TypeNode {
   const int _inst_index;  // Alias index of the instance memory slice.
   // Array elements references have the same alias_idx but different offset.
   const int _inst_offset; // Offset of the instance memory slice.
+
+  // Bottom memory Phis are peculiar. Consider a bottom memory Phi bot_phi and an arbitrary alias
+  // class mem.
+  //
+  // 1. Sometimes, bot_phi does not contain the memory state corresponding to mem, and there is
+  // another memory Phi mem_phi at the same region representing the memory state corresponding to
+  // mem.
+  //
+  // if (b) {
+  //   Call1();
+  //   MemProj1(Call1);
+  // } else {
+  //   Call2();
+  //   MemProj2(Call2);
+  //   Store1(_, MemProj2, p, v): mem;
+  // }
+  // bot_phi = Phi(MemProj1, MemProj2);
+  // mem_phi = Phi(MemProj1, Store1);
+  //
+  // In this example, bot_phi cannot contain the memory state corresponding to mem, because
+  // MemProj2 does not capture the store into that memory.
+  //
+  // 2. Sometimes, bot_phi contains the memory state corresponding to mem, even if there is another
+  // memory Phi at the same region representing the memory state corresponding to mem.
+  //
+  // Call1();
+  // MemProj1(Call1);
+  // Store1(_, MemProj1, p1, v): mem;
+  // MergeMem1(MemProj1, Top, Store1);
+  // Load1(_, Store1, p2): mem;
+  // Load2(_, MergeMem, p3): mem;
+  //
+  // We somehow want to multiversion some statements:
+  //
+  // Call1();
+  // MemProj1(Call1);
+  // if (b) {
+  //   Store11(_, MemProj1, p1, v): mem;
+  //   MergeMem11(MemProj1, Top, Store11);
+  // } else {
+  //   Store12(_, MemProj1, p1, v): mem;
+  //   MergeMem12(MemProj1, Top, Store12);
+  // }
+  // bot_phi = Phi(MergeMem11, MergeMem12);
+  // mem_phi = Phi(Store11, Store12);
+  // Load1(_, mem_phi, p2): mem;
+  // Load2(_, bot_phi, p3): mem;
+  //
+  // In this example, bot_phi must contain the memory state corresponding to mem, because there is
+  // a load corresponding to mem from it. This pattern can be eventually simplified after IGVN, but
+  // until then, the existence of mem_phi does not mean that bot_phi does not contain the memory
+  // state corresponding to mem.
+  //
+  // 3. Sometimes, bot_phi does not contain the memory state corresponding to mem, even if there is
+  // not any memory Phi at the same region representing the memory state corresponding to mem.
+  //
+  // Call1();
+  // MemProj1(Call1);
+  // Store1(_, MemProj1, p, v);
+  // if (b) {
+  //   MergeMem1(MemProj1, Top, Store1);
+  // }
+  // bot_phi = Phi(MergeMem1, MemProj1);
+  //
+  // In this case, bot_phi does not contain the memory state corresponding to mem, because in one
+  // branch, its input is MemProj1, which does not capture the latest store Store1 of the alias
+  // class mem.
+  //
+  // Those situations can be solved by pushing the MergeMems down through their bottom memory Phi
+  // outputs. However, naively doing so can lead to infinite loop, because a Phi can be a
+  // transitive input of itself, which means keeping pushing the MergeMem down may eventually
+  // results in it being an input of the original Phi again. To tackle that issue, we observe that
+  // pushing a MergeMem down through a bottom memory Phi effectively splits that Phi into multiple
+  // Phis each of which represents an alias class, and the new bottom memory Phi must not contain
+  // the memory states of those alias classes that are split. For example, by transforming:
+  //
+  //   Proj1       Store
+  //      \       /
+  //       MergeMem        Proj2
+  //             \       /
+  //                Phi
+  //                 |
+  //                ...
+  //
+  // Into:
+  //
+  //   Proj1     Proj2    Store     Proj2(this is the same node as the other Proj2)
+  //       \     /            \     /
+  //         Phi1              Phi2
+  //             \            /
+  //                MergeMem
+  //                   |
+  //                  ...
+  //
+  // While it is uncertain which memory states the original Phi contains, it is certain that Phi1
+  // (the new bottom memory Phi) does not contain the memory state corresponding to Phi2, because
+  // it misses the latest Store into that alias class.
+  //
+  // As a result, if we record which alias classes have been split from each bottom memory Phi, it
+  // is certain that the transformation will terminate, because if a MergeMem input of a bottom
+  // memory Phi has all its non-top inputs being known to be excluded from that Phi, then the Phi
+  // does not have to be split anymore (i.e. it can simply skip the MergeMem and is rewired to the
+  // MergeMem's base input instead of having the MergeMem pushed through it). Otherwise, the split
+  // is performed, more alias classes are split from the Phi, which means some progress is made.
+  //
+  // This does not need to be exact, it is fine if it misses alias classes that a bottom memory Phi
+  // does not include, but it must not contain alias classes that the Phi includes.
+  class ExcludedAliasIdx {
+  private:
+    BitMapView _view;
+
+    ExcludedAliasIdx(BitMap::bm_word_t* payload, BitMap::idx_t bit_size) : _view(payload, bit_size) {}
+
+  public:
+    static const ExcludedAliasIdx* make(Compile* C, const BitMap& excluded_idx) {
+      Arena* arena = C->node_arena();
+      char* ptr = static_cast<char*>(arena->Amalloc(sizeof(ExcludedAliasIdx) + excluded_idx.size_in_bytes()));
+      BitMap::bm_word_t* payload = reinterpret_cast<BitMap::bm_word_t*>(ptr + sizeof(ExcludedAliasIdx));
+      memset(payload, 0, excluded_idx.size_in_bytes());
+      ExcludedAliasIdx* res = ::new(ptr) ExcludedAliasIdx(payload, excluded_idx.size());
+      res->_view.set_from(excluded_idx);
+      return res;
+    }
+
+    bool contains(int alias_idx) const {
+      assert(alias_idx >= 0, "invalid idx %d", alias_idx);
+      BitMap::idx_t idx = alias_idx;
+      return idx < _view.size() && _view.at(idx);
+    }
+
+    void copy_into(BitMap& dst) const {
+      for (BitMap::Iterator iter(_view); !iter.is_empty(); iter.step()) {
+        dst.set_bit(iter.index());
+      }
+    }
+  };
+
+  const ExcludedAliasIdx* _excluded_idx;
+
   // Size is bigger to hold the _adr_type field.
   virtual uint hash() const;    // Check the type
   virtual bool cmp( const Node &n ) const;
@@ -180,7 +320,7 @@ class PhiNode : public TypeNode {
 
   bool must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const;
 
-  bool is_split_through_mergemem_terminating() const;
+  Node* split_through_mergemem(PhaseIterGVN& igvn);
 
   void verify_type_stability(const PhaseGVN* phase, const Type* union_of_input_types, const Type* new_type) const NOT_DEBUG_RETURN;
   bool wait_for_cast_input_igvn(const PhaseIterGVN* igvn) const;
@@ -201,7 +341,8 @@ public:
       _inst_mem_id(imid),
       _inst_id(iid),
       _inst_index(iidx),
-      _inst_offset(ioffs)
+      _inst_offset(ioffs),
+      _excluded_idx(nullptr)
   {
     init_class_id(Class_Phi);
     init_req(0, r);
@@ -283,7 +424,7 @@ public:
 #endif //ASSERT
 
   const TypeTuple* collect_types(PhaseGVN* phase) const;
-  bool can_be_replaced_by(const PhiNode* other) const;
+  bool can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const;
 };
 
 //------------------------------GotoNode---------------------------------------

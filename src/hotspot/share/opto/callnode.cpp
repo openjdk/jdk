@@ -1469,7 +1469,7 @@ Node* CallStaticJavaNode::replace_identity_hash_code(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 // Try to replace a runtime call to the substitutability test by either a simple pointer comparison
@@ -1516,7 +1516,7 @@ Node* CallStaticJavaNode::replace_is_substitutable(PhaseIterGVN* igvn) {
   }
   Node* new_mem = kit.reset_memory();
   assert(in(TypeFunc::Memory) == new_mem, "must not modify memory");
-  return TupleNode::make(tf()->range_cc(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
+  return TupleNode::make(tf()->range_cc(), adr_type(), igvn->C->top(), kit.i_o(), new_mem, kit.frameptr(), kit.returnadr(), replace);
 }
 
 #ifndef PRODUCT
@@ -1685,7 +1685,7 @@ bool CallLeafPureNode::is_dead() const {
 TupleNode* CallLeafPureNode::make_tuple_of_input_state_and_top_return_values(const Compile* C) const {
   // Transparently propagate input state but parameters
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       in(TypeFunc::Control),
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
@@ -2980,7 +2980,7 @@ TupleNode* PowDNode::make_tuple_of_input_state_and_result(PhaseIterGVN* phase, N
   Compile* C = phase->C;
   C->remove_macro_node(this);
   TupleNode* tuple = TupleNode::make(
-      tf()->range_cc(),
+      tf()->range_cc(), nullptr,
       control,
       in(TypeFunc::I_O),
       in(TypeFunc::Memory),
