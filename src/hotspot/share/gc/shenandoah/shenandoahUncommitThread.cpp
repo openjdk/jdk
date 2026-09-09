@@ -194,7 +194,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     // otherwise, we will just trip through uncommit-commit wastefully.
     double expected_ts = i * ms_per_candidate;
     double actual_ts = ((os::elapsedTime() - start) * MILLIUNITS);
-    int delay_ms = checked_cast<int>(MAX2<double>(0, expected_ts - actual_ts));
+    int delay_ms = MAX2<int>(0, expected_ts - actual_ts);
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
       break;
