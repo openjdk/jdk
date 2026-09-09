@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,14 +101,14 @@ class jfieldIDWorkaround: AllStatic {
     // the jfieldID is created with.
     return checked_cast<int>(result);
   }
-  static intptr_t encode_klass_hash(Klass* k, int offset);
+  static intptr_t encode_klass_hash(InstanceKlass* k, int offset);
   static bool             klass_hash_ok(Klass* k, jfieldID id);
   static void  verify_instance_jfieldID(Klass* k, jfieldID id);
 
  public:
   static bool is_valid_jfieldID(Klass* k, jfieldID id);
 
-  static bool is_instance_jfieldID(Klass* k, jfieldID id) {
+  static bool is_instance_jfieldID(jfieldID id) {
     uintptr_t as_uint = (uintptr_t) id;
     return ((as_uint & instance_mask_in_place) != 0);
   }
@@ -122,7 +122,7 @@ class jfieldIDWorkaround: AllStatic {
     return ((as_uint & flat_mask_in_place) != 0);
   }
 
-  static jfieldID to_instance_jfieldID(Klass* k, int offset, bool is_flat) {
+  static jfieldID to_instance_jfieldID(InstanceKlass* k, int offset, bool is_flat) {
     intptr_t as_uint = ((offset & large_offset_mask) << offset_shift) |
                         instance_mask_in_place;
     if (is_flat) {

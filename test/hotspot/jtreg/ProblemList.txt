@@ -71,7 +71,7 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
-compiler/igvn/TestMaskedStoreIdealization.java 8388490 generic-all
+compiler/vectorapi/AllBitsSetVectorMatchRuleTest.java 8391806 generic-aarch64
 
 #############################################################################
 
@@ -89,6 +89,7 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
+gc/metaspace/TestMetaspaceFirstGC.java 8391711 generic-all
 
 #############################################################################
 
@@ -104,18 +105,19 @@ runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJFREvents.java 8327723 linux-x64
+containers/docker/TestLimitsUpdating.java 8390823 linux-all
+containers/docker/ShareTmpDir.java 8390823 linux-all
 
 #############################################################################
 
 # :hotspot_serviceability
 
 # 8239062 and 8270326 only affects macosx-x64,macosx-aarch64
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
@@ -137,6 +139,8 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
 
+serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 8390812 windows-x64
+
 #############################################################################
 
 # :hotspot_misc
@@ -152,11 +156,6 @@ serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-
 
 vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
 vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
-
-vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
 
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all
@@ -204,8 +203,6 @@ compiler/codegen/TestRedundantLea.java#Spill                            8361089 
 compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all
 
 serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8386674 linux-aarch64
-
-vmTestbase/nsk/jvmti/IterateOverReachableObjects/iterreachobj002/TestDescription.java 8384882 linux-all
 
 # The following test failure(s) DID NOT reproduce during Tier[1-8] testing
 # done for 8377828. Further analysis was done with 8376235 and just one

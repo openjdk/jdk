@@ -2600,9 +2600,9 @@ void MachVEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
       int initial_framesize = ra_->C->output()->frame_size_in_bytes() - 2*wordSize;
       __ remove_frame(initial_framesize, false);
     }
-    // Unpack inline type args passed as oop and then jump to
+    // Unpack value type args passed as oop and then jump to
     // the verified entry point (skipping the unverified entry).
-    int sp_inc = __ unpack_inline_args(ra_->C, _receiver_only);
+    int sp_inc = __ unpack_value_args(ra_->C, _receiver_only);
     // Emit code for verified entry and save increment for stack repair on return
     __ verified_entry(ra_->C, sp_inc);
     if (Compile::current()->output()->in_scratch_emit_size()) {
@@ -3055,13 +3055,18 @@ bool Matcher::match_rule_supported(int opcode) {
       }  // fallthrough
     case Op_AddHF:
     case Op_DivHF:
-    case Op_FmaHF:
     case Op_MulHF:
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
     case Op_SubHF:
     case Op_SqrtHF:
       if (!VM_Version::supports_avx512_fp16()) {
+        return false;
+      }
+      break;
+    case Op_FmaHF:
+      // UseFMA also needs to be checked along with AVX512-FP16.
+      if (!UseFMA || !VM_Version::supports_avx512_fp16()) {
         return false;
       }
       break;
@@ -3178,6 +3183,7 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_FmaD:
     case Op_FmaVD:
     case Op_FmaVF:
+    case Op_FmaVHF:
       if (!UseFMA) {
         return false;
       }
@@ -3220,7 +3226,7 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_CompressBits:
     case Op_ExpandBits:
-      if (!VM_Version::supports_bmi2()) {
+      if (!VM_Version::supports_fast_bmi2()) {
         return false;
       }
       break;
@@ -4615,7 +4621,7 @@ encode %{
       __ int3();
       __ bind(L);
     }
-    if (tf()->returns_inline_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
+    if (tf()->returns_value_type_as_fields() && !_method->is_method_handle_intrinsic() && _method->return_type()->is_loaded()) {
       // The last return value is not set by the callee but used to pass the null marker to compiled code.
       // Search for the corresponding projection, get the register and emit code that initializes it.
       uint con = (tf()->range_cc()->cnt() - 1);
@@ -4637,9 +4643,9 @@ encode %{
         }
       }
       if (return_value_is_used()) {
-        // An inline type is returned as fields in multiple registers.
-        // Rax either contains an oop if the inline type is buffered or a pointer
-        // to the corresponding InlineKlass with the lowest bit set to 1. Zero rax
+        // A value type is returned as fields in multiple registers.
+        // Rax either contains an oop if the value type is buffered or a pointer
+        // to the corresponding ValueKlass with the lowest bit set to 1. Zero rax
         // if the lowest bit is set to allow C2 to use the oop after null checking.
         // rax &= (rax & 1) - 1
         __ movptr(rscratch1, rax);
@@ -4736,12 +4742,9 @@ frame
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
-  // Otherwise, it is above the locks and verification slot and alignment word
-  return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
-                        Compile::current()->fixed_slots()),
-                       stack_alignment_in_slots()));
+  // Ret Addr is on stack 2 slots below _old_SP, i.e. in slot 0 if no locks
+  // or verification or alignment.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) - 2);
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
@@ -24809,12 +24812,11 @@ instruct long_to_mask_evex(kReg dst, rRegL src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct mask_opers_evex(kReg dst, kReg src1, kReg src2, kReg kscratch) %{
+instruct mask_opers_evex(kReg dst, kReg src1, kReg src2) %{
   match(Set dst (AndVMask src1 src2));
   match(Set dst (OrVMask src1 src2));
   match(Set dst (XorVMask src1 src2));
-  effect(TEMP kscratch);
-  format %{ "mask_opers_evex $dst, $src1, $src2\t! using $kscratch as TEMP" %}
+  format %{ "mask_opers_evex $dst, $src1, $src2" %}
   ins_encode %{
     const MachNode* mask1 = static_cast<const MachNode*>(this->in(this->operand_index($src1)));
     const MachNode* mask2 = static_cast<const MachNode*>(this->in(this->operand_index($src2)));
@@ -25247,11 +25249,11 @@ instruct scalar_minmax_HF_reg(regF dst, regF src1, regF src2, kReg ktmp, regF xt
 
 instruct scalar_fma_HF_reg(regF dst, regF src1, regF src2)
 %{
-  match(Set dst (FmaHF  src2 (Binary dst src1)));
-  effect(DEF dst);
-  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  match(Set dst (FmaHF dst (Binary src1 src2)));
+  format %{ "scalar_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
-    __ vfmadd132sh($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister);
+    assert(UseFMA, "Needs FMA instructions support.");
+    __ vfmadd231sh($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -25270,6 +25272,7 @@ instruct vector_sqrt_HF_reg(vec dst, vec src)
 
 instruct vector_sqrt_HF_mem(vec dst, memory src)
 %{
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (SqrtVHF (VectorReinterpret (LoadVector src))));
   format %{ "vector_sqrt_fp16_mem $dst, $src" %}
   ins_encode %{
@@ -25297,6 +25300,7 @@ instruct vector_binOps_HF_reg(vec dst, vec src1, vec src2)
 
 instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
 %{
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (AddVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (DivVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (MulVHF src1 (VectorReinterpret (LoadVector src2))));
@@ -25312,29 +25316,32 @@ instruct vector_binOps_HF_mem(vec dst, vec src1, memory src2)
 
 instruct vector_fma_HF_reg(vec dst, vec src1, vec src2)
 %{
-  match(Set dst (FmaVHF src2 (Binary dst src1)));
-  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  match(Set dst (FmaVHF dst (Binary src1 src2)));
+  format %{ "vector_fma_fp16 $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
-    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$XMMRegister, vlen_enc);
+    __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct vector_fma_HF_mem(vec dst, memory src1, vec src2)
+instruct vector_fma_HF_mem(vec dst, vec src1, memory src2)
 %{
-  match(Set dst (FmaVHF src2 (Binary dst (VectorReinterpret (LoadVector src1)))));
-  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $dst * $src1 + $src2 fma packedH" %}
+  predicate(Matcher::vector_length_in_bytes(n) > 8);
+  match(Set dst (FmaVHF dst (Binary src1 (VectorReinterpret (LoadVector src2)))));
+  format %{ "vector_fma_fp16_mem $dst, $src1, $src2\t# $dst = $src1 * $src2 + $dst fma packedH" %}
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     int vlen_enc = vector_length_encoding(this);
-    __ evfmadd132ph($dst$$XMMRegister, $src2$$XMMRegister, $src1$$Address, vlen_enc);
+    __ evfmadd231ph($dst$$XMMRegister, $src1$$XMMRegister, $src2$$Address, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
 
 instruct vector_minmax_HF_mem_avx10_2(vec dst, vec src1, memory src2)
 %{
-  predicate(VM_Version::supports_avx10_2());
+  predicate(VM_Version::supports_avx10_2() && Matcher::vector_length_in_bytes(n) > 8);
   match(Set dst (MinVHF src1 (VectorReinterpret (LoadVector src2))));
   match(Set dst (MaxVHF src1 (VectorReinterpret (LoadVector src2))));
   format %{ "vector_min_max_fp16_mem $dst, $src1, $src2" %}

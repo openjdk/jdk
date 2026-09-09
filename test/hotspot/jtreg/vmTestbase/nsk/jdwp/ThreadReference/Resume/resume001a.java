@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdwp.ThreadReference.Resume;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -66,7 +67,7 @@ public class resume001a {
 
             // load tested class and create tested thread
             log.display("Creating object of tested class");
-            TestedClass.thread = new TestedClass(THREAD_NAME);
+            TestedClass.thread = new TestedClass(THREAD_NAME).getThread();
 
             // start the thread and wait for notification from it
             synchronized (threadStarted) {
@@ -104,10 +105,10 @@ public class resume001a {
     }
 
     // tested thread class
-    public static class TestedClass extends Thread {
+    public static class TestedClass extends ThreadWrapper {
 
         // field with the tested Thread value
-        public static volatile TestedClass thread = null;
+        public static volatile Thread thread = null;
 
         TestedClass(String name) {
             super(name);

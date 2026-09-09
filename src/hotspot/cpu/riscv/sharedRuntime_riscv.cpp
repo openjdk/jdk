@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "classfile/symbolTable.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
 #include "code/vtableStubs.hpp"
@@ -389,7 +390,7 @@ int SharedRuntime::java_return_convention(const BasicType *sig_bt,
   return int_args + fp_args;
 }
 
-BufferedInlineTypeBlob* SharedRuntime::generate_buffered_inline_type_adapter(const InlineKlass* vk) {
+BufferedValueTypeBlob* SharedRuntime::generate_buffered_value_type_adapter(const ValueKlass* vk) {
   Unimplemented();
   return nullptr;
 }
@@ -422,13 +423,13 @@ static void patch_callers_callsite(MacroAssembler *masm) {
   __ bind(L);
 }
 
-// For each inline type argument, sig includes the list of fields of
-// the inline type. This utility function computes the number of
-// arguments for the call if inline types are passed by reference (the
+// For each value type argument, sig includes the list of fields of
+// the value type. This utility function computes the number of
+// arguments for the call if value types are passed by reference (the
 // calling convention the interpreter expects).
 static int compute_total_args_passed_int(const GrowableArray<SigEntry>* sig_extended) {
   int total_args_passed = 0;
-  assert(!InlineTypePassFieldsAsArgs, "");
+  assert(!ValueTypePassFieldsAsArgs, "");
   total_args_passed = sig_extended->length();
   return total_args_passed;
 }
@@ -546,21 +547,21 @@ static void gen_c2i_adapter(MacroAssembler *masm,
   // Now write the args into the outgoing interpreter space
 
   // next_arg_comp is the next argument from the compiler point of
-  // view (inline type fields are passed in registers/on the stack). In
-  // sig_extended, an inline type argument starts with: T_METADATA,
-  // followed by the types of the fields of the inline type and T_VOID
-  // to mark the end of the inline type. ignored counts the number of
-  // T_METADATA/T_VOID. next_vt_arg is the next inline type argument:
+  // view (value type fields are passed in registers/on the stack). In
+  // sig_extended, a value type argument starts with: T_METADATA,
+  // followed by the types of the fields of the value type and T_VOID
+  // to mark the end of the value type. ignored counts the number of
+  // T_METADATA/T_VOID. next_vt_arg is the next value type argument:
   // used to get the buffer for that argument from the pool of buffers
   // we allocated above and want to pass to the
   // interpreter. next_arg_int is the next argument from the
-  // interpreter point of view (inline types are passed by reference).
+  // interpreter point of view (value types are passed by reference).
   for (int next_arg_comp = 0, ignored = 0, next_vt_arg = 0, next_arg_int = 0;
        next_arg_comp < sig_extended->length(); next_arg_comp++) {
     assert(ignored <= next_arg_comp, "shouldn't skip over more slots than there are arguments");
     assert(next_arg_int <= total_args_passed, "more arguments for the interpreter than expected?");
     BasicType bt = sig_extended->at(next_arg_comp)._bt;
-    assert(!InlineTypePassFieldsAsArgs, "");
+    assert(!ValueTypePassFieldsAsArgs, "");
 
     int st_off = (total_args_passed - next_arg_int - 1) * Interpreter::stackElementSize;
     int next_off = st_off - Interpreter::stackElementSize;
@@ -605,7 +606,7 @@ void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
 
   // Will jump to the compiled code just as if compiled code was doing it.
   // Pre-load the register-jump target early, to schedule it better.
-  __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_inline_offset())));
+  __ ld(t1, Address(xmethod, in_bytes(Method::from_compiled_value_offset())));
 
   int total_args_passed = sig->length();
 
@@ -739,7 +740,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   // On exit from the interpreter, the interpreter will restore our SP (lest the
   // compiled code, which relies solely on SP and not FP, get sick).
   entry_address[AdapterBlob::C2I_Unverified] = __ pc();
-  entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
 
   Label skip_fixup;
   gen_inline_cache_check(masm, skip_fixup);
@@ -750,7 +751,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
   // Scalarized c2i adapter with non-scalarized receiver (i.e., don't pack receiver)
   entry_address[AdapterBlob::C2I_No_Clinit_Check] = nullptr;
-  entry_address[AdapterBlob::C2I_Inline_RO] = __ pc();
+  entry_address[AdapterBlob::C2I_Value_RO] = __ pc();
   if (regs_cc != regs_cc_ro) {
     // No class init barrier needed because method is guaranteed to be non-static
     gen_c2i_adapter(masm, sig_cc_ro, regs_cc_ro, /* requires_clinit_barrier = */ false, entry_address[AdapterBlob::C2I_No_Clinit_Check],
@@ -759,20 +760,20 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   }
 
   // Scalarized c2i adapter
-  entry_address[AdapterBlob::C2I]        = __ pc();
-  entry_address[AdapterBlob::C2I_Inline] = __ pc();
+  entry_address[AdapterBlob::C2I]       = __ pc();
+  entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
                   skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);
 
   // Non-scalarized c2i adapter
   if (regs != regs_cc) {
-    entry_address[AdapterBlob::C2I_Unverified_Inline] = __ pc();
-    Label inline_entry_skip_fixup;
-    gen_inline_cache_check(masm, inline_entry_skip_fixup);
+    entry_address[AdapterBlob::C2I_Unverified_Value] = __ pc();
+    Label value_entry_skip_fixup;
+    gen_inline_cache_check(masm, value_entry_skip_fixup);
 
-    entry_address[AdapterBlob::C2I_Inline] = __ pc();
+    entry_address[AdapterBlob::C2I_Value] = __ pc();
     gen_c2i_adapter(masm, sig, regs, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    inline_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
   }
 
   // The c2i adapters might safepoint and trigger a GC. The caller must make sure that
@@ -1391,7 +1392,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     assert(vep_offset != -1,        "Must be set");
 #endif
 
-    __ flush();
+    // Code will be copied. No ICache sync required.
     nmethod* nm = nmethod::new_native_nmethod(method,
                                               compile_id,
                                               masm->code(),
@@ -1429,7 +1430,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                          in_sig_bt,
                          in_regs);
     int frame_complete = ((intptr_t)__ pc()) - start;  // not complete, period
-    __ flush();
+    // Code will be copied. No ICache sync required.
     int stack_slots = SharedRuntime::out_preserve_stack_slots();  // no out slots at all, actually
     return nmethod::new_native_nmethod(method,
                                        compile_id,
@@ -1798,10 +1799,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ la(c_rarg0, Address(xthread, in_bytes(JavaThread::jni_environment_offset())));
 
   // Now set thread in native
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_native);
+  __ mv(t1, _thread_in_native);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   // Clobbers t1
   __ rt_call(native_func);
@@ -1816,16 +1816,10 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   Label safepoint_in_progress, safepoint_in_progress_done;
 
-  // Switch thread to "native transition" state before reading the synchronization state.
-  // This additional state is necessary because reading and testing the synchronization
-  // state is not atomic w.r.t. GC, as this scenario demonstrates:
-  //     Java thread A, in _thread_in_native state, loads _not_synchronized and is preempted.
-  //     VM thread changes sync state to synchronizing and suspends threads for GC.
-  //     Thread A is resumed to finish this native method, but doesn't block here since it
-  //     didn't see any synchronization is progress, and escapes.
-  __ mv(t0, _thread_in_native_trans);
-
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+  // change thread state
+  __ mv(t1, _thread_in_Java);
+  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1839,12 +1833,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     __ bnez(t0, safepoint_in_progress);
     __ bind(safepoint_in_progress_done);
   }
-
-  // change thread state
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_Java);
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
 
   if (method->is_object_wait0()) {
     // Check preemption for Object.wait()
@@ -2046,7 +2034,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #ifndef PRODUCT
     assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
 #endif
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
 
     // Restore any method result value
     restore_native_result(masm, ret_type, stack_slots);
@@ -2088,7 +2076,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
   }
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 
   nmethod *nm = nmethod::new_native_nmethod(method,
                                             compile_id,
@@ -2123,6 +2111,12 @@ void SharedRuntime::generate_deopt_blob() {
   // Setup code generation tools
   int pad = 0;
   const char* name = SharedRuntime::stub_name(StubId::shared_deopt_id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, BlobId::shared_deopt_id);
+  if (blob != nullptr) {
+    _deopt_blob = blob->as_deoptimization_blob();
+    return;
+  }
+
   CodeBuffer buffer(name, 2048 + pad, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   int frame_size_in_words = -1;
@@ -2421,12 +2415,13 @@ void SharedRuntime::generate_deopt_blob() {
   // Jump to interpreter
   __ ret();
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_in_words);
   assert(_deopt_blob != nullptr, "create deoptimization blob fail!");
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
+
+  AOTCodeCache::store_code_blob(*_deopt_blob, AOTCodeEntry::SharedBlob, BlobId::shared_deopt_id);
 }
 
 // Number of stack slots between incoming argument block and the start of
@@ -2453,13 +2448,18 @@ VMReg SharedRuntime::thread_register() {
 SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr) {
   assert(is_polling_page_id(id), "expected a polling page stub id");
 
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_safepoint_blob();
+  }
+
   ResourceMark rm;
   OopMapSet *oop_maps = new OopMapSet();
   assert_cond(oop_maps != nullptr);
   OopMap* map = nullptr;
 
   // Allocate space for the code.  Setup code generation tools.
-  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 2048, 1024);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
@@ -2560,11 +2560,13 @@ SafepointBlob* SharedRuntime::generate_handler_blob(StubId id, address call_ptr)
   __ stop("Attempting to adjust pc to skip safepoint poll but the return point is not what we expected");
 #endif
 
-  // Make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // Fill-out other meta info
-  return SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+  SafepointBlob* sp_blob = SafepointBlob::create(&buffer, oop_maps, frame_size_in_words);
+
+  AOTCodeCache::store_code_blob(*sp_blob, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  return sp_blob;
 }
 
 //
@@ -2579,10 +2581,15 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   assert(StubRoutines::forward_exception_entry() != nullptr, "must be generated before");
   assert(is_resolve_id(id), "expected a resolve stub id");
 
+  const char* name = SharedRuntime::stub_name(id);
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   // allocate space for the code
   ResourceMark rm;
 
-  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer buffer(name, 1000, 512);
   MacroAssembler* masm = new MacroAssembler(&buffer);
   assert_cond(masm != nullptr);
@@ -2648,12 +2655,13 @@ RuntimeStub* SharedRuntime::generate_resolve_blob(StubId id, address destination
   __ ld(x10, Address(xthread, Thread::pending_exception_offset()));
   __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
 
-  // -------------
-  // make sure all code is generated
-  masm->flush();
+  // Code will be copied. No ICache sync required.
 
   // return the  blob
-  return RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+  RuntimeStub* rs_blob = RuntimeStub::new_runtime_stub(name, &buffer, frame_complete, frame_size_in_words, oop_maps, true);
+
+  AOTCodeCache::store_code_blob(*rs_blob, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  return rs_blob;
 }
 
 // Continuation point for throwing of implicit exceptions that are
@@ -2697,6 +2705,11 @@ RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_
   ResourceMark rm;
   const char* timer_msg = "SharedRuntime generate_throw_exception";
   TraceTime timer(timer_msg, TRACETIME_LOG(Info, startuptime));
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
 
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps  = new OopMapSet();
@@ -2756,11 +2769,13 @@ RuntimeStub* SharedRuntime::generate_throw_exception(StubId id, address runtime_
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
   assert(stub != nullptr, "create runtime stub fail!");
+
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
   return stub;
 }
 
 // Call here from the interpreter or compiled code to store returned
-// values to a newly allocated inline type instance.
+// values to a newly allocated value type instance.
 RuntimeStub* SharedRuntime::generate_return_value_stub(address destination) {
   Unimplemented();
   return nullptr;
@@ -2780,6 +2795,13 @@ static void jfr_epilogue(MacroAssembler* masm) {
 // It returns a jobject handle to the event writer.
 // The handle is dereferenced and the return value is the event writer oop.
 RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
+  StubId id = StubId::shared_jfr_write_checkpoint_id;
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   enum layout {
     fp_off,
     fp_off2,
@@ -2790,7 +2812,7 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_write_checkpoint_id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2814,11 +2836,19 @@ RuntimeStub* SharedRuntime::generate_jfr_write_checkpoint() {
     RuntimeStub::new_runtime_stub(name, &code, frame_complete,
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
   return stub;
 }
 
 // For c2: call to return a leased buffer.
 RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
+  StubId id = StubId::shared_jfr_return_lease_id;
+
+  CodeBlob* blob = AOTCodeCache::load_code_blob(AOTCodeEntry::SharedBlob, StubInfo::blob(id));
+  if (blob != nullptr) {
+    return blob->as_runtime_stub();
+  }
+
   enum layout {
     fp_off,
     fp_off2,
@@ -2829,7 +2859,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
 
   int insts_size = 1024;
   int locs_size = 64;
-  const char* name = SharedRuntime::stub_name(StubId::shared_jfr_return_lease_id);
+  const char* name = SharedRuntime::stub_name(id);
   CodeBuffer code(name, insts_size, locs_size);
   OopMapSet* oop_maps = new OopMapSet();
   MacroAssembler* masm = new MacroAssembler(&code);
@@ -2852,6 +2882,7 @@ RuntimeStub* SharedRuntime::generate_jfr_return_lease() {
     RuntimeStub::new_runtime_stub(name, &code, frame_complete,
                                   (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                   oop_maps, false);
+  AOTCodeCache::store_code_blob(*stub, AOTCodeEntry::SharedBlob, StubInfo::blob(id));
   return stub;
 }
 

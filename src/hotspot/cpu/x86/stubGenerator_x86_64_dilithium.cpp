@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Intel Corporation. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -254,7 +254,7 @@ static auto whole_shuffle(Register scratch, KRegister mergeMask1, KRegister merg
 //         swap the second operand (zetas) since the odd slots contain the same number
 //         as the corresponding even one. This is indicated by input2NeedsShuffle=false)
 //
-// The registers to be multiplied are in input1[] and inputs2[]. The results go
+// The registers to be multiplied are in input1[] and input2[]. The results go
 // into output[]. Two scratch[] register arrays are expected. input1[] can
 // overlap with either output[] or scratch1[]
 // - If AVX512, all register arrays are of length 4
@@ -279,7 +279,7 @@ static auto whole_montMul(XMMRegister montQInvModR, XMMRegister dilithium_q,
     // If so, use output:
     const XMMRegister* scratch = scratch1 == input1 ? output: scratch1;
 
-    // scratch = input1_even * intput2_even
+    // scratch = input1_even * input2_even
     for (int i = 0; i < regCnt; i++) {
       __ vpmuldq(scratch[i], input1[i], input2[i], vector_len);
     }
@@ -308,7 +308,7 @@ static auto whole_montMul(XMMRegister montQInvModR, XMMRegister dilithium_q,
       }
     }
 
-    // scratch1 = input1_even*intput2_even
+    // scratch1 = input1_even*input2_even
     for (int i = 0; i < regCnt; i++) {
       __ vpmuldq(scratch1[i], input1[i], input2[i], vector_len);
     }
@@ -423,7 +423,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
   // products will be added to and subtracted from the other half of the
   // coefficients. In each level we just shuffle the coefficients that need to
   // be multiplied by the zetas in one set, the rest to another set of vector
-  // registers, then redistribute the addition/substraction results.
+  // registers, then redistribute the addition/subtraction results.
 
   // For levels 0 and 1 the zetas are not different within the 4 xmm registers
   // that we would use for them, so we use only one register.
@@ -649,7 +649,7 @@ static address generate_dilithiumAlmostNtt_avx(StubGenerator *stubgen,
   }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -898,7 +898,7 @@ static address generate_dilithiumAlmostInverseNtt_avx(StubGenerator *stubgen,
   }
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -993,7 +993,7 @@ static address generate_dilithiumNttMult_avx(StubGenerator *stubgen,
   __ jcc(Assembler::notEqual, L_loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -1002,7 +1002,7 @@ static address generate_dilithiumNttMult_avx(StubGenerator *stubgen,
   return start;
 }
 
-// Dilithium Motgomery multiply an array by a constant.
+// Dilithium Montgomery multiply an array by a constant.
 // Implements
 // static int implDilithiumMontMulByConstant(int[] coeffs, int constant) {}
 //
@@ -1089,7 +1089,7 @@ static address generate_dilithiumMontMulByConstant_avx(StubGenerator *stubgen,
   __ jcc(Assembler::notEqual, L_loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end
@@ -1357,7 +1357,7 @@ static address generate_dilithiumDecomposePoly_avx(StubGenerator *stubgen,
   __ jcc(Assembler::notEqual, L_loop);
 
   __ leave(); // required for proper stackwalking of RuntimeStub frame
-  __ mov64(rax, 0); // return 0
+  __ mov64(rax, 0); // Intrinsic returns a value of 0, whereas Java callees return 1
   __ ret(0);
 
   // record the stub entry and end

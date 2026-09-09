@@ -33,7 +33,6 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/matcher.hpp"
@@ -43,6 +42,7 @@
 #include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -525,9 +525,6 @@ Node *Node::clone() const {
     C->add_template_assertion_predicate_opaque(n->as_OpaqueTemplateAssertionPredicate());
   }
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->register_potential_barrier_node(n);
-
   n->set_idx(C->next_unique()); // Get new unique index as well
   NOT_PRODUCT(n->_igv_idx = C->next_igv_idx());
   DEBUG_ONLY( n->verify_construction() );
@@ -576,8 +573,8 @@ Node *Node::clone() const {
     n->as_SafePoint()->clone_jvms(C);
     n->as_SafePoint()->clone_replaced_nodes();
   }
-  if (n->is_InlineType()) {
-    C->add_inline_type(n);
+  if (n->is_ValueType()) {
+    C->add_value_type(n);
   }
   if (n->is_LoadFlat() || n->is_StoreFlat()) {
     C->add_flat_access(n);
@@ -645,8 +642,8 @@ void Node::destruct(PhaseValues* phase) {
   if (for_post_loop_opts_igvn()) {
     compile->remove_from_post_loop_opts_igvn(this);
   }
-  if (is_InlineType()) {
-    compile->remove_inline_type(this);
+  if (is_ValueType()) {
+    compile->remove_value_type(this);
   }
   if (for_merge_stores_igvn()) {
     compile->remove_from_merge_stores_igvn(this);
@@ -659,8 +656,6 @@ void Node::destruct(PhaseValues* phase) {
       compile->remove_unstable_if_trap(as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(this);
 
   // See if the input array was allocated just prior to the object
   int edge_size = _max*sizeof(void*);
@@ -1260,6 +1255,11 @@ bool Node::has_special_unique_user() const {
   }
 };
 
+bool Node::should_process_when_disconnect_output(Node* output) const {
+  return (is_Phi() && as_Phi()->is_dead_phi()) ||
+         output->is_data_proj_of_pure_function(this);
+}
+
 //--------------------------find_exact_control---------------------------------
 // Skip Proj and CatchProj nodes chains. Check for Null and Top.
 Node* Node::find_exact_control(Node* ctrl) {
@@ -1492,10 +1492,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
             // The restriction (outcnt() <= 2) is the same as in set_req_X()
             // and remove_globally_dead_node().
             igvn->add_users_to_worklist( n );
-          } else if (dead->is_data_proj_of_pure_function(n)) {
+          } else if (n->should_process_when_disconnect_output(dead)) {
             igvn->_worklist.push(n);
-          } else {
-            BarrierSet::barrier_set()->barrier_set_c2()->enqueue_useful_gc_barrier(igvn, n);
           }
         }
       }
