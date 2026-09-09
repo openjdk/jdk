@@ -1894,8 +1894,8 @@ void MacroAssembler::remove_frame(int frame_size_in_bytes) {
   raw_pop(FP, LR);
 }
 
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
    Unimplemented();
 }
 
@@ -1903,19 +1903,19 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   Unimplemented();
 }
 
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                             VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                             RegState reg_state[]) {
   Unimplemented();
 }
 
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                           VMRegPair* from, int from_count, int& from_index, VMReg to,
                           RegState reg_state[], Register val_array) {
   Unimplemented();
 }
 
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   Unimplemented();
 }
 

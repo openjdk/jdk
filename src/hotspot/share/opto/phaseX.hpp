@@ -477,6 +477,8 @@ private:
   // Idealize old Node 'n' with respect to its inputs and its value
   virtual Node *transform_old( Node *a_node );
 
+  bool can_kill(Node* n) const;
+
   // Drain the IGVN worklist: process nodes until the worklist is empty.
   // Returns true if compilation was aborted (node limit or infinite loop),
   // false on normal completion.

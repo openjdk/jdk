@@ -68,18 +68,18 @@ inline address InstanceKlass::end_of_instance_klass() const {
       (is_interface() ? sizeof(InstanceKlass*) : 0);
 }
 
-inline InlineKlass* InstanceKlass::get_inline_type_field_klass(int idx) const {
+inline ValueKlass* InstanceKlass::get_value_type_field_klass(int idx) const {
   assert(has_inlined_fields() || has_null_restricted_static_fields(), "Sanity checking");
   assert(idx < java_fields_count(), "IOOB");
-  InlineKlass* k = inline_layout_info(idx).klass();
+  ValueKlass* k = value_field_layout_info(idx).klass();
   assert(k != nullptr, "Should always be set before being read");
   return k;
 }
 
-inline InlineKlass* InstanceKlass::get_inline_type_field_klass_or_null(int idx) const {
+inline ValueKlass* InstanceKlass::get_value_type_field_klass_or_null(int idx) const {
   assert(has_inlined_fields() || has_null_restricted_static_fields(), "Sanity checking");
   assert(idx < java_fields_count(), "IOOB");
-  InlineKlass* k = inline_layout_info(idx).klass();
+  ValueKlass* k = value_field_layout_info(idx).klass();
   return k;
 }
 
