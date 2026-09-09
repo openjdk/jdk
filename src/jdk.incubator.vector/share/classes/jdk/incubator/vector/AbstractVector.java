@@ -206,7 +206,7 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     @ForceInline
     final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
-        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
+        if (NATIVE_ENDIAN != ByteOrder.BIG_ENDIAN) {
             return -1;
         }
         int sBytes = srcSpecies.elementSize();
