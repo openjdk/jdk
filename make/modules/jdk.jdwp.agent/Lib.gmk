@@ -39,6 +39,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBDT_SOCKET, \
         include \
         libjdwp/export, \
     LIBS_linux := $(LIBPTHREAD), \
+    LIBS_bsd := $(LIBPTHREAD), \
     LIBS_windows := iphlpapi.lib ws2_32.lib, \
 ))
 

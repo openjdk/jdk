@@ -194,6 +194,26 @@ AC_DEFUN([PLATFORM_EXTRACT_VARS_FROM_OS],
       VAR_OS=macosx
       VAR_OS_TYPE=unix
       ;;
+    *netbsd*)
+      VAR_OS=bsd
+      VAR_OS_ENV=bsd.netbsd
+      VAR_OS_TYPE=unix
+      ;;
+    *openbsd*)
+      VAR_OS=bsd
+      VAR_OS_ENV=bsd.openbsd
+      VAR_OS_TYPE=unix
+      ;;
+    *dragonfly*)
+      VAR_OS=bsd
+      VAR_OS_ENV=bsd.dragonfly
+      VAR_OS_TYPE=unix
+      ;;
+    *freebsd*)
+      VAR_OS=bsd
+      VAR_OS_ENV=bsd.freebsd
+      VAR_OS_TYPE=unix
+      ;;
     *bsd*)
       VAR_OS=bsd
       VAR_OS_TYPE=unix

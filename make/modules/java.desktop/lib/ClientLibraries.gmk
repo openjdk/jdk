@@ -89,7 +89,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     HEADERS_FROM_SRC := $(LIBLCMS_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc := format-nonliteral stringop-truncation \
         unused-variable, \
-    DISABLED_WARNINGS_clang := format-nonliteral, \
+    DISABLED_WARNINGS_clang := format-nonliteral char-subscripts, \
     JDK_LIBS := libawt java.base:libjava, \
     LIBS_unix := $(LCMS_LIBS) $(LIBM), \
 ))
@@ -266,6 +266,7 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       LIBS := $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(LIBZ_LIBS) $(PNG_LIBS) $(ICONV_LIBS), \
       LIBS_unix := $(LIBM) $(LIBPTHREAD), \
       LIBS_linux := $(X_LIBS) -lX11 -lXext, \
+      LIBS_bsd := $(X_LIBS) -lX11 -lXext, \
       LIBS_macosx := \
           -framework ApplicationServices \
           -framework Cocoa \

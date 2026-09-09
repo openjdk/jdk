@@ -132,6 +132,15 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     fi
   fi
 
+  # OpenBSD refuses a mapping that is both writable and executable unless the
+  # executable asks for one in its ELF header, and the JVM's code cache is
+  # exactly that.  The file system has to be mounted wxallowed as well, which
+  # is why OpenBSD's own java package installs under /usr/local.  Without the
+  # header the VM does not start: "Could not reserve enough space in CodeHeap".
+  if test "x$OPENJDK_TARGET_OS_ENV" = xbsd.openbsd; then
+    EXECUTABLE_LDFLAGS="$EXECUTABLE_LDFLAGS -Wl,-z,wxneeded"
+  fi
+
   # Setup LDFLAGS for linking executables
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     # Enabling pie on 32 bit builds prevents the JVM from allocating a continuous
