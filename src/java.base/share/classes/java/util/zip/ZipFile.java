@@ -53,7 +53,6 @@ import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.OperatingSystem;
 import jdk.internal.perf.PerfCounter;
 import jdk.internal.ref.CleanerFactory;
-import jdk.internal.vm.annotation.Stable;
 import jdk.internal.vm.annotation.TrustFinalFields;
 import sun.nio.cs.UTF_8;
 import sun.nio.fs.DefaultFileSystemProvider;
