@@ -131,6 +131,10 @@ abstract public class CDSAppTester {
         }
     }
 
+    public class TerminateWorkflowException extends RuntimeException {
+        private static final long serialVersionUID = 1L; // Value is not important.
+    }
+
     public boolean isDumping(RunMode runMode) {
         if (isStaticWorkflow()) {
             return runMode == RunMode.DUMP_STATIC;
@@ -167,9 +171,11 @@ abstract public class CDSAppTester {
     abstract public String[] appCommandLine(RunMode runMode);
 
     // optional
-    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {}
+    // @throws TerminateWorkflowException if the AOT workflow should be terminated (any remaining AOT
+    // steps in the AOT workflow will be skipped).
+    public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception, TerminateWorkflowException {}
 
-    private Workflow workflow = Workflow.AOT; // Use this by default.
+    private Workflow workflow;
     private boolean checkExitValue = true;
 
     public final void setCheckExitValue(boolean b) {
@@ -219,12 +225,12 @@ abstract public class CDSAppTester {
         for (String logFile : logFiles) {
             listOutputFile(logFile);
         }
-        if (checkExitValue) {
-            output.shouldHaveExitValue(0);
-        }
         output.shouldNotContain(CDSTestUtils.MSG_STATIC_FIELD_MAY_HOLD_DIFFERENT_VALUE);
         CDSTestUtils.checkCommonExecExceptions(output);
         checkExecution(output, runMode);
+        if (checkExitValue) {
+            output.shouldHaveExitValue(0);
+        }
         return output;
     }
 
@@ -268,7 +274,7 @@ abstract public class CDSAppTester {
         return cmdLine;
     }
 
-    public OutputAnalyzer recordAOTConfiguration() throws Exception {
+    private OutputAnalyzer recordAOTConfiguration() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -284,7 +290,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, aotConfigurationFile, aotConfigurationFileLog);
     }
 
-    public OutputAnalyzer createAOTCacheOneStep() throws Exception {
+    private OutputAnalyzer createAOTCacheOneStep() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -302,7 +308,7 @@ abstract public class CDSAppTester {
         return out;
     }
 
-    public OutputAnalyzer createClassList() throws Exception {
+    private OutputAnalyzer createClassList() throws Exception {
         RunMode runMode = RunMode.TRAINING;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -315,7 +321,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, classListFile, classListFileLog);
     }
 
-    public OutputAnalyzer dumpStaticArchive() throws Exception {
+    private OutputAnalyzer dumpStaticArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_STATIC;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -336,7 +342,7 @@ abstract public class CDSAppTester {
         return executeAndCheck(cmdLine, runMode, staticArchiveFile, staticArchiveFileLog);
     }
 
-    public OutputAnalyzer createAOTCache() throws Exception {
+    private OutputAnalyzer createAOTCache() throws Exception {
         RunMode runMode = RunMode.ASSEMBLY;
         String[] cmdLine = addCommonVMArgs(runMode);
         cmdLine = StringArrayUtils.concat(cmdLine, vmArgs(runMode));
@@ -395,7 +401,7 @@ abstract public class CDSAppTester {
         return this;
     }
 
-    public OutputAnalyzer dumpDynamicArchive() throws Exception {
+    private OutputAnalyzer dumpDynamicArchive() throws Exception {
         RunMode runMode = RunMode.DUMP_DYNAMIC;
         String[] cmdLine = new String[0];
         String baseArchive = getBaseArchiveForDynamicArchive();
@@ -527,18 +533,23 @@ abstract public class CDSAppTester {
             }
         }
 
-        if (oneStepTraining) {
-            try {
-                inOneStepTraining = true;
-                createAOTCacheOneStep();
-            } finally {
-                inOneStepTraining = false;
+        try {
+            if (oneStepTraining) {
+                try {
+                    inOneStepTraining = true;
+                    createAOTCacheOneStep();
+                } finally {
+                    inOneStepTraining = false;
+                }
+            } else {
+                recordAOTConfiguration();
+                createAOTCache();
             }
-        } else {
-            recordAOTConfiguration();
-            createAOTCache();
+            productionRun();
+        } catch (TerminateWorkflowException e) {
+            System.out.println("AOT workflow is terminated by tester's checkExecution() method");
+            e.printStackTrace(System.out);
         }
-        productionRun();
     }
 
     // See JEP 483; stop at the assembly run; do not execute production run

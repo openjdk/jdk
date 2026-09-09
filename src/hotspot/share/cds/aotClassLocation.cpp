@@ -223,9 +223,9 @@ ModulePathClassLocationStream::ModulePathClassLocationStream() : ClassLocationSt
         }
       } else if (errno == ENOENT) {
         log_info(class, path)("Found non-existent module path (ignored): '%s'", path);
-      }  else { 
+      }  else {
         aot_log_error(aot)("Unable to open file %s.", path);
-        AOTMetaspace::unrecoverable_loading_error();        
+        AOTMetaspace::unrecoverable_loading_error();
       }
     }
   }

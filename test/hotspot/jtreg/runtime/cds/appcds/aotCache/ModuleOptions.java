@@ -38,6 +38,8 @@
 import java.nio.file.Files;
 import java.nio.file.Path;
 import jdk.test.lib.cds.CDSAppTester;
+import jdk.test.lib.cds.CDSAppTester.RunMode;
+import jdk.test.lib.cds.CDSAppTester.TerminateWorkflowException;
 import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 
@@ -47,7 +49,7 @@ public class ModuleOptions {
 
     public static void main(String[] args) throws Exception {
         nonExistentPath(args);
-        notJar();
+        notJar(args);
     }
 
     // Non-existent paths specified by --module-path should be ignored by AOTClassLocation checks
@@ -98,24 +100,24 @@ public class ModuleOptions {
         tester.run(args);
     }
 
-    static void notJar() throws Exception {
+    static void notJar(String[] args) throws Exception {
         Files.writeString(Path.of("file.notjar"), "");
-        notJar(true,  false, false);
-        notJar(false, true,  false);
-        notJar(false, false, true);
+        notJar(args, RunMode.TRAINING);
+        notJar(args, RunMode.ASSEMBLY);
+        notJar(args, RunMode.PRODUCTION);
     }
 
-    static void notJar(boolean train, boolean assembly, boolean production) throws Exception {
+    // Add argument {--module-path file.notjar} when the AOT workflow is at the specified
+    // testPhase. The workflow should fail at this phase.
+    static void notJar(String[] args, RunMode testPhase) throws Exception {
         CDSAppTester tester = new CDSAppTester(mainClass) {
-                private boolean useNotJarFile(RunMode runMode) {
-                    return (train && runMode == RunMode.TRAINING) ||
-                           (assembly && runMode == RunMode.ASSEMBLY) ||
-                           (production && runMode == RunMode.PRODUCTION);
+                private boolean isTestPhase(RunMode runMode) {
+                    return runMode == testPhase;
                 }
 
                 @Override
                 public String[] vmArgs(RunMode runMode) {
-                    if (useNotJarFile(runMode)) {
+                    if (isTestPhase(runMode)) {
                         return new String [] { "--module-path", "file.notjar", "-Xlog:class+path" };
                     } else {
                         return new String[] {};
@@ -129,28 +131,19 @@ public class ModuleOptions {
 
                 @Override
                 public void checkExecution(OutputAnalyzer out, RunMode runMode) {
-                    if (useNotJarFile(runMode)) {
+                    if (isTestPhase(runMode)) {
                         out.shouldContain("Module path points to a single non-JAR file: 'file.notjar'");
                         out.shouldNotHaveExitValue(0);
                         if (runMode != RunMode.TRAINING) {
                             out.shouldContain("module path contains sub-directories or non-JAR files (incompatible with full module graph");
                         }
+
+                        // We can't go on with the AOT workflow. Terminate it now.
+                        throw new TerminateWorkflowException();
                     }
                 }
             };
 
-        if (train) {
-            tester.setCheckExitValue(false);
-            tester.recordAOTConfiguration();
-        } else if (assembly) {
-            tester.recordAOTConfiguration();
-            tester.setCheckExitValue(false);
-            tester.createAOTCache();
-        } else if (production) {
-            tester.recordAOTConfiguration();
-            tester.createAOTCache();
-            tester.setCheckExitValue(false);
-            tester.productionRun();
-        }
+        tester.run(args);
     }
 }
