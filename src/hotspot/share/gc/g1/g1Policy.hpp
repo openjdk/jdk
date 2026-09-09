@@ -98,7 +98,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // G1 allocation of new regions for eden is restrained when allocating into that reserve.
   // This intentionally slows down the allocation when the heap is close to full to allow
   // concurrent marking to finish and hopefully avoid a Full GC.
-  Atomic<uint> _reserve_regions;
+  Atomic<uint> _num_reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
   // Region budget for Eden allocation during the current mutator phase. It
@@ -287,7 +287,7 @@ public:
   void revise_target_num_young_regions(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
-  void record_new_heap_size(uint new_number_of_regions);
+  void record_new_heap_size(uint new_num_regions);
 
   void init(G1CollectedHeap* g1h, G1CollectionSet* collection_set);
 
@@ -398,11 +398,11 @@ private:
   uint _tenuring_threshold;
 
   // The limit on the number of regions allocated for survivors.
-  uint _max_survivor_regions;
+  uint _max_num_survivor_regions;
 
   AgeTable _survivors_age_table;
 
-  size_t desired_survivor_size(uint max_regions) const;
+  size_t desired_survivor_size(uint max_num_regions) const;
 
 public:
   static size_t young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_copy,
@@ -422,8 +422,8 @@ public:
 
   uint tenuring_threshold() const { return _tenuring_threshold; }
 
-  uint max_survivor_regions() {
-    return _max_survivor_regions;
+  uint max_num_survivor_regions() {
+    return _max_num_survivor_regions;
   }
 
   void start_adding_survivor_regions() {
