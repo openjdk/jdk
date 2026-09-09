@@ -29,40 +29,40 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-// G1FromCardCache remembers which destination cset groups have been
+// G1FromCardCache remembers which destination card set groups have been
 // encountered while a worker scans the current from_card.
 //
 // Refinement and remembered set rebuild scan the heap linearly, visiting
 // references from a card consecutively. Therefore, the cache only tracks
-// the destination cset groups found while scanning the current card. The
+// the destination card set groups found while scanning the current card. The
 // cache state is discarded when advancing to the next card.
 //
 // A scan can be suspended at a yield point. A GC may run while it is
-// suspended and change the cset group assignments. Therefore, the cache
+// suspended and change the card set group assignments. Therefore, the cache
 // must be reset before the scan resumes after every yield.
 class G1FromCardCache {
-  // Worst case: each reference in a card targets a different cset group.
+  // Worst case: each reference in a card targets a different card set group.
   static constexpr uint MaxGroupsPerCard = MaxGCCardSizeInBytes / sizeof(narrowOop);
 
   uintptr_t _from_card;
-  uint _num_cset_groups;
-  uint _cset_group_ids[MaxGroupsPerCard];
+  uint _num_card_set_groups;
+  uint _card_set_group_ids[MaxGroupsPerCard];
 
   NONCOPYABLE(G1FromCardCache);
 
 public:
   G1FromCardCache()
     : _from_card(0),
-      _num_cset_groups(0) {}
+      _num_card_set_groups(0) {}
 
   // Discard the state associated with the _from_card.
   void reset() {
-    _num_cset_groups = 0;
+    _num_card_set_groups = 0;
   }
 
-  // Returns true if cset_group_id has already been encountered while
+  // Returns true if card_set_group_id has already been encountered while
   // scanning from_card. Otherwise, records the id and returns false.
-  inline bool contains_or_add(uintptr_t from_card, uint cset_group_id);
+  inline bool contains_or_add(uintptr_t from_card, uint card_set_group_id);
 };
 
 #endif // SHARE_GC_G1_G1FROMCARDCACHE_HPP
