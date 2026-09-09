@@ -183,7 +183,7 @@ extern LONG WINAPI topLevelExceptionFilter(_EXCEPTION_POINTERS* );
 // out-of-line helpers for class jfieldIDWorkaround:
 
 bool jfieldIDWorkaround::is_valid_jfieldID(Klass* k, jfieldID id) {
-  if (jfieldIDWorkaround::is_instance_jfieldID(k, id)) {
+  if (jfieldIDWorkaround::is_instance_jfieldID(id)) {
     uintptr_t as_uint = (uintptr_t) id;
     int offset = raw_instance_offset(id);
     if (is_checked_jfieldID(id)) {
@@ -244,7 +244,7 @@ bool jfieldIDWorkaround::klass_hash_ok(Klass* k, jfieldID id) {
 }
 
 void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
-  guarantee(jfieldIDWorkaround::is_instance_jfieldID(k, id), "must be an instance field" );
+  guarantee(jfieldIDWorkaround::is_instance_jfieldID(id), "must be an instance field" );
   uintptr_t as_uint = (uintptr_t) id;
   int offset = raw_instance_offset(id);
   if (VerifyJNIFields) {

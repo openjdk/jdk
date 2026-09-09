@@ -337,25 +337,6 @@ void VM_Version::initialize() {
     warning("ValueTypeReturnedAsFields not supported on this CPU.");
     FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
-  // TODO: Valhalla optimizations
-  if (UseArrayFlattening) {
-    FLAG_SET_DEFAULT(UseArrayFlattening, false);
-  }
-  if (UseFieldFlattening) {
-    FLAG_SET_DEFAULT(UseFieldFlattening, false);
-  }
-  if (UseNullFreeNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
-  }
-  if (UseNullableAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
-  }
-  if (UseNullFreeAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
-  }
-  if (UseNullableNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
-  }
 }
 
 
