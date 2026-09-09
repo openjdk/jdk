@@ -1362,7 +1362,7 @@ void G1ConcurrentMark::remark() {
 
   G1Policy* policy = _g1h->policy();
   policy->record_pause_start_time();
-  const uint free_regions_before_remark = _g1h->num_free_regions();
+  const uint num_free_regions_before_remark = _g1h->num_free_regions();
 
   double start = os::elapsedTime();
 
@@ -1478,7 +1478,7 @@ void G1ConcurrentMark::remark() {
 
   _g1h->update_perf_counter_cpu_time();
 
-  policy->record_concurrent_mark_remark_end(free_regions_before_remark);
+  policy->record_concurrent_mark_remark_end(num_free_regions_before_remark);
 
   return;
 }

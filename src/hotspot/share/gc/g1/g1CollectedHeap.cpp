@@ -209,13 +209,13 @@ G1HeapRegion* G1CollectedHeap::new_region(size_t word_size,
            "This kind of expansion should never be more than one region. Size: %zu",
            word_size * HeapWordSize);
 
-    const uint free_regions_before_expand = num_free_regions();
+    const uint num_free_regions_before = num_free_regions();
 
     if (expand_single_region(node_index)) {
       if (!is_init_completed()) {
         assert(type.is_eden(), "Pre-init expansion must be for Eden");
-        policy()->adjust_eden_region_allocation_budget(free_regions_before_expand,
-                                                       num_free_regions());
+        policy()->adjust_eden_allocation_budget(num_free_regions_before,
+                                                num_free_regions());
       }
       // Given that expand_single_region() succeeded in expanding the heap, and we
       // always expand the heap by an amount aligned to the heap
@@ -386,7 +386,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   _verifier->verify_region_sets_optional();
 
-  uint free_regions_before = num_free_regions();
+  uint num_free_regions_before = num_free_regions();
 
   uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
   if (obj_regions > num_available_regions()) {
@@ -419,11 +419,11 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // A successful humongous object allocation changes the used space
     // information of the old generation so we need to recalculate the
     // sizes and update the jstat counters here.
-    uint free_regions_after = num_free_regions();
-    assert(free_regions_before >= free_regions_after, "must be");
+    uint num_free_regions_after = num_free_regions();
+    assert(num_free_regions_before >= num_free_regions_after, "must be");
 
-    assert((free_regions_before - free_regions_after) <= obj_regions, "must be");
-    policy()->adjust_eden_region_allocation_budget(free_regions_before, free_regions_after);
+    assert((num_free_regions_before - num_free_regions_after) <= obj_regions, "must be");
+    policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions_after);
     monitoring_support()->update_sizes();
   }
 
@@ -567,7 +567,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   // when mmap'ing archived heap data in, so pre-touching is wasted.
   FlagSetting fs(AlwaysPreTouch, false);
 
-  uint free_regions_before = num_free_regions();
+  uint num_free_regions_before = num_free_regions();
 
   // Attempt to allocate towards the end of the heap.
   HeapWord* start_addr = reserved.end() - align_up(word_size, G1HeapRegion::GrainWords);
@@ -577,7 +577,7 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   size_t commits = 0;
   bool allocated = _hrm.allocate_containing_regions(range, &commits, workers());
 
-  policy()->adjust_eden_region_allocation_budget(free_regions_before, num_free_regions());
+  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions());
 
   if (commits != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
@@ -627,7 +627,7 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   HeapWord* start_address = range.start();
   HeapWord* last_address = range.last();
 
-  uint free_regions_before = num_free_regions();
+  uint num_free_regions_before = num_free_regions();
 
   assert(reserved.contains(start_address) && reserved.contains(last_address),
          "MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
@@ -664,8 +664,8 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
     uncommit_regions(shrink_count);
     policy()->record_new_heap_size(num_committed_regions());
   }
-  uint free_regions_after = num_free_regions();
-  policy()->adjust_eden_region_allocation_budget(free_regions_before, free_regions_after);
+  uint num_free_regions_after = num_free_regions();
+  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions_after);
   decrease_used(size_used);
 }
 
@@ -1159,12 +1159,12 @@ HeapWord* G1CollectedHeap::expand_and_allocate(uint node_index, size_t word_size
   log_debug(gc, ergo, heap)("Attempt heap expansion (allocation request failed). Allocation request: %zuB",
                             word_size * HeapWordSize);
 
-  uint free_regions_before_expand = num_free_regions();
+  uint num_free_regions_before = num_free_regions();
   if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
 
-    policy()->adjust_eden_region_allocation_budget(free_regions_before_expand, num_free_regions());
+    policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions());
 
     return attempt_allocation_at_safepoint(node_index,
                                            word_size,

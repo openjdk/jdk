@@ -105,7 +105,7 @@ class G1Policy: public CHeapObj<mtGC> {
   // includes regions already allocated to Eden and free regions available for
   // Eden allocation. Humongous allocations, Remark reclamation, and heap
   // resizing modify this value.
-  Atomic<uint> _eden_region_allocation_budget;
+  Atomic<uint> _eden_allocation_budget_num_regions;
 
   // Tracks the number of cards marked as dirty (only) during garbage collection
   // (evacuation) on the card table.
@@ -124,11 +124,11 @@ class G1Policy: public CHeapObj<mtGC> {
 
   double pending_cards_processing_time() const;
 
-  uint eden_region_allocation_budget() const {
-    return _eden_region_allocation_budget.load_relaxed();
+  uint eden_allocation_budget_num_regions() const {
+    return _eden_allocation_budget_num_regions.load_relaxed();
   }
 
-  void reset_eden_region_allocation_budget();
+  void reset_eden_allocation_budget();
 
 public:
   const G1Predictions& predictor() const { return _predictor; }
@@ -138,7 +138,7 @@ public:
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
 
-  void adjust_eden_region_allocation_budget(uint num_free_before, uint num_free_after);
+  void adjust_eden_allocation_budget(uint num_free_regions_before, uint num_free_regions_after);
 
   void set_region_eden(G1HeapRegion* hr) {
     hr->install_surv_rate_group(_eden_surv_rate_group);
@@ -229,7 +229,7 @@ private:
   G1EvacuationPrediction predict_retained_regions_evacuation() const;
 
   // Predict evacuation of the minimum marking candidates that must be included
-  // in the next mixed collection set. Candidate groups are indivisible, so the
+  // in the next mixed collection set. Card set groups are indivisible, so the
   // prediction may include more regions than the minimum.
   G1EvacuationPrediction predict_min_marking_candidates_evacuation() const;
 
@@ -314,7 +314,7 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  void record_concurrent_mark_remark_end(uint free_regions_before_remark);
+  void record_concurrent_mark_remark_end(uint num_free_regions_before_remark);
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);

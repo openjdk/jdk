@@ -502,7 +502,7 @@ void G1CollectionSet::CandidateSelection::add_for_minimum(G1CardSetGroup* group,
   }
 
   if (prediction._bytes_to_copy > budget._copy_budget_bytes) {
-    log_debug(gc, ergo, cset)("Minimum %s candidate group %u (%u regions) does not fit "
+    log_debug(gc, ergo, cset)("Minimum %s card set group %u (%u regions) does not fit "
                               "old CSet copy budget: predicted %zuB, budget %zuB. "
                               "Adding to initial collection set anyway.",
                               candidate_type, group->group_id(), group->length(),
@@ -700,7 +700,7 @@ bool G1CollectionSet::MarkingCandidateSelection::add_initial_or_optional(G1CardS
 void G1CollectionSet::MarkingCandidateSelection::finalize() {
   G1CardSetGroupList& from_marking_groups = _collection_set->candidates()->from_marking_groups();
 
-  // Remove selected groups from list of candidate groups.
+  // Remove selected groups from list of card set groups.
   if (_initial_groups.length() > 0) {
     _collection_set->candidates()->remove(&_initial_groups);
   }
@@ -790,7 +790,7 @@ G1CollectionSet::RetainedCandidateSelection::RetainedCandidateSelection(G1Collec
 }
 
 void G1CollectionSet::RetainedCandidateSelection::select_required(SelectionBudget& budget) {
-  uint min_retained_regions = _collection_set->_policy->min_num_retained_old_cset_regions();
+  uint min_num_retained_regions = _collection_set->_policy->min_num_retained_old_cset_regions();
   G1CardSetGroupList& retained_groups = _collection_set->candidates()->retained_groups();
 
   double time_budget_ms = MIN2(budget._time_budget_ms, _collection_set->_policy->max_time_for_retaining());
@@ -798,12 +798,12 @@ void G1CollectionSet::RetainedCandidateSelection::select_required(SelectionBudge
   log_debug(gc, ergo, cset)("Start adding required retained candidates to collection set. "
                             "Min %u regions, available %u regions (%u groups), "
                             "time budget %1.2fms, old CSet copy budget %zuB",
-                            min_retained_regions, retained_groups.num_regions(), retained_groups.length(),
+                            min_num_retained_regions, retained_groups.num_regions(), retained_groups.length(),
                             time_budget_ms, budget._copy_budget_bytes);
 
   G1CardSetGroupList selected_groups;
   for (G1CardSetGroup* group : retained_groups) {
-    if (num_initial_regions() >= min_retained_regions) {
+    if (num_initial_regions() >= min_num_retained_regions) {
       break;
     }
 
@@ -867,7 +867,7 @@ void G1CollectionSet::RetainedCandidateSelection::select_additional_candidates(c
     bool fits_copy_budget = prediction._bytes_to_copy <= selection_budget._copy_budget_bytes;
 
     if (!fits_copy_budget) {
-      log_debug(gc, ergo, cset)("Retained candidate group %u does not fit "
+      log_debug(gc, ergo, cset)("Retained card set group %u does not fit "
                                 "old CSet copy budget: predicted %zuB, budget %zuB.",
                                 group->group_id(), prediction._bytes_to_copy,
                                 selection_budget._copy_budget_bytes);
@@ -960,11 +960,11 @@ void G1CollectionSet::RetainedCandidateSelection::age_and_remove_unreclaimable_c
 }
 
 uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
-  uint total_optional_regions = num_optional_regions();
-  assert(total_optional_regions > 0,
+  uint total_num_optional_regions = num_optional_regions();
+  assert(total_num_optional_regions > 0,
          "Should only be called when there are optional regions");
 
-  uint num_regions_selected = 0;
+  uint num_selected_regions = 0;
   // Previous evacuation rounds have completed copying their live
   // objects, so do not reserve copy space for them again.
   // We do not account for the remaining reference processing.
@@ -997,7 +997,7 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
 
     copy_budget_bytes = available_copy_budget_bytes(copy_budget_bytes, bytes_to_copy);
 
-    num_regions_selected += group->length();
+    num_selected_regions += group->length();
 
     add_group_to_collection_set(group);
     selected.append(group);
@@ -1005,7 +1005,7 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
 
   log_debug(gc, ergo, cset)("Completed with groups, selected %u regions in %u groups, "
                             "predicted copy bytes: %zuB, old CSet copy budget: %zuB",
-                            num_regions_selected, selected.length(), total_bytes_to_copy,
+                            num_selected_regions, selected.length(), total_bytes_to_copy,
                             copy_budget_bytes);
   // Remove selected groups from candidate list.
   if (selected.length() > 0) {
@@ -1015,10 +1015,10 @@ uint G1CollectionSet::select_optional_groups(double time_budget_ms) {
 
   log_debug(gc, ergo, cset)("Prepared %u regions out of %u for optional evacuation. "
                             "Total predicted time: %.3fms, old CSet copy budget: %zuB",
-                            num_regions_selected, total_optional_regions, total_predicted_time_ms,
+                            num_selected_regions, total_num_optional_regions, total_predicted_time_ms,
                             copy_budget_bytes);
 
-  return num_regions_selected;
+  return num_selected_regions;
 }
 
 void G1CollectionSet::prepare_optional_group(G1CardSetGroup* gr, uint cur_index) {
@@ -1062,13 +1062,13 @@ void G1CollectionSet::finalize_initial_collection_set(double target_pause_time_m
 bool G1CollectionSet::finalize_optional_for_evacuation(double time_budget_ms) {
   continue_incremental_building();
 
-  uint num_regions_selected = select_optional_groups(time_budget_ms);
+  uint num_selected_regions = select_optional_groups(time_budget_ms);
 
   stop_incremental_building();
 
   _g1h->verify_region_attr_is_remset_tracked();
 
-  return num_regions_selected > 0;
+  return num_selected_regions > 0;
 }
 
 void G1CollectionSet::abandon_optional_collection_set(G1ParScanThreadStateSet* pss) {
