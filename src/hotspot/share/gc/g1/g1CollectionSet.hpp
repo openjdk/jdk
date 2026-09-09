@@ -215,8 +215,9 @@ class G1CollectionSet {
 
   void select_candidates_from_marking(SelectionBudget& budget);
 
-  // Select groups for evacuation from the optional candidates given the time budget
-  // and return the number of actually selected regions.
+  // Select card set groups for evacuation from the optional candidates
+  // given the time budget and return the number of actually selected
+  // regions.
   uint select_optional_groups(double time_budget_ms);
 
   // Finalize the young part of the initial collection set. Relabel survivor regions
@@ -243,7 +244,7 @@ class G1CollectionSet {
                          uint length,
                          uint worker_id) const;
 
-  // Add and prepare the given group for optional evacuation.
+  // Add and prepare the given card set group for optional evacuation.
   void add_optional_group(G1CardSetGroup* group);
 
 public:
