@@ -2045,7 +2045,7 @@ class CollectObjectOops : public BasicOopIterateClosure {
 
   void add_oop(oop o) {
     Handle oh = Handle(Thread::current(), o);
-    if (oh != nullptr && oh->is_inline_type()) {
+    if (oh != nullptr && oh->is_value_type()) {
       oh->oop_iterate(this);
     } else {
       _array->append(oh);
@@ -2185,6 +2185,22 @@ WB_ENTRY(jobject, WB_printMethods(JNIEnv* env, jobject wb, jstring class_name_pa
   jstring result = env->NewStringUTF(st.freeze());
   CHECK_JNI_EXCEPTION_(env, nullptr);
   return result;
+WB_END
+
+WB_ENTRY(jint, WB_GetMarkWordOffset(JNIEnv* env, jobject o))
+  return oopDesc::mark_offset_in_bytes();
+WB_END
+
+WB_ENTRY(jlong, WB_GetValueTypePattern(JNIEnv* env, jobject o))
+  return markWord::value_type_pattern;
+WB_END
+
+WB_ENTRY(jlong, WB_GetNullFreeArrayBitInPlace(JNIEnv* env, jobject o))
+  return markWord::null_free_array_bit_in_place;
+WB_END
+
+WB_ENTRY(jlong, WB_GetFlatArrayBitInPlace(JNIEnv* env, jobject o))
+  return markWord::flat_array_bit_in_place;
 WB_END
 
 WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb, jboolean preserve_static_stubs))
@@ -3103,6 +3119,10 @@ static JNINativeMethod methods[] = {
   {CC"getIndyCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getIndyCPIndex},
   {CC"printClasses0",      CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printClasses},
   {CC"printMethods0",      CC"(Ljava/lang/String;Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_printMethods},
+  {CC"getMarkWordOffset",          CC"()I",           (void*)&WB_GetMarkWordOffset},
+  {CC"getValueTypePattern",        CC"()J",           (void*)&WB_GetValueTypePattern},
+  {CC"getNullFreeArrayBitInPlace", CC"()J",           (void*)&WB_GetNullFreeArrayBitInPlace},
+  {CC"getFlatArrayBitInPlace",     CC"()J",           (void*)&WB_GetFlatArrayBitInPlace},
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},

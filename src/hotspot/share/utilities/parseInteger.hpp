@@ -115,7 +115,7 @@ inline bool multiply_by_1k(T& n) {
 // Example: "1024M:oom" will yield true, result=1G, endptr pointing to ":oom"
 
 template<typename T>
-static bool parse_integer(const char *s, char **endptr, T* result) {
+inline bool parse_integer(const char *s, char **endptr, T* result) {
 
   if (!isdigit(s[0]) && s[0] != '-') {
     // strtoll/strtoull may allow leading spaces. Forbid it.
@@ -163,7 +163,7 @@ static bool parse_integer(const char *s, char **endptr, T* result) {
 // characters. No remainder are allowed here.
 // Example: "100m" - okay, "100m:oom" -> not okay
 template<typename T>
-static bool parse_integer(const char *s, T* result) {
+inline bool parse_integer(const char *s, T* result) {
   char* remainder;
   bool rc = parse_integer(s, &remainder, result);
   rc = rc && (*remainder == '\0');

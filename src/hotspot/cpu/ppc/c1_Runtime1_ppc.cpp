@@ -455,13 +455,13 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
             __ cmpwi(CR0, R0, Klass::_lh_array_tag_ref_value);  // new "[Ljava/lang/Object;"
             __ cmpwi(CR1, R0, Klass::_lh_array_tag_flat_value); // new "[LVT;"
             __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
-            __ asm_assert_eq("assert(is an object or inline type array klass)");
+            __ asm_assert_eq("assert(is an object or value type array klass)");
             break;
           case StubId::c1_new_null_free_array_id:
             __ cmpwi(CR0, R0, Klass::_lh_array_tag_flat_value); // the array can be a flat array.
             __ cmpwi(CR1, R0, Klass::_lh_array_tag_ref_value);  // the array cannot be a flat array (due to the InlineArrayElementMaxFlatSize, etc.)
             __ cror(CR0, Assembler::equal, CR1, Assembler::equal);
-            __ asm_assert_eq("assert(is an object or inline type array klass)");
+            __ asm_assert_eq("assert(is an object or value type array klass)");
             break;
           default: ShouldNotReachHere();
         }
@@ -490,14 +490,14 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_inline_args_id:
-    case StubId::c1_buffer_inline_args_no_receiver_id:
+    case StubId::c1_buffer_value_args_id:
+    case StubId::c1_buffer_value_args_no_receiver_id:
       {
-        address entry = (id == StubId::c1_buffer_inline_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_inline_args) :
-          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+        address entry = (id == StubId::c1_buffer_value_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_value_args) :
+          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
 
-        __ unimplemented("c1_buffer_inline_args"); // TODO: handle arguments and return value
+        __ unimplemented("c1_buffer_value_args"); // TODO: handle arguments and return value
         OopMap* oop_map = save_live_registers(sasm);
         int call_offset = __ call_RT(noreg, noreg, entry, R3_ARG1);
 
