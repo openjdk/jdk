@@ -52,18 +52,8 @@ public class TestVectorBitwiseBlendTopInput {
         return ShortVector.broadcast(ShortVector.SPECIES_128, 0);
     }
 
-    @Test
-    Object a() {
-        return g;
-    }
-
     Object g(VectorShuffle<?> a) {
         return a;
-    }
-
-    @Test
-    Object e() {
-        return g;
     }
 
     @Test
@@ -88,11 +78,6 @@ public class TestVectorBitwiseBlendTopInput {
         } catch (IndexOutOfBoundsException a) {
             return a;
         }
-    }
-
-    @Test
-    Object b() {
-        return g;
     }
 
     @Test
