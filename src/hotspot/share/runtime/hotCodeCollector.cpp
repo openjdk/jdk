@@ -117,12 +117,12 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
   int num_relocated = 0;
   int num_skipped = 0;
 
-  bool hot_code_heap_exhausted = false;
+  bool hot_code_heap_full = false;
 
   // Sort nmethods by increasing sample count so pop() returns the hottest
   candidates.sort();
 
-  while (candidates.has_candidates() && !hot_code_heap_exhausted) {
+  while (candidates.has_candidates() && !hot_code_heap_full) {
     double percent_from_hot = candidates.get_hot_sample_percent();
     log_debug(hotcode)("Percentage of samples from hot code heap: %f", percent_from_hot);
     if (percent_from_hot >= HotCodeSamplePercent) {
@@ -144,7 +144,7 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
         log_info(hotcode)("Not enough free space in MethodHot heap: %zu bytes free. "
                           "Bailing out.",
                           hot_heap->unallocated_capacity());
-        hot_code_heap_exhausted = true;
+        hot_code_heap_full = true;
         break;
       }
       case RelocationResult::NotRelocatable:
@@ -188,6 +188,7 @@ HotCodeCollector::RelocationResult HotCodeCollector::do_relocation(void* candida
   nmethod* hot_nm = nullptr;
 
   if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
+    CompiledICLocker ic_locker(nm);
     if (!nm->is_relocatable()) {
       return RelocationResult::NotRelocatable;
     }
@@ -200,7 +201,6 @@ HotCodeCollector::RelocationResult HotCodeCollector::do_relocation(void* candida
       return RelocationResult::NoSpaceInCodeHeap;
     }
 
-    CompiledICLocker ic_locker(nm);
     bool out_of_space = false;
     hot_nm = nm->relocate(CodeBlobType::MethodHot, &out_of_space);
 
