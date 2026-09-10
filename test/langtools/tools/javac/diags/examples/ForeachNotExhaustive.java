@@ -23,6 +23,8 @@
 
 // key: compiler.misc.feature.enhanced.variable.decls
 // key: compiler.warn.preview.feature.use.plural
+// key: compiler.warn.declared.using.preview
+// key: compiler.warn.preview.feature.use.classfile
 // key: compiler.err.foreach.not.exhaustive.on.type
 // options: --enable-preview -source ${jdk.version} -Xlint:preview
 import java.util.List;

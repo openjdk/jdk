@@ -2,7 +2,7 @@
  * @test /nodynamiccopyright/
  * @summary Ensure non-NR1S assignments stay rejected in all modes
  * @compile/fail/ref=EnhancedVariableDeclAssignmentNR1SRegressionErrors.out -XDrawDiagnostics EnhancedVariableDeclAssignmentNR1SRegressionErrors.java
- * @compile/fail/ref=EnhancedVariableDeclAssignmentNR1SRegressionErrors.out --enable-preview --source ${jdk.version} -XDrawDiagnostics EnhancedVariableDeclAssignmentNR1SRegressionErrors.java
+ * @compile/fail/ref=EnhancedVariableDeclAssignmentNR1SRegressionErrorsPreview.out --enable-preview --source ${jdk.version} -XDrawDiagnostics EnhancedVariableDeclAssignmentNR1SRegressionErrors.java
  */
 public class EnhancedVariableDeclAssignmentNR1SRegressionErrors {
     static sealed abstract class SA2<T> permits SB2 {}
