@@ -1079,7 +1079,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // that were not reclaimed.
         G1CardSetGroup* group = r->rem_set()->card_set_group();
         assert(group != nullptr, "must have a card set group");
-        assert(group->length() == 1, "Card set groups containing humongous regions must have a single entry");
+        assert(group->num_regions() == 1, "Card set groups containing humongous regions must have a single region");
         group->clear_card_set();
       }
 
