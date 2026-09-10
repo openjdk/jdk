@@ -101,16 +101,24 @@ public:
     if (site->size() > 0) {
       // There may be inserts concurrent with this traversal
       // so we must check whether we still have room for another site.
-      if (_index < _length) {
-        new (&_malloc_sites[_index]) MallocSite(*site);
-        _index++;
-      } else {
-        // Ran out of space, so we can stop prematurely.
-        return false;
+      if (_index >= _length) {
+        // Ran out of space, we'll do a conservative resize.
+        // Casting float to int is floor(), and we want to increase count by at least 1.
+        int new_len = int(float(_length) * 1.2) + 1;
+        MallocSite* r = REALLOC_C_HEAP_ARRAY_RETURN_NULL(_malloc_sites, new_len, mtNMT);
+        if (r == nullptr) {
+          // Failed, we can bail and let the report continue with an incomplete one.
+          return false;
+        }
+        _malloc_sites = r;
+        _length = new_len;
       }
+      new (&_malloc_sites[_index]) MallocSite(*site);
+      _index++;
     }
     return true;
   }
+
 
   bool allocation_failed() {
     return _malloc_sites == nullptr;
