@@ -921,17 +921,33 @@ struct ShenandoahRegionChunk {
 // Some ranges hold primarily primitive (non-pointer) data.  We start with larger chunk sizes because larger chunks
 // reduce coordination overhead.  We expect that the GC worker threads that receive more difficult assignments
 // will work longer on those chunks.  Meanwhile, other worker threads will repeatedly accept and complete multiple
-// easier chunks.  As the total amount of work remaining to be completed decreases, we decrease the size of chunks
-// given to individual threads.  This reduces the likelihood of significant imbalance between worker thread assignments
-// when there is less meaningful work to be performed by the remaining worker threads while they wait for
-// worker threads with difficult assignments to finish, reducing the overall duration of the phase.
-
+// easier chunks.
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
   static const size_t _clusters_in_chunk = 8;
   static size_t chunk_size_words() {
-      return _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+    // The standard work assignment is 8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
+    return _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   }
+
+  // The implementation of ShenandoahRegionChunk is sufficiently general to support multiple groups of work assignments,
+  // with each group representing work assignments of a different size. In theory, as the total amount of work remaining
+  // to be completed decreases, we can decrease the size of chunks given to individual threads.  This reduces the likelihood
+  // of significant imbalance between worker thread assignments when there is less meaningful work to be performed by the
+  // remaining worker threads while they wait for worker threads with difficult assignments to finish, reducing the overall
+  // duration of the phase. We found that the original configuration of ShenandoahRegionChunkIterator did not effectively
+  // balance workloads because it started with assignments representing the entiree region size, and ended with
+  // with assignments spanning only 128K bytes. Certain threads which received initial assignments to process entire
+  // heap regions would still be working on these very large assignments after all other threads had finished their
+  // small assignments.
+
+  // In the current configuration, we opt for a single group with all assignment of equal size. On the Retain.java
+  // worlkoad described in https://bugs.openjdk.org/browse/JDK-8391086, maximum times to scan remembered set and to
+  // perform concurrent marking are improved by approximately 50%.
+
+  // We preserve some of the original generality of the ShenandoahRegionChunkIterator in case a future effort wants to
+  // explore less extreme load balancing mechanisms with differently sized Chunk assignments. This approach reduces the
+  // likelihood that major refactoring will introduce new bugs.
 
   static const size_t _maximum_groups = 1;
   const ShenandoahHeap* _heap;
@@ -957,9 +973,6 @@ private:
 
   // Makes use of _heap.
   size_t calc_regular_group_size();
-
-  // Makes use of _regular_group_size and _first_group_chunk_size_b4_rebalance, both of which must be initialized before call.
-  size_t calc_num_groups();
 
   // Makes use of _regular_group_size, _first_group_chunk_size_b4_rebalance, which must be initialized before call.
   size_t calc_total_chunks();

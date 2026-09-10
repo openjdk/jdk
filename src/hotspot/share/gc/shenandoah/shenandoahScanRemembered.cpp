@@ -869,10 +869,6 @@ size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
   return group_size;
 }
 
-size_t ShenandoahRegionChunkIterator::calc_num_groups() {
-  return 1;
-}
-
 size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
   size_t region_size_words = ShenandoahHeapRegion::region_size_words();
   size_t num_chunks = (_heap->num_regions() * region_size_words) / chunk_size_words();
@@ -884,10 +880,11 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(size_t worker_count
 {
 }
 
+// Configure with a single group that spans the entire heap with equal-sized chunks of work.
 ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap, size_t worker_count) :
     _heap(heap),
     _group_size(calc_regular_group_size()),
-    _num_groups(calc_num_groups()),
+    _num_groups(1),
     _total_chunks(calc_total_chunks()),
     _index(0)
 {
