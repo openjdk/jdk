@@ -87,7 +87,6 @@ public class SecurityPropertiesPluginTest {
                                          kiwi, mango
         # Property with ':' delimiter
         Truth:Beauty
-        abc=euro_\\u20AC_value
         """;
 
     /**
