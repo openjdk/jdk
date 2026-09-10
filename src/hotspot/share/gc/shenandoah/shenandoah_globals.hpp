@@ -310,16 +310,8 @@
           "this time. First use after that would incur allocation stalls. " \
           "Actively used regions would never be uncommitted, because they " \
           "do not become unused longer than this delay. Time is in "        \
-          "milliseconds. Setting this delay to 0 effectively makes regions "\
-          "eligible for uncommit immediately after they become unused.")    \
-                                                                            \
-  product(uintx, ShenandoahUncommitGrace, 10*1000, EXPERIMENTAL,            \
-          "Uncommit memory using this grace period. Allows regions to "     \
-          "linger a bit, in case active allocation takes them back. "       \
-          "Time is in milliseconds. Setting this grace to 0 effectively "   \
-          "disables the graceful period, allowing regions to be "           \
-          "uncommitted at max speed.")                                      \
-          range(0, 24*60*60*1000)                                           \
+          "milliseconds. Setting this delay to 0 effectively uncommits "    \
+          "regions almost immediately after they become unused.")           \
                                                                             \
   product(bool, ShenandoahRegionSampling, false, EXPERIMENTAL,              \
           "Provide heap region sampling data via jvmstat.")                 \

@@ -174,9 +174,8 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   EventMark em("%s", msg);
   log_info(gc, start)("%s", msg);
 
+  const int delay_ms = 10;
   double start = os::elapsedTime();
-  double ms_time_budget = ShenandoahUncommitGrace;
-  double ms_per_candidate = ms_time_budget / _candidates_count;
 
   size_t uncommitted_count = 0;
   for (size_t i = 0; i < _candidates_count; i++) {
@@ -187,22 +186,22 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
       break;
     }
 
-    double cur_time = os::elapsedTime();
+    double shrink_before = os::elapsedTime() - shrink_delay;
+    if (!r->is_empty_committed() || (r->empty_time() >= shrink_before)) {
+      // Not a candidate, try again.
+      continue;
+    }
 
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
-    double expected_ts = i * ms_per_candidate;
-    double actual_ts = (cur_time - start) * MILLIUNITS;
-    int delay_ms = MAX2<int>(0, expected_ts - actual_ts);
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
       break;
     }
 
     // Go for uncommit!
-    double shrink_before = cur_time - shrink_delay;
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
+    {
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
       if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
