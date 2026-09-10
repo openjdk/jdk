@@ -417,7 +417,7 @@ public class TestCheckIndexIntrinsics {
         }
     }
 
-    private static void assertEqual(Method groundTruth, Method intrinsified, Object[] args)
+    private static void assertEqual(Method groundTruth, Method intrinsified, boolean expectDeopt, Object[] args)
             throws Exception {
         try {
             boolean oob = false;
@@ -443,10 +443,7 @@ public class TestCheckIndexIntrinsics {
             intrinsified = loadAndCompileCopyOfMethod(intrinsified);
             Object observed = intrinsified.invoke(null, args);
 
-            // FIXME: for checkFromToIndex(from, to, length) and checkFromIndexSize(from, size, length),
-            //        length = Integer/Long.MAX_VALUE is an edge case that will trigger de-opt. We
-            //        still want to make sure they produce correct results.
-            if (args.length == 3 && (args[2].equals(Long.MAX_VALUE) || args[2].equals(Integer.MAX_VALUE))) {
+            if (expectDeopt) {
                 assertIsNotCompiled(intrinsified);
                 System.err.printf("Warning: edge case de-opt observed on %s(%s)\n",
                         intrinsified.getName(), Arrays.toString(args));
@@ -515,14 +512,14 @@ public class TestCheckIndexIntrinsics {
         };
 
         for (long[] input : inputs) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
+            assertEqual(groundTruth, intrinsified, false, testLongVariant
                     ? new Object[] { input[0], input[1] }
                     : new Object[] { (int) input[0], (int) input[1] });
         }
 
         // a few randoms for good measure
         for (int i = 0; i < 100; i++) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
+            assertEqual(groundTruth, intrinsified, false, testLongVariant
                     ? new Object[] { LONG_RNG.next(), LONG_RNG.next() }
                     : new Object[] { INT_RNG.next(), INT_RNG.next() });
         }
@@ -554,16 +551,22 @@ public class TestCheckIndexIntrinsics {
         };
 
         for (long[] input : inputs) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
+            // deopt edge case: from == to (empty range)
+            boolean expectDeopt = input[0] == input[1];
+            assertEqual(groundTruth, intrinsified, expectDeopt, testLongVariant
                     ? new Object[] { input[0], input[1], input[2] }
                     : new Object[] { (int) input[0], (int) input[1], (int) input[2] });
         }
 
         // a few randoms for good measure
         for (int i = 0; i < 100; i++) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
-                    ? new Object[] { LONG_RNG.next(), LONG_RNG.next(), LONG_RNG.next() }
-                    : new Object[] { INT_RNG.next(), INT_RNG.next(), INT_RNG.next() });
+            if (testLongVariant) {
+                long from = LONG_RNG.next(), to = LONG_RNG.next(), length = LONG_RNG.next();
+                assertEqual(groundTruth, intrinsified, from == to, new Object[] { from, to, length });
+            } else {
+                int from = INT_RNG.next(), to = INT_RNG.next(), length = INT_RNG.next();
+                assertEqual(groundTruth, intrinsified, from == to, new Object[] { from, to, length });
+            }
         }
     }
 
@@ -597,16 +600,22 @@ public class TestCheckIndexIntrinsics {
         };
 
         for (long[] input : inputs) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
+            // deopt edge case: size == 0
+            boolean expectDeopt = input[1] == 0;
+            assertEqual(groundTruth, intrinsified, expectDeopt, testLongVariant
                     ? new Object[] { input[0], input[1], input[2] }
                     : new Object[] { (int) input[0], (int) input[1], (int) input[2] });
         }
 
         // a few randoms for good measure
         for (int i = 0; i < 100; i++) {
-            assertEqual(groundTruth, intrinsified, testLongVariant
-                    ? new Object[] { LONG_RNG.next(), LONG_RNG.next(), LONG_RNG.next() }
-                    : new Object[] { INT_RNG.next(), INT_RNG.next(), INT_RNG.next() });
+            if (testLongVariant) {
+                long from = LONG_RNG.next(), size = LONG_RNG.next(), length = LONG_RNG.next();
+                assertEqual(groundTruth, intrinsified, size == 0, new Object[] { from, size, length });
+            } else {
+                int from = INT_RNG.next(), size = INT_RNG.next(), length = INT_RNG.next();
+                assertEqual(groundTruth, intrinsified, size == 0, new Object[] { from, size, length });
+            }
         }
     }
 }
