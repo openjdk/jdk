@@ -2112,9 +2112,9 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_narrow_oop_entry); // used by arraycopy stubs
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_pre_oop_entry); // used by arraycopy stubs
   ADD_EXTERNAL_ADDRESS(G1BarrierSetRuntime::write_ref_array_post_entry); // used by arraycopy stubs
+#endif
   ADD_EXTERNAL_ADDRESS(BarrierSetNMethod::nmethod_stub_entry_barrier); // used by method_entry_barrier
 
-#endif
 #if INCLUDE_SHENANDOAHGC
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre);
   ADD_EXTERNAL_ADDRESS(ShenandoahRuntime::write_barrier_pre_narrow);
