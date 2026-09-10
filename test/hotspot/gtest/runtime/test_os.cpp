@@ -181,20 +181,20 @@ TEST_VM(os, test_print_location) {
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ObjectLocker ol(h_obj, THREAD);
     assert_test_pattern(obj, "locked");
-    assert_test_pattern(obj, "is_unlocked", false);
+    assert_test_pattern(obj, "is_lock_neutral", false);
   }
 
   // Unlocked again
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_unlocked");
+    assert_test_pattern(obj, "is_lock_neutral");
   }
 
   // Hash the object then print it.
   {
     intx hash = h_obj->identity_hash();
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_unlocked hash=");
+    assert_test_pattern(obj, "is_lock_neutral hash=");
   }
 }
 
