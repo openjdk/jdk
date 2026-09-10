@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,37 @@
 
 /*
  * @test
- * @bug 8062744
+ * @bug 8062744 8210362
+ * @summary Check that IP_TOS is not supported by ServerSocket
  * @modules jdk.net
- * @run main SupportedOptions
+ * @run junit ${test.main.class}
  */
 
 import java.net.*;
-import java.io.IOException;
 import jdk.net.*;
 
-public class SupportedOptions {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        if (!Sockets.supportedOptions(ServerSocket.class)
-              .contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class SupportedOptions {
+
+    @Test
+    void serverSocketOptions() throws Exception {
+        var option = StandardSocketOptions.IP_TOS;
+
+        assertFalse(Sockets.supportedOptions(ServerSocket.class).contains(option),
+                "ServerSocket class options unexpectedly include IP_TOS");
+
+        try (var ss = new ServerSocket()) {
+            assertFalse(ss.supportedOptions().contains(option),
+                    "ServerSocket options unexpectedly include IP_TOS");
+
+            assertThrows(UnsupportedOperationException.class,
+                    () -> Sockets.setOption(ss, option, 128));
+            assertThrows(UnsupportedOperationException.class,
+                    () -> Sockets.getOption(ss, option));
         }
-        // Now set the option
-        ServerSocket ss = new ServerSocket();
-        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
-        }
-        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
     }
 }

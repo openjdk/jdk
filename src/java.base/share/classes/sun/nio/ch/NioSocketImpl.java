@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -919,8 +919,6 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             options.add(StandardSocketOptions.SO_RCVBUF);
             options.add(StandardSocketOptions.SO_REUSEADDR);
             if (server) {
-                // IP_TOS added for server socket to maintain compatibility
-                options.add(StandardSocketOptions.IP_TOS);
                 options.addAll(ExtendedSocketOptions.serverSocketOptions());
             } else {
                 options.add(StandardSocketOptions.IP_TOS);
