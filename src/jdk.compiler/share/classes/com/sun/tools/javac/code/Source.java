@@ -304,7 +304,7 @@ public enum Source {
         PRIVATE_MEMBERS_IN_PERMITS_CLAUSE(JDK19),
         ERASE_POLY_SIG_RETURN_TYPE(JDK24),
         CAPTURE_MREF_RETURN_TYPE(JDK26),
-        ENHANCED_VARIABLE_DECLS(JDK27, Fragments.FeatureEnhancedVariableDecls, DiagKind.PLURAL),
+        ENHANCED_VARIABLE_DECLS(DEFAULT, Fragments.FeatureEnhancedVariableDecls, DiagKind.PLURAL),
         VALUE_CLASSES(DEFAULT, Fragments.FeatureValueClasses, DiagKind.PLURAL),
         ;
 
