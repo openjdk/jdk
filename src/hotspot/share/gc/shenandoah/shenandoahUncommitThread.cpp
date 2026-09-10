@@ -72,11 +72,6 @@ void ShenandoahUncommitThread::run_service() {
         // Wake up for terminating, exit.
         break;
       }
-
-      if (_uncommit_allowed.is_unset()) {
-        // Wake up for disallowing uncommits, go back to sleep.
-        continue;
-      }
     }
 
     // Recheck after sleep too.
