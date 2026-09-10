@@ -750,7 +750,9 @@
           "    1000: verify Node::Identity did not miss opportunities"      \
           "     100: verify Node::Ideal did not miss opportunities"         \
           "      10: verify that type(n) == n->Value() after IGVN"          \
-          "       1: verify Def-Use modifications during IGVN")             \
+          "       1: verify Def-Use modifications during IGVN. "            \
+          "Example: -XX:VerifyIterativeGVN=101 enables Node::Ideal and "    \
+          "Def-Use checks.")                                                \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
