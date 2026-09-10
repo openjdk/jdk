@@ -1393,10 +1393,9 @@ algorithm as its hash and MGF1 algorithms.
 the security provider will choose a default setting.
 
 * Modern digital signature algorithms such as EdDSA and ML-DSA use the same
-name for both the key and signature algorithms. Only the signature algorithm
-with the same name can be used with a given key algorithm. The specific
-signature parameter set (for example, Ed25519 or Ed448 for EdDSA) is the
-same as that of the key.
+algorithm as the key, and there is no separately selectable signature algorithm
+such as `SHA256withRSA`. Therefore, when using such a key, specifying `-sigalg`
+explicitly is unnecessary.
 
 **Note:**
 

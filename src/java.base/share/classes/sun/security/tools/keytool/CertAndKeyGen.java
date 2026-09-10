@@ -149,19 +149,9 @@ public final class CertAndKeyGen {
             if (prng == null) {
                 prng = new SecureRandom();
             }
-            try {
-                keyGen.initialize(keyType.toUpperCase(Locale.ROOT).equals("EC")
-                        ? new ECGenParameterSpec(name)
-                        : new NamedParameterSpec(name), prng);
-            } catch (InvalidAlgorithmParameterException e) {
-                if (keyType.equalsIgnoreCase("EC")) {
-                    // EC has another NamedParameterSpec
-                    keyGen.initialize(new ECGenParameterSpec(name), prng);
-                } else {
-                    throw e;
-                }
-            }
-
+            keyGen.initialize(keyType.toUpperCase(Locale.ROOT).equals("EC")
+                    ? new ECGenParameterSpec(name)
+                    : new NamedParameterSpec(name), prng);
         } catch (Exception e) {
             throw new IllegalArgumentException(e.getMessage(), e);
         }

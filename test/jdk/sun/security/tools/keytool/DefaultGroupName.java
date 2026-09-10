@@ -59,7 +59,9 @@ public class DefaultGroupName {
             = "-keystore ks -storepass changeit -keypass changeit -debug";
     private static final char[] PASS = "changeit".toCharArray();
 
-    private static String last = "";
+    // A public observable status string set inside our private
+    // provider so we can check what has been done recently.
+    private static String status = "";
     private static int count = 0;
 
     public static void main(String[] args) throws Exception {
@@ -101,9 +103,9 @@ public class DefaultGroupName {
             cmd += " " + extra;
         }
 
-        last = "";
+        status = "";
         Main.main(cmd.split(" "));
-        Asserts.assertEquals(alg, last); // ensure our provider is used
+        Asserts.assertEquals(alg, status); // ensure our provider is used
 
         KeyStore ks = KeyStore.getInstance(new File("ks"), PASS);
         PublicKey key = ks.getCertificate(alias).getPublicKey();
@@ -228,10 +230,10 @@ public class DefaultGroupName {
                 KeyPairGenerator gen = KeyPairGenerator.getInstance(algorithm, realProvider);
                 gen.initialize(spec);
                 KeyPair kp = gen.generateKeyPair();
-                last = algorithm;
+                status = algorithm;
                 return kp;
             } catch (Exception e) {
-                last = e.getMessage();
+                status = e.getMessage();
                 throw new ProviderException(e);
             }
         }
