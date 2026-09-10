@@ -809,7 +809,7 @@ FieldLayoutBuilder::FieldLayoutBuilder(const Symbol* classname, ClassLoaderData*
   _must_be_atomic(must_be_atomic),
   _has_nonstatic_fields(false),
   _has_flattenable_fields(false),
-  _has_flattened_fields(false),
+  _has_flat_fields(false),
   _is_contended(is_contended),
   _is_concrete_value(is_concrete_value),
   _is_abstract_value(is_abstract_value),
@@ -882,7 +882,7 @@ int FieldLayoutBuilder::add_field_to_group(FieldInfo fieldinfo, int idx, FieldGr
     const int field_index = (int)fieldinfo.index();
     assert(_value_field_layout_info_array != nullptr, "Array must have been created");
     assert(_value_field_layout_info_array->adr_at(field_index)->klass() != nullptr, "Klass must have been set");
-    _has_flattened_fields = true;
+    _has_flat_fields = true;
     ValueKlass* vk = _value_field_layout_info_array->adr_at(field_index)->klass();
     if (is_value_compatible_class && !vk->is_naturally_atomic(LayoutKindHelper::is_null_free_flat(lk))) {
       _has_non_naturally_atomic_fields = true;
@@ -1533,7 +1533,7 @@ void FieldLayoutBuilder::epilogue() {
   _info->_static_field_size = static_fields_size;
   _info->_nonstatic_field_size = (nonstatic_field_end - instanceOopDesc::base_offset_in_bytes()) / heapOopSize;
   _info->_has_nonstatic_fields = _has_nonstatic_fields;
-  _info->_has_flattened_fields = _has_flattened_fields;
+  _info->_has_flat_fields = _has_flat_fields;
   _info->_is_naturally_atomic = _is_naturally_atomic;
   if (_is_concrete_value) {
     _info->_must_be_atomic = _must_be_atomic;

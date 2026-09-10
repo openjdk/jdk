@@ -6421,7 +6421,7 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
   // If it turned out that we didn't flatten any of the fields, we deallocate
   // the array of ValueFieldLayoutInfo since it isn't needed, and so it isn't
   // transferred to the allocated InstanceKlass.
-  if (_value_field_layout_info_array != nullptr && !(_layout_info->_has_flattened_fields || _has_null_restricted_static_fields)) {
+  if (_value_field_layout_info_array != nullptr && !(_layout_info->_has_flat_fields || _has_null_restricted_static_fields)) {
     MetadataFactory::free_array<ValueFieldLayoutInfo>(_loader_data, _value_field_layout_info_array);
     _value_field_layout_info_array = nullptr;
   }

@@ -1210,7 +1210,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
     return nullptr;
   }
 
-  if (ik->has_flattened_fields() || ik->has_null_restricted_static_fields()) {
+  if (ik->has_flat_fields() || ik->has_null_restricted_static_fields()) {
     for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
       if (fs.access_flags().is_static() && !fs.is_null_free_value_type()) {
         continue;

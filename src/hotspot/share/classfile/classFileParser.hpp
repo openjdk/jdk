@@ -98,7 +98,7 @@ class FieldLayoutInfo : public ResourceObj {
   bool _has_nonstatic_fields;
   bool _is_naturally_atomic;
   bool _must_be_atomic;
-  bool _has_flattened_fields;
+  bool _has_flat_fields;
   bool _is_empty_value_klass;
   FieldLayoutInfo() : oop_map_blocks(nullptr), _nonoop_acmp_map(nullptr), _oop_acmp_map(nullptr),
                       _instance_size(-1), _nonstatic_field_size(-1), _static_field_size(-1),
@@ -108,7 +108,7 @@ class FieldLayoutInfo : public ResourceObj {
                       _nullable_non_atomic_layout_size_in_bytes(-1),
                       _null_marker_offset(-1), _null_reset_value_offset(-1), _acmp_maps_offset(-1),
                       _has_nonstatic_fields(false), _is_naturally_atomic(false), _must_be_atomic(false),
-                      _has_flattened_fields(false), _is_empty_value_klass(false) { }
+                      _has_flat_fields(false), _is_empty_value_klass(false) { }
 };
 
 // Parser for for .class files
@@ -577,7 +577,7 @@ class ClassFileParser {
   bool is_interface() const { return _access_flags.is_interface(); }
   bool is_concrete_value_class() const { return !_access_flags.is_identity_class() && !_access_flags.is_interface() && !_access_flags.is_abstract(); }
   bool is_identity_class() const { return _access_flags.is_identity_class(); }
-  bool has_flattened_fields() const { return _layout_info->_has_flattened_fields; }
+  bool has_flat_fields() const { return _layout_info->_has_flat_fields; }
 
   u2 java_fields_count() const { return _java_fields_count; }
   bool is_abstract() const { return _access_flags.is_abstract(); }

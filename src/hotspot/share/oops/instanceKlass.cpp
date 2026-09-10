@@ -616,8 +616,8 @@ InstanceKlass::InstanceKlass(const ClassFileParser& parser, KlassKind kind, mark
   if (parser.is_hidden()) set_is_hidden();
   set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
                                                     false));
-  if (parser.has_flattened_fields()) {
-    set_has_flattened_fields();
+  if (parser.has_flat_fields()) {
+    set_has_flat_fields();
   }
 
   assert(nullptr == _methods, "underlying memory not zeroed?");
