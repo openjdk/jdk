@@ -1240,8 +1240,8 @@ class StubGenerator: public StubCodeGenerator {
   void verify_oop_array(size_t size, Register a, Register count, Register temp) {
     Label loop, end;
     __ mv(t1, zr);
-    __ slli(t0, count, exact_log2(size));
     __ bind(loop);
+    __ slli(t0, count, exact_log2(size));
     __ bgeu(t1, t0, end);
 
     __ add(temp, a, t1);
@@ -2248,10 +2248,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(t1, scratch_src_klass, L_failed);
 
     if (Arguments::is_valhalla_enabled()) {
-      // Check for flat inline type array -> return -1
+      // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, t1, L_failed);
 
-      // Check for null-free (non-flat) inline type array -> handle as object array
+      // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, t1, L_objArray);
     }
 

@@ -5,6 +5,7 @@
 | --add-modules | bundle |  |  |  | CONCATENATE |
 | --app-content | bundle |  |  |  | CONCATENATE |
 | --app-image | mac-sign, native-bundle |  | x |  | USE_LAST |
+| --app-resources | bundle |  |  |  | CONCATENATE |
 | --app-version | bundle | x | x |  | USE_LAST |
 | --arguments | bundle |  |  | x | CONCATENATE |
 | --copyright | bundle | x | x |  | USE_LAST |

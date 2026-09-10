@@ -83,11 +83,11 @@ static int* decode_guard_from_instruction(nmethod* nm, address& instruction) {
 //
 // The mapping of C1-compiled methods (scalarization used) looks as follows:
 // * alt1: verified entry point
-// * alt2 (optional): verified inline ro entry point
+// * alt2 (optional): verified value ro entry point
 //
 // The mapping of C2-compiled methods (scalarization used) looks as follows:
-// * alt1: verified inline entry point
-// * alt2 (optional): verified inline ro entry point
+// * alt1: verified value entry point
+// * alt2 (optional): verified value ro entry point
 //
 // In other scenarios, neither alt1 nor alt2 are defined.
 class NativeNMethodBarrier {
@@ -119,19 +119,19 @@ class NativeNMethodBarrier {
     // If the nmethod has scalarized arguments, then there are more entry
     // points, each with their own nmethod entry barrier.
     if (!nm->is_osr_method() && nm->method()->has_scalarized_args()) {
-      assert(nm->verified_entry_point() != nm->verified_inline_entry_point(), "scalarized entry point not found");
-      address method_body = nm->is_compiled_by_c1() ? nm->verified_inline_entry_point() : nm->verified_entry_point();
+      assert(nm->verified_entry_point() != nm->verified_value_entry_point(), "scalarized entry point not found");
+      address method_body = nm->is_compiled_by_c1() ? nm->verified_value_entry_point() : nm->verified_entry_point();
       int barrier_offset = _default_entry_instruction - method_body;
 
       // Set the first alternative entry point.
-      address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_inline_entry_point();
+      address entry_point2 = nm->is_compiled_by_c1() ? nm->verified_entry_point() : nm->verified_value_entry_point();
       _verified_alt1_instruction = entry_point2 + barrier_offset;
       assert(_default_entry_instruction != _verified_alt1_instruction, "sanity");
       _verified_alt1_guard = decode_guard_from_instruction(nm, _verified_alt1_instruction);
 
       // If there is a second alternative entry point, set it too.
-      if (method_body != nm->verified_inline_ro_entry_point() && entry_point2 != nm->verified_inline_ro_entry_point()) {
-        _verified_alt2_instruction = nm->verified_inline_ro_entry_point() + barrier_offset;
+      if (method_body != nm->verified_value_ro_entry_point() && entry_point2 != nm->verified_value_ro_entry_point()) {
+        _verified_alt2_instruction = nm->verified_value_ro_entry_point() + barrier_offset;
         _verified_alt2_guard = decode_guard_from_instruction(nm, _verified_alt2_instruction);
         assert(_default_entry_instruction != _verified_alt2_instruction &&
                _verified_alt1_instruction != _verified_alt2_instruction,

@@ -30,10 +30,10 @@
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class LogStream;
+class ShenandoahScanRemembered;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahOldHeuristics;
@@ -193,7 +193,7 @@ public:
   void clear_cards_for(ShenandoahHeapRegion* region);
 
   // Mark card for this location as dirty
-  void mark_card_as_dirty(void* location);
+  void mark_card_as_dirty(void* location) const;
 
   template<typename T>
   class ShenandoahHeapRegionLambda : public ShenandoahHeapRegionClosure {
@@ -343,7 +343,7 @@ public:
 
   size_t usage_trigger_threshold() const;
 
-  bool can_start_gc() {
+  bool can_start_gc() const {
     return _state == IDLE;
   }
 
