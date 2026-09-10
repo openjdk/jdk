@@ -34,6 +34,7 @@ template <ChunkFrames frame_kind>
 inline bool StackChunkFrameStream<frame_kind>::is_in_frame(void* p0) const {
   assert(!is_done(), "");
   assert(is_compiled(), "");
+  assert(!_cb->as_nmethod()->needs_stack_repair(), "unsupported");
   intptr_t* p = (intptr_t*)p0;
   int argsize = (_cb->as_nmethod()->num_stack_arg_slots() * VMRegImpl::stack_slot_size) >> LogBytesPerWord;
   int frame_size = _cb->frame_size() + (argsize > 0 ? argsize + frame::metadata_words_at_top : 0);

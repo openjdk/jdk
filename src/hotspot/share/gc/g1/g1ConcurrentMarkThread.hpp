@@ -50,7 +50,8 @@ class G1ConcurrentMarkThread: public ConcurrentGCThread {
 
   Atomic<ServiceState> _state;
 
-  ServiceState state() const { return _state.load_relaxed(); }
+  ServiceState state() const { return _state.load_acquire(); }
+  void set_state(ServiceState new_state) { _state.release_store(new_state); }
 
   // Returns whether we are in a "Full" cycle.
   bool is_in_full_concurrent_cycle() const;

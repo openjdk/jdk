@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,10 +94,11 @@ protected:
     return cards_required(_whole_heap.word_size()) - 1;
   }
 
+  MemRegion committed_for(const MemRegion mr) const;
+
 private:
   void initialize_covered_region(void* region0_start, void* region1_start);
 
-  MemRegion committed_for(const MemRegion mr) const;
 public:
   CardTable(MemRegion whole_heap);
   virtual ~CardTable() = default;

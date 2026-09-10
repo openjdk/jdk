@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,9 @@ public class ResumeChecksServer extends SSLContextTemplate {
         System.err.println("firstSession.getCreationTime() = " +
             firstSession.getCreationTime());
 
+        // Sleep 100ms between 2 connections to avoid test flakiness.
+        Thread.sleep(100);
+
         long secondStartTime = System.currentTimeMillis();
         secondSession = c.test();
 
@@ -128,7 +131,8 @@ public class ResumeChecksServer extends SSLContextTemplate {
         case SIGNATURE_SCHEME:
         case LOCAL_CERTS:
             // fail if a new session is not created
-            if (secondSession.getCreationTime() < secondStartTime) {
+            if (secondSession.getCreationTime() ==
+                    firstSession.getCreationTime()) {
                 throw new AssertionError("Existing session was used: FAIL");
             }
             System.out.println("secondSession not resumed: PASS");

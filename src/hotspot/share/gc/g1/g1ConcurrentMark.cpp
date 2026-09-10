@@ -24,6 +24,7 @@
 
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
+#include "code/codeCache.hpp"
 #include "cppstdlib/new.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BatchedTask.hpp"
@@ -35,7 +36,6 @@
 #include "gc/g1/g1ConcurrentMarkRemarkTasks.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
-#include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
 #include "gc/g1/g1HeapRegionPrinter.hpp"
@@ -70,6 +70,7 @@
 #include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -299,7 +300,7 @@ void G1CMMarkStack::add_chunk_to_list(Atomic<TaskQueueEntryChunk*>* list, TaskQu
 void G1CMMarkStack::add_chunk_to_chunk_list(TaskQueueEntryChunk* elem) {
   MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   add_chunk_to_list(&_chunk_list, elem);
-  _chunks_in_chunk_list++;
+  _chunks_in_chunk_list.add_then_fetch(1u, memory_order_relaxed);
 }
 
 void G1CMMarkStack::add_chunk_to_free_list(TaskQueueEntryChunk* elem) {
@@ -319,7 +320,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::remove_chunk_from_chunk_list(
   MutexLocker x(G1MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
   TaskQueueEntryChunk* result = remove_chunk_from_list(&_chunk_list);
   if (result != nullptr) {
-    _chunks_in_chunk_list--;
+    _chunks_in_chunk_list.sub_then_fetch(1u, memory_order_relaxed);
   }
   return result;
 }
@@ -363,7 +364,7 @@ bool G1CMMarkStack::par_pop_chunk(G1TaskQueueEntry* ptr_arr) {
 }
 
 void G1CMMarkStack::set_empty() {
-  _chunks_in_chunk_list = 0;
+  _chunks_in_chunk_list.store_relaxed(0);
   _chunk_list.store_relaxed(nullptr);
   _free_list.store_relaxed(nullptr);
   _chunk_allocator.reset();
@@ -446,7 +447,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   _finger(nullptr), // _finger set in set_non_marking_state
 
-  _worker_id_offset(G1ConcRefinementThreads), // The refinement control thread does not refine cards, so it's just the worker threads.
   _max_num_tasks(MAX2(ConcGCThreads, ParallelGCThreads)),
   _num_active_tasks(0), // _num_active_tasks set in set_non_marking_state()
   _tasks(nullptr),
@@ -500,7 +500,7 @@ void G1ConcurrentMark::fully_initialize() {
     vm_shutdown_during_initialization("Could not create ConcurrentMarkThread");
   }
 
-  log_debug(gc)("ConcGCThreads: %u offset %u", ConcGCThreads, _worker_id_offset);
+  log_debug(gc)("ConcGCThreads: %u", ConcGCThreads);
   log_debug(gc)("ParallelGCThreads: %u", ParallelGCThreads);
 
   _max_concurrent_workers = ConcGCThreads;
@@ -688,8 +688,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers(active_tasks);
-  _second_overflow_barrier_sync.set_n_workers(active_tasks);
+  _first_overflow_barrier_sync.set_num_workers(active_tasks);
+  _second_overflow_barrier_sync.set_num_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -838,10 +838,10 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint num_workers, bool suspendible) :
     WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
-    _hr_claimer(n_workers),
+    _hr_claimer(num_workers),
     _suspendible(suspendible)
   { }
 
@@ -941,11 +941,11 @@ public:
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
     const double regions_per_thread = 1000;
-    return _claimer.n_regions() / regions_per_thread;
+    return _claimer.num_regions() / regions_per_thread;
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   void do_work(uint worker_id) override {
@@ -1378,6 +1378,8 @@ void G1ConcurrentMark::remark() {
   if (mark_finished) {
     weak_refs_work();
 
+    CodeCache::on_gc_marking_cycle_finish();
+
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
       G1CMIsAliveClosure is_alive(this);
@@ -1446,7 +1448,7 @@ void G1ConcurrentMark::remark() {
     // Completely reset the marking state (except bitmaps) since marking completed.
     reset_at_marking_complete();
 
-    G1CollectedHeap::finish_codecache_marking_cycle();
+    CodeCache::arm_all_nmethods();
 
     {
       GCTraceTime(Debug, gc, phases) debug("Report Object Count", _gc_timer_cm);
@@ -1945,31 +1947,29 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
 }
 
 #ifndef PRODUCT
-class VerifyNoCSetOops {
+class G1VerifyNoCollectionSetOops {
   G1CollectedHeap* _g1h;
-  const char* _phase;
-  int _info;
+  const char* _location;
+  int _index;
 
 public:
-  VerifyNoCSetOops(const char* phase, int info = -1) :
+  G1VerifyNoCollectionSetOops(const char* location, int index = -1) :
     _g1h(G1CollectedHeap::heap()),
-    _phase(phase),
-    _info(info)
+    _location(location),
+    _index(index)
   { }
 
   void operator()(G1TaskQueueEntry task_entry) const {
-    if (task_entry.is_partial_array_state()) {
-      oop obj = task_entry.to_partial_array_state()->source();
-      guarantee(_g1h->is_in_reserved(obj), "Partial Array " PTR_FORMAT " must be in heap.", p2i(obj));
-      return;
-    }
-    guarantee(oopDesc::is_oop(task_entry.to_oop()),
-              "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(task_entry.to_oop()), _phase, _info);
-    G1HeapRegion* r = _g1h->heap_region_containing(task_entry.to_oop());
+    oop obj = task_entry.is_partial_array_state()
+            ? task_entry.to_partial_array_state()->source()
+            : task_entry.to_oop();
+    guarantee(oopDesc::is_oop(obj),
+              "Non-oop " PTR_FORMAT ", location: %s, index: %d",
+              p2i(obj), _location, _index);
+    G1HeapRegion* r = _g1h->heap_region_containing(obj);
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(task_entry.to_oop()), _phase, _info, r->hrm_index());
+              p2i(obj), _location, _index, r->hrm_index());
   }
 };
 
@@ -1981,15 +1981,17 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
   }
 
   // Verify entries on the global mark stack
-  _global_mark_stack.iterate(VerifyNoCSetOops("Stack"));
+  _global_mark_stack.iterate(G1VerifyNoCollectionSetOops("Stack"));
 
   // Verify entries on the task queues
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* queue = _task_queues->queue(i);
-    queue->iterate(VerifyNoCSetOops("Queue", i));
+    queue->iterate(G1VerifyNoCollectionSetOops("Queue", i));
   }
 
-  // Verify the global finger
+  // Verify the global finger. Unlike the task fingers, it only moves in whole
+  // regions as tasks claim them, so it must be at a region bottom. That region
+  // may be in the collection set: nothing in it has been scanned yet.
   HeapWord* global_finger = finger();
   if (global_finger != nullptr && global_finger < _heap.end()) {
     // Since we always iterate over all regions, we might get a null G1HeapRegion
@@ -2006,10 +2008,11 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
     G1CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
     if (task_finger != nullptr && task_finger < _heap.end()) {
-      // See above note on the global finger verification.
+      // Since we always iterate over all regions, we might get a null G1HeapRegion
+      // here.
       G1HeapRegion* r = _g1h->heap_region_containing_or_null(task_finger);
       guarantee(r == nullptr || task_finger == r->bottom() ||
-                !r->in_collection_set() || !r->has_index_in_opt_cset(),
+                !(r->in_collection_set() || r->has_index_in_opt_cset()),
                 "task finger: " PTR_FORMAT " region: " HR_FORMAT,
                 p2i(task_finger), HR_FORMAT_PARAMS(r));
     }
@@ -2034,6 +2037,26 @@ void G1ConcurrentMark::print_stats() {
     _tasks[i]->print_stats();
     log_debug(gc, stats)("---------------------------------------------------------------------");
   }
+}
+
+bool G1ConcurrentMark::shutdown_cleanup_needed() const {
+  // Cleanup (aborting threads, setting abort flags) is needed throughout the whole cycle before
+  // stopping the CM thread.
+  return is_fully_initialized() && is_in_concurrent_cycle();
+}
+
+void G1ConcurrentMark::shutdown_concurrent_cycle() {
+  assert_at_safepoint_on_vm_thread();
+
+  abort_root_region_scan_at_safepoint();
+  abort_marking_threads();
+
+  SATBMarkQueueSet& satb_mq_set = G1BarrierSet::satb_mark_queue_set();
+  satb_mq_set.abandon_partial_marking();
+  // This can be called either during or outside marking, we'll read
+  // the expected_active value from the SATB queue set.
+  satb_mq_set.set_active_all_threads(false, /* new active value */
+                                     satb_mq_set.is_active() /* expected_active */);
 }
 
 bool G1ConcurrentMark::concurrent_cycle_abort() {
@@ -2424,7 +2447,7 @@ void G1CMTask::drain_local_queue(bool partially) {
 size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   assert(obj->length() >= (int)ObjArrayMarkingStride, "Must be a large array object %d", obj->length());
 
-  // Mark objArray klass metadata
+  // Mark klass metadata
   process_klass(obj->klass());
 
   size_t array_length = obj->length();
@@ -2433,19 +2456,32 @@ size_t G1CMTask::start_partial_array_processing(objArrayOop obj) {
   process_array_chunk(obj, 0, initial_chunk_size);
 
   // Include object header size
-  return objArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  if (obj->is_refArray()) {
+    return refArrayOopDesc::object_size(checked_cast<int>(initial_chunk_size));
+  } else {
+    FlatArrayKlass* fak = FlatArrayKlass::cast(obj->klass());
+    return flatArrayOopDesc::object_size(fak->layout_helper(), checked_cast<int>(initial_chunk_size));
+  }
 }
 
 size_t G1CMTask::process_partial_array(const G1TaskQueueEntry& task, bool stolen) {
   PartialArrayState* state = task.to_partial_array_state();
   // Access state before release by claim().
-  objArrayOop obj = objArrayOop(state->source());
+  objArrayOop obj = oop_cast<objArrayOop>(state->source());
 
   PartialArraySplitter::Claim claim =
     _partial_array_splitter.claim(state, _task_queue, stolen);
 
   process_array_chunk(obj, claim._start, claim._end);
-  return heap_word_size((claim._end - claim._start) * heapOopSize);
+
+  if (obj->is_refArray()) {
+    return heap_word_size((claim._end - claim._start) * heapOopSize);
+  } else {
+    assert(obj->is_flatArray(), "Must be!");
+    size_t element_byte_size = FlatArrayKlass::cast(obj->klass())->element_byte_size();
+    size_t nof_elements = claim._end - claim._start;
+    return heap_word_size(nof_elements * element_byte_size);
+  }
 }
 
 void G1CMTask::drain_global_stack(bool partially) {
@@ -3122,9 +3158,9 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t code_roots_bytes = r->rem_set()->code_roots_mem_size();
   const char* remset_type = r->rem_set()->get_short_state_str();
-  uint cset_group_id     = r->rem_set()->has_cset_group()
-                         ? r->rem_set()->cset_group_id()
-                         : G1CSetCandidateGroup::NoRemSetId;
+  uint card_set_group_id  = r->rem_set()->has_card_set_group()
+                          ? r->rem_set()->card_set_group_id()
+                          : G1CardSetGroup::NoGroupId;
 
   _total_used_bytes      += used_bytes;
   _total_capacity_bytes  += capacity_bytes;
@@ -3144,7 +3180,7 @@ bool G1PrintRegionLivenessInfoClosure::do_heap_region(G1HeapRegion* r) {
                         type, p2i(bottom), p2i(end),
                         used_bytes, live_bytes,
                         remset_type, code_roots_bytes,
-                        cset_group_id);
+                        card_set_group_id);
 
   return false;
 }
@@ -3159,7 +3195,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
   // add static memory usages to remembered set sizes
   _total_remset_bytes += G1HeapRegionRemSet::static_mem_size();
 
-  log_cset_candidate_groups();
+  log_card_set_groups();
 
   // Print the footer of the output.
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
@@ -3179,7 +3215,7 @@ G1PrintRegionLivenessInfoClosure::~G1PrintRegionLivenessInfoClosure() {
                          bytes_to_mb(_total_code_roots_bytes));
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSetCandidateGroup* group, const char* type) {
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGroup* group, const char* type) {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_FORMAT
                           G1PPRL_LEN_FORMAT
@@ -3188,23 +3224,23 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_group_add_total(G1CSet
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(),
-                          group->length(),
-                          group->length() > 0 ? group->gc_efficiency() : 0.0,
-                          group->length() > 0 ? group->liveness_percent() : 0.0,
+                          group->num_regions(),
+                          group->num_regions() > 0 ? group->gc_efficiency() : 0.0,
+                          group->num_regions() > 0 ? group->liveness_percent() : 0.0,
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type) {
-  for (G1CSetCandidateGroup* group : gl) {
-    log_cset_candidate_group_add_total(group, type);
+void G1PrintRegionLivenessInfoClosure::log_card_set_group_list(G1CardSetGroupList& gl, const char* type) {
+  for (G1CardSetGroup* group : gl) {
+    log_card_set_group_add_total(group, type);
   }
 }
 
-void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
+void G1PrintRegionLivenessInfoClosure::log_card_set_groups() {
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX);
-  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX" Collection Set Candidate Groups");
+  log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Card Set Groups");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX " Types: Y=Young, M=From Marking Regions, R=Retained Regions");
   log_trace(gc, liveness)(G1PPRL_LINE_PREFIX
                           G1PPRL_GID_H_FORMAT
@@ -3213,7 +3249,7 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_BYTE_H_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
-                          "groud-id", "num-regions",
+                          "group-id", "num-regions",
                           "gc-eff", "liveness",
                           "remset", "type");
 
@@ -3230,9 +3266,9 @@ void G1PrintRegionLivenessInfoClosure::log_cset_candidate_groups() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  log_cset_candidate_group_add_total(g1h->young_regions_cset_group(), "Y");
+  log_card_set_group_add_total(g1h->young_regions_card_set_group(), "Y");
 
   G1CollectionSetCandidates* candidates = g1h->policy()->candidates();
-  log_cset_candidate_grouplist(candidates->from_marking_groups(), "M");
-  log_cset_candidate_grouplist(candidates->retained_groups(), "R");
+  log_card_set_group_list(candidates->from_marking_groups(), "M");
+  log_card_set_group_list(candidates->retained_groups(), "R");
 }

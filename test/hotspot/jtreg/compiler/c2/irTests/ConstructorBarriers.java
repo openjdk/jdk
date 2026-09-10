@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @summary Test barriers emitted in constructors
  * @library /test/lib /
  * @requires os.arch=="aarch64" | os.arch=="riscv64" | os.arch=="x86_64" | os.arch=="amd64"
- * @run main compiler.c2.irTests.ConstructorBarriers
+ * @run driver ${test.main.class}
  */
 public class ConstructorBarriers {
     public static void main(String[] args) {

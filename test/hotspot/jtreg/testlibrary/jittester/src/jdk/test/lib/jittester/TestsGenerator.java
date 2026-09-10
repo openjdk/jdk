@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ public abstract class TestsGenerator implements Consumer<IRTreeGenerator.Test> {
         String parents = type.getParentsNames().stream().collect(Collectors.joining(","));
         result.append(type.isAbstract() ? "abstract " : "")
               .append(type.isFinal() ? "final " : "")
+              .append(type.isValueKlass() ? "value " : "")
               .append(type.isInterface() ? "interface " : "class ")
               .append(type.getName())
               .append(parents.isEmpty() ? "" : ": " + parents);

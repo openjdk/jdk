@@ -53,6 +53,9 @@ $(eval $(call VerifyVariable,TEST_IMAGE_DIR))
 $(eval $(call VerifyVariable,MAKE))
 $(eval $(call VerifyVariable,BASH))
 
+include $(TOPDIR)/make/conf/version-numbers.conf
+VERSION_FEATURE := $(DEFAULT_VERSION_FEATURE)
+
 ################################################################################
 # The "human readable" name of this configuration
 CONF_NAME := run-test-prebuilt

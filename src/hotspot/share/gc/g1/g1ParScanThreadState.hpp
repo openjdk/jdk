@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "gc/shared/taskqueue.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "utilities/growableArray.hpp"
 #include "utilities/ticks.hpp"
 
 class G1CardTable;
@@ -44,10 +45,16 @@ class G1CollectionSet;
 class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
+class G1ParScanThreadStateSet;
 class G1PLABAllocator;
 class G1HeapRegion;
 class outputStream;
 
+// A code root pair gathered during code root scanning.
+struct G1CodeRootPair {
+  uint _region_idx;
+  nmethod* _nmethod;
+};
 class G1ParScanThreadState : public CHeapObj<mtGC> {
   G1CollectedHeap* _g1h;
   G1ScannerTasksQueue* _task_queue;
@@ -95,6 +102,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   // Only starts recording when log of gc+heap+numa is enabled and its data is
   // transferred when flushed.
   size_t* _obj_alloc_stat;
+
+  // Code root pairs to add after evacuation.
+  GrowableArrayCHeap<G1CodeRootPair, mtGC> _code_root_pairs;
 
   // Per-thread evacuation failure data structures.
   ALLOCATION_FAILURE_INJECTOR_ONLY(size_t _allocation_failure_inject_counter;)
@@ -174,6 +184,7 @@ public:
 private:
   void do_partial_array(PartialArrayState* state, bool stolen);
   void start_partial_objarray(oop from, oop to);
+  void process_array_chunk(objArrayOop obj, size_t start, size_t end);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
                                Klass* klass,
@@ -239,9 +250,13 @@ public:
   Tickspan trim_ticks() const;
   void reset_trim_ticks();
 
-  void record_evacuation_failed_region(G1HeapRegion* r, uint worker_id, bool cause_pinned);
+  void record_evacuation_failed_region(G1HeapRegion* r, bool cause_pinned);
   // An attempt to evacuate "obj" has failed; take necessary steps.
   oop handle_evacuation_failure_par(oop obj, markWord m, Klass* klass, G1HeapRegionAttr attr, size_t word_sz, bool cause_pinned);
+
+  inline void remember_nmethod_into_region(G1HeapRegion* r, nmethod* nm);
+
+  const GrowableArrayCHeap<G1CodeRootPair, mtGC>& code_root_pairs() const { return _code_root_pairs; }
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
@@ -268,6 +283,8 @@ class G1ParScanThreadStateSet : public StackObj {
   ~G1ParScanThreadStateSet();
 
   void flush_stats();
+  void destroy_worker_states();
+
   void record_unused_optional_region(G1HeapRegion* hr);
 #if TASKQUEUE_STATS
   void print_partial_array_task_stats();

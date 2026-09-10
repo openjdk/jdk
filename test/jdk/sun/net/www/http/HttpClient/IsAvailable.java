@@ -67,6 +67,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import sun.net.www.http.HttpClient;
 
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
@@ -117,6 +118,13 @@ class IsAvailable {
             // Verify that closing the socket removes the availability
             LOGGER.info("Closing the socket...");
             infra.clientSocket.close();
+            // Closing the server socket may not immediately be observable by
+            // the client. Read from the client's _internal_ socket to ensure
+            // that EOF, which is necessary for the `HttpClient::available`
+            // verification, has arrived.
+            assertEquals(
+                    -1, infra.readFromHttpClientSocket(),
+                    "Expected EOF after closing the server socket");
             LOGGER.info("Checking the connection (#2)...");
             assertFalse(infra.available(), "Connection over closed socket should not be available");
             assertEquals(readTimeout, infra.httpClient.getReadTimeout(), "Read-timeout should be restored");
@@ -142,10 +150,13 @@ class IsAvailable {
                 clientSocketOutputStream.write("unexpected data".getBytes(US_ASCII));
             }
 
-            // Writing to the socket on the server side may not make the data
-            // immediately visible to the client side. Make sure we wait long
-            // enough for the data to get delivered.
-            Thread.sleep(adjustTimeout(500));
+            // Writing to the server socket may not immediately be observable
+            // by the client. Read from the client's _internal_ socket to ensure
+            // that the data, which is necessary for the `HttpClient::available`
+            // verification, has arrived.
+            assertTrue(
+                    infra.readFromHttpClientSocket() >= 0,
+                    "Unexpected data should have arrived to the client socket");
 
             // Verify that the presence of stale data on the socket removes the availability
             LOGGER.info("Checking the connection (#2)...");
@@ -161,6 +172,8 @@ class IsAvailable {
 
         private static final Predicate<HttpClient> AVAILABLE_ACCESSOR = findAvailableAccessor();
 
+        private static final Function<HttpClient, Socket> SERVER_SOCKET_ACCESSOR = findServerSocketAccessor();
+
         private static Predicate<HttpClient> findAvailableAccessor() {
             final MethodHandle availableMH;
             try {
@@ -173,6 +186,24 @@ class IsAvailable {
             return httpClient -> {
                 try {
                     return (boolean) availableMH.invoke(httpClient);
+                } catch (Throwable e) {
+                    throw new RuntimeException(e);
+                }
+            };
+        }
+
+        private static Function<HttpClient, Socket> findServerSocketAccessor() {
+            final MethodHandle serverSocketMH;
+            try {
+                serverSocketMH = MethodHandles
+                        .privateLookupIn(HttpClient.class, MethodHandles.lookup())
+                        .findGetter(HttpClient.class, "serverSocket", Socket.class);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            return httpClient -> {
+                try {
+                    return (Socket) serverSocketMH.invoke(httpClient);
                 } catch (Throwable e) {
                     throw new RuntimeException(e);
                 }
@@ -208,6 +239,17 @@ class IsAvailable {
 
         private boolean available() {
             return AVAILABLE_ACCESSOR.test(httpClient);
+        }
+
+        private int readFromHttpClientSocket() throws IOException {
+            Socket socket = SERVER_SOCKET_ACCESSOR.apply(httpClient);
+            int timeout = socket.getSoTimeout();
+            try {
+                socket.setSoTimeout((int) adjustTimeout(5000));
+                return socket.getInputStream().read();
+            } finally {
+                socket.setSoTimeout(timeout);
+            }
         }
 
         @Override

@@ -70,7 +70,7 @@ class MethodHandleCharacterFieldAccessorImpl extends MethodHandleFieldAccessorIm
             } else {
                 return (char) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -143,7 +143,7 @@ class MethodHandleCharacterFieldAccessorImpl extends MethodHandleFieldAccessorIm
             } else {
                 setter.invokeExact(obj, c);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

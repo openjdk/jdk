@@ -52,6 +52,7 @@
 
 package nsk.stress.jni.gclocker;
 
+import nsk.share.gc.DefaultProducer;
 import nsk.share.gc.GC;
 import nsk.share.gc.ThreadedGCTest;
 import nsk.share.gc.gp.array.BooleanArrayProducer;
@@ -141,11 +142,11 @@ public class gcl001 extends ThreadedGCTest {
 
         private int maxSize;
         ExecutionController stresser;
-        ByteArrayProducer bp;
+        DefaultProducer gp;
 
         GarbageProducer(int size) {
             this.maxSize = size;
-            bp = new ByteArrayProducer();
+            gp = new DefaultProducer();
         }
 
         public void run() {
@@ -155,8 +156,7 @@ public class gcl001 extends ThreadedGCTest {
 
             while (stresser.continueExecution()) {
                 try {
-                    byte[] arr = bp.create(random(maxSize));
-                    tmp = arr;
+                    tmp = gp.create(random(maxSize));
                 } catch (OutOfMemoryError oome) {
                     // Do nothing.
                 }

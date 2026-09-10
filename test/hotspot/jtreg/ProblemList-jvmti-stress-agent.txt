@@ -107,3 +107,4 @@ serviceability/jvmti/HeapMonitor/MyPackage/HeapMonitorVMEventsTest.java#id1     
 
 #############################################################################
 
+# Value Objects failures start here:

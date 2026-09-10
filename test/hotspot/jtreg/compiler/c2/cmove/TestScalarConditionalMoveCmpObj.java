@@ -22,7 +22,7 @@
  * questions.
  */
 
-package compiler.c2.irTests;
+package compiler.c2.cmove;
 
 import compiler.lib.ir_framework.*;
 import java.util.Random;
@@ -51,6 +51,12 @@ public class TestScalarConditionalMoveCmpObj {
         TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:-UseVectorCmov",
                                    "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCompactObjectHeaders", "-XX:-UseCompressedOops");
     }
+
+    // While a value of type Object can be a value object, a value of type NotValue
+    // cannot since it is a non-abstract non-value class and so cannot be the base
+    // class of a value class. This makes sure that comparisons between values of
+    // this type are simply pointer comparisons, and not substitutability
+    static class NotValue {}
 
     // Object comparison
     //    O for I
@@ -97,7 +103,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveOEQforI(Object[] a, Object[] b, int[] c, int[] d, int[] r, int[] r2) {
+    private static void testCMoveOEQforI(NotValue[] a, NotValue[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
             int dd = d[i];
@@ -112,7 +118,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_I, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveONEforI(Object[] a, Object[] b, int[] c, int[] d, int[] r, int[] r2) {
+    private static void testCMoveONEforI(NotValue[] a, NotValue[] b, int[] c, int[] d, int[] r, int[] r2) {
         for (int i = 0; i < a.length; i++) {
             int cc = c[i];
             int dd = d[i];
@@ -130,7 +136,7 @@ public class TestScalarConditionalMoveCmpObj {
     //     applyIf = {"UseCompressedOops", "false"})
     // @IR(counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
     //     applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveOEQforL(Object[] a, Object[] b, long[] c, long[] d, long[] r, long[] r2) {
+    private static void testCMoveOEQforL(NotValue[] a, NotValue[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
             long dd = d[i];
@@ -145,7 +151,7 @@ public class TestScalarConditionalMoveCmpObj {
     //     applyIf = {"UseCompressedOops", "false"})
     // @IR(counts = {IRNode.CMOVE_L, ">0", IRNode.CMP_N, ">0"},
     //     applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveONEforL(Object[] a, Object[] b, long[] c, long[] d, long[] r, long[] r2) {
+    private static void testCMoveONEforL(NotValue[] a, NotValue[] b, long[] c, long[] d, long[] r, long[] r2) {
         for (int i = 0; i < a.length; i++) {
             long cc = c[i];
             long dd = d[i];
@@ -160,7 +166,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveOEQforF(Object[] a, Object[] b, float[] c, float[] d, float[] r, float[] r2) {
+    private static void testCMoveOEQforF(NotValue[] a, NotValue[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
             float dd = d[i];
@@ -175,7 +181,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_F, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveONEforF(Object[] a, Object[] b, float[] c, float[] d, float[] r, float[] r2) {
+    private static void testCMoveONEforF(NotValue[] a, NotValue[] b, float[] c, float[] d, float[] r, float[] r2) {
         for (int i = 0; i < a.length; i++) {
             float cc = c[i];
             float dd = d[i];
@@ -190,7 +196,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveOEQforD(Object[] a, Object[] b, double[] c, double[] d, double[] r, double[] r2) {
+    private static void testCMoveOEQforD(NotValue[] a, NotValue[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
             double dd = d[i];
@@ -205,7 +211,7 @@ public class TestScalarConditionalMoveCmpObj {
         applyIf = {"UseCompressedOops", "false"})
     @IR(counts = {IRNode.CMOVE_D, ">0", IRNode.CMP_N, ">0"},
         applyIf = {"UseCompressedOops", "true"})
-    private static void testCMoveONEforD(Object[] a, Object[] b, double[] c, double[] d, double[] r, double[] r2) {
+    private static void testCMoveONEforD(NotValue[] a, NotValue[] b, double[] c, double[] d, double[] r, double[] r2) {
         for (int i = 0; i < a.length; i++) {
             double cc = c[i];
             double dd = d[i];
@@ -226,8 +232,8 @@ public class TestScalarConditionalMoveCmpObj {
                  "testCMoveONEforD",
                 })
     private void testCMove_runner_two() {
-        Object[] aO = new Object[SIZE];
-        Object[] bO = new Object[SIZE];
+        NotValue[] aO = new NotValue[SIZE];
+        NotValue[] bO = new NotValue[SIZE];
         int[] cI = new int[SIZE];
         int[] dI = new int[SIZE];
         int[] rI = new int[SIZE];
@@ -243,6 +249,8 @@ public class TestScalarConditionalMoveCmpObj {
 
         init(aO);
         shuffle(aO, bO);
+        init(cI);
+        init(dI);
         init(cL);
         init(dL);
         init(cF);
@@ -292,20 +300,20 @@ public class TestScalarConditionalMoveCmpObj {
 
     }
 
-    private static void init(Object[] a) {
+    private static void init(NotValue[] a) {
         for (int i = 0; i < SIZE; i++) {
-            a[i] = new Object();
+            a[i] = new NotValue();
         }
     }
 
-    private static void shuffle(Object[] a, Object[] b) {
+    private static void shuffle(NotValue[] a, NotValue[] b) {
         for (int i = 0; i < a.length; i++) {
             b[i] = a[i];
         }
         Random rand = Utils.getRandomInstance();
         for (int i = 0; i < SIZE; i++) {
             if (rand.nextInt(5) == 0) {
-                Object t = b[i];
+                NotValue t = b[i];
                 b[i] = b[SIZE-1-i];
                 b[SIZE-1-i] = t;
             }

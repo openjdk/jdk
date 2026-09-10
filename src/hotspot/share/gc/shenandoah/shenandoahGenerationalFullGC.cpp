@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,14 @@
 
 #include "gc/shared/fullGCForwarding.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahScanRemembered.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
@@ -106,10 +108,11 @@ void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
   if (lt.is_enabled()) {
     size_t live_bytes_in_old = 0;
     for (size_t i = 0; i < heap->num_regions(); i++) {
-      ShenandoahHeapRegion* r = heap->get_region(i);
-      if (r->is_old()) {
-        live_bytes_in_old += r->get_live_data_bytes();
+      if (!heap->is_region_old(i)) {
+        continue;
       }
+
+      live_bytes_in_old += heap->get_region(i)->get_live_data_bytes();
     }
     log_debug(gc)("Live bytes in old after STW mark: " PROPERFMT, PROPERFMTARGS(live_bytes_in_old));
   }
@@ -157,7 +160,9 @@ void ShenandoahGenerationalFullGC::compute_balances() {
   // Invoke this in case we are able to transfer memory from OLD to YOUNG
   size_t allocation_runway =
     heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0L);
-  heap->compute_old_generation_balance(allocation_runway, 0, 0);
+  size_t max_transfer = MIN2(allocation_runway,
+                             heap->young_generation()->free_unaffiliated_regions() * ShenandoahHeapRegion::region_size_bytes());
+  heap->compute_old_generation_balance(max_transfer, 0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,
