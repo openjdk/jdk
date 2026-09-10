@@ -33,7 +33,8 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:-TieredCompilation -XX:+SegmentedCodeCache
- *                   -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation -XX:HotCodeHeapSize=256K
+ *                   -XX:+UnlockExperimentalVMOptions -XX:+HotCodeHeap -XX:+NMethodRelocation
+ *                   -XX:HotCodeHeapSize=256K -XX:HotCodeStartupDelaySeconds=86400
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CodeCacheMinBlockLength=1
  *                   -XX:-UseCodeCacheFlushing
  *                   compiler.hotcode.TestFullHotCodeHeap
