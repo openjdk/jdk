@@ -282,7 +282,7 @@ public abstract class Snippet {
         /**
          * An binding variable.
          * {@code SubKind} of {@link Kind#VAR}.
-         * @since 27
+         * @since 28
          */
         VAR_BINDING_SUBKIND(Kind.VAR, true, true, true),
 

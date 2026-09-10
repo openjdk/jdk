@@ -38,7 +38,7 @@ import jdk.internal.javac.PreviewFeature;
  * @jls 14.4.2 Local Variable Declaration Statements
  *
  * @author Angelos Bimpoudis
- * @since 27
+ * @since 28
  */
 @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
 public interface EnhancedVariableDeclarationTree extends StatementTree {

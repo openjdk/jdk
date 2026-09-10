@@ -82,7 +82,7 @@ public interface Tree {
 
         /**
          * Used for instances of {@link EnhancedVariableDeclarationTree}.
-         * @since 27
+         * @since 28
          */
         @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
         ENHANCED_VARIABLE_DECLARATION(EnhancedVariableDeclarationTree.class),
