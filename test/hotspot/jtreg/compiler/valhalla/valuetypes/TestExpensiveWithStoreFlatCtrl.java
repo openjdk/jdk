@@ -44,9 +44,11 @@ public class TestExpensiveWithStoreFlatCtrl {
         }
 
         Integer[] array = new Integer[1];
-        array[0] = 42; // StoreFlat
-        double res = Math.sqrt(-1.0); // Expensive SqrtDNode
+        // Expensive SqrtDNode
+        double res = Math.sqrt(-1.0);
+        // StoreFlat
         array[0] = 43;
+        // Equivalent SqrtDNode to prevent cleanup from removing control
         res += Math.sqrt(-1.0);
         return res;
     }
