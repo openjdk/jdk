@@ -2468,8 +2468,9 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
 }
 
 inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
+  // Reporting classes from the class loader is not supported for old Heap 1.0 functions.
   if (is_basic_heap_walk()) {
-    return invoke_basic_object_reference_callback(JVMTI_REFERENCE_OTHER, referrer, referree, -1);
+    return false;
   } else {
     return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
   }
@@ -2804,7 +2805,7 @@ class VM_HeapWalkOperation: public VM_Operation {
   inline bool iterate_over_class_loader(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_object(const JvmtiHeapwalkObject& o);
 
-  class CollectKlasses;
+  class CollectDeclaredKlasses;
 
   // root collection
   inline bool collect_simple_roots();
@@ -3105,12 +3106,12 @@ inline bool VM_HeapWalkOperation::iterate_over_class(const JvmtiHeapwalkObject& 
   return true;
 }
 
-class VM_HeapWalkOperation::CollectKlasses : public KlassClosure {
+class VM_HeapWalkOperation::CollectDeclaredKlasses : public KlassClosure {
   GrowableArray<Klass*>* _klasses;
  public:
-  CollectKlasses(GrowableArray<Klass*>* klasses) : _klasses(klasses) {}
+  CollectDeclaredKlasses(GrowableArray<Klass*>* klasses) : _klasses(klasses) {}
   void do_klass(Klass* k) {
-    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded()) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
       _klasses->push(k);
     }
   }
@@ -3126,7 +3127,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class_loader(const JvmtiHeapwalkO
   if (res && data != nullptr) {
     ResourceMark rm;
     GrowableArray<Klass*>* klasses = new GrowableArray<Klass*>(10);
-    CollectKlasses itr(klasses);
+    CollectDeclaredKlasses itr(klasses);
     data->classes_do(&itr);
 
     for (int i = 0; i < klasses->length(); i++) {
