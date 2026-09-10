@@ -174,7 +174,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   EventMark em("%s", msg);
   log_info(gc, start)("%s", msg);
 
-  const int delay_ms = 10;
+  size_t used_before = _heap->used();
   double start = os::elapsedTime();
 
   size_t uncommitted_count = 0;
@@ -195,6 +195,14 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
+    int delay_ms = 1;
+    size_t used_after = _heap->used();
+    if (used_after > used_before) {
+      // Allocations detected, slow down uncommits even more. Successful allocation
+      // would likely quickly deplete our candidate list, so it would be worth the wait.
+      delay_ms = 10;
+      used_before = used_after;
+    }
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
       break;
