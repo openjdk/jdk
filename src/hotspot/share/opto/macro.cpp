@@ -999,15 +999,18 @@ void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints
 
 #ifdef ASSERT
   // Verify if a value can be written into a field.
-  void verify_type_compatability(const Type* value_type, const Type* field_type) {
+  void verify_type_compatibility(const Type* value_type, const Type* field_type) {
     BasicType value_bt = value_type->basic_type();
     BasicType field_bt = field_type->basic_type();
 
-    // Primitive types must match.
-    if (is_java_primitive(value_bt) && value_bt == field_bt) { return; }
+    // Primitive types must match or have a matching reinterpreted variant
+    if (is_java_primitive(value_bt) &&
+        (value_bt == field_bt || MemNode::get_reinterpret_variant(value_bt) == field_bt)) {
+      return;
+    }
 
     // I have been struggling to make a similar assert for non-primitive
-    // types. I we can add one in the future. For now, I just let them
+    // types. If we can add one in the future. For now, I just let them
     // pass without checks.
     // In particular, I was struggling with a value that came from a call,
     // and had only a non-null check CastPP. There was also a checkcast
@@ -1055,7 +1058,7 @@ void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, 
       value_worklist->push(field_val);
     }
   }
-  DEBUG_ONLY(verify_type_compatability(field_val->bottom_type(), field_type);)
+  DEBUG_ONLY(verify_type_compatibility(field_val->bottom_type(), field_type);)
   sfpt->add_req(field_val);
 }
 

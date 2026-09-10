@@ -185,6 +185,9 @@ public:
 #endif
     return new_node;
   }
+
+  // Support for reinterpret variants used by StoreNode and LoadNode
+  static BasicType get_reinterpret_variant(BasicType bt);
 };
 
 // Analyze a MemNode to try to prove that it is independent from other memory accesses
