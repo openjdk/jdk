@@ -7704,10 +7704,22 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     /**
      * Creates a synchronizing method handle that executes the give {@code body}
-     * while synchronizing on a lock object passed as the first argument.
+     * handle while synchronizing on a lock object passed as the first argument.
+     * <p>
+     * The returned method handle behaves similar to the following notional code:
+     * {@snippet lang="java" :
+     * R adapter(Object lock, A... a) {
+     *     synchronized (lock) {
+     *         return body.invokeExact(a...);
+     *     }
+     * }
+     * }
      *
      * @param body body of the synchronized block
-     * @return the syncrhonizing method handle
+     * @return the synchronizing method handle
+     * @throws NullPointerException if {@code body} is {@code null}.
+     *
+     * @since 28
      */
     public static MethodHandle synchronize(MethodHandle body) {
         Objects.requireNonNull(body);
