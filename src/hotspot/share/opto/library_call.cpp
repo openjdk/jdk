@@ -48,9 +48,11 @@
 #include "opto/countbitsnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
+#include "opto/int128tnode.hpp"
 #include "opto/library_call.hpp"
 #include "opto/mathexactnode.hpp"
 #include "opto/mulnode.hpp"
+#include "opto/multnode.hpp"
 #include "opto/narrowptrnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/opcodes.hpp"
@@ -753,6 +755,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_minD_strict:
   case vmIntrinsics::_maxD_strict:
     return inline_min_max(intrinsic_id());
+
+  case vmIntrinsics::_addInt128TLo:
+  case vmIntrinsics::_addInt128THi:
+  case vmIntrinsics::_subInt128TLo:
+  case vmIntrinsics::_subInt128THi:
+    return inline_int128t_addsub(intrinsic_id());
 
   case vmIntrinsics::_VectorUnaryOp:
     return inline_vector_nary_operation(1);
@@ -2105,6 +2113,29 @@ bool LibraryCallKit::inline_math_multiplyHigh() {
 
 bool LibraryCallKit::inline_math_unsignedMultiplyHigh() {
   set_result(_gvn.transform(new UMulHiLNode(argument(0), argument(2))));
+  return true;
+}
+
+bool LibraryCallKit::inline_int128t_addsub(vmIntrinsicID id) {
+  Node* lo1 = argument(0);
+  Node* hi1 = argument(2);
+  Node* lo2 = argument(4);
+  Node* hi2 = argument(6);
+  Node* multi;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_addInt128THi) {
+    multi = _gvn.transform(new AddI128TNode(lo1, hi1, lo2, hi2));
+  } else {
+    assert(id == vmIntrinsics::_subInt128TLo || id == vmIntrinsics::_subInt128THi, "unexpected input %s", vmIntrinsics::name_at(id));
+    multi = _gvn.transform(new SubI128TNode(lo1, hi1, lo2, hi2));
+  }
+
+  Node* result;
+  if (id == vmIntrinsics::_addInt128TLo || id == vmIntrinsics::_subInt128TLo) {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::lo_proj_num));
+  } else {
+    result = _gvn.transform(new ProjNode(multi, Int128TBinaryNode::hi_proj_num));
+  }
+  set_result(result);
   return true;
 }
 
@@ -5533,12 +5564,12 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
  * }
  *
  * cache_path:
- * if header is not safe to read { goto inline_fast_path }
+ * if header is not safe to read { goto value_fast_path }
  * hash = read_hash_from_header()
- * if hash is empty { goto inline_fast_path }
+ * if hash is empty { goto value_fast_path }
  * return hash
  *
- * inline_fast_path:
+ * value_fast_path:
  * if not static { goto slow }
  * if not value object { goto slow }
  * if value klass has no fast path { goto slow }
@@ -5559,7 +5590,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     _slow_path = 1,  // Actually perform the runtime call
     _cache_path,  // Get the hash from the header
     _null_path,  // If object is null, hash is 0.
-    _inline_fast_path,  // Fast path for value objects only (see ValueKlass::Members::_fast_hashcode_offset et seqq.)
+    _value_fast_path,  // Fast path for value objects only (see ValueKlass::Members::_fast_hashcode_offset et seqq.)
     PATH_LIMIT,
   };
 
@@ -5600,11 +5631,11 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   }
 
   // We only go to the cache case code if we pass a number of guards. The paths which do
-  // not pass are accumulated in the inline_fast_path_region. The compute region tries
+  // not pass are accumulated in the value_fast_path_region. The compute region tries
   // to use the fast path for value types. That also needs a lot of guards to be met.
   // The paths which do not pass are accumulated in the slow_region, where we do the
   // runtime call, which is the last resort.
-  RegionNode* inline_fast_path_region = new RegionNode(1);
+  RegionNode* value_fast_path_region = new RegionNode(1);
   RegionNode* slow_region = new RegionNode(1);
 
   // If this is a virtual call, we generate a funny guard.  We pull out
@@ -5626,12 +5657,12 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   Node* no_ctrl = nullptr;
   Node* header = make_load(no_ctrl, header_addr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered);
 
-  Node* hash_val = get_hashcode_from_header(header, inline_fast_path_region);
+  Node* hash_val = get_hashcode_from_header(header, value_fast_path_region);
 
   result_val->init_req(_cache_path, hash_val);
   result_reg->init_req(_cache_path, control());
 
-  set_control(_gvn.transform(inline_fast_path_region));
+  set_control(_gvn.transform(value_fast_path_region));
   IfNode* fast_path_iff = nullptr;
   if (!stopped()) {
     if (UseHashcodeFastPath && is_static && !_gvn.type(obj)->is_valueklassptr()) {
@@ -5697,8 +5728,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             unmasked_result->init_req(3, result_long);
 
             Node* fast_path_result = AndI(_gvn.transform(unmasked_result), intcon(markWord::hash_mask));
-            result_reg->init_req(_inline_fast_path, _gvn.transform(unmasked_region));
-            result_val->init_req(_inline_fast_path, fast_path_result);
+            result_reg->init_req(_value_fast_path, _gvn.transform(unmasked_region));
+            result_val->init_req(_value_fast_path, fast_path_result);
           }
         }
       }
@@ -5712,8 +5743,8 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
   result_mem->init_req(_null_path, init_mem);
   result_io ->init_req(_cache_path, i_o());
   result_mem->init_req(_cache_path, init_mem);
-  result_io  ->set_req(_inline_fast_path, i_o());
-  result_mem ->set_req(_inline_fast_path, init_mem);
+  result_io  ->set_req(_value_fast_path, i_o());
+  result_mem ->set_req(_value_fast_path, init_mem);
 
   // Generate code for the slow case.  We make a call to hashCode().
   set_control(_gvn.transform(slow_region));
@@ -7735,6 +7766,11 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
   const TypeInt* basic_type_t = _gvn.type(basic_type)->is_int();
   if (!basic_type_t->is_con()) {
     return false; // Only intrinsify if mode argument is constant
+  }
+
+  const TypeAryPtr* array_t = _gvn.type(array)->isa_aryptr();
+  if (array_t == nullptr || array_t->elem() == Type::BOTTOM) {
+    return false; // failed input validation
   }
 
   array = must_be_not_null(array, true);
@@ -10342,4 +10378,3 @@ bool LibraryCallKit::inline_fp16_operations(vmIntrinsics::ID id, int num_args) {
   set_result(box_fp16_value(float16_box_type, field, result));
   return true;
 }
-

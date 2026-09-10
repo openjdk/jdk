@@ -608,13 +608,13 @@ static bool check_cycle(ciValueKlass* vk) {
 
 // Check if 'lhs' and 'rhs' are the same oop, possibly wrapped in an ValueTypeNode.
 static bool same_oop(PhaseGVN* phase, Node* lhs, Node* rhs) {
-  ValueTypeNode* lhs_inline = lhs->isa_ValueType();
-  if (lhs_inline != nullptr && lhs_inline->is_allocated(phase)) {
-    lhs = lhs_inline->get_oop();
+  ValueTypeNode* lhs_value = lhs->isa_ValueType();
+  if (lhs_value != nullptr && lhs_value->is_allocated(phase)) {
+    lhs = lhs_value->get_oop();
   }
-  ValueTypeNode* rhs_inline = rhs->isa_ValueType();
-  if (rhs_inline != nullptr && rhs_inline->is_allocated(phase)) {
-    rhs = rhs_inline->get_oop();
+  ValueTypeNode* rhs_value = rhs->isa_ValueType();
+  if (rhs_value != nullptr && rhs_value->is_allocated(phase)) {
+    rhs = rhs_value->get_oop();
   }
   return lhs->eqv_uncast(rhs);
 }
@@ -648,25 +648,25 @@ bool ValueTypeNode::can_emit_substitutability_check(PhaseGVN* phase, Node* lhs, 
     swap(lhs, rhs);
   }
 
-  ValueTypeNode* lhs_inline = lhs->as_ValueType();
-  ValueTypeNode* rhs_inline = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
-  if (rhs_inline != nullptr && lhs_inline->type()->value_klass() != rhs_inline->type()->value_klass()) {
+  ValueTypeNode* lhs_value = lhs->as_ValueType();
+  ValueTypeNode* rhs_value = rhs != nullptr ? rhs->isa_ValueType() : nullptr;
+  if (rhs_value != nullptr && lhs_value->type()->value_klass() != rhs_value->type()->value_klass()) {
     // Dead code, can skip the substitutability check
     return true;
   }
 
-  if (check_cycle(lhs_inline->value_klass())) {
+  if (check_cycle(lhs_value->value_klass())) {
     return false;
   }
 
-  for (uint i = 0; i < lhs_inline->field_count(); i++) {
-    ciType* ft = lhs_inline->field(i)->type();
+  for (uint i = 0; i < lhs_value->field_count(); i++) {
+    ciType* ft = lhs_value->field(i)->type();
     if (!ft->can_be_value_klass()) {
       continue;
     }
 
-    Node* lhs_fv = lhs_inline->field_value(i);
-    Node* rhs_fv = rhs_inline != nullptr ? rhs_inline->field_value(i) : nullptr;
+    Node* lhs_fv = lhs_value->field_value(i);
+    Node* rhs_fv = rhs_value != nullptr ? rhs_value->field_value(i) : nullptr;
     if (!can_emit_substitutability_check(phase, lhs_fv, rhs_fv)) {
       return false;
     }
@@ -892,8 +892,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
 
       Node* cur_lhs_field = cur_lhs->field_value(field_idx);
       Node* cur_rhs_field = cur_rhs->field_value(field_idx);
-      ValueTypeNode* cur_lhs_inline = cur_lhs_field->isa_ValueType();
-      ValueTypeNode* cur_rhs_inline = cur_rhs_field->isa_ValueType();
+      ValueTypeNode* cur_lhs_value = cur_lhs_field->isa_ValueType();
+      ValueTypeNode* cur_rhs_value = cur_rhs_field->isa_ValueType();
 
       Node* preprocess = emit_substitutability_check_pointer(kit, result, cur_lhs_field, cur_rhs_field);
       if (kit->stopped()) {
@@ -981,8 +981,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
 
       // Both must be vk
       // ValueTypeNodes need no (new) field loads, so we can use the uncasted value below.
-      if (cur_lhs_inline != nullptr && cur_lhs_inline->value_klass() == vk) {
-        cur_lhs_field = cur_lhs_inline;
+      if (cur_lhs_value != nullptr && cur_lhs_value->value_klass() == vk) {
+        cur_lhs_field = cur_lhs_value;
       } else {
         Node* not_vk = kit->top();
         cur_lhs_field = kit->gen_checkcast(cur_lhs_field, vk_klass, &not_vk);
@@ -993,8 +993,8 @@ Node* ValueTypeNode::emit_substitutability_check(GraphKit* kit, Node* lhs, Node*
         cur_lhs_field = ValueTypeNode::make_from_oop(kit, cur_lhs_field, vk);
       }
 
-      if (cur_rhs_inline != nullptr && cur_rhs_inline->value_klass() == vk) {
-        cur_rhs_field = cur_rhs_inline;
+      if (cur_rhs_value != nullptr && cur_rhs_value->value_klass() == vk) {
+        cur_rhs_field = cur_rhs_value;
       } else {
         Node* not_vk = kit->top();
         cur_rhs_field = kit->gen_checkcast(cur_rhs_field, vk_klass, &not_vk);
