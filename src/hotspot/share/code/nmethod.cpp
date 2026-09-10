@@ -40,6 +40,7 @@
 #include "compiler/directivesParser.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.inline.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -1508,14 +1509,18 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
   }
 
   run_nmethod_entry_barrier();
-  nmethod* nm_copy = new (size(), code_blob_type) nmethod(*this);
 
-  if (nm_copy == nullptr) {
+  // Relocation is not compilation: on allocation failure it should not
+  // stop compilation.
+  void* blob = CodeCache::allocate(size(), code_blob_type, false /* handle_alloc_failure */);
+  if (blob == nullptr) {
     if (out_of_space != nullptr) {
       *out_of_space = true;
     }
     return nullptr;
   }
+
+  nmethod* nm_copy = ::new (blob) nmethod(*this);
 
   // To make dependency checking during class loading fast, record
   // the nmethod dependencies in the classes it is dependent on.
@@ -1596,13 +1601,6 @@ bool nmethod::is_relocatable() {
 
 void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
   return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level));
-}
-
-void* nmethod::operator new(size_t size, int nmethod_size, CodeBlobType code_blob_type) throw () {
-  // HotCodeHeap is used for grouping hot code which is relocated, not compiled, there.
-  // It getting full should not stop compilation.
-  bool handle_alloc_failure = (code_blob_type != CodeBlobType::MethodHot);
-  return CodeCache::allocate(nmethod_size, code_blob_type, handle_alloc_failure);
 }
 
 void* nmethod::operator new(size_t size, int nmethod_size, bool allow_NonNMethod_space) throw () {
