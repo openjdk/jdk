@@ -34,14 +34,14 @@ import nsk.share.gc.gp.*;
 import nsk.share.test.ExecutionController;
 import nsk.share.test.Stresser;
 import jdk.test.lib.Utils;
-import jdk.test.whitebox.WhiteBox;
+import jdk.test.lib.classloader.ClassUnloadCommon;
 
 /**
  * The <code>ClassUnloader</code> class allows to force VM to unload class(es)
- * using WhiteBox.fullGC technique.
+ * using the full GC from ClassUnloadCommon.
  *
  * <p>The method <code>unloadClass()</code> is provided which calls
- * WhiteBox.fullGC to cleanup the heap. So, if all references to a class
+ * ClassUnloadCommon.triggerUnloading() to cleanup the heap. So, if all references to a class
  * and its loader are canceled, this may result in unloading the class.
  *
  * <p>ClassUnloader mainly intends to unload a class which was loaded
@@ -235,7 +235,7 @@ public class ClassUnloader {
      * @return  <i>true</i> if the class has been unloaded
              or <i>false</i> otherwise
      *
-     * @see WhiteBox.getWhiteBox().fullGC()
+     * @see ClassUnloadCommon#triggerUnloading()
      */
     public boolean unloadClass() {
         // free references to class and class loader to be able for collecting by GC
@@ -243,7 +243,7 @@ public class ClassUnloader {
         customClassLoader = null;
 
         // force class unloading by triggering full GC
-        WhiteBox.getWhiteBox().fullGC();
+        ClassUnloadCommon.triggerUnloading();
 
         if (isClassLoaderReclaimed()) {
             System.out.println("ClassUnloader: class loader has been reclaimed.");
@@ -263,18 +263,15 @@ public class ClassUnloader {
              or <i>false</i> otherwise
      */
     public boolean unloadClassAndWait(long timeout) {
-        timeout = Utils.adjustTimeout(timeout);
-        boolean wasUnloaded;
-        final long waitTime = 100;
-        do {
-            try {
-                Thread.sleep(waitTime);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-            timeout -= waitTime;
-            wasUnloaded = unloadClass();
-        } while (!wasUnloaded && timeout > 0);
+        classObjects.removeAllElements();
+        customClassLoader = null;
+        boolean wasUnloaded = ClassUnloadCommon.triggerUnloadingUntil(this::isClassLoaderReclaimed,
+                                                                      Utils.adjustTimeout(timeout));
+        if (wasUnloaded) {
+            System.out.println("ClassUnloader: class loader has been reclaimed.");
+        } else {
+            System.out.println("ClassUnloader: class loader is still reachable.");
+        }
         return wasUnloaded;
     }
 }
