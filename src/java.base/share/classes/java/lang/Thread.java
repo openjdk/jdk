@@ -2486,9 +2486,9 @@ public class Thread implements Runnable {
      * already accept whatever &quot;default&quot; behavior the system
      * provided.
      *
-     * <p>Note that the default uncaught exception handler should not usually
-     * defer to the thread's {@code ThreadGroup} object, as that could cause
-     * infinite recursion.
+     * {@note The default uncaught exception handler should not
+     * usually defer to the thread's {@code ThreadGroup} object, as that could
+     * cause infinite recursion.}
      *
      * @param ueh the object to use as the default uncaught exception handler.
      * If {@code null} then there is no default handler.
