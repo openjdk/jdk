@@ -258,7 +258,7 @@ class PollsetSelectorImpl
                 SelectionKeyImpl ski = fdToKey.get(fd);
                 // ski is null in the case of an interrupt
                 if (ski != null) {
-                    int rOps = Pollset.getEvents(event);
+                    int rOps = Pollset.getRevents(event);
                     numKeysUpdated += processReadyEvents(rOps, ski, action);
                 }
             }

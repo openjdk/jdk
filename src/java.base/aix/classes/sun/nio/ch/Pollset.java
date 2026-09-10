@@ -52,6 +52,7 @@ public class Pollset {
      *     int   fd;
      * }
      */
+
     public static final int SIZEOF_POLLCTL           = pollCtlSize();
     public static final int OFFSETOF_POLLCTL_CMD     = pollCtlCmdOffset();
     public static final int OFFSETOF_POLLCTL_EVENTS  = pollCtlEventsOffset();
@@ -126,13 +127,8 @@ public class Pollset {
     /**
      * Returns event->revents
      */
-    public static char getRevents(long eventAddress) {
+    public static int getRevents(long eventAddress) {
         return unsafe.getChar(eventAddress + OFFSETOF_REVENTS);
-    }
-
-    public static boolean isReventsError(long eventAddress) {
-        char revents = getRevents(eventAddress);
-        return (revents & PS_POLLNVAL) != 0 || (revents & PS_POLLERR) != 0;
     }
 
     static {
