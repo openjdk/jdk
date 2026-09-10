@@ -43,22 +43,19 @@ public class OopField extends Field {
     super(holder, fieldArrayIndex);
   }
 
-  private Klass getFieldKlass() {
-    var sig = getSignature().asString();
-    var klsName = sig.substring(1, sig.length() - 1); // extracts L(class name);
-    return SystemDictionaryHelper.findInstanceKlass(klsName);
-  }
-
   public Oop getValue(Oop obj) {
     if (!isVMField() && !obj.isInstance() && !obj.isArray()) {
       throw new InternalError();
     }
     var heap = obj.getHeap();
     if (isFlat()) {
+      var layout = ((InstanceKlass)obj.getKlass()).getValueFieldLayoutInfoArray().at(getFieldIndex());
+      ValueKlass vk = layout.getKlass();
+
       // OopHandle does not allow to call addOffsetTo() due to prevent interior
       // object pointers. So addOffsetToAsOopHandle() is required here.
       Address payload = obj.getHandle().addOffsetToAsOopHandle(getOffset());
-      return heap.newOop(payload, (ValueKlass)getFieldKlass(), this);
+      return heap.newOop(payload, vk, this);
     } else {
       return heap.newOop(getValueAsOopHandle(obj));
     }
