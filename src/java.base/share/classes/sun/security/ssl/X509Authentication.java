@@ -364,19 +364,6 @@ enum X509Authentication implements SSLAuthentication {
             }
 
             PublicKey serverPublicKey = serverCerts[0].getPublicKey();
-            if (!shc.negotiatedProtocol.useTLS13PlusSpec() &&
-                    ("ML-DSA".equalsIgnoreCase(
-                    serverPrivateKey.getAlgorithm())
-                    || "ML-DSA".equalsIgnoreCase(
-                    serverPublicKey.getAlgorithm()))) {
-                if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
-                    SSLLogger.fine(serverAlias +
-                            " ML-DSA certificates are not supported for " +
-                            shc.negotiatedProtocol.name);
-                }
-                continue;
-            }
-
             if ((!serverPrivateKey.getAlgorithm().equals(keyType))
                     || (!serverPublicKey.getAlgorithm().equals(keyType))) {
                 if (SSLLogger.isOn() && SSLLogger.isOn(SSLLogger.Opt.SSL)) {
