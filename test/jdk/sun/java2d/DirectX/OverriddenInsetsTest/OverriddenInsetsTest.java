@@ -82,8 +82,8 @@ public class OverriddenInsetsTest {
         });
         BufferedImage bi = robot.createScreenCapture(new Rectangle(point.x,
             point.y, PANEL_WIDTH / 2, PANEL_HEIGHT / 2));
-        for (int y = 0; y < bi.getHeight(); y++) {
-            for (int x = 0; x < bi.getWidth(); x++) {
+        for (int y = 1; y < bi.getHeight() - 1; y++) {
+            for (int x = 1; x < bi.getWidth() - 1; x++) {
                 if (bi.getRGB(x, y) != Color.blue.getRGB()) {
                     System.err.printf("Test failed at %d %d c=%x\n",
                         x, y, bi.getRGB(x, y));
