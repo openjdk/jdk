@@ -550,7 +550,7 @@ enum SignatureScheme {
             if (keySize >= ss.minimalKeySize &&
                     keyAlgorithm.equalsIgnoreCase(ss.keyAlgorithm) &&
                     ss.isAllowed(constraints, version, HANDSHAKE_SCOPE)) {
-                if (ss.checkNamedParam()) {
+                if (ss.hasNamedParam()) {
                     String keyParams = KeyUtil.getAlgorithm(signingKey);
                     if (!ss.algorithm.equalsIgnoreCase(keyParams)) {
                         if (SSLLogger.isOn() &&
@@ -625,8 +625,9 @@ enum SignatureScheme {
         return null;
     }
 
-    private boolean checkNamedParam() {
-        return "ML-DSA".equalsIgnoreCase(keyAlgorithm);
+    private boolean hasNamedParam() {
+        return "EdDSA".equalsIgnoreCase(keyAlgorithm) ||
+                "ML-DSA".equalsIgnoreCase(keyAlgorithm);
     }
 
     // Returns true if this signature scheme is supported for the given
@@ -673,7 +674,7 @@ enum SignatureScheme {
             return null;
         }
 
-        if (checkNamedParam()) {
+        if (hasNamedParam()) {
             String keyParams = KeyUtil.getAlgorithm(publicKey);
             if (!algorithm.equalsIgnoreCase(keyParams)) {
                 throw new InvalidKeyException("Unsupported named parameter: " +
