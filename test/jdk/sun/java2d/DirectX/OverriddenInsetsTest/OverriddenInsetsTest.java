@@ -58,6 +58,7 @@ public class OverriddenInsetsTest {
             getColorModel().getPixelSize() < 16)
         {
             System.out.println("<16 bit mode detected, test passed");
+            return;
         }
         try {
             EventQueue.invokeAndWait(OverriddenInsetsTest::createAndShowGUI);
@@ -128,9 +129,9 @@ public class OverriddenInsetsTest {
         @Override
         public void paint(Graphics g) {
             g.setColor(Color.red);
-            g.drawRect(0,0,getWidth() - 1,getHeight() - 1);
+            g.drawRect(0, 0, getWidth() - 1, getHeight() - 1);
             g.setColor(Color.blue);
-            g.fillRect(0,0,getWidth() / 2,getHeight() / 2);
+            g.fillRect(0, 0, getWidth() / 2, getHeight() / 2);
         }
     }
 }
