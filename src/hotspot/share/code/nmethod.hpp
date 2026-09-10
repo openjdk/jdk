@@ -607,7 +607,7 @@ public:
   // relocation, otherwise the relocated nmethod (relocation_result is set
   // if provided).
   //
-  // If relocation is succeeded, the relocated nmethod is installed into
+  // If relocation succeeds, the relocated nmethod is installed into
   // the owner of the original nmethod and the original nmethod is made
   // not entrant.
   nmethod* relocate(CodeBlobType code_blob_type, RelocationResult* relocation_result = nullptr);
