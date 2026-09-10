@@ -2201,8 +2201,13 @@ void LoadFlatNode::expand_projs_atomic(PhaseIterGVN& igvn, Node* ctrl, Node* pay
 Node* LoadFlatNode::get_payload_value(PhaseIterGVN& igvn, Node* ctrl, BasicType payload_bt, Node* payload, const Type* value_type, BasicType value_bt, int offset) {
   assert((offset + type2aelembytes(value_bt)) <= type2aelembytes(payload_bt), "Value does not fit into payload");
   Node* value = nullptr;
-  // Shift to the right position in the long value
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+  // Shift the field to the low-order bits of the payload.
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(value_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     value = igvn.transform(new URShiftLNode(payload, shift_val));
     value = igvn.transform(new ConvL2INode(value));
@@ -2398,7 +2403,12 @@ Node* StoreFlatNode::set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt,
     assert(val_bt == T_INT, "Unsupported type: %s", type2name(val_bt));
   }
 
-  Node* shift_val = igvn.intcon(offset << LogBitsPerByte);
+#ifdef VM_LITTLE_ENDIAN
+  int shift = offset << LogBitsPerByte;
+#else
+  int shift = (type2aelembytes(payload_bt) - type2aelembytes(val_bt) - offset) << LogBitsPerByte;
+#endif
+  Node* shift_val = igvn.intcon(shift);
   if (payload_bt == T_LONG) {
     // Convert to long and remove the sign bit (the backend will fold this and emit a zero extend i2l)
     value = igvn.transform(new ConvI2LNode(value));
