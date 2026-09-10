@@ -182,8 +182,11 @@ public class ObjectHeap {
       if (klass instanceof TypeArrayKlass) return new TypeArray(handle, this);
       if (klass instanceof FlatArrayKlass) return new FlatArray(handle, this);
       if (klass instanceof ObjArrayKlass) return new ObjArray(handle, this);
-      if (klass instanceof InstanceKlass) return new Instance(handle, this);
+
+      // ValueKlass should be evaluated before InstanceKlass
+      // because ValueKlass inherits InstanceKlass.
       if (klass instanceof ValueKlass)    return new Value(handle, this);
+      if (klass instanceof InstanceKlass) return new Instance(handle, this);
     }
 
     if (DEBUG) {
