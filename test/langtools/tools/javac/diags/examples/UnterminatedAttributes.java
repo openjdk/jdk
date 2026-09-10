@@ -27,6 +27,6 @@
 // run: backdoor
 // options: -processor DocCommentProcessor -proc:only
 
-/** {@note [ } */
+/** {@note ( } */
 class UnterminatedAttributes { }
 

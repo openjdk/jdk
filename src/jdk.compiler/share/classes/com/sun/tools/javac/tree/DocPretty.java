@@ -367,9 +367,9 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
             print(node.getTagName());
             List<? extends DocTree> attrs = node.getAttributes();
             if (!attrs.isEmpty()) {
-                print(" [");
+                print(" (");
                 print(attrs, ' ');
-                print(']');
+                print(')');
             }
             if (node.getBody() != null && !node.getBody().isEmpty()) {
                 print(' ');

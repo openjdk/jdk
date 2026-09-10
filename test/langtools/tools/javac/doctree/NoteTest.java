@@ -58,7 +58,7 @@ DocComment[DOC_COMMENT, pos:0
 
     /**
      * abc.
-     * @note [attr="value"] note body
+     * @note (attr="value") note body
      */
     void attr_block_note() { }
 /*
@@ -105,7 +105,7 @@ DocComment[DOC_COMMENT, pos:0
 */
 
     /**
-     * abc {@note [attr="value"] note body} def.
+     * abc {@note (attr="value") note body} def.
      */
     void attr_inline_note() { }
 /*
@@ -153,7 +153,7 @@ DocComment[DOC_COMMENT, pos:0
 
     /**
      * abc
-     * @note [attr=val]
+     * @note (attr=val)
      */
     void empty_body_block_note() { }
 /*
@@ -198,7 +198,7 @@ DocComment[DOC_COMMENT, pos:0
 */
 
     /**
-     * abc {@note [attr="value"]} def.
+     * abc {@note (attr="value")} def.
      */
     void empty_body_inline_note() { }
 /*
