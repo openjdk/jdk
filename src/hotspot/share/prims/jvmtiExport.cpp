@@ -2969,8 +2969,8 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
-  const bool is_inline = object->is_value();
-  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
     return;
   }
   HandleMark hm(thread);
@@ -2981,7 +2981,7 @@ void JvmtiExport::post_vm_object_alloc(JavaThread *thread, oop object) {
   JvmtiEnvIterator it;
   for (JvmtiEnv* env = it.first(); env != nullptr; env = it.next(env)) {
     if (env->is_enabled(JVMTI_EVENT_VM_OBJECT_ALLOC) &&
-        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_VM_OBJECT_ALLOC, ("[%s] Evt vmobject alloc sent %s",
                                          JvmtiTrace::safe_get_thread_name(thread),
                                          object->klass()->external_name()));
@@ -3011,8 +3011,8 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   if (thread->should_hide_jvmti_events()) {
     return;
   }
-  const bool is_inline = object->is_value();
-  if (is_inline && !JvmtiExport::can_support_value_objects()) {
+  const bool is_value = object->is_value();
+  if (is_value && !JvmtiExport::can_support_value_objects()) {
     return;
   }
 
@@ -3023,7 +3023,7 @@ void JvmtiExport::post_sampled_object_alloc(JavaThread *thread, oop object) {
   for (JvmtiEnvThreadState* ets = it.first(); ets != nullptr; ets = it.next(ets)) {
     JvmtiEnv *env = ets->get_env();
     if (ets->is_enabled(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC) &&
-        (!is_inline || env->get_capabilities()->can_support_value_objects != 0)) {
+        (!is_value || env->get_capabilities()->can_support_value_objects != 0)) {
       EVT_TRACE(JVMTI_EVENT_SAMPLED_OBJECT_ALLOC,
                 ("[%s] Evt sampled object alloc sent %s",
                  JvmtiTrace::safe_get_thread_name(thread),
