@@ -167,7 +167,8 @@ class ValuePayloadContext {
   int _offset_in_obj; // in bytes
 public:
   ValuePayloadContext(ValueKlass* klass, int offset_in_obj) :
-    _klass(klass), _offset_in_obj(offset_in_obj) {
+    _klass(klass), _offset_in_obj(offset_in_obj)
+  {
     precond(klass != nullptr);
     precond(offset_in_obj > 0);
   }

@@ -883,7 +883,6 @@ public:
                           is_null ? "Field marked as null" : "Field marked as non-null");
           }
         } else {
-          // Was this a bug before this change?
           fd->print_on(_st, _vpc); // print just the name and offset
           FakeOop field_value = _fake_oop.obj_field(fd->field_offset_in_obj(_vpc));
           print_oop_info_cr(_st, field_value);
@@ -1047,7 +1046,7 @@ void AOTMapLogger::print_oop_details(FakeOop fake_oop, outputStream* st) {
       if (!is_null) {
         st->cr();
         ValuePayloadContext vpc{elem_k, elem_offset};
-        ArchivedFieldPrinter print_field(fake_flat_array, st, 0, &vpc);
+        ArchivedFieldPrinter print_field(fake_flat_array, st, 1, &vpc);
         elem_k->do_nonstatic_fields(&print_field);
       } else {
         assert(!real_klass->is_null_free_array_klass(), "must be");

@@ -433,7 +433,7 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
       st->print_cr(" - (null)");
     } else {
       ValuePayloadContext vpc{vk, fa->value_offset_as_int(index, layout_helper())};
-      FieldPrinter print_field(st, fa, /*indent*/0, &vpc);
+      FieldPrinter print_field(st, fa, /* indent */1, &vpc);
       vk->do_nonstatic_fields(&print_field);
     }
     st->cr();
