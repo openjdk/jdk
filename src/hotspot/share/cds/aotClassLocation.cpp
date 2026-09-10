@@ -51,6 +51,9 @@
 Array<ClassPathZipEntry*>* AOTClassLocationConfig::_dumptime_jar_files = nullptr;
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
+const char* AOTClassLocationConfig::_runtime_lcp;
+size_t AOTClassLocationConfig::_runtime_lcp_len;
+bool AOTClassLocationConfig::_use_lcp_match;
 
 // A ClassLocationStream represents a list of code locations, which can be iterated using
 // start() and has_next().
@@ -507,47 +510,13 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
   _max_used_index = 0;
 }
 
-const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index) const {
-  AllClassLocationStreams all_css;
-  ClassLocationStream runtime_css = all_css.boot_and_app_cp();
-
-  const AOTClassLocation* cs = class_location_at(shared_path_index);
-  const char* effective_dumptime_path = cs->path();
-
-  const char* runtime_lcp = nullptr;
-  size_t runtime_lcp_len = 0;
-  bool use_lcp_match = need_lcp_match(all_css);
-
-  if (use_lcp_match && _dumptime_lcp_len > 0) {
-    runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
-    effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index, const char* path) const {
+  const char* real_path = path;
+  if (_use_lcp_match && !class_location_at(shared_path_index)->from_module_path()) {
+    // lcp match is not done for module paths
+    real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_lcp, _runtime_lcp_len);
   }
-
-  const char* runtime_path = get_runtime_path_helper(cs, effective_dumptime_path, runtime_css);
-
-  if (use_lcp_match && runtime_lcp_len > 0) {
-    os::free((void*)runtime_lcp);
-  }
-  return runtime_path;
-}
-
-const char* AOTClassLocationConfig::get_runtime_path_helper(const AOTClassLocation* cs, const char* effective_dumptime_path,
-                                                            ClassLocationStream& runtime_css) const {
-  if (!cs->from_cpattr()) {
-    runtime_css.start();
-    const char* runtime_path = nullptr;
-
-    while (runtime_css.has_next()) {
-      runtime_path = runtime_css.get_next();
-      if (file_exists(runtime_path) && os::same_files(effective_dumptime_path, runtime_path)) {
-        return runtime_path;
-      }
-    }
-    // The file was not found, fall back to the dumptime path
-    return cs->path();
-  } else {
-    return effective_dumptime_path;
-  }
+  return real_path;
 }
 
 // Find the longest common prefix of two paths, up to max_lcp_len.
@@ -793,8 +762,7 @@ AOTClassLocationConfig* AOTClassLocationConfig::write_to_archive() const {
 bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
                                               int index_start, int index_end,
                                               ClassLocationStream& runtime_css,
-                                              bool use_lcp_match, const char* runtime_lcp,
-                                              size_t runtime_lcp_len) const {
+                                              RuntimePathInfo& path_info) const {
   if (index_start >= index_end && runtime_css.is_empty()) { // nothing to check
     return true;
   }
@@ -805,9 +773,10 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
   if (lt.is_enabled()) {
     LogStream ls(lt);
     ls.print("Checking %s classpath from index [%d]", which, index_start);
-    ls.print_cr("%s", use_lcp_match ? " (with longest common prefix substitution)" : "");
+    ls.print_cr("%s", path_info.use_lcp_match ? " (with longest common prefix substitution)" : "");
     ls.print("- expected : '");
-    print_dumptime_classpath(ls, index_start, index_end, use_lcp_match, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+    print_dumptime_classpath(ls, index_start, index_end, path_info.use_lcp_match, _dumptime_lcp_len,
+                             path_info.runtime_lcp, path_info.runtime_lcp_len);
     ls.print_cr("'");
     ls.print("- actual   : '");
     runtime_css.print(&ls);
@@ -819,8 +788,9 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
     ResourceMark rm;
     const AOTClassLocation* cs = class_location_at(i);
     const char* effective_dumptime_path = cs->path();
-    if (use_lcp_match && _dumptime_lcp_len > 0) {
-      effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len, runtime_lcp, runtime_lcp_len);
+    if (path_info.use_lcp_match && _dumptime_lcp_len > 0) {
+      effective_dumptime_path = substitute(effective_dumptime_path, _dumptime_lcp_len,
+                                           path_info.runtime_lcp, path_info.runtime_lcp_len);
     }
 
     log_info(class, path)("Checking [%d] '%s' %s%s", i, effective_dumptime_path, cs->file_type_string(),
@@ -1037,7 +1007,8 @@ bool AOTClassLocationConfig::need_lcp_match_helper(int start, int end, ClassLoca
   return true;
 }
 
-bool AOTClassLocationConfig::validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
+bool AOTClassLocationConfig::validate_helper(const char* cache_filename, bool has_aot_linked_classes,
+                                             bool has_full_module_graph, RuntimePathInfo& path_info) const {
   ResourceMark rm;
   AllClassLocationStreams all_css;
 
@@ -1047,7 +1018,7 @@ bool AOTClassLocationConfig::validate_helper(const char* cache_filename, bool ha
     return false;
   }
 
-  if (!check_classpaths(has_aot_linked_classes, all_css)) {
+  if (!check_classpaths(has_aot_linked_classes, all_css, path_info)) {
     return false;
   }
 
@@ -1064,37 +1035,32 @@ bool AOTClassLocationConfig::check_jrt(bool has_aot_linked_classes) const {
   return status;
 }
 
-bool AOTClassLocationConfig::check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css) const {
-  const char* runtime_lcp = nullptr;
-  size_t runtime_lcp_len = 0;
-
-  bool use_lcp_match = need_lcp_match(all_css);
+bool AOTClassLocationConfig::check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css,
+                                              RuntimePathInfo& path_info) const {
+  path_info.use_lcp_match = need_lcp_match(all_css);
   log_info(class, path)("Longest common prefix substitution in boot/app classpath matching: %s",
-                        use_lcp_match ? "yes" : "no");
-  if (use_lcp_match) {
-    runtime_lcp = find_lcp(all_css.boot_and_app_cp(), runtime_lcp_len);
-    log_info(class, path)("Longest common prefix: %s (%zu chars)", runtime_lcp, runtime_lcp_len);
+                        path_info.use_lcp_match ? "yes" : "no");
+  if (path_info.use_lcp_match) {
+    path_info.runtime_lcp = find_lcp(all_css.boot_and_app_cp(), path_info.runtime_lcp_len);
+    log_info(class, path)("Longest common prefix: %s (%zu chars)", path_info.runtime_lcp, path_info.runtime_lcp_len);
   }
 
-  bool status = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(), boot_cp_end_index(), all_css.boot_cp(),
-                                 use_lcp_match, runtime_lcp, runtime_lcp_len);
+  bool status = check_classpaths(true, has_aot_linked_classes, boot_cp_start_index(),
+                                 boot_cp_end_index(), all_css.boot_cp(), path_info);
   log_info(class, path)("Archived boot classpath validation: %s", status ? "passed" : "failed");
 
   if (status && need_to_check_app_classpath()) {
-    status = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(), app_cp_end_index(), all_css.app_cp(),
-                              use_lcp_match, runtime_lcp, runtime_lcp_len);
+    status = check_classpaths(false, has_aot_linked_classes, app_cp_start_index(),
+                              app_cp_end_index(), all_css.app_cp(), path_info);
     log_info(class, path)("Archived app classpath validation: %s", status ? "passed" : "failed");
-  }
-
-  if (runtime_lcp_len > 0) {
-    os::free((void*)runtime_lcp);
   }
 
   return status;
 }
 
 bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const {
-  if (!validate_helper(cache_filename, has_aot_linked_classes, has_full_module_graph)) {
+  RuntimePathInfo path_info { false, nullptr, 0 };
+  if (!validate_helper(cache_filename, has_aot_linked_classes, has_full_module_graph, path_info)) {
     const char* mismatch_msg = "shared class paths mismatch";
     const char* hint_msg = log_is_enabled(Info, class, path) ?
         "" : " (hint: enable -Xlog:class+path=info to diagnose the failure)";
@@ -1110,6 +1076,11 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     } else {
       AOTMetaspace::report_loading_error("%s%s", mismatch_msg, hint_msg);
     }
+
+    if (path_info.runtime_lcp_len > 0) {
+      os::free((void*)path_info.runtime_lcp);
+    }
+
     return false;
   }
 
@@ -1124,6 +1095,14 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
         "Dynamic archiving is disabled because base layer archive has appended boot classpath");
     }
   }
+
+  if (_runtime_lcp_len > 0) {
+    os::free((void*)_runtime_lcp);
+  }
+
+  _use_lcp_match = path_info.use_lcp_match;
+  _runtime_lcp = path_info.runtime_lcp;
+  _runtime_lcp_len = path_info.runtime_lcp_len;
 
   _runtime_instance = this;
   return true;
