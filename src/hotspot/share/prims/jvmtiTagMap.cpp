@@ -2547,7 +2547,7 @@ public:
   void do_cld(ClassLoaderData* cld) {
     CLDKlassClosure clk;
     cld->classes_do(&clk);
-    _continue = clk.stopped();
+    _continue = !clk.stopped();
   }
 
   inline bool stopped() const { return !_continue; }
@@ -3182,8 +3182,6 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
   // Preloaded classes and loader from the system dictionary
   CLDRootsClosure cld_roots_closure;
-  // CLDToOopClosure cld_closure(&cld_roots_closure, ClassLoaderData::_claim_none);
-
   ClassLoaderDataGraph::always_strong_cld_do(&cld_roots_closure);
   if (cld_roots_closure.stopped()) {
     return false;
