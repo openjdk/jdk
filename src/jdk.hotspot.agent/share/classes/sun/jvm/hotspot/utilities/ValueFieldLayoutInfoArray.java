@@ -53,6 +53,10 @@ public class ValueFieldLayoutInfoArray extends GenericArray {
     }
 
     public ValueFieldLayoutInfo at(int i) {
+        if (i < 0 || i >= length()) {
+            throw new ArrayIndexOutOfBoundsException(i);
+        }
+
         var addr = getDataStart().addOffsetTo(i * getElemType().getSize());
         return new ValueFieldLayoutInfo(addr);
     }
