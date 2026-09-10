@@ -28,6 +28,7 @@ package jdk.jshell;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import jdk.internal.javac.PreviewFeature;
 
 /**
  * A Snippet represents a snippet of Java source code as passed to
@@ -284,6 +285,7 @@ public abstract class Snippet {
          * {@code SubKind} of {@link Kind#VAR}.
          * @since 28
          */
+        @PreviewFeature(feature=PreviewFeature.Feature.ENHANCED_LOCAL_VARIABLE_DECLARATIONS, reflective=true)
         VAR_BINDING_SUBKIND(Kind.VAR, true, true, true),
 
         /**
