@@ -1195,6 +1195,7 @@ class InvokerBytecodeGenerator {
         Label tryStart = cob.newLabel();
         Label tryEnd = cob.newLabel();
         Label catchStart = cob.newLabel();
+        Label end = cob.newLabel();
 
         emitPushArgument(cob, invoker, 0); // push lock
         cob.monitorenter();
@@ -1205,12 +1206,14 @@ class InvokerBytecodeGenerator {
         cob.labelBinding(tryEnd);
         emitPushArgument(cob, invoker, 0); // push lock
         cob.monitorexit();
-        cob.return_(TypeKind.from(returnType));
+        cob.goto_(end);
 
         cob.labelBinding(catchStart); // exception on top
         emitPushArgument(cob, invoker, 0); // push lock
         cob.monitorexit(); // exit
         cob.athrow(); // throw
+
+        cob.labelBinding(end);
 
         cob.exceptionCatchAll(tryStart, tryEnd, catchStart);
 
