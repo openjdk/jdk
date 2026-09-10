@@ -106,12 +106,14 @@ public class OverflowCodeCacheTest {
         System.out.println("allocating till possible...");
         ArrayList<Long> blobs = new ArrayList<>();
         int compilationActivityMode = -1;
+        int compilationActivityModeBefore = -1;
         CodeCacheConstraints constraints = getCodeCacheConstraints(type);
         // Lock compilation to be able to better control code cache space
         WHITE_BOX.lockCompilation();
         try {
             long addr;
             int size = (int) (getHeapSize() >> 7);
+            compilationActivityModeBefore = WHITE_BOX.getCompilationActivityMode();
             while ((addr = WHITE_BOX.allocateCodeBlob(size, type.id)) != 0) {
                 blobs.add(addr);
 
@@ -154,6 +156,12 @@ public class OverflowCodeCacheTest {
                 helper.method(0, 0, 0, null);
             }
         }
+
+        if (type == BlobType.MethodHot) {
+            Asserts.assertEQ(compilationActivityMode, compilationActivityModeBefore,
+                    "MethodHot overflow must not change compilation activity mode");
+        }
+
         // Only check this if compilation is disabled, otherwise the sweeper might have
         // freed enough nmethods to allow for re-enabling compilation.
         if (COMPILATION_DISABLED) {
