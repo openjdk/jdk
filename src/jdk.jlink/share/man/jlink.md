@@ -238,7 +238,7 @@ Description
 ### Plugin `security-properties`
 
 Options
-:   `--security-properties=`*filename*`
+:   `--security-properties=`*filename*
 
 Description
 :   Override the security properties in the `conf/security/java.security`
