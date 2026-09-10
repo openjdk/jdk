@@ -41,8 +41,6 @@
 
 package compiler.hotcode;
 
-import java.lang.management.MemoryPoolMXBean;
-import java.lang.management.MemoryUsage;
 import java.lang.reflect.Method;
 
 import jdk.test.lib.Asserts;
@@ -56,7 +54,6 @@ public class TestFullHotCodeHeap {
 
     private static final int C2_LEVEL = 4;
     private static final int BLOB_SIZE = 128;
-    private static final int MIN_FREE_SPACE = 2 * BLOB_SIZE;
 
     public static void main(String[] args) throws Exception {
         Method method1 = getMethod("simple1");
@@ -66,7 +63,8 @@ public class TestFullHotCodeHeap {
         NMethod nmethod = NMethod.get(method1, false);
         Asserts.assertNotNull(nmethod, "`simple1` is not compiled");
 
-        fillHotCodeHeap();
+        // Fill HotCodeHeap until allocation fails.
+        while (WHITE_BOX.allocateCodeBlob(BLOB_SIZE, BlobType.MethodHot.id) != 0) {}
 
         // Not enough space is left in the hot code heap, so the relocation must fail
         // and leave the nmethod where it is.
@@ -78,21 +76,6 @@ public class TestFullHotCodeHeap {
 
         simple2(11);
         compileWithC2(getMethod("simple2"));
-    }
-
-    private static void fillHotCodeHeap() {
-        MemoryPoolMXBean pool = BlobType.MethodHot.getMemoryPool();
-        Asserts.assertNotNull(pool, "MethodHot heap is not available");
-
-        while (freeSpace(pool) >= MIN_FREE_SPACE) {
-            long blob = WHITE_BOX.allocateCodeBlob(BLOB_SIZE, BlobType.MethodHot.id);
-            Asserts.assertNE(0L, blob, "Failed to allocate a blob in the MethodHot heap");
-        }
-    }
-
-    private static long freeSpace(MemoryPoolMXBean pool) {
-        MemoryUsage usage = pool.getUsage();
-        return usage.getMax() - usage.getUsed();
     }
 
     private static Method getMethod(String name) throws Exception {
