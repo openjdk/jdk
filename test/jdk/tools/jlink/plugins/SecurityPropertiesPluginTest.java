@@ -27,16 +27,14 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 
-import jtreg.SkippedException;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.util.FileUtils;
 import jdk.tools.jlink.internal.LinkableRuntimeImage;
+import jtreg.SkippedException;
 import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageGenerator.JLinkTask;
@@ -89,32 +87,45 @@ public class SecurityPropertiesPluginTest {
                                          kiwi, mango
         # Property with ':' delimiter
         Truth:Beauty
+        abc=euro_\\u20AC_value
         """;
 
-    /*
-     * Test with file containing the following properties:
-     * one that overrides a current property,
-     * one that is a user-defined property,
-     * two include properties (it should only use the 2nd one)
-     * one that overrides a multi-lined value property,
-     * one that uses a character that is encoded differently in
-     * ISO-8859-1 vs. UTF-8,
-     * one that contains an empty string as the value.
-     * one that is a multi-lined value property.
-     *
-     * Each entry contains the key, value, and the expected value after
-     * loading/parsing.
+    /**
+     * Properties to add or override.
+     * Each entry contains the key, value, the expected key and the expected
+     * value after loading/parsing.
      */
     private static final String[][] EXTRA_PROPS = new String[][] {
-        {"keystore.type", "bogus", "bogus"},
-        {"foo", "bar", "bar"},
-        {"include", "doNotUse", "use"},
-        {"include", "use", "use"},
-        {"jdk.certpath.disabledAlgorithms", "MD2", "MD2"},
-        {"iso_8859_1_char", "é", "é"},
-        {"empty", "", ""},
-        {"equalSign", "\\=", "="},
-        {"multiLine", "multi-line \\\n value", "multi-line value"}
+        // overrides a current property
+        {"keystore.type", "bogus", "keystore.type", "bogus"},
+        // simple user-defined property
+        {"foo", "bar", "foo", "bar"},
+        // two include properties (it should only use the 2nd one)
+        {"include", "doNotUse", "include", "use"},
+        {"include", "use", "include", "use"},
+        // overrides a multi-lined value property
+        {"jdk.certpath.disabledAlgorithms", "MD2",
+             "jdk.certpath.disabledAlgorithms", "MD2"},
+        // value with a char that is encoded differently in ISO-8859-1 vs. UTF-8
+        {"iso_8859_1_char", "é", "iso_8859_1_char", "é"},
+        // value with an empty string
+        {"empty", "", "empty", ""},
+        // value with an equal sign
+        {"equalSign", "\\=", "equalSign", "="},
+        // value with a unicode escaped euro character
+        {"aaa", "euro_\\u20AC_value", "aaa", "euro_\u20AC_value"},
+        // key with a unicode escaped euro character
+        {"euro_\\u20AC_key", "111", "euro_\u20AC_key", "111"},
+        // key with an escaped space character
+        {"spaced\\ key", "333", "spaced key", "333"},
+        // value with an escaped slash character
+        {"abb", "slash_\\\\_value", "abb", "slash_\\_value"},
+        // key with an escaped slash character
+        {"slash_\\\\_key", "222", "slash_\\_key", "222"},
+        // value with indented spaces
+        {"zyy", "\\    indented value", "zyy", "    indented value"},
+        // multi-line value with newline character
+        {"zzz", "multi-line\\nvalue", "zzz", "multi-line\nvalue"}
     };
 
     public static void main(String[] args) throws Throwable {
@@ -133,6 +144,10 @@ public class SecurityPropertiesPluginTest {
         testBadOptions();
     }
 
+    /**
+     * Create image using current java.security file. Test that properties
+     * are overridden and compliant with java.util.Properties specification.
+     */
     private static void testWithDefaultJDKImage() throws Exception {
 
         helper.generateDefaultJModule("defaultModule");
@@ -145,6 +160,10 @@ public class SecurityPropertiesPluginTest {
         testImage(image);
     }
 
+    /**
+     * Create image using custom java.security file. Test that properties
+     * are overridden and compliant with java.util.Properties specification.
+     */
     private static void testWithCustomJDKImage() throws Exception {
 
         // Copy JDK's jmods directory
@@ -209,7 +228,8 @@ public class SecurityPropertiesPluginTest {
         }
 
         for (String[] prop : EXTRA_PROPS) {
-            Asserts.assertEquals(prop[2], javasecProps.getProperty(prop[0]));
+            Asserts.assertEquals(prop[3], javasecProps.getProperty(prop[2]));
+            Asserts.assertTrue(javasecProps.containsKey(prop[2]));
         }
 
         // check include is last line
