@@ -36,10 +36,10 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -1287,18 +1287,18 @@ void InterpreterMacroAssembler::profile_acmp(Register mdp,
     mv(tmp, left);
     profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::left_offset())), t1);
 
-    Label left_not_inline_type;
-    test_oop_is_not_inline_type(left, tmp, left_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::left_inline_type_byte_constant());
-    bind(left_not_inline_type);
+    Label left_not_value_type;
+    test_oop_is_not_value_type(left, tmp, left_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::left_value_type_byte_constant());
+    bind(left_not_value_type);
 
     mv(tmp, right);
     profile_obj_type(tmp, Address(mdp, in_bytes(ACmpData::right_offset())), t1);
 
-    Label right_not_inline_type;
-    test_oop_is_not_inline_type(right, tmp, right_not_inline_type);
-    set_mdp_flag_at(mdp, ACmpData::right_inline_type_byte_constant());
-    bind(right_not_inline_type);
+    Label right_not_value_type;
+    test_oop_is_not_value_type(right, tmp, right_not_value_type);
+    set_mdp_flag_at(mdp, ACmpData::right_value_type_byte_constant());
+    bind(right_not_value_type);
 
     bind(profile_continue);
   }
@@ -1877,7 +1877,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   Label slow_path, done;
 
   load_unsigned_byte(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::flags_offset())));
-  test_field_is_not_null_free_inline_type(tmp1, tmp2, slow_path);
+  test_field_is_not_null_free_value_type(tmp1, tmp2, slow_path);
 
   null_check(x10); // FIXME JDK-8341120
 
@@ -1889,7 +1889,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register field_
   Register layout_info = field_offset;
   load_unsigned_short(tmp1, Address(entry, in_bytes(ResolvedFieldEntry::field_index_offset())));
   ld(tmp2, Address(entry, in_bytes(ResolvedFieldEntry::field_holder_offset())));
-  inline_layout_info(tmp2, tmp1, layout_info);
+  value_field_layout_info(tmp2, tmp1, layout_info);
 
   flat_field_copy(IN_HEAP, x10, obj, layout_info);
   j(done);

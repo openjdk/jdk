@@ -298,8 +298,8 @@ class GraphBuilder {
   void new_multi_array(int dimensions);
   void throw_op(int bci);
 
-  // inline types
-  void copy_inline_content(ciInlineKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field = nullptr);
+  // value types
+  void copy_inline_content(ciValueKlass* vk, Value src, int src_off, Value dest, int dest_off, ValueStack* state_before, ciField* enclosing_field = nullptr);
 
   // stack/code manipulation helpers
   Instruction* append_with_bci(Instruction* instr, int bci);
@@ -430,6 +430,7 @@ class GraphBuilder {
   bool profile_arguments()     { return _compilation->profile_arguments();     }
   bool profile_return()        { return _compilation->profile_return();        }
   bool profile_array_accesses(){ return _compilation->profile_array_accesses();}
+  bool profile_acmp()          { return _compilation->profile_acmp();          }
 
   Values* args_list_for_profiling(ciMethod* target, int& start, bool may_have_receiver);
   Values* collect_args_for_profiling(Values* args, ciMethod* target, bool may_have_receiver);

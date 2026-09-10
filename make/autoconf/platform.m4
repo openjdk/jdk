@@ -660,7 +660,19 @@ AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
 [
   AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
-  # There are no deprecated ports. Implement the deprecation warnings here.
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
+    # Unfortunately, variants have not been parsed yet, so we have to check the configure option
+    # directly. Allow only the directly specified Zero variant, treat any other mix as containing
+    # something non-Zero.
+    if test "x$with_jvm_variants" != xzero; then
+      if test "x$enable_deprecated_ports" = "xyes"; then
+        AC_MSG_WARN([The macOS/x64 port is deprecated and may be removed in a future release.])
+      else
+        AC_MSG_ERROR(m4_normalize([The macOS/x64 port is deprecated and may be removed in a future release.
+          Use --enable-deprecated-ports to suppress this error.]))
+      fi
+    fi
+  fi
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],

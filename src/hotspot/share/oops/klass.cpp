@@ -841,6 +841,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   assert(is_klass(), "ensure C++ vtable is restored");
   assert(in_aot_cache(), "must be set");
   assert(secondary_supers()->length() >= (int)population_count(_secondary_supers_bitmap), "must be");
+  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
   if (log_is_enabled(Trace, aot, unshareable)) {
     ResourceMark rm(THREAD);
     oop class_loader = loader_data->class_loader();
@@ -858,8 +859,6 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   // Add to class loader list first before creating the mirror
   // (same order as class file parsing)
   loader_data->add_class(this);
-
-  JFR_ONLY(Jfr::on_restoration(this, THREAD);)
 
   Handle loader(THREAD, loader_data->class_loader());
   ModuleEntry* module_entry = nullptr;
@@ -1075,15 +1074,15 @@ void Klass::validate_array_description(const ArrayDescription& ad) {
     assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
     assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
   } else {
-    assert(is_inline_klass(), "Must be");
-    const InlineKlass* ik = InlineKlass::cast(this);
+    assert(is_value_klass(), "Must be");
+    const ValueKlass* vk = ValueKlass::cast(this);
     if (ad._layout_kind == LayoutKind::BUFFERED) {
       fatal("Invalid layout for an array");
     } else if (ad._layout_kind == LayoutKind::REFERENCE) {
       assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
       return;
     }
-    assert(ik->layouts().has_a(ad._layout_kind), "Sanity check");
+    assert(vk->layouts().has_a(ad._layout_kind), "Sanity check");
   }
 }
 #endif // ASSERT
