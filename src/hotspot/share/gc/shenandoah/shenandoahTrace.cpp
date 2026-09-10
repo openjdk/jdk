@@ -26,7 +26,7 @@
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
+#include "jfr/jfrEvents.hpp"
 
 void ShenandoahTracer::report_evacuation_info(const ShenandoahCollectionSet* cset,
     size_t free_regions, size_t regions_immediate, size_t immediate_size) {

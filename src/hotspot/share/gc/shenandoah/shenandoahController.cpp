@@ -33,8 +33,8 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahController::update_gc_id() {
   _gc_id.add_then_fetch((size_t)1);

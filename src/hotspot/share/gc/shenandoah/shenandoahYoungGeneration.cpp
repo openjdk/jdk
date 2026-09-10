@@ -36,7 +36,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 class ShenandoahMode;
 

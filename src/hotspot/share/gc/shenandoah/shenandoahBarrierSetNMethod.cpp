@@ -29,8 +29,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   if (!is_armed(nm)) {

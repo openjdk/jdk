@@ -46,7 +46,6 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahSTWMarkTask : public WorkerTask {
 private:

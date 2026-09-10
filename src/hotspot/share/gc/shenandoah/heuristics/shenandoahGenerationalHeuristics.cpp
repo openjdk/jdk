@@ -23,9 +23,15 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
@@ -37,7 +43,13 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "memory/resourceArea.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
+
+#include <sys/types.h>
 
 static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
   if (a._live_data < b._live_data)

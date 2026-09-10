@@ -34,7 +34,6 @@
 #include "utilities/bitMap.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 
 ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :

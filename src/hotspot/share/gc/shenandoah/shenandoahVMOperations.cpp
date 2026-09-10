@@ -38,7 +38,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 bool VM_ShenandoahOperation::doit_prologue() {
   log_active_generation("Prologue");

@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSIMPLEBITMAP_HPP
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 #include "utilities/vmassert_reinstall.hpp"

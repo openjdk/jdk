@@ -38,8 +38,8 @@
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahInPlacePromotionPlanner::RegionPromotionStats::update(ShenandoahHeapRegion* region) {
   count++;

@@ -30,7 +30,12 @@
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahCycleDuration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/numberSeq.hpp"
+
+struct ShenandoahAnticipatedConsumption;
+class ShenandoahCollectionSet;
+class ShenandoahSpaceInfo;
 
 
 /*

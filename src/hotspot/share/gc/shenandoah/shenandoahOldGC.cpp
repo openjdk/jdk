@@ -38,7 +38,7 @@
 #include "memory/universe.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/os.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 
 ShenandoahOldGC::ShenandoahOldGC(ShenandoahOldGeneration* generation, ShenandoahSharedFlag& allow_preemption) :

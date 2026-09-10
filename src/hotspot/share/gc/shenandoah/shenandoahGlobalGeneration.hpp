@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
 

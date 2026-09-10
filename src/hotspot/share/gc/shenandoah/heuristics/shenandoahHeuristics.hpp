@@ -29,8 +29,14 @@
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/globals_extension.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/numberSeq.hpp"
+
+class ShenandoahSpaceInfo;
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \

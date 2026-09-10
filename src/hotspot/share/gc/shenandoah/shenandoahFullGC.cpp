@@ -84,11 +84,11 @@
 #include "runtime/vmThread.hpp"
 #include "utilities/bitMap.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class Method;
 class nmethod;

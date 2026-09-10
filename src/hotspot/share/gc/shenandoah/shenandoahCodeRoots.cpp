@@ -38,8 +38,8 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;

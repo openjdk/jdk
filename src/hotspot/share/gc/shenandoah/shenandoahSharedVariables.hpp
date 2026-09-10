@@ -28,6 +28,10 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <limits.h>
 
 typedef int32_t ShenandoahSharedValue;
 typedef struct ShenandoahSharedFlag {

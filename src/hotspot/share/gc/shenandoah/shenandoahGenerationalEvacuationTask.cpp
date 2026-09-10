@@ -39,7 +39,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/thread.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:

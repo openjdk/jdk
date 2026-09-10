@@ -52,9 +52,9 @@
 #include "logging/logStream.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 using idx_t = ShenandoahSimpleBitMap::idx_t;
 

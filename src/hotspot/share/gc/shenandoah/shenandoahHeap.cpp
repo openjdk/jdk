@@ -103,7 +103,6 @@
 #include "gc/shenandoah/shenandoahWorkGroup.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "jni.h"
-#include "jni_md.h"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
@@ -157,7 +156,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 #include <new>
 #include <string.h>

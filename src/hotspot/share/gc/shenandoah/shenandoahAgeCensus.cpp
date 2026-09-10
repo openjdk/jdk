@@ -34,10 +34,10 @@
 #include "nmt/memTag.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/java.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 
 ShenandoahAgeCensus::ShenandoahAgeCensus()

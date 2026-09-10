@@ -54,7 +54,6 @@
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahMark::start_mark() {
   if (!CodeCache::is_gc_marking_cycle_active()) {

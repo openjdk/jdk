@@ -28,6 +28,7 @@
 
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
+#include "jni.h"
 #include "jni_md.h"
 #include "memory/padded.hpp"
 #include "nmt/memTag.hpp"

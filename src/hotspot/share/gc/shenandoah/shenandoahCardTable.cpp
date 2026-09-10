@@ -34,7 +34,7 @@
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 void ShenandoahCardTable::initialize() {
   size_t num_cards = cards_required(_whole_heap.word_size());

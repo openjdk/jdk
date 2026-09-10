@@ -32,8 +32,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),

@@ -53,7 +53,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {

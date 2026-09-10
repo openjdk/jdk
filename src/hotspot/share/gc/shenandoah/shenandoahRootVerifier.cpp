@@ -42,8 +42,8 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),

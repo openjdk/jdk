@@ -29,9 +29,9 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "services/memoryPool.hpp"
 #include "services/memoryUsage.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
 
 class ShenandoahGeneration;
 class ShenandoahHeap;

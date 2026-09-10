@@ -23,22 +23,33 @@
  *
  */
 
+#include "asm/codeBuffer.hpp"
+#include "ci/ciEnv.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "code/dependencies.hpp"
+#include "code/vmreg.hpp"
 #include "gc/shared/barrierSet.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "jni.h"
+#include "libadt/vectset.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/accessDecorators.hpp"
+#include "oops/arrayOop.hpp"
 #include "opto/arraycopynode.hpp"
-#include "opto/escape.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
-#include "opto/narrowptrnode.hpp"
 #include "opto/output.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "runtime/globals.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
+
+class Arena;
 
 ShenandoahBarrierSetC2* ShenandoahBarrierSetC2::bsc2() {
   return reinterpret_cast<ShenandoahBarrierSetC2*>(BarrierSet::barrier_set()->barrier_set_c2());

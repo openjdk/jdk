@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
 
+#include "utilities/debug.hpp"
+
 enum ShenandoahGenerationType {
     NON_GEN,         // non-generational
     GLOBAL,          // generational: Global

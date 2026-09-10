@@ -57,7 +57,6 @@
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahIsUnloadingOopClosure : public OopClosure {
 private:

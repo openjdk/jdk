@@ -58,7 +58,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :

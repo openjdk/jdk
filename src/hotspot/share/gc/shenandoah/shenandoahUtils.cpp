@@ -34,7 +34,6 @@
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ticks.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 ShenandoahPhaseTimings::Phase ShenandoahTimingsTracker::_current_phase = ShenandoahPhaseTimings::_invalid_phase;
 

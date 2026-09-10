@@ -23,11 +23,16 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "runtime/java.hpp"
+#include "utilities/debug.hpp"
+
+#include <string.h>
 
 ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {
   if (ShenandoahGCHeuristics == nullptr) {

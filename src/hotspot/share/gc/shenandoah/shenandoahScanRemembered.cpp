@@ -55,9 +55,9 @@
 #include "runtime/atomic.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 #include <sys/types.h>
 

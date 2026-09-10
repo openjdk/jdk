@@ -40,7 +40,7 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "jni_md.h"
+#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.hpp"
@@ -53,7 +53,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "utilities/debug.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 static ReferenceType reference_type(oop reference) {
   return InstanceKlass::cast(reference->klass())->reference_type();

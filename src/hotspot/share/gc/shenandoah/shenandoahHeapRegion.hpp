@@ -32,6 +32,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "jni.h"
 #include "jni_md.h"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"

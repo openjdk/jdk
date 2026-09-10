@@ -26,7 +26,7 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 class Thread;
 

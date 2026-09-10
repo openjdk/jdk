@@ -90,7 +90,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 // Breakpoint support
 class ShenandoahBreakpointGCScope : public StackObj {

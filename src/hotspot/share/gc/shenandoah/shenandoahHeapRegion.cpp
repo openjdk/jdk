@@ -40,7 +40,7 @@
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
-#include "jfrfiles/jfrEventClasses.hpp"
+#include "jfr/jfrEvents.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/memRegion.hpp"
@@ -60,7 +60,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 #include <inttypes.h>
 #include <string.h>

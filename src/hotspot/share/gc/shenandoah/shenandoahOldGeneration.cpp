@@ -71,7 +71,6 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahHeuristics;
 

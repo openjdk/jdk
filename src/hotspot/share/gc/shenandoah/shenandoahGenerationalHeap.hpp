@@ -32,10 +32,10 @@
 #include "oops/oopsHierarchy.hpp"
 #include "services/memoryPool.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmassert_reinstall.hpp"
-
 
 class CollectedHeap;
 class ShenandoahAgeCensus;

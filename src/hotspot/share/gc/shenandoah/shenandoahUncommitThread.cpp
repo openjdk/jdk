@@ -30,9 +30,9 @@
 #include "logging/log.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)

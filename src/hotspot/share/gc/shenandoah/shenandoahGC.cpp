@@ -35,7 +35,6 @@
 #include "memory/iterator.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 const char* ShenandoahGC::degen_point_to_string(ShenandoahDegenPoint point) {
   switch(point) {

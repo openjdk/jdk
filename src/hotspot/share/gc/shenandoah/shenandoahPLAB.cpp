@@ -33,7 +33,7 @@
 #include "logging/log.hpp"
 #include "oops/oop.hpp"
 #include "utilities/copy.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 ShenandoahPLAB::ShenandoahPLAB() :
   _plab(nullptr),

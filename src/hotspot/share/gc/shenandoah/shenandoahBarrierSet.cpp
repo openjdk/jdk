@@ -63,9 +63,9 @@
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class BarrierSetAssembler;
 class StackWatermark;

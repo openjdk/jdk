@@ -40,7 +40,6 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class RegisterMap;
 class nmethod;

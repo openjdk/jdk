@@ -27,7 +27,7 @@
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 bool ShenandoahBreakpoint::_start_gc = false;
 

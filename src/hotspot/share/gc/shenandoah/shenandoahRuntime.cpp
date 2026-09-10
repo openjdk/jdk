@@ -30,7 +30,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
-#include "utilities/vmassert_reinstall.hpp"
+#include "utilities/debug.hpp"
 
 JRT_LEAF(void, ShenandoahRuntime::arraycopy_barrier_oop(oop* src, oop* dst, size_t length))
   ShenandoahBarrierSet::barrier_set()->arraycopy_barrier(src, dst, length, false);

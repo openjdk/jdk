@@ -27,8 +27,8 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "nmt/memTag.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
   uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();

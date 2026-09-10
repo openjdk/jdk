@@ -28,11 +28,12 @@
 
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
 
-class ShenandoahSpaceInfo;
 class ShenandoahHeuristics;
+class ShenandoahSpaceInfo;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \

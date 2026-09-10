@@ -28,6 +28,16 @@
 
 #include "c1/c1_CodeStubs.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
+#include "oops/accessDecorators.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
+
+class BufferBlob;
+class CodeBlob;
+class LIR_Assembler;
+class LIRGenerator;
+class LIRItem;
 
 class ShenandoahKeepaliveBarrierStub: public CodeStub {
   friend class ShenandoahBarrierSetC1;

@@ -50,8 +50,8 @@
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class nmethod;
 

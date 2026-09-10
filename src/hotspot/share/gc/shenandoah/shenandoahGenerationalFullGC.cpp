@@ -46,8 +46,8 @@
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/growableArray.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 #ifdef ASSERT
 void assert_regions_used_not_more_than_capacity(ShenandoahGeneration* generation) {

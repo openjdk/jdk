@@ -75,7 +75,6 @@
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class Metadata;
 enum class VerifyOption : uint;
