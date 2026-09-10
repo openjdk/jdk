@@ -67,7 +67,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 23
  */
 @SupportedSourceVersion(RELEASE_28)
-@PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
+@PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public class TypeKindVisitorPreview<R, P> extends TypeKindVisitor14<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}

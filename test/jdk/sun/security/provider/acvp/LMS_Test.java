@@ -22,7 +22,7 @@
  */
 import jdk.test.lib.Asserts;
 import jdk.test.lib.json.JSONValue;
-import sun.security.util.RawKeySpec;
+import sun.security.util.KeyUtil;
 
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
@@ -62,11 +62,11 @@ public class LMS_Test {
 
                 // Convert to HSS key by prepending height of tree (1)
                 // to the LMS public key.
-                RawKeySpec rks = new RawKeySpec(toByteArray(
-                        "00000001" + t.get("publicKey").asString()));
                 KeyFactory kf = p == null ? KeyFactory.getInstance("HSS/LMS") :
                         KeyFactory.getInstance("HSS/LMS", p);
-                PublicKey pk1 = kf.generatePublic(rks);
+                PublicKey pk1 = (PublicKey) kf.translateKey(KeyUtil
+                        .newRawPublicKey("HSS/LMS", toByteArray(
+                                "00000001" + t.get("publicKey").asString())));
 
                 try {
                     s.initVerify(pk1);

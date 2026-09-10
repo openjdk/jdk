@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,13 +167,13 @@ public class TestNewRatioFlag {
             long maxOld = HeapRegionUsageTool.getOldUsage().getMax();
 
             int regionSize = wb.g1RegionSize();
-            int youngListLength = (int) ((initEden + initSurv) / regionSize);
+            int numYoungRegions = (int) ((initEden + initSurv) / regionSize);
             int maxRegions = (int) (maxOld / regionSize);
-            int expectedYoungListLength = (int) (maxRegions / (double) (expectedRatio + 1));
+            int expectedNumYoungRegions = (int) (maxRegions / (double) (expectedRatio + 1));
 
-            if (youngListLength != expectedYoungListLength) {
-                throw new RuntimeException("Expected G1 young list length is: " + expectedYoungListLength
-                        + ", but observed young list length is: " + youngListLength);
+            if (numYoungRegions != expectedNumYoungRegions) {
+                throw new RuntimeException("Expected G1 number of young regions is: " + expectedNumYoungRegions
+                        + ", but observed number of young regions is: " + numYoungRegions);
             }
         }
     }

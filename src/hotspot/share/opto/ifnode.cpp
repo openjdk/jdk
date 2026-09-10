@@ -669,9 +669,11 @@ const TypeInt* IfNode::filtered_int_type(PhaseGVN* gvn, Node* val, Node* if_proj
       BoolNode* bol = iff->in(1)->as_Bool();
       if (bol->in(1) && bol->in(1)->is_Cmp()) {
         const CmpNode* cmp  = bol->in(1)->as_Cmp();
-        // Val is always the lhs of the comparision: val <test> cmp2
-        if (cmp->in(1) == val) {
-          assert(cmp->Opcode() == Op_CmpI, "signed comparison required");
+        // Val is always the lhs of the comparision: val CmpI cmp2
+        if (cmp->Opcode() == Op_CmpI && cmp->in(1) == val) {
+          // Only CmpI allowed, assumed by signed logic below.
+          // We could extend to CmpU in the future, and would
+          // have to implement unsigned range logic below.
           const TypeInt* cmp2_t = gvn->type(cmp->in(2))->isa_int();
           if (cmp2_t != nullptr) {
             jint lo = cmp2_t->_lo;
@@ -1612,6 +1614,23 @@ bool IfNode::is_null_check(IfProjNode* proj, PhaseIterGVN* igvn) const {
   return false;
 }
 
+// Returns true if this IfNode belongs to a flat array check
+// and returns the corresponding array in the 'array' parameter.
+bool IfNode::is_flat_array_check(PhaseTransform* phase, Node** array) {
+  Node* bol = in(1);
+  if (!bol->is_Bool()) {
+    return false;
+  }
+  Node* cmp = bol->in(1);
+  if (cmp->isa_FlatArrayCheck()) {
+    if (array != nullptr) {
+      *array = cmp->in(FlatArrayCheckNode::ArrayOrKlass);
+    }
+    return true;
+  }
+  return false;
+}
+
 // Check that the If that is in between the 2 integer comparisons has
 // no side effect
 bool IfNode::is_side_effect_free_test(IfProjNode* proj, PhaseIterGVN* igvn) const {
@@ -1861,6 +1880,19 @@ Node* IfNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* prev_dom = search_identical(dist, igvn);
 
   if (prev_dom != nullptr) {
+    Node* true_proj = this->true_proj();
+    Node* false_proj = this->false_proj();
+
+    Node* head = true_proj->find_out_with(Op_Loop);
+    if (head == nullptr) {
+      head = false_proj->find_out_with(Op_Loop);
+    }
+    if (head != nullptr && head->as_Loop()->is_loop_nest_inner_loop()) {
+      // Exit test for a loop that's in the process of being transformed into a counted loop: do not remove that exit
+      // test so the counted loop transformation happens.
+      return nullptr;
+    }
+
     // Dominating CountedLoopEnd (left over from some now dead loop) will become the new loop exit. Outer strip mined
     // loop will go away. Mark this loop as no longer strip mined.
     if (is_CountedLoopEnd()) {

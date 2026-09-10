@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
  * @test
  * @bug 8072726
  * @summary Tests for Enumeration-to-Iterator conversion.
+ * @library /test/lib
  * @run testng EnumerationAsIterator
  */
 
+import jdk.test.lib.valueclass.VClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
@@ -46,6 +48,7 @@ import static org.testng.Assert.*;
 
 @Test
 public class EnumerationAsIterator {
+
     static Object[] of(String description, Supplier<Enumeration<?>> s, Collection<?> exp) {
         return new Object[]{description, s, exp};
     }
@@ -111,7 +114,11 @@ public class EnumerationAsIterator {
 
             of("Arrays.asList(...)",
                Arrays.asList("a", "b", "c"),
-               Arrays.asList("a", "b", "c"))
+               Arrays.asList("a", "b", "c")),
+
+            of("Value Collections.enumeration()",
+               () -> Collections.enumeration(Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }))),
+               Arrays.asList(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 })))
         ).iterator();
     }
 

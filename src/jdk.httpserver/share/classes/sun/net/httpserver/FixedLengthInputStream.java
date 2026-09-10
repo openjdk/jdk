@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ class FixedLengthInputStream extends LeftOverInputStream {
             throw new IllegalArgumentException("Content-Length: " + len);
         }
         this.remaining = len;
+        this.eof = len == 0;
     }
 
     protected int readImpl(byte[] b, int off, int len) throws IOException {

@@ -449,14 +449,14 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         public final boolean compareAndSet(T obj, V expect, V update) {
             accessCheck(obj);
             valueCheck(update);
-            return U.compareAndSetReference(obj, offset, expect, update);
+            return U.compareAndSetReference(obj, offset, vclass, expect, update);
         }
 
         public final boolean weakCompareAndSet(T obj, V expect, V update) {
             // same implementation as strong form for now
             accessCheck(obj);
             valueCheck(update);
-            return U.compareAndSetReference(obj, offset, expect, update);
+            return U.compareAndSetReference(obj, offset, vclass, expect, update);
         }
 
         public final void set(T obj, V newValue) {

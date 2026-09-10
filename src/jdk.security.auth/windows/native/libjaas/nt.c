@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,21 +106,21 @@ Java_com_sun_security_auth_module_NTSystem_getCurrent
     }
     if (getUser
         (tokenHandle, &userName, &domainName, &userSid, &domainSid) == FALSE) {
-        return;
+        goto cleanup;
     }
 
     if (debug) {
         printf("getting primary group\n");
     }
     if (getPrimaryGroup(tokenHandle, &primaryGroup) == FALSE) {
-        return;
+        goto cleanup;
     }
 
     if (debug) {
         printf("getting supplementary groups\n");
     }
     if (getGroups(tokenHandle, &numGroups, &groups) == FALSE) {
-        return;
+        goto cleanup;
     }
 
     // then set values into NTSystem
@@ -578,6 +578,7 @@ BOOL getImpersonationToken(PHANDLE impersonationToken) {
                 GetLastError());
             DisplayErrorText(GetLastError());
         }
+        CloseHandle(dupToken);
         return FALSE;
     }
     CloseHandle(dupToken);

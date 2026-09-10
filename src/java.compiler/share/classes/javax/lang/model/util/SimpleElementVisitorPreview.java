@@ -62,7 +62,7 @@ import static javax.lang.model.SourceVersion.*;
  * @since 23
  */
 @SupportedSourceVersion(RELEASE_28)
-@PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
+@PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public class SimpleElementVisitorPreview<R, P> extends SimpleElementVisitor14<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

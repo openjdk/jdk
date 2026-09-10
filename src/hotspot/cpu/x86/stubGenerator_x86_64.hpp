@@ -77,6 +77,8 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_verify_mxcsr();
 
+  address generate_hf2i_fixup();
+  address generate_hf2l_fixup();
   address generate_f2i_fixup();
   address generate_f2l_fixup();
   address generate_d2i_fixup();

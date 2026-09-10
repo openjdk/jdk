@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @run testng TestDereferencePath
+ * @run junit TestDereferencePath
  */
 
 import java.lang.foreign.Arena;
@@ -34,10 +34,11 @@ import java.lang.foreign.MemorySegment;
 
 import java.lang.foreign.ValueLayout;
 
-import org.testng.annotations.*;
 
 import java.lang.invoke.VarHandle;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class TestDereferencePath {
 
@@ -73,7 +74,7 @@ public class TestDereferencePath {
             c.set(ValueLayout.JAVA_INT, 0, 42);
             // dereference
             int val = (int) abcx.get(a, 0L);
-            assertEquals(val, 42);
+            assertEquals(42, val);
         }
     }
 
@@ -109,13 +110,13 @@ public class TestDereferencePath {
             c.setAtIndex(ValueLayout.JAVA_INT, 3, 4);
             // dereference
             int val00 = (int) abcx_multi.get(a, 0L, 0, 0); // a->b[0]->c[0] = 1
-            assertEquals(val00, 1);
+            assertEquals(1, val00);
             int val10 = (int) abcx_multi.get(a, 0L, 1, 0); // a->b[1]->c[0] = 3
-            assertEquals(val10, 3);
+            assertEquals(3, val10);
             int val01 = (int) abcx_multi.get(a, 0L, 0, 1); // a->b[0]->c[1] = 2
-            assertEquals(val01, 2);
+            assertEquals(2, val01);
             int val11 = (int) abcx_multi.get(a, 0L, 1, 1); // a->b[1]->c[1] = 4
-            assertEquals(val11, 4);
+            assertEquals(4, val11);
         }
     }
 
@@ -138,44 +139,53 @@ public class TestDereferencePath {
             b.set(ValueLayout.JAVA_INT, 0, 42);
             // dereference
             int val = (int) a_value.get(a, 0L);
-            assertEquals(val, 42);
+            assertEquals(42, val);
         }
     }
 
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testBadDerefInSelect() {
-        A.select(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            A.select(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testBadDerefInOffset() {
-        A.byteOffset(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            A.byteOffset(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void testBadDerefInSlice() {
-        A.sliceHandle(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            A.sliceHandle(PathElement.groupElement("b"), PathElement.dereferenceElement());
+        });
     }
 
     static final MemoryLayout A_MULTI_NO_TARGET = MemoryLayout.structLayout(
             ValueLayout.ADDRESS.withName("bs")
     );
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void badDerefAddressNoTarget() {
-        A_MULTI_NO_TARGET.varHandle(PathElement.groupElement("bs"), PathElement.dereferenceElement());
+        assertThrows(IllegalArgumentException.class, () -> {
+            A_MULTI_NO_TARGET.varHandle(PathElement.groupElement("bs"), PathElement.dereferenceElement());
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     void badDerefMisAligned() {
         MemoryLayout struct = MemoryLayout.structLayout(
-            ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
-
+                ValueLayout.ADDRESS.withTargetLayout(ValueLayout.JAVA_INT).withName("x"));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(struct.byteSize() + 1, struct.byteAlignment()).asSlice(1);
             VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
-            vhX.set(segment, 0L, 42); // should throw
+            assertThrows(IllegalArgumentException.class, () -> {
+                vhX.set(segment, 0L, 42);
+            });
         }
     }
 }

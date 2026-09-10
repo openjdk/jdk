@@ -124,7 +124,7 @@ void ShenandoahNMethod::heal_nmethod(nmethod* nm) {
   assert(data->lock()->owned_by_self(), "Must hold the lock");
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
-  if (heap->is_concurrent_weak_root_in_progress() ||
+  if ((heap->is_concurrent_weak_root_in_progress() && heap->is_evacuation_in_progress()) ||
       heap->is_concurrent_strong_root_in_progress()) {
     heal_nmethod_metadata(data);
   } else if (heap->is_concurrent_mark_in_progress()) {

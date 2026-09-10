@@ -64,17 +64,14 @@
   product(bool, StressUnstableIfTraps, false, DIAGNOSTIC,                   \
           "Randomly take unstable if traps")                                \
                                                                             \
-  product(uint, StressSeed, 0, DIAGNOSTIC,                                  \
-          "Seed for randomized stress testing (if unset, a random one is "  \
-          "generated). The seed is recorded in the compilation log, if "    \
-          "available.")                                                     \
-          range(0, max_juint)                                               \
-                                                                            \
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
+                                                                            \
+  develop(bool, StressVerifyMeetJoin, false,                                \
+          "Perform cross meet/join sanity checks on all Type instances")    \
                                                                             \
   product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
           "Optimize reachability fences "                                   \
@@ -251,6 +248,9 @@
   product(bool, UseCountedLoopSafepoints, false,                            \
           "Force counted loops to keep a safepoint")                        \
                                                                             \
+  product(bool, UseParsePredicates, true, DIAGNOSTIC,                       \
+          "Use Parse Predicates for speculative optimizations.")            \
+                                                                            \
   product(bool, UseLoopPredicate, true,                                     \
           "Move checks with uncommon trap out of loops.")                   \
                                                                             \
@@ -262,6 +262,11 @@
                                                                             \
   develop(bool, TraceSplitIf, false,                                        \
           "Trace Split-If optimization")                                    \
+                                                                            \
+  product(bool, UseLoopLimitCheckPredicate, true, DIAGNOSTIC,               \
+          "Use Loop Limit Check Predicate to speculatively transform "      \
+          "loops to counted loops where overflow is uncertain at "          \
+          "compile time.")                                                  \
                                                                             \
   develop(bool, TraceLoopLimitCheck, false,                                 \
           "Trace generation of loop limits checks")                         \
@@ -601,6 +606,14 @@
           "Number of fields in instance limit for scalar replacement")      \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, StressEliminateAllocations, false, DIAGNOSTIC,              \
+          "Randomly fail allocation elimination attempts")                  \
+                                                                            \
+  product(uint, StressEliminateAllocationsMean, 20, DIAGNOSTIC,             \
+          "The expected number of elimination checks made until "           \
+          "a random failure.")                                              \
+          range(1, max_juint)                                               \
+                                                                            \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
                                                                             \
@@ -724,10 +737,14 @@
           "Re-process nodes that could benefit from a deep revisit after "  \
           "the IGVN worklist drains")                                       \
                                                                             \
+  product(uint, MacroExpansionCleanupCount, 16, DIAGNOSTIC,                 \
+          "Run IGVN to clean the graph after this many macro nodes are "    \
+          "expanded or when we approach the max live node limit.")          \
+          range(1, 100)                                                     \
+                                                                            \
   develop(uint, VerifyIterativeGVN, 0,                                      \
           "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
-          "  F: verify Node::Ideal does not return nullptr if the node"     \
-                "hash has changed"                                          \
+          "  F: verify IGVN method return invariants"                       \
           "  E: verify node specific invariants"                            \
           "  D: verify Node::Identity did not miss opportunities"           \
           "  C: verify Node::Ideal did not miss opportunities"              \
@@ -789,6 +806,11 @@
           "high tier compiler")                                             \
           range(0, max_jint)                                                \
                                                                             \
+  product(bool, InlineColdMethods, false, DIAGNOSTIC,                       \
+          "Inline cold methods that would otherwise be rejected due to "    \
+          "cold profile counters. Useful for compiler testing to expose "   \
+          "more code to compilers.")                                        \
+                                                                            \
   product(bool, IncrementalInline, true,                                    \
           "do post parse inlining")                                         \
                                                                             \
@@ -803,6 +825,9 @@
                                                                             \
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
+                                                                            \
+  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+          "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \
@@ -876,6 +901,12 @@
           "Move checks with an uncommon trap out of loops based on "        \
           "profiling data. "                                                \
           "Requires UseLoopPredicate to be turned on (default).")           \
+                                                                            \
+  product(bool, UseArrayLoadStoreProfile, true, DIAGNOSTIC,                 \
+          "Take advantage of profiling at array load/store")                \
+                                                                            \
+  product(bool, UseACmpProfile, true, DIAGNOSTIC,                           \
+          "Take advantage of profiling at if_acmp<cond>")                   \
                                                                             \
   develop(uintx, StressLongCountedLoop, 0,                                  \
           "if > 0, convert int counted loops to long counted loops"         \

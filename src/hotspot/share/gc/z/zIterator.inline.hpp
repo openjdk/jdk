@@ -30,6 +30,7 @@
 #include "memory/iterator.inline.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/refArrayOop.hpp"
 
 inline bool ZIterator::is_invisible_object(oop obj) {
   // This is a good place to make sure that we can't concurrently iterate over
@@ -49,7 +50,7 @@ inline bool ZIterator::is_invisible_object_array(oop obj) {
 }
 
 inline bool ZIterator::is_invisible_object_array(oop obj, Klass* klass) {
-  return klass->is_objArray_klass() && is_invisible_object(obj);
+  return klass->is_refArray_klass() && is_invisible_object(obj);
 }
 
 // These iterators skips invisible object arrays
@@ -78,7 +79,8 @@ void ZIterator::oop_iterate(oop obj, OopClosureT* cl) {
 template <typename OopClosureT>
 void ZIterator::oop_iterate_elements_range(objArrayOop obj, OopClosureT* cl, int start, int end) {
   assert(!is_invisible_object_array(obj), "not safe");
-  obj->oop_iterate_elements_range(cl, start, end);
+  assert(obj->is_refArray(), "Must be");
+  refArrayOop(obj)->oop_iterate_elements_range(cl, start, end);
 }
 
 template <typename Function>

@@ -39,7 +39,7 @@ inline frame FreezeBase::sender(const frame& f) {
   return frame();
 }
 
-template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
+template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& caller, int size_adjust) {
   Unimplemented();
   return frame();
 }
@@ -56,7 +56,7 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   Unimplemented();
 }
 
-inline void FreezeBase::patch_pd(frame& hf, const frame& caller) {
+inline void FreezeBase::patch_pd(frame& hf, const frame& caller, bool is_bottom_frame) {
   Unimplemented();
 }
 
@@ -82,7 +82,7 @@ inline frame ThawBase::new_entry_frame() {
   return frame();
 }
 
-template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom) {
+template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame& caller, bool bottom, int size_adjust) {
   Unimplemented();
   return frame();
 }

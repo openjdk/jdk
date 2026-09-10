@@ -174,7 +174,10 @@ Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType el
   }
   assert(check_vbox(vbox_type), "");
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
-  Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, v, merged_memory()));
+  Node* ctrl = control();
+  Node* mem = reset_memory();
+  set_all_memory(mem);
+  Node* unbox = gvn().transform(new VectorUnboxNode(C, vt, ctrl, v, mem));
   if (gvn().type(unbox)->isa_vect() == nullptr) {
     assert(gvn().type(unbox) == Type::TOP, "sanity");
     return nullptr; // not a vector
@@ -1677,15 +1680,21 @@ bool LibraryCallKit::inline_vector_test() {
   }
 
   Node* opd1 = unbox_vector(argument(4), vbox_type, elem_bt, num_elem);
+  if (opd1 == nullptr) {
+    log_if_needed("  ** unbox failed m1=%s", NodeClassNames[argument(4)->Opcode()]);
+    return false;
+  }
+
   Node* opd2;
   if (Matcher::vectortest_needs_second_argument(booltest == BoolTest::overflow,
                                                 opd1->bottom_type()->isa_pvectmask())) {
     opd2 = unbox_vector(argument(5), vbox_type, elem_bt, num_elem);
+    if (opd2 == nullptr) {
+      log_if_needed("  ** unbox failed m2=%s", NodeClassNames[argument(5)->Opcode()]);
+      return false;
+    }
   } else {
     opd2 = opd1;
-  }
-  if (opd1 == nullptr || opd2 == nullptr) {
-    return false; // operand unboxing failed
   }
 
   Node* cmp = gvn().transform(trace_vector(new VectorTestNode(opd1, opd2, booltest)));

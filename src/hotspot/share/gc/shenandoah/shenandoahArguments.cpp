@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,16 +43,6 @@ void ShenandoahArguments::initialize() {
 #if !(defined AARCH64 || defined AMD64 || defined PPC64 || defined RISCV64)
   vm_exit_during_initialization("Shenandoah GC is not supported on this platform.");
 #endif
-
-  // Shenandoah relies on the object header bits (including the self-forwarded bit
-  // at markWord::self_fwd_mask_in_place) being preserved across monitor inflation,
-  // which only holds with UseObjectMonitorTable.
-  if (!UseObjectMonitorTable) {
-    if (FLAG_IS_CMDLINE(UseObjectMonitorTable)) {
-      vm_exit_during_initialization("Shenandoah requires UseObjectMonitorTable");
-    }
-    FLAG_SET_DEFAULT(UseObjectMonitorTable, true);
-  }
 
 #if 0 // leave this block as stepping stone for future platforms
   log_warning(gc)("Shenandoah GC is not fully supported on this platform:");
@@ -207,6 +197,17 @@ void ShenandoahArguments::initialize() {
         ShenandoahMomentaryAllocRateSampleWindow, ShenandoahRecentAllocRateSampleWindow,
         ShenandoahAllocRateSampleWindow));
   }
+
+#ifdef _LP64
+  if (Arguments::is_valhalla_enabled()) {
+    // Flat atomic payloads may contain embedded oops. Current Valhalla code does not handle
+    // it well, missing the GC barriers. As the temporary kludge, disable compressed oops:
+    // this would make flat atomic payloads contain at most one oop, which would be treated
+    // as the single oop field.
+    log_warning(gc)("Shenandoah disables compressed oops to avoid breaking with Valhalla");
+    FLAG_SET_ERGO(UseCompressedOops, false);
+  }
+#endif
 
   FullGCForwarding::initialize_flags(MaxHeapSize);
 }
