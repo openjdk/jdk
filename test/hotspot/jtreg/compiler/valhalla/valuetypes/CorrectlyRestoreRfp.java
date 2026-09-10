@@ -44,7 +44,7 @@ package compiler.valhalla.valuetypes;
 import jdk.test.whitebox.WhiteBox;
 
 import java.lang.reflect.Method;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CompletableFuture;
 
 public class CorrectlyRestoreRfp {
     static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -112,7 +112,7 @@ public class CorrectlyRestoreRfp {
 
     static class GarbageProducerThread extends Thread {
         public void run() {
-            for (;;) {
+            while (!isInterrupted()) {
                 // Produce some garbage and then let the GC do its work
                 Object[] arrays = new Object[1024];
                 for (int i = 0; i < arrays.length; i++) {
@@ -135,22 +135,18 @@ public class CorrectlyRestoreRfp {
         garbage_producer.setDaemon(true);
         garbage_producer.start();
 
-        CountDownLatch cdl = new CountDownLatch(1);
-        Thread.ofPlatform().start(() -> {
-            try {
+        try {
+            CompletableFuture.runAsync(() -> {
                 // Trigger compilation
                 for (int i = 0; i < 500_000; i++) {
                     Object val = new SmallValue(i);
                     var v = compile_me_C1_testLargeValueWithOopsHelper(val);
                     LargeValueWithOops.compile_me_C2_verify(v, "return", val, false);
                 }
-                cdl.countDown();
-            } catch (Exception e) {
-                System.out.println("Exception thrown: " + e);
-                e.printStackTrace(System.out);
-                System.exit(1);
-            }
-        });
-        cdl.await();
+            }, task -> Thread.ofPlatform().start(task)).join();
+        } finally {
+            garbage_producer.interrupt();
+            garbage_producer.join();
+        }
     }
 }
