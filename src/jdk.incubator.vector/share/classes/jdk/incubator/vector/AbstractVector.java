@@ -189,7 +189,8 @@ abstract sealed class AbstractVector<E> extends Vector<E>
     /*package-private*/
     @ForceInline
     ByteVector asByteVectorRawTemplate() {
-        return (ByteVector) asVectorRawTemplate(LaneType.BYTE);
+        // NOTE: asByteVectorRaw respects REGISTER_ENDIAN order.
+        return (ByteVector) convert0('X', vspecies().byteSpecies());
     }
 
 
