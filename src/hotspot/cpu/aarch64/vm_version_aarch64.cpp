@@ -283,6 +283,9 @@ void VM_Version::initialize() {
     if (model_is(CPU_MODEL_ARM_NEOVERSE_V1) && FLAG_IS_DEFAULT(MinJumpTableSize)) {
       FLAG_SET_DEFAULT(MinJumpTableSize, 72);
     }
+    if (model_is(CPU_MODEL_ARM_NEOVERSE_V2) && FLAG_IS_DEFAULT(MinJumpTableSize)) {
+      FLAG_SET_DEFAULT(MinJumpTableSize, 80);
+    }
 #endif
   }
 
