@@ -26,18 +26,13 @@
 #ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 #define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 
+#include "code/nmethod.hpp"
 #include "runtime/javaThread.hpp"
 
 class Candidates;
 
 class HotCodeCollector : public JavaThread {
  private:
-  enum class RelocationResult {
-    Success,
-    NotRelocatable,
-    NoSpaceInCodeHeap
-  };
-
   static bool _is_initialized;
 
   static int _new_c2_nmethods_count;
@@ -47,7 +42,7 @@ class HotCodeCollector : public JavaThread {
 
   static void do_grouping(Candidates& candidates);
 
-  static RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
+  static nmethod::RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
 
  public:
   static void initialize();

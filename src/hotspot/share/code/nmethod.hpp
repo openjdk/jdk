@@ -577,15 +577,40 @@ public:
                               CompLevel comp_level,
                               Flags flags);
 
+  enum class RelocationResult : u1 {
+    SUCCESS,
+    FAILED_NO_SPACE_IN_CODE_HEAP,
+    FAILED_NOT_RELOCATABLE_NMETHOD,
+    FAILED_INVALIDATED_NMETHOD
+  };
+
+  static const char* relocation_result_to_string(RelocationResult relocation_result) {
+    switch (relocation_result) {
+      case RelocationResult::SUCCESS:
+        return "relocated";
+      case RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP:
+        return "not enough space in the code heap";
+      case RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD:
+        return "not relocatable nmethod";
+      case RelocationResult::FAILED_INVALIDATED_NMETHOD:
+        return "nmethod invalidated during relocation";
+      default: {
+        assert(false, "Unhandled relocation result");
+        return "Unknown";
+      }
+    }
+  }
+
   // Relocate the nmethod to the code heap identified by code_blob_type.
-  // Returns nullptr if the code heap does not have enough space (out_of_space is set
-  // to true if provided), the nmethod is unrelocatable, or the nmethod is
-  // invalidated during relocation, otherwise the relocated nmethod.
+  // Returns nullptr if the code heap does not have enough space,
+  // the nmethod is unrelocatable, or the nmethod is invalidated during
+  // relocation, otherwise the relocated nmethod (relocation_result is set
+  // if provided).
   //
   // If relocation is succeeded, the relocated nmethod is installed into
   // the owner of the original nmethod and the original nmethod is made
   // not entrant.
-  nmethod* relocate(CodeBlobType code_blob_type, bool* out_of_space = nullptr);
+  nmethod* relocate(CodeBlobType code_blob_type, RelocationResult* relocation_result = nullptr);
 
   static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,

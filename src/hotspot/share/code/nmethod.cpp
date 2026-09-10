@@ -1495,7 +1495,13 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   post_init();
 }
 
-nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
+static inline void set_relocation_result(nmethod::RelocationResult* relocation_result, nmethod::RelocationResult result) {
+  if (relocation_result != nullptr) {
+    *relocation_result = result;
+  }
+}
+
+nmethod* nmethod::relocate(CodeBlobType code_blob_type, RelocationResult* relocation_result) {
   assert(NMethodRelocation, "must enable use of function");
 
   // Locks required to be held by caller to ensure the nmethod
@@ -1505,6 +1511,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
 
   if (!is_relocatable()) {
+    set_relocation_result(relocation_result, RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD);
     return nullptr;
   }
 
@@ -1514,9 +1521,7 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
   // stop compilation.
   void* blob = CodeCache::allocate(size(), code_blob_type, false /* handle_alloc_failure */);
   if (blob == nullptr) {
-    if (out_of_space != nullptr) {
-      *out_of_space = true;
-    }
+    set_relocation_result(relocation_result, RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP);
     return nullptr;
   }
 
@@ -1562,12 +1567,13 @@ nmethod* nmethod::relocate(CodeBlobType code_blob_type, bool* out_of_space) {
 
       nm_copy->log_relocated_nmethod(this);
 
+      set_relocation_result(relocation_result, RelocationResult::SUCCESS);
       return nm_copy;
     }
   }
 
   nm_copy->make_not_used();
-
+  set_relocation_result(relocation_result, RelocationResult::FAILED_INVALIDATED_NMETHOD);
   return nullptr;
 }
 
