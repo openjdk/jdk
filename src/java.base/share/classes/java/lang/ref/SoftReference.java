@@ -32,7 +32,7 @@ import java.util.Objects;
  * collector in response to memory demand.  Soft references are most often used
  * to implement memory-sensitive caches.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
  *          When preview features are enabled, attempts to create a reference
  *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.

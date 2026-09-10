@@ -160,7 +160,7 @@ public final class Objects {
      * overridden}
      *
      * @apiNote
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          Note that, like ==, the hash code string exposes information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.

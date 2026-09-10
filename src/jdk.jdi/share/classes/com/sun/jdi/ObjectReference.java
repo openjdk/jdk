@@ -53,7 +53,7 @@ import com.sun.jdi.event.VMDisconnectEvent;
  * {@link ObjectCollectedException} if the mirrored object has been
  * garbage collected.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  * <h2><a id=valueObjects>Value Objects</a></h2>
  * If preview features are enabled, JDI supports value objects and classes.
  * However, the support does in some cases deviate from identity object
@@ -100,7 +100,7 @@ public interface ObjectReference extends Value {
      * The Field must be valid for this ObjectReference;
      * that is, it must be from
      * the mirrored object's class or a superclass of that class.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      * If preview features are enabled, this method does not prevent a
      * strictly-initialized field from being read before it has been initialized.
      * }
@@ -117,7 +117,7 @@ public interface ObjectReference extends Value {
      * The Fields must be valid for this ObjectReference;
      * that is, they must be from
      * the mirrored object's class or a superclass of that class.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      * If preview features are enabled, this method does not prevent a
      * strictly-initialized field from being read before it has been initialized.
      * }

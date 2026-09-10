@@ -123,7 +123,7 @@ import java.util.regex.Pattern;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Period} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in

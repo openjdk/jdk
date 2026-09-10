@@ -67,7 +67,7 @@ import java.lang.annotation.Target;
  * groups. Contention group tags are not inherited, and the same tag used
  * in a superclass and subclass, represent distinct contention groups.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  * <p> This annotation has no effect when used on or inside value classes.
  * }
  *

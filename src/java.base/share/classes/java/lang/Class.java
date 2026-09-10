@@ -1386,7 +1386,7 @@ public final class Class<T> implements java.io.Serializable,
      * arrays, the values of other modifiers are {@code false} other
      * than as specified above.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          When preview features are enabled and this {@code Class} object
      *          either represents a class whose {@code class} file does not
      *          depend on preview features or represents an array type, its
@@ -1400,7 +1400,7 @@ public final class Class<T> implements java.io.Serializable,
      * of <cite>The Java Virtual Machine Specification</cite>.
      *
      * @apiNote
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          Developers should be aware that the presence of the {@code
      *          identity} modifier is dependent on whether preview features are
      *          enabled.  Use the {@link #isValue() Class.isValue()} method to
@@ -1448,7 +1448,7 @@ public final class Class<T> implements java.io.Serializable,
      * For {@code Class} objects representing void, primitive types, and
      * arrays, access flags are absent other than as specified above.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          When preview features are enabled and this {@code Class} object
      *          either represents a class whose {@code class} file does not
      *          depend on preview features or represents an array type, its
@@ -1459,7 +1459,7 @@ public final class Class<T> implements java.io.Serializable,
      * }
      *
      * @apiNote
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          Developers should be aware that the presence of the {@code
      *          identity} modifier is dependent on whether preview features are
      *          enabled.  Use the {@link #isValue() Class.isValue()} method to

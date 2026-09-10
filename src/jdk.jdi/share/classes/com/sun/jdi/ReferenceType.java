@@ -520,7 +520,7 @@ public interface ReferenceType
      * that is, it must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      * If preview features are enabled, this method does not prevent a
      * strictly-initialized field from being read before it has been initialized.
      * }
@@ -539,7 +539,7 @@ public interface ReferenceType
      * that is, they must be declared in this type, a superclass, a
      * superinterface, or an implemented interface.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      * If preview features are enabled, this method does not prevent a
      * strictly-initialized field from being read before it has been initialized.
      * }

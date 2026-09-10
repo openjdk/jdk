@@ -62,7 +62,7 @@ import static java.lang.String.COMPACT_STRINGS;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Long} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
@@ -963,7 +963,7 @@ public final /*value*/ class Long extends Number
     /**
      * Returns a {@code Long} instance representing the specified
      * {@code long} value.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          <p>
      *              - When preview features are NOT enabled, {@code Long} is an identity class.
      *              If a new {@code Long} instance is not required, this method

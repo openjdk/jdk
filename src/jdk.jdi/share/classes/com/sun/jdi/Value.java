@@ -32,7 +32,7 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
  * This interface is the root of a
  * value hierarchy encompassing primitive values and object values.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  * When preview features are enabled, JDI supports value classes. A "value class"
  * as supported in the Java language is not related to the JDI Value interface.
  * A "value class" is a class declared with the "value" modifier. The JDI

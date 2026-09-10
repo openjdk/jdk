@@ -364,7 +364,7 @@ public final class System {
      * the difference between two such values, obtained within the same
      * instance of a Java virtual machine, is computed.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      * To measure how long some code takes to execute:
      * <pre> {@code
      * long startTime = System.nanoTime();
@@ -488,13 +488,13 @@ public final class System {
      * hashCode().
      * The hash code for the null reference is zero.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The "identity hash code" of a {@linkplain Class#isValue() value object}
      *          is computed by combining the identity hash codes of the value object's fields recursively.
      * }
      *
      * @apiNote
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          Note that, like ==, this hash code exposes information about a value object's
      *          private fields that might otherwise be hidden by an identity object.
      *          Developers should be cautious about storing sensitive secrets in value object fields.
@@ -641,7 +641,7 @@ public final class System {
      * {@link Locale##default_locale Default Locale} section in the {@code Locale}
      * class description may also be obtained with this method.
      *
-     * @apiNote [kind=important id=system-properties-api-note]
+     * @apiNote (kind=important id=system-properties-api-note)
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * Property values may be cached during initialization or on first use.
@@ -712,7 +712,7 @@ public final class System {
      * {@code null}, then the current set of system properties is
      * forgotten.
      *
-     * @apiNote [kind=important]
+     * @apiNote (kind=important)
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * See {@linkplain ##system-properties-api-note getProperties} for details.
@@ -737,7 +737,7 @@ public final class System {
      * properties is first created and initialized in the same manner as
      * for the {@code getProperties} method.
      *
-     * @apiNote [kind=important]
+     * @apiNote (kind=important)
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * See {@linkplain ##system-properties-api-note getProperties} for details.
@@ -781,7 +781,7 @@ public final class System {
     /**
      * Sets the system property indicated by the specified key.
      *
-     * @apiNote [kind=important]
+     * @apiNote (kind=important)
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * See {@linkplain ##system-properties-api-note getProperties} for details.
@@ -807,7 +807,7 @@ public final class System {
     /**
      * Removes the system property indicated by the specified key.
      *
-     * @apiNote [kind=important]
+     * @apiNote (kind=important)
      * Changing a standard system property may have unpredictable results
      * unless otherwise specified.
      * See {@linkplain ##system-properties-api-note getProperties} method for details.

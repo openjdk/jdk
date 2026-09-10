@@ -53,7 +53,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Float} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
@@ -569,7 +569,7 @@ public final /*value*/ class Float extends Number
     /**
      * Returns a {@code Float} instance representing the specified
      * {@code float} value.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          <p>
      *              - When preview features are NOT enabled, {@code Float} is an identity class.
      *              If a new {@code Float} instance is not required, this

@@ -110,7 +110,7 @@ import java.util.function.Function;
  * than for {@code HashMap}, as iteration times for this class are unaffected
  * by capacity.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a linked hash map concurrently, and at least
  * one of the threads modifies the map structurally, it <em>must</em> be
  * synchronized externally.  This is typically accomplished by

@@ -63,7 +63,7 @@ import static java.lang.String.COMPACT_STRINGS;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Integer} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
@@ -994,7 +994,7 @@ public final /*value*/ class Integer extends Number
     /**
      * Returns an {@code Integer} instance representing the specified
      * {@code int} value.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          <p>
      *              - When preview features are NOT enabled, {@code Integer} is an identity class.
      *              If a new {@code Integer} instance is not

@@ -55,7 +55,7 @@ import java.util.function.Function;
  * inconsistent with {@code equals}; it just fails to obey the general contract
  * of the {@code Map} interface.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a map concurrently, and at least one of the
  * threads modifies the map structurally, it <em>must</em> be synchronized
  * externally.  (A structural modification is any operation that adds or

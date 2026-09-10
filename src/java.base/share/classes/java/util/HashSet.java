@@ -44,7 +44,7 @@ import jdk.internal.access.SharedSecrets;
  * buckets).  Thus, it's very important not to set the initial capacity too
  * high (or the load factor too low) if iteration performance is important.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a hash set concurrently, and at least one of
  * the threads modifies the set, it <i>must</i> be synchronized externally.
  * This is typically accomplished by synchronizing on some object that

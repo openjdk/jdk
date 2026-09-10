@@ -47,7 +47,7 @@ import jdk.internal.util.ByteArray;
  * An ObjectInputStream deserializes primitive data and objects previously
  * written using an ObjectOutputStream.
  *
- * {@note [kind=critical header="Warning:"] Deserialization of untrusted data is
+ * {@note (kind=critical header="Warning:") Deserialization of untrusted data is
  * inherently dangerous and should be avoided. Untrusted data should be carefully
  * validated according to the "Serialization and Deserialization" section of the
  * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
@@ -235,7 +235,7 @@ import jdk.internal.util.ByteArray;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          {@linkplain Class#isValue Value classes} that are not records cannot be
  *          deserialized directly. To serialize an instance of a value class, a proxy
  *          object should be used instead. That object can then implement
@@ -439,7 +439,7 @@ public class ObjectInputStream
      * the InputStream and leave it in an indeterminate state; it is up to the
      * caller to ignore or recover the stream state.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          An object in the stream that instantiates a concrete
      *          {@linkplain Class#isValue value class}, or that extends a
      *          Serializable abstract value class that declares instance fields,

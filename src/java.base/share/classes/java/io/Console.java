@@ -73,7 +73,7 @@ import sun.nio.cs.UTF_8;
  * {@link Locale##default_locale default format Locale} to produce localized
  * formatted strings.
  *
- * {@note [header="Security note:"]
+ * {@note (header="Security note:")
  * If an application needs to read a password or other secure data, it should
  * use {@link #readPassword()} or {@link #readPassword(String, Object...)} and
  * manually zero the returned character array after processing to minimize the

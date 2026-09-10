@@ -29,7 +29,7 @@ package java.io;
  * Serializability of a class is enabled by the class implementing the
  * java.io.Serializable interface.
  *
- * {@note [kind=critical header="Warning:"] Deserialization of untrusted data is
+ * {@note (kind=critical header="Warning:") Deserialization of untrusted data is
  * inherently dangerous and should be avoided. Untrusted data should be carefully
  * validated according to the "Serialization and Deserialization" section of the
  * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.
@@ -145,7 +145,7 @@ package java.io;
  * handling methods discussed above, except {@code writeReplace},
  * are ignored for record types.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          {@linkplain Class#isValue Value classes} that are not records can
  *          implement {@code Serializable}, but cannot be serialized directly. Instead,
  *          the {@code writeReplace} method should be used to designate an alternative

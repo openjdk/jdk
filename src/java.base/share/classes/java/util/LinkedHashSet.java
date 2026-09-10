@@ -75,7 +75,7 @@ package java.util;
  * than for {@code HashSet}, as iteration times for this class are unaffected
  * by capacity.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a linked hash set concurrently, and at least
  * one of the threads modifies the set, it <em>must</em> be synchronized
  * externally.  This is typically accomplished by synchronizing on some

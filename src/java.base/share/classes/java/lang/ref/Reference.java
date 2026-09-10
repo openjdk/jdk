@@ -39,7 +39,7 @@ import java.util.Objects;
  * implemented in close cooperation with the garbage collector, this class may
  * not be subclassed directly.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
  *          When preview features are enabled, attempts to create a reference
  *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.

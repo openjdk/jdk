@@ -33,7 +33,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * determines that their referents may otherwise be reclaimed.  Phantom
  * references are most often used to schedule post-mortem cleanup actions.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          The referent must have {@linkplain Objects#hasIdentity(Object) object identity}.
  *          When preview features are enabled, attempts to create a reference
  *          to a {@linkplain Class#isValue value object} result in an {@link IdentityException}.

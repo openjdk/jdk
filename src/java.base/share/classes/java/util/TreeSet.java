@@ -46,7 +46,7 @@ package java.util;
  * <i>is</i> well-defined even if its ordering is inconsistent with equals; it
  * just fails to obey the general contract of the {@code Set} interface.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a tree set concurrently, and at least one
  * of the threads modifies the set, it <i>must</i> be synchronized
  * externally.  This is typically accomplished by synchronizing on some

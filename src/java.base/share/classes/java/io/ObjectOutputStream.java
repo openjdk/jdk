@@ -160,7 +160,7 @@ import static jdk.internal.util.ModifiedUtf.utfLen;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          {@linkplain Class#isValue Value classes} that are not records cannot be
  *          serialized directly. To serialize an instance of a value class, the
  *          <a href="{@docRoot}/../specs/serialization/output.html#the-writereplace-method">
@@ -320,7 +320,7 @@ public class ObjectOutputStream
      * OutputStream, which is left in an indeterminate state, and it is up to
      * the caller to ignore or recover the stream state.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          An object that instantiates a concrete
      *          {@linkplain Class#isValue value class}, or that extends a
      *          Serializable abstract value class that declares instance fields,

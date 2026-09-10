@@ -57,7 +57,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Byte} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
@@ -154,7 +154,7 @@ public final /*value*/ class Byte extends Number
     /**
      * Returns a {@code Byte} instance representing the specified
      * {@code byte} value.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          <p>
      *              - When preview features are NOT enabled, {@code Byte} is an identity class.
      *              If a new {@code Byte} instance is not required, this method

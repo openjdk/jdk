@@ -33,7 +33,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * Every class has {@code Object} as a superclass. All objects,
  * including arrays, implement the methods of this class.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, subclasses of {@code java.lang.Object}
  *          are either {@linkplain Class#isValue value classes} or identity classes.
  *          A <em>value object</em> is an instance of a non-abstract value class. All
@@ -337,7 +337,7 @@ public class Object {
      * <p>
      * Only one thread at a time can own an object's monitor.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code notify} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
@@ -369,7 +369,7 @@ public class Object {
      * description of the ways in which a thread can become the owner of
      * a monitor.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code notifyAll} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
@@ -392,7 +392,7 @@ public class Object {
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
@@ -422,7 +422,7 @@ public class Object {
      * had been called. See the specification of the {@link #wait(long, int)} method
      * for details.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
@@ -525,7 +525,7 @@ public class Object {
      * this exception is thrown. This exception is not thrown until the lock status of
      * this object has been restored as described above.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code wait} method requires that the current thread be the owner
      *          of the object's monitor. Since it is not possible to synchronize on a
      *          value object, an attempt to call this method on a value object will
@@ -586,7 +586,7 @@ public class Object {
      * An identity class may override the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
      *
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          The {@code finalize} method of a value class is never directly
      *          invoked by the garbage collector. This includes the case where an
      *          abstract value class declares a {@code finalize} method and the

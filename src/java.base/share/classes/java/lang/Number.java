@@ -46,7 +46,7 @@ package java.lang;
  * See the documentation of a given {@code Number} implementation for
  * conversion details.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Number} is
  *          an abstract {@linkplain Class#isValue value class}.
  *          Subclasses of {@code Number} can be either value classes

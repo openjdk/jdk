@@ -43,7 +43,7 @@ import java.util.function.Consumer;
  * so this class behaves somewhat differently from other {@code Map}
  * implementations.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          {@linkplain java.util.Objects#hasIdentity Value objects} can not be used as
  *          keys in a {@code WeakHashMap}. The {@link #put(Object, Object) put(K, V)}
  *          method, and all methods that associate a value with a key, throw {@link
@@ -97,7 +97,7 @@ import java.util.function.Consumer;
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
  *
- * {@note [header="Implementation note:"] The values in a
+ * {@note (header="Implementation note:") The values in a
  * {@code WeakHashMap} are held by ordinary strong references.  Thus care
  * should be taken to ensure that values do not strongly refer to their
  * own keys, either directly or indirectly, since that will prevent the keys

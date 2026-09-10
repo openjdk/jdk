@@ -41,7 +41,7 @@ import static javax.lang.model.SourceVersion.*;
  * call {@link #defaultAction defaultAction}, passing their arguments
  * to {@code defaultAction}'s corresponding parameters.
  *
- * @note [id=note_for_subclasses header=Warning: kind=bordered]
+ * @note (id=note_for_subclasses header=Warning: kind=bordered)
  * The {@code TypeVisitor} interface implemented by this class may have methods
  * added to it or the {@link TypeKind TypeKind enum} used in this
  * class may have constants added to it in the future to accommodate

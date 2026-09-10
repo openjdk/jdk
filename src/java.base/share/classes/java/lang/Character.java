@@ -212,7 +212,7 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * as interchangeable and should not use instances for synchronization or
  * with {@linkplain java.lang.ref.Reference object references}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Character} is a {@linkplain Class#isValue value class}.
  *          Use of value class instances for synchronization or with
  *          {@linkplain java.lang.ref.Reference object references} result in
@@ -9466,7 +9466,7 @@ public final /*value*/ class Character
     /**
      * Returns a {@code Character} instance representing the specified
      * {@code char} value.
-     * {@previewNote [jep=401]
+     * {@previewNote (jep=401)
      *          <p>
      *              - When preview features are NOT enabled, {@code Character} is an identity class.
      *              If a new {@code Character} instance is not required, this method

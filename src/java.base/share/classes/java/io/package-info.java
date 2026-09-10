@@ -36,7 +36,7 @@
  * interpreted as described in the class specification of {@link java.io.File}.
  *
  * <h2>Object Serialization</h2>
- * {@note [kind=critical header="Warning:"] Deserialization of untrusted data is
+ * {@note (kind=critical header="Warning:") Deserialization of untrusted data is
  * inherently dangerous and should be avoided. Untrusted data should be carefully
  * validated according to the "Serialization and Deserialization" section of the
  * {@extLink secure_coding_guidelines_javase Secure Coding Guidelines for Java SE}.}

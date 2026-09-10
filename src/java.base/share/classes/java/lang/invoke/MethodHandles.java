@@ -160,7 +160,7 @@ public final class MethodHandles {
      * {@code UNCONDITIONAL} mode assumes readability. Consequently, the lookup class
      * is not used to determine the lookup context.
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * The lookup class can be changed to any other class {@code C} using an expression of the form
      * {@link Lookup#in publicLookup().in(C.class)}.
      * Also, it cannot access
@@ -586,7 +586,7 @@ public final class MethodHandles {
      * the returned method handle will also be of {@linkplain MethodHandle#asVarargsCollector variable arity}.
      * In all other cases, the returned method handle will be of fixed arity.
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * The equivalence between looked-up method handles and underlying
      * class members and bytecode behaviors
      * can break down in a few ways:
@@ -658,7 +658,7 @@ public final class MethodHandles {
      * to executing the compiled, verified, and resolved call to {@code M}.
      * The same point is true of fields and constructors.
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * Access checks only apply to named and reflected methods,
      * constructors, and fields.
      * Other method handle creation methods, such as
@@ -724,7 +724,7 @@ public final class MethodHandles {
      * Also, the {@link Lookup#in Lookup.in} method may produce a lookup object
      * with fewer access modes than the original lookup object.
      *
-     * {@note [id="privacc" header="Discussion of private and module access:" kind=side-note]
+     * {@note (id="privacc" header="Discussion of private and module access:" kind=side-note)
      * We say that a lookup has <em>private access</em>
      * if its {@linkplain #lookupModes lookup modes}
      * include the possibility of accessing {@code private} members
@@ -1320,7 +1320,7 @@ public final class MethodHandles {
      * access is forbidden, and the lookup fails with an
      * {@code IllegalAccessException}.
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * For example, the caller-sensitive method
      * {@link java.lang.Class#forName(String) Class.forName(x)}
      * can return varying classes or throw varying exceptions,
@@ -2501,7 +2501,7 @@ public final class MethodHandles {
          * If the returned method handle is invoked, the method's class will
          * be initialized, if it has not already been initialized.
          *
-         * @note [header=Example:]
+         * @note (header=Example:)
          *
          * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -2565,7 +2565,7 @@ assertEquals("[x, y]", MH_asList.invoke("x", "y").toString());
          * the access mode corresponding to the name string and with the same
          * {@code type} arguments.
          *
-         * @note [header=Example:]
+         * @note (header=Example:)
          *
          * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -2651,7 +2651,7 @@ assertEquals("", (String) MH_newString.invokeExact());
          * If the returned method handle is invoked, the constructor's class will
          * be initialized, if it has not already been initialized.
          *
-         * @note [header=Example:]
+         * @note (header=Example:)
          *
          * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -2879,13 +2879,13 @@ assertEquals("[x, y, z]", pb.command().toString());
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
          *
-         * {@note [kind=side-note] JVM internal methods named {@value ConstantDescs#INIT_NAME}
+         * {@note (kind=side-note) JVM internal methods named {@value ConstantDescs#INIT_NAME}
          * are not visible to this API,
          * even though the {@code invokespecial} instruction can refer to them
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.}
          *
-         * @note [header=Example:]
+         * @note (header=Example:)
          *
          * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -4468,7 +4468,7 @@ return invoker;
      * This method is equivalent to the following code (though it may be more efficient):
      * {@code publicLookup().findVirtual(MethodHandle.class, "invokeExact", type)}
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * Invoker method handles can be useful when working with variable method handles
      * of unknown types.
      * For example, to emulate an {@code invokeExact} call to a variable method
@@ -4514,7 +4514,7 @@ return invoker;
      * This method is equivalent to the following code (though it may be more efficient):
      * {@code publicLookup().findVirtual(MethodHandle.class, "invoke", type)}
      *
-     * {@note [header=Discussion: kind=side-note]
+     * {@note (header=Discussion: kind=side-note)
      * A {@linkplain MethodType#genericMethodType general method type} is one which
      * mentions only {@code Object} arguments and return values.
      * An invoker for such a type is capable of calling any method handle
@@ -5078,7 +5078,7 @@ assert((int)twice.invokeExact(21) == 42);
      * the target's real arguments; if {@code pos} is <i>N</i>
      * they will come after.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -5152,7 +5152,7 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
      * the target's real arguments; if {@code pos} is <i>N</i>
      * they will come after.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
 import static java.lang.invoke.MethodType.*;
@@ -5357,7 +5357,7 @@ assertEquals("xy", h3.invoke("x", "y", 1, "a", "b", "c"));
      * (null or not)
      * which do not correspond to argument positions in the target.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      *
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -5519,7 +5519,7 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      * In all cases, {@code pos} must be greater than or equal to zero, and
      * {@code pos} must also be less than or equal to the target's arity.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      *
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -5656,7 +5656,7 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      * The argument type of the filter (if any) must be identical to the
      * return type of the target.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      *
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -5797,7 +5797,7 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
      * arguments will not need to be live on the stack on entry to the
      * target.)
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      *
      * {@snippet lang="java" :
 import static java.lang.invoke.MethodHandles.*;
@@ -5866,7 +5866,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * zero-based index. The aforementioned method {@link #foldArguments(MethodHandle, MethodHandle)} assumes position
      * 0.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
     import static java.lang.invoke.MethodHandles.*;
     import static java.lang.invoke.MethodType.*;
@@ -6433,7 +6433,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * to their full length, even though individual clause functions may neglect to take them all.
      * As noted above, missing parameters are filled in as if by {@link #dropArgumentsToMatch(MethodHandle, int, List, int)}.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      * {@snippet lang="java" :
      * // iterative implementation of the factorial function as a loop handle
      * static int one(int k) { return 1; }
@@ -6720,7 +6720,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
      * // implement the zip function for lists as a loop handle
      * static List<String> initZip(Iterator<String> a, Iterator<String> b) { return new ArrayList<>(); }
@@ -6833,7 +6833,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
      * // int i = 0; while (i < limit) { ++i; } return i; => limit
      * static int zero(int limit) { return 0; }
@@ -6977,7 +6977,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      *
      * Example with a fully conformant body method:
      * {@snippet lang="java" :
@@ -7337,7 +7337,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * }
      * }
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * {@snippet lang="java" :
      * // get an iterator from a list
      * static List<String> reverseStep(List<String> r, String e) {
@@ -7656,7 +7656,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * method handle as well. Any arguments assigned to these parameters will be forwarded,
      * together with the selector value, to the selected method handle when invoking it.
      *
-     * @note [header=Example:]
+     * @note (header=Example:)
      * The cases each drop the {@code selector} value they are given, and take an additional
      * {@code String} argument, which is concatenated (using {@link String#concat(String)})
      * to a specific constant label string for each case:

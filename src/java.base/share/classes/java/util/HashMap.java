@@ -86,7 +86,7 @@ import jdk.internal.access.SharedSecrets;
  * are {@link Comparable}, this class may use comparison order among
  * keys to help break ties.
  *
- * {@note [header="Note that this implementation is not synchronized."]
+ * {@note (header="Note that this implementation is not synchronized.")
  * If multiple threads access a hash map concurrently, and at least one of
  * the threads modifies the map structurally, it <i>must</i> be
  * synchronized externally.  (A structural modification is any operation

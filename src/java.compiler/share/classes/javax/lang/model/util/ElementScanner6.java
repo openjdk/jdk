@@ -57,7 +57,7 @@ import static javax.lang.model.SourceVersion.*;
  * calling <code>super.visit<i>Xyz</i></code>, an overriding visit method
  * should call {@code scan} with the elements in the desired order.
  *
- * @note [id=note_for_subclasses header=Warning: kind=bordered]
+ * @note (id=note_for_subclasses header=Warning: kind=bordered)
  * The {@code ElementVisitor} interface
  * implemented by this class may have methods added to it in the
  * future to accommodate new, currently unknown, language structures

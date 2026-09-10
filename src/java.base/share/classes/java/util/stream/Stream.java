@@ -251,7 +251,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * transformation to the elements of the stream, and then flattening the
      * resulting elements into a new stream.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      *
      * If {@code orders} is a stream of purchase orders, and each purchase
      * order contains a collection of line items, then the following produces a
@@ -381,7 +381,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * the returned stream. This can be provided in the form of explicit type declarations for
      * the lambda parameters or as an explicit type argument to the {@code mapMulti} call.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      *
      * Given a stream of {@code Number} objects, the following
      * produces a list containing only the {@code Integer} objects:
@@ -1122,7 +1122,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * <p>This is a <a href="package-summary.html#StreamOps">terminal
      * operation</a>.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      * There are many existing classes in the JDK whose signatures are
      * well-suited for use with method references as arguments to {@code collect()}.
      * For example, the following will accumulate strings into an {@code ArrayList}:
@@ -1187,7 +1187,7 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
      * with non-thread-safe data structures (such as {@code ArrayList}), no
      * additional synchronization is needed for a parallel reduction.
      *
-     * @note [header=Examples:]
+     * @note (header=Examples:)
      * The following will accumulate strings into a List:
      * <pre>{@code
      *     List<String> asList = stringStream.collect(Collectors.toList());

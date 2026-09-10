@@ -67,7 +67,7 @@ package java.lang;
  * </pre>
  * then it must be the case that {@code r.equals(copy)}.
  *
- * {@previewNote [jep=401]
+ * {@previewNote (jep=401)
  *          When preview features are enabled, {@code Record} is
  *          an abstract {@linkplain Class#isValue value class}.
  *          Subclasses of {@code Record} can be either identity classes
