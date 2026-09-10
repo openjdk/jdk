@@ -137,6 +137,7 @@ public class SuspendResume5 {
         // R1R2R3  -> 0
 
         for (int mask = (1 << nThreads) - 1; mask >= 0; mask--) {
+            System.out.println("Processing mask: " + mask);
             Thread[] threads = new Thread[nThreads];
             boolean[] suspended = new boolean[nThreads];
             try{
@@ -197,12 +198,20 @@ public class SuspendResume5 {
                 // Now resume the threads
                 for (int i = 0; i < nThreads; i++) {
                     if (suspended[i]) {
+                        System.out.println("Resuming thread: " + threads[i]);
                         JVMTIUtils.resumeThread(threads[i]);
                     }
                 }
                 for (Thread t : threads) {
                     if (t != null) {
-                        t.join();
+                        System.out.println("Joining thread: " + t);
+                        t.join(10000);
+                        if (t.isAlive()) {
+                            System.out.println("Failed to join thread: " + t);
+                            System.out.println("First successor was " + successor);
+                            System.out.println("Last owner was " + owner);
+                            t.join(); // let the test timeout
+                        }
                     }
                 }
             }
