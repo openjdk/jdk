@@ -56,7 +56,10 @@ void ShenandoahUncommitThread::run_service() {
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
 
   while (true) {
-    {
+    bool soft_max_changed = _soft_max_changed.try_unset();
+    bool explicit_gc_requested = _explicit_gc_requested.try_unset();
+
+    if (!soft_max_changed && !explicit_gc_requested) {
       MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
       if (_terminating.is_set()) {
         // Terminating already, exit.
@@ -76,14 +79,15 @@ void ShenandoahUncommitThread::run_service() {
       }
     }
 
-    bool soft_max_changed = _soft_max_changed.try_unset();
-    bool explicit_gc_requested = _explicit_gc_requested.try_unset();
+    // Recheck after sleep too.
+    soft_max_changed |= _soft_max_changed.try_unset();
+    explicit_gc_requested |= _explicit_gc_requested.try_unset();
 
     // Explicit GC tries to uncommit everything down to min capacity.
     // Soft max change tries to uncommit everything down to target capacity.
     // Periodic uncommit tries to uncommit suitable regions down to min capacity.
     size_t shrink_until = soft_max_changed ? _heap->soft_max_capacity() : _heap->min_capacity();
-    double shrink_delay = (soft_max_changed || explicit_gc_requested) ? 0 : normal_shrink_delay;
+    double shrink_delay = soft_max_changed || explicit_gc_requested ? 0 : normal_shrink_delay;
 
     if (plan_work(shrink_delay, shrink_until)) {
       uncommit(shrink_delay, shrink_until);
@@ -204,7 +208,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
       used_before = used_after;
     }
     if (!try_set_progress(delay_ms)) {
-      // Termination asserted.
+      // Need to stop.
       break;
     }
 
@@ -254,7 +258,8 @@ bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
     locker.wait();
   }
 
-  if (_terminating.is_set()) {
+  // Anything changed drastically? Exit then.
+  if (_terminating.is_set() || _soft_max_changed.is_set() || _explicit_gc_requested.is_set()) {
     assert(_uncommit_in_progress.is_unset(), "Should remain unset");
     return false;
   }
