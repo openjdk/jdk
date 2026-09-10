@@ -199,11 +199,11 @@ public class ObjectHeap {
 
   // This method is used to instantiate a holder object that contains
   // the flattened field payload.
-  public Oop newOop(Address payload, ValueKlass klass) {
+  public Oop newOop(Address payload, ValueKlass klass, OopField field) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(payload != null, "payload should not be null");
     }
-    return klass.isPayloadMarkedAsNull(payload)
+    return field.hasNullMarker() && klass.isPayloadMarkedAsNull(payload)
                ? null
                : new FlattenedValue(payload, this, klass);
   }
