@@ -26,6 +26,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Properties;
+
+import jdk.internal.vm.annotation.NullRestricted;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.apps.LingeredApp;
@@ -34,7 +37,7 @@ import jdk.test.whitebox.WhiteBox;
 
 public class LingeredAppWithValueObject extends LingeredApp {
 
-    public static final Path ADDR_FILE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "LingeredAppWithValueObject-address.txt");
+    public static final Path ADDR_FILE_PATH = Path.of(System.getProperty("java.io.tmpdir"), "LingeredAppWithValueObject-addresses.properties");
 
     public static value record Rec(byte recA, byte recB){};
 
@@ -51,17 +54,50 @@ public class LingeredAppWithValueObject extends LingeredApp {
         }
     }
 
+    public static value class NonNullValueObj {
+
+        public final byte a;
+        public final Rec  rec;
+
+        public NonNullValueObj(byte a, byte recA, byte recB) {
+            this.a = a;
+            this.rec = new Rec(recA, recB);
+        }
+    }
+
+    public static value class NonFlattenedValueObj {
+
+        public final int a;
+        public final Object obj;
+
+        public NonFlattenedValueObj(int a, Object obj) {
+            this.a = a;
+            this.obj = obj;
+        }
+    }
+
     private static ValueObj valObj;
 
-    public static void main(String[] args) {
-        valObj = new ValueObj((byte)1, (byte)10, (byte)20);
-        WhiteBox wb = WhiteBox.getWhiteBox();
-        long addr = wb.getObjectAddress(valObj);
-        String addrInHex = String.format("0x%x", addr);
-        IO.println("valObj address = " + addrInHex);
+    @NullRestricted
+    private static NonNullValueObj nonNullValObj;
 
-        try {
-            Files.writeString(ADDR_FILE_PATH, addrInHex, StandardOpenOption.CREATE_NEW);
+    private static NonFlattenedValueObj nonFlattenedValObj;
+
+    static {
+        valObj = new ValueObj((byte)1, (byte)10, (byte)20);
+        nonNullValObj = new NonNullValueObj((byte)2, (byte)30, (byte)40);
+        nonFlattenedValObj = new NonFlattenedValueObj(100, new Object());
+    }
+
+    public static void main(String[] args) {
+        WhiteBox wb = WhiteBox.getWhiteBox();
+        Properties addresses = new Properties();
+        addresses.setProperty("valObj", String.format("0x%x", wb.getObjectAddress(valObj)));
+        addresses.setProperty("nonNullValObj", String.format("0x%x", wb.getObjectAddress(nonNullValObj)));
+        addresses.setProperty("nonFlattenedValObj", String.format("0x%x", wb.getObjectAddress(nonFlattenedValObj)));
+
+        try (var out = Files.newOutputStream(ADDR_FILE_PATH)) {
+            addresses.store(out, null);
             ADDR_FILE_PATH.toFile().deleteOnExit();
         } catch (IOException e) {
             Asserts.fail("Unexpected exception happened", e);

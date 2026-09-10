@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import jdk.test.lib.apps.LingeredApp;
 import jdk.test.lib.SA.SATestUtils;
@@ -41,6 +42,7 @@ import jtreg.SkippedException;
  *
  * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
+ * @modules java.base/jdk.internal.vm.annotation
  * @build LingeredAppWithValueObject
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=480 ClhsdbInspectWithValueObject
@@ -67,16 +69,37 @@ public class ClhsdbInspectWithValueObject {
             );
             theApp.waitAppReadyOrCrashed();
 
-            String addrInHex = Files.readString(LingeredAppWithValueObject.ADDR_FILE_PATH);
-            String cmd = "inspect " + addrInHex;
-            var expStrMap = Map.of(cmd, List.of(
-              "a: 1",
-              "rec:",
-                "recA: 10",
-                "recB: 20",
-              "nullField: null"
-            ));
-            test.run(theApp.getPid(), List.of(cmd), expStrMap, null);
+            Properties addresses = new Properties();
+            try (var in = Files.newInputStream(LingeredAppWithValueObject.ADDR_FILE_PATH)) {
+                addresses.load(in);
+            }
+
+            var cmds = List.of(
+                "inspect " + addresses.getProperty("valObj"),
+                "inspect " + addresses.getProperty("nonNullValObj"),
+                "inspect " + addresses.getProperty("nonFlattenedValObj")
+            );
+
+            var expStrMap = Map.of(
+              cmds.get(0) /* valObj */ , List.of(
+                "a: 1",
+                "rec:",
+                  "recA: 10",
+                  "recB: 20",
+                "nullField: null"
+              ),
+              cmds.get(1) /* nonNullValObj */ , List.of(
+                "a: 2",
+                "rec:",
+                  "recA: 30",
+                  "recB: 40"
+              ),
+              cmds.get(2) /* nonFlattenedValObj */ , List.of(
+                "a: 100",
+                "obj: Oop for java/lang/Object"
+              )
+            );
+            test.run(theApp.getPid(), cmds, expStrMap, null);
         } finally {
             try {
                 LingeredApp.stopApp(theApp);
