@@ -156,7 +156,8 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
     }
   }
 
-  log_info(hotcode)("Collection done. Relocated %d nmethods to the MethodHot heap. Skipped %d. Invalidated during relocation %d.", num_relocated, num_skipped, num_invalidated);
+  log_info(hotcode)("Collection done. Relocated %d nmethods (candidates and callees) to the MethodHot heap. "
+                    "Skipped %d candidates. %d candidates invalidated during relocation.", num_relocated, num_skipped, num_invalidated);
 }
 
 nmethod::RelocationResult HotCodeCollector::do_relocation(void* candidate, uint call_level, int* num_relocated) {
