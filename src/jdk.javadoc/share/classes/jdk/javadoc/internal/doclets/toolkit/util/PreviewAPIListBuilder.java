@@ -69,7 +69,7 @@ import static com.sun.source.doctree.DocTree.Kind.NOTE;
  *     as tag name:
  *
  *     <pre>{@code
- *        @previewNote [jep=401]
+ *        @previewNote (jep=401)
  *        This class is affected by the Value Classes preview feature.
  *     }</pre>
  *
@@ -84,7 +84,7 @@ import static com.sun.source.doctree.DocTree.Kind.NOTE;
  *     page to non-JDK projects. For example, with "previewFeature" as tag name:
  *
  *     <pre>{@code
- *      @previewFeature [title="Preview feature name" url="<URL>" status="<status>"]
+ *      @previewFeature (title="Preview feature name" url="<URL>" status="<status>")
  *      Alternative preview note body.
  *     }</pre>
  *

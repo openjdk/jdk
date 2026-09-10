@@ -353,13 +353,13 @@ public class TestPreview extends JavadocTester {
 
                  /**
                   * Non-preview interface.
-                  * @previewNote [jep=2147483647]
+                  * @previewNote (jep=2147483647)
                   * Block preview note.
                   */
                  public interface NonPreviewFeature {
                       /**
                        * Non-preview method.
-                       * {@previewNote [jep=2147483647 header="" id="preview-note"]
+                       * {@previewNote (jep=2147483647 header="" id="preview-note")
                        * Inline preview note with empty header and explicit id.
                        * }
                        */

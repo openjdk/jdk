@@ -57,7 +57,7 @@ public class TestCustomNoteTag extends JavadocTester {
                 package p;
                 /// First sentence. {@warning abc {@linkplain C _emphasized_} def}
                 ///
-                /// @example [id=example] __xyz__ {@snippet :
+                /// @example (id=example) __xyz__ {@snippet :
                 ///    code ...
                 /// }
                 public class C { }
@@ -93,8 +93,8 @@ public class TestCustomNoteTag extends JavadocTester {
         tb.writeJavaFiles(mdlSrc, """
                 /**
                  * Module m1.
-                 * {@warning [id=inline-MODULE-warning] inline warning}
-                 * @warning [id=block-MODULE-warning] block warning
+                 * {@warning (id=inline-MODULE-warning) inline warning}
+                 * @warning (id=block-MODULE-warning) block warning
                  */
                 module m1 {
                      exports p.q;
@@ -104,8 +104,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 """
                 /**
                  * Package p.q.
-                 * {@warning [id=inline-PACKAGE-warning] inline warning}
-                 * @warning [id=block-PACKAGE-warning] block warning
+                 * {@warning (id=inline-PACKAGE-warning) inline warning}
+                 * @warning (id=block-PACKAGE-warning) block warning
                  */
                 package p.q;
                 """,
@@ -113,26 +113,26 @@ public class TestCustomNoteTag extends JavadocTester {
                 package p.q;
                 /**
                  * An interface.
-                 * {@warning [id=inline-TYPE-warning] inline warning}
-                 * @warning [id=block-TYPE-warning] block warning
+                 * {@warning (id=inline-TYPE-warning) inline warning}
+                 * @warning (id=block-TYPE-warning) block warning
                  */
                 public interface I {
                     /**
                      * A method.
-                     * {@warning [id=inline-METHOD-warning] inline warning}
-                     * @warning [id=block-METHOD-warning] block warning
+                     * {@warning (id=inline-METHOD-warning) inline warning}
+                     * @warning (id=block-METHOD-warning) block warning
                      */
                     void m();
                     /**
                      * An enum.
-                     * {@warning [id=inline-TYPE-warning] inline warning}
-                     * @warning [id=block-TYPE-warning] block warning
+                     * {@warning (id=inline-TYPE-warning) inline warning}
+                     * @warning (id=block-TYPE-warning) block warning
                      */
                     enum E {
                         /**
                          * An enum constant.
-                         * {@warning [id=inline-FIELD-warning] inline warning}
-                         * @warning [id=block-FIELD-warning] block warning
+                         * {@warning (id=inline-FIELD-warning) inline warning}
+                         * @warning (id=block-FIELD-warning) block warning
                          */
                         C
                     }
@@ -142,38 +142,38 @@ public class TestCustomNoteTag extends JavadocTester {
                 package p.q.r;
                 /**
                  * A class.
-                 * {@warning [id=inline-TYPE-warning] inline warning}
-                 * @warning [id=block-TYPE-warning] block warning
+                 * {@warning (id=inline-TYPE-warning) inline warning}
+                 * @warning (id=block-TYPE-warning) block warning
                  */
                 public class C {
                     /**
                      * A field.
-                     * {@warning [id=inline-FIELD-warning] inline warning}
-                     * @warning [id=block-FIELD-warning] block warning
+                     * {@warning (id=inline-FIELD-warning) inline warning}
+                     * @warning (id=block-FIELD-warning) block warning
                      */
                     public static int i;
                     /**
                      * A constructor.
-                     * {@warning [id=inline-CONSTRUCTOR-warning] inline warning}
-                     * @warning [id=block-CONSTRUCTOR-warning] block warning
+                     * {@warning (id=inline-CONSTRUCTOR-warning) inline warning}
+                     * @warning (id=block-CONSTRUCTOR-warning) block warning
                      */
                     public C() { }
                     /**
                      * A record.
-                     * {@warning [id=inline-TYPE-warning] inline warning}
-                     * @warning [id=block-TYPE-warning] block warning
+                     * {@warning (id=inline-TYPE-warning) inline warning}
+                     * @warning (id=block-TYPE-warning) block warning
                      */
                     public record R(int x, int y) { }
                     /**
                      * An annotation interface.
-                     * {@warning [id=inline-TYPE-warning] inline warning}
-                     * @warning [id=block-TYPE-warning] block warning
+                     * {@warning (id=inline-TYPE-warning) inline warning}
+                     * @warning (id=block-TYPE-warning) block warning
                      */
                     public @interface A {
                         /**
                          * A method.
-                         * {@warning [id=inline-METHOD-warning] inline warning}
-                         * @warning [id=block-METHOD-warning] block warning
+                         * {@warning (id=inline-METHOD-warning) inline warning}
+                         * @warning (id=block-METHOD-warning) block warning
                          */
                         String a() default "";
                     }
@@ -183,8 +183,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 <html>
                 <body>
                 Overview file.
-                {@warning [id=inline-OVERVIEW-warning] inline warning}
-                @warning [id=block-OVERVIEW-warning] block warning
+                {@warning (id=inline-OVERVIEW-warning) inline warning}
+                @warning (id=block-OVERVIEW-warning) block warning
                 </body>
                 </html>
                 """);
@@ -192,8 +192,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 <html>
                 <body>
                 HTML file.
-                {@warning [id=inline-PACKAGE-warning] inline warning}
-                @warning [id=block-PACKAGE-warning] block warning
+                {@warning (id=inline-PACKAGE-warning) inline warning}
+                @warning (id=block-PACKAGE-warning) block warning
                 </body>
                 </html>
                 """);
@@ -201,8 +201,8 @@ public class TestCustomNoteTag extends JavadocTester {
                 <html>
                 <body>
                 Package HTML file.
-                {@warning [id=inline-PACKAGE-warning] inline warning}
-                @warning [id=block-PACKAGE-warning] block warning
+                {@warning (id=inline-PACKAGE-warning) inline warning}
+                @warning (id=block-PACKAGE-warning) block warning
                 </body>
                 </html>
                 """);

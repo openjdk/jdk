@@ -31,8 +31,8 @@ public class OtherApi {
    /**
     * This is a preview method.
     *
-    * @previewFeature [title="First preview feature" url="https://example.org/first-preview-feature"
-    *   status]
+    * @previewFeature (title="First preview feature" url="https://example.org/first-preview-feature"
+    *   status)
     * Alternative preview note. {@link PreviewApi} is a preview API.
     */
     public void previewMethod() {}
@@ -40,8 +40,8 @@ public class OtherApi {
    /**
     * This is another preview method.
     *
-    * @previewFeature [title="Second preview feature" url="https://example.org/second-preview-feature"
-    *   status="new"]
+    * @previewFeature (title="Second preview feature" url="https://example.org/second-preview-feature"
+    *   status="new")
     * Alternative preview note for second preview feature.
     * @previewFeature Extra note tag triggers a warning
     */

@@ -184,9 +184,9 @@ public class TestNoteTag extends JavadocTester {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src, """
                 package p;
-                /// First sentence. {@note [id=inline-note] abc {@linkplain C _emphasized_ link} def}
+                /// First sentence. {@note (id=inline-note) abc {@linkplain C _emphasized_ link} def}
                 ///
-                /// @note [] xyz [**bold** link][C]
+                /// @note () xyz [**bold** link][C]
                 ///
                 public class C {
                     /// Constructor.
@@ -234,10 +234,10 @@ public class TestNoteTag extends JavadocTester {
                     /**
                      * @note First note
                      * @note Second note
-                     * @note [header="Important:"] First important note
-                     * @note [header="Important:"] Second important note
-                     * @note [header="Warning:" id="first-warning" kind="warning"] First warning
-                     * @note [header="Warning:" id="second-warning" kind="warning"] Second warning
+                     * @note (header="Important:") First important note
+                     * @note (header="Important:") Second important note
+                     * @note (header="Warning:" id="first-warning" kind="warning") First warning
+                     * @note (header="Warning:" id="second-warning" kind="warning") Second warning
                      */
                     public class C {
                     }
@@ -279,9 +279,9 @@ public class TestNoteTag extends JavadocTester {
         tb.writeJavaFiles(src, """
                     package p;
                     /**
-                    * First sentence. {@note [header=Warning }
+                    * First sentence. {@note (header=Warning }
                     * @note
-                    *  [ id=important-note
+                    *  ( id=important-note
                     *    kind=important
                     */
                     public class C {
@@ -295,7 +295,7 @@ public class TestNoteTag extends JavadocTester {
 
         checkOutput(Output.OUT, true, """
                     C.java:3: error: unterminated attributes
-                    * First sentence. {@note [header=Warning }
+                    * First sentence. {@note (header=Warning }
                                                              ^
                     """,
                 """
@@ -308,7 +308,7 @@ public class TestNoteTag extends JavadocTester {
         checkOrder("p/C.html", """
                 <details class="invalid-tag">
                 <summary>invalid @note</summary>
-                <pre>{@note [header=Warning }</pre>
+                <pre>{@note (header=Warning }</pre>
                 </details>""");
     }
 
@@ -318,9 +318,9 @@ public class TestNoteTag extends JavadocTester {
         tb.writeJavaFiles(src, """
                     package p;
                     /**
-                    * First sentence. {@note [id] body }
+                    * First sentence. {@note (id) body }
                     *
-                    * @note [ id=important-note kind ] body
+                    * @note ( id=important-note kind ) body
                     */
                     public class C {
                     }
@@ -333,12 +333,12 @@ public class TestNoteTag extends JavadocTester {
 
         checkOutput(Output.OUT, true, """
                     C.java:3: warning: attribute lacks value
-                    * First sentence. {@note [id] body }
+                    * First sentence. {@note (id) body }
                                               ^
                     """,
                 """
                     C.java:5: warning: attribute lacks value
-                    * @note [ id=important-note kind ] body
+                    * @note ( id=important-note kind ) body
                                                 ^
                     """);
 
@@ -360,9 +360,9 @@ public class TestNoteTag extends JavadocTester {
         tb.writeJavaFiles(src, """
                     package p;
                     /**
-                    * First sentence. {@note [id=foo id=bar] body }
+                    * First sentence. {@note (id=foo id=bar) body }
                     *
-                    * @note [kind=important kind=other] body
+                    * @note (kind=important kind=other) body
                     */
                     public class C {
                     }
@@ -375,12 +375,12 @@ public class TestNoteTag extends JavadocTester {
 
         checkOutput(Output.OUT, true, """
                     C.java:3: warning: repeated attribute: id=bar
-                    * First sentence. {@note [id=foo id=bar] body }
+                    * First sentence. {@note (id=foo id=bar) body }
                                                      ^
                     """,
                 """
                     C.java:5: warning: repeated attribute: kind=other
-                    * @note [kind=important kind=other] body
+                    * @note (kind=important kind=other) body
                                             ^
                     """);
 
@@ -402,14 +402,14 @@ public class TestNoteTag extends JavadocTester {
         tb.writeJavaFiles(src, """
                     package p;
                     /**
-                     * @note [id=block-note] A
-                     * @note [id=block-note] B
-                     * @note [id=block-note] C
+                     * @note (id=block-note) A
+                     * @note (id=block-note) B
+                     * @note (id=block-note) C
                      */
                     public class C {
                         /**
-                         * {@note [id=inline-note] 1} {@note 2}.
-                         * {@note [id=inline-note] 3}
+                         * {@note (id=inline-note) 1} {@note 2}.
+                         * {@note (id=inline-note) 3}
                          */
                         public void m() {}
                     }
@@ -554,22 +554,22 @@ public class TestNoteTag extends JavadocTester {
         tb.writeJavaFiles(src, """
                 package p;
                 /**
-                 * @note [id='id "$ value'
+                 * @note (id='id "$ value'
                  *   header='Multi-line header containing <em>
                  *           both <sup>$upported</sup></EM> and
                  *           <a href="javascript:alert(0)">unsupported</a> markup'
                  *   kind='myNote " otherStyle'
-                 *   otherAttribute="ignored"]
+                 *   otherAttribute="ignored")
                  * Block note body.
                  */
                 public class C {
                     /**
-                     * {@note [id='id "$ value'
+                     * {@note (id='id "$ value'
                      *   header='Multi-line header containing <em>
                      *           both <sup>$upported</sup></EM> and
                      *           <a href="javascript:alert(0)">unsupported</a> markup'
                      *   kind='myNote " otherStyle'
-                     *   otherAttribute="ignored"]
+                     *   otherAttribute="ignored")
                      * Inline note body.
                      * }
                      */

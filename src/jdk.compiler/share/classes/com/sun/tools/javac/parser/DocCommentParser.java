@@ -2143,10 +2143,10 @@ public class DocCommentParser {
                 public DCTree parse(int pos, Kind kind, String tagName) throws ParseException {
                     skipWhitespace();
                     List<DCTree> attributes = List.nil();
-                    if (ch == '[') {
+                    if (ch == '(') {
                         nextChar();
-                        attributes = tagAttrs(']');
-                        if (ch != ']') {
+                        attributes = tagAttrs(')');
+                        if (ch != ')') {
                             nextChar();
                             throw new ParseException("dc.unterminated.attributes");
                         }
