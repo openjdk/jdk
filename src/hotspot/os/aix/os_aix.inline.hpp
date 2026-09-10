@@ -48,6 +48,10 @@ inline bool os::must_commit_stack_guard_pages() {
   return false;
 }
 
+inline bool os::uses_stack_growth_guard_page() {
+  return false;
+}
+
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
 }

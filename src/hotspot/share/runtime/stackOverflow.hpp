@@ -227,6 +227,9 @@ class StackOverflow {
   static size_t _stack_reserved_zone_size;
   static size_t _stack_shadow_zone_size;
 
+  // Additional platform guard space not represented by the stack zone flags.
+  static size_t _stack_growth_guard_zone_size;
+
  public:
   static void initialize_stack_zone_sizes();
 
@@ -258,8 +261,7 @@ class StackOverflow {
 
   // Returns base of the reserved zone (one-beyond the highest reserved zone address).
   address stack_reserved_zone_base() const {
-    return (address)(stack_end() +
-                     (stack_red_zone_size() + stack_yellow_zone_size() + stack_reserved_zone_size()));
+    return (address)(stack_end() + stack_guard_zone_size());
   }
 
   // Returns true if address points into the reserved zone.
@@ -268,18 +270,26 @@ class StackOverflow {
            (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
   }
 
+  // Size of the recoverable stack zones configured by the VM flags.
   static size_t stack_yellow_reserved_zone_size() {
     return _stack_yellow_zone_size + _stack_reserved_zone_size;
   }
 
-  // Returns true if a points into either yellow or reserved zone.
+  // Size protected for the recoverable zones, including any platform guard
+  // needed to grow the stack.
+  static size_t stack_yellow_reserved_guard_zone_size() {
+    return stack_yellow_reserved_zone_size() + _stack_growth_guard_zone_size;
+  }
+
+  // Returns true if a points into the recoverable protected region. This also
+  // includes any platform growth guard adjacent to the yellow zone.
   bool in_stack_yellow_reserved_zone(address a) const {
     return (a < stack_reserved_zone_base()) && (a >= stack_red_zone_base());
   }
 
-  // Size of red + yellow + reserved zones.
+  // Size of red + yellow + reserved zones and any platform growth guard.
   static size_t stack_guard_zone_size() {
-    return stack_red_zone_size() + stack_yellow_reserved_zone_size();
+    return stack_red_zone_size() + stack_yellow_reserved_guard_zone_size();
   }
 
   static size_t stack_shadow_zone_size() {
