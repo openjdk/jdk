@@ -303,4 +303,4 @@ value class CarPair {
         car1 = new Car(m1, w1);
         car2 = new Car(m2, w2);
     }
-}        
+}
