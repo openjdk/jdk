@@ -36,7 +36,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -45,7 +44,6 @@
 
 address VtableStub::_chunk             = nullptr;
 address VtableStub::_chunk_end         = nullptr;
-VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
 
 void* VtableStub::operator new(size_t size, int code_size) throw() {
@@ -81,8 +79,8 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = %zd, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
-             index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
+  st->print("vtable stub (index = %d, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
+             index(), p2i(code_begin()), p2i(code_end()));
 }
 
 void VtableStub::print() const { print_on(tty); }
@@ -124,9 +122,6 @@ int VtableStubs::_itab_stub_size = 0;
 
 
 void VtableStubs::initialize() {
-  assert(VtableStub::_receiver_location == VMRegImpl::Bad(), "initialized multiple times?");
-
-  VtableStub::_receiver_location = SharedRuntime::name_for_receiver();
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     for (int i = 0; i < N; i++) {
@@ -228,9 +223,9 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool calle
 
       enter(is_vtable_stub, vtable_index, caller_is_c1, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub (%s) %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
+        tty->print_cr("Decoding VtableStub (%s) %s[%d] [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
                       caller_is_c1 ? "c1" : "full opt",
-                      is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
+                      is_vtable_stub? "vtbl": "itbl", vtable_index,
                       p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());
       }
@@ -250,8 +245,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool calle
 
 
 inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index, bool caller_is_c1) {
-  // Assumption: receiver_location < 4 in most cases.
-  int hash = ((vtable_index << 2) ^ VtableStub::receiver_location()->value()) + vtable_index;
+  int hash = vtable_index;
   if (caller_is_c1) {
     // We have different vtable stubs for C1 and C2. We therefore make sure to get different hashes.
     hash = 7 - hash;

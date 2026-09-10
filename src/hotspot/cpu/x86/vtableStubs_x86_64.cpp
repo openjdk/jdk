@@ -74,7 +74,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
 #endif
 
   // get receiver (need to skip return address on top of stack)
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
+  assert(SharedRuntime::name_for_receiver() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Free registers (non-args) are rax, rbx
 
@@ -188,7 +188,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   Label L_no_such_interface;
 
   // get receiver klass (also an implicit null-check)
-  assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
+  assert(SharedRuntime::name_for_receiver() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
   address npe_addr = __ pc();
   __ load_klass(recv_klass_reg, j_rarg0, temp_reg);
 
