@@ -163,13 +163,16 @@ class fieldDescriptor {
 //   Line::p2::x::value             Integer           16
 //   Line::p2::y::value             Integer           20  -> p2.y is at offset 20 of the heap oop
 class ValuePayloadContext {
-  DEBUG_ONLY(ValueKlass* _klass;) // this is used only in asserts for now ...
+  ValueKlass* _klass;
   int _offset_in_obj; // in bytes
 public:
   ValuePayloadContext(ValueKlass* klass, int offset_in_obj) :
-    DEBUG_ONLY(_klass(klass) COMMA) _offset_in_obj(offset_in_obj) {}
+    _klass(klass), _offset_in_obj(offset_in_obj) {
+    precond(klass != nullptr);
+    precond(offset_in_obj > 0);
+  }
 
-  DEBUG_ONLY(ValueKlass* klass() const { return _klass; })
+  ValueKlass* klass() const { return _klass; }
   int offset_in_obj() const { return _offset_in_obj; }
 };
 

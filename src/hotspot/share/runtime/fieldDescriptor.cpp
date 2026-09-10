@@ -117,9 +117,9 @@ int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
   if (vpc == nullptr) {
     return offset();
   } else {
-    precond(vpc->klass() != nullptr);
-    precond(vpc->offset_in_obj() != 0);
-    precond(vpc->klass() == this->field_holder());
+    // vpc->klass() is not necessarily the same as this->field_holder(), as this field could be
+    // declared in a superclass of vpc->klass().
+    precond(vpc->klass()->is_subclass_of(this->field_holder()));
 
     // Compute the offset of the field represented by this fieldDescriptor from
     // the beginning of an heap oop.
@@ -136,7 +136,7 @@ int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
     //     vpc->klass()->payload_offset() : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
     //   =>
     //     field_offset_in_obj() : 12 + (8 - 8) == 12 (offset inside a Point object)
-    int offset_in_value_payload = this->offset() - ValueKlass::cast(this->field_holder())->payload_offset();
+    int offset_in_value_payload = this->offset() - vpc->klass()->payload_offset();
     return vpc->offset_in_obj() + offset_in_value_payload;
   }
 }

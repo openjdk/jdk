@@ -170,6 +170,15 @@ public class ValueObjectPrinting {
                     checkMatch(s, " 1111 .* 2222 .* 3333 .* 4444 .* 5555 .* 6666 ");
                 });
         }
+
+        // In fieldDescriptor::field_offset_in_obj(), vpc->klass() is not the same as this->field_holder()
+        // when printing CarPair::car1::make: this field is declared in Vehicle, but vpc->klass() is Car.
+        {
+            test(new CarPair("Morgan", 3, "Mini", 4), (s) -> {
+                    checkMatch(s, "car1.*\n.*Morgan.*\n.*numWheels.* 3 ");
+                    checkMatch(s, "car2.*\n.*Mini.*\n.*numWheels.* 4 ");
+                });
+        }
     }
 
     static void test(Object o, Checker c) {
@@ -225,6 +234,7 @@ value class PaddedRectangle {
     @NullRestricted Point p1;
     int c, d;
     @NullRestricted Point p2;
+    @NullRestricted Number p3;
 
     PaddedRectangle(int x1, int y1, int x2, int y2) {
         a = "info";
@@ -232,6 +242,7 @@ value class PaddedRectangle {
         c = 1000001003;
         d = 1000001004;
         this.p2 = new Point(x2, y2);
+        this.p3 = new Integer(0);
     }
 }
 
@@ -268,3 +279,28 @@ value class NullableRectanglePair {
         }
     }
 }
+
+abstract value class Vehicle {
+    String make;
+    Vehicle(String m) {
+        make = m;
+    }
+}
+
+value class Car extends Vehicle {
+    int numWheels;
+    Car(String m, int w) {
+        numWheels = w;
+        super(m);
+    }
+}
+
+value class CarPair {
+    @NullRestricted Car car1;
+    @NullRestricted Car car2;
+
+    CarPair(String m1, int w1, String m2, int w2) {
+        car1 = new Car(m1, w1);
+        car2 = new Car(m2, w2);
+    }
+}        
