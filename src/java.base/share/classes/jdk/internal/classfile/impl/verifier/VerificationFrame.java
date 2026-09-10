@@ -154,7 +154,7 @@ class VerificationFrame {
     }
 
     void unsatisfied_strict_fields_error(VerificationWrapper klass, int bci) {
-        _verifier.verifyError("All strict final fields must be initialized before super(): %d field(s), %s"
+        _verifier.verifyError("All strict fields must be initialized before super(): %d field(s), %s"
                 .formatted(_assert_unset_fields.size(), _assert_unset_fields));
     }
 

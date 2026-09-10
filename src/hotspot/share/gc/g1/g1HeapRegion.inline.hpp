@@ -534,12 +534,12 @@ inline void G1HeapRegion::add_pinned_object_count(size_t value) {
   _pinned_object_count.add_then_fetch(value, memory_order_relaxed);
 }
 
-inline void G1HeapRegion::install_cset_group(G1CSetCandidateGroup* cset_group) {
-  _rem_set->install_cset_group(cset_group);
+inline void G1HeapRegion::install_card_set_group(G1CardSetGroup* card_set_group) {
+  _rem_set->install_card_set_group(card_set_group);
 }
 
-inline void G1HeapRegion::uninstall_cset_group() {
-  _rem_set->uninstall_cset_group();
+inline void G1HeapRegion::uninstall_card_set_group() {
+  _rem_set->uninstall_card_set_group();
 }
 
 #endif // SHARE_GC_G1_G1HEAPREGION_INLINE_HPP

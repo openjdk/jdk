@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          carrier thread pool (i.e., FJP) requires `parallelism <= maxPoolSize`
  *          and having 1 thread in the pool is easier to make it starve.
  *
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & test.thread.factory != "Virtual"
  *
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout=1

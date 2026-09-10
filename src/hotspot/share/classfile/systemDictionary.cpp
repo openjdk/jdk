@@ -56,7 +56,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -66,6 +65,7 @@
 #include "oops/oopHandle.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -434,7 +434,7 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 }
 
 // Must be called for any superclass or superinterface resolution
-// during class definition, or may be called for inline field layout processing
+// during class definition, or may be called for value field layout processing
 // to detect class circularity errors.
 // superinterface callers:
 //    parse_interfaces - from defineClass
@@ -448,7 +448,7 @@ static inline void log_circularity_error(Symbol* name, PlaceholderEntry* probe) 
 //      If another thread is trying to resolve the class, it must do
 //      superclass checks on its own thread to catch class circularity and
 //      to avoid deadlock.
-// inline field layout callers:
+// value field layout callers:
 //    The field's class must be loaded to determine layout.
 //
 // resolve_with_circularity_detection adds a DETECT_CIRCULARITY placeholder to the placeholder table before calling
@@ -1109,9 +1109,9 @@ bool SystemDictionary::check_shared_class_super_types(InstanceKlass* ik, Handle 
   return true;
 }
 
-// Pre-load class referred to in fields with archived inline field metadata. These fields
+// Pre-load class referred to in fields with archived value field metadata. These fields
 // must be checked against the resolved runtime class before the shared class can be used.
-bool SystemDictionary::preload_from_required_inline_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS) {
+bool SystemDictionary::preload_from_required_value_field(InstanceKlass* ik, Handle class_loader, Symbol* sig, int field_index, TRAPS) {
   if (log_is_enabled(Info, class, preload)) {
     TempNewSymbol name = Signature::strip_envelope(sig);
     log_info(class, preload)("Preloading of class %s during loading of shared class %s. "
@@ -1119,7 +1119,7 @@ bool SystemDictionary::preload_from_required_inline_field(InstanceKlass* ik, Han
                              name->as_C_string(), ik->name()->as_C_string());
   }
 
-  InstanceKlass* k = ik->get_inline_type_field_klass_or_null(field_index);
+  InstanceKlass* k = ik->get_value_type_field_klass_or_null(field_index);
   bool check = check_shared_class_dependency(ik, k, class_loader, false, THREAD);
   if (!check) {
     const bool has_pending_exception = HAS_PENDING_EXCEPTION;
@@ -1161,7 +1161,7 @@ void SystemDictionary::try_preload_from_loadable_descriptors(InstanceKlass* ik, 
   log_info(class, preload)("Preloading of class %s during loading of shared class %s. "
                            "Cause: field type in LoadableDescriptors attribute",
                            name->as_C_string(), ik->name()->as_C_string());
-  InstanceKlass* k = ik->get_inline_type_field_klass_or_null(field_index);
+  InstanceKlass* k = ik->get_value_type_field_klass_or_null(field_index);
   if (k == nullptr) {
     SystemDictionary::resolve_with_circularity_detection(ik->name(), name, class_loader, false, THREAD);
     if (HAS_PENDING_EXCEPTION) {
@@ -1212,7 +1212,7 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
 
   if (ik->has_inlined_fields() || ik->has_null_restricted_static_fields()) {
     for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-      if (fs.access_flags().is_static() && !fs.is_null_free_inline_type()) {
+      if (fs.access_flags().is_static() && !fs.is_null_free_value_type()) {
         continue;
       }
 
@@ -1223,8 +1223,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
         continue;
       }
 
-      if (fs.is_flat() || fs.is_null_free_inline_type()) {
-        bool check = preload_from_required_inline_field(ik, class_loader, sig, field_index, CHECK_NULL);
+      if (fs.is_flat() || fs.is_null_free_value_type()) {
+        bool check = preload_from_required_value_field(ik, class_loader, sig, field_index, CHECK_NULL);
         if (!check) {
           ik->set_shared_loading_failed();
           return nullptr;
