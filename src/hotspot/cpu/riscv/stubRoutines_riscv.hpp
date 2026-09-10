@@ -98,7 +98,8 @@ private:
   }
 
 private:
-  static juint    _crc_table[];
+  static const juint    _crc_table[];
+  static const juint    _crc32c_table[];
 };
 
 #endif // CPU_RISCV_STUBROUTINES_RISCV_HPP

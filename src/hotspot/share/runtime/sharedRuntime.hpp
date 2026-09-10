@@ -302,9 +302,9 @@ class SharedRuntime: AllStatic {
   }
 
   // Value types
-  static address store_inline_type_fields_to_buf_entry()   {
-    assert(_store_inline_type_fields_to_buf_blob != nullptr, "");
-    return _store_inline_type_fields_to_buf_blob->entry_point();
+  static address store_value_type_fields_to_buf_entry()   {
+    assert(_store_value_type_fields_to_buf_blob != nullptr, "");
+    return _store_value_type_fields_to_buf_blob->entry_point();
   }
 
 #if INCLUDE_JFR
@@ -573,8 +573,8 @@ class SharedRuntime: AllStatic {
   static address resolve_virtual_call_C    (JavaThread* current);
   static address resolve_opt_virtual_call_C(JavaThread* current);
 
-  static void load_inline_type_fields_in_regs(JavaThread* current, oopDesc* res);
-  static void store_inline_type_fields_to_buf(JavaThread* current, intptr_t res);
+  static void load_value_type_fields_in_regs(JavaThread* current, oopDesc* res);
+  static void store_value_type_fields_to_buf(JavaThread* current, intptr_t res);
 
   // arraycopy, the non-leaf version.  (See StubRoutines for all the leaf calls.)
   static void slow_arraycopy_C(oopDesc* src,  jint src_pos,
@@ -586,12 +586,12 @@ class SharedRuntime: AllStatic {
   static address handle_wrong_method(JavaThread* current);
   static address handle_wrong_method_abstract(JavaThread* current);
   static address handle_wrong_method_ic_miss(JavaThread* current);
-  static void allocate_inline_types(JavaThread* current, Method* callee, bool allocate_receiver);
-  static oop allocate_inline_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS);
+  static void allocate_value_types(JavaThread* current, Method* callee, bool allocate_receiver);
+  static oop allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS);
 
   static address handle_unsafe_access(JavaThread* thread, address next_pc);
 
-  static BufferedInlineTypeBlob* generate_buffered_inline_type_adapter(const InlineKlass* vk);
+  static BufferedValueTypeBlob* generate_buffered_value_type_adapter(const ValueKlass* vk);
 #ifndef PRODUCT
 
   // Collect and print inline cache miss statistics
@@ -744,7 +744,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
 
   static const char *_entry_names[];
 
-  // Support for scalarized inline type calling convention
+  // Support for scalarized value type calling convention
   GrowableArray<SigEntry>* _sig_cc;
   GrowableArray<SigEntry>* _sig_cc_ro;
 
@@ -812,19 +812,19 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif // ZERO
   }
 
-  address get_c2i_inline_entry() const {
+  address get_c2i_value_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_inline_entry();
+    return _adapter_blob->c2i_value_entry();
 #else
     return nullptr;
 #endif // ZERO
   }
 
-  address get_c2i_inline_ro_entry() const {
+  address get_c2i_value_ro_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_inline_ro_entry();
+    return _adapter_blob->c2i_value_ro_entry();
 #else
     return nullptr;
 #endif // ZERO
@@ -839,10 +839,10 @@ class AdapterHandlerEntry : public MetaspaceObj {
 #endif // ZERO
   }
 
-  address get_c2i_unverified_inline_entry() const {
+  address get_c2i_unverified_value_entry() const {
 #ifndef ZERO
     assert(_adapter_blob != nullptr, "must be");
-    return _adapter_blob->c2i_unverified_inline_entry();
+    return _adapter_blob->c2i_unverified_value_entry();
 #else
     return nullptr;
 #endif // ZERO
@@ -860,7 +860,7 @@ class AdapterHandlerEntry : public MetaspaceObj {
   AdapterBlob* adapter_blob() const { return _adapter_blob; }
   bool is_linked() const { return _linked; }
 
-  // Support for scalarized inline type calling convention
+  // Support for scalarized value type calling convention
   void set_sig_cc(GrowableArray<SigEntry>* sig) {
     assert(_sig_cc == nullptr, "Already initialized");
     _sig_cc = sig;
@@ -955,14 +955,14 @@ class AdapterHandlerLibrary: public AllStatic {
 
 // Utility class for computing the calling convention of the 3 types
 // of compiled method entries:
-//     Method::_from_compiled_entry               - sig_cc
-//     Method::_from_compiled_inline_ro_entry     - sig_cc_ro
-//     Method::_from_compiled_inline_entry        - sig
+//     Method::_from_compiled_entry              - sig_cc
+//     Method::_from_compiled_value_ro_entry     - sig_cc_ro
+//     Method::_from_compiled_value_entry        - sig
 class CompiledEntrySignature : public StackObj {
 private:
   Method* _method;
-  int  _num_inline_args;
-  bool _has_inline_recv;
+  int  _num_value_args;
+  bool _has_value_recv;
   GrowableArray<SigEntry>* _sig;
   GrowableArray<SigEntry>* _sig_cc;
   GrowableArray<SigEntry>* _sig_cc_ro;
@@ -983,13 +983,13 @@ private:
 public:
   Method* method()                     const { return _method; }
 
-  // Used by Method::_from_compiled_inline_entry
+  // Used by Method::_from_compiled_value_entry
   GrowableArray<SigEntry>* sig()       const { return _sig; }
 
   // Used by Method::_from_compiled_entry
   GrowableArray<SigEntry>* sig_cc()    const { return _sig_cc; }
 
-  // Used by Method::_from_compiled_inline_ro_entry
+  // Used by Method::_from_compiled_value_ro_entry
   GrowableArray<SigEntry>* sig_cc_ro() const { return _sig_cc_ro; }
 
   VMRegPair* regs()                    const { return _regs; }
@@ -1000,12 +1000,12 @@ public:
   int args_on_stack_cc()               const { return _args_on_stack_cc; }
   int args_on_stack_cc_ro()            const { return _args_on_stack_cc_ro; }
 
-  int  num_inline_args()               const { return _num_inline_args; }
-  bool has_inline_recv()               const { return _has_inline_recv; }
+  int  num_value_args()                const { return _num_value_args; }
+  bool has_value_recv()                const { return _has_value_recv; }
 
   bool has_scalarized_args()           const { return _sig != _sig_cc; }
   bool needs_stack_repair()            const { return _needs_stack_repair; }
-  CodeOffsets::Entries c1_inline_ro_entry_type() const;
+  CodeOffsets::Entries c1_value_ro_entry_type() const;
 
   CompiledEntrySignature(Method* method = nullptr);
   void compute_calling_conventions(bool link_time = true);

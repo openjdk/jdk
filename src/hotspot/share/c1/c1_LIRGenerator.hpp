@@ -303,7 +303,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
  public:
   void access_store_at(DecoratorSet decorators, BasicType type,
                        LIRItem& base, LIR_Opr offset, LIR_Opr value,
-                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr, ciInlineKlass* vk = nullptr);
+                       CodeEmitInfo* patch_info = nullptr, CodeEmitInfo* store_emit_info = nullptr, ciValueKlass* vk = nullptr);
 
   void access_load_at(DecoratorSet decorators, BasicType type,
                       LIRItem& base, LIR_Opr offset, LIR_Opr result,
@@ -496,7 +496,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void profile_null_free_array(LIRItem array, ciMethodData* md, ciProfileData* load_store);
   template <class ArrayData> void profile_array_type(AccessIndexed* x, ciMethodData*& md, ArrayData*& load_store);
   void profile_element_type(Value element, ciMethodData* md, ciArrayLoadData* load_store);
-  bool profile_inline_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
+  bool profile_value_klass(ciMethodData* md, ciProfileData* data, Value value, int flag);
   LIR_Opr mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info);
 
  public:

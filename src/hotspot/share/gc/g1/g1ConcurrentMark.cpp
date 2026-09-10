@@ -688,8 +688,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers(active_tasks);
-  _second_overflow_barrier_sync.set_n_workers(active_tasks);
+  _first_overflow_barrier_sync.set_num_workers(active_tasks);
+  _second_overflow_barrier_sync.set_num_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -838,10 +838,10 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint num_workers, bool suspendible) :
     WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
-    _hr_claimer(n_workers),
+    _hr_claimer(num_workers),
     _suspendible(suspendible)
   { }
 
@@ -941,11 +941,11 @@ public:
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
     const double regions_per_thread = 1000;
-    return _claimer.n_regions() / regions_per_thread;
+    return _claimer.num_regions() / regions_per_thread;
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   void do_work(uint worker_id) override {
@@ -1947,31 +1947,29 @@ G1HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {
 }
 
 #ifndef PRODUCT
-class VerifyNoCSetOops {
+class G1VerifyNoCollectionSetOops {
   G1CollectedHeap* _g1h;
-  const char* _phase;
-  int _info;
+  const char* _location;
+  int _index;
 
 public:
-  VerifyNoCSetOops(const char* phase, int info = -1) :
+  G1VerifyNoCollectionSetOops(const char* location, int index = -1) :
     _g1h(G1CollectedHeap::heap()),
-    _phase(phase),
-    _info(info)
+    _location(location),
+    _index(index)
   { }
 
   void operator()(G1TaskQueueEntry task_entry) const {
-    if (task_entry.is_partial_array_state()) {
-      oop obj = task_entry.to_partial_array_state()->source();
-      guarantee(_g1h->is_in_reserved(obj), "Partial Array " PTR_FORMAT " must be in heap.", p2i(obj));
-      return;
-    }
-    guarantee(oopDesc::is_oop(task_entry.to_oop()),
-              "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-              p2i(task_entry.to_oop()), _phase, _info);
-    G1HeapRegion* r = _g1h->heap_region_containing(task_entry.to_oop());
+    oop obj = task_entry.is_partial_array_state()
+            ? task_entry.to_partial_array_state()->source()
+            : task_entry.to_oop();
+    guarantee(oopDesc::is_oop(obj),
+              "Non-oop " PTR_FORMAT ", location: %s, index: %d",
+              p2i(obj), _location, _index);
+    G1HeapRegion* r = _g1h->heap_region_containing(obj);
     guarantee(!(r->in_collection_set() || r->has_index_in_opt_cset()),
               "obj " PTR_FORMAT " from %s (%d) in region %u in (optional) collection set",
-              p2i(task_entry.to_oop()), _phase, _info, r->hrm_index());
+              p2i(obj), _location, _index, r->hrm_index());
   }
 };
 
@@ -1983,15 +1981,17 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
   }
 
   // Verify entries on the global mark stack
-  _global_mark_stack.iterate(VerifyNoCSetOops("Stack"));
+  _global_mark_stack.iterate(G1VerifyNoCollectionSetOops("Stack"));
 
   // Verify entries on the task queues
   for (uint i = 0; i < _max_num_tasks; ++i) {
     G1CMTaskQueue* queue = _task_queues->queue(i);
-    queue->iterate(VerifyNoCSetOops("Queue", i));
+    queue->iterate(G1VerifyNoCollectionSetOops("Queue", i));
   }
 
-  // Verify the global finger
+  // Verify the global finger. Unlike the task fingers, it only moves in whole
+  // regions as tasks claim them, so it must be at a region bottom. That region
+  // may be in the collection set: nothing in it has been scanned yet.
   HeapWord* global_finger = finger();
   if (global_finger != nullptr && global_finger < _heap.end()) {
     // Since we always iterate over all regions, we might get a null G1HeapRegion
@@ -2008,10 +2008,11 @@ void G1ConcurrentMark::verify_no_collection_set_oops() {
     G1CMTask* task = _tasks[i];
     HeapWord* task_finger = task->finger();
     if (task_finger != nullptr && task_finger < _heap.end()) {
-      // See above note on the global finger verification.
+      // Since we always iterate over all regions, we might get a null G1HeapRegion
+      // here.
       G1HeapRegion* r = _g1h->heap_region_containing_or_null(task_finger);
       guarantee(r == nullptr || task_finger == r->bottom() ||
-                !r->in_collection_set() || !r->has_index_in_opt_cset(),
+                !(r->in_collection_set() || r->has_index_in_opt_cset()),
                 "task finger: " PTR_FORMAT " region: " HR_FORMAT,
                 p2i(task_finger), HR_FORMAT_PARAMS(r));
     }
@@ -3223,9 +3224,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGro
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(),
-                          group->length(),
-                          group->length() > 0 ? group->gc_efficiency() : 0.0,
-                          group->length() > 0 ? group->liveness_percent() : 0.0,
+                          group->num_regions(),
+                          group->num_regions() > 0 ? group->gc_efficiency() : 0.0,
+                          group->num_regions() > 0 ? group->liveness_percent() : 0.0,
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();

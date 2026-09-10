@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,26 +28,26 @@
 #include "memory/allocation.hpp"
 
 class G1EvacInfo : public StackObj {
-  uint _collection_set_regions;
-  uint _allocation_regions;
+  uint _num_collection_set_regions;
+  uint _num_allocation_regions;
   size_t _collection_set_used_before;
   size_t _collection_set_used_after;
   size_t _alloc_regions_used_before;
   size_t _bytes_used;
-  uint   _regions_freed;
+  uint   _num_freed_regions;
 
 public:
   G1EvacInfo() :
-    _collection_set_regions(0), _allocation_regions(0), _collection_set_used_before(0),
+    _num_collection_set_regions(0), _num_allocation_regions(0), _collection_set_used_before(0),
     _collection_set_used_after(0), _alloc_regions_used_before(0),
-    _bytes_used(0), _regions_freed(0) { }
+    _bytes_used(0), _num_freed_regions(0) { }
 
-  void set_collection_set_regions(uint collection_set_regions) {
-    _collection_set_regions = collection_set_regions;
+  void set_num_collection_set_regions(uint num_collection_set_regions) {
+    _num_collection_set_regions = num_collection_set_regions;
   }
 
-  void set_allocation_regions(uint allocation_regions) {
-    _allocation_regions = allocation_regions;
+  void set_num_allocation_regions(uint num_allocation_regions) {
+    _num_allocation_regions = num_allocation_regions;
   }
 
   void set_collection_set_used_before(size_t used) {
@@ -66,17 +66,17 @@ public:
     _bytes_used = used;
   }
 
-  void set_regions_freed(uint freed) {
-    _regions_freed += freed;
+  void add_to_num_freed_regions(uint num_freed_regions) {
+    _num_freed_regions += num_freed_regions;
   }
 
-  uint   collection_set_regions()     { return _collection_set_regions; }
-  uint   allocation_regions()         { return _allocation_regions; }
+  uint   num_collection_set_regions() { return _num_collection_set_regions; }
+  uint   num_allocation_regions()     { return _num_allocation_regions; }
   size_t collection_set_used_before() { return _collection_set_used_before; }
   size_t collection_set_used_after()  { return _collection_set_used_after; }
   size_t alloc_regions_used_before()  { return _alloc_regions_used_before; }
   size_t bytes_used()                 { return _bytes_used; }
-  uint   regions_freed()              { return _regions_freed; }
+  uint   num_freed_regions()          { return _num_freed_regions; }
 };
 
 #endif // SHARE_GC_G1_G1EVACINFO_HPP

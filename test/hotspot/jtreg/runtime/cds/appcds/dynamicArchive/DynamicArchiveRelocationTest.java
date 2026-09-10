@@ -33,9 +33,9 @@
  * @enablePreview
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
- * @compile ../test-classes/HelloInlineClassApp.java ../test-classes/HelloRelocation.java
+ * @compile ../test-classes/HelloValueClassApp.java ../test-classes/HelloRelocation.java
  * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloRelocation HelloInlineClassApp HelloInlineClassApp$Point HelloInlineClassApp$Rectangle  HelloInlineClassApp$ValueRecord
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello.jar HelloRelocation HelloValueClassApp HelloValueClassApp$Point HelloValueClassApp$Rectangle  HelloValueClassApp$ValueRecord
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:. DynamicArchiveRelocationTest
  */

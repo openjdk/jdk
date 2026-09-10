@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 
 inline bool G1HeapRegionManager::is_available(uint region) const {
-  return _committed_map.active(region);
+  return _committed_map.is_active(region);
 }
 
 inline G1HeapRegion* G1HeapRegionManager::addr_to_region(HeapWord* addr) const {

@@ -3601,10 +3601,10 @@ address StubGenerator::generate_generic_copy(address byte_copy_entry, address sh
   __ jcc(Assembler::notEqual, L_failed);
 
   if (Arguments::is_valhalla_enabled()) {
-    // Check for flat inline type array -> return -1
+    // Check for flat value type array -> return -1
     __ test_flat_array_oop(src, rax, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
+    // Check for null-free (non-flat) value type array -> handle as object array
     __ test_null_free_array_oop(src, rax, L_objArray);
   }
 

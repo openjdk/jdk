@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8331670 8338383
+ * @bug 8331670 8338383 8387729
  * @summary Basic test for --sun-misc-unsafe-memory-access=<value>
  * @library /test/lib
  * @compile TryUnsafeMemoryAccess.java
@@ -59,16 +59,17 @@ class UnsafeMemoryAccessWarnings {
      */
     @Test
     void testAllow() throws Exception {
-        test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner",
-                "--sun-misc-unsafe-memory-access=allow")
-            .shouldHaveExitValue(0)
-            .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::objectFieldOffset")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::putLong")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::getLong")
-            .shouldNotContain("WARNING: sun.misc.Unsafe::invokeCleaner");
+        for (String[] opt : optionForms("--sun-misc-unsafe-memory-access", "allow")) {
+            test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner", opt)
+                .shouldHaveExitValue(0)
+                .shouldNotContain("WARNING: A terminally deprecated method in sun.misc.Unsafe has been called")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::allocateMemory")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::freeMemory")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::objectFieldOffset")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::putLong")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::getLong")
+                .shouldNotContain("WARNING: sun.misc.Unsafe::invokeCleaner");
+        }
     }
 
     /**
@@ -80,7 +81,9 @@ class UnsafeMemoryAccessWarnings {
             "objectFieldOffset+putLong+getLong"
     })
     void testWarn(String input) throws Exception {
-        testOneWarning(input, "--sun-misc-unsafe-memory-access=warn");
+        for (String[] opt : optionForms("--sun-misc-unsafe-memory-access", "warn")) {
+            testOneWarning(input, opt);
+        }
     }
 
     /**
@@ -113,15 +116,16 @@ class UnsafeMemoryAccessWarnings {
      */
     @Test
     void testDebug() throws Exception {
-        test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner",
-                "--sun-misc-unsafe-memory-access=debug")
-            .shouldHaveExitValue(0)
-            .shouldContain("WARNING: sun.misc.Unsafe::allocateMemory called")
-            .shouldContain("WARNING: sun.misc.Unsafe::freeMemory called")
-            .shouldContain("WARNING: sun.misc.Unsafe::objectFieldOffset called")
-            .shouldContain("WARNING: sun.misc.Unsafe::putLong called")
-            .shouldContain("WARNING: sun.misc.Unsafe::getLong called")
-            .shouldContain("WARNING: sun.misc.Unsafe::invokeCleaner called");
+        for (String[] opt : optionForms("--sun-misc-unsafe-memory-access", "debug")) {
+            test("allocateMemory+freeMemory+objectFieldOffset+putLong+getLong+invokeCleaner", opt)
+                .shouldHaveExitValue(0)
+                .shouldContain("WARNING: sun.misc.Unsafe::allocateMemory called")
+                .shouldContain("WARNING: sun.misc.Unsafe::freeMemory called")
+                .shouldContain("WARNING: sun.misc.Unsafe::objectFieldOffset called")
+                .shouldContain("WARNING: sun.misc.Unsafe::putLong called")
+                .shouldContain("WARNING: sun.misc.Unsafe::getLong called")
+                .shouldContain("WARNING: sun.misc.Unsafe::invokeCleaner called");
+        }
     }
 
     /**
@@ -129,11 +133,13 @@ class UnsafeMemoryAccessWarnings {
      */
     @Test
     void testDeny() throws Exception {
-        test("allocateMemory+objectFieldOffset+invokeCleaner", "--sun-misc-unsafe-memory-access=deny")
-            .shouldHaveExitValue(0)
-            .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
-            .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
-            .shouldContain("java.lang.UnsupportedOperationException: invokeCleaner");
+        for (String[] opt : optionForms("--sun-misc-unsafe-memory-access", "deny")) {
+            test("allocateMemory+objectFieldOffset+invokeCleaner", opt)
+                .shouldHaveExitValue(0)
+                .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
+                .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
+                .shouldContain("java.lang.UnsupportedOperationException: invokeCleaner");
+        }
     }
 
     /**
@@ -171,8 +177,16 @@ class UnsafeMemoryAccessWarnings {
     @Test
     void testLastOneWins() throws Exception {
         test("allocateMemory+objectFieldOffset+invokeCleaner",
-                "--sun-misc-unsafe-memory-access=allow",
-                "--sun-misc-unsafe-memory-access=deny")
+             "--sun-misc-unsafe-memory-access=allow",
+             "--sun-misc-unsafe-memory-access=deny")
+            .shouldHaveExitValue(0)
+            .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
+            .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
+            .shouldContain("java.lang.UnsupportedOperationException: invokeCleaner");
+
+        test("allocateMemory+objectFieldOffset+invokeCleaner",
+              "--sun-misc-unsafe-memory-access", "allow",
+              "--sun-misc-unsafe-memory-access", "deny")
             .shouldHaveExitValue(0)
             .shouldContain("java.lang.UnsupportedOperationException: allocateMemory")
             .shouldContain("java.lang.UnsupportedOperationException: objectFieldOffset")
@@ -185,9 +199,11 @@ class UnsafeMemoryAccessWarnings {
     @ParameterizedTest
     @ValueSource(strings = { "", "bad" })
     void testInvalidValues(String value) throws Exception {
-        test("allocateMemory", "--sun-misc-unsafe-memory-access=" + value)
-            .shouldNotHaveExitValue(0)
-            .shouldContain("Value specified to --sun-misc-unsafe-memory-access not recognized: '" + value);
+        for (String[] opt : optionForms("--sun-misc-unsafe-memory-access", value)) {
+            test("allocateMemory", opt)
+                .shouldNotHaveExitValue(0)
+                .shouldContain("Value specified to --sun-misc-unsafe-memory-access not recognized: '" + value);
+        }
     }
 
     /**
@@ -213,5 +229,15 @@ class UnsafeMemoryAccessWarnings {
                 .outputTo(System.err)
                 .errorTo(System.err);
         return outputAnalyzer;
+    }
+
+    /**
+     * Returns the given option in both supported argument forms.
+     */
+    private String[][] optionForms(String option, String value) {
+        return new String[][] {
+            { option + "=" + value },
+            { option, value }
+        };
     }
 }

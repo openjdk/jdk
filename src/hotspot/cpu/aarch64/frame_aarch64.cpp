@@ -160,7 +160,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       // Just strip it for now.
       sender_pc = pauth_strip_pointer((address) *(sender_sp - 1));
 
-      // Repair the sender sp if this is a method with scalarized inline type args
+      // Repair the sender sp if this is a method with scalarized value type args
       sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
       sender_unextended_sp = sender_sp;
     }

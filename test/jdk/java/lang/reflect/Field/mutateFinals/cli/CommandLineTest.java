@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8353835
+ * @bug 8353835 8387729
  * @summary Test the command line option --enable-final-field-mutation
  * @library /test/lib
  * @build CommandLineTestHelper
@@ -84,18 +84,27 @@ class CommandLineTest {
      */
     @Test
     void testAllow() throws Exception {
-        test("testFieldSetInt", "--illegal-final-field-mutation=allow")
-            .shouldNotContain(WARNING_LINE1)
-            .shouldNotContain(WARNING_MUTATED)
-            .shouldHaveExitValue(0);
+        for (String[] opt : optionForms("--illegal-final-field-mutation", "allow")) {
+            test("testFieldSetInt", opt)
+                .shouldNotContain(WARNING_LINE1)
+                .shouldNotContain(WARNING_MUTATED)
+                .shouldHaveExitValue(0);
+        }
 
-        test("testFieldSetInt", "--enable-final-field-mutation=ALL-UNNAMED")
-            .shouldNotContain(WARNING_LINE1)
-            .shouldNotContain(WARNING_MUTATED)
-            .shouldHaveExitValue(0);
+        for (String[] opt : optionForms("--enable-final-field-mutation", "ALL-UNNAMED")) {
+            test("testFieldSetInt", opt)
+                .shouldNotContain(WARNING_LINE1)
+                .shouldNotContain(WARNING_MUTATED)
+                .shouldHaveExitValue(0);
+        }
 
         // allow ALL-UNNAMED, deny by default
         test("testFieldSetInt", "--enable-final-field-mutation=ALL-UNNAMED", "--illegal-final-field-mutation=deny")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
+            .shouldHaveExitValue(0);
+
+        test("testFieldSetInt", "--enable-final-field-mutation", "ALL-UNNAMED", "--illegal-final-field-mutation", "deny")
             .shouldNotContain(WARNING_LINE1)
             .shouldNotContain(WARNING_MUTATED)
             .shouldHaveExitValue(0);
@@ -122,12 +131,14 @@ class CommandLineTest {
      */
     @Test
     void testWarn() throws Exception {
-        test("testFieldSetInt", "--illegal-final-field-mutation=warn")
-            .shouldContain(WARNING_LINE1)
-            .shouldContain(WARNING_MUTATED)
-            .shouldContain(WARNING_LINE3)
-            .shouldContain(WARNING_LINE4)
-            .shouldHaveExitValue(0);
+        for (String[] opt : optionForms("--illegal-final-field-mutation", "warn")) {
+            test("testFieldSetInt", opt)
+                .shouldContain(WARNING_LINE1)
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain(WARNING_LINE3)
+                .shouldContain(WARNING_LINE4)
+                .shouldHaveExitValue(0);
+        }
 
         test("testUnreflectSetter", "--illegal-final-field-mutation=warn")
             .shouldContain(WARNING_LINE1)
@@ -162,13 +173,15 @@ class CommandLineTest {
      */
     @Test
     void testDebug() throws Exception {
-        test("testFieldSetInt+testUnreflectSetter", "--illegal-final-field-mutation=debug")
-            .shouldContain("Final field value in class " + HELPER)
-            .shouldContain(WARNING_MUTATED)
-            .shouldContain("java.lang.reflect.Field.setInt")
-            .shouldContain(WARNING_UNREFLECTED)
-            .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
-            .shouldHaveExitValue(0);
+        for (String[] opt : optionForms("--illegal-final-field-mutation", "debug")) {
+            test("testFieldSetInt+testUnreflectSetter", opt)
+                .shouldContain("Final field value in class " + HELPER)
+                .shouldContain(WARNING_MUTATED)
+                .shouldContain("java.lang.reflect.Field.setInt")
+                .shouldContain(WARNING_UNREFLECTED)
+                .shouldContain("java.lang.invoke.MethodHandles$Lookup.unreflectSetter")
+                .shouldHaveExitValue(0);
+        }
 
         test("testUnreflectSetter+testFieldSetInt", "--illegal-final-field-mutation=debug")
             .shouldContain("Final field value in class " + HELPER)
@@ -184,11 +197,13 @@ class CommandLineTest {
      */
     @Test
     void testDeny() throws Exception {
-        test("testFieldSetInt", "--illegal-final-field-mutation=deny")
-            .shouldNotContain(WARNING_LINE1)
-            .shouldNotContain(WARNING_MUTATED)
-            .shouldContain("java.lang.IllegalAccessException")
-            .shouldNotHaveExitValue(0);
+        for (String[] opt : optionForms("--illegal-final-field-mutation", "deny")) {
+            test("testFieldSetInt", opt)
+                .shouldNotContain(WARNING_LINE1)
+                .shouldNotContain(WARNING_MUTATED)
+                .shouldContain("java.lang.IllegalAccessException")
+                .shouldNotHaveExitValue(0);
+        }
 
         test("testUnreflectSetter", "--illegal-final-field-mutation=deny")
             .shouldNotContain(WARNING_LINE1)
@@ -202,7 +217,17 @@ class CommandLineTest {
      */
     @Test
     void testLastOneWins() throws Exception {
-        test("testFieldSetInt", "--illegal-final-field-mutation=allow", "--illegal-final-field-mutation=deny")
+        test("testFieldSetInt",
+             "--illegal-final-field-mutation=allow",
+             "--illegal-final-field-mutation=deny")
+            .shouldNotContain(WARNING_LINE1)
+            .shouldNotContain(WARNING_MUTATED)
+            .shouldContain("java.lang.IllegalAccessException")
+            .shouldNotHaveExitValue(0);
+
+        test("testFieldSetInt",
+             "--illegal-final-field-mutation", "allow",
+             "--illegal-final-field-mutation", "deny")
             .shouldNotContain(WARNING_LINE1)
             .shouldNotContain(WARNING_MUTATED)
             .shouldContain("java.lang.IllegalAccessException")
@@ -220,9 +245,11 @@ class CommandLineTest {
     @ParameterizedTest
     @ValueSource(strings = { "", "bad" })
     void testInvalidValues(String value) throws Exception {
-        test("testFieldSetInt", "--illegal-final-field-mutation=" + value)
-            .shouldContain("Value specified to --illegal-final-field-mutation not recognized")
-            .shouldNotHaveExitValue(0);
+        for (String[] opt : optionForms("--illegal-final-field-mutation", value)) {
+            test("testFieldSetInt", opt)
+                .shouldContain("Value specified to --illegal-final-field-mutation not recognized")
+                .shouldNotHaveExitValue(0);
+        }
     }
 
     /**
@@ -290,5 +317,15 @@ class CommandLineTest {
      */
     private int countStrings(String input, String substring) {
         return input.split(Pattern.quote(substring)).length - 1;
+    }
+
+    /**
+     * Returns the given option in both supported argument forms.
+     */
+    private String[][] optionForms(String option, String value) {
+        return new String[][] {
+            { option + "=" + value },
+            { option, value }
+        };
     }
 }

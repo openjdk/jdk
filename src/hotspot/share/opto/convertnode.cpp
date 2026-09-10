@@ -27,12 +27,12 @@
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/divnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
 
@@ -67,10 +67,10 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
 }
 
 Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  if (in(1)->is_InlineType()) {
-    // Null checking a scalarized but nullable inline type. Check the null marker
+  if (in(1)->is_ValueType()) {
+    // Null checking a scalarized but nullable value type. Check the null marker
     // input instead of the oop input to avoid keeping buffer allocations alive.
-    set_req_X(1, in(1)->as_InlineType()->get_null_marker(), phase);
+    set_req_X(1, in(1)->as_ValueType()->get_null_marker(), phase);
     return this;
   }
   if (!Matcher::match_rule_supported(Op_Conv2B)) {

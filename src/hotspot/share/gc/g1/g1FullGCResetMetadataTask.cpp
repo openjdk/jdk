@@ -33,7 +33,7 @@ G1FullGCResetMetadataTask::G1ResetMetadataClosure::G1ResetMetadataClosure(G1Full
 void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_region_metadata(G1HeapRegion* hr) {
   if (hr->rem_set()->has_card_set_group()) {
     assert(hr->is_starts_humongous(), "Only humongous start regions can retain a card set group");
-    assert(hr->rem_set()->card_set_group()->length() == 1,
+    assert(hr->rem_set()->card_set_group()->num_regions() == 1,
            "Humongous region card set group must contain exactly one region");
 
     hr->rem_set()->card_set_group()->clear_card_set();

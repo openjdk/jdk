@@ -45,8 +45,8 @@ void markWord::print_on(outputStream* st) const {
     assert(is_fast_locked(), "should be");
     st->print("is_fast_locked");
   }
-  if (is_inline_type()) {
-    st->print(" inline_type");
+  if (is_value_type()) {
+    st->print(" value_type");
   }
   if (has_hash()) {
     st->print(" hash=" INTPTR_FORMAT, hash());

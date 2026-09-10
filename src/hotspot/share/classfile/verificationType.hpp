@@ -68,7 +68,7 @@ class VerificationType {
 
     // Enum for the _data field
     enum : uint {
-      // Bottom three bits determine if the type is a reference, inline type,
+      // Bottom three bits determine if the type is a reference, value type,
       // primitive, uninitialized or a query-type.
       TypeMask           = 0x00000007,
 
@@ -185,7 +185,7 @@ class VerificationType {
   bool is_reference() const { return ((_u._data & TypeMask) == Reference); }
   bool is_category1() const {
     // This should return true for all one-word types, which are category1
-    // primitives, references (including uninitialized refs) and inline types.
+    // primitives, references (including uninitialized refs) and value types.
     // Though the 'query' types should technically return 'false' here, if we
     // allow this to return true, we can perform the test using only
     // 2 operations rather than 8 (3 masks, 3 compares and 2 logical 'ands').

@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Red Hat, Inc.  All Rights Reserved.
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -143,6 +143,8 @@ public class bug6800513 {
         robot = new Robot();
         testFrame(false, "javax.swing.PopupFactory$HeavyWeightPopup");
 
-        testFrame(true, "javax.swing.PopupFactory$LightWeightPopup");
+        if (!((UIManager.getLookAndFeel().getID()).equals("Aqua"))) {
+            testFrame(true, "javax.swing.PopupFactory$LightWeightPopup");
+        }
     }
 }

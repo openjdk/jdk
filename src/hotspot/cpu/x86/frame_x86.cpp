@@ -151,7 +151,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
       intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
       saved_fp = *saved_fp_addr;
 
-      // Repair the sender sp if this is a method with scalarized inline type args
+      // Repair the sender sp if this is a method with scalarized value type args
       sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
       sender_unextended_sp = sender_sp;
     }

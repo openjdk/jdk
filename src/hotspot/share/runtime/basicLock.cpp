@@ -34,38 +34,3 @@ void BasicLock::print_on(outputStream* st, oop owner) const {
     mon->print_on(st);
   }
 }
-
-void BasicLock::move_to(oop obj, BasicLock* dest) {
-  // Check to see if we need to inflate the lock. This is only needed
-  // if an object is locked using "this" lightweight monitor. In that
-  // case, the displaced_header() is lock-neutral, because the
-  // displaced_header() contains the header for the originally unlocked
-  // object. However the lock could have already been inflated. But it
-  // does not matter, this inflation will just be a no-op. For other cases,
-  // the displaced header will be either 0x0 or 0x3, which are location
-  // independent, therefore the BasicLock is free to move.
-  //
-  // During OSR we may need to relocate a BasicLock (which contains a
-  // displaced word) from a location in an interpreter frame to a
-  // new location in a compiled frame.  "this" refers to the source
-  // BasicLock in the interpreter frame.  "dest" refers to the destination
-  // BasicLock in the new compiled frame.  We *always* inflate in move_to()
-  // when the object is locked using "this" lightweight monitor.
-  //
-  // The always-Inflate policy works properly, but it depends on the
-  // inflated fast-path operations in fast_lock and fast_unlock to avoid
-  // performance problems. See x86/macroAssembler_x86.cpp: fast_lock()
-  // and fast_unlock() for examples.
-  //
-  // Note that there is a way to safely swing the object's markword from
-  // one stack location to another.  This avoids inflation.  Obviously,
-  // we need to ensure that both locations refer to the current thread's stack.
-  // There are some subtle concurrency issues, however, and since the benefit is
-  // small (given the support for inflated fast-path locking in the fast_lock, etc)
-  // we'll leave that optimization for another time.
-
-  // Preserve the ObjectMonitor*, the cache is cleared when a box is reused
-  // and only read while the lock is held, so no stale ObjectMonitor* is
-  // encountered.
-  dest->set_object_monitor_cache(object_monitor_cache());
-}

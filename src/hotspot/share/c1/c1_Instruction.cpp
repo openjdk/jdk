@@ -27,9 +27,9 @@
 #include "c1/c1_IR.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciFlatArrayKlass.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 
@@ -144,7 +144,7 @@ bool Instruction::maybe_flat_array() const {
       } else if (type->is_obj_array_klass()) {
         // This is the unrefined array type
         ciKlass* element_klass = type->as_obj_array_klass()->element_klass();
-        if (element_klass->can_be_inline_klass() && (!element_klass->is_inlinetype() || element_klass->as_inline_klass()->maybe_flat_in_array())) {
+        if (element_klass->can_be_value_klass() && (!element_klass->is_value_klass() || element_klass->as_value_klass()->maybe_flat_in_array())) {
           return true;
         }
       } else if (type->is_klass() && type->as_klass()->is_java_lang_Object()) {
@@ -167,7 +167,7 @@ bool Instruction::maybe_null_free_array() const {
       return type->as_array_klass()->is_elem_null_free();
     } else if (type->is_obj_array_klass()) {
       // Due to array covariance, the runtime type might be a null-free array.
-      if (type->as_obj_array_klass()->can_be_inline_array_klass()) {
+      if (type->as_obj_array_klass()->can_be_value_array_klass()) {
         return true;
       }
     }

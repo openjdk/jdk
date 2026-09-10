@@ -40,7 +40,6 @@
 #include "oops/flatArrayKlass.hpp"
 #include "oops/flatArrayOop.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/layoutKind.hpp"
@@ -48,6 +47,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/arguments.hpp"
@@ -61,13 +61,13 @@
 FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk)
     : ObjArrayKlass(1, element_klass, name, Kind, props),
       _layout_kind(lk) {
-  assert(element_klass->is_inline_klass(), "Expected Inline");
+  assert(element_klass->is_value_klass(), "Expected Inline");
   assert(lk != LayoutKind::NULLABLE_NON_ATOMIC_FLAT, "Layout not supported by arrays yet (needs frozen arrays)");
   assert(LayoutKindHelper::is_flat(lk), "Must be a flat layout");
 
   assert(_class_loader_data == element_klass->class_loader_data(), "Sanity check");
 
-  set_layout_helper(array_layout_helper(InlineKlass::cast(element_klass), lk));
+  set_layout_helper(array_layout_helper(ValueKlass::cast(element_klass), lk));
   assert(is_array_klass(), "sanity");
   assert(is_flatArray_klass(), "sanity");
 
@@ -106,7 +106,7 @@ FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties pr
   assert(props.is_null_restricted() || !props.is_non_atomic(),
          "Nullable non-atomic arrays are unsupported");
 
-  InlineKlass* element_klass = InlineKlass::cast(eklass);
+  ValueKlass* element_klass = ValueKlass::cast(eklass);
   // If the array is non-atomic, then the element should be one of the following:
   // a) naturally atomic, so atomicity relaxation has no impact; or
   // b) explicitly marked as allowing non-atomicity.
@@ -159,7 +159,7 @@ oop FlatArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
   ShouldNotReachHere();
 }
 
-jint FlatArrayKlass::array_layout_helper(InlineKlass* vk, LayoutKind lk) {
+jint FlatArrayKlass::array_layout_helper(ValueKlass* vk, LayoutKind lk) {
   BasicType etype = T_FLAT_ELEMENT;
   int esize = log2i_exact(round_up_power_of_2(vk->layout_size_in_bytes(lk)));
   int hsize = arrayOopDesc::base_offset_in_bytes(etype);
@@ -279,8 +279,8 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
           FlatArrayPayload::Handle src_payload_handle = src_payload.make_handle(THREAD);
           FlatArrayPayload::Handle dst_payload_handle = dst_payload.make_handle(THREAD);
 
-          InlineKlass* vk = InlineKlass::cast(s_elem_klass);
-          inlineOop buffer = vk->allocate_instance(CHECK);
+          ValueKlass* vk = ValueKlass::cast(s_elem_klass);
+          valueOop buffer = vk->allocate_instance(CHECK);
           BufferedValuePayload buf_payload(buffer);
 
           // Reload the oops from the payload handles.
@@ -424,7 +424,7 @@ void FlatArrayKlass::oop_print_value_on(oop obj, outputStream* st) {
 }
 
 void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
-  InlineKlass* vk = element_klass();
+  ValueKlass* vk = element_klass();
   int print_len = MIN2(fa->length(), MaxElementPrintSize);
   for(int index = 0; index < print_len; index++) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
@@ -460,5 +460,5 @@ void FlatArrayKlass::oop_verify_on(oop obj, outputStream* st) {
 
 void FlatArrayKlass::verify_on(outputStream* st) {
   ArrayKlass::verify_on(st);
-  guarantee(element_klass()->is_inline_klass(), "should be inline type klass");
+  guarantee(element_klass()->is_value_klass(), "should be value type klass");
 }

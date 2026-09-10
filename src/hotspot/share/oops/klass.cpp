@@ -1074,23 +1074,23 @@ void Klass::validate_array_description(const ArrayDescription& ad) {
     assert(ad._layout_kind == LayoutKind::REFERENCE, "Cannot support flattening");
     assert(ad._kind == KlassKind::RefArrayKlassKind, "Must be a reference array");
   } else {
-    assert(is_inline_klass(), "Must be");
-    InlineKlass* ik = InlineKlass::cast(this);
+    assert(is_value_klass(), "Must be");
+    ValueKlass* vk = ValueKlass::cast(this);
     switch(ad._layout_kind) {
       case LayoutKind::BUFFERED:
         fatal("Invalid layout for an array");
         break;
       case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-        assert(ik->has_null_free_atomic_layout(), "Sanity check");
+        assert(vk->has_null_free_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-        assert(ik->has_null_free_non_atomic_layout(), "Sanity check");
+        assert(vk->has_null_free_non_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULLABLE_ATOMIC_FLAT:
-        assert(ik->has_nullable_atomic_layout(), "Sanity check");
+        assert(vk->has_nullable_atomic_layout(), "Sanity check");
         break;
       case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
-        assert(ik->has_nullable_non_atomic_layout(), "Sanity check)");
+        assert(vk->has_nullable_non_atomic_layout(), "Sanity check)");
         break;
       case LayoutKind::REFERENCE:
         break;

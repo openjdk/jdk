@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.valhalla.inlinetypes;
+package compiler.valhalla.valuetypes;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
  * @bug 8366879
  * @summary Test that locks are successfully eliminated by C2.
  * @library /test/lib  /
- * @run driver compiler.valhalla.inlinetypes.TestLockElimination
+ * @run driver compiler.valhalla.valuetypes.TestLockElimination
  */
 public class TestLockElimination {
 

@@ -872,11 +872,11 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in1->is_Load() && phase->type(in1)->isa_long()) {
     const TypePtr* adr_t = phase->type(in1->in(MemNode::Address))->isa_ptr();
     if (adr_t != nullptr && adr_t->offset() == oopDesc::mark_offset_in_bytes()) {
-      if (mask == markWord::inline_type_pattern) {
-        if (adr_t->is_inlinetypeptr()) {
+      if (mask == markWord::value_type_pattern) {
+        if (adr_t->is_valueklassptr()) {
           set_req_X(1, in(2), phase);
           return this;
-        } else if (!adr_t->can_be_inline_type()) {
+        } else if (!adr_t->can_be_value_type()) {
           set_req_X(1, phase->longcon(0), phase);
           return this;
         }

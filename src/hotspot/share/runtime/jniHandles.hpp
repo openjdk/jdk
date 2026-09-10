@@ -134,7 +134,7 @@ public:
 
 // JNI handle blocks holding local/global JNI handles
 
-class JNIHandleBlock : public CHeapObj<mtInternal> {
+class JNIHandleBlock : public CHeapObj<mtJNI> {
   friend class VMStructs;
   friend class ZeroInterpreter;
 

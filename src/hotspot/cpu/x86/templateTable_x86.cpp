@@ -36,10 +36,10 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
@@ -1957,7 +1957,7 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ profile_acmp(rbx, rdx, rax, rcx);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   if (Arguments::is_valhalla_enabled()) {
     __ cmpoop(rdx, rax);
     __ jcc(Assembler::equal, (cc == equal) ? taken : not_taken);
@@ -1971,8 +1971,8 @@ void TemplateTable::if_acmp(Condition cc) {
     // and both are values ?
     __ movptr(rbx, Address(rdx, oopDesc::mark_offset_in_bytes()));
     __ andptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
-    __ andptr(rbx, is_inline_type_mask);
-    __ cmpptr(rbx, is_inline_type_mask);
+    __ andptr(rbx, is_value_type_mask);
+    __ cmpptr(rbx, is_value_type_mask);
     __ jcc(Assembler::notEqual, (cc == equal) ? not_taken : taken);
 
     // same value klass ?
@@ -2972,7 +2972,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ test_field_is_not_null_free_inline_type(flags, rscratch1, is_nullable);
+        __ test_field_is_not_null_free_value_type(flags, rscratch1, is_nullable);
         __ null_check(rax);  // FIXME JDK-8341120
         __ bind(is_nullable);
         do_oop_store(_masm, field, rax);
@@ -2980,7 +2980,7 @@ void TemplateTable::putfield_or_static_helper(int byte_no, bool is_static, Rewri
       } else {
         Label is_flat, null_free_reference, rewrite_inline;
         __ test_field_is_flat(flags, rscratch1, is_flat);
-        __ test_field_is_null_free_inline_type(flags, rscratch1, null_free_reference);
+        __ test_field_is_null_free_value_type(flags, rscratch1, null_free_reference);
         pop_and_check_object(obj);
         // Store into the field
         do_oop_store(_masm, field, rax);
@@ -4048,9 +4048,9 @@ void TemplateTable::monitorenter() {
   // check for null object
   __ null_check(rax);
 
-  Label is_inline_type;
+  Label is_value_type;
   __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(rbx, is_inline_type);
+  __ test_markword_is_value_type(rbx, is_value_type);
 
   const Address monitor_block_top(
         rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -4145,7 +4145,7 @@ void TemplateTable::monitorenter() {
   // next instruction.
   __ dispatch_next(vtos);
 
-  __ bind(is_inline_type);
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                     InterpreterRuntime::throw_identity_exception), rax);
   __ should_not_reach_here();
@@ -4157,11 +4157,11 @@ void TemplateTable::monitorexit() {
   // check for null object
   __ null_check(rax);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   Label has_identity;
   __ movptr(rbx, Address(rax, oopDesc::mark_offset_in_bytes()));
-  __ andptr(rbx, is_inline_type_mask);
-  __ cmpl(rbx, is_inline_type_mask);
+  __ andptr(rbx, is_value_type_mask);
+  __ cmpl(rbx, is_value_type_mask);
   __ jcc(Assembler::notEqual, has_identity);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                      InterpreterRuntime::throw_illegal_monitor_state_exception));

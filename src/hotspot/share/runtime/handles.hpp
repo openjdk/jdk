@@ -29,9 +29,9 @@
 #include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class InlineKlass;
 class InstanceKlass;
 class Klass;
+class ValueKlass;
 class Thread;
 
 //------------------------------------------------------------------------------------------------------------------------

@@ -923,12 +923,12 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     bind(no_reserved_zone_enabling);
   }
 
-  if (state == atos && InlineTypeReturnedAsFields) {
+  if (state == atos && ValueTypeReturnedAsFields) {
     Label skip, not_null;
     cmpdi(CR0, R17_tos, 0);
     bne(CR0, not_null);
 
-    untested("remove_activation InlineTypeReturnedAsFields null");
+    untested("remove_activation ValueTypeReturnedAsFields null");
     // Returned value is null, zero all return registers because they may belong to oop fields
     li(R3_ARG1, 0);
     li(R4_ARG2, 0);
@@ -942,14 +942,14 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 
     bind(not_null);
 
-    // Check if we are returning an non-null inline type and load its fields into registers
-    test_oop_is_not_inline_type(R17_tos, skip, /* can_be_null= */ false);
+    // Check if we are returning an non-null value type and load its fields into registers
+    test_oop_is_not_value_type(R17_tos, skip, /* can_be_null= */ false);
 
-    // Load fields from a buffered value with an inline class specific handler
+    // Load fields from a buffered value with a value class specific handler
     load_klass(R11_scratch1, R17_tos);
-    ld(R11_scratch1, InlineKlass::adr_members_offset(), R11_scratch1);
-    ld(R11_scratch1, InlineKlass::unpack_handler_offset(), R11_scratch1);
-    // Unpack handler can be null if inline type is not scalarizable in returns
+    ld(R11_scratch1, ValueKlass::adr_members_offset(), R11_scratch1);
+    ld(R11_scratch1, ValueKlass::unpack_handler_offset(), R11_scratch1);
+    // Unpack handler can be null if value type is not scalarizable in returns
     cmpdi(CR0, R11_scratch1, 0);
     beq(CR0, skip);
     mtctr(R11_scratch1);
@@ -1588,15 +1588,15 @@ void InterpreterMacroAssembler::profile_acmp(Register left,
 
     profile_obj_type(left, R28_mdx, in_bytes(ACmpData::left_offset()), tmp1, tmp2);
 
-    Label left_not_inline_type;
-    test_oop_is_not_inline_type(left, left_not_inline_type);
-    set_mdp_flag_at(ACmpData::left_inline_type_byte_constant(), tmp1);
-    bind(left_not_inline_type);
+    Label left_not_value_type;
+    test_oop_is_not_value_type(left, left_not_value_type);
+    set_mdp_flag_at(ACmpData::left_value_type_byte_constant(), tmp1);
+    bind(left_not_value_type);
 
     profile_obj_type(right, R28_mdx, in_bytes(ACmpData::right_offset()), tmp1, tmp2);
 
-    test_oop_is_not_inline_type(right, profile_continue);
-    set_mdp_flag_at(ACmpData::right_inline_type_byte_constant(), tmp1);
+    test_oop_is_not_value_type(right, profile_continue);
+    set_mdp_flag_at(ACmpData::right_value_type_byte_constant(), tmp1);
 
     bind(profile_continue);
   }
@@ -2440,7 +2440,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, 
   Label slow_path, done;
 
   lbz(tmp1, in_bytes(ResolvedFieldEntry::flags_offset()), entry);
-  test_field_is_not_null_free_inline_type(tmp1, slow_path);
+  test_field_is_not_null_free_value_type(tmp1, slow_path);
 
   null_check_throw(value, -1, tmp1);
 
@@ -2452,7 +2452,7 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, 
   Register layout_info = field_offset;
   lhz(tmp1, in_bytes(ResolvedFieldEntry::field_index_offset()), entry);
   ld(tmp2, in_bytes(ResolvedFieldEntry::field_holder_offset()), entry);
-  inline_layout_info(tmp2, tmp1, layout_info);
+  value_field_layout_info(tmp2, tmp1, layout_info);
 
   flat_field_copy(IN_HEAP, value, obj, layout_info);
   b(done);

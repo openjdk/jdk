@@ -869,7 +869,7 @@ const Type *AddPNode::bottom_type() const {
     txoffset = tx->get_con();
   }
   if (tp->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return tp->is_aryptr()->add_field_offset_and_offset(txoffset);
@@ -895,7 +895,7 @@ const Type* AddPNode::Value(PhaseGVN* phase) const {
     p2offset = p2->get_con();
   }
   if (p1->isa_aryptr()) {
-    // In the case of a flat inline type array, each field has its
+    // In the case of a flat value type array, each field has its
     // own slice so we need to extract the field being accessed from
     // the address computation
     return p1->is_aryptr()->add_field_offset_and_offset(p2offset);

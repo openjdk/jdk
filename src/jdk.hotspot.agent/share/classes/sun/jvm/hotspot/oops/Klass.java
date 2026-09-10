@@ -38,7 +38,7 @@ public class Klass extends Metadata implements ClassConstants {
   public static class KlassKind {
 
     public static KlassKind InstanceKlassKind;
-    public static KlassKind InlineKlassKind;
+    public static KlassKind ValueKlassKind;
     public static KlassKind InstanceRefKlassKind;
     public static KlassKind InstanceMirrorKlassKind;
     public static KlassKind InstanceClassLoaderKlassKind;
@@ -59,7 +59,7 @@ public class Klass extends Metadata implements ClassConstants {
       Type type = db.lookupType("Klass::KlassKind");
 
       InstanceKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceKlassKind").intValue());
-      InlineKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InlineKlassKind").intValue());
+      ValueKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::ValueKlassKind").intValue());
       InstanceRefKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceRefKlassKind").intValue());
       InstanceMirrorKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceMirrorKlassKind").intValue());
       InstanceClassLoaderKlassKind = new KlassKind(db.lookupIntConstant("Klass::KlassKind::InstanceClassLoaderKlassKind").intValue());
@@ -78,8 +78,8 @@ public class Klass extends Metadata implements ClassConstants {
     public static KlassKind valueOf(int rawValue) {
       if (rawValue == InstanceKlassKind.value) {
         return InstanceKlassKind;
-      } else if (rawValue == InlineKlassKind.value) {
-        return InlineKlassKind;
+      } else if (rawValue == ValueKlassKind.value) {
+        return ValueKlassKind;
       } else if (rawValue == InstanceRefKlassKind.value) {
         return InstanceRefKlassKind;
       } else if (rawValue == InstanceMirrorKlassKind.value) {

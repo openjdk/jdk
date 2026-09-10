@@ -209,10 +209,10 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       int parm_idx = 0;  // The index of the Java parameter: double/long take one slot
       for (uint i = 0; i < nargs; i++) {  // The index of the argument on the JVM stack: double/long take two slots
         const Type* arg_type = call->tf()->domain_sig()->field_at(TypeFunc::Parms + i);
-        if (arg_type->is_inlinetypeptr() && !call->method()->mismatch() && call->method()->is_scalarized_arg(parm_idx)) {
+        if (arg_type->is_valueklassptr() && !call->method()->mismatch() && call->method()->is_scalarized_arg(parm_idx)) {
           bool nullable = arg_type->maybe_null();
-          ciInlineKlass* vk = arg_type->inline_klass();
-          InlineTypeNode* it = InlineTypeNode::make_from_multi(&kit, call, vk, in_idx, true, !nullable);
+          ciValueKlass* vk = arg_type->value_klass();
+          ValueTypeNode* it = ValueTypeNode::make_from_multi(&kit, call, vk, in_idx, true, !nullable);
           kit.push(gvn.transform(it));
         } else {
           kit.push(call->in(in_idx));

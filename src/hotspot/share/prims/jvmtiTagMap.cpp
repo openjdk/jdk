@@ -39,7 +39,6 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -47,6 +46,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiExport.hpp"
@@ -231,14 +231,14 @@ private:
     // source flat value object
     Handle holder;
     int offset;
-    InlineKlass* inline_klass;
+    ValueKlass* value_klass;
     LayoutKind layout_kind;
     // converted heap-allocated object
     Handle dst;
 
-    Entry(): holder(), offset(0), inline_klass(nullptr), dst() {}
-    Entry(Handle holder, int offset, InlineKlass* inline_klass, LayoutKind lk)
-      : holder(holder), offset(offset), inline_klass(inline_klass), layout_kind(lk), dst() {}
+    Entry(): holder(), offset(0), value_klass(nullptr), dst() {}
+    Entry(Handle holder, int offset, ValueKlass* value_klass, LayoutKind lk)
+      : holder(holder), offset(offset), value_klass(value_klass), layout_kind(lk), dst() {}
   };
 
   int _batch_size;
@@ -264,7 +264,7 @@ public:
       Importer(GrowableArray<Entry>& entries, int batch_size): _entries(entries), _batch_size(batch_size) {}
 
       bool do_entry(JvmtiFlatTagMapKey& key, jlong& tag) {
-        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.inline_klass(), key.layout_kind());
+        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.value_klass(), key.layout_kind());
         _entries.append(entry);
 
         return _entries.length() < _batch_size;
@@ -280,7 +280,7 @@ public:
       EXCEPTION_MARK;
       Entry& entry = _entries.at(i);
       FlatValuePayload payload = FlatValuePayload::construct_from_parts(
-          entry.holder(), entry.offset, entry.inline_klass, entry.layout_kind);
+          entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
       oop obj = payload.read(JavaThread::current());
 
       if (HAS_PENDING_EXCEPTION) {
@@ -305,7 +305,7 @@ public:
         // some error during conversion, skip the entry
         continue;
       }
-      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.inline_klass, entry.layout_kind);
+      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
       jlong tag = src_table->remove(obj);
 
       if (tag != 0) { // ensure the entry is still in the src_table
@@ -440,8 +440,8 @@ class CallbackWrapper : public StackObj {
       _obj_size = (jlong)o.obj()->size() * wordSize;
     } else {
       // flat value object, we know its InstanceKlass
-      assert(_o.inline_klass() != nullptr, "must be");
-      _obj_size = _o.inline_klass()->size() * wordSize;
+      assert(_o.value_klass() != nullptr, "must be");
+      _obj_size = _o.value_klass()->size() * wordSize;
     }
 
     // get object tag
@@ -584,7 +584,7 @@ class ClassFieldDescriptor: public CHeapObj<mtInternal> {
   int _field_index;
   int _field_offset;
   char _field_type;
-  InlineKlass* _inline_klass; // nullptr for heap object
+  ValueKlass* _value_klass; // nullptr for heap object
   LayoutKind _layout_kind;
  public:
   ClassFieldDescriptor(int index, const FieldStreamBase& fld) :
@@ -592,19 +592,19 @@ class ClassFieldDescriptor: public CHeapObj<mtInternal> {
     if (fld.is_flat()) {
       const fieldDescriptor& fd = fld.field_descriptor();
       InstanceKlass* holder_klass = fd.field_holder();
-      InlineLayoutInfo* layout_info = holder_klass->inline_layout_info_adr(fd.index());
-      _inline_klass = layout_info->klass();
+      ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
+      _value_klass = layout_info->klass();
       _layout_kind = layout_info->kind();
     } else {
-      _inline_klass = nullptr;
+      _value_klass = nullptr;
       _layout_kind = LayoutKind::REFERENCE;
     }
   }
   int field_index()  const  { return _field_index; }
   char field_type()  const  { return _field_type; }
   int field_offset() const  { return _field_offset; }
-  bool is_flat()     const  { return _inline_klass != nullptr; }
-  InlineKlass* inline_klass() const { return _inline_klass; }
+  bool is_flat()     const  { return _value_klass != nullptr; }
+  ValueKlass* value_klass() const { return _value_klass; }
   LayoutKind layout_kind() const { return _layout_kind; }
 };
 
@@ -1377,16 +1377,16 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
     int field_offset = field->field_offset();
     if (obj.is_flat()) {
       // the object is inlined, its fields are stored without the header
-      field_offset += obj.offset() - obj.inline_klass()->payload_offset();
+      field_offset += obj.offset() - obj.value_klass()->payload_offset();
     }
     // check for possible nulls
     if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
       address payload = cast_from_oop<address>(obj.obj()) + field_offset;
-      if (field->inline_klass()->is_payload_marked_as_null(payload)) {
+      if (field->value_klass()->is_payload_marked_as_null(payload)) {
         continue;
       }
     }
-    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->inline_klass(), field->layout_kind());
+    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->layout_kind());
 
     visit_object(field_obj);
 
@@ -1401,7 +1401,7 @@ void IterateThroughHeapObjectClosure::visit_flat_array_elements(const JvmtiHeapw
   assert(!obj.is_flat() && obj.obj()->is_flatArray() , "sanity check");
   flatArrayOop array = flatArrayOop(obj.obj());
   FlatArrayKlass* fak = array->klass();
-  InlineKlass* vk = fak->element_klass();
+  ValueKlass* vk = fak->element_klass();
   bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
 
   for (int index = 0; index < array->length(); index++) {
@@ -2890,7 +2890,7 @@ inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObj
   assert(!o.is_flat(), "Array object cannot be flattened");
   flatArrayOop array = flatArrayOop(o.obj());
   FlatArrayKlass* fak = array->klass();
-  InlineKlass* vk = fak->element_klass();
+  ValueKlass* vk = fak->element_klass();
   bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
 
   // array reference to its class
@@ -3110,18 +3110,18 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     int field_offset = field->field_offset();
     if (o.is_flat()) {
       // the object is inlined, its fields are stored without the header
-      field_offset += o.offset() - o.inline_klass()->payload_offset();
+      field_offset += o.offset() - o.value_klass()->payload_offset();
     }
     if (!is_primitive_field_type(type)) {
       if (field->is_flat()) {
         // check for possible nulls
         if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
           address payload = cast_from_oop<address>(o.obj()) + field_offset;
-          if (field->inline_klass()->is_payload_marked_as_null(payload)) {
+          if (field->value_klass()->is_payload_marked_as_null(payload)) {
             continue;
           }
         }
-        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->inline_klass(), field->layout_kind());
+        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->layout_kind());
         if (!CallbackInvoker::report_field_reference(o, field_obj, slot)) {
           return false;
         }

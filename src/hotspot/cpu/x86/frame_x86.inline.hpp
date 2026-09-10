@@ -428,7 +428,7 @@ ALWAYSINLINE frame frame::sender_raw(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-// Check for a method with scalarized inline type arguments that needs
+// Check for a method with scalarized value type arguments that needs
 // a stack repair and return the repaired sender stack pointer.
 ALWAYSINLINE intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
   nmethod* nm = _cb->as_nmethod_or_null();
@@ -475,16 +475,16 @@ ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 #ifdef COMPILER1
     nmethod* nm = _cb->as_nmethod_or_null();
     if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
-        pc() < nm->verified_inline_entry_point()) {
-      // The VEP and VIEP(RO) of C1-compiled methods call buffer_inline_args_xxx
+        pc() < nm->verified_value_entry_point()) {
+      // The VEP and VIEP(RO) of C1-compiled methods call buffer_value_args_xxx
       // before doing any argument shuffling, so we need to scan the oops
       // as the caller passes them.
       c1_buffering = true;
 #ifdef ASSERT
       NativeCall* call = nativeCall_before(pc());
       address dest = call->destination();
-      assert(dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id) ||
-             dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_id), "unexpected safepoint in entry point");
+      assert(dest == Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id) ||
+             dest == Runtime1::entry_for(StubId::c1_buffer_value_args_id), "unexpected safepoint in entry point");
 #endif
     }
 #endif

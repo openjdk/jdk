@@ -30,7 +30,6 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -42,6 +41,7 @@
 #include "oops/refArrayKlass.hpp"
 #include "oops/trainingData.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/growableArray.hpp"
@@ -90,7 +90,7 @@ using GrowableArray_SigEntry = GrowableArray<SigEntry>;
   f(ObjArrayKlass) \
   f(RefArrayKlass) \
   f(FlatArrayKlass) \
-  f(InlineKlass) \
+  f(ValueKlass) \
   f(KlassTrainingData) \
   f(MethodTrainingData) \
   f(CompileTrainingData) \

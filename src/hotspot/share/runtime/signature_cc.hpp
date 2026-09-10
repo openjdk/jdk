@@ -28,7 +28,7 @@
 #include "runtime/signature.hpp"
 
 // Stream that iterates over a scalarized signature
-class ScalarizedInlineArgsStream : public StackObj {
+class ScalarizedValueArgsStream : public StackObj {
   const GrowableArray<SigEntry>* _sig;
   int _sig_idx;
   const VMRegPair* _regs;
@@ -39,7 +39,7 @@ class ScalarizedInlineArgsStream : public StackObj {
   DEBUG_ONLY(bool _finished);
 
 public:
-  ScalarizedInlineArgsStream(const GrowableArray<SigEntry>* sig, int sig_idx, VMRegPair* regs, int regs_count, int regs_idx, bool reverse = false)
+  ScalarizedValueArgsStream(const GrowableArray<SigEntry>* sig, int sig_idx, VMRegPair* regs, int regs_count, int regs_idx, bool reverse = false)
     : _sig(sig), _sig_idx(sig_idx), _regs(regs), _regs_count(regs_count), _regs_idx(regs_idx), _step(reverse ? -1 : 1) {
     reset(sig_idx, regs_idx);
   }
@@ -75,7 +75,7 @@ public:
   void reset(int sig_idx, int regs_idx) {
     _sig_idx = sig_idx;
     _regs_idx = regs_idx;
-    assert(_sig->at(_sig_idx)._bt == ((_step > 0) ? T_METADATA : T_VOID), "should be at inline type delimiter");
+    assert(_sig->at(_sig_idx)._bt == ((_step > 0) ? T_METADATA : T_VOID), "should be at value type delimiter");
     _depth = 1;
     DEBUG_ONLY(_finished = false);
   }

@@ -54,12 +54,12 @@
 #include "metaprogramming/primitiveConversions.hpp"
 #include "oops/access.hpp"
 #include "oops/fieldStreams.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/forte.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
@@ -122,9 +122,9 @@ void SharedRuntime::generate_initial_stubs() {
     generate_throw_exception(StubId::shared_throw_StackOverflowError_id,
                              CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
-  if (InlineTypeReturnedAsFields) {
-    _store_inline_type_fields_to_buf_blob =
-      generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::store_inline_type_fields_to_buf));
+  if (ValueTypeReturnedAsFields) {
+    _store_value_type_fields_to_buf_blob =
+      generate_return_value_stub(CAST_FROM_FN_PTR(address, SharedRuntime::store_value_type_fields_to_buf));
   }
 }
 
@@ -1284,9 +1284,9 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     }
     bool caller_is_c1 = callerFrame.is_compiled_frame() && callerFrame.cb()->as_nmethod()->is_compiled_by_c1();
     if (!caller_is_c1 && callee->is_scalarized_arg(0)) {
-      // If the receiver is an inline type that is passed as fields, no oop is available
+      // If the receiver is a value type that is passed as fields, no oop is available
       // Resolve the call without receiver null checking.
-      assert(!callee->mismatch(), "calls with inline type receivers should never mismatch");
+      assert(!callee->mismatch(), "calls with value type receivers should never mismatch");
       assert(attached_method.not_null() && !attached_method->is_abstract(), "must have non-abstract attached method");
       if (bc == Bytecodes::_invokeinterface) {
         bc = Bytecodes::_invokevirtual; // C2 optimistically replaces interface calls by virtual calls
@@ -1539,7 +1539,7 @@ JRT_BLOCK_ENTRY(address, SharedRuntime::handle_wrong_method(JavaThread* current)
       return callee->get_c2i_no_clinit_check_entry();
     } else {
       if (caller_frame.is_interpreted_frame()) {
-        return callee->get_c2i_inline_entry();
+        return callee->get_c2i_value_entry();
       } else {
         return callee->get_c2i_entry();
       }
@@ -1605,10 +1605,10 @@ address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle call
 
   if (caller_does_not_scalarize) {
     if (go_to_interpreter) {
-      return callee_method->get_c2i_inline_entry();
+      return callee_method->get_c2i_value_entry();
     }
-    assert(callee_method->verified_inline_code_entry() != nullptr, "Jump to zero!");
-    return callee_method->verified_inline_code_entry();
+    assert(callee_method->verified_value_code_entry() != nullptr, "Jump to zero!");
+    return callee_method->verified_value_code_entry();
   } else if (is_static_call || is_optimized) {
     if (go_to_interpreter) {
       return callee_method->get_c2i_entry();
@@ -1617,10 +1617,10 @@ address SharedRuntime::get_resolved_entry(JavaThread* current, methodHandle call
     return callee_method->verified_code_entry();
   } else {
     if (go_to_interpreter) {
-      return callee_method->get_c2i_inline_ro_entry();
+      return callee_method->get_c2i_value_ro_entry();
     }
-    assert(callee_method->verified_inline_ro_code_entry() != nullptr, "Jump to zero!");
-    return callee_method->verified_inline_ro_code_entry();
+    assert(callee_method->verified_value_ro_code_entry() != nullptr, "Jump to zero!");
+    return callee_method->verified_value_ro_code_entry();
   }
 }
 
@@ -1748,7 +1748,7 @@ methodHandle SharedRuntime::reresolve_call_site(bool& is_optimized, bool& caller
 
   // If the frame isn't a live compiled frame (i.e. deoptimized by the time we get here), no IC clearing must be done
   // for the caller. However, when the caller is C2 compiled and the callee a C1 or C2 compiled method, then we still
-  // need to figure out whether it was an optimized virtual call with an inline type receiver. Otherwise, we end up
+  // need to figure out whether it was an optimized virtual call with a value type receiver. Otherwise, we end up
   // using the wrong method entry point and accidentally skip the buffering of the receiver.
   methodHandle callee_method = find_callee_method(caller_does_not_scalarize, CHECK_(methodHandle()));
   const bool caller_is_compiled_and_not_deoptimized = caller.is_compiled_frame() && !caller.is_deoptimized_frame();
@@ -2034,7 +2034,7 @@ char* SharedRuntime::generate_class_cast_message(
 }
 
 char* SharedRuntime::generate_identity_exception_message(JavaThread* current, Klass* klass) {
-  assert(klass->is_inline_klass(), "Must be a concrete value class");
+  assert(klass->is_value_klass(), "Must be a concrete value class");
   const char* desc = "Cannot synchronize on an instance of value class ";
   const char* className = klass->external_name();
   size_t msglen = strlen(desc) + strlen(className) + 1;
@@ -2330,16 +2330,16 @@ private:
       const SigEntry& sig_entry = sig->at(index);
       BasicType bt = sig_entry._bt;
       if (bt == T_METADATA) {
-        // Found start of inline type in signature
-        assert(InlineTypePassFieldsAsArgs, "unexpected start of inline type");
+        // Found start of value type in signature
+        assert(ValueTypePassFieldsAsArgs, "unexpected start of value type");
         vt_count++;
       } else if (bt == T_VOID && prev_bt != T_LONG && prev_bt != T_DOUBLE) {
-        // Found end of inline type in signature
-        assert(InlineTypePassFieldsAsArgs, "unexpected end of inline type");
+        // Found end of value type in signature
+        assert(ValueTypePassFieldsAsArgs, "unexpected end of value type");
         vt_count--;
         assert(vt_count >= 0, "invalid vt_count");
       } else if (vt_count == 0) {
-        // Widen fields that are not part of a scalarized inline type argument
+        // Widen fields that are not part of a scalarized value type argument
         assert(sig_entry._offset == -1, "invalid offset for argument that is not a flattened field %d", sig_entry._offset);
         bt = adapter_encoding(bt);
       }
@@ -2700,16 +2700,16 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
     return _no_arg_handler;
   } else if (total_args_passed == 1) {
     if (!method->is_static()) {
-      if (InlineTypePassFieldsAsArgs && method->method_holder()->is_inline_klass()) {
+      if (ValueTypePassFieldsAsArgs && method->method_holder()->is_value_klass()) {
         return nullptr;
       }
       return _obj_arg_handler;
     }
     switch (method->signature()->char_at(1)) {
       case JVM_SIGNATURE_CLASS: {
-        if (InlineTypePassFieldsAsArgs) {
+        if (ValueTypePassFieldsAsArgs) {
           SignatureStream ss(method->signature());
-          InlineKlass* vk = ss.as_inline_klass(method->method_holder());
+          ValueKlass* vk = ss.as_value_klass(method->method_holder());
           if (vk != nullptr) {
             return nullptr;
           }
@@ -2726,12 +2726,12 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
         return _int_arg_handler;
     }
   } else if (total_args_passed == 2 &&
-             !method->is_static() && (!InlineTypePassFieldsAsArgs || !method->method_holder()->is_inline_klass())) {
+             !method->is_static() && (!ValueTypePassFieldsAsArgs || !method->method_holder()->is_value_klass())) {
     switch (method->signature()->char_at(1)) {
       case JVM_SIGNATURE_CLASS: {
-        if (InlineTypePassFieldsAsArgs) {
+        if (ValueTypePassFieldsAsArgs) {
           SignatureStream ss(method->signature());
-          InlineKlass* vk = ss.as_inline_klass(method->method_holder());
+          ValueKlass* vk = ss.as_value_klass(method->method_holder());
           if (vk != nullptr) {
             return nullptr;
           }
@@ -2752,7 +2752,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_simple_adapter(const methodHandl
 }
 
 CompiledEntrySignature::CompiledEntrySignature(Method* method) :
-  _method(method), _num_inline_args(0), _has_inline_recv(false),
+  _method(method), _num_value_args(0), _has_value_recv(false),
   _regs(nullptr), _regs_cc(nullptr), _regs_cc_ro(nullptr),
   _args_on_stack(0), _args_on_stack_cc(0), _args_on_stack_cc_ro(0),
   _needs_stack_repair(false), _supers(nullptr) {
@@ -2763,7 +2763,7 @@ CompiledEntrySignature::CompiledEntrySignature(Method* method) :
 
 // See if we can save space by sharing the same entry for VIEP and VIEP(RO),
 // or the same entry for VEP and VIEP(RO).
-CodeOffsets::Entries CompiledEntrySignature::c1_inline_ro_entry_type() const {
+CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   if (!has_scalarized_args()) {
     // VEP/VIEP/VIEP(RO) all share the same entry. There's no packing.
     return CodeOffsets::Verified_Entry;
@@ -2773,27 +2773,27 @@ CodeOffsets::Entries CompiledEntrySignature::c1_inline_ro_entry_type() const {
     return CodeOffsets::Verified_Entry;
   }
 
-  if (has_inline_recv()) {
-    if (num_inline_args() == 1) {
+  if (has_value_recv()) {
+    if (num_value_args() == 1) {
       // Share same entry for VIEP and VIEP(RO).
-      // This is quite common: we have an instance method in an InlineKlass that has
-      // no inline type args other than <this>.
-      return CodeOffsets::Verified_Inline_Entry;
+      // This is quite common: we have an instance method in an ValueKlass that has
+      // no value type args other than <this>.
+      return CodeOffsets::Verified_Value_Entry;
     } else {
-      assert(num_inline_args() > 1, "must be");
+      assert(num_value_args() > 1, "must be");
       // No sharing:
       //   VIEP(RO) -- <this> is passed as object
       //   VEP      -- <this> is passed as fields
-      return CodeOffsets::Verified_Inline_Entry_RO;
+      return CodeOffsets::Verified_Value_Entry_RO;
     }
   }
 
-  // Either a static method, or <this> is not an inline type
+  // Either a static method, or <this> is not a value type
   if (args_on_stack_cc() != args_on_stack_cc_ro()) {
     // No sharing:
     // Some arguments are passed on the stack, and we have inserted reserved entries
     // into the VEP, but we never insert reserved entries into the VIEP(RO).
-    return CodeOffsets::Verified_Inline_Entry_RO;
+    return CodeOffsets::Verified_Value_Entry_RO;
   } else {
     // Share same entry for VEP and VIEP(RO).
     return CodeOffsets::Verified_Entry;
@@ -2905,13 +2905,13 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     int arg_num = 0;
     if (!_method->is_static()) {
       // We shouldn't scalarize 'this' in a value class constructor
-      if (holder->is_inline_klass() && InlineKlass::cast(holder)->can_be_passed_as_fields() &&
+      if (holder->is_value_klass() && ValueKlass::cast(holder)->can_be_passed_as_fields() &&
           !_method->is_object_constructor() && (link_time || _method->is_scalarized_arg(arg_num))) {
-        _sig_cc->appendAll(InlineKlass::cast(holder)->extended_sig());
+        _sig_cc->appendAll(ValueKlass::cast(holder)->extended_sig());
         _sig_cc->insert_before(1, SigEntry(T_OBJECT, 0, nullptr, false, true)); // buffer argument
         has_scalarized = true;
-        _has_inline_recv = true;
-        _num_inline_args++;
+        _has_value_recv = true;
+        _num_value_args++;
       } else {
         SigEntry::add_entry(_sig_cc, T_OBJECT, holder->name());
       }
@@ -2921,8 +2921,8 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     }
     for (SignatureStream ss(_method->signature()); !ss.at_return_type(); ss.next()) {
       const BasicType bt = ss.type();
-      if (InlineTypePassFieldsAsArgs && bt == T_OBJECT) {
-        InlineKlass* vk = ss.as_inline_klass(holder);
+      if (ValueTypePassFieldsAsArgs && bt == T_OBJECT) {
+        ValueKlass* vk = ss.as_value_klass(holder);
         if (vk != nullptr && vk->can_be_passed_as_fields() && (link_time || _method->is_scalarized_arg(arg_num))) {
           // Check for a calling convention mismatch with super method(s)
           if (link_time && check_supers_and_deoptimize(arg_num)) {
@@ -2930,7 +2930,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
             SigEntry::add_entry(_sig_cc, T_OBJECT, ss.as_symbol());
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT, ss.as_symbol());
           } else {
-            _num_inline_args++;
+            _num_value_args++;
             has_scalarized = true;
             int last = _sig_cc->length();
             int last_ro = _sig_cc_ro->length();
@@ -2939,7 +2939,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
             // buffer argument
             _sig_cc->insert_before(last + 1, SigEntry(T_OBJECT, 0, nullptr, false, true));
             _sig_cc_ro->insert_before(last_ro + 1, SigEntry(T_OBJECT, 0, nullptr, false, true));
-            // Insert InlineTypeNode::NullMarker field right after T_METADATA delimiter
+            // Insert ValueTypeNode::NullMarker field right after T_METADATA delimiter
             _sig_cc->insert_before(last + 2, SigEntry(T_BOOLEAN, -1, nullptr, true, false));
             _sig_cc_ro->insert_before(last_ro + 2, SigEntry(T_BOOLEAN, -1, nullptr, true, false));
           }
@@ -2962,7 +2962,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
   _regs = NEW_RESOURCE_ARRAY(VMRegPair, _sig->length());
   _args_on_stack = SharedRuntime::java_calling_convention(_sig, _regs);
 
-  // Compute the scalarized calling conventions if there are scalarized inline types in the signature
+  // Compute the scalarized calling conventions if there are scalarized value types in the signature
   if (has_scalarized && !_method->is_native()) {
     _regs_cc = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc->length());
     _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
@@ -2984,12 +2984,12 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     // receiver would help. If so, use the receiver-as-oop convention for the
     // method body but keep scalarizing the other arguments. This also preserves
     // the convention used by calls through super methods.
-    if (_has_inline_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_inline_args > 1) {
+    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_value_args > 1) {
       _sig_cc = _sig_cc_ro;
       _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
-      _has_inline_recv = false;
-      _num_inline_args--;
+      _has_value_recv = false;
+      _num_value_args--;
       _needs_stack_repair = _args_on_stack_cc > _args_on_stack;
       return; // Success
     }
@@ -3017,7 +3017,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 }
 
 void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fingerprint) {
-  _has_inline_recv = fingerprint->has_ro_adapter();
+  _has_value_recv = fingerprint->has_ro_adapter();
 
   int value_object_count = 0;
   BasicType prev_bt = T_ILLEGAL;
@@ -3052,7 +3052,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
     switch (bt) {
       case T_VOID:
         if (prev_bt != T_LONG && prev_bt != T_DOUBLE) {
-          assert(InlineTypePassFieldsAsArgs, "unexpected end of inline type");
+          assert(ValueTypePassFieldsAsArgs, "unexpected end of value type");
           value_object_count--;
           SigEntry::add_entry(_sig_cc, T_VOID, nullptr, offset);
           if (!skipping_inline_recv) {
@@ -3094,13 +3094,13 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
         }
         break;
       case T_METADATA:
-        assert(InlineTypePassFieldsAsArgs, "unexpected start of inline type");
+        assert(ValueTypePassFieldsAsArgs, "unexpected start of value type");
         if (value_object_count == 0) {
           SigEntry::add_entry(_sig, T_OBJECT);
         }
         SigEntry::add_entry(_sig_cc, T_METADATA, nullptr, offset);
         if (!skipping_inline_recv) {
-          if (!receiver_handled && _has_inline_recv && value_object_count == 0) {
+          if (!receiver_handled && _has_value_recv && value_object_count == 0) {
             SigEntry::add_entry(_sig_cc_ro, T_OBJECT);
             skipping_inline_recv = true;
             receiver_handled = true;
@@ -3127,7 +3127,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
   assert(value_object_count == 0, "invalid value object count");
 
 #ifdef ASSERT
-  if (_has_inline_recv) {
+  if (_has_value_recv) {
     // In RO signatures, inline receivers must be represented as a single T_OBJECT
     assert(_sig_cc_ro->length() >= 1, "sig_cc_ro must include receiver");
     assert(_sig_cc_ro->at(0)._bt == T_OBJECT,
@@ -3140,7 +3140,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
   _regs = NEW_RESOURCE_ARRAY(VMRegPair, _sig->length());
   _args_on_stack = SharedRuntime::java_calling_convention(_sig, _regs);
 
-  // Compute the scalarized calling conventions if there are scalarized inline types in the signature
+  // Compute the scalarized calling conventions if there are scalarized value types in the signature
   if (has_scalarized_arguments) {
     _regs_cc = NEW_RESOURCE_ARRAY(VMRegPair, _sig_cc->length());
     _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
@@ -3163,7 +3163,7 @@ void CompiledEntrySignature::initialize_from_fingerprint(AdapterFingerPrint* fin
 
 #ifdef ASSERT
   {
-    AdapterFingerPrint* compare_fp = AdapterFingerPrint::allocate(_sig_cc, _has_inline_recv);
+    AdapterFingerPrint* compare_fp = AdapterFingerPrint::allocate(_sig_cc, _has_value_recv);
     assert(fingerprint->equals(compare_fp), "%s - %s", fingerprint->as_string(), compare_fp->as_string());
     AdapterFingerPrint::deallocate(compare_fp);
   }
@@ -3188,7 +3188,7 @@ void AdapterHandlerLibrary::verify_adapter_sharing(CompiledEntrySignature& ces, 
 #endif /* ASSERT*/
 
 AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
-  assert(!method->is_abstract() || InlineTypePassFieldsAsArgs, "abstract methods do not have adapters");
+  assert(!method->is_abstract() || ValueTypePassFieldsAsArgs, "abstract methods do not have adapters");
   // Use customized signature handler.  Need to lock around updates to
   // the _adapter_handler_table (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
@@ -3218,7 +3218,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& meth
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Lookup method signature's fingerprint
-    entry = lookup(ces.sig_cc(), ces.has_inline_recv());
+    entry = lookup(ces.sig_cc(), ces.has_value_recv());
 
     if (entry != nullptr) {
 #ifndef ZERO
@@ -3285,10 +3285,10 @@ void AdapterHandlerLibrary::address_to_offset(address entry_address[AdapterBlob:
                                               int entry_offset[AdapterBlob::ENTRY_COUNT]) {
   entry_offset[AdapterBlob::I2C] = 0;
   entry_offset[AdapterBlob::C2I] = entry_address[AdapterBlob::C2I] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Inline] = entry_address[AdapterBlob::C2I_Inline] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Inline_RO] = entry_address[AdapterBlob::C2I_Inline_RO] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Value] = entry_address[AdapterBlob::C2I_Value] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Value_RO] = entry_address[AdapterBlob::C2I_Value_RO] - entry_address[AdapterBlob::I2C];
   entry_offset[AdapterBlob::C2I_Unverified] = entry_address[AdapterBlob::C2I_Unverified] - entry_address[AdapterBlob::I2C];
-  entry_offset[AdapterBlob::C2I_Unverified_Inline] = entry_address[AdapterBlob::C2I_Unverified_Inline] - entry_address[AdapterBlob::I2C];
+  entry_offset[AdapterBlob::C2I_Unverified_Value] = entry_address[AdapterBlob::C2I_Unverified_Value] - entry_address[AdapterBlob::I2C];
   if (entry_address[AdapterBlob::C2I_No_Clinit_Check] == nullptr) {
     entry_offset[AdapterBlob::C2I_No_Clinit_Check] = -1;
   } else {
@@ -3381,7 +3381,7 @@ bool AdapterHandlerLibrary::generate_adapter_code(AdapterHandlerEntry* handler,
 AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(CompiledEntrySignature& ces,
                                                            bool allocate_code_blob,
                                                            bool is_transient) {
-  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(ces.sig_cc(), ces.has_inline_recv());
+  AdapterFingerPrint* fp = AdapterFingerPrint::allocate(ces.sig_cc(), ces.has_value_recv());
 #ifdef ASSERT
   // Verify that we can successfully restore the compiled entry signature object.
   CompiledEntrySignature ces_verify;
@@ -3533,29 +3533,29 @@ void AdapterHandlerLibrary::lookup_simple_adapters() {
   ResourceMark rm;
   CompiledEntrySignature no_args;
   no_args.compute_calling_conventions();
-  _no_arg_handler = lookup(no_args.sig_cc(), no_args.has_inline_recv());
+  _no_arg_handler = lookup(no_args.sig_cc(), no_args.has_value_recv());
 
   CompiledEntrySignature obj_args;
   SigEntry::add_entry(obj_args.sig(), T_OBJECT);
   obj_args.compute_calling_conventions();
-  _obj_arg_handler = lookup(obj_args.sig_cc(), obj_args.has_inline_recv());
+  _obj_arg_handler = lookup(obj_args.sig_cc(), obj_args.has_value_recv());
 
   CompiledEntrySignature int_args;
   SigEntry::add_entry(int_args.sig(), T_INT);
   int_args.compute_calling_conventions();
-  _int_arg_handler = lookup(int_args.sig_cc(), int_args.has_inline_recv());
+  _int_arg_handler = lookup(int_args.sig_cc(), int_args.has_value_recv());
 
   CompiledEntrySignature obj_int_args;
   SigEntry::add_entry(obj_int_args.sig(), T_OBJECT);
   SigEntry::add_entry(obj_int_args.sig(), T_INT);
   obj_int_args.compute_calling_conventions();
-  _obj_int_arg_handler = lookup(obj_int_args.sig_cc(), obj_int_args.has_inline_recv());
+  _obj_int_arg_handler = lookup(obj_int_args.sig_cc(), obj_int_args.has_value_recv());
 
   CompiledEntrySignature obj_obj_args;
   SigEntry::add_entry(obj_obj_args.sig(), T_OBJECT);
   SigEntry::add_entry(obj_obj_args.sig(), T_OBJECT);
   obj_obj_args.compute_calling_conventions();
-  _obj_obj_arg_handler = lookup(obj_obj_args.sig_cc(), obj_obj_args.has_inline_recv());
+  _obj_obj_arg_handler = lookup(obj_obj_args.sig_cc(), obj_obj_args.has_value_recv());
 
   assert(_no_arg_handler != nullptr &&
          _obj_arg_handler != nullptr &&
@@ -3805,13 +3805,12 @@ VMRegPair *SharedRuntime::find_callee_arguments(Symbol* sig, bool has_receiver, 
 //
 // This code is used convert interpreter frames into compiled frames.  It is
 // called from very start of a compiled OSR nmethod.  A temp array is
-// allocated to hold the interesting bits of the interpreter frame.  All
-// active locks are inflated to allow them to move.  The displaced headers and
-// active interpreter locals are copied into the temp buffer.  Then we return
-// back to the compiled code.  The compiled code then pops the current
-// interpreter frame off the stack and pushes a new compiled frame.  Then it
-// copies the interpreter locals and displaced headers where it wants.
-// Finally it calls back to free the temp buffer.
+// allocated to hold the interesting bits of the interpreter frame.  The active
+// object monitor oops and caches, and active interpreter locals are copied into
+// the temp buffer.  Then we return back to the compiled code.  The compiled
+// code then pops the current interpreter frame off the stack and pushes a new
+// compiled frame.  Then it copies the object monitor oops and caches, and
+// interpreter locals where it wants. Finally it calls back to free the temp buffer.
 //
 // All of this is done NOT at any Safepoint, nor is any safepoint or GC allowed.
 
@@ -3861,7 +3860,7 @@ JRT_LEAF(intptr_t*, SharedRuntime::OSR_migration_begin( JavaThread *current) )
                        (HeapWord*)&buf[0],
                        max_locals);
 
-  // Inflate locks.  Copy the displaced headers.  Be careful, there can be holes.
+  // Copy the object monitor oops and caches.  Be careful, there can be holes.
   int i = max_locals;
   for (BasicObjectLock *kptr2 = fr.interpreter_frame_monitor_end();
        kptr2 < fr.interpreter_frame_monitor_begin();
@@ -3937,10 +3936,10 @@ void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   if (adapter_blob() != nullptr) {
     st->print(" i2c: " INTPTR_FORMAT, p2i(get_i2c_entry()));
     st->print(" c2i: " INTPTR_FORMAT, p2i(get_c2i_entry()));
-    st->print(" c2iVE: " INTPTR_FORMAT, p2i(get_c2i_inline_entry()));
-    st->print(" c2iVROE: " INTPTR_FORMAT, p2i(get_c2i_inline_ro_entry()));
+    st->print(" c2iVE: " INTPTR_FORMAT, p2i(get_c2i_value_entry()));
+    st->print(" c2iVROE: " INTPTR_FORMAT, p2i(get_c2i_value_ro_entry()));
     st->print(" c2iUE: " INTPTR_FORMAT, p2i(get_c2i_unverified_entry()));
-    st->print(" c2iUVE: " INTPTR_FORMAT, p2i(get_c2i_unverified_inline_entry()));
+    st->print(" c2iUVE: " INTPTR_FORMAT, p2i(get_c2i_unverified_value_entry()));
     if (get_c2i_no_clinit_check_entry() != nullptr) {
       st->print(" c2iNCI: " INTPTR_FORMAT, p2i(get_c2i_no_clinit_check_entry()));
     }
@@ -4029,11 +4028,11 @@ void SharedRuntime::on_slowpath_allocation_exit(JavaThread* current) {
 }
 
 // We are at a compiled code to interpreter call. We need backing
-// buffers for all inline type arguments. Allocate an object array to
+// buffers for all value type arguments. Allocate an object array to
 // hold them (convenient because once we're done with it we don't have
 // to worry about freeing it).
-oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS) {
-  assert(InlineTypePassFieldsAsArgs, "no reason to call this");
+oop SharedRuntime::allocate_value_types_impl(JavaThread* current, methodHandle callee, bool allocate_receiver, bool from_c1, TRAPS) {
+  assert(ValueTypePassFieldsAsArgs, "no reason to call this");
   ResourceMark rm;
 
   // Retrieve arguments passed at the call
@@ -4054,7 +4053,7 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
 
   int nb_slots = 0;
   InstanceKlass* holder = callee->method_holder();
-  allocate_receiver &= !callee->is_static() && holder->is_inline_klass() && callee->is_scalarized_arg(0);
+  allocate_receiver &= !callee->is_static() && holder->is_value_klass() && callee->is_scalarized_arg(0);
   if (allocate_receiver) {
     nb_slots++;
   }
@@ -4087,7 +4086,7 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
     oop* buffer = callerFrame.oopmapreg_to_oop_location(reg_pair.first(), &reg_map2);
     guarantee(buffer != nullptr, "bad register save location");
     instanceHandle h_buffer(THREAD, (instanceOop)*buffer);
-    InlineKlass* vk = InlineKlass::cast(holder);
+    ValueKlass* vk = ValueKlass::cast(holder);
     if (h_buffer.not_null()) {
       assert(h_buffer->klass() == vk, "buffer not of expected class");
     } else {
@@ -4126,7 +4125,7 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
       oop* buffer = callerFrame.oopmapreg_to_oop_location(reg_pair.first(), &reg_map2);
       guarantee(buffer != nullptr, "bad register save location");
       instanceHandle h_buffer(THREAD, (instanceOop)*buffer);
-      InlineKlass* vk = ss.as_inline_klass(holder);
+      ValueKlass* vk = ss.as_value_klass(holder);
       assert(vk != nullptr, "Unexpected klass");
       if (h_buffer.not_null()) {
         assert(h_buffer->klass() == vk, "buffer not of expected class");
@@ -4148,20 +4147,20 @@ oop SharedRuntime::allocate_inline_types_impl(JavaThread* current, methodHandle 
   return array();
 }
 
-JRT_ENTRY(void, SharedRuntime::allocate_inline_types(JavaThread* current, Method* callee_method, bool allocate_receiver))
+JRT_ENTRY(void, SharedRuntime::allocate_value_types(JavaThread* current, Method* callee_method, bool allocate_receiver))
   methodHandle callee(current, callee_method);
-  oop array = SharedRuntime::allocate_inline_types_impl(current, callee, allocate_receiver, false, CHECK);
+  oop array = SharedRuntime::allocate_value_types_impl(current, callee, allocate_receiver, false, CHECK);
   current->set_vm_result_oop(array);
 JRT_END
 
 // We've returned to an interpreted method, the interpreter needs a
-// reference to an inline type instance. Allocate it and initialize it
+// reference to a value type instance. Allocate it and initialize it
 // from field's values in registers.
-JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread* current, intptr_t res))
+JRT_BLOCK_ENTRY(void, SharedRuntime::store_value_type_fields_to_buf(JavaThread* current, intptr_t res))
 {
   if (!is_set_nth_bit(res, 0)) {
-    // We're not returning with inline type fields in registers (the
-    // calling convention didn't allow it for this inline klass)
+    // We're not returning with value type fields in registers (the
+    // calling convention didn't allow it for this value klass)
     assert(!Metaspace::contains((void*)res), "should be oop or pointer in buffer area");
     current->set_vm_result_oop((oopDesc*)res);
     current->set_vm_result_metadata(nullptr);
@@ -4169,7 +4168,7 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   }
 
   clear_nth_bit(res, 0);
-  InlineKlass* vk = (InlineKlass*)res;
+  ValueKlass* vk = (ValueKlass*)res;
   assert(Metaspace::contains((void*)res), "should be klass");
 
   if (!vk->contains_oops()) {
@@ -4194,7 +4193,7 @@ JRT_BLOCK_ENTRY(void, SharedRuntime::store_inline_type_fields_to_buf(JavaThread*
   frame stubFrame = current->last_frame();
   stubFrame.sender(&reg_map);
 
-  assert(vk == InlineKlass::returned_inline_klass(reg_map), "broken calling convention");
+  assert(vk == ValueKlass::returned_value_klass(reg_map), "broken calling convention");
 
   // Allocate handles for every oop field so they are safe in case of
   // a safepoint when allocating

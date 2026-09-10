@@ -38,9 +38,9 @@
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "oops/valueKlass.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
@@ -803,10 +803,10 @@ void ThreadSafepointState::handle_polling_page_exception() {
     bool return_oop = method->is_returning_oop();
     HandleMark hm(self);
     GrowableArray<Handle> return_values;
-    InlineKlass* vk = nullptr;
-    if (InlineTypeReturnedAsFields && return_oop) {
-      // Check if an inline type is returned as fields
-      vk = InlineKlass::returned_inline_klass(map, &return_oop, method);
+    ValueKlass* vk = nullptr;
+    if (ValueTypeReturnedAsFields && return_oop) {
+      // Check if a value type is returned as fields
+      vk = ValueKlass::returned_value_klass(map, &return_oop, method);
       if (vk != nullptr) {
         // We're at a safepoint at the return of a method that returns
         // multiple values. We must make sure we preserve the oop values

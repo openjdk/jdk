@@ -37,13 +37,13 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/arrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -874,7 +874,7 @@ oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   if (fd->is_trusted_final()) {
     flags |= TRUSTED_FINAL;
   }
-  if (fd->is_null_free_inline_type()) {
+  if (fd->is_null_free_value_type()) {
     flags |= NULL_RESTRICTED;
   }
   java_lang_reflect_Field::set_flags(rh(), flags);

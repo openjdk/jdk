@@ -61,7 +61,6 @@
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -80,6 +79,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -935,7 +935,7 @@
              declare_type(FlatArrayKlass, ArrayKlass)                     \
              declare_type(RefArrayKlass, ArrayKlass)                      \
       declare_type(InstanceKlass, Klass)                                  \
-        declare_type(InlineKlass, InstanceKlass)                          \
+        declare_type(ValueKlass, InstanceKlass)                           \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
@@ -1487,7 +1487,7 @@
   /************************/                                              \
                                                                           \
   declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
-  declare_constant(Klass::KlassKind::InlineKlassKind)                     \
+  declare_constant(Klass::KlassKind::ValueKlassKind)                      \
   declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
   declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
   declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \
@@ -1536,7 +1536,7 @@
   declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
-  declare_constant(FieldInfo::FieldFlags::_ff_null_free_inline_type)      \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_free_value_type)       \
   declare_constant(FieldInfo::FieldFlags::_ff_flat)                       \
   declare_constant(FieldInfo::FieldFlags::_ff_null_marker)                \
                                                                           \

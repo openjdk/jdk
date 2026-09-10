@@ -329,32 +329,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 
-  if (InlineTypePassFieldsAsArgs) {
-    warning("InlineTypePassFieldsAsArgs not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
   }
-  if (InlineTypeReturnedAsFields) {
-    warning("InlineTypeReturnedAsFields not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
-  }
-  // TODO: Valhalla optimizations
-  if (UseArrayFlattening) {
-    FLAG_SET_DEFAULT(UseArrayFlattening, false);
-  }
-  if (UseFieldFlattening) {
-    FLAG_SET_DEFAULT(UseFieldFlattening, false);
-  }
-  if (UseNullFreeNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeNonAtomicValueFlattening, false);
-  }
-  if (UseNullableAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableAtomicValueFlattening, false);
-  }
-  if (UseNullFreeAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullFreeAtomicValueFlattening, false);
-  }
-  if (UseNullableNonAtomicValueFlattening) {
-    FLAG_SET_DEFAULT(UseNullableNonAtomicValueFlattening, false);
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 }
 
