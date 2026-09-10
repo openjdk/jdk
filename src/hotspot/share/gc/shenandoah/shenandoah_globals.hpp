@@ -319,6 +319,7 @@
           "Time is in milliseconds. Setting this grace to 0 effectively "   \
           "disables the graceful period, allowing regions to be "           \
           "uncommitted at max speed.")                                      \
+          range(0, 24*60*60*1000)                                           \
                                                                             \
   product(bool, ShenandoahRegionSampling, false, EXPERIMENTAL,              \
           "Provide heap region sampling data via jvmstat.")                 \

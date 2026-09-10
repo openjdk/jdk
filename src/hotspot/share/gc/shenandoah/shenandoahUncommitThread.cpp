@@ -71,7 +71,7 @@ void ShenandoahUncommitThread::run_service() {
       }
 
       if (_uncommit_allowed.is_unset()) {
-        // Wake up for disallowing commits, go back to sleep.
+        // Wake up for disallowing uncommits, go back to sleep.
         continue;
       }
     }
@@ -179,8 +179,6 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
   double ms_per_candidate = ms_time_budget / _candidates_count;
 
   size_t uncommitted_count = 0;
-  double shrink_before = os::elapsedTime() - shrink_delay;
-
   for (size_t i = 0; i < _candidates_count; i++) {
     ShenandoahHeapRegion* r = _candidates[i]._region;
 
@@ -189,11 +187,13 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
       break;
     }
 
+    double cur_time = os::elapsedTime();
+
     // Try to claim progress, gracefully waiting. This allows allocators to proceed
     // taking the heap lock and start using the region. We are not in a hurry to uncommit,
     // otherwise, we will just trip through uncommit-commit wastefully.
     double expected_ts = i * ms_per_candidate;
-    double actual_ts = ((os::elapsedTime() - start) * MILLIUNITS);
+    double actual_ts = (cur_time - start) * MILLIUNITS;
     int delay_ms = MAX2<int>(0, expected_ts - actual_ts);
     if (!try_set_progress(delay_ms)) {
       // Termination asserted.
@@ -201,6 +201,7 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
     }
 
     // Go for uncommit!
+    double shrink_before = cur_time - shrink_delay;
     if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
       SuspendibleThreadSetJoiner sts_joiner;
       ShenandoahHeapLocker heap_locker(_heap->lock());
@@ -238,7 +239,7 @@ bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
   while (_uncommit_allowed.is_set() && (delay_ms > 0)) {
     double started = os::elapsedTime();
     locker.wait(delay_ms);
-    delay_ms -= os::elapsedTime() - started;
+    delay_ms -= (os::elapsedTime() - started) * MILLIUNITS;
   }
 
   // Pessimistic: uncommits are disallowed. Wait until allowed again or terminated.
