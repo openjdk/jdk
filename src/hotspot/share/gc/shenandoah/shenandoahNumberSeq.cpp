@@ -34,7 +34,7 @@
 #include <cmath>
 
 HdrSeq::HdrSeq() {
-  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtInternal);
+  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
   for (int c = 0; c < MagBuckets; c++) {
     _hdr[c] = nullptr;
   }
@@ -100,7 +100,7 @@ void HdrSeq::add(double val) {
 
   int* b = _hdr[bucket];
   if (b == nullptr) {
-    b = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
+    b = NEW_C_HEAP_ARRAY(int, ValBuckets, mtGC);
     for (int c = 0; c < ValBuckets; c++) {
       b[c] = 0;
     }
@@ -146,7 +146,7 @@ void HdrSeq::add(const HdrSeq& other) {
       }
     } else {
       // Create our bucket and copy the contents over
-      bucket = NEW_C_HEAP_ARRAY(int, ValBuckets, mtInternal);
+      bucket = NEW_C_HEAP_ARRAY(int, ValBuckets, mtGC);
       for (int val = 0; val < ValBuckets; val++) {
         bucket[val] = other_bucket[val];
       }
@@ -191,7 +191,7 @@ void HdrSeq::clear() {
 }
 
 BinaryMagnitudeSeq::BinaryMagnitudeSeq() {
-  _mags = NEW_C_HEAP_ARRAY(size_t, BitsPerSize_t, mtInternal);
+  _mags = NEW_C_HEAP_ARRAY(size_t, BitsPerSize_t, mtGC);
   clear();
 }
 

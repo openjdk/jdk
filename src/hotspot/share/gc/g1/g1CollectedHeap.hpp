@@ -469,7 +469,8 @@ private:
   // at the end of a successful GC). expect_null_mutator_alloc_region
   // specifies whether the mutator alloc region is expected to be null
   // or not.
-  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
+  HeapWord* attempt_allocation_at_safepoint(uint node_index,
+                                            size_t word_size,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -508,7 +509,7 @@ private:
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t word_size);
+  HeapWord* satisfy_failed_allocation(uint node_index, size_t word_size);
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -520,7 +521,8 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
-  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+  HeapWord* satisfy_failed_allocation_helper(uint node_index,
+                                             size_t word_size,
                                              bool do_gc,
                                              bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region);
@@ -529,7 +531,7 @@ private:
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else null.
-  HeapWord* expand_and_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(uint node_index, size_t word_size);
 
   void verify_numa_regions(const char* desc);
 
@@ -753,7 +755,8 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t word_size,
+  HeapWord* do_collection_pause(uint node_index,
+                                size_t word_size,
                                 uint gc_count_before,
                                 bool* succeeded,
                                 GCCause::Cause gc_cause);
@@ -790,13 +793,13 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
-  // Group cardsets
-  G1CSetCandidateGroup _young_regions_cset_group;
+  // Young-region card set group
+  G1CardSetGroup _young_regions_card_set_group;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
+  G1CardSetGroup* young_regions_card_set_group() { return &_young_regions_card_set_group; }
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -1034,8 +1037,8 @@ public:
 
   bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
 
-  void remove_from_old_gen_sets(const uint old_regions_removed,
-                                const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint num_old_regions_removed,
+                                const uint num_humongous_regions_removed);
   void prepend_to_freelist(G1FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
@@ -1231,9 +1234,9 @@ public:
 
   inline uint target_num_eden_regions() const;
   uint num_eden_regions() const { return _eden.num_regions(); }
-  uint num_eden_regions(uint node_index) const { return _eden.regions_on_node(node_index); }
+  uint num_eden_regions(uint node_index) const { return _eden.num_regions_on_node(node_index); }
   uint num_survivor_regions() const { return _survivor.num_regions(); }
-  uint num_survivor_regions(uint node_index) const { return _survivor.regions_on_node(node_index); }
+  uint num_survivor_regions(uint node_index) const { return _survivor.num_regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
   uint num_young_regions() const { return _eden.num_regions() + _survivor.num_regions(); }

@@ -27,7 +27,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "cds/archiveBuilder.hpp"
-#include "ci/ciInlineKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
@@ -541,7 +541,7 @@ void MacroAssembler::_verify_oop(Register reg, const char* s, const char* file, 
   // The length of the instruction sequence emitted should not depend
   // on the address of the char buffer so that the size of mach nodes for
   // scratch emit and normal emit matches.
-  la(t0, ExternalAddress((address)b));
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -738,7 +738,7 @@ void MacroAssembler::_verify_oop_addr(Address addr, const char* s, const char* f
   // The length of the instruction sequence emitted should not depend
   // on the address of the char buffer so that the size of mach nodes for
   // scratch emit and normal emit matches.
-  la(t0, ExternalAddress((address)b));
+  la(t0, Address((address)b, external_word_Relocation::spec_for_immediate()));
 
   // Call indirectly to solve generation ordering problem
   ld(t1, RuntimeAddress(StubRoutines::verify_oop_subroutine_entry_address()));
@@ -2762,6 +2762,184 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     andn(crc, tmp5, crc);
 }
 
+// Advance buf to the next 8-byte boundary, folding each byte into crc via the
+// byte lookup table. tmp1 holds the alignment count, tmp2 the loaded byte.
+void MacroAssembler::kernel_crc32c_clmul_align(Register crc, Register buf, Register len,
+        Register table, Register tmp1, Register tmp2) {
+  assert_different_registers(crc, buf, len, table, tmp1, tmp2);
+  Label L_adjust, L_loop, L_done;
+
+  // bytes to next 8-byte boundary: (-buf) & 7 = 8 - (buf & 7)
+  neg(tmp1, buf);
+  andi(tmp1, tmp1, 7);
+
+  // tmp1 = min(tmp1, len)
+  bleu(tmp1, len, L_adjust);
+  mv(tmp1, len);
+  bind(L_adjust);
+    subw(len, len, tmp1);
+    beqz(tmp1, L_done);
+
+  bind(L_loop);
+    lbu(tmp2, Address(buf, 0));
+    addi(buf, buf, 1);
+    update_byte_crc32(crc, tmp2, table);
+    addi(tmp1, tmp1, -1);
+    bnez(tmp1, L_loop);
+  bind(L_done);
+}
+
+// Fold 128 bits of input into the 128-bit accumulator (accum_hi:accum_lo).
+// With the next 16 input bytes as (data_hi:data_lo) and * = carry-less mul:
+//   accum_lo' = (accum_lo*k1)[63:0] XOR (accum_hi*k2)[63:0] XOR data_lo
+//   accum_hi' = (accum_lo*k1)[127:64] XOR (accum_hi*k2)[127:64] XOR data_hi
+void MacroAssembler::kernel_crc32c_clmul_fold_128(Register accum_lo, Register accum_hi,
+        Register k1, Register k2, Register buf, Register tmp1, Register tmp2) {
+  assert_different_registers(accum_lo, accum_hi, k1, k2, buf, tmp1, tmp2);
+
+  clmul(tmp1, accum_lo, k1);
+  clmulh(tmp2, accum_lo, k1);
+
+  clmul(accum_lo, accum_hi, k2);
+  clmulh(accum_hi, accum_hi, k2);
+
+  xorr(accum_lo, accum_lo, tmp1);
+  ld(tmp1, Address(buf, 0));      // tmp1 = data_lo
+  xorr(accum_lo, accum_lo, tmp1);
+
+  xorr(accum_hi, accum_hi, tmp2);
+  ld(tmp1, Address(buf, 8));      // tmp1 = data_hi
+  xorr(accum_hi, accum_hi, tmp1);
+}
+
+// Reduce the 128-bit accumulator (accum_hi:accum_lo) to 64 bits using the
+// ISA-L two-constant method. With rk1 at OFF_REDUCE_HI and rk2 at OFF_REDUCE_LO:
+//   x = accum_lo
+//   y0 = accum_hi XOR clmul(x, rk1)[63:0]
+//   y1 = clmulh(x, rk1)[95:64]
+//   accum_lo' = clmul(y0[31:0], rk2)[63:0] XOR (y1 : y0[63:32])
+void MacroAssembler::kernel_crc32c_clmul_reduce_128_to_64(Register accum_lo, Register accum_hi,
+        Register clmul_table, Register k, Register tmp1, Register tmp2) {
+  assert_different_registers(accum_lo, accum_hi, clmul_table, k, tmp1, tmp2);
+
+  const int OFF_REDUCE_LO = 16;
+  const int OFF_REDUCE_HI = 24;
+
+  ld(k, Address(clmul_table, OFF_REDUCE_HI));
+  clmul(tmp1, accum_lo, k);   // tmp1 = clmul(x, rk1)[63:0]
+  clmulh(tmp2, accum_lo, k);  // tmp2 = clmulh(x, rk1) = clmul(x, rk1)[127:64]
+
+  xorr(accum_hi, accum_hi, tmp1); // y0 = accum_hi XOR clmul(x, rk1)[63:0]
+
+  zext(tmp1, accum_hi, 32);   // tmp1 = y0[31:0]
+  srli(accum_hi, accum_hi, 32); // accum_hi = y0[63:32]
+
+  ld(k, Address(clmul_table, OFF_REDUCE_LO));
+  clmul(accum_lo, tmp1, k);   // accum_lo' = clmul(y0[31:0], rk2)[63:0]
+
+  slli(tmp2, tmp2, 32);       // tmp2 = clmul(x, rk1)[95:64] << 32 = y1 : 0
+  xorr(tmp2, tmp2, accum_hi); // tmp2 = y1 : y0[63:32]
+  xorr(accum_lo, accum_lo, tmp2); // accum_lo' XOR= (y1 : y0[63:32])
+}
+
+// Reduce the 64-bit accumulator accum_lo to a residue mod P (the 33-bit
+// CRC32C polynomial) using Barrett reduction, with mu = floor(x^64/P) at
+// OFF_BARRETT_MU and poly = P at OFF_BARRETT_POLY:
+//   q = (accum_lo[31:0] * mu)[31:0]      // quotient estimate
+//   accum_lo XOR= (q * poly)[63:0]       // subtract q*P
+// The high 32 bits of accum_lo then hold the final CRC.
+void MacroAssembler::kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
+        Register k, Register tmp) {
+  assert_different_registers(accum_lo, clmul_table, k, tmp);
+
+  const int OFF_BARRETT_MU   = 32;
+  const int OFF_BARRETT_POLY = 40;
+
+  zext(tmp, accum_lo, 32);   // tmp = accum_lo[31:0]
+
+  ld(k, Address(clmul_table, OFF_BARRETT_MU));
+  clmul(tmp, tmp, k);
+  zext(tmp, tmp, 32);        // tmp = q = (accum_lo[31:0] * mu)[31:0]
+
+  ld(k, Address(clmul_table, OFF_BARRETT_POLY));
+  clmul(tmp, tmp, k);
+
+  xorr(accum_lo, accum_lo, tmp);
+}
+
+void MacroAssembler::kernel_crc32c_clmul_fold(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+  assert_different_registers(crc, buf, len, byte_table, clmul_table, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+  Label L_fold_loop, L_tail, L_tail_loop, L_exit;
+
+  const int FOLD_THRESHOLD = 64;  // fold only for inputs >= 4 FOLD_STEPs
+  const int FOLD_STEP      = 16;
+  const int OFF_FOLD_K1    =  0;
+  const int OFF_FOLD_K2    =  8;
+
+  mv(tmp4, FOLD_THRESHOLD);
+  blt(len, tmp4, L_tail);
+
+  kernel_crc32c_clmul_align(crc, buf, len, byte_table, tmp4, tmp5);
+  beqz(len, L_exit);
+
+  // fold_end = buf + len - (len mod 16); len = tail
+  const Register fold_end = tmp6;
+  add(fold_end, buf, len);
+  andi(len, len, FOLD_STEP - 1);
+  sub(fold_end, fold_end, len);
+
+  // accum = (buf[0:8] XOR crc) : buf[8:16]
+  const Register accum_lo = crc;
+  const Register accum_hi = tmp1;
+  ld(tmp4, Address(buf, 0));
+  xorr(accum_lo, tmp4, crc);
+  ld(accum_hi, Address(buf, 8));
+  addi(buf, buf, FOLD_STEP);
+
+  ld(tmp2, Address(clmul_table, OFF_FOLD_K1));
+  ld(tmp3, Address(clmul_table, OFF_FOLD_K2));
+
+  bind(L_fold_loop);
+    kernel_crc32c_clmul_fold_128(accum_lo, accum_hi, tmp2, tmp3, buf, tmp4, tmp5);
+    addi(buf, buf, 16);
+    blt(buf, fold_end, L_fold_loop);
+
+  // reduce 128->64 (ISA-L) then 64->32 (Barrett); tmp2 = k; tmp4..tmp5 reused as scratch
+  kernel_crc32c_clmul_reduce_128_to_64(accum_lo, accum_hi, clmul_table, tmp2, tmp4, tmp5);
+  kernel_crc32c_clmul_barrett_64_to_32(accum_lo, clmul_table, tmp2, tmp4);
+  srli(crc, accum_lo, 32);
+
+  bind(L_tail);
+    add(tmp5, buf, len); // tmp5 = tail_end
+  bind(L_tail_loop);
+    bgeu(buf, tmp5, L_exit);
+    lbu(tmp4, Address(buf, 0));
+    addi(buf, buf, 1);
+    update_byte_crc32(crc, tmp4, byte_table);
+    j(L_tail_loop);
+
+  bind(L_exit);
+}
+
+void MacroAssembler::kernel_crc32c(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6) {
+  assert_different_registers(crc, buf, len, byte_table, clmul_table, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+
+  zext(crc, crc, 32);
+
+  // _crc32c_table is followed by the clmul constants
+  const int64_t single_table_size = 256;
+  const ExternalAddress table_addr = StubRoutines::crc32c_table_addr();
+  la(byte_table, table_addr);
+  add(clmul_table, byte_table, 1 * single_table_size * sizeof(juint), tmp4);
+
+  kernel_crc32c_clmul_fold(crc, buf, len, byte_table, clmul_table,
+                           tmp1, tmp2, tmp3, tmp4, tmp5, tmp6);
+}
+
 #ifdef COMPILER2
 // Push vector registers in the bitset supplied.
 // Return the number of words pushed
@@ -3626,9 +3804,9 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
   movptr(dst, Address((address)obj, rspec));
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     slli(index, index, log2i_exact(size)); // Scale index by power of 2
@@ -3636,28 +3814,28 @@ void MacroAssembler::inline_layout_info(Register holder_klass, Register index, R
     mv(layout_info, size);
     mul(index, index, layout_info); // Scale the index to be the entry index * array_element_size
   }
-  ld(layout_info, Address(holder_klass, InstanceKlass::inline_layout_info_array_offset()));
-  add(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ld(layout_info, Address(holder_klass, InstanceKlass::value_field_layout_info_array_offset()));
+  add(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   add(layout_info, layout_info, index);
   la(layout_info, Address(layout_info));
 }
 
 void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst,
-                                     Register inline_layout_info) {
+                                     Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ld(offset, Address(inline_klass, InlineKlass::adr_members_offset()));
-  lwu(offset, Address(offset, InlineKlass::payload_offset_offset()));
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ld(offset, Address(value_klass, ValueKlass::adr_members_offset()));
+  lwu(offset, Address(offset, ValueKlass::payload_offset_offset()));
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass) {
   assert_different_registers(data, t0);
   // ((address) (void*) o) + vk->payload_offset();
   Register offset = (data == oop) ? t0 : data;
-  payload_offset(inline_klass, offset);
+  payload_offset(value_klass, offset);
   if (data == oop) {
     add(data, data, offset);
   } else {
@@ -3751,14 +3929,14 @@ void MacroAssembler::null_check(Register reg, int offset) {
   }
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  bnez(temp_reg, is_null_free_inline_type);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Register temp_reg, Label& is_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  bnez(temp_reg, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free_inline_type) {
-  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  beqz(temp_reg, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Register temp_reg, Label& not_null_free_value_type) {
+  test_bit(temp_reg, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  beqz(temp_reg, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label& is_flat) {
@@ -3766,24 +3944,24 @@ void MacroAssembler::test_field_is_flat(Register flags, Register temp_reg, Label
   bnez(temp_reg, is_flat);
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, t1);
-  mv(t1, markWord::inline_type_pattern_mask);
+  mv(t1, markWord::value_type_pattern_mask);
   andr(markword, markword, t1);
-  mv(t1, markWord::inline_type_pattern);
-  beq(markword, t1, is_inline_type);
+  mv(t1, markWord::value_type_pattern);
+  beq(markword, t1, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Register tmp, Label& not_value_type, bool can_be_null) {
   assert_different_registers(tmp, t0);
   if (can_be_null) {
-    beqz(object, not_inline_type);
+    beqz(object, not_value_type);
   }
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   ld(tmp, Address(object, oopDesc::mark_offset_in_bytes()));
-  mv(t0, is_inline_type_mask);
+  mv(t0, is_value_type_mask);
   andr(tmp, tmp, t0);
-  bne(tmp, t0, not_inline_type);
+  bne(tmp, t0, not_value_type);
 }
 
 void MacroAssembler::test_oop_prototype_bit(Register oop, Register temp_reg, int32_t tst_bit, bool jmp_set, Label& jmp_label) {
@@ -5507,26 +5685,26 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   return false;
 }
 
-// Read all fields from an inline type oop and store the values in registers/stack slots
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
-                                          VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
-                                          RegState reg_state[]) {
+// Read all fields from a value type oop and store the values in registers/stack slots
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+                                         VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
+                                         RegState reg_state[]) {
 
   Unimplemented();
   return false;
 }
 
-// Pack fields back into an inline type oop
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
-                                        VMRegPair* from, int from_count, int& from_index, VMReg to,
-                                        RegState reg_state[], Register val_array) {
+// Pack fields back into a value type oop
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+                                       VMRegPair* from, int from_count, int& from_index, VMReg to,
+                                       RegState reg_state[], Register val_array) {
   Unimplemented();
   return false;
 }
 
-// Calculate the extra stack space required for packing or unpacking inline
+// Calculate the extra stack space required for packing or unpacking value
 // args and adjust the stack pointer
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   Unimplemented();
   return false;
 }
@@ -7134,8 +7312,8 @@ void MacroAssembler::fast_lock(Register basic_lock, Register obj, Register tmp1,
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::lock_neutral_value);
   if (Arguments::is_valhalla_enabled()) {
-    // Mask inline_type bit such that we go to the slow path if object is an inline type
-    andi(mark, mark, ~((int) markWord::inline_type_bit_in_place));
+    // Mask value_type bit such that we go to the slow path if object is a value type
+    andi(mark, mark, ~((int) markWord::value_type_bit_in_place));
   }
 
   xori(t, mark, markWord::lock_neutral_value);
