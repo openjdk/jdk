@@ -3214,7 +3214,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ bind(is_nullable);
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
     } else {
-      Label null_free_reference, is_flat, rewrite_inline;
+      Label null_free_reference, is_flat, rewrite_value;
       __ test_field_is_flat(Rflags, is_flat);
       __ test_field_is_null_free_value_type(Rflags, null_free_reference);
       pop_and_check_object(Rclass_or_obj);
@@ -3234,12 +3234,12 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       pop_and_check_object(Rclass_or_obj);
       // Store into the field
       do_oop_store(_masm, Rclass_or_obj, Roffset, R17_tos, Rscratch, Rscratch2, Rscratch3, IN_HEAP);
-      __ b(rewrite_inline);
+      __ b(rewrite_value);
 
       __ bind(is_flat);
       pop_and_check_object(Rclass_or_obj);
       __ write_flat_field(Rcache, Rscratch, Rscratch2, Rclass_or_obj, Roffset, R17_tos);
-      __ bind(rewrite_inline);
+      __ bind(rewrite_value);
       if (rc == may_rewrite) {
         patch_bytecode(Bytecodes::_fast_vputfield, Rbc, Rscratch, true, byte_no);
       }

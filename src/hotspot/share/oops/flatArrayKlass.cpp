@@ -61,7 +61,7 @@
 FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk)
     : ObjArrayKlass(1, element_klass, name, Kind, props),
       _layout_kind(lk) {
-  assert(element_klass->is_value_klass(), "Expected Inline");
+  assert(element_klass->is_value_klass(), "Expected value klass");
   assert(lk != LayoutKind::NULLABLE_NON_ATOMIC_FLAT, "Layout not supported by arrays yet (needs frozen arrays)");
   assert(LayoutKindHelper::is_flat(lk), "Must be a flat layout");
 
