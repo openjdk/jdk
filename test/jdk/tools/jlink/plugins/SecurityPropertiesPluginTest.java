@@ -89,6 +89,8 @@ public class SecurityPropertiesPluginTest {
                                          kiwi, mango
         # Property with ':' delimiter
         Truth:Beauty
+        # Property with EOF immediately after continuation character
+        sport=baseball\
         """;
 
     /**
@@ -129,6 +131,7 @@ public class SecurityPropertiesPluginTest {
         {"zzz", "multi-line\\nvalue", "zzz", "multi-line\nvalue"}
     };
 
+    // Invalid java.security file containing duplicate properties
     private static final String DUPLICATE_PROPS =
         """
         foo=123
@@ -136,6 +139,7 @@ public class SecurityPropertiesPluginTest {
         foo=456
         """;
 
+    // Invalid java.security file containing include statement
     private static final String INCLUDE_STATEMENT =
         """
         include notAllowed
@@ -199,7 +203,7 @@ public class SecurityPropertiesPluginTest {
             helper.generateDefaultJModule("customModule").assertSuccess();
 
         // Create second image using custom module and new java.base.jmod
-        Path customImage = Path.of(TEST_DIR, "images/customModule.image");
+        Path customImage = Path.of(TEST_DIR, "images/customModule1.image");
         createSecondImage(customImage).assertSuccess();
 
         testImage(customImage);
@@ -282,6 +286,11 @@ public class SecurityPropertiesPluginTest {
         Asserts.assertLessThan(
             lines.indexOf("jdk.certpath.disabledAlgorithms=MD2"),
             lines.size() - EXTRA_PROPS.length);
+
+        // Check property with EOF after \ was parsed correctly
+        if (image.endsWith("customModule1.image")) {
+            Asserts.assertEquals("baseball", javasecProps.getProperty("sport"));
+        }
     }
 
     private static void testBadOptions() throws Exception {

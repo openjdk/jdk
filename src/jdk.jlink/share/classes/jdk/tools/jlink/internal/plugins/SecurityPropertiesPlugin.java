@@ -130,6 +130,10 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
                 while (lineContinues(line)) {
                     // multi-lined value, add lines until end of value
                     line = br.readLine();
+                    if (line == null) {
+                        // end of stream
+                        break;
+                    }
                     sb.append("\n").append(line);
                 }
 
