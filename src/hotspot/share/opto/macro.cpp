@@ -999,7 +999,7 @@ void PhaseMacroExpand::undo_previous_scalarizations(Unique_Node_List& safepoints
 
 #ifdef ASSERT
   // Verify if a value can be written into a field.
-  void verify_type_compatibility(const Type* value_type, const Type* field_type) {
+  void verify_value_type_compatibility(const Type* value_type, const Type* field_type) {
     BasicType value_bt = value_type->basic_type();
     BasicType field_bt = field_type->basic_type();
 
@@ -1058,7 +1058,7 @@ void PhaseMacroExpand::process_field_value_at_safepoint(const Type* field_type, 
       value_worklist->push(field_val);
     }
   }
-  DEBUG_ONLY(verify_type_compatibility(field_val->bottom_type(), field_type);)
+  DEBUG_ONLY(verify_value_type_compatibility(field_val->bottom_type(), field_type);)
   sfpt->add_req(field_val);
 }
 

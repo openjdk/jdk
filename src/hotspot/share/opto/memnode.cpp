@@ -1562,6 +1562,10 @@ BasicType MemNode::get_reinterpret_variant(BasicType bt) {
   }
 }
 
+bool MemNode::has_reinterpret_variant(const Type* vt) const {
+  return get_reinterpret_variant(value_basic_type()) == vt->basic_type();
+}
+
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
@@ -1690,10 +1694,6 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
-bool LoadNode::has_reinterpret_variant(const Type* rt) {
-  return get_reinterpret_variant(value_basic_type()) == rt->basic_type();
-}
-
 Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   BasicType bt = rt->basic_type();
   assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
@@ -1712,10 +1712,6 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
-}
-
-bool StoreNode::has_reinterpret_variant(const Type* vt) {
-  return get_reinterpret_variant(value_basic_type()) == vt->basic_type();
 }
 
 Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {

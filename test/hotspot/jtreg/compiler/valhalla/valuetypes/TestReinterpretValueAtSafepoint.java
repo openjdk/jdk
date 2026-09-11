@@ -26,11 +26,11 @@
  * @summary Test type verification of writes of scalarized object at safepoint
  * @bug 8389342
  * @requires vm.compiler2.enabled
- * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
- * @run main/othervm -Xbatch -XX:RepeatCompilation=100 -XX:+StressEliminateAllocations
- *                   -XX:CompileOnly=${test.main.class}::test  ${test.main.class}
+ * @run main/othervm -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:RepeatCompilation=100
+ *                   -XX:+StressEliminateAllocations -XX:CompileOnly=${test.main.class}::test
+ *                   ${test.main.class}
  */
 
 package compiler.valhalla.valuetypes;
