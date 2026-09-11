@@ -308,7 +308,7 @@ class FieldLayoutBuilder : public ResourceObj {
   LayoutDescriptions& layouts() { return _available_layouts; }
 
   template<typename T>
-  int least_restrictive_layout_of(T lk) {
+  int largest_layout_of(T lk) {
     if (layouts().has_a(lk)) {
       return layouts().size_in_bytes_of(lk);
     } else {
@@ -316,8 +316,8 @@ class FieldLayoutBuilder : public ResourceObj {
     }
   }
   template<typename T, typename... Ts>
-  int least_restrictive_layout_of(T lk, Ts... lks) {
-    auto max_rest = least_restrictive_layout_of(lks...);
+  int largest_layout_of(T lk, Ts... lks) {
+    auto max_rest = largest_layout_of(lks...);
     if (layouts().has_a(lk)) {
       auto max_lk = layouts().size_in_bytes_of(lk);
       return max_rest > max_lk ? max_rest : max_lk;
