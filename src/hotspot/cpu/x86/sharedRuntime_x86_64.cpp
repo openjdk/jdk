@@ -2742,7 +2742,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 // EPILOG must remove this many slots.  amd64 needs two slots for
 // return address.
 uint SharedRuntime::in_preserve_stack_slots() {
-  return 4 + 2 * VerifyStackAtCalls;
+  return 2 * VMRegImpl::slots_per_word;
 }
 
 VMReg SharedRuntime::thread_register() {
