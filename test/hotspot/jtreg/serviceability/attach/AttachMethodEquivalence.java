@@ -36,6 +36,7 @@ import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AttachNotSupportedException;
 
 import jdk.test.lib.apps.LingeredApp;
+import jdk.test.lib.apps.LingeredAppWithDeadlock;
 
 public class AttachMethodEquivalence {
 
@@ -45,19 +46,24 @@ public class AttachMethodEquivalence {
         VirtualMachine vm = null;
 
         try {
-            app = LingeredApp.startApp();
+            app = LingeredAppWithDeadlock.startApp();
             strPID = Long.toString(app.getPid());
 
-            vm = VirtualMachine.attach(strPID, Map.of()); // Equivalent to attach(strPID)
+            vm = VirtualMachine.attach(strPID, Map.of()); // Should be equivalent to attach(strPID)
+            if (vm == null) {
+                throw new RuntimeException("Failed to attach to vmid: " + strPID + " for app: " + app);
+            }
             System.out.println("Attached: " + vm.id());
 
         } catch (AttachNotSupportedException | IOException e) {
             throw new RuntimeException(e);
         } finally {
-            try {
-                vm.detach();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+            if (vm != null) {
+                try {
+                    vm.detach();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             LingeredApp.stopApp(app);
         }

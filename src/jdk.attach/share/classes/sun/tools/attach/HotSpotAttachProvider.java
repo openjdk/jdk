@@ -50,24 +50,6 @@ public abstract class HotSpotAttachProvider extends AttachProvider {
     public HotSpotAttachProvider() {
     }
 
-    /**
-     * This method accepts a Map of parameters which is passed to the attach provider.
-     *
-     * This implementation is equivalent to attachVirtualMachine(String id) if
-     * vmid does not name a file that exists.
-     */
-    @Override
-    public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
-        throws AttachNotSupportedException, IllegalArgumentException, IOException {
-
-        // The 'vmid' existing as a file implies it is a core or minidump:
-        if (new File(vmid).exists()) {
-            return new VirtualMachineCoreDumpImpl(this, vmid, env);
-        } else {
-            return attachVirtualMachine(vmid);
-        }
-    }
-
     /*
      * This listVirtualMachines implementation is based on jvmstat. Can override
      * this in platform implementations when there is a more efficient mechanism

@@ -156,10 +156,7 @@ public abstract class AttachProvider {
      * Java virtual machine is a version to which this provider cannot attach, then
      * an {@code AttachNotSupportedException} is thrown.
      *
-     * @implNote The default implementation of this method is equivalent to {@link attachVirtualMachine(String id)}
-     * if {@code env} is empty, and otherwise throws {@link AttachNotSupportedException}.
-     *
-     * @implNote Where implemented by a Provider, this method may attach to a core file in preference to a PID.
+     * @implNote The default implementation of this method always throws {@link AttachNotSupportedException}.
      *
      * @param  id
      *         The abstract identifier that identifies the Java virtual machine.
@@ -187,11 +184,7 @@ public abstract class AttachProvider {
     public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
         throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
-        if (env.isEmpty()) {
-            return attachVirtualMachine(id);
-        } else {
-            throw new AttachNotSupportedException("Not implemented in base AttachProvider class");
-        }
+        throw new AttachNotSupportedException("Not implemented in base AttachProvider class");
     }
 
     /**

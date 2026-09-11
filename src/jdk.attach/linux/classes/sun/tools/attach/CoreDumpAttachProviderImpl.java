@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.tools.attach;
 
-/**
- * Defines the attach API.
- *
- * @uses com.sun.tools.attach.spi.AttachProvider
- *
- * @moduleGraph
- * @since 9
+import com.sun.tools.attach.VirtualMachine;
+import com.sun.tools.attach.VirtualMachineDescriptor;
+import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.spi.AttachProvider;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+
+/*
+ * Platform specific provider implementations extend this
  */
-module jdk.attach {
-    requires jdk.internal.jvmstat;
+public class CoreDumpAttachProviderImpl extends AttachProviderImpl {
 
-    exports com.sun.tools.attach;
-    exports com.sun.tools.attach.spi;
+    public CoreDumpAttachProviderImpl() {
+    }
 
-    exports sun.tools.attach to
-        jdk.jcmd;
+    @Override
+    public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
+        throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
-    uses com.sun.tools.attach.spi.AttachProvider;
-
-    provides com.sun.tools.attach.spi.AttachProvider with
-        sun.tools.attach.AttachProviderImpl,
-        sun.tools.attach.CoreDumpAttachProviderImpl;
+        if (new File(vmid).exists()) {
+            return new VirtualMachineCoreDumpImpl(this, vmid, env);
+        } else {
+            throw new AttachNotSupportedException("not a file: " + vmid);
+        }
+    }
 }
