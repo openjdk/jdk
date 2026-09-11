@@ -25,6 +25,7 @@
 
 package sun.lwawt;
 
+import java.lang.ref.WeakReference;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Component;
@@ -137,7 +138,15 @@ public class LWWindowPeer
 
     private static LWWindowPeer grabbingWindow;
 
+    /*
+     * The last native window which was logically focused when it was hidden.
+     * Its focus restore target may be a simple Window, which cannot become a
+     * native key window on macOS.
+     */
+    private static volatile WeakReference<LWWindowPeer> hiddenFocusedWindow;
+
     private volatile boolean skipNextFocusChange;
+    private volatile LWWindowPeer focusRestoreWindow;
 
     private static final Color nonOpaqueBackground = new Color(0, 0, 0, 0);
 
@@ -248,6 +257,7 @@ public class LWWindowPeer
 
     @Override
     protected void disposeImpl() {
+        rememberHiddenFocusedWindow();
         deactivateDisplayListener();
         SurfaceData oldData = getSurfaceData();
         synchronized (surfaceDataLock){
@@ -276,6 +286,9 @@ public class LWWindowPeer
 
     @Override
     protected void setVisibleImpl(final boolean visible) {
+        if (!visible) {
+            rememberHiddenFocusedWindow();
+        }
         updateFocusableWindowState();
         super.setVisibleImpl(visible);
         // TODO: update graphicsConfig, see 4868278
@@ -754,6 +767,12 @@ public class LWWindowPeer
     @Override
     public void notifyActivation(boolean activation, LWWindowPeer opposite) {
         Window oppositeWindow = (opposite == null)? null : opposite.getTarget();
+        if (activation) {
+            if (restoreFocusAfterHide()) {
+                return;
+            }
+            rememberFocusRestoreWindow();
+        }
         changeFocusedWindow(activation, oppositeWindow);
     }
 
@@ -1407,6 +1426,53 @@ public class LWWindowPeer
             }
             return blocker;
         }
+    }
+
+    // Records this focused native top-level before it is hidden, so its
+    // logical simple-Window focus target can be restored during native activation.
+    private void rememberHiddenFocusedWindow() {
+        KeyboardFocusManagerPeer kfmPeer = LWKeyboardFocusManagerPeer.getInstance();
+        if (kfmPeer.getCurrentFocusedWindow() == getTarget()) {
+            hiddenFocusedWindow = new WeakReference<>(this);
+        }
+    }
+
+    // Saves the currently focused simple Window as this native top-level's
+    // Java focus restore target when it becomes active.
+    private void rememberFocusRestoreWindow() {
+        Window focusedWindow = LWKeyboardFocusManagerPeer.getInstance()
+                .getCurrentFocusedWindow();
+        LWWindowPeer focusedPeer = focusedWindow == null ? null
+                : (LWWindowPeer) AWTAccessor.getComponentAccessor()
+                        .getPeer(focusedWindow);
+
+        focusRestoreWindow = focusedPeer != null && focusedPeer.isSimpleWindow()
+                ? focusedPeer : null;
+    }
+
+    // Restores Java focus to the simple Window saved by the just-hidden peer,
+    // if this peer is that Window's native owner and restoration is allowed.
+    private boolean restoreFocusAfterHide() {
+        WeakReference<LWWindowPeer> reference = hiddenFocusedWindow;
+        LWWindowPeer hiddenPeer = reference == null ? null : reference.get();
+        if (hiddenPeer == null || hiddenPeer.getTarget().isVisible()) {
+            hiddenFocusedWindow = null;
+            return false;
+        }
+
+        hiddenFocusedWindow = null;
+        LWWindowPeer simpleWindow = hiddenPeer.focusRestoreWindow;
+        hiddenPeer.focusRestoreWindow = null;
+
+        if (simpleWindow == null
+                || getOwnerFrameDialog(simpleWindow) != this
+                || !simpleWindow.focusAllowedFor()
+                || simpleWindow.getBlocker() != null) {
+            return false;
+        }
+
+        simpleWindow.changeFocusedWindow(true, hiddenPeer.getTarget());
+        return true;
     }
 
     @Override
