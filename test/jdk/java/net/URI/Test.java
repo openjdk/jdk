@@ -1043,16 +1043,19 @@ public class Test {
         test("http://[1:2:3:4:5:6:7:8:9]").x().z();
         test("http://[1:2:3:4:5:6:7:8%]").x().z();
         test("http://[1:2:3:4:5:6:7:8%!/]").x().z();
-        // Oversized IPv4 octet
+        // Oversized IPv4 octet in IPv4-compatible IPv6 address
         test("http://[::1.2.3.300]").x().z();
-        // Oversized IPv4 octet, stressing NFE
+        // Oversized IPv4 octet in IPv4-compatible IPv6 address, stressing NFE
         test("http://[::1.2.3.4" + Long.MAX_VALUE + "]").x().z();
         // Oversized IPv4 octet in IPv4-mapped IPv6 address
         test("http://[::FFFF:1.2.3.300]").x().z();
         // Oversized IPv4 octet in IPv4-mapped IPv6 address, stressing NFE
         test("http://[::FFFF:1.2.3.4" + Long.MAX_VALUE + "]").x().z();
         test("http://1.2.3").psa().x().z();
+        // Oversized IPv4 octet
         test("http://1.2.3.300").psa().x().z();
+        // Oversized IPv4 octet, stressing NFE
+        test("http://1.2.3.4" + Long.MAX_VALUE).psa().x().z();
         test("http://1.2.3.4.5").psa().x().z();
         test("http://[1.2.3.4:5]").x().z();
         test("http://1:2:3:4:5:6:7:8").psa().x().z();
