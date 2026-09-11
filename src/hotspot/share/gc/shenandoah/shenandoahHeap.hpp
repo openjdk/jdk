@@ -165,7 +165,6 @@ class ShenandoahHeap : public CollectedHeap {
 
 // ---------- Locks that guard important data structures in Heap
 //
-private:
   ShenandoahHeapLock _lock;
 
   // This is set and cleared by only the VMThread
@@ -193,9 +192,6 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
-  // ---------- Initialization, termination, identification, printing routines
-//
-public:
   static ShenandoahHeap* heap();
 
   const char* name()          const override { return "Shenandoah"; }
@@ -221,7 +217,7 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
-// WhiteBox testing support.
+  // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
     return true;
   }
@@ -443,14 +439,14 @@ private:
   // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
 
-  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
-  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
+  // True when gc threads should stop
+  ShenandoahSharedFlag _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc(GCCause::Cause cause);
+  bool try_cancel_gc();
 
 public:
   // True if gc has been cancelled
@@ -459,15 +455,8 @@ public:
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
-  // This indicates the reason the last GC cycle was cancelled.
-  inline GCCause::Cause cancelled_cause() const;
-
-  // Clears the cancellation cause and resets the oom handler
+  // Clears the cancellation
   inline void clear_cancelled_gc();
-
-  // Clears the cancellation cause iff the current cancellation reason equals the given
-  // expected cancellation cause. Does not reset the oom handler.
-  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
 
   void cancel_concurrent_mark();
 
@@ -509,7 +498,7 @@ private:
 
   virtual void update_heap_references(ShenandoahGeneration* generation);
   // Final update region states
-  void update_heap_region_states(bool had_self_forwards);
+  void update_heap_region_states();
   virtual void final_update_refs_update_region_states();
 
   void rendezvous_threads(const char* name);
@@ -553,6 +542,7 @@ private:
 
 public:
   ShenandoahController*   control_thread() const { return _control_thread; }
+  inline bool is_stopping() const;
 
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahYoungGeneration* young_generation()  const {
@@ -614,13 +604,7 @@ public:
   void set_unload_classes(bool uc);
   bool unload_classes() const;
 
-  // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(ShenandoahGeneration* generation);
-
 private:
-  void stw_unload_classes();
-  void stw_process_weak_roots();
-  void stw_weak_refs(ShenandoahGeneration* generation);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);
@@ -663,6 +647,10 @@ public:
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
   inline ShenandoahAffiliation region_affiliation(size_t index) const;
+
+  inline bool is_region_young(size_t index) const;
+  inline bool is_region_old(size_t index) const;
+  inline bool is_region_free(size_t index) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
 
@@ -878,7 +866,7 @@ public:
   void log_heap_status(const char *msg) const;
 
 private:
-  void trash_cset_regions(bool had_self_forwards);
+  void trash_cset_regions();
 
 // ---------- Testing helpers functions
 //

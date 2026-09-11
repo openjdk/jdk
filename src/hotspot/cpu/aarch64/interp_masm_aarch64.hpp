@@ -158,7 +158,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
-  // Allocate instance in "obj" and read in the content of the inline field
+  // Allocate instance in "obj" and read in the content of the flat field
   // NOTES:
   //   - input holder object via "obj", which must be r0,
   //     will return new instance via the same reg

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   int       slop_delta = 0;
   // No variance was detected in vtable stub sizes. Setting index_dependent_slop == 0 will unveil any deviation from this observation.
   const int index_dependent_slop     = 0;
-  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_value_offset() :  Method::from_compiled_value_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -131,7 +131,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   address ame_addr = __ pc();
   __ jmp( Address(rbx, entry_offset));
 
-  masm->flush();
+  masm->invalidate_icache();
   slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, index_dependent_slop);
 
@@ -142,7 +142,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
 VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
-  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_inline_offset() :  Method::from_compiled_inline_ro_offset();
+  ByteSize  entry_offset = caller_is_c1 ? Method::from_compiled_value_offset() :  Method::from_compiled_value_ro_offset();
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index, caller_is_c1);
   // Can be nullptr if there is no free space in the code cache.
   if (s == nullptr) {
@@ -248,7 +248,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   // dirty work.
   __ jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  masm->flush();
+  masm->invalidate_icache();
   slop_bytes += index_dependent_slop; // add'l slop for size variance due to large itable offsets
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, index_dependent_slop);
 

@@ -99,7 +99,7 @@ class FieldLayoutInfo : public ResourceObj {
   bool _is_naturally_atomic;
   bool _must_be_atomic;
   bool _has_inlined_fields;
-  bool _is_empty_inline_klass;
+  bool _is_empty_value_klass;
   FieldLayoutInfo() : oop_map_blocks(nullptr), _nonoop_acmp_map(nullptr), _oop_acmp_map(nullptr),
                       _instance_size(-1), _nonstatic_field_size(-1), _static_field_size(-1),
                       _payload_alignment(-1), _payload_offset(-1), _payload_size_in_bytes(-1),
@@ -108,7 +108,7 @@ class FieldLayoutInfo : public ResourceObj {
                       _nullable_non_atomic_layout_size_in_bytes(-1),
                       _null_marker_offset(-1), _null_reset_value_offset(-1), _acmp_maps_offset(-1),
                       _has_nonstatic_fields(false), _is_naturally_atomic(false), _must_be_atomic(false),
-                      _has_inlined_fields(false), _is_empty_inline_klass(false) { }
+                      _has_inlined_fields(false), _is_empty_value_klass(false) { }
 };
 
 // Parser for for .class files
@@ -178,7 +178,7 @@ class ClassFileParser {
 
   ClassAnnotationCollector* _parsed_annotations;
   FieldLayoutInfo* _layout_info;
-  Array<InlineLayoutInfo>* _inline_layout_info_array;
+  Array<ValueFieldLayoutInfo>* _value_field_layout_info_array;
   GrowableArray<FieldInfo>* _temp_field_info;
   const intArray* _method_ordering;
   GrowableArray<Method*>* _all_mirandas;
@@ -230,6 +230,7 @@ class ClassFileParser {
   bool _has_contended_fields;
   bool _has_aot_runtime_setup_method;
   bool _has_strict_static_fields;
+  bool _has_strict_instance_fields;
   bool _has_null_restricted_static_fields;
 
   bool _must_be_atomic;
@@ -253,7 +254,7 @@ class ClassFileParser {
 
   void set_klass(InstanceKlass* instance);
 
-  void set_inline_layout_info_klass(int field_index, InlineKlass* ik, TRAPS);
+  void set_value_field_layout_info_klass(int field_index, ValueKlass* vk, TRAPS);
 
   void set_class_bad_constant_seen(short bad_constant);
   short class_bad_constant_seen() { return  _bad_constant_seen; }
@@ -538,12 +539,12 @@ class ClassFileParser {
 
   void update_class_name(Symbol* new_name);
 
-  // Check if the class file supports inline types
-  bool supports_inline_types() const;
+  // Check if the class file supports value types
+  bool supports_value_types() const;
 
   void create_acmp_maps(InstanceKlass* ik, TRAPS);
-  void set_fast_acmp_members(InlineKlass* vk) const;
-  void set_fast_hashcode_members(InlineKlass* vk) const;
+  void set_fast_acmp_members(ValueKlass* vk) const;
+  void set_fast_hashcode_members(ValueKlass* vk) const;
 
  public:
   ClassFileParser(ClassFileStream* stream,
@@ -574,8 +575,7 @@ class ClassFileParser {
 
   bool is_hidden() const { return _is_hidden; }
   bool is_interface() const { return _access_flags.is_interface(); }
-  // Being an inline type means being a concrete value class
-  bool is_inline_type() const { return !_access_flags.is_identity_class() && !_access_flags.is_interface() && !_access_flags.is_abstract(); }
+  bool is_concrete_value_class() const { return !_access_flags.is_identity_class() && !_access_flags.is_interface() && !_access_flags.is_abstract(); }
   bool is_identity_class() const { return _access_flags.is_identity_class(); }
   bool has_inlined_fields() const { return _layout_info->_has_inlined_fields; }
 

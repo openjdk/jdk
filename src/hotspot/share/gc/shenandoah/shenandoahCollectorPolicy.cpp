@@ -38,6 +38,7 @@
 ShenandoahCollectorPolicy::ShenandoahCollectorPolicy() :
   _success_concurrent_gcs(0),
   _abbreviated_concurrent_gcs(0),
+  _last_whole_heap_gc_id(0),
   _success_full_gcs(0),
   _consecutive_young_gcs(0),
   _mixed_gcs(0),
@@ -66,8 +67,12 @@ void ShenandoahCollectorPolicy::record_allocation_stall(ShenandoahController::Sh
   _stall_counts[phase].add_then_fetch(1UL);
 }
 
-void ShenandoahCollectorPolicy::record_success_concurrent(bool is_young, bool is_abbreviated) {
+void ShenandoahCollectorPolicy::record_success_concurrent(size_t gc_id, bool is_young, bool is_abbreviated) {
   update_young(is_young);
+
+  if (!is_young) {
+    _last_whole_heap_gc_id.store_relaxed(gc_id);
+  }
 
   _success_concurrent_gcs++;
   if (is_abbreviated) {
@@ -97,9 +102,10 @@ void ShenandoahCollectorPolicy::update_young(bool is_young) {
   }
 }
 
-void ShenandoahCollectorPolicy::record_success_full() {
+void ShenandoahCollectorPolicy::record_success_full(size_t gc_id) {
   _consecutive_young_gcs = 0;
   _success_full_gcs++;
+  _last_whole_heap_gc_id.store_relaxed(gc_id);
 }
 
 void ShenandoahCollectorPolicy::record_shutdown() {
@@ -212,13 +218,20 @@ int ShenandoahCollectorPolicy::cause_priority(GCCause::Cause cause) {
   }
 
   switch (cause) {
-    case GCCause::_shenandoah_stop_vm: return 7;
-    case GCCause::_shenandoah_upgrade_to_full_gc: return 6;
-    case GCCause::_shenandoah_humongous_allocation_failure: return 4;
-    case GCCause::_shenandoah_allocation_failure_evac: return 3;
-    case GCCause::_allocation_failure: return 2;
-    case GCCause::_shenandoah_concurrent_gc: return 1;
-    case GCCause::_no_gc: return 0;
+    case GCCause::_shenandoah_stop_vm:
+      return 7;
+    case GCCause::_shenandoah_upgrade_to_full_gc:
+      return 6;
+    case GCCause::_shenandoah_humongous_allocation_failure:
+      return 4;
+    case GCCause::_shenandoah_allocation_failure_evac:
+      return 3;
+    case GCCause::_allocation_failure:
+      return 2;
+    case GCCause::_shenandoah_concurrent_gc:
+      return 1;
+    case GCCause::_no_gc:
+      return 0;
     default:
       // Unanticipated gc causes are treated as an allocation failure and cannot be
       // preempted by regulator requests

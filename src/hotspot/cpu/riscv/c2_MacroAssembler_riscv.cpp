@@ -123,8 +123,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    ori(tmp1_mark, tmp1_mark, markWord::unlocked_value);
-    xori(tmp3_t, tmp1_mark, markWord::unlocked_value);
+    ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
+    xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
@@ -295,7 +295,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-    ori(tmp3_t, tmp1_mark, markWord::unlocked_value);
+    ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
             /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
@@ -354,15 +354,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     bind(not_recursive);
 
-    const Register tmp2_owner_addr = tmp2;
-
-    // Compute owner address.
-    la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
-
     // Set owner to null.
     // Release to satisfy the JMM
     membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp2_owner_addr));
+    sd(zr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.
     membar(StoreLoad);
@@ -514,19 +509,20 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
                                             Register tmp3, Register tmp4,
                                             bool isL)
 {
-  Label CH1_LOOP, HIT, NOMATCH, DONE, SHORT;
+  Label CH1_LOOP, HIT, DONE, SHORT;
   Register ch1 = t0;
   Register orig_cnt = t1;
-  Register mask1 = tmp3;
+  Register mask1 = tmp1;
   Register mask2 = tmp2;
-  Register match_mask = tmp1;
+  Register match_mask = tmp3;
   Register loop_step = tmp4;
   Register trailing_chars = tmp4;
   Register unaligned_chars = tmp4;
   Register start_index = tmp4;
 
   BLOCK_COMMENT("string_indexof_char {");
-  beqz(cnt1, NOMATCH);
+  mv(result, -1);
+  beqz(cnt1, DONE);
 
   subi(t0, cnt1, isL ? 32 : 16);
   mv(start_index, zr);
@@ -575,13 +571,13 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(CH1_LOOP);
   ld(ch1, Address(str1));
-  addi(str1, str1, 8);
-  subi(cnt1, cnt1, 8);
   compute_match_mask(ch1, ch, match_mask, mask1, mask2);
   bnez(match_mask, HIT);
+  addi(str1, str1, 8);
+  subi(cnt1, cnt1, 8);
   bge(cnt1, loop_step, CH1_LOOP);
 
-  beqz(cnt1, NOMATCH);
+  beqz(cnt1, DONE);
   if (!isL) {
     srli(cnt1, cnt1, 1);
   }
@@ -601,9 +597,8 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   bind(HIT);
   // count bits of trailing zero chars
-  ctzc_bits(trailing_chars, match_mask, isL, ch1, result);
+  ctzc_bits(trailing_chars, match_mask, isL, mask1, mask2);
   srli(trailing_chars, trailing_chars, 3);
-  addi(cnt1, cnt1, 8);
 
   // match case
   if (!isL) {
@@ -613,10 +608,6 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
 
   sub(result, orig_cnt, cnt1);
   add(result, result, trailing_chars);
-  j(DONE);
-
-  bind(NOMATCH);
-  mv(result, -1);
 
   bind(DONE);
   BLOCK_COMMENT("} string_indexof_char");

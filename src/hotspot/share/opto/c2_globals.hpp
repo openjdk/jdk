@@ -70,6 +70,9 @@
   develop(bool, StressBailout, false,                                       \
           "Perform bailouts randomly at C2 failing() checks")               \
                                                                             \
+  develop(bool, StressVerifyMeetJoin, false,                                \
+          "Perform cross meet/join sanity checks on all Type instances")    \
+                                                                            \
   product(bool, OptimizeReachabilityFences, true, DIAGNOSTIC,               \
           "Optimize reachability fences "                                   \
           "(leave reachability fence nodes intact when turned off)")        \
@@ -740,14 +743,16 @@
           range(1, 100)                                                     \
                                                                             \
   develop(uint, VerifyIterativeGVN, 0,                                      \
-          "Verify Iterative Global Value Numbering =FEDCBA, with:"          \
-          "  F: verify IGVN method return invariants"                       \
-          "  E: verify node specific invariants"                            \
-          "  D: verify Node::Identity did not miss opportunities"           \
-          "  C: verify Node::Ideal did not miss opportunities"              \
-          "  B: verify that type(n) == n->Value() after IGVN"               \
-          "  A: verify Def-Use modifications during IGVN"                   \
-          "Each can be 0=off or 1=on")                                      \
+          "Verify Iterative Global Value Numbering. Set the corresponding " \
+          "decimal place to 1 to enable a check, or 0 to disable it:\n"     \
+          "100000: verify IGVN method return invariants\n"                  \
+          " 10000: verify node specific invariants\n"                       \
+          "  1000: verify Node::Identity did not miss opportunities\n"      \
+          "   100: verify Node::Ideal did not miss opportunities\n"         \
+          "    10: verify that type(n) == n->Value() after IGVN\n"          \
+          "     1: verify Def-Use modifications during IGVN\n"              \
+          "Example: -XX:VerifyIterativeGVN=101 enables Node::Ideal and "    \
+          "Def-Use checks.")                                                \
           constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   develop(bool, TraceCISCSpill, false,                                      \
@@ -822,6 +827,9 @@
                                                                             \
   product(bool, IncrementalInlineForceCleanup, false, DIAGNOSTIC,           \
           "do cleanup after every iteration of incremental inlining")       \
+                                                                            \
+  product(bool, IncrementalInlineVector, true, DIAGNOSTIC,                  \
+          "Inline fallback implementation of failed vector intrinsics")     \
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \

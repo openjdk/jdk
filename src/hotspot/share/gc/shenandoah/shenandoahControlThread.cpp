@@ -58,11 +58,7 @@ void ShenandoahControlThread::run_service() {
 
   ShenandoahHeuristics* const heuristics = heap->heuristics();
   while (!should_terminate()) {
-    const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-    if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-      break;
-    }
-    assert(cancelled_cause == GCCause::_no_gc, "Cannot be cancelled for: %s", GCCause::to_string(cancelled_cause));
+    assert(!heap->cancelled_gc() || should_terminate(), "Can only be cancelled for shutdown");
 
     // Figure out if we have pending requests.
     GCCause::Cause cause;
@@ -77,7 +73,7 @@ void ShenandoahControlThread::run_service() {
     bool clear_soft_references = ShenandoahAlwaysClearSoftRefs;
     if (cause != GCCause::_no_gc) {
       // A cycle was requested, clear soft references
-      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC Request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
       clear_soft_references = true;
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
@@ -223,7 +219,7 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   // heuristics say there are no regions to compact, and all the collection comes from immediately
   // reclaimable regions, Shenandoah can skip the evacuation phase.
   ShenandoahHeap* heap = ShenandoahHeap::heap();
-  if (check_cancellation()) {
+  if (ShenandoahHeap::heap()->cancelled_gc()) {
     // Need to report at "gc" level to report GC ID proper.
     log_info(gc)("Cancelled before cycle started");
     return;
@@ -238,31 +234,16 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   if (gc.collect(cause)) {
     heap->notify_gc_progress();
     heap->global_generation()->heuristics()->record_concurrent_completion();
-    heap->shenandoah_policy()->record_success_concurrent(false, gc.abbreviated());
+    heap->shenandoah_policy()->record_success_concurrent(get_gc_id(), false, gc.abbreviated());
     heap->log_heap_status("At end of GC");
   } else {
     assert(heap->cancelled_gc(), "Must have been cancelled");
-    check_cancellation();
     heap->log_heap_status("At end of cancelled GC");
   }
 }
 
-bool ShenandoahControlThread::check_cancellation() {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  const GCCause::Cause cancelled_cause = heap->cancelled_cause();
-  if (cancelled_cause == GCCause::_no_gc) {
-    return false;
-  }
-
-  if (cancelled_cause == GCCause::_shenandoah_stop_vm) {
-    return true;
-  }
-
-  fatal("Unexpected reason for cancellation: %s", GCCause::to_string(cancelled_cause));
-}
-
 void ShenandoahControlThread::stop_service() {
-  ShenandoahHeap::heap()->cancel_gc(GCCause::_shenandoah_stop_vm);
+  // Nothing to do here, worker threads will also check should_terminate, by way of shHeap::is_stopping.
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
@@ -275,18 +256,16 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
   gc.collect(cause);
 }
 
-void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {
-  // Although setting gc request is under _controller_lock, the read side (run_service())
-  // does not take the lock. We need to enforce following order, so that read side sees
-  // latest requested gc cause when the flag is set. Do not let a lower priority cause
-  // overwrite a higher priority cause.
+bool ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {
   MonitorLocker controller(&_control_lock, Mutex::_no_safepoint_check_flag);
   if (ShenandoahCollectorPolicy::is_higher_priority(_requested_gc_cause, cause)) {
     log_debug(gc, thread)("Not overwriting gc cause %s with %s", GCCause::to_string(_requested_gc_cause), GCCause::to_string(cause));
-  } else {
-    _requested_gc_cause = cause;
+    return false;
   }
-  controller.notify();
+
+  _requested_gc_cause = cause;
+  controller.notify_all();
+  return true;
 }
 
 void ShenandoahControlThread::notify_alloc_stall(GCCause::Cause cause) {

@@ -630,8 +630,12 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
   bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
+    if (!heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* region = heap->get_region(i);
-    if (region->is_old() && region->is_active() && !region->is_cset()) {
+    if (region->is_active() && !region->is_cset()) {
       HeapWord* start_of_range = region->bottom();
       HeapWord* end_of_range = region->top();
       size_t start_cluster_no = cluster_for_addr(start_of_range);

@@ -47,10 +47,10 @@ public class TestPeriodicGC {
 
         output.shouldHaveExitValue(0);
         if (periodic) {
-            output.shouldContain("Trigger: Time since last GC");
+            output.shouldContain("Trigger: Guaranteed Interval.");
         }
         if (!periodic) {
-            output.shouldNotContain("Trigger: Time since last GC");
+            output.shouldNotContain("Trigger: Guaranteed Interval.");
         }
     }
 
@@ -63,11 +63,11 @@ public class TestPeriodicGC {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         if (periodic) {
-            output.shouldContain("Trigger (Young): Time since last GC");
-            output.shouldContain("Trigger (Old): Time since last GC");
+            output.shouldContain("Trigger (Young): Guaranteed Interval.");
+            output.shouldContain("Trigger (Old): Guaranteed Interval.");
         } else {
-            output.shouldNotContain("Trigger (Young): Time since last GC");
-            output.shouldNotContain("Trigger (Old): Time since last GC");
+            output.shouldNotContain("Trigger (Young): Guaranteed Interval.");
+            output.shouldNotContain("Trigger (Old): Guaranteed Interval.");
         }
     }
 

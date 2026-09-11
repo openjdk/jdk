@@ -93,9 +93,10 @@ void ShenandoahController::request_gc(GCCause::Cause cause) {
 }
 
 void ShenandoahController::handle_requested_gc(GCCause::Cause cause) {
-
   // Requested gc's always operate on the entire heap
-  ShenandoahGeneration* global = ShenandoahHeap::heap()->global_generation();
+  const ShenandoahHeap* heap = ShenandoahHeap::heap();
+  const ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
+  ShenandoahGeneration* global = heap->global_generation();
 
   // For normal requested GCs (System.gc) we want to block the caller. However,
   // for whitebox requested GC, we want to initiate the GC and return immediately.
@@ -115,12 +116,10 @@ void ShenandoahController::handle_requested_gc(GCCause::Cause cause) {
   // opportunities for cleanup that were made available before the caller
   // requested the GC.
   MonitorLocker ml(&_gc_waiters_lock);
-  size_t current_gc_id = get_gc_id();
-  size_t required_gc_id = current_gc_id + 1;
-  while (current_gc_id < required_gc_id && !should_terminate()) {
+  const size_t current_gc_id = get_gc_id();
+  while (policy->last_whole_heap_gc_id() <= current_gc_id && !should_terminate()) {
     notify_control_thread(cause, global);
     ml.wait();
-    current_gc_id = get_gc_id();
   }
 }
 
@@ -141,8 +140,8 @@ void ShenandoahController::increase_concurrent_worker_count() {
 void ShenandoahController::decrease_concurrent_worker_count() {
   const size_t alloc_stalls = _alloc_stall_count.exchange(0);
   if (alloc_stalls != 0) {
-    log_info(gc)("Allocation stalls: %zu, holding concurrent worker count at: %zu",
-                 alloc_stalls, _concurrent_worker_count.load_relaxed());
+    log_info(gc, ergo)("Allocation stalls: %zu, holding concurrent worker count at: %zu",
+                       alloc_stalls, _concurrent_worker_count.load_relaxed());
   } else {
     // There were no stalls during this cycle, try to reduce the concurrent gc workers
     while (true) {

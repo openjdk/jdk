@@ -81,12 +81,6 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
-  // Cancels gc if old mark is in progress
-  void maybe_cancel_old_cycle(GCCause::Cause cause);
-
-  // Handles explict requests. Overridden to deal with cancelling old if necessary.
-  void request_gc(GCCause::Cause cause) override;
-
   // Return true if the request to start a concurrent GC for the given generation succeeded.
   bool request_concurrent_gc(ShenandoahGeneration* generation);
 
@@ -100,7 +94,7 @@ protected:
   void stop_service() override;
 
   void notify_alloc_stall(GCCause::Cause cause) override;
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
 
 private:
 
@@ -129,9 +123,9 @@ private:
 
   // These notify the control thread after updating _requested_gc_cause and (optionally) _requested_generation.
   // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
-  void notify_control_thread(GCCause::Cause cause);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
-  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  bool notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  void request_gc_and_interrupt_old(GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.

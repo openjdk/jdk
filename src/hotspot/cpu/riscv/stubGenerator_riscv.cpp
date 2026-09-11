@@ -1240,8 +1240,8 @@ class StubGenerator: public StubCodeGenerator {
   void verify_oop_array(size_t size, Register a, Register count, Register temp) {
     Label loop, end;
     __ mv(t1, zr);
-    __ slli(t0, count, exact_log2(size));
     __ bind(loop);
+    __ slli(t0, count, exact_log2(size));
     __ bgeu(t1, t0, end);
 
     __ add(temp, a, t1);
@@ -2248,10 +2248,10 @@ class StubGenerator: public StubCodeGenerator {
     __ bne(t1, scratch_src_klass, L_failed);
 
     if (Arguments::is_valhalla_enabled()) {
-      // Check for flat inline type array -> return -1
+      // Check for flat value type array -> return -1
       __ test_flat_array_oop(src, t1, L_failed);
 
-      // Check for null-free (non-flat) inline type array -> handle as object array
+      // Check for null-free (non-flat) value type array -> handle as object array
       __ test_null_free_array_oop(src, t1, L_objArray);
     }
 
@@ -7827,6 +7827,43 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+  address generate_updateBytesCRC32C() {
+    assert(UseCRC32CIntrinsics, "what are we doing here?");
+    StubId stub_id = StubId::stubgen_updateBytesCRC32C_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, stub_id);
+
+    start = __ pc();
+
+    const Register crc    = c_rarg0;  // crc
+    const Register buf    = c_rarg1;  // source java byte array address
+    const Register len    = c_rarg2;  // length
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+    // c_rarg3/c_rarg4 are reused as the two table base pointers; the rest are scratch.
+    __ kernel_crc32c(crc, buf, len,
+                     c_rarg3, c_rarg4,           // byte_table, clmul_table
+                     c_rarg5, c_rarg6, c_rarg7,  // accum_hi, k1, k2
+                     t2, t3, t4);                // scratch1, scratch2, fold_end
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret();
+
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
+  }
+
   // exception handler for upcall stubs
   address generate_upcall_stub_exception_handler() {
     StubId stub_id = StubId::stubgen_upcall_stub_exception_handler_id;
@@ -7914,6 +7951,10 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     if (UseCRC32Intrinsics) {
       StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
+
+    if (UseCRC32CIntrinsics) {
+      StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&

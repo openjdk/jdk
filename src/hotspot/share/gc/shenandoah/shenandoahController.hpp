@@ -94,7 +94,7 @@ protected:
   }
 
   // Notify the control thread to run a cycle for the given generation
-  virtual void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) = 0;
+  virtual bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) = 0;
 
   // Notify the control thread about an allocation stall specifically. Implementation
   // will decide which generation to use and any other mode specific work that must be done.

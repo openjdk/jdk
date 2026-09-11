@@ -118,12 +118,7 @@ template <typename T>
 void ShenandoahKeepAliveClosure::do_oop_work(T* p) {
   assert(ShenandoahHeap::heap()->is_concurrent_mark_in_progress(), "Only for concurrent marking phase");
   assert(ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress() || !ShenandoahHeap::heap()->has_forwarded_objects(), "Not expected");
-
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    _bs->enqueue(obj);
-  }
+  _bs->keepalive_barrier(ON_STRONG_OOP_REF, p, nullptr, ShenandoahBarrierSet::FILTER_MARKED);
 }
 
 
@@ -217,25 +212,6 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Update References
 //
-
-template <ShenandoahGenerationType GENERATION>
-ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
-                                                                             ShenandoahReferenceProcessor* rp,
-                                                                             ShenandoahObjToScanQueue* old_q) :
-  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
-  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-}
-
-template<ShenandoahGenerationType GENERATION>
-template<class T>
-inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
-  // Update the location
-  _heap->non_conc_update_with_forwarded(p);
-
-  // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
-}
-
 template<class T>
 inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);

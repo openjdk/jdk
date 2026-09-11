@@ -26,6 +26,7 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -97,7 +98,7 @@ void set_oop_field<narrowOop>(narrowOop* field, oop value) {
 
 static oop lrb(oop obj) {
   if (obj != nullptr && ShenandoahHeap::heap()->marking_context()->is_marked(obj)) {
-    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(obj);
+    return ShenandoahBarrierSet::barrier_set()->load_reference_barrier(ON_STRONG_OOP_REF, obj, (oop*)nullptr);
   } else {
     return obj;
   }
