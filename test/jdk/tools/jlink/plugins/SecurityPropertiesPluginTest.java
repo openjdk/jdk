@@ -40,6 +40,7 @@ import tests.Helper;
 import tests.JImageGenerator;
 import tests.JImageGenerator.JLinkTask;
 import tests.JImageGenerator.JModTask;
+import tests.Result;
 
 /* @test
  * @bug 8377819
@@ -135,6 +136,11 @@ public class SecurityPropertiesPluginTest {
         foo=456
         """;
 
+    private static final String INCLUDE_STATEMENT =
+        """
+        include notAllowed
+        """;
+
     public static void main(String[] args) throws Throwable {
 
         helper = Helper.newHelper(LINKABLE_RUNTIME);
@@ -194,14 +200,7 @@ public class SecurityPropertiesPluginTest {
 
         // Create second image using custom module and new java.base.jmod
         Path customImage = Path.of(TEST_DIR, "images/customModule.image");
-        JLinkTask jLinkTask = JImageGenerator.getJLinkTask()
-            .modulePath(Path.of(TEST_DIR, "jmods").toString())
-            .output(customImage)
-            .addMods("customModule")
-            .limitMods("customModule")
-            .option("--security-properties")
-            .option("test.security");
-        jLinkTask.call().assertSuccess();
+        createSecondImage(customImage).assertSuccess();
 
         testImage(customImage);
 
@@ -211,14 +210,17 @@ public class SecurityPropertiesPluginTest {
         // Create second image using custom module and new java.base.jmod
         // Expect failure because java.security file has duplicate properties.
         customImage = Path.of(TEST_DIR, "images/customModule2.image");
-        jLinkTask = JImageGenerator.getJLinkTask()
-            .modulePath(Path.of(TEST_DIR, "jmods").toString())
-            .output(customImage)
-            .addMods("customModule")
-            .limitMods("customModule")
-            .option("--security-properties")
-            .option("test.security");
-        jLinkTask.call().assertFailure("Parsing error, duplicate property");
+        createSecondImage(customImage)
+            .assertFailure("Parsing error, duplicate property");
+
+        Files.delete(Path.of(TEST_DIR, "jmods/java.base.jmod"));
+        createReplacementJmod(INCLUDE_STATEMENT);
+
+        // Create second image using custom module and new java.base.jmod
+        // Expect failure because java.security file has an include statement.
+        customImage = Path.of(TEST_DIR, "images/customModule3.image");
+        createSecondImage(customImage)
+            .assertFailure("Parsing error, include statement disallowed");
     }
 
     private static void createReplacementJmod(String jsProps) throws IOException{
@@ -243,6 +245,17 @@ public class SecurityPropertiesPluginTest {
             .addNativeLibraries(extractedPath.resolve("lib"))
             .jmod(Path.of(TEST_DIR, "jmods/java.base.jmod"));
         jmodTask.create().assertSuccess();
+    }
+
+    private static Result createSecondImage(Path customImage) {
+        JLinkTask jLinkTask = JImageGenerator.getJLinkTask()
+            .modulePath(Path.of(TEST_DIR, "jmods").toString())
+            .output(customImage)
+            .addMods("customModule")
+            .limitMods("customModule")
+            .option("--security-properties")
+            .option("test.security");
+        return jLinkTask.call();
     }
 
     private static void testImage(Path image) throws Exception {

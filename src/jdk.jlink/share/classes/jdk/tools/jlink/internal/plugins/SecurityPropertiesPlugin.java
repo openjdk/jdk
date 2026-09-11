@@ -144,13 +144,19 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
                     throw new PluginException("Parsing error: " + propNames);
                 }
 
-                // check if property should be overridden
+                // check for duplicate properties and include statements
                 String propName = propNames.iterator().next();
                 if (keys.contains(propName)) {
                     throw new PluginException("Parsing error, " +
                         "duplicate property: " + propName);
                 }
+                if (propName.equals("include")) {
+                    throw new PluginException("Parsing error, " +
+                        "include statement disallowed");
+                }
                 keys.add(propName);
+
+                // check if property should be overridden
                 String propValue = (String) extraProps.remove(propName);
                 if (propValue != null) {
                     // override value
