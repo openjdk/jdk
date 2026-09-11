@@ -388,19 +388,19 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   uint num_free_regions_before = num_free_regions();
 
-  uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
-  if (obj_regions > num_available_regions()) {
+  uint num_obj_regions = (uint) humongous_obj_size_in_regions(word_size);
+  if (num_obj_regions > num_available_regions()) {
     // Can't satisfy this allocation; early-return.
     return nullptr;
   }
 
   // Policy: First try to allocate a humongous object in the free list.
-  G1HeapRegion* humongous_start = _hrm.allocate_humongous(obj_regions);
+  G1HeapRegion* humongous_start = _hrm.allocate_humongous(num_obj_regions);
   if (humongous_start == nullptr) {
     // Policy: We could not find enough regions for the humongous object in the
     // free list. Look through the heap to find a mix of free and uncommitted regions.
     // If so, expand the heap and allocate the humongous object.
-    humongous_start = _hrm.expand_and_allocate_humongous(obj_regions);
+    humongous_start = _hrm.expand_and_allocate_humongous(num_obj_regions);
     if (humongous_start != nullptr) {
       // We managed to find a region by expanding the heap.
       log_debug(gc, ergo, heap)("Heap expansion (humongous allocation request). Allocation request: %zuB",
@@ -413,7 +413,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   HeapWord* result = nullptr;
   if (humongous_start != nullptr) {
-    result = humongous_obj_allocate_initialize_regions(humongous_start, obj_regions, word_size);
+    result = humongous_obj_allocate_initialize_regions(humongous_start, num_obj_regions, word_size);
     assert(result != nullptr, "it should always return a valid result");
 
     // A successful humongous object allocation changes the used space
@@ -422,7 +422,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     uint num_free_regions_after = num_free_regions();
     assert(num_free_regions_before >= num_free_regions_after, "must be");
 
-    assert((num_free_regions_before - num_free_regions_after) <= obj_regions, "must be");
+    assert((num_free_regions_before - num_free_regions_after) <= num_obj_regions, "must be");
     policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions_after);
     monitoring_support()->update_sizes();
   }
@@ -574,16 +574,16 @@ HeapWord* G1CollectedHeap::alloc_archive_region(size_t word_size) {
   MemRegion range = MemRegion(start_addr, word_size);
   HeapWord* last_address = range.last();
 
-  size_t commits = 0;
-  bool allocated = _hrm.allocate_containing_regions(range, &commits, workers());
+  size_t num_regions_committed = 0;
+  bool allocated = _hrm.allocate_containing_regions(range, &num_regions_committed, workers());
 
-  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions());
-
-  if (commits != 0) {
+  if (num_regions_committed != 0) {
     log_debug(gc, ergo, heap)("Attempt heap expansion (allocate archive regions). Total size: %zuB",
-                              G1HeapRegion::GrainWords * HeapWordSize * commits);
+                              G1HeapRegion::GrainBytes * num_regions_committed);
     policy()->record_new_heap_size(num_committed_regions());
   }
+
+  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions());
 
   if (!allocated) {
     return nullptr;
@@ -627,29 +627,28 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
   HeapWord* start_address = range.start();
   HeapWord* last_address = range.last();
 
-  uint num_free_regions_before = num_free_regions();
-
   assert(reserved.contains(start_address) && reserved.contains(last_address),
          "MemRegion outside of heap [" PTR_FORMAT ", " PTR_FORMAT "]",
          p2i(start_address), p2i(last_address));
   size_used += range.byte_size();
 
-  uint max_shrink_count = 0;
+  uint max_num_regions_to_shrink = 0;
   if (capacity() > MinHeapSize) {
     size_t max_shrink_bytes = capacity() - MinHeapSize;
-    max_shrink_count = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
+    max_num_regions_to_shrink = (uint)(max_shrink_bytes / G1HeapRegion::GrainBytes);
   }
 
-  uint shrink_count = 0;
+  uint num_free_regions_before = num_free_regions();
+  uint num_regions_to_shrink = 0;
   // Free, empty and uncommit regions with CDS archive content.
   auto dealloc_archive_region = [&] (G1HeapRegion* r, bool is_last) {
     guarantee(r->is_old(), "Expected old region at index %u", r->hrm_index());
     _old_set.remove(r);
     r->set_free();
     r->set_top(r->bottom());
-    if (shrink_count < max_shrink_count) {
+    if (num_regions_to_shrink < max_num_regions_to_shrink) {
       _hrm.shrink_at(r->hrm_index(), 1);
-      shrink_count++;
+      num_regions_to_shrink++;
     } else {
       _hrm.insert_into_free_list(r);
     }
@@ -657,15 +656,14 @@ void G1CollectedHeap::dealloc_archive_regions(MemRegion range) {
 
   iterate_regions_in_range(range, dealloc_archive_region);
 
-  if (shrink_count != 0) {
+  if (num_regions_to_shrink != 0) {
     log_debug(gc, ergo, heap)("Attempt heap shrinking (CDS archive regions). Total size: %zuB (%u Regions)",
-                              G1HeapRegion::GrainWords * HeapWordSize * shrink_count, shrink_count);
+                              G1HeapRegion::GrainWords * HeapWordSize * num_regions_to_shrink, num_regions_to_shrink);
     // Explicit uncommit.
-    uncommit_regions(shrink_count);
+    uncommit_regions(num_regions_to_shrink);
     policy()->record_new_heap_size(num_committed_regions());
   }
-  uint num_free_regions_after = num_free_regions();
-  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions_after);
+  policy()->adjust_eden_allocation_budget(num_free_regions_before, num_free_regions());
   decrease_used(size_used);
 }
 

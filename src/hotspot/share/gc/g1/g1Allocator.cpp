@@ -91,7 +91,7 @@ bool G1Allocator::is_retained_old_region(G1HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-bool G1Allocator::can_reuse_retained_old_region(const G1HeapRegion* region) {
+static bool can_reuse_retained_old_region(const G1HeapRegion* hr) {
   // We will discard the current GC alloc region if:
   // a) it's in the collection set (it can happen!),
   // b) it's already full (no point in using it),
@@ -101,12 +101,12 @@ bool G1Allocator::can_reuse_retained_old_region(const G1HeapRegion* region) {
   // during a cleanup and was added to the free list, but
   // has been subsequently used to allocate a humongous
   // object that may be less than the region size).
-  return region != nullptr &&
-         region->is_old() &&
-         !region->in_collection_set() &&
-         region->top() != region->end() &&
-         !region->is_empty() &&
-         !region->is_humongous();
+  return hr != nullptr &&
+         hr->is_old() &&
+         !hr->in_collection_set() &&
+         hr->top() != hr->end() &&
+         !hr->is_empty() &&
+         !hr->is_humongous();
 }
 
 void G1Allocator::reuse_retained_old_region(G1EvacInfo* evacuation_info,

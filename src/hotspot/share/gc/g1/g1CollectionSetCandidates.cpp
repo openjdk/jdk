@@ -125,7 +125,7 @@ G1EvacuationPrediction G1CardSetGroup::predict_group_evacuation() const {
                              non_young_other_time_ms,
                              predicted_bytes_to_copy);
 
-  return {total_time_ms, predicted_bytes_to_copy};
+  return G1EvacuationPrediction{total_time_ms, predicted_bytes_to_copy};
 }
 
 int G1CardSetGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2) {

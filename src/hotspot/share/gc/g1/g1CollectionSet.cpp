@@ -359,17 +359,15 @@ G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegi
 
   size_t predicted_eden_bytes_to_copy = eden_prediction._bytes_to_copy;
 
-  double predicted_eden_time = eden_prediction._time_ms;
+  double predicted_eden_time_ms = eden_prediction._time_ms;
 
   size_t predicted_young_bytes_to_copy = predicted_eden_bytes_to_copy + predicted_survivor_bytes_to_copy;
-  double predicted_young_evac_time = predicted_base_time_ms + predicted_eden_time;
+  double predicted_young_evac_time_ms = predicted_base_time_ms + predicted_eden_time_ms;
 
-  double old_cset_time_budget_ms = available_time_ms(target_pause_time_ms, predicted_young_evac_time);
+  double old_cset_time_budget_ms = available_time_ms(target_pause_time_ms, predicted_young_evac_time_ms);
 
-  size_t young_used = young_used_bytes();
-
-  size_t old_cset_copy_budget = old_cset_copy_budget_bytes(predicted_young_bytes_to_copy,
-                                                           young_used);
+  size_t old_cset_copy_budget_bytes = this->old_cset_copy_budget_bytes(predicted_young_bytes_to_copy,
+                                                                       young_used_bytes());
 
   log_trace(gc, ergo, cset)("Added young regions to CSet. Eden: %u regions, Survivors: %u regions, "
                             "predicted Eden time: %1.2fms, predicted base time: %1.2fms, "
@@ -377,17 +375,17 @@ G1CollectionSet::finalize_young_part(double target_pause_time_ms, G1SurvivorRegi
                             "Eden bytes to copy: %zu, Survivor bytes to copy: %zu, "
                             "old CSet copy budget: %zuB",
                             num_eden_regions, num_survivor_regions,
-                            predicted_eden_time, predicted_base_time_ms, target_pause_time_ms,
+                            predicted_eden_time_ms, predicted_base_time_ms, target_pause_time_ms,
                             old_cset_time_budget_ms,
                             predicted_eden_bytes_to_copy, predicted_survivor_bytes_to_copy,
-                            old_cset_copy_budget);
+                            old_cset_copy_budget_bytes);
 
   // Set survivor regions as eden and clear survivor tracking for this pause.
   survivors->convert_to_eden();
 
   phase_times()->record_young_cset_choice_time_ms((Ticks::now() - start_time).seconds() * 1000.0);
 
-  return {old_cset_time_budget_ms, old_cset_copy_budget};
+  return SelectionBudget{old_cset_time_budget_ms, old_cset_copy_budget_bytes};
 }
 
 static size_t max_evacuation_copy_bytes(size_t available_destination_bytes) {
@@ -615,8 +613,8 @@ public:
     return num_initial_regions() + num_optional_regions();
   }
 
-  // Add a card set group required to reach the minimum num old collection set
-  // regions. These groups are selected for initial evacuation even if their
+  // Add a card set group required to reach the minimum number of old collection
+  // set regions. These groups are selected for initial evacuation even if their
   // prediction exceeds the budget.
   void add_for_minimum(G1CardSetGroup* group,
                        const G1EvacuationPrediction& prediction);

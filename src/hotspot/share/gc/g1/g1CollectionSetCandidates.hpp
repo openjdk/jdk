@@ -26,7 +26,6 @@
 #define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP
 
 #include "gc/g1/g1CardSetMemory.hpp"
-#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1EvacuationPrediction.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"

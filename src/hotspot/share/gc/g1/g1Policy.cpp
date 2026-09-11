@@ -235,7 +235,7 @@ void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_pr
   uint target_num_young_regions = calculate_target_num_young_regions(predictor,
                                                                      min_num_young_regions_by_sizer);
 
-  log_trace(gc, ergo, heap)("Young num regions update: base time %1.3fms survivor bytes to copy %zu "
+  log_trace(gc, ergo, heap)("Calculate young num regions: base time %1.3fms survivor bytes to copy %zu "
                             "old target %u desired: %u evacuation space max: %u target: %u",
                             base_prediction._time_ms,
                             base_prediction._bytes_to_copy,
@@ -372,13 +372,11 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
 
     log_trace(gc, ergo, heap)("Target young regions: Common "
                               "eden region allocation budget %u "
-                              "desired number of young regions %u "
-                              "max young regions by evacuation space %u "
+                              "target young regions by evacuation space %u "
                               "reserve regions %u "
                               "max to eat into reserve %u",
                               eden_allocation_budget_num_regions,
-                              desired_num_young_regions,
-                              max_num_young_regions_by_evac_space,
+                              target_num_young_regions_by_evac_space,
                               num_reserve_regions,
                               max_num_regions_to_eat_into_reserve);
 
@@ -421,7 +419,7 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
       log_trace(gc, ergo, heap)("Target young regions: Partially eat into reserve "
                                 "num free regions outside reserve %u "
                                 "num eden regions from reserve %u "
-                                "target num eden regions  %u "
+                                "target num eden regions %u "
                                 "num additional eden regions %u",
                                 num_free_regions_outside_reserve, num_eden_regions_from_reserve,
                                 target_num_eden_regions, num_additional_eden_regions);
@@ -502,7 +500,7 @@ G1EvacuationPrediction G1Policy::predict_survivor_regions_evacuation() const {
     survivor_bytes_to_copy += bytes_to_copy;
   }
 
-  return {survivor_regions_evac_time, survivor_bytes_to_copy};
+  return G1EvacuationPrediction{survivor_regions_evac_time, survivor_bytes_to_copy};
 }
 
 G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
@@ -524,7 +522,10 @@ G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
       // The required number of retained regions has been selected. Exit.
       break;
     }
-    // Skip over pinned retained candidates.
+    // Skip pinned retained candidates. If they are unpinned before the GC, they
+    // will be selected ahead of the regions used for this prediction. Since
+    // retained candidates are sorted by GC efficiency, the actual selection
+    // should not be more expensive than predicted.
     if (r->has_pinned_objects()) {
       num_pinned_regions++;
       continue;
@@ -539,7 +540,8 @@ G1EvacuationPrediction G1Policy::predict_retained_regions_evacuation() const {
 
   log_trace(gc, ergo, heap)("Selected %u of %u retained candidates (pinned %u skipped) taking %1.3fms additional time",
                             num_selected_regions, retained_groups->num_regions(), num_pinned_regions, predicted_evac_time_ms);
-  return {predicted_evac_time_ms, predicted_bytes_to_copy};
+
+  return G1EvacuationPrediction{predicted_evac_time_ms, predicted_bytes_to_copy};
 }
 
 G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() const {
@@ -572,7 +574,7 @@ G1EvacuationPrediction G1Policy::predict_min_marking_candidates_evacuation() con
                             num_selected_regions, num_selected_groups,
                             predicted_evac_time_ms, predicted_bytes_to_copy);
 
-  return {predicted_evac_time_ms, predicted_bytes_to_copy};
+  return G1EvacuationPrediction{predicted_evac_time_ms, predicted_bytes_to_copy};
 }
 
 G1GCPhaseTimes* G1Policy::phase_times() const {
@@ -726,16 +728,13 @@ void G1Policy::adjust_eden_allocation_budget(uint num_free_regions_before, uint 
     _eden_allocation_budget_num_regions.add_then_fetch(num_added_regions, memory_order_relaxed);
   } else if (num_free_regions_after < num_free_regions_before) {
     uint num_removed_regions = num_free_regions_before - num_free_regions_after;
-    assert(_eden_allocation_budget_num_regions.load_relaxed() >= num_removed_regions, "Eden allocation budget underflow");
+    assert(_eden_allocation_budget_num_regions.load_relaxed() >= num_removed_regions,
+           "Eden allocation budget underflow");
     _eden_allocation_budget_num_regions.sub_then_fetch(num_removed_regions, memory_order_relaxed);
   }
 }
 
-void G1Policy::record_concurrent_mark_remark_end(uint num_free_regions_before_remark) {
-  uint num_free_regions_after_remark = _g1h->num_free_regions();
-
-  adjust_eden_allocation_budget(num_free_regions_before_remark, num_free_regions_after_remark);
-
+void G1Policy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double start_time_sec = cur_pause_start_sec();
   double elapsed_time_ms = (end_time_sec - start_time_sec) * 1000.0;
@@ -1147,7 +1146,8 @@ G1EvacuationPrediction G1Policy::predict_base_evacuation(size_t pending_cards,
                             total_time, pending_cards, card_rs_length, effective_scanned_cards,
                             refinement_table_merge_time, card_scan_time, code_root_rs_length, code_root_scan_time,
                             constant_other_time, survivor_evac_time, survivor_bytes_to_copy);
-  return {total_time, survivor_bytes_to_copy};
+
+  return G1EvacuationPrediction{total_time, survivor_bytes_to_copy};
 }
 
 size_t G1Policy::predict_bytes_to_copy(G1HeapRegion* hr) const {
@@ -1179,7 +1179,7 @@ double G1Policy::predict_non_young_other_time_ms(uint num_regions) const {
 
 G1EvacuationPrediction G1Policy::predict_eden_evacuation(uint num_eden_regions) const {
   if (num_eden_regions == 0) {
-    return {0.0, 0};
+    return G1EvacuationPrediction{0.0, 0};
   }
   size_t bytes_to_copy = _eden_surv_rate_group->accum_surv_rate_pred(num_eden_regions - 1) * G1HeapRegion::GrainBytes;
 
@@ -1188,7 +1188,7 @@ G1EvacuationPrediction G1Policy::predict_eden_evacuation(uint num_eden_regions) 
 
   double evacuation_time_ms = copy_time_ms + predict_young_region_other_time_ms(num_eden_regions);
 
-  return {evacuation_time_ms, bytes_to_copy};
+  return G1EvacuationPrediction{evacuation_time_ms, bytes_to_copy};
 }
 
 bool G1Policy::should_update_surv_rate_group_predictors() {

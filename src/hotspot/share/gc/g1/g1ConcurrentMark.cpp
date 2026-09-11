@@ -1362,7 +1362,6 @@ void G1ConcurrentMark::remark() {
 
   G1Policy* policy = _g1h->policy();
   policy->record_pause_start_time();
-  const uint num_free_regions_before_remark = _g1h->num_free_regions();
 
   double start = os::elapsedTime();
 
@@ -1403,6 +1402,7 @@ void G1ConcurrentMark::remark() {
     // in parallel below so that we can not do this in the After-Remark verification.
     _g1h->verifier()->verify_bitmap_clear(true /* above_tams_only */);
 
+    const uint num_free_regions_before = _g1h->num_free_regions();
     {
       GCTraceTime(Debug, gc, phases) debug("Select For Rebuild and Reclaim Empty Regions", _gc_timer_cm);
 
@@ -1419,7 +1419,7 @@ void G1ConcurrentMark::remark() {
 
       if (_needs_remembered_set_rebuild) {
         GrowableArrayCHeap<G1HeapRegion*, mtGC>* selected = cl.sort_and_prune_old_selected();
-        _g1h->policy()->candidates()->set_candidates_from_marking(selected);
+        policy->candidates()->set_candidates_from_marking(selected);
       }
     }
 
@@ -1442,6 +1442,9 @@ void G1ConcurrentMark::remark() {
     }
 
     compute_new_sizes();
+
+    policy->adjust_eden_allocation_budget(num_free_regions_before,
+                                          _g1h->num_free_regions());
 
     verify_during_pause(G1HeapVerifier::G1VerifyRemark, VerifyLocation::RemarkAfter);
 
@@ -1478,7 +1481,7 @@ void G1ConcurrentMark::remark() {
 
   _g1h->update_perf_counter_cpu_time();
 
-  policy->record_concurrent_mark_remark_end(num_free_regions_before_remark);
+  policy->record_concurrent_mark_remark_end();
 
   return;
 }

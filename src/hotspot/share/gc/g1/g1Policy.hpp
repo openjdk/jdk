@@ -159,7 +159,7 @@ public:
   G1EvacuationPrediction predict_base_evacuation() const;
   G1EvacuationPrediction predict_base_evacuation(size_t pending_cards,
                                                  size_t card_rs_length,
-                                                 size_t code_root_length) const;
+                                                 size_t code_root_rs_length) const;
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
@@ -314,7 +314,7 @@ public:
   void record_full_collection_start();
   void record_full_collection_end(size_t allocation_word_size);
 
-  void record_concurrent_mark_remark_end(uint num_free_regions_before_remark);
+  void record_concurrent_mark_remark_end();
 
   // Record start, end, and completion of cleanup.
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
