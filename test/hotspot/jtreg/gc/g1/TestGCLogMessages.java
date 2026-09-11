@@ -285,6 +285,9 @@ public class TestGCLogMessages {
                                                      "-Xmx32M",
                                                      "-Xmn16M",
                                                      "-Xms32M",
+                                                     "-XX:+G1GCAllocationFailureALot",
+                                                     "-XX:G1GCAllocationFailureALotCount=100",
+                                                     "-XX:G1GCAllocationFailureALotInterval=1",
                                                      "-XX:+UnlockDiagnosticVMOptions",
                                                      "-Xlog:gc+phases=trace",
                                                      GCTestWithAllocationFailure.class.getName());

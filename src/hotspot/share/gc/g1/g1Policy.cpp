@@ -81,13 +81,45 @@ class G1YoungGenPredictor {
 public:
   G1YoungGenPredictor(const G1Policy* const policy,
                       const G1EvacuationPrediction& base_prediction,
+                      uint num_young_regions,
                       uint min_num_young_regions_by_sizer,
                       uint max_num_young_regions_by_sizer);
 
   uint desired_num_young_regions() const;
   uint max_num_young_regions_by_evacuation_space() const;
-
   uint eden_allocation_budget_num_regions() const { return _eden_allocation_budget_num_regions; }
+};
+
+class G1NumYoungRegionsBounds {
+  const bool _is_valid;
+  const uint _desired_num_young_regions;
+  const uint _target_num_young_regions;
+
+public:
+  G1NumYoungRegionsBounds()
+  : _is_valid(false),
+    _desired_num_young_regions(0),
+    _target_num_young_regions(0) {}
+
+  G1NumYoungRegionsBounds(uint desired_num_young_regions,
+                          uint target_num_young_regions)
+  : _is_valid(true),
+    _desired_num_young_regions(desired_num_young_regions),
+    _target_num_young_regions(target_num_young_regions) {
+    precond(_target_num_young_regions <= _desired_num_young_regions);
+  }
+
+  bool is_valid() const { return _is_valid; }
+
+  uint desired_num_young_regions() const {
+    precond(_is_valid);
+    return _desired_num_young_regions;
+  }
+
+  uint target_num_young_regions() const {
+    precond(_is_valid);
+    return _target_num_young_regions;
+  }
 };
 
 static size_t evacuation_reserve_bytes(double bytes_to_copy) {
@@ -196,24 +228,33 @@ uint G1Policy::calculate_desired_num_eden_regions_by_mmu() const {
   return (uint) ceil(alloc_rate_ms * when_ms);
 }
 
+void G1Policy::update_young_regions_bounds(const G1NumYoungRegionsBounds& young_regions_bounds) {
+  // Write back. This is not an attempt to control visibility order to other threads
+  // here; all the revising of the number of young regions are best effort to keep pause time.
+  // E.g. we could be "too late" revising young gen upwards to avoid GC because
+  // there is some time left, or some threads could get different values for stopping
+  // allocation.
+  // That is "fine" - at most this will schedule a GC (hopefully only a little) too
+  // early or too late.
+  _desired_num_young_regions.store_relaxed(young_regions_bounds.desired_num_young_regions());
+  _target_num_young_regions.store_relaxed(young_regions_bounds.target_num_young_regions());
+}
+
 void G1Policy::update_young_regions_bounds() {
   assert(!Universe::is_fully_initialized() || SafepointSynchronize::is_at_safepoint(), "must be");
   G1EvacuationPrediction base_prediction = use_adaptive_num_young_regions() ?
                                            predict_base_evacuation() :
                                            G1EvacuationPrediction{0.0, 0};
-  update_young_regions_bounds(base_prediction);
+
+  G1NumYoungRegionsBounds young_regions_bounds = calculate_young_regions_bounds(base_prediction,
+                                                                                _g1h->num_young_regions());
+  if (young_regions_bounds.is_valid()) {
+    update_young_regions_bounds(young_regions_bounds);
+  }
 }
 
-void G1Policy::update_young_regions_bounds(size_t pending_cards,
-                                           size_t card_rs_length,
-                                           size_t code_root_rs_length) {
-  G1EvacuationPrediction base_prediction = predict_base_evacuation(pending_cards,
-                                                                   card_rs_length,
-                                                                   code_root_rs_length);
-  update_young_regions_bounds(base_prediction);
-}
-
-void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_prediction) {
+G1NumYoungRegionsBounds G1Policy::calculate_young_regions_bounds(const G1EvacuationPrediction& base_prediction,
+                                                                 uint cur_num_young_regions) {
   uint old_target_num_young_regions = target_num_young_regions();
 
   uint min_num_young_regions_by_sizer = _young_gen_sizer.min_desired_num_regions();
@@ -223,16 +264,28 @@ void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_pr
     // This can happen due to races with heap_size_changed() at mutator time. Do not update the
     // young regions. Will be updated on the next regular call anyway.
     assert(!SafepointSynchronize::is_at_safepoint(), "must be");
-    return;
+    return G1NumYoungRegionsBounds();
   }
 
   G1YoungGenPredictor predictor(this,
                                 base_prediction,
+                                cur_num_young_regions,
                                 min_num_young_regions_by_sizer,
                                 max_num_young_regions_by_sizer);
 
   uint desired_num_young_regions = predictor.desired_num_young_regions();
-  uint target_num_young_regions = calculate_target_num_young_regions(predictor,
+  uint max_num_young_regions_by_evac_space = predictor.max_num_young_regions_by_evacuation_space();
+  uint eden_allocation_budget_num_regions = predictor.eden_allocation_budget_num_regions();
+
+  // Cap by predicted evacuation space before determining how much
+  // additional Eden can be provided by the Eden allocation budget.
+  uint target_num_young_regions_by_evac_space = MIN2(desired_num_young_regions,
+                                                     MAX2(cur_num_young_regions,
+                                                          max_num_young_regions_by_evac_space));
+
+  uint target_num_young_regions = calculate_target_num_young_regions(target_num_young_regions_by_evac_space,
+                                                                     eden_allocation_budget_num_regions,
+                                                                     cur_num_young_regions,
                                                                      min_num_young_regions_by_sizer);
 
   log_trace(gc, ergo, heap)("Calculate young num regions: base time %1.3fms survivor bytes to copy %zu "
@@ -241,22 +294,15 @@ void G1Policy::update_young_regions_bounds(const G1EvacuationPrediction& base_pr
                             base_prediction._bytes_to_copy,
                             old_target_num_young_regions,
                             desired_num_young_regions,
-                            predictor.max_num_young_regions_by_evacuation_space(),
+                            max_num_young_regions_by_evac_space,
                             target_num_young_regions);
 
-  // Write back. This is not an attempt to control visibility order to other threads
-  // here; all the revising of the number of young regions are best effort to keep pause time.
-  // E.g. we could be "too late" revising young gen upwards to avoid GC because
-  // there is some time left, or some threads could get different values for stopping
-  // allocation.
-  // That is "fine" - at most this will schedule a GC (hopefully only a little) too
-  // early or too late.
-  _desired_num_young_regions.store_relaxed(desired_num_young_regions);
-  _target_num_young_regions.store_relaxed(target_num_young_regions);
+  return G1NumYoungRegionsBounds(desired_num_young_regions, target_num_young_regions);
 }
 
 G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
                                          const G1EvacuationPrediction& base_prediction,
+                                         uint num_young_regions,
                                          uint min_num_young_regions_by_sizer,
                                          uint max_num_young_regions_by_sizer) :
   _base_time_ms(0.0),
@@ -264,7 +310,7 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   _min_num_young_regions(0),
   _max_num_young_regions(0),
   _desired_num_eden_regions_by_mmu(0),
-  _num_young_regions(0),
+  _num_young_regions(num_young_regions),
   _num_survivor_regions(0),
   _survivor_bytes_to_copy(0),
   _survivor_used_bytes(0),
@@ -279,8 +325,6 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
 
   // This is how many survivor regions we already have.
   _num_survivor_regions = g1h->num_survivor_regions();
-  // Size of the already allocated young gen.
-  _num_young_regions = g1h->num_young_regions();
   // This is the absolute minimum number of young regions that we can return. Ensure that we
   // don't go below any user-defined minimum bound.  Also, we must have at least
   // one eden region, to ensure progress. But when revising during the ensuing
@@ -333,28 +377,19 @@ G1YoungGenPredictor::G1YoungGenPredictor(const G1Policy* const policy,
   postcond(_use_adaptive_sizing || _desired_num_eden_regions_by_mmu == 0);
 }
 
-uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& predictor,
+uint G1Policy::calculate_target_num_young_regions(uint target_num_young_regions_by_evac_space,
+                                                  uint eden_allocation_budget_num_regions,
+                                                  uint current_num_young_regions,
                                                   uint min_num_young_regions_by_sizer) const {
-  uint desired_num_young_regions = predictor.desired_num_young_regions();
-  uint max_num_young_regions_by_evac_space = predictor.max_num_young_regions_by_evacuation_space();
-  uint eden_allocation_budget_num_regions = predictor.eden_allocation_budget_num_regions();
-  uint num_young_regions = _g1h->num_young_regions();
-
-  // Cap by predicted evacuation space before determining how much
-  // additional Eden can be provided from the currently free regions.
-  uint target_num_young_regions_by_evac_space = MIN2(desired_num_young_regions,
-                                                     MAX2(num_young_regions,
-                                                          max_num_young_regions_by_evac_space));
 
   uint num_additional_eden_regions = 0;
-  if (num_young_regions >= target_num_young_regions_by_evac_space) {
+  if (current_num_young_regions >= target_num_young_regions_by_evac_space) {
     // Already used up all we actually want (may happen as G1 revises the
     // number of young regions concurrently). Do not allow more, potentially resulting in GC.
-    log_trace(gc, ergo, heap)("Target young regions: Already used up desired young regions %u "
-                              "evacuation space max %u allocated young regions %u",
-                              desired_num_young_regions,
-                              max_num_young_regions_by_evac_space,
-                              num_young_regions);
+    log_trace(gc, ergo, heap)("Target young regions: Already used up the "
+                              "target young regions by evacuation space %u allocated young regions %u",
+                              target_num_young_regions_by_evac_space,
+                              current_num_young_regions);
   } else {
     // Now look at Eden region allocation budget, and the heap reserve.
     // We will try our best not to "eat" into the reserve as long as we can. If we
@@ -382,7 +417,7 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
 
     uint num_survivor_regions = _g1h->num_survivor_regions();
     uint target_num_eden_regions_by_evac_space = target_num_young_regions_by_evac_space - num_survivor_regions;
-    uint num_eden_regions = num_young_regions - num_survivor_regions;
+    uint num_eden_regions = current_num_young_regions - num_survivor_regions;
 
     if (eden_allocation_budget_num_regions <= num_reserve_regions) {
       // Fully eat (or already eating) into the reserve.
@@ -425,25 +460,38 @@ uint G1Policy::calculate_target_num_young_regions(const G1YoungGenPredictor& pre
                                 target_num_eden_regions, num_additional_eden_regions);
     } else {
       // No need to use the reserve.
-      num_additional_eden_regions = target_num_young_regions_by_evac_space - num_young_regions;
+      num_additional_eden_regions = target_num_young_regions_by_evac_space - current_num_young_regions;
       log_trace(gc, ergo, heap)("Target young regions: No need to use reserve "
                                 "num additional eden regions %u",
                                 num_additional_eden_regions);
     }
   }
 
-  uint target_num_young_regions = num_young_regions + num_additional_eden_regions;
+  uint target_num_young_regions = current_num_young_regions + num_additional_eden_regions;
 
-  assert(target_num_young_regions >= num_young_regions, "must be");
+  assert(target_num_young_regions >= current_num_young_regions, "must be");
 
   log_trace(gc, ergo, heap)("Target num young regions: "
                             "target num young regions %u "
                             "num allocated young regions %u "
                             "num additional eden regions %u",
                             target_num_young_regions,
-                            num_young_regions,
+                            current_num_young_regions,
                             num_additional_eden_regions);
   return target_num_young_regions;
+}
+
+void G1Policy::update_target_num_young_regions() {
+  // The current target is already limited by evacuation space. Use it as
+  // an upper bound when recalculating the target after a change to the
+  // Eden allocation budget.
+  uint target_num_young_regions_upper_bound = target_num_young_regions();
+
+  uint new_target_num_young_regions = calculate_target_num_young_regions(target_num_young_regions_upper_bound,
+                                                                         eden_allocation_budget_num_regions(),
+                                                                         _g1h->num_young_regions(),
+                                                                         _young_gen_sizer.min_desired_num_regions());
+  _target_num_young_regions.store_relaxed(new_target_num_young_regions);
 }
 
 uint G1YoungGenPredictor::desired_num_young_regions() const {
@@ -586,10 +634,39 @@ G1GCPhaseTimes* G1Policy::phase_times() const {
   return _phase_times;
 }
 
-void G1Policy::revise_target_num_young_regions(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) {
+void G1Policy::try_revise_target_num_young_regions(size_t pending_cards,
+                                                   size_t card_rs_length,
+                                                   size_t code_root_rs_length) {
+  assert(Thread::current()->is_suspendible_thread(), "Should only be called from service thread");
   guarantee(use_adaptive_num_young_regions(), "should not call this otherwise" );
 
-  update_young_regions_bounds(pending_cards, card_rs_length, code_root_rs_length);
+  // The service thread must not block on Heap_lock. A GC VMOp may hold Heap_lock
+  // while waiting for suspendible threads to yield or leave, which would deadlock.
+  // We use try_lock() and abandon this best-effort revision if the lock is unavailable.
+
+  if (!Heap_lock->try_lock()) {
+    return;
+  }
+
+  uint num_humongous_regions_before = _g1h->num_humongous_regions();
+  uint cur_num_young_regions = _g1h->num_young_regions();
+  Heap_lock->unlock();
+
+  G1EvacuationPrediction base_prediction = predict_base_evacuation(pending_cards,
+                                                                   card_rs_length,
+                                                                   code_root_rs_length);
+
+  G1NumYoungRegionsBounds young_regions_bounds = calculate_young_regions_bounds(base_prediction,
+                                                                                cur_num_young_regions);
+
+  if (young_regions_bounds.is_valid()) {
+    if (Heap_lock->try_lock()) {
+      if (_g1h->num_humongous_regions() == num_humongous_regions_before) {
+        update_young_regions_bounds(young_regions_bounds);
+      }
+      Heap_lock->unlock();
+    }
+  }
 }
 
 void G1Policy::record_full_collection_start() {
@@ -723,6 +800,7 @@ void G1Policy::record_young_collection_start() {
 }
 
 void G1Policy::adjust_eden_allocation_budget(uint num_free_regions_before, uint num_free_regions_after) {
+  assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
   if (num_free_regions_after > num_free_regions_before) {
     uint num_added_regions = num_free_regions_after - num_free_regions_before;
     _eden_allocation_budget_num_regions.add_then_fetch(num_added_regions, memory_order_relaxed);
@@ -732,6 +810,7 @@ void G1Policy::adjust_eden_allocation_budget(uint num_free_regions_before, uint 
            "Eden allocation budget underflow");
     _eden_allocation_budget_num_regions.sub_then_fetch(num_removed_regions, memory_order_relaxed);
   }
+  update_target_num_young_regions();
 }
 
 void G1Policy::record_concurrent_mark_remark_end() {
