@@ -749,10 +749,10 @@ void PhaseOutput::set_sv_for_object_node(GrowableArray<ScopeValue*> *objs,
 
 static jint array_description_value(const TypeAryPtr* ary_type) {
   ciArrayKlass* array_klass = ary_type->exact_klass()->as_array_klass();
-  const bool is_element_inline = array_klass->element_klass()->is_value_klass();
+  const bool is_element_value = array_klass->element_klass()->is_value_klass();
   ArrayProperties properties = ArrayProperties::Default()
-      .with_null_restricted(is_element_inline && array_klass->is_elem_null_free())
-      .with_non_atomic(is_element_inline && !array_klass->is_elem_atomic());
+      .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
+      .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
 
   LayoutKind layout_kind = LayoutKind::REFERENCE;
   Klass::KlassKind kind = Klass::RefArrayKlassKind;
