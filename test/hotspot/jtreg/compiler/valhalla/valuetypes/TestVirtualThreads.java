@@ -225,8 +225,8 @@ import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.LockSupport;
-import java.util.concurrent.CountDownLatch;
 import java.util.Random;
 
 import jdk.test.lib.Platform;
@@ -746,7 +746,7 @@ public class TestVirtualThreads {
 
     static class GarbageProducerThread extends Thread {
         public void run() {
-            for (;;) {
+            while (!isInterrupted()) {
                 // Produce some garbage and then let the GC do its work
                 Object[] arrays = new Object[1024];
                 for (int i = 0; i < arrays.length; i++) {
@@ -757,36 +757,29 @@ public class TestVirtualThreads {
         }
     }
 
-    public static void startTest(CountDownLatch cdl, Thread.Builder builder, int iterations) {
-        builder.start(() -> {
-            try {
-                // Trigger compilation
-                boolean isVirtual = Thread.currentThread().isVirtual();
-                for (int i = 0; i < iterations; i++) {
-                    boolean park = (i % 1000) == 0;
-                    boolean useNull = RAND.nextBoolean();
-                    Object val = useNull ? null : new SmallValue(i);
-                    SmallValue.verify(testSmallHelper(i, useNull, park), "return", i, useNull);
-                    LargeValue.verify(testLargeHelper(i, useNull, park), "return", i, useNull);
-                    LargeValue.verify(testLargeManyArgsHelper(i, useNull, park), "return", i + 3, useNull);
-                    LargeValue2.verify(testLarge2Helper(i, useNull, park), "return", i, useNull);
-                    LargeValue2.verify(testLarge2ManyArgsHelper(i, useNull, park), "return", i + 3, useNull);
-                    testExtendsAbstractHelper(i, park).verify("return", i + 3);
-                    LargeValueWithOops.verify(testLargeValueWithOopsHelper(val, useNull, park), "return", val, useNull);
-                    LargeValueWithOops.verify(testLargeValueWithOops2Helper(val, useNull, park), "return", val, useNull);
-                    DoubleValue.verify(testDoubleValueHelper(i, useNull, park), "return", i, useNull);
-                    DoubleValue2.verify(testDoubleValue2Helper(i, useNull, park), "return", i, useNull);
-                    if (i % 1000 == 0) {
-                        System.out.format("%s => %s %d of %d%n", Instant.now(), isVirtual ? "Virtual: " : "Platform:", i, iterations);
-                    }
+    public static CompletableFuture<Void> startTest(Thread.Builder builder, int iterations) {
+        return CompletableFuture.runAsync(() -> {
+            // Trigger compilation
+            boolean isVirtual = Thread.currentThread().isVirtual();
+            for (int i = 0; i < iterations; i++) {
+                boolean park = (i % 1000) == 0;
+                boolean useNull = RAND.nextBoolean();
+                Object val = useNull ? null : new SmallValue(i);
+                SmallValue.verify(testSmallHelper(i, useNull, park), "return", i, useNull);
+                LargeValue.verify(testLargeHelper(i, useNull, park), "return", i, useNull);
+                LargeValue.verify(testLargeManyArgsHelper(i, useNull, park), "return", i + 3, useNull);
+                LargeValue2.verify(testLarge2Helper(i, useNull, park), "return", i, useNull);
+                LargeValue2.verify(testLarge2ManyArgsHelper(i, useNull, park), "return", i + 3, useNull);
+                testExtendsAbstractHelper(i, park).verify("return", i + 3);
+                LargeValueWithOops.verify(testLargeValueWithOopsHelper(val, useNull, park), "return", val, useNull);
+                LargeValueWithOops.verify(testLargeValueWithOops2Helper(val, useNull, park), "return", val, useNull);
+                DoubleValue.verify(testDoubleValueHelper(i, useNull, park), "return", i, useNull);
+                DoubleValue2.verify(testDoubleValue2Helper(i, useNull, park), "return", i, useNull);
+                if (i % 1000 == 0) {
+                    System.out.format("%s => %s %d of %d%n", Instant.now(), isVirtual ? "Virtual: " : "Platform:", i, iterations);
                 }
-                cdl.countDown();
-            } catch (Exception e) {
-                System.out.println("Exception thrown: " + e);
-                e.printStackTrace(System.out);
-                System.exit(1);
             }
-        });
+        }, task -> builder.start(task));
     }
 
     public static void main(String[] args) throws Exception {
@@ -821,16 +814,18 @@ public class TestVirtualThreads {
         garbage_producer.setDaemon(true);
         garbage_producer.start();
 
-        int iterations = args.length > 0 ? Integer.parseInt(args[0]) : 300_000;
-        if (Platform.isDebugBuild()) {
-            iterations /= 4;
+        try {
+            int iterations = args.length > 0 ? Integer.parseInt(args[0]) : 300_000;
+            if (Platform.isDebugBuild()) {
+                iterations /= 4;
+            }
+            CompletableFuture<Void> platform = startTest(Thread.ofPlatform(), iterations);
+            CompletableFuture<Void> virtual = startTest(Thread.ofVirtual(), iterations);
+            CompletableFuture.allOf(platform, virtual).join();
+        } finally {
+            garbage_producer.interrupt();
+            garbage_producer.join();
         }
-        CountDownLatch cdlPlatform = new CountDownLatch(1);
-        CountDownLatch cdlVirtual = new CountDownLatch(1);
-        startTest(cdlPlatform, Thread.ofPlatform(), iterations);
-        startTest(cdlVirtual, Thread.ofVirtual(), iterations);
-        cdlPlatform.await();
-        cdlVirtual.await();
     }
 }
 
