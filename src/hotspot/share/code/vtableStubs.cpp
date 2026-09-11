@@ -245,12 +245,8 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool calle
 
 
 inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index, bool caller_is_c1) {
-  int hash = vtable_index;
-  if (caller_is_c1) {
-    // We have different vtable stubs for C1 and C2. We therefore make sure to get different hashes.
-    hash = 7 - hash;
-  }
-  return (is_vtable_stub ? ~hash : hash)  & mask;
+  int hash = (vtable_index << 2) + (is_vtable_stub ? 2 : 0) + (caller_is_c1 ? 1 : 0);
+  return hash & mask;
 }
 
 
