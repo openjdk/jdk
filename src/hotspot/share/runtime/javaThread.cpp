@@ -290,8 +290,15 @@ void JavaThread::check_for_valid_safepoint_state() {
   // are held.
   check_possible_safepoint();
 
-  if (thread_state() != _thread_in_vm) {
-    fatal("LEAF method calling lock?");
+  switch (thread_state()) {
+  case _thread_in_vm:
+    // In debug builds, leaf entries use NoHandleMark and NoSafepointVerifier (checked above).
+    if (handle_area()->no_handle_mark_active()) {
+      fatal("LEAF method calling lock?");
+    }
+    break;
+  default:
+    fatal("illegal thread state %d, LEAF method calling lock?", thread_state());
   }
 
   if (GCALotAtAllSafepoints) {
@@ -1095,24 +1102,6 @@ void JavaThread::verify_not_published() {
   assert(!on_thread_list(), "JavaThread shouldn't have been published yet!");
 }
 #endif
-
-// Slow path when the native==>Java barriers detect a safepoint/handshake is
-// pending, when _suspend_flags is non-zero or when we need to process a stack
-// watermark. Also check for pending async exceptions (except unsafe access error).
-void JavaThread::check_special_condition_for_native_trans(JavaThread *thread) {
-  assert(thread->thread_state() == _thread_in_vm, "wrong state");
-  assert(!thread->has_last_Java_frame() || thread->frame_anchor()->walkable(), "Unwalkable stack in native->Java transition");
-
-  // Enable WXWrite: called directly from interpreter native wrapper.
-  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, thread));
-
-  SafepointMechanism::process_if_requested_with_exit_check(thread, true /* check asyncs */);
-
-  // After returning from native, it could be that the stack frames are not
-  // yet safe to use. We catch such situations in the subsequent stack watermark
-  // barrier, which will trap unsafe stack frames.
-  StackWatermarkSet::before_unwind(thread);
-}
 
 #ifndef PRODUCT
 // Deoptimization

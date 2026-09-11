@@ -398,7 +398,7 @@ template <DecoratorSet decorators, typename BarrierSetT>
 void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
   precond(src.klass() == dst.klass());
 
-  const InlineKlass* md = src.klass();
+  const ValueKlass* md = src.klass();
   if (!md->contains_oops()) {
     // If we do not have oops in the flat array, we can just do a raw copy.
     Raw::value_copy(src, dst);
@@ -442,7 +442,7 @@ void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in
 
 template <DecoratorSet decorators, typename BarrierSetT>
 void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_null_in_heap(const ValuePayload& dst) {
-  const InlineKlass* md = dst.klass();
+  const ValueKlass* md = dst.klass();
   if (!md->contains_oops()) {
     // If we do not have oops in the flat array, we can just do a raw clear.
     Raw::value_store_null(dst);

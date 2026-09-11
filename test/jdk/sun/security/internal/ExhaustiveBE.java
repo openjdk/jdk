@@ -25,7 +25,6 @@
  * @test
  * @bug 8383608
  * @summary verify switches over BinaryEncodable are not exhaustive
- * @enablePreview
  * @compile/fail ExhaustiveBE.java
  */
 

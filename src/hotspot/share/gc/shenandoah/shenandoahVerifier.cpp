@@ -25,6 +25,7 @@
  */
 
 #include "gc/shared/tlab_globals.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -1425,8 +1426,12 @@ void ShenandoahVerifier::verify_rem_set_before_mark() {
 
   ShenandoahScanRemembered* scanner = old_generation->card_scan();
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && r->is_active()) {
+    if (r->is_active()) {
       help_verify_region_rem_set(scanner, r, r->end(), "Verify init-mark remembered set violation");
     }
   }
@@ -1438,8 +1443,12 @@ void ShenandoahVerifier::verify_rem_set_after_full_gc() {
 
   ShenandoahWriteTableScanner scanner(ShenandoahGenerationalHeap::heap()->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && !r->is_cset()) {
+    if (!r->is_cset()) {
       help_verify_region_rem_set(&scanner, r, r->top(), "Remembered set violation at end of Full GC");
     }
   }
@@ -1455,8 +1464,12 @@ void ShenandoahVerifier::verify_rem_set_before_update_ref() {
 
   ShenandoahWriteTableScanner scanner(_heap->old_generation()->card_scan());
   for (size_t i = 0, n = _heap->num_regions(); i < n; ++i) {
+    if (!_heap->is_region_old(i)) {
+      continue;
+    }
+
     ShenandoahHeapRegion* r = _heap->get_region(i);
-    if (r->is_old() && !r->is_cset()) {
+    if (!r->is_cset()) {
       help_verify_region_rem_set(&scanner, r, r->get_update_watermark(), "Remembered set violation at init-update-references");
     }
   }

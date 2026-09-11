@@ -1073,15 +1073,19 @@ public final class LinuxHelper {
         static final PackageType VALUE;
 
         private static boolean isDebian() {
-            // we are just going to run "dpkg -s coreutils" and assume Debian
-            // or derivative if no error is returned.
-            return Result.of(Executor.of("dpkg", "-s", "coreutils")::execute).hasValue();
+            // Run "dpkg -s coreutils" command and assume this is native Debian-based Linux if it succeeds.
+            // If it fails to execute (command not found) or exits with an error (non-zero exit code), we assume the opposite.
+            return Result.of(Executor.of("dpkg", "-s", "coreutils")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         private static boolean isRpm() {
-            // we are just going to run "rpm -q rpm" and assume RPM
-            // or derivative if no error is returned.
-            return Result.of(Executor.of("rpm", "-q", "rpm")::execute).hasValue();
+            // Run "rpm -q rpm" command and assume this is native RPM-based Linux if it succeeds.
+            // If it fails to execute (command not found) or exits with an error (non-zero exit code), we assume the opposite.
+            return Result.of(Executor.of("rpm", "-q", "rpm")::executeWithoutExitCodeCheck).value().filter(result -> {
+                return result.getExitCode() == 0;
+            }).isPresent();
         }
 
         static {

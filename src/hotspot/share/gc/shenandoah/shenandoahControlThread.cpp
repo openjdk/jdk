@@ -77,7 +77,7 @@ void ShenandoahControlThread::run_service() {
     bool clear_soft_references = ShenandoahAlwaysClearSoftRefs;
     if (cause != GCCause::_no_gc) {
       // A cycle was requested, clear soft references
-      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC Request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
       clear_soft_references = true;
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {

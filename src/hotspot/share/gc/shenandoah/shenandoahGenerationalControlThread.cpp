@@ -157,7 +157,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 void ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   request.generation = _heap->global_generation();
   request.generation->heuristics()->record_requested_gc();
-  request.generation->heuristics()->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  request.generation->heuristics()->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
   _heap->set_unload_classes(request.generation->heuristics()->can_unload_classes());
 }
 
@@ -186,10 +186,12 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
     LogStream ls(lt);
     AgeTable young_region_ages(false);
     for (uint i = 0; i < _heap->num_regions(); ++i) {
-      const ShenandoahHeapRegion* r = _heap->get_region(i);
-      if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
+      if (!_heap->is_region_young(i)) {
+        continue;
       }
+
+      const ShenandoahHeapRegion* r = _heap->get_region(i);
+      young_region_ages.add(r->age(), r->get_live_data_words());
     }
 
     ls.print("Young regions: ");
