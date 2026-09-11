@@ -36,8 +36,7 @@ import jdk.incubator.vector.VectorSpecies;
  *          is enabled.
  * @modules jdk.incubator.vector
  * @library /test/lib /
- * @requires vm.compiler2.enabled &
- *           (vm.opt.final.EnableVectorSupport == null | vm.opt.final.EnableVectorSupport == true)
+ * @requires vm.compiler2.enabled
  * @run driver ${test.main.class}
  */
 
