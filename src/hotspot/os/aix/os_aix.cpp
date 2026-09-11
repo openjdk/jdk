@@ -1797,6 +1797,42 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   }
 }
 
+bool os::pd_placeholders_supported() {
+  return os::vm_page_size() == 4*K || g_multipage_support.can_use_64K_mmap_pages;
+}
+
+// A specialized version of os::pd_reserve_placeholder_memory and os::pd_split_memory
+// is needed on AIX as long as we support System V shared memory for 64K pages.
+os::PlaceholderRegion os::pd_reserve_placeholder_memory(size_t bytes, char* addr) {
+  // Always round to os::vm_page_size(), which may be larger than 4K.
+  bytes = align_up(bytes, os::vm_page_size());
+
+  // shmated memory cannot be split after allocation
+  if (pd_placeholders_supported()) {
+    char* base = reserve_mmaped_memory(bytes, addr);
+    return PlaceholderRegion(base, base != nullptr ? bytes : 0);
+  }
+  return PlaceholderRegion();
+}
+
+os::PlaceholderRegionPair os::pd_split_memory(const PlaceholderRegion& orig, size_t offset) {
+  // On AIX, mmap regions are inherently splittable. Just do bookkeeping.
+  // pd_reserve_placeholder_memory guarantees mmaped (not shmated) memory.
+  char* base = orig.base();
+  size_t region_size = orig.size();
+
+  // update vmembk to reflect the split
+  vmembk_t* const vmi = vmembk_find(base);
+  guarantee(vmi != nullptr, "vmembk not found for splittable region at " PTR_FORMAT, p2i(base));
+  guarantee(vmi->type != VMEM_SHMATED, "Cannot split shmated memory at " PTR_FORMAT, p2i(base));
+
+  vmembk_add(base, offset, vmi->pagesize, vmi->type);
+  vmi->addr = base + offset;
+  vmi->size = region_size - offset;
+
+  return {PlaceholderRegion(base, offset), PlaceholderRegion(base + offset, region_size - offset)};
+}
+
 bool os::pd_release_memory(char* addr, size_t size) {
 
   // Dynamically do different things for mmap/shmat.

@@ -204,6 +204,35 @@ class os: AllStatic {
     void print_on(outputStream* st) const;
   };
 
+  // A "reserved" region of address space that can be split or converted to a
+  // normal reservation. Conceptually distinct from a reserved region:
+  // callers must NOT call commit_memory, map_memory, or other operations
+  // directly on the raw address. They must first convert it via
+  // convert_to_reserved().
+  class PlaceholderRegion {
+      char*  _base;
+      size_t _size;
+  public:
+      PlaceholderRegion() : _base(nullptr), _size(0) {}
+      PlaceholderRegion(char* base, size_t size) : _base(base), _size(size) {
+        if (base != nullptr) {
+          assert(size > 0, "Non-empty Placeholder must have positive size.");
+          assert(is_aligned(base, os::vm_allocation_granularity()), "New Placeholder base should be aligned to allocation granularity.");
+          assert(is_aligned(size, os::vm_page_size()), "New Placeholder size should be page-aligned");
+        } else {
+          assert(size == 0, "Empty Placeholder must have zero size.");
+        }
+      }
+      char*  base() const { return _base; }
+      size_t size() const { return _size; }
+      bool   is_empty() const { return _base == nullptr; }
+  };
+
+  struct PlaceholderRegionPair {
+      PlaceholderRegion left;
+      PlaceholderRegion right;
+  };
+
  private:
   static OSThread*          _starting_thread;
   static PageSizes          _page_sizes;
@@ -212,6 +241,14 @@ class os: AllStatic {
   // is chosen to give us reasonable protection against null pointer dereferences while being
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
+
+  static bool pd_placeholders_supported();
+
+  static PlaceholderRegion pd_reserve_placeholder_memory(size_t bytes, char* addr = nullptr);
+
+  static PlaceholderRegionPair pd_split_memory(const PlaceholderRegion& orig, size_t offset);
+
+  static char* pd_convert_to_reserved(PlaceholderRegion region);
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
@@ -234,6 +271,9 @@ class os: AllStatic {
 
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                               char *addr, size_t bytes, bool read_only, bool allow_exec);
+  static char* pd_map_memory(int fd, const char* file_name, size_t file_offset,
+                             PlaceholderRegion region, bool read_only, bool allow_exec);
+
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_disclaim_memory(char *addr, size_t bytes);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
@@ -519,6 +559,29 @@ class os: AllStatic {
 
   inline static size_t cds_core_region_alignment();
 
+  static bool placeholders_supported();
+
+  // Reserves a virtual memory region that can be split after allocation.
+  // The returned region must be converted via convert_to_reserved() before committing.
+  // If the returned PlaceholderRegion is empty, the reservation failed.
+  // This should only be called after os::init_2() has completed, otherwise the Windows API may not be initialized.
+  // Requires the base address be null or aligned to allocation granularity.
+  // If addr is non-null, attempts to place the reservation at that address.
+  static PlaceholderRegion reserve_placeholder_memory(size_t bytes, MemTag mem_tag, char* addr = nullptr);
+
+  // Split 'orig' at 'offset'. Returns left and right placeholder pieces as a PlaceholderRegionPair.
+  // The caller must not use 'orig' afterward.
+  // Offset must be aligned to allocation granularity.
+  // If offset == orig.size(), returns { orig, empty }.
+  // If offset == 0, returns { empty, orig }.
+  // This should not fail. If unsuccessful, this function fails fatally.
+  static PlaceholderRegionPair split_memory(PlaceholderRegion& orig, size_t offset);
+
+  // Convert a placeholder region into a regular reserved region.
+  // After conversion the Placeholder region should no longer be used.
+  // This should not fail. If unsuccessful, this function fails fatally.
+  static char* convert_to_reserved(PlaceholderRegion& region);
+
   // Reserves virtual memory.
   static char*  reserve_memory(size_t bytes, MemTag mem_tag, bool executable = false);
 
@@ -545,6 +608,8 @@ class os: AllStatic {
                                       bool executable, const char* mesg);
   static void   uncommit_memory(char* addr, size_t bytes, bool executable = false);
   static void   release_memory(char* addr, size_t bytes);
+  // After releasing, the Placeholder region should no longer be used.
+  static void   release_memory(PlaceholderRegion& region);
 
   // Does the platform support trimming the native heap?
   static bool can_trim_native_heap();
@@ -588,6 +653,8 @@ class os: AllStatic {
 
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only, MemTag mem_tag, bool allow_exec);
+  // After mapping, the Placeholder region should no longer be used.
+  static char* map_memory(int fd, const char* file_name, size_t file_offset, PlaceholderRegion& region, bool read_only, MemTag mem_tag, bool allow_exec);
   static void   unmap_memory(char *addr, size_t bytes);
   static void   disclaim_memory(char *addr, size_t bytes);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

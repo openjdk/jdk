@@ -1359,3 +1359,196 @@ TEST_VM(os, reserve_memory_aligned_large) {
 
   os::release_memory(result, size);
 }
+
+#define SKIP_IF_PLACEHOLDER_NOT_SUPPORTED \
+  if (!os::placeholders_supported())  GTEST_SKIP() << "placeholders are not available";
+
+TEST_VM(os, placeholder_reserve_and_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+
+  char* base = region.base();
+  char* reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, base);
+
+  ASSERT_TRUE(os::commit_memory(reserved, size, false));
+  // Touch the memory to confirm it's usable.
+  memset(reserved, 0xAB, size);
+  EXPECT_EQ((unsigned char)reserved[0], 0xAB);
+  EXPECT_EQ((unsigned char)reserved[size - 1], 0xAB);
+
+  os::release_memory(reserved, size);
+}
+
+TEST_VM(os, placeholder_split_two_way) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t total = 4 * granularity;
+  const size_t split_offset = 3 * granularity;
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(total, mtTest);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegionPair split = os::split_memory(region, split_offset);
+
+  // Leading piece: [base, base+split_offset)
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), split_offset);
+
+  // Trailing piece: [base+split_offset, base+total)
+  ASSERT_EQ(split.right.base(), original_base + split_offset);
+  ASSERT_EQ(split.right.size(), total - split_offset);
+
+  // Convert both and commit.
+  char* addr1 = os::convert_to_reserved(split.left);
+  char* addr2 = os::convert_to_reserved(split.right);
+  ASSERT_EQ(addr1, original_base);
+  ASSERT_EQ(addr2, original_base + split_offset);
+
+  ASSERT_TRUE(os::commit_memory(addr1, split_offset, false));
+  ASSERT_TRUE(os::commit_memory(addr2, total - split_offset, false));
+
+  // Touch the memory to confirm it's usable.
+  memset(addr1, 0x11, split_offset);
+  memset(addr2, 0x22, total - split_offset);
+  EXPECT_EQ((unsigned char)addr1[0], 0x11);
+  EXPECT_EQ((unsigned char)addr2[0], 0x22);
+
+  // Verify we can release the parts separately.
+  os::release_memory(addr1, split_offset);
+  os::release_memory(addr2, total - split_offset);
+}
+
+TEST_VM(os, placeholder_split_consumes_full_range) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(region_size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegionPair split = os::split_memory(region, region_size);
+
+  // Leading piece
+  ASSERT_EQ(split.left.base(), original_base);
+  ASSERT_EQ(split.left.size(), region_size);
+
+  // Trailing piece
+  ASSERT_TRUE(split.right.is_empty());
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::convert_to_reserved(split.left);
+  ASSERT_TRUE(os::commit_memory(addr, region_size, false));
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  os::release_memory(addr, region_size);
+}
+
+TEST_VM(os, placeholder_split_consumes_nothing) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t region_size = os::vm_allocation_granularity();
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(region_size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  char* original_base = region.base();
+  os::PlaceholderRegionPair split = os::split_memory(region, 0);
+
+  // Leading piece
+  ASSERT_TRUE(split.left.is_empty());
+
+  // Trailing piece
+  ASSERT_EQ(split.right.base(), original_base);
+  ASSERT_EQ(split.right.size(), region_size);
+
+  // Commit and touch to confirm it's usable.
+  char* addr = os::convert_to_reserved(split.right);
+  ASSERT_TRUE(os::commit_memory(addr, region_size, false));
+  memset(addr, 0x11, region_size);
+  EXPECT_EQ((unsigned char)addr[0], 0x11);
+
+  os::release_memory(addr, region_size);
+}
+
+TEST_VM(os, map_into_placeholder_memory) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  // Note that the file size needs to be at least the size of the placeholder since the view size must be the full placeholder.
+  const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const char* path = "map_into_placeholder_memory.txt";
+  const size_t size = os::vm_allocation_granularity();
+  int fd = os::open(path, O_RDWR | O_CREAT, 0666);
+  ASSERT_TRUE(fd > 0);
+  char* buf = (char*)os::malloc(size, mtTest);
+  memset(buf, 0, size);
+  memcpy(buf, letters, strlen(letters) + 1);
+  ASSERT_TRUE(os::write(fd, buf, size));
+  os::free(buf);
+  ::close(fd);
+
+  // Set up the placeholder region
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+
+  // Map into the file
+  fd = os::open(path, O_RDONLY, 0666);
+  char* result = os::map_memory(fd, path, 0, region, true /* read_only */, mtTest, false /* allow_exec */);
+  ASSERT_NOT_NULL(result);
+
+  // Verify and cleanup
+  EXPECT_EQ(strcmp(letters, result), 0);
+  os::unmap_memory(result, size);
+}
+
+TEST_VM_FATAL_ERROR_MSG(os, placeholder_double_convert, ".*Region cannot be empty.*") {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+
+  // Double convert
+  char* base = region.base();
+  char* reserved = os::convert_to_reserved(region);
+  ASSERT_EQ(reserved, base);
+  // This second conversion attempt should fail
+  reserved = os::convert_to_reserved(region);
+}
+
+#if !defined(_WIN32)
+
+TEST_VM(os, placeholder_commit_before_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+
+  // This should be fine on posix, although it is discouraged.
+  ASSERT_TRUE(os::commit_memory(region.base(), size, false));
+  os::release_memory(region.base(), size);
+}
+#endif
+
+TEST_VM(os, placeholder_release_before_convert) {
+  SKIP_IF_PLACEHOLDER_NOT_SUPPORTED;
+
+  const size_t size = 4 * os::vm_allocation_granularity();
+
+  os::PlaceholderRegion region = os::reserve_placeholder_memory(size, mtTest, nullptr);
+  ASSERT_FALSE(region.is_empty());
+  ASSERT_EQ(region.size(), size);
+
+  os::release_memory(region);
+}

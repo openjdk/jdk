@@ -1965,6 +1965,65 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
   return os::pd_create_stack_guard_pages(addr, bytes);
 }
 
+bool os::placeholders_supported() {
+  return pd_placeholders_supported();
+}
+
+os::PlaceholderRegion os::reserve_placeholder_memory(size_t bytes, MemTag mem_tag, char* addr) {
+  assert(bytes > 0, "Size must be a value greater than 0");
+  assert(is_aligned(addr, os::vm_allocation_granularity()), "Requested address should be aligned to allocation granularity.");
+  assert(is_aligned(bytes, os::vm_page_size()), "Requested size, bytes, should be aligned to page size.");
+
+  PlaceholderRegion result = pd_reserve_placeholder_memory(bytes, addr);
+  if (!result.is_empty()) {
+    MemTracker::record_virtual_memory_reserve(result.base(), result.size(), CALLER_PC, mem_tag);
+    log_debug(os, map)("Reserved placeholder memory " RANGEFMT, RANGEFMTARGS(result.base(), result.size()));
+  } else {
+    log_info(os, map)("Reserve placeholder memory failed (%zu bytes)", bytes);
+  }
+  return result;
+}
+
+os::PlaceholderRegionPair os::split_memory(PlaceholderRegion& orig, size_t offset) {
+  assert(!orig.is_empty(), "Region cannot be empty");
+  assert(offset <= orig.size(), "Offset must be less than or equal to region size");
+  assert(is_aligned(orig.base(), os::vm_page_size()), "Region base should be page-aligned");
+  assert(is_aligned(offset, os::vm_page_size()), "Offset should be page-aligned");
+
+  char* original_base = orig.base();
+  size_t original_size = orig.size();
+
+  if (offset == 0) {
+    log_debug(os)("Split memory has offset 0: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
+    return { PlaceholderRegion(), orig };
+  } else if (offset == original_size) {
+    log_debug(os)("Split memory consumed the whole region: " RANGEFMT, RANGEFMTARGS(original_base, original_size));
+    return { orig, PlaceholderRegion() };
+  }
+  assert(is_aligned(offset, os::vm_allocation_granularity()), "If the split does not consume the entire original region, the offset should be aligned to allocation granularity since a new Placeholder is spawned the split point.");
+
+  PlaceholderRegionPair split = pd_split_memory(orig, offset);
+
+  assert(!split.left.is_empty() || !split.right.is_empty(), "It should be impossible to reach here if splitting failed.");
+
+  log_debug(os, map)("Split memory at offset %zu: " RANGEFMT " -> " RANGEFMT " + " RANGEFMT,
+                     offset,
+                     RANGEFMTARGS(original_base, original_size),
+                     RANGEFMTARGS(split.left.base(), split.left.size()),
+                     RANGEFMTARGS(split.right.base(), split.right.size()));
+  orig = PlaceholderRegion(); // Prevent reuse of the stale PlaceholderRegion
+  return split;
+}
+
+char* os::convert_to_reserved(PlaceholderRegion& region) {
+  assert(!region.is_empty(), "Region cannot be empty");
+  char* result = pd_convert_to_reserved(region);
+  log_debug(os, map)("Converted placeholder region " RANGEFMT " to reserved region at " PTR_FORMAT, RANGEFMTARGS(region.base(), region.size()), p2i(result));
+  region = PlaceholderRegion();
+  return result;
+}
+
+
 char* os::reserve_memory(size_t bytes, MemTag mem_tag, bool executable) {
   char* result = pd_reserve_memory(bytes, executable);
   if (result != nullptr) {
@@ -2343,6 +2402,16 @@ void os::release_memory(char* addr, size_t bytes) {
   log_debug(os, map)("Released " RANGEFMT, RANGEFMTARGS(addr, bytes));
 }
 
+void os::release_memory(PlaceholderRegion& region) {
+  assert_nonempty_range(region.base(), region.size());
+  MemTracker::record_virtual_memory_release(region.base(), region.size());
+  if (!pd_release_memory(region.base(), region.size())) {
+    fatal("Failed to release placeholder " RANGEFMT, RANGEFMTARGS(region.base(), region.size()));
+  }
+  log_debug(os, map)("Released placeholder " RANGEFMT, RANGEFMTARGS(region.base(), region.size()));
+  region = PlaceholderRegion();
+}
+
 // Prints all mappings
 void os::print_memory_mappings(outputStream* st) {
   os::print_memory_mappings(nullptr, SIZE_MAX, st);
@@ -2405,6 +2474,18 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
+  }
+  return result;
+}
+
+char* os::map_memory(int fd, const char* file_name, size_t file_offset,
+                     PlaceholderRegion& region, bool read_only,
+                     MemTag mem_tag, bool allow_exec) {
+  assert(!region.is_empty(), "Region cannot be empty");
+  char* result = pd_map_memory(fd, file_name, file_offset, region, read_only, allow_exec);
+  if (result != nullptr) {
+    MemTracker::record_virtual_memory_commit((address)result, region.size(), CALLER_PC);
+    region = PlaceholderRegion();
   }
   return result;
 }
