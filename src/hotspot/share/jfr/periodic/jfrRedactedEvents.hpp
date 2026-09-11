@@ -195,6 +195,7 @@ class JfrRedactedEvents: public AllStatic {
   static String* _redacted_jvm_command_line;
   static String* _redacted_flags_command_line;
   static String* _redacted_flight_recorder_options;
+  static String* _redacted_flight_recorder_options_with_marker;
   static GrowableArray<StringKeyValue*>* _initial_system_properties;
   static GrowableArray<StringKeyValue*>* _initial_environment_variables;
   static GrowableArray<StringFlag*>*     _string_flags;
@@ -205,6 +206,7 @@ class JfrRedactedEvents: public AllStatic {
   static bool equals_case_insensitive(char a, char b);
   static bool is_redacted_key(const char* key);
   static bool is_separator(char c);
+  static bool is_valid_redaction_file(const char* filename);
   static bool is_whitespace(char c);
   static void ensure_initialized();
   static StringArray* make_java_args_array();
@@ -216,7 +218,10 @@ class JfrRedactedEvents: public AllStatic {
   static int match_arguments(StringArray* filter_array, StringArray* arguments, int arg_index);
   static bool match_key(StringArray* array, const char* text);
   static bool read_file(StringArray* target, const char* filename);
+  static void redact(String* scratch_string, const char* target, const String* redaction);
+  static String* redact_flight_recorder_options(const char* option, bool marker);
   static String* redact_command_line(StringArray* arguments);
+  static String* redact_environment_variable_value(const char* value);
   static StringArray* split(const char* text, char separator);
 };
 

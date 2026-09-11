@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-24.04
     env:
       # List of platforms to exclude by default
-      EXCLUDED_PLATFORMS: 'alpine-linux-x64'
+      EXCLUDED_PLATFORMS: 'alpine-linux-x64,macos-x64'
     outputs:
       linux-x64: ${{ steps.include.outputs.linux-x64 }}
       linux-x64-variants: ${{ steps.include.outputs.linux-x64-variants }}
@@ -76,7 +76,7 @@ jobs:
 
     steps:
       - name: 'Checkout the scripts'
-        uses: actions/checkout@v6
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           sparse-checkout: |
             .github

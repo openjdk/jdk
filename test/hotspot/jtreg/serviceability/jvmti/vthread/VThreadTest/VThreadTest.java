@@ -33,12 +33,12 @@
 import java.util.concurrent.*;
 
 public class VThreadTest {
-    private static final String agentLib = "VThreadTest";
-
     static final int MSG_COUNT = 10*1000;
     static final SynchronousQueue<String> QUEUE = new SynchronousQueue<>();
 
     static native boolean check();
+
+    static void log(String msg) { System.out.println(msg); }
 
     static void producer(String msg) throws InterruptedException {
         int ii = 1;
@@ -54,7 +54,11 @@ public class VThreadTest {
             for (int i = 0; i < MSG_COUNT; i++) {
                 producer("msg: ");
             }
-        } catch (InterruptedException e) { }
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            log("VThreadTest failed: PRODUCER caught a throwable: " + t);
+            System.exit(1);
+        }
     };
 
     static final Runnable CONSUMER = () -> {
@@ -62,7 +66,11 @@ public class VThreadTest {
             for (int i = 0; i < MSG_COUNT; i++) {
                 String s = QUEUE.take();
             }
-        } catch (InterruptedException e) { }
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            log("VThreadTest failed: CONSUMER caught a throwable: " + t);
+            System.exit(1);
+        }
     };
 
     public static void test1() throws Exception {
@@ -80,14 +88,6 @@ public class VThreadTest {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            System.loadLibrary(agentLib);
-        } catch (UnsatisfiedLinkError ex) {
-            System.err.println("Failed to load " + agentLib + " lib");
-            System.err.println("java.library.path: " + System.getProperty("java.library.path"));
-            throw ex;
-        }
-
         VThreadTest obj = new VThreadTest();
         obj.runTest();
     }

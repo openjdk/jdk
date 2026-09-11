@@ -278,30 +278,21 @@ Java_sun_nio_fs_WindowsNativeDispatcher_CreateFile0(JNIEnv* env, jclass this,
     return ptr_to_jlong(handle);
 }
 
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControlSetSparse(JNIEnv* env, jclass this,
-    jlong handle)
-{
-    DWORD bytesReturned;
-    HANDLE h = (HANDLE)jlong_to_ptr(handle);
-    if (DeviceIoControl(h, FSCTL_SET_SPARSE, NULL, 0, NULL, 0, &bytesReturned, NULL) == 0) {
-        throwWindowsException(env, GetLastError());
-    }
-}
-
-JNIEXPORT void JNICALL
-Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControlGetReparsePoint(JNIEnv* env, jclass this,
-    jlong handle, jlong bufferAddress, jint bufferSize)
+JNIEXPORT jint JNICALL
+Java_sun_nio_fs_WindowsNativeDispatcher_DeviceIoControl(JNIEnv* env, jclass this,
+    jlong handle, jint dwIoControlCode, jlong bufferAddress, jint bufferSize)
 {
     DWORD bytesReturned;
     HANDLE h = (HANDLE)jlong_to_ptr(handle);
     LPVOID outBuffer = (LPVOID)jlong_to_ptr(bufferAddress);
 
-    if (DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, NULL, 0, outBuffer, (DWORD)bufferSize,
+    if (DeviceIoControl(h, (DWORD)dwIoControlCode, NULL, 0, outBuffer, (DWORD)bufferSize,
                         &bytesReturned, NULL) == 0)
     {
         throwWindowsException(env, GetLastError());
+        return 0;
     }
+    return (jint)bytesReturned;
 }
 
 JNIEXPORT void JNICALL
@@ -901,8 +892,8 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupAccountSid0(JNIEnv* env,
 {
     WCHAR domain[255];
     WCHAR name[255];
-    DWORD domainLen = sizeof(domain);
-    DWORD nameLen = sizeof(name);
+    DWORD domainLen = (DWORD)(sizeof(domain) / sizeof(domain[0]));
+    DWORD nameLen = (DWORD)(sizeof(name) / sizeof(name[0]));
     SID_NAME_USE use;
     PSID sid = jlong_to_ptr(address);
     jstring s;
@@ -932,7 +923,7 @@ Java_sun_nio_fs_WindowsNativeDispatcher_LookupAccountName0(JNIEnv* env,
     LPCWSTR accountName = jlong_to_ptr(nameAddress);
     PSID sid = jlong_to_ptr(sidAddress);
     WCHAR domain[255];
-    DWORD domainLen = sizeof(domain);
+    DWORD domainLen = (DWORD)(sizeof(domain) / sizeof(domain[0]));
     SID_NAME_USE use;
 
     if (LookupAccountNameW(NULL, accountName, sid, (LPDWORD)&cbSid,

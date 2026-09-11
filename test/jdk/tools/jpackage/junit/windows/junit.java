@@ -57,3 +57,11 @@
  *    jdk/jpackage/internal/WixToolTest.java
  * @run junit jdk.jpackage/jdk.jpackage.internal.WixToolTest
  */
+
+/* @test
+ * @summary RtfConverter unit tests
+ * @requires (os.family == "windows")
+ * @compile/module=jdk.jpackage -Xlint:all -Werror
+ *    jdk/jpackage/internal/RtfConverterTest.java
+ * @run junit jdk.jpackage/jdk.jpackage.internal.RtfConverterTest
+ */

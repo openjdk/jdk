@@ -1085,6 +1085,30 @@ JVM_InitAgentProperties(JNIEnv *env, jobject agent_props);
 JNIEXPORT jstring JNICALL
 JVM_GetTemporaryDirectory(JNIEnv *env);
 
+JNIEXPORT jarray JNICALL
+JVM_CopyOfSpecialArray(JNIEnv *env, jarray orig, jint from, jint to);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullRestrictedNonAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullRestrictedAtomicArray(JNIEnv *env, jclass elmClass, jint len, jobject initVal);
+
+JNIEXPORT jarray JNICALL
+JVM_NewNullableAtomicArray(JNIEnv *env, jclass elmClass, jint len);
+
+JNIEXPORT jarray JNICALL
+JVM_NewReferenceArray(JNIEnv *env, jclass elmClass, jint len);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsFlatArray(JNIEnv *env, jarray array);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsNullRestrictedArray(JNIEnv *env, jarray array);
+
+JNIEXPORT jboolean JNICALL
+JVM_IsAtomicArray(JNIEnv *env, jarray array);
+
 /* Generics reflection support.
  *
  * Returns information about the given class's EnclosingMethod

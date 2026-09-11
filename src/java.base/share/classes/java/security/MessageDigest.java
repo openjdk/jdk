@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@ import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.ByteBuffer;
+
+import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.Reflection;
 
 import sun.security.jca.GetInstance;
 import sun.security.util.Debug;
@@ -168,8 +171,18 @@ public abstract class MessageDigest extends MessageDigestSpi {
      * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
      * </li>
      * </ul>
      *
@@ -191,6 +204,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm)
         throws NoSuchAlgorithmException
     {
@@ -198,6 +212,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
 
         if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
         }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
@@ -233,11 +252,24 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -265,6 +297,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @see Provider
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm, String provider)
         throws NoSuchAlgorithmException, NoSuchProviderException
     {
@@ -276,6 +309,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
 
         if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
         }
 
         GetInstance.Instance instance = GetInstance.getInstance("MessageDigest",
@@ -302,11 +340,24 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @implNote
      * The JDK Reference Implementation additionally uses
-     * the {@code jdk.crypto.disabledAlgorithms}
+     * <ul>
+     * <li>the {@code jdk.crypto.disabledAlgorithms}
      * {@link Security#getProperty(String) Security} property to determine
      * if the specified algorithm is allowed. If the
-     * {@systemProperty jdk.crypto.disabledAlgorithms} is set, it supersedes
-     * the security property value.
+     * {@systemProperty jdk.crypto.disabledAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * <li>the {@code jdk.crypto.legacyAlgorithms}
+     * {@link Security#getProperty(String) Security} property to determine
+     * if the specified algorithm is considered legacy.
+     * If so, a warning is emitted at runtime when this method is called
+     * with the algorithm. This warning is shown once per caller for
+     * each legacy algorithm. If the algorithm is also disabled,
+     * the warning will not be shown.
+     * If the {@systemProperty jdk.crypto.legacyAlgorithms} system property
+     * is set, it supersedes the security property value.
+     * </li>
+     * </ul>
      *
      * @param algorithm the name of the algorithm requested.
      * See the MessageDigest section in the <a href=
@@ -333,6 +384,7 @@ public abstract class MessageDigest extends MessageDigestSpi {
      *
      * @since 1.4
      */
+    @CallerSensitive
     public static MessageDigest getInstance(String algorithm,
                                             Provider provider)
         throws NoSuchAlgorithmException
@@ -345,6 +397,11 @@ public abstract class MessageDigest extends MessageDigestSpi {
 
         if (!CryptoAlgorithmConstraints.permits("MessageDigest", algorithm)) {
             throw new NoSuchAlgorithmException(algorithm + " is disabled");
+        }
+
+        if (CryptoAlgorithmConstraints.isLegacy("MessageDigest", algorithm)) {
+            CryptoAlgorithmConstraints.warn("MessageDigest", algorithm,
+                    Reflection.getCallerClass());
         }
 
         Object[] objs = Security.getImpl(algorithm, "MessageDigest", provider);

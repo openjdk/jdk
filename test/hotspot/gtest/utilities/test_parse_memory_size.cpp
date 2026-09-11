@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,6 +23,7 @@
  */
 
 #include "jvm_io.h"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
@@ -155,4 +156,70 @@ TEST(ParseMemorySize, negatives_both) {
 
   do_test_invalid_for_parse_arguments("100 M"); // parse_memory_size would see "100", parse_argument_memory_size would reject it
   do_test_invalid_for_parse_arguments("100X");  // parse_memory_size would see "100", parse_argument_memory_size would reject it
+}
+
+// Hex prefix handling for negative numbers. Only signed types are covered here:
+// parse_integer_impl() refuses a leading '-' for unsigned types before the base
+// is ever used.
+
+template <typename T>
+static void test_negative_hex_prefix() {
+  T value = 17;
+  char* end = nullptr;
+
+  // Both spellings of the prefix must be recognized, just as "0x"/"0X" are for
+  // positive numbers.
+  ASSERT_TRUE(parse_integer("-0x10", &end, &value));
+  ASSERT_EQ(value, (T)-16);
+  EXPECT_STREQ(end, "");
+
+  ASSERT_TRUE(parse_integer("-0X10", &end, &value));
+  ASSERT_EQ(value, (T)-16);
+  EXPECT_STREQ(end, "");
+
+  ASSERT_TRUE(parse_integer("-0xff", &end, &value));
+  ASSERT_EQ(value, (T)-255);
+
+  ASSERT_TRUE(parse_integer("-0XFF", &end, &value));
+  ASSERT_EQ(value, (T)-255);
+
+  // A unit suffix still applies after a negative hex number.
+  ASSERT_TRUE(parse_integer("-0X10k", &end, &value));
+  ASSERT_EQ(value, (T)(-16 * K));
+  EXPECT_STREQ(end, "");
+
+  // "-0" is decimal; the character after the '0' decides, and here there is
+  // none. The value is zero either way, but see minus_zero_no_overread below.
+  ASSERT_TRUE(parse_integer("-0", &end, &value));
+  ASSERT_EQ(value, (T)0);
+  EXPECT_STREQ(end, "");
+
+  // Not a hex prefix: 'f' is not 'x'/'X', so this is decimal "-0" with "fX"
+  // left over, not hex "-0f".
+  value = 17;
+  ASSERT_TRUE(parse_integer("-0fX", &end, &value));
+  ASSERT_EQ(value, (T)0);
+  EXPECT_STREQ(end, "fX");
+  ASSERT_FALSE(parse_integer("-0fX", &value));
+}
+
+TEST(ParseMemorySize, negative_hex_prefix) {
+  test_negative_hex_prefix<int64_t>();
+  test_negative_hex_prefix<int32_t>();
+}
+
+// "-0" holds just two characters plus the terminating NUL, so hex prefix
+// detection must stop at the NUL rather than read the character beyond it.
+// The string is copied into a tightly sized allocation so that an over-read
+// is caught when running under a memory checker such as ASan.
+TEST(ParseMemorySize, minus_zero_no_overread) {
+  char* s = os::strdup("-0", mtTest);
+  int64_t value = 17;
+  char* end = nullptr;
+
+  ASSERT_TRUE(parse_integer(s, &end, &value));
+  ASSERT_EQ(value, (int64_t)0);
+  EXPECT_STREQ(end, "");
+
+  os::free(s);
 }

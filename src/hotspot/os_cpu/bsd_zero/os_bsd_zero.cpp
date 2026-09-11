@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -145,14 +145,6 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
       ShouldNotCallThis();
     }
 
-    // jni_fast_Get<Primitive>Field can trap at certain pc's if a GC
-    // kicks in and the heap gets shrunk before the field access.
-    /*if (sig == SIGSEGV || sig == SIGBUS) {
-      address addr = JNI_FastGetField::find_slowcase_pc(pc);
-      if (addr != (address)-1) {
-        stub = addr;
-      }
-    }*/
   }
 
   return false;

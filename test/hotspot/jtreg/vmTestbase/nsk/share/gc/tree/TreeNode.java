@@ -48,9 +48,15 @@ public final class TreeNode {
          */
         public TreeNode(long memory) {
                 int length = (int) (memory - (4 * 2 + 2 * Memory.getReferenceSize() + Memory.getObjectExtraSize()));
-                if (length > 0)
-                        storage = new byte[length];
                 size = length;
+                if (length <= 0) {
+                    return;
+                }
+                if (Memory.isValhallaEnabled()) {
+                    storage = new Integer[Memory.getArrayLength(memory, Memory.getIntegerArrayElementSize())];
+                } else {
+                    storage = new int[Memory.getArrayLength(memory, Memory.getIntSize())];
+                }
         }
 
         /**

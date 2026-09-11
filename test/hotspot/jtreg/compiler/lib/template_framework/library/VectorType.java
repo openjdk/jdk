@@ -39,6 +39,11 @@ import static compiler.lib.template_framework.library.PrimitiveType.BOOLEANS;
 
 /**
  * The {@link VectorType} models the Vector API types.
+ *
+ * <p>A {@code VectorType.Vector} is parameterized by a {@link VectorElementType}
+ * (its lane element type) and a lane count. The lane element type may be a
+ * Java primitive lane ({@link PrimitiveType}) or {@link ShortCarriesFloat16Type} for
+ * {@code Float16Vector}.
  */
 public abstract class VectorType implements CodeGenerationDataNameType {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -73,6 +78,11 @@ public abstract class VectorType implements CodeGenerationDataNameType {
     public static final VectorType.Vector DOUBLE_256 = new VectorType.Vector(DOUBLES, 4);
     public static final VectorType.Vector DOUBLE_512 = new VectorType.Vector(DOUBLES, 8);
 
+    public static final VectorType.Vector FLOAT16_64  = new VectorType.Vector(ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16, 4);
+    public static final VectorType.Vector FLOAT16_128 = new VectorType.Vector(ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16, 8);
+    public static final VectorType.Vector FLOAT16_256 = new VectorType.Vector(ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16, 16);
+    public static final VectorType.Vector FLOAT16_512 = new VectorType.Vector(ShortCarriesFloat16Type.SHORT_CARRIES_FLOAT16, 32);
+
     private final String vectorTypeName;
 
     private VectorType(String vectorTypeName) {
@@ -95,8 +105,8 @@ public abstract class VectorType implements CodeGenerationDataNameType {
         return this == other;
     }
 
-    private static final String vectorTypeName(PrimitiveType elementType) {
-        return switch(elementType.name()) {
+    private static final String vectorTypeName(VectorElementType elementType) {
+        return switch(elementType.vectorElementClass()) {
             case "byte"   -> "ByteVector";
             case "short"  -> "ShortVector";
             case "char"   -> throw new UnsupportedOperationException("VectorAPI has no char vector type");
@@ -104,19 +114,20 @@ public abstract class VectorType implements CodeGenerationDataNameType {
             case "long"   -> "LongVector";
             case "float"  -> "FloatVector";
             case "double" -> "DoubleVector";
-            default       -> throw new UnsupportedOperationException("Not supported: " + elementType.name());
+            case "Float16" -> "Float16Vector";
+            default       -> throw new UnsupportedOperationException("Not supported: " + elementType.vectorElementClass());
         };
     }
 
     public static final class Vector extends VectorType {
-        public final PrimitiveType elementType;
+        public final VectorElementType elementType;
         public final int length; // lane count
         public final String speciesName;
 
         public final Mask maskType;
         public final Shuffle shuffleType;
 
-        private Vector(PrimitiveType elementType, int length) {
+        private Vector(VectorElementType elementType, int length) {
             super(vectorTypeName(elementType));
             this.elementType = elementType;
             this.length = length;
@@ -132,7 +143,7 @@ public abstract class VectorType implements CodeGenerationDataNameType {
                 return List.of(name(), ".zero(", speciesName, ")");
             } else if (r <= 8) {
                 return List.of(
-                    name(), ".fromArray(", speciesName, ", new ", elementType.name(), "[] {",
+                    name(), ".fromArray(", speciesName, ", new ", elementType.carrierTypeName(), "[] {",
                     elementType.con(),
                     Stream.generate(() ->
                         List.of(", ", elementType.con())

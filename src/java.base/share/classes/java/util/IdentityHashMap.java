@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,8 @@ import jdk.internal.access.SharedSecrets;
 
 /**
  * This class implements the {@code Map} interface with a hash table, using
- * reference-equality in place of object-equality when comparing keys (and
- * values).  In other words, in an {@code IdentityHashMap}, two keys
+ * {@code ==} in place of {@code .equals()} equality when comparing keys (and values).
+ * In other words, in an {@code IdentityHashMap}, two keys
  * {@code k1} and {@code k2} are considered equal if and only if
  * {@code (k1==k2)}.  (In normal {@code Map} implementations (like
  * {@code HashMap}) two keys {@code k1} and {@code k2} are considered equal
@@ -46,12 +46,20 @@ import jdk.internal.access.SharedSecrets;
  * implementation!  While this class implements the {@code Map} interface, it
  * intentionally violates {@code Map's} general contract, which mandates the
  * use of the {@code equals} method when comparing objects.  This class is
- * designed for use only in the rare cases wherein reference-equality
- * semantics are required.</b>
+ * designed for use only in the rare cases wherein {@code ==} semantics are required.
+ * </b>
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, keys and values may be
+ *          {@linkplain java.util.Objects#hasIdentity value objects}.
+ *          Two value object keys are {@code ==} if they are instances
+ *          of the same class and the values of their instance fields are the same.
+ *      </div>
+ * </div>
  *
- * <p>The view collections of this map also have reference-equality semantics
- * for their elements. See the {@link keySet() keySet}, {@link values() values},
- * and {@link entrySet() entrySet} methods for further information.
+ * <p>The view collections of this map also have {@code ==} equality semantics
+ * for their elements. See the {@link #keySet() keySet}, {@link #values() values},
+ * and {@link #entrySet() entrySet} methods for further information.
  *
  * <p>A typical use of this class is <i>topology-preserving object graph
  * transformations</i>, such as serialization or deep-copying.  To perform such
@@ -242,7 +250,7 @@ public class IdentityHashMap<K,V>
      * Returns the appropriate capacity for the given expected maximum size.
      * Returns the smallest power of two between MINIMUM_CAPACITY and
      * MAXIMUM_CAPACITY, inclusive, that is greater than (3 *
-     * expectedMaxSize)/2, if such a number exists.  Otherwise returns
+     * expectedMaxSize)/2, if such a number exists.  Otherwise, returns
      * MAXIMUM_CAPACITY.
      */
     private static int capacity(int expectedMaxSize) {
@@ -418,7 +426,7 @@ public class IdentityHashMap<K,V>
 
     /**
      * Associates the specified value with the specified key in this identity
-     * hash map. If this map already {@link containsKey(Object) contains}
+     * hash map. If this map already {@link #containsKey(Object) contains}
      * a mapping for the key, the old value is replaced, otherwise, a new mapping
      * is inserted into this map.
      *
@@ -506,7 +514,7 @@ public class IdentityHashMap<K,V>
     /**
      * Copies all of the mappings from the specified map to this map.
      * For each mapping in the specified map, if this map already
-     * {@link containsKey(Object) contains} a mapping for the key,
+     * {@link #containsKey(Object) contains} a mapping for the key,
      * its value is replaced with the value from the specified map;
      * otherwise, a new mapping is inserted into this map.
      *
@@ -645,7 +653,7 @@ public class IdentityHashMap<K,V>
      * represent identical object-reference mappings.  More formally, this
      * map is equal to another map {@code m} if and only if
      * {@code this.entrySet().equals(m.entrySet())}. See the
-     * {@link entrySet() entrySet} method for the specification of equality
+     * {@link #entrySet() entrySet} method for the specification of equality
      * of this map's entries.
      *
      * <p><b>Owing to the reference-equality-based semantics of this map it is
@@ -682,7 +690,7 @@ public class IdentityHashMap<K,V>
     /**
      * Returns the hash code value for this map.  The hash code of a map is
      * defined to be the sum of the hash codes of each entry of this map.
-     * See the {@link entrySet() entrySet} method for a specification of the
+     * See the {@link #entrySet() entrySet} method for a specification of the
      * hash code of this map's entries.
      *
      * <p>This specification ensures that {@code m1.equals(m2)}
@@ -1447,7 +1455,7 @@ public class IdentityHashMap<K,V>
 
     /**
      * Similar form as array-based Spliterators, but skips blank elements,
-     * and guestimates size as decreasing by half per split.
+     * and guesstimates size as decreasing by half per split.
      */
     static class IdentityHashMapSpliterator<K,V> {
         final IdentityHashMap<K,V> map;

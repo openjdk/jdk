@@ -46,6 +46,7 @@ import com.sun.crypto.provider.PBKDF2KeyImpl;
 import sun.security.jca.JCAUtil;
 import sun.security.pkcs.PKCS8Key;
 import sun.security.x509.AlgorithmId;
+import sun.security.x509.X509Key;
 
 /**
  * A utility class to get key length, validate keys, etc.
@@ -588,6 +589,67 @@ public final class KeyUtil {
                 Arrays.fill(encoding, (byte)0);
             }
         }
+    }
+
+    public static PublicKey newRawPublicKey(String algorithm, byte[] key) {
+        return newRawPublicKey(algorithm, null, key);
+    }
+
+    public static PublicKey newRawPublicKey(String algorithm,
+            AlgorithmParameterSpec params, byte[] key) {
+        return new RawPublicKey(algorithm, params, key);
+    }
+
+    private record RawPublicKey(String algorithm, AlgorithmParameterSpec params,
+            byte[] data) implements PublicKey {
+
+        RawPublicKey {
+            data = data.clone();
+        }
+
+        @Override
+        public String getAlgorithm() {
+            return algorithm;
+        }
+
+        @Override
+        public String getFormat() {
+            return "RAW";
+        }
+
+        @Override
+        public byte[] getEncoded() {
+            return data.clone();
+        }
+
+        @Override
+        public AlgorithmParameterSpec getParams() {
+            return params;
+        }
+    }
+
+    // Convert RAW encoding to X.509 encoding of a public key.
+    // The AlgorithmId will be a single OID from `pname`, so this
+    // cannot be used by EC or RSASSA-PSS.
+    static public byte[] rawToX509(String pname, byte[] bytes)
+            throws NoSuchAlgorithmException {
+        return new X509Key(AlgorithmId.get(pname),
+                new BitArray(bytes.length * 8, bytes)).getEncoded();
+    }
+
+    // Convert X.509 encoding to RAW encoding of a public key.
+    // AlgorithmId is ignored. No check for trailing data after key.
+    static public byte[] x509ToRaw(byte[] bytes) throws IOException {
+        DerValue in = new DerValue(bytes);
+        if (in.tag != DerValue.tag_Sequence) {
+            throw new IOException("corrupt subject key");
+        }
+        AlgorithmId.parse(in.data.getDerValue());
+        BitArray keyMaterial = in.data.getUnalignedBitString();
+        if (keyMaterial.length() % 8 != 0) {
+            throw new IOException("Unaligned bits in public key");
+        }
+        return keyMaterial.toByteArray();
     }
 }
 

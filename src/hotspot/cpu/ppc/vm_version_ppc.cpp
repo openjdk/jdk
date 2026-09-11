@@ -342,6 +342,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
+  }
+
   check_virtualizations();
 }
 
@@ -497,7 +506,7 @@ void VM_Version::determine_features() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
   _features = VM_Version::unknown_m;
 
   // Print the detection code.
@@ -553,7 +562,7 @@ void VM_Version::config_dscr() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   // Print the detection code.
   if (PrintAssembly) {

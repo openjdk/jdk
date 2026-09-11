@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1228,7 +1228,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         private final Selector selector;
         private volatile boolean closed;
         private final List<AsyncEvent> registrations;
-        private final List<AsyncTriggerEvent> deregistrations;
         private final Logger debug;
         private final Logger debugtimeout;
         private final HttpClientImpl owner;
@@ -1242,7 +1241,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             debugtimeout = ref.debugtimeout;
             pool = ref.connectionPool();
             registrations = new ArrayList<>();
-            deregistrations = new ArrayList<>();
             selector = Selector.open();
         }
 
@@ -1328,9 +1326,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                     // OK - nothing to do...
                 }
                 toAbort.addAll(this.registrations);
-                toAbort.addAll(this.deregistrations);
                 this.registrations.clear();
-                this.deregistrations.clear();
             } finally {
                 lock.unlock();
             }
@@ -1402,10 +1398,6 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                         assert errorList.isEmpty();
                         assert readyList.isEmpty();
                         assert resetList.isEmpty();
-                        for (AsyncTriggerEvent event : deregistrations) {
-                            event.handle();
-                        }
-                        deregistrations.clear();
                         for (AsyncEvent event : registrations) {
                             if (event instanceof AsyncTriggerEvent) {
                                 readyList.add(event);

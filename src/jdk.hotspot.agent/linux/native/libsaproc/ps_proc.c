@@ -472,7 +472,7 @@ Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   }
 
 #ifdef __aarch64__
-  ph->pac_enabled = HWCAP_PACA & getauxval(AT_HWCAP);
+  ph->pac_enabled = (HWCAP_PACA & getauxval(AT_HWCAP)) == HWCAP_PACA;
 #endif
 
   // initialize ps_prochandle

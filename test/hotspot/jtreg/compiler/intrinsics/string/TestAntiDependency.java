@@ -82,6 +82,7 @@ public class TestAntiDependency {
         byte[] dst = new byte[4];
         char[] src = new char[4];
         consume(dst, src);
+        dst[0] = (byte) -1;
 
         // The compiler must not schedule this after the store to src, either by having
         // StringCompressedCopyNode kill the whole memory, or by taking into consideration the
@@ -96,6 +97,7 @@ public class TestAntiDependency {
         char[] dst = new char[4];
         byte[] src = new byte[4];
         consume(dst, src);
+        dst[0] = (char) -1;
 
         // The compiler must not schedule this after the store to src, either by having
         // StringInflatedCopyNode kill the whole memory, or by taking into consideration the
@@ -110,6 +112,7 @@ public class TestAntiDependency {
         byte[] dst = new byte[4];
         char[] src = new char[4];
         consume(dst, src);
+        dst[0] = (byte) -1;
 
         // The compiler must not schedule this after the store to src, either by having
         // EncodeISOArrayNode kill the whole memory, or by taking into consideration the
