@@ -455,9 +455,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, BytecodeVerificationLocal, false, DIAGNOSTIC,               \
           "Enable the Java bytecode verifier for local classes")            \
                                                                             \
-  develop(bool, VerifyStackAtCalls, false,                                  \
-          "Verify that the stack pointer is unchanged after calls")         \
-                                                                            \
   develop(bool, VerifyCodeCache, false,                                     \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \

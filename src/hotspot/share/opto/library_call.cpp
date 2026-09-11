@@ -7768,6 +7768,11 @@ bool LibraryCallKit::inline_vectorizedHashCode() {
     return false; // Only intrinsify if mode argument is constant
   }
 
+  const TypeAryPtr* array_t = _gvn.type(array)->isa_aryptr();
+  if (array_t == nullptr || array_t->elem() == Type::BOTTOM) {
+    return false; // failed input validation
+  }
+
   array = must_be_not_null(array, true);
 
   BasicType bt = (BasicType)basic_type_t->get_con();
