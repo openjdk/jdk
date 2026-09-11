@@ -1349,8 +1349,6 @@ bool needs_releasing_store(const Node *n) {
   return n->as_Store()->trailing_membar() != nullptr;
 }
 
-constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
-
 // predicate controlling translation of CAS
 //
 // returns true if CAS needs to use an acquiring load otherwise false
@@ -1543,11 +1541,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
   if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
 
-  if (VerifyStackAtCalls) {
-    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
-    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
-  }
-
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
@@ -1566,13 +1559,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
   __ verified_entry(C, 0);
-
-  if (VerifyStackAtCalls) {
-    // n.b. frame size includes space for return pc and fp
-    const long framesize = C->output()->frame_size_in_bytes();
-    __ mv(t2, MAJIK_DWORD);
-    __ sd(t2, Address(sp, framesize - 3 * wordSize));
-  }
 
   if (C->stub_function() == nullptr) {
     __ entry_barrier();
@@ -2073,9 +2059,10 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
       return UseZfh || UseZfhmin;
+    case Op_FmaHF:
+      return UseFMA && UseZfh;
     case Op_AddHF:
     case Op_DivHF:
-    case Op_FmaHF:
     case Op_MaxHF:
     case Op_MinHF:
     case Op_MulHF:
@@ -2586,18 +2573,7 @@ encode %{
     __ post_call_nop();
   %}
 
-  enc_class riscv_enc_call_epilog() %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
-      Label stack_ok;
-      __ ld(t1, Address(sp, framesize));
-      __ mv(t2, MAJIK_DWORD);
-      __ beq(t2, t1, stack_ok);
-      __ stop("MAJIK_DWORD not found");
-      __ bind(stack_ok);
-    }
-  %}
+  enc_class riscv_enc_call_epilog() %{ %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
@@ -2732,15 +2708,9 @@ frame %{
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
-  // Otherwise, it is above the locks and verification slot and alignment word
-  // TODO this may well be correct but need to check why that - 2 is there
-  // ppc port uses 0 but we definitely need to allow for fixed_slots
-  // which folds in the space used for monitors
-  return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
-                        Compile::current()->fixed_slots()),
-                       stack_alignment_in_slots()));
+  // Ret Addr is on stack 2 slots below _old_SP, i.e. in slot 0 if no locks
+  // or verification or alignment.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) - 2);
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
