@@ -2470,7 +2470,7 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
 inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
   // Reporting classes from the class loader is not supported for old Heap 1.0 functions.
   if (is_basic_heap_walk()) {
-    return false;
+    return true;
   } else {
     return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
   }
