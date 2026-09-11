@@ -46,11 +46,11 @@
   #define TRACE_BCEA(level, code)
 #endif
 
+static const int INDENTATION_WIDTH = 4;
+
 static void print_header(int level) {
   tty->print("[EA] ");
-  for (int i = 0; i < level; i++) {
-    tty->print("    ");
-  }
+  tty->sp(INDENTATION_WIDTH * clamp(level, 0, max_jint / INDENTATION_WIDTH));
 }
 
 // Maintain a map of which arguments a local variable or
