@@ -118,6 +118,8 @@ public:
 
   bool is_loaded() const;
 
+  bool should_be_constant() const;
+
   // Debugging output
   void print() const;
 };

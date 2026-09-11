@@ -228,6 +228,7 @@ private:
   // _ptrmap is split into these two bitmaps which are written into the archive.
   CHeapBitMap _rw_ptrmap;   // marks pointers in the RW region
   CHeapBitMap _ro_ptrmap;   // marks pointers in the RO region
+  CHeapBitMap _ac_ptrmap;   // marks pointers in the CC region
 
   SourceObjList _rw_src_objs;                 // objs to put in rw region
   SourceObjList _ro_src_objs;                 // objs to put in ro region

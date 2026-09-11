@@ -146,6 +146,7 @@ public class TestFramework {
                     "LogCompilation",
                     "UseCompactObjectHeaders",
                     "UseFMA",
+                    "AOTCache",
                     // Riscv
                     "UseRVV",
                     "UseZbb",

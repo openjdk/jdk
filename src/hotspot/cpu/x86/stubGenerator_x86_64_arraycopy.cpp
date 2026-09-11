@@ -25,6 +25,7 @@
 #include "asm/macroAssembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/sharedRuntime.hpp"

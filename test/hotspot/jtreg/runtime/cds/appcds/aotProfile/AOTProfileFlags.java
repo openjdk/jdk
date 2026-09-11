@@ -74,6 +74,7 @@ public class AOTProfileFlags {
 
         // first make sure we have a valid aotConfigFile with default value of TypeProfileLevel
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTMode=record",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:+UnlockExperimentalVMOptions",
@@ -84,6 +85,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTMode=create",
             "-XX:AOTConfiguration=" + aotConfigFile,
             "-XX:AOTCache=" + aotCacheFile,
@@ -95,6 +97,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockExperimentalVMOptions",
             trainingFlags,
@@ -105,6 +108,7 @@ public class AOTProfileFlags {
         out.shouldHaveExitValue(0);
 
         pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            "-Xlog:aot",
             "-XX:AOTCache=" + aotCacheFile,
             "-XX:+UnlockExperimentalVMOptions",
             productionFlags,
