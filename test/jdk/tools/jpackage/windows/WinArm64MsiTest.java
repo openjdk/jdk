@@ -23,6 +23,8 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import jdk.jpackage.test.Annotations.Test;
@@ -95,8 +97,17 @@ public class WinArm64MsiTest {
         new PackageTest()
                 .forTypes(PackageType.WIN_MSI)
                 .configureHelloApp()
+                .addInitializer(WinArm64MsiTest::configureCustomResources)
                 .addBundleVerifier(WinArm64MsiTest::verifyArm64Msi)
                 .run(PackageTest.Action.CREATE);
+    }
+
+    private static void configureCustomResources(JPackageCommand cmd) throws IOException {
+        final Path resourceDir = TKit.createTempDirectory("resources");
+        Files.copy(
+                TKit.TEST_SRC_ROOT.resolve("resources/close-application-os-condition.wxf"),
+                resourceDir.resolve("os-condition.wxf"));
+        cmd.addArguments("--resource-dir", resourceDir.toString());
     }
 
     private static void verifyArm64Msi(JPackageCommand cmd) throws Exception {
@@ -110,8 +121,10 @@ public class WinArm64MsiTest {
                 "Check MSI Summary Information \"Template\" property reports "
                 + "the Arm64 platform, got: [" + template + "]");
 
-        // Verify the WiX Util extension selected the Arm64 ("A64") flavor of
-        // its CloseApplications custom action, not the X64 one.
+        // The custom os-condition.wxf resource injected by this test adds a
+        // util:CloseApplication entry, giving WiX a concrete reason to link
+        // the architecture-specific CloseApplications custom action. Verify it
+        // selected the Arm64 ("A64") flavor, not the X64 one.
         final List<String> customActions = queryMsiCustomActionNames(msi);
         TKit.assertTrue(customActions.contains("Wix4CloseApplications_A64"),
                 "Check MSI selects the Wix4CloseApplications_A64 custom action");
