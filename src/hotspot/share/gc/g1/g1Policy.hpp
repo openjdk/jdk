@@ -218,12 +218,12 @@ private:
   void update_young_regions_bounds();
   void update_young_regions_bounds(const G1NumYoungRegionsBounds& young_regions_bounds);
   G1NumYoungRegionsBounds calculate_young_regions_bounds(const G1EvacuationPrediction& base_prediction,
-                                                         uint cur_num_young_regions);
+                                                         uint current_num_young_regions);
 
   // Calculate and return the minimum desired number of eden regions based on the MMU target.
   uint calculate_desired_num_eden_regions_by_mmu() const;
 
-  // Limit the given desired number of young regions to Eden allocation budget
+  // Limit the given target number of young regions to the Eden allocation budget
   // and the heap reserve.
   uint calculate_target_num_young_regions(uint target_num_young_regions_by_evac_space,
                                           uint eden_allocation_budget_num_regions,
