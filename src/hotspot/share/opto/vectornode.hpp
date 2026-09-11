@@ -254,7 +254,6 @@ class AddVNode : public VectorNode {
 public:
   AddVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector add byte
@@ -538,7 +537,6 @@ class MulVNode : public VectorNode {
 public:
   MulVNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
   virtual Node* Identity(PhaseGVN* phase);
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 // Vector multiply byte

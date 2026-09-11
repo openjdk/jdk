@@ -1506,32 +1506,25 @@ Node* AddVNode::Identity(PhaseGVN* phase) {
   }
 
   // AddV(X, Replicate(0)) => X (integral only)
-  // For blend-predicated nodes, if edges were swapped then Replicate(0) was originally
-  // in(1) i.e. the passthrough operand. Folding to in(1) would return X instead of
-  // the passthrough, so we must not fold in that case.
-  if (VectorNode::is_vector_zero(in(2), phase) && (!is_predicated_using_blend() || !has_swapped_edges())) {
+  // Also holds when predicated: inactive lanes pass through in(1), which is X.
+  if (VectorNode::is_vector_zero(in(2), phase)) {
     return in(1);
   }
 
   // AddV(Replicate(0), X) => X (integral only)
-  // For predicated nodes, returning in(2) loses the passthrough from in(1).
-  // For blend-predicated nodes, safe when edges were swapped: in(2) was originally
-  // in(1) i.e. the passthrough operand, so returning in(2) returns the passthrough.
-  if (VectorNode::is_vector_zero(in(1), phase) && !is_predicated_vector() &&
-      (!is_predicated_using_blend() || has_swapped_edges())) {
+  // Not valid when predicated, inactive lanes must keep in(1) rather than X.
+  if (VectorNode::is_vector_zero(in(1), phase) && !is_predicated_vector()) {
     return in(2);
   }
 
   return this;
 }
 
-Node* AddVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return VectorNode::Ideal(phase, can_reshape);
-}
-
 //------------------------------SubVNode---------------------------------------
 Node* SubVNode::Identity(PhaseGVN* phase) {
   // SubV(X, Replicate(0)) => X
+  // Valid for floating point too: X - (+0.0) is X for every X, including -0.0
+  // and NaN. Note that is_vector_zero() only matches positive zero.
   if (VectorNode::is_vector_zero(in(2), phase)) {
     return in(1);
   }
@@ -1539,8 +1532,10 @@ Node* SubVNode::Identity(PhaseGVN* phase) {
 }
 
 Node* SubVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  // SubV(X, X) => Replicate(0) for integral types, non-predicated only
-  if (!is_predicated_vector() && !is_predicated_using_blend() && in(1) == in(2)) {
+  // SubV(X, X) => Replicate(0) for integral types, non-predicated only.
+  // Not valid for floating point, NaN - NaN is NaN and X - X is -0.0 under
+  // round-to-negative-infinity.
+  if (!is_predicated_vector() && in(1) == in(2)) {
     BasicType bt = vect_type()->element_basic_type();
     if (is_integral_type(bt)) {
       return new ReplicateNode(phase->zerocon(bt), vect_type());
@@ -1552,40 +1547,31 @@ Node* SubVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 //------------------------------MulVNode---------------------------------------
 Node* MulVNode::Identity(PhaseGVN* phase) {
   // MulV(X, Replicate(1)) => X
-  // For blend-predicated nodes, if edges were swapped then Replicate(1) was originally
-  // in(1) i.e. the passthrough operand. Folding to in(1) would return X instead of
-  // the passthrough, so we must not fold in that case.
-  if (VectorNode::is_vector_one(in(2), phase) && (!is_predicated_using_blend() || !has_swapped_edges())) {
+  // Also holds when predicated: inactive lanes pass through in(1), which is X.
+  if (VectorNode::is_vector_one(in(2), phase)) {
     return in(1);
   }
 
   // MulV(Replicate(1), X) => X
-  // For predicated nodes, returning in(2) loses the passthrough from in(1).
-  // For blend-predicated nodes, safe when edges were swapped: in(2) was originally
-  // in(1) i.e. the passthrough (opd1), so returning in(2) returns the passthrough.
-  if (VectorNode::is_vector_one(in(1), phase) && !is_predicated_vector() &&
-      (!is_predicated_using_blend() || has_swapped_edges())) {
+  // Not valid when predicated, inactive lanes must keep in(1) rather than X.
+  if (VectorNode::is_vector_one(in(1), phase) && !is_predicated_vector()) {
     return in(2);
   }
 
   // MulV(Replicate(0), X) => Replicate(0) for integral types
-  // Safe for predicated: in(1) is both the passthrough and the result (0 * X = 0),
-  // so all lanes produce zero.
-  if (is_integral_type(vect_type()->element_basic_type()) && VectorNode::is_vector_zero(in(1), phase) &&
-      (!is_predicated_using_blend() || !has_swapped_edges())) {
+  // Also holds when predicated: in(1) is both the passthrough and the result
+  // (0 * X = 0), so all lanes produce zero.
+  // Not valid for floating point, 0.0 * NaN is NaN and 0.0 * -1.0 is -0.0.
+  if (is_integral_type(vect_type()->element_basic_type()) && VectorNode::is_vector_zero(in(1), phase)) {
     return in(1);
   }
 
   // MulV(X, Replicate(0)) => Replicate(0) for integral types, non-predicated only
-  if (VectorNode::is_vector_zero(in(2), phase) && is_integral_type(vect_type()->element_basic_type()) &&
-      !is_predicated_vector() && (!is_predicated_using_blend() || has_swapped_edges()))  {
+  if (is_integral_type(vect_type()->element_basic_type()) && VectorNode::is_vector_zero(in(2), phase) &&
+      !is_predicated_vector())  {
     return in(2);
   }
   return this;
-}
-
-Node* MulVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return VectorNode::Ideal(phase, can_reshape);
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.

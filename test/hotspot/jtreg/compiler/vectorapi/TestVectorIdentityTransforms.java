@@ -333,10 +333,16 @@ public class TestVectorIdentityTransforms {
         }
     }
 
-    // Negative: predicated MulV(Replicate(1), X, mask) must NOT be folded
+    // Predicated MulV(Replicate(1), X, mask) must NOT be folded, inactive lanes
+    // keep in(1) which is Replicate(1) rather than X.
+    // x86 has no masked byte multiply, so there the operation is implemented as
+    // VectorBlend(Replicate(1), MulV(Replicate(1), X), mask). The blend holds the
+    // passthrough, hence the unpredicated MulV does fold away.
     @Test
     @IR(counts = {IRNode.MUL_VB, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeature = {"sve", "true"})
+    @IR(failOn = {IRNode.MUL_VB},
+        applyIfCPUFeature = {"avx512f", "true"})
     public void testByteMaskedOneMulX(int index) {
         ByteVector v = ByteVector.fromArray(B_SPECIES, byteInput, index);
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, maskArr, index);
@@ -355,10 +361,16 @@ public class TestVectorIdentityTransforms {
         }
     }
 
-    // Negative: predicated MulV(X, Replicate(0), mask) must NOT be folded [integral only]
+    // Predicated MulV(X, Replicate(0), mask) must NOT be folded [integral only],
+    // inactive lanes keep in(1) which is X rather than zero.
+    // x86 has no masked byte multiply, so there the operation is implemented as
+    // VectorBlend(X, MulV(X, Replicate(0)), mask). The blend holds the passthrough,
+    // hence the unpredicated MulV does fold away.
     @Test
     @IR(counts = {IRNode.MUL_VB, IRNode.VECTOR_SIZE_ANY, " >= 1 "},
-        applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true"})
+        applyIfCPUFeature = {"sve", "true"})
+    @IR(failOn = {IRNode.MUL_VB},
+        applyIfCPUFeature = {"avx512f", "true"})
     public void testByteMaskedMulZero(int index) {
         ByteVector v = ByteVector.fromArray(B_SPECIES, byteInput, index);
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, maskArr, index);
