@@ -402,13 +402,13 @@ void ConstantPoolCache::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
   if (_resolved_indy_entries != nullptr) {
-    remove_resolved_indy_entries_if_non_deterministic();
+    remove_resolved_indy_entries_if_non_archivable();
   }
   if (_resolved_field_entries != nullptr) {
-    remove_resolved_field_entries_if_non_deterministic();
+    remove_resolved_field_entries_if_non_archivable();
   }
   if (_resolved_method_entries != nullptr) {
-    remove_resolved_method_entries_if_non_deterministic();
+    remove_resolved_method_entries_if_non_archivable();
   }
 
 #if INCLUDE_CDS_JAVA_HEAP
@@ -423,7 +423,7 @@ void ConstantPoolCache::remove_unshareable_info() {
 #endif
 }
 
-void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
+void ConstantPoolCache::remove_resolved_field_entries_if_non_archivable() {
   ConstantPool* cp = constant_pool();
   ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
   for (int i = 0; i < _resolved_field_entries->length(); i++) {
@@ -465,13 +465,17 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_deterministic() {
   }
 }
 
-void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
+template <typename FUNC>
+void ConstantPoolCache::iterate_resolved_method_entries_with_archivability_check(FUNC f) {
+  if (_resolved_method_entries == nullptr) {
+    return;
+  }
+
   ConstantPool* cp = constant_pool();
-  ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
+  ConstantPool* src_cp = ArchiveBuilder::current()->is_in_buffer_space(cp) ? ArchiveBuilder::current()->get_source_addr(cp) : cp;
   for (int i = 0; i < _resolved_method_entries->length(); i++) {
     ResolvedMethodEntry* rme = _resolved_method_entries->adr_at(i);
     int cp_index = rme->constant_pool_index();
-    bool archived = false;
     bool resolved = rme->is_resolved(Bytecodes::_invokevirtual)   ||
                     rme->is_resolved(Bytecodes::_invokespecial)   ||
                     rme->is_resolved(Bytecodes::_invokeinterface) ||
@@ -479,14 +483,25 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
                     (rme->is_resolved(Bytecodes::_invokestatic) && VM_Version::supports_fast_class_init_checks());
 
     const char* rejection_reason = nullptr;
-    if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
-        && can_archive_resolved_method(src_cp, rme, rejection_reason)) {
+    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+                      can_archive_resolved_method(src_cp, rme, rejection_reason));
+    f(src_cp, cp_index, rme, resolved, archivable, rejection_reason);
+  }
+}
+
+void ConstantPoolCache::remove_resolved_method_entries_if_non_archivable() {
+  ConstantPool* cp = constant_pool();
+  iterate_resolved_method_entries_with_archivability_check([&] (ConstantPool* src_cp, int cp_index,
+                                                               ResolvedMethodEntry* rme, bool resolved,
+                                                               bool archivable, const char* rejection_reason) {
+    bool archived = false;
+    LogTarget(Trace, aot, resolve) lt;
+    if (archivable) {
       rme->mark_and_relocate(src_cp);
       archived = true;
     } else {
       rme->remove_unshareable_info();
     }
-    LogTarget(Trace, aot, resolve) lt;
     if (lt.is_enabled()) {
       ResourceMark rm;
       int klass_cp_index = cp->uncached_klass_ref_index_at(cp_index);
@@ -514,10 +529,20 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_deterministic() {
       ls.cr();
     }
     ArchiveBuilder::alloc_stats()->record_method_cp_entry(archived, resolved && !archived);
-  }
+  });
 }
 
-void ConstantPoolCache::remove_resolved_indy_entries_if_non_deterministic() {
+void ConstantPoolCache::record_archivable_method_entries() {
+  iterate_resolved_method_entries_with_archivability_check([&] (ConstantPool* src_cp, int cp_index,
+                                                               ResolvedMethodEntry* rme, bool resolved,
+                                                               bool archivable, const char* rejection_reason) {
+    if (archivable) {
+      rme->record_archivable_classes();
+    }
+  });
+}
+
+void ConstantPoolCache::remove_resolved_indy_entries_if_non_archivable() {
   ConstantPool* cp = constant_pool();
   ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
   for (int i = 0; i < _resolved_indy_entries->length(); i++) {

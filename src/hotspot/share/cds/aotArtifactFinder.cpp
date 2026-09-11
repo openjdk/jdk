@@ -268,6 +268,10 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
       // The following are not appliable to unregistered classes
       return;
     }
+    ConstantPoolCache* cpCache = ik->constants()->cache();
+    if (cpCache != nullptr) {
+      cpCache->record_archivable_method_entries();
+    }
     scan_oops_in_instance_class(ik);
     if (ik->is_hidden() && CDSConfig::is_dumping_aot_linked_classes()) {
       bool succeed = AOTClassLinker::try_add_candidate(ik);

@@ -219,9 +219,15 @@ class ConstantPoolCache: public MetaspaceObj {
 #endif // INCLUDE_JVMTI
 
 #if INCLUDE_CDS
-  void remove_resolved_field_entries_if_non_deterministic();
-  void remove_resolved_indy_entries_if_non_deterministic();
-  void remove_resolved_method_entries_if_non_deterministic();
+ private:
+  template <typename FUNC>
+  void iterate_resolved_method_entries_with_archivability_check(FUNC f);
+
+ public:
+  void record_archivable_method_entries();
+  void remove_resolved_field_entries_if_non_archivable();
+  void remove_resolved_indy_entries_if_non_archivable();
+  void remove_resolved_method_entries_if_non_archivable();
   bool can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason);
 #endif
 
