@@ -33,6 +33,7 @@
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "utilities/align.hpp"
@@ -1284,7 +1285,7 @@ void FieldLayoutBuilder::compute_value_class_layout() {
           _layout->remove_null_marker();
           layouts().set_null_marker_offset(LayoutDescriptions::NoValue);
         }
-        layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, LayoutDescriptions::NoValue);
+        layouts().set_size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, LayoutDescriptions::NoValue);
       }
     } else {
       layouts().set_payload_alignment(required_alignment);
