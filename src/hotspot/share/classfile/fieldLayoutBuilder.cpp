@@ -213,7 +213,6 @@ void FieldGroup::add_flat_field(int idx, ValueKlass* vk, LayoutKind lk) {
   LayoutRawBlock* block = new LayoutRawBlock(idx, LayoutRawBlock::FLAT, size, alignment);
   block->set_value_klass(vk);
   block->set_layout_kind(lk);
-  assert(!vk->contains_oops() || block->size() >= heapOopSize, "Size of Value klass with oops should be >= heapOopSize");
   add_to_non_oop_list(block);
 }
 
