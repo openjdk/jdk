@@ -87,7 +87,7 @@ public class hs203t002 extends RedefineAgent {
             resumeThread(mt.getThread());
             MyThread.resume.set(true);
             mt.join();
-                        log.println(" ..."+mt.threadState);
+                        log.display(" ..."+mt.threadState);
                 } catch(Exception ie) {
                         ie.printStackTrace();
                 }
@@ -95,7 +95,7 @@ public class hs203t002 extends RedefineAgent {
                 if ( (mt.threadState < 1000)  && (redefineAttempted() && isRedefined()) ) {
                         passed = true;
                 } else {
-                        log.println(" FAILED ...");
+                        log.display(" FAILED ...");
                 }
         return passed;
 

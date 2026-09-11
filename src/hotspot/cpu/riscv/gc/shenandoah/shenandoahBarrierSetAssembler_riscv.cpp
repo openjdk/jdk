@@ -24,6 +24,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -219,11 +220,14 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
   // Test for in-cset
   if (is_strong) {
+#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       __ ld(t1, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ lwu(t0, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
       __ srl(t0, x10, t0);
-    } else {
+    } else
+#endif
+    {
       __ mv(t1, ShenandoahHeap::in_cset_fast_test_addr());
       __ srli(t0, x10, ShenandoahHeapRegion::region_size_bytes_shift_jint());
     }
@@ -440,10 +444,20 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
 }
 
 void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, obj, tmp2);
-  __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ andr(tmp1, obj, tmp2);
+    __ ld(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+  } else
+#endif
+  {
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, obj, tmp2);
+    __ mv(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
 
   // Compare tmp1 and tmp2.
   __ bne(tmp1, tmp2, L_error);

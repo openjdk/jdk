@@ -64,8 +64,8 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   int       slop_delta = 0;
 
   ByteSize  entry_offset = caller_is_c1
-                           ? Method::from_compiled_inline_offset()
-                           : Method::from_compiled_inline_ro_offset();
+                           ? Method::from_compiled_value_offset()
+                           : Method::from_compiled_value_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -137,7 +137,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   __ ld(t1, Address(xmethod, entry_offset));
   __ jr(t1);
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, true, vtable_index, slop_bytes, 0);
 
   return s;
@@ -159,8 +159,8 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   int       slop_delta = 0;
 
   ByteSize  entry_offset = caller_is_c1
-                           ? Method::from_compiled_inline_offset()
-                           : Method::from_compiled_inline_ro_offset();
+                           ? Method::from_compiled_value_offset()
+                           : Method::from_compiled_value_ro_offset();
 
   ResourceMark    rm;
   CodeBuffer      cb(s->entry_point(), stub_code_length);
@@ -246,7 +246,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   assert(SharedRuntime::get_handle_wrong_method_stub() != nullptr, "check initialization order");
   __ far_jump(RuntimeAddress(SharedRuntime::get_handle_wrong_method_stub()));
 
-  masm->flush();
+  masm->invalidate_icache();
   bookkeeping(masm, tty, s, npe_addr, ame_addr, false, itable_index, slop_bytes, 0);
 
   return s;

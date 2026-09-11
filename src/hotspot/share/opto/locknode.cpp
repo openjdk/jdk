@@ -195,8 +195,8 @@ const Type* FastLockNode::Value(PhaseGVN* phase) const {
   if (in1_t == Type::TOP) {
     return Type::TOP;
   }
-  if (in1_t->is_inlinetypeptr()) {
-    // Locking on inline types always fails
+  if (in1_t->is_valueklassptr()) {
+    // Locking on value types always fails
     return TypeInt::CC_GT;
   }
   return TypeInt::CC;
@@ -222,8 +222,8 @@ void Parse::do_monitor_enter() {
   if (stopped()) return;
 
   {
-    // Synchronizing on an inline type is not allowed
-    BuildCutout unless(this, inline_type_test(obj, /* is_inline = */ false), PROB_MAX);
+    // Synchronizing on a value type is not allowed
+    BuildCutout unless(this, value_type_test(obj, /* is_inline = */ false), PROB_MAX);
     uncommon_trap_exact(Deoptimization::Reason_class_check, Deoptimization::Action_none);
   }
 

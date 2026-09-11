@@ -222,6 +222,17 @@ public final class StandardOption {
             }))
             .createArray(toExplodedPathList());
 
+    public static final OptionValue<List<Collection<RootedPath>>> APP_RESOURCES = existingPathOption("app-resources")
+            .tokenizer(pathSeparator())
+            .valuePattern("additional resources")
+            .description("help.option.app-resources" + resourceKeySuffix(OperatingSystem.current()))
+            .outOfScope(NOT_BUILDING_APP_IMAGE)
+            .map(explodedPathOptionMapper(explodedPathConverter().withPathFileName().create()))
+            .mutate(createOptionSpecBuilderMutator((b, context) -> {
+                b.description("help.option.app-resources" + resourceKeySuffix(context.os()));
+            }))
+            .createArray(toExplodedPathList());
+
     static final OptionValue<Path[]> FILE_ASSOCIATIONS_INTERNAL = fileOption("file-associations")
             .tokenizer(pathSeparator())
             .outOfScope(BundlingOperationModifier.BUNDLE_RUNTIME)

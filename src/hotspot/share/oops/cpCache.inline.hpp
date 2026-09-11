@@ -35,8 +35,7 @@
 #include "runtime/atomicAccess.hpp"
 
 // Constructor
-inline ConstantPoolCache::ConstantPoolCache(const intStack& invokedynamic_references_map,
-                                            Array<ResolvedIndyEntry>* invokedynamic_info,
+inline ConstantPoolCache::ConstantPoolCache(Array<ResolvedIndyEntry>* invokedynamic_info,
                                             Array<ResolvedFieldEntry>* field_entries,
                                             Array<ResolvedMethodEntry>* method_entries) :
                                                   _constant_pool(nullptr),

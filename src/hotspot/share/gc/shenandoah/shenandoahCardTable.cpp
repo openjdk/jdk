@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,7 +96,7 @@ bool ShenandoahCardTable::is_in_young(const void* obj) const {
   return ShenandoahHeap::heap()->is_in_young(obj);
 }
 
-CardValue* ShenandoahCardTable::read_byte_for(const void* p) {
+CardTable::CardValue* ShenandoahCardTable::read_byte_for(const void* p) {
     CardValue* result = &_read_byte_map_base[uintptr_t(p) >> _card_shift];
     assert(result >= _read_byte_map && result < _read_byte_map + _byte_map_size,
            "out of bounds accessor for card marking array");

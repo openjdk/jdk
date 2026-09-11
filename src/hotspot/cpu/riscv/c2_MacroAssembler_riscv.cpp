@@ -123,8 +123,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    ori(tmp1_mark, tmp1_mark, markWord::unlocked_value);
-    xori(tmp3_t, tmp1_mark, markWord::unlocked_value);
+    ori(tmp1_mark, tmp1_mark, markWord::lock_neutral_value);
+    xori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_t);
     bne(tmp1_mark, tmp3_t, slow_path);
@@ -295,7 +295,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-    ori(tmp3_t, tmp1_mark, markWord::unlocked_value);
+    ori(tmp3_t, tmp1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ tmp1_mark, /*new*/ tmp3_t, Assembler::int64,
             /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ tmp3_t);
     beq(tmp1_mark, tmp3_t, unlocked);
@@ -354,15 +354,10 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 
     bind(not_recursive);
 
-    const Register tmp2_owner_addr = tmp2;
-
-    // Compute owner address.
-    la(tmp2_owner_addr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
-
     // Set owner to null.
     // Release to satisfy the JMM
     membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-    sd(zr, Address(tmp2_owner_addr));
+    sd(zr, Address(tmp1_monitor, ObjectMonitor::owner_offset()));
     // We need a full fence after clearing owner to avoid stranding.
     // StoreLoad achieves this.
     membar(StoreLoad);
@@ -408,6 +403,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box,
 // StringLatin1.indexOfChar
 void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
                                                   Register ch, Register result,
+                                                  Register start_index,
                                                   bool isL)
 {
   Register ch1 = t0;
@@ -500,7 +496,7 @@ void C2_MacroAssembler::string_indexof_char_short(Register str1, Register cnt1,
   addi(index, index, 7);
 
   bind(MATCH);
-  mv(result, index);
+  add(result, start_index, index);
   bind(NOMATCH);
   BLOCK_COMMENT("} string_indexof_char_short");
 }
@@ -513,39 +509,40 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
                                             Register tmp3, Register tmp4,
                                             bool isL)
 {
-  Label CH1_LOOP, HIT, NOMATCH, DONE, DO_LONG;
+  Label CH1_LOOP, HIT, DONE, SHORT;
   Register ch1 = t0;
   Register orig_cnt = t1;
-  Register mask1 = tmp3;
+  Register mask1 = tmp1;
   Register mask2 = tmp2;
-  Register match_mask = tmp1;
-  Register trailing_char = tmp4;
-  Register unaligned_elems = tmp4;
+  Register match_mask = tmp3;
+  Register loop_step = tmp4;
+  Register trailing_chars = tmp4;
+  Register unaligned_chars = tmp4;
+  Register start_index = tmp4;
 
   BLOCK_COMMENT("string_indexof_char {");
-  beqz(cnt1, NOMATCH);
+  mv(result, -1);
+  beqz(cnt1, DONE);
 
   subi(t0, cnt1, isL ? 32 : 16);
-  bgtz(t0, DO_LONG);
-  string_indexof_char_short(str1, cnt1, ch, result, isL);
-  j(DONE);
+  mv(start_index, zr);
+  blez(t0, SHORT);
 
-  bind(DO_LONG);
   mv(orig_cnt, cnt1);
   if (AvoidUnalignedAccesses) {
     Label ALIGNED;
-    andi(unaligned_elems, str1, 0x7);
-    beqz(unaligned_elems, ALIGNED);
-    sub(unaligned_elems, unaligned_elems, 8);
-    neg(unaligned_elems, unaligned_elems);
+    andi(unaligned_chars, str1, 0x7);
+    beqz(unaligned_chars, ALIGNED);
+    sub(unaligned_chars, unaligned_chars, 8);
+    neg(unaligned_chars, unaligned_chars);
     if (!isL) {
-      srli(unaligned_elems, unaligned_elems, 1);
+      srli(unaligned_chars, unaligned_chars, 1);
     }
     // do unaligned part per element
-    string_indexof_char_short(str1, unaligned_elems, ch, result, isL);
+    string_indexof_char_short(str1, unaligned_chars, ch, result, zr, isL);
     bgez(result, DONE);
     mv(orig_cnt, cnt1);
-    sub(cnt1, cnt1, unaligned_elems);
+    sub(cnt1, cnt1, unaligned_chars);
     bind(ALIGNED);
   }
 
@@ -570,33 +567,47 @@ void C2_MacroAssembler::string_indexof_char(Register str1, Register cnt1,
   uint64_t mask7fff = UCONST64(0x7fff7fff7fff7fff);
   mv(mask2, isL ? mask7f7f : mask7fff);
 
+  mv(loop_step, 8);
+
   bind(CH1_LOOP);
   ld(ch1, Address(str1));
-  addi(str1, str1, 8);
-  subi(cnt1, cnt1, 8);
   compute_match_mask(ch1, ch, match_mask, mask1, mask2);
   bnez(match_mask, HIT);
-  bgtz(cnt1, CH1_LOOP);
-  j(NOMATCH);
+  addi(str1, str1, 8);
+  subi(cnt1, cnt1, 8);
+  bge(cnt1, loop_step, CH1_LOOP);
+
+  beqz(cnt1, DONE);
+  if (!isL) {
+    srli(cnt1, cnt1, 1);
+  }
+  // Tail (1..7 chars) after the SWAR loop has advanced str1. cnt1 holds the
+  // remaining char count; the number of chars already scanned by the loop is
+  // (orig_cnt - cnt1). string_indexof_char_short returns an index relative to
+  // the current str1, so we pass that prefix as start_index to recover the
+  // real index.
+  // Note: ch was broadcast across all 8 bytes for the SWAR loop above, but the
+  // short helper compares a single element, so restore ch to a single char.
+  isL ? zext(ch, ch, 8) : zext(ch, ch, 16);
+  sub(start_index, orig_cnt, cnt1);
+
+  bind(SHORT);
+  string_indexof_char_short(str1, cnt1, ch, result, start_index, isL);
+  j(DONE);
 
   bind(HIT);
   // count bits of trailing zero chars
-  ctzc_bits(trailing_char, match_mask, isL, ch1, result);
-  srli(trailing_char, trailing_char, 3);
-  addi(cnt1, cnt1, 8);
-  ble(cnt1, trailing_char, NOMATCH);
+  ctzc_bits(trailing_chars, match_mask, isL, mask1, mask2);
+  srli(trailing_chars, trailing_chars, 3);
+
   // match case
   if (!isL) {
     srli(cnt1, cnt1, 1);
-    srli(trailing_char, trailing_char, 1);
+    srli(trailing_chars, trailing_chars, 1);
   }
 
   sub(result, orig_cnt, cnt1);
-  add(result, result, trailing_char);
-  j(DONE);
-
-  bind(NOMATCH);
-  mv(result, -1);
+  add(result, result, trailing_chars);
 
   bind(DONE);
   BLOCK_COMMENT("} string_indexof_char");
@@ -2021,47 +2032,49 @@ void C2_MacroAssembler::enc_cmpEqNe_imm0_branch(int cmpFlag, Register op1, Label
 }
 
 void C2_MacroAssembler::enc_cmove(int cmpFlag, Register op1, Register op2, Register dst, Register src) {
-  bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
-  int op_select = cmpFlag & (~unsigned_branch_mask);
+  if (dst != src) {
+    bool is_unsigned = (cmpFlag & unsigned_branch_mask) == unsigned_branch_mask;
+    int op_select = cmpFlag & (~unsigned_branch_mask);
 
-  switch (op_select) {
-    case BoolTest::eq:
-      cmov_eq(op1, op2, dst, src);
-      break;
-    case BoolTest::ne:
-      cmov_ne(op1, op2, dst, src);
-      break;
-    case BoolTest::le:
-      if (is_unsigned) {
-        cmov_leu(op1, op2, dst, src);
-      } else {
-        cmov_le(op1, op2, dst, src);
-      }
-      break;
-    case BoolTest::ge:
-      if (is_unsigned) {
-        cmov_geu(op1, op2, dst, src);
-      } else {
-        cmov_ge(op1, op2, dst, src);
-      }
-      break;
-    case BoolTest::lt:
-      if (is_unsigned) {
-        cmov_ltu(op1, op2, dst, src);
-      } else {
-        cmov_lt(op1, op2, dst, src);
-      }
-      break;
-    case BoolTest::gt:
-      if (is_unsigned) {
-        cmov_gtu(op1, op2, dst, src);
-      } else {
-        cmov_gt(op1, op2, dst, src);
-      }
-      break;
-    default:
-      assert(false, "unsupported compare condition");
-      ShouldNotReachHere();
+    switch (op_select) {
+      case BoolTest::eq:
+        cmov_eq(op1, op2, dst, src);
+        break;
+      case BoolTest::ne:
+        cmov_ne(op1, op2, dst, src);
+        break;
+      case BoolTest::le:
+        if (is_unsigned) {
+          cmov_leu(op1, op2, dst, src);
+        } else {
+          cmov_le(op1, op2, dst, src);
+        }
+        break;
+      case BoolTest::ge:
+        if (is_unsigned) {
+          cmov_geu(op1, op2, dst, src);
+        } else {
+          cmov_ge(op1, op2, dst, src);
+        }
+        break;
+      case BoolTest::lt:
+        if (is_unsigned) {
+          cmov_ltu(op1, op2, dst, src);
+        } else {
+          cmov_lt(op1, op2, dst, src);
+        }
+        break;
+      case BoolTest::gt:
+        if (is_unsigned) {
+          cmov_gtu(op1, op2, dst, src);
+        } else {
+          cmov_gt(op1, op2, dst, src);
+        }
+        break;
+      default:
+        assert(false, "unsupported compare condition");
+        ShouldNotReachHere();
+    }
   }
 }
 

@@ -34,7 +34,6 @@
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
 #include "gc/g1/g1ConcurrentRefineSweepTask.hpp"
-#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/g1GCParPhaseTimesTracker.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
@@ -201,8 +200,8 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
         return AlmostNoWork;
       }
 
-      double num_cards = num_regions << G1HeapRegion::LogCardsPerRegion;
-      return ceil(num_cards / num_cards_per_worker);
+      size_t num_cards = (size_t)num_regions << G1HeapRegion::LogCardsPerRegion;
+      return align_up(num_cards, num_cards_per_worker) / num_cards_per_worker;
     }
 
     virtual ~G1ClearCardTableTask() {
@@ -1078,7 +1077,10 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // remembered sets for this region.
         // We want to continue collecting remembered set entries for humongous regions
         // that were not reclaimed.
-        r->rem_set()->clear(true /* only_cardset */, true /* keep_tracked */);
+        G1CardSetGroup* group = r->rem_set()->card_set_group();
+        assert(group != nullptr, "must have a card set group");
+        assert(group->length() == 1, "Card set groups containing humongous regions must have a single entry");
+        group->clear_card_set();
       }
 
       // Postcondition
@@ -1146,7 +1148,7 @@ public:
         // 2. collection set
         G1MergeCardSetClosure merge(_scan_state);
 
-        g1h->collection_set()->merge_cardsets_for_collection_groups(merge, worker_id, _num_workers);
+        g1h->collection_set()->merge_collection_set_card_set_groups(merge, worker_id, _num_workers);
 
         G1MergeCardSetStats stats = merge.stats();
 
@@ -1209,14 +1211,14 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
   {
     WorkerThreads* workers = g1h->workers();
 
-    uint const num_groups_in_increment = g1h->collection_set()->num_groups_in_increment();
+    uint const num_selected_groups_in_increment = g1h->collection_set()->num_selected_groups_in_increment();
 
     uint const num_workers = initial_evacuation ? workers->active_workers() :
-                                                  MIN2(workers->active_workers(), num_groups_in_increment);
+                                                  MIN2(workers->active_workers(), num_selected_groups_in_increment);
 
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    log_debug(gc, ergo)("Running %s using %u workers for %u groups",
-                        cl.name(), num_workers, num_groups_in_increment);
+    log_debug(gc, ergo)("Running %s using %u workers for %u card set groups",
+                        cl.name(), num_workers, num_selected_groups_in_increment);
     workers->run_task(&cl, num_workers);
   }
 
@@ -1264,8 +1266,7 @@ inline void check_card_ptr(CardTable::CardValue* card_ptr, G1CardTable* ct) {
 #endif
 }
 
-G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr,
-                                                          const uint worker_id) {
+G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_ptr) {
   assert(!_g1h->is_stw_gc_active(), "Only call concurrently");
   G1CardTable* ct = _g1h->refinement_table();
   check_card_ptr(card_ptr, ct);
@@ -1295,7 +1296,7 @@ G1RemSet::RefineResult G1RemSet::refine_card_concurrently(CardValue* const card_
   MemRegion dirty_region(start, MIN2(scan_limit, end));
   assert(!dirty_region.is_empty(), "sanity");
 
-  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h, worker_id);
+  G1ConcurrentRefineOopClosure conc_refine_cl(_g1h);
   if (r->oops_on_memregion_seq_iterate_careful<false>(dirty_region, &conc_refine_cl) != nullptr) {
     if (conc_refine_cl.has_ref_to_cset()) {
       return HasRefToCSet;

@@ -9,7 +9,7 @@ SPP=build.tools.spp.Spp
 # desirable to generate code using ASM which will allow more flexibility
 # in the kinds of tests that are generated.
 
-for type in boolean byte short char int long float double String Value
+for type in boolean byte short char int long float double String Value NullRestrictedValue
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   args="-K$type -Dtype=$type -DType=$Type"
@@ -36,6 +36,9 @@ do
       ;;
     Value)
       args="$args -KObject -KValue"
+      ;;
+    NullRestrictedValue)
+      args="$args -KObject -KValue -KNullRestricted"
       ;;
   esac
 
@@ -93,6 +96,10 @@ do
       value2="Value.getInstance(20)"
       value3="Value.getInstance(30)"
       ;;
+    NullRestrictedValue)
+      value1="NullRestrictedValue.of((byte)20,(short)1854)"
+      value2="NullRestrictedValue.of((byte)-42,(short)1854)"
+      value3="NullRestrictedValue.of((byte)20,(short)-31083)"
   esac
 
   args="$args -Dvalue1=$value1 -Dvalue2=$value2 -Dvalue3=$value3 -Dwrong_primitive_type=$wrong_primitive_type"

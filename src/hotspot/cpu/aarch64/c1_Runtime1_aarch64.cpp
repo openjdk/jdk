@@ -773,14 +773,14 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
             __ br(Assembler::EQ, ok);
             __ cmpw(t0, Klass::_lh_array_tag_flat_value);  // new "[LVT;"
             __ br(Assembler::EQ, ok);
-            __ stop("assert(is an object or inline type array klass)");
+            __ stop("assert(is an object or value type array klass)");
             break;
           case StubId::c1_new_null_free_array_id:
             __ cmpw(t0, Klass::_lh_array_tag_flat_value);  // the array can be a flat array.
             __ br(Assembler::EQ, ok);
             __ cmpw(t0, Klass::_lh_array_tag_ref_value); // the array cannot be a flat array (due to the InlineArrayElementMaxFlatSize, etc.)
             __ br(Assembler::EQ, ok);
-            __ stop("assert(is an object or inline type array klass)");
+            __ stop("assert(is an object or value type array klass)");
             break;
           default:  ShouldNotReachHere();
           }
@@ -833,17 +833,17 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_inline_args_id:
-    case StubId::c1_buffer_inline_args_no_receiver_id:
+    case StubId::c1_buffer_value_args_id:
+    case StubId::c1_buffer_value_args_no_receiver_id:
       {
-        const char* name = (id == StubId::c1_buffer_inline_args_id) ?
-          "buffer_inline_args" : "buffer_inline_args_no_receiver";
+        const char* name = (id == StubId::c1_buffer_value_args_id) ?
+          "buffer_value_args" : "buffer_value_args_no_receiver";
         StubFrame f(sasm, name, dont_gc_arguments);
         OopMap* map = save_live_registers(sasm);
         Register method = r19;   // Incoming
-        address entry = (id == StubId::c1_buffer_inline_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_inline_args) :
-          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+        address entry = (id == StubId::c1_buffer_value_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_value_args) :
+          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
         // This is called from a C1 method's scalarized entry point
         // where r0-r7 may be holding live argument values so we can't
         // return the result in r0 as the other stubs do. LR is used as

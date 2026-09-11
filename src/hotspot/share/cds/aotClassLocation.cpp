@@ -39,8 +39,10 @@
 #include "memory/metaspaceClosure.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/array.hpp"
+#include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/handles.inline.hpp"
 #include "utilities/classpathStream.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/stringUtils.hpp"
@@ -279,7 +281,8 @@ AOTClassLocation* AOTClassLocation::allocate(JavaThread* current, const char* pa
   }
   assert(*(cs->manifest() + cs->manifest_length()) == '\0', "should be nul-terminated");
 
-  if (strstr(cs->manifest(), "Multi-Release: true") != nullptr) {
+  const char* multi_release = cs->get_attr("Multi-Release: ");
+  if (multi_release != nullptr && strcasecmp(multi_release, "true") == 0) {
     cs->_is_multi_release_jar = true;
   }
 
@@ -321,7 +324,7 @@ char* AOTClassLocation::read_manifest(JavaThread* current, const char* path, siz
 }
 
 // The result is resource allocated.
-char* AOTClassLocation::get_cpattr() const {
+char* AOTClassLocation::get_attr(const char* tag) const {
   if (_manifest_length == 0) {
     return nullptr;
   }
@@ -337,7 +340,6 @@ char* AOTClassLocation::get_cpattr() const {
   // Remove all new-line continuation (remove all "\n " substrings)
   StringUtils::replace_no_expand(buf, "\n ", "");
 
-  const char* tag = "Class-Path: ";
   size_t tag_len = strlen(tag);
   char* found = nullptr;
   char* line_start = buf;
@@ -351,7 +353,13 @@ char* AOTClassLocation::get_cpattr() const {
       // JAR spec require the manifest file to be terminated by a new line.
       break;
     }
-    if (strncmp(tag, line_start, tag_len) == 0) {
+
+    if (line_start == line_end) {
+      break;
+    }
+
+    // Attribute names are case insensitive
+    if (strncasecmp(tag, line_start, tag_len) == 0) {
       if (found != nullptr) {
         // Same behavior as jdk/src/share/classes/java/util/jar/Attributes.java
         // If duplicated entries are found, the last one is used.
@@ -368,6 +376,11 @@ char* AOTClassLocation::get_cpattr() const {
   }
 
   return found;
+}
+
+// The result is resource allocated.
+char* AOTClassLocation::get_cpattr() const {
+  return get_attr("Class-Path: ");
 }
 
 AOTClassLocation* AOTClassLocation::write_to_archive() const {
@@ -719,7 +732,9 @@ bool AOTClassLocationConfig::is_valid_classpath_index(int classpath_index, Insta
       const char* const class_name = ik->name()->as_C_string();
       const char* const file_name = ClassLoader::file_name_for_class_name(class_name,
                                                                           ik->name()->utf8_length());
-      if (!zip->has_entry(current, file_name)) {
+      Handle class_loader(current, ik->class_loader());
+      const AOTClassLocation* cl = AOTClassLocationConfig::class_location_at(classpath_index);
+      if (!zip->has_entry(current, file_name, class_loader, cl->is_multi_release_jar())) {
         aot_log_warning(aot)("class %s cannot be archived because it was not defined from %s as claimed",
                          class_name, zip->name());
         return false;

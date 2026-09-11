@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -329,13 +329,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
   }
 
-  if (InlineTypePassFieldsAsArgs) {
-    warning("InlineTypePassFieldsAsArgs not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
   }
-  if (InlineTypeReturnedAsFields) {
-    warning("InlineTypeReturnedAsFields not supported on this CPU.");
-    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields not supported on this CPU.");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
   // TODO: Valhalla optimizations
   if (UseArrayFlattening) {
@@ -1142,7 +1142,7 @@ void VM_Version::determine_features() {
   a->z_br(Z_R14);
 
   address code_end = a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   cbuf.insts()->set_end(code_end);
 

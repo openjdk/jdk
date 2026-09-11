@@ -258,7 +258,10 @@ class Compilation: public StackObj {
   }
   bool profile_array_accesses() {
     return env()->comp_level() == CompLevel_full_profile &&
-      C1UpdateMethodData;
+      C1UpdateMethodData && MethodData::profile_array_accesses();
+  }
+  bool profile_acmp() {
+    return is_profiling() && profile_branches() && MethodData::profile_acmp();
   }
 
   // will compilation make optimistic assumptions that might lead to

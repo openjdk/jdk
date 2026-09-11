@@ -5360,7 +5360,7 @@ instruct castN2X(iRegL dst, iRegN src) %{
   ins_pipe(pipe_class_dummy);
 %}
 
-// Cast Integer to Narrow Pointer for inline types.
+// Cast Integer to Narrow Pointer for value types.
 instruct castI2N(iRegN dst, iRegI src) %{
   match(Set dst (CastI2N src));
   size(2); // LR is 2 bytes

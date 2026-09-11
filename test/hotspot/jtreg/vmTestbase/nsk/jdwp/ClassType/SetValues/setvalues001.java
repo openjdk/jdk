@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,10 @@ public class setvalues001 {
     // tested class name and signature constants
     static final String TESTED_CLASS_NAME = DEBUGEE_CLASS_NAME + "$" + "TestedClass";
     static final String TESTED_CLASS_SIGNATURE = "L" + TESTED_CLASS_NAME.replace('.', '/') + ";";
+
+    // tested final class name and signature constants
+    static final String TESTED_FINAL_CLASS_NAME = DEBUGEE_CLASS_NAME + "$" + "TestedFinalClass";
+    static final String TESTED_FINAL_CLASS_SIGNATURE = "L" + TESTED_FINAL_CLASS_NAME.replace('.', '/') + ";";
 
     // target values class name and signature constants
     static final String TARGET_VALUES_CLASS_NAME = DEBUGEE_CLASS_NAME + "$" + "TargetValuesClass";
@@ -147,7 +151,7 @@ public class setvalues001 {
                 log.display("Getting values of the static fields");
                 JDWP.Value targetValues[] =
                         queryClassFieldValues(targetValuesClassID, targetValuesFieldIDs);
-                log.display("  got values: " + targetValues.length);
+                log.display("  got target values: " + targetValues.length);
                 if (targetValues.length != count) {
                     throw new Failure("Unexpected number of static fields values received: "
                                     + targetValues.length + "(expected: " + count + ")");
@@ -157,7 +161,7 @@ public class setvalues001 {
                 log.display("Getting tested classID by signature:\n"
                             + "  " + TESTED_CLASS_SIGNATURE);
                 long testedClassID = debugee.getReferenceTypeID(TESTED_CLASS_SIGNATURE);
-                log.display("  got classID: " + testedClassID);
+                log.display("  got tested classID: " + testedClassID);
 
                 // query debugee for fieldIDs of tested class static fields
                 log.display("Getting fieldIDs for static fields of the tested class");
@@ -168,14 +172,32 @@ public class setvalues001 {
                                     + testedFieldIDs.length + "(expected: " + count + ")");
                 }
 
-                // perform testing JDWP command
-                log.display("\n>>> Testing JDWP command \n");
+                // query debugee for classID of the tested final class
+                log.display("Getting tested final classID by signature:\n"
+                            + "  " + TESTED_FINAL_CLASS_SIGNATURE);
+                long testedFinalClassID = debugee.getReferenceTypeID(TESTED_FINAL_CLASS_SIGNATURE);
+                log.display("  got tested final classID: " + testedFinalClassID);
+
+                // query debugee for fieldIDs of tested final class static fields
+                log.display("Getting fieldIDs for static fields of the tested final class");
+                long testedFinalFieldIDs[] = queryClassFieldIDs(testedFinalClassID);
+                log.display("  got fields: " + testedFinalFieldIDs.length);
+                if (testedFinalFieldIDs.length != count) {
+                    throw new Failure("Unexpected number of static fields of tested final class received: "
+                                      + testedFinalFieldIDs.length + "(expected: " + count + ")");
+                }
+
+                log.display("\n>>> Testing JDWP ClassType.SetValues command on tested class\n");
                 testCommand(testedClassID, testedFieldIDs, targetValues);
 
-                // check confirmation from debuggee that values have been set properly
-                log.display("\n>>> Checking that the values have been set properly \n");
+                log.display("\n>>> Checking with the debuggee that the values have been set properly\n");
                 checkValuesChanged();
 
+                log.display("\n>>> Testing JDWP ClassType.SetValues command on tested final class\n");
+                testCommand(testedFinalClassID, testedFinalFieldIDs, targetValues);
+
+                log.display("\n>>> Checking with JDWP ClassType.GetValues that the values have been set properly \n");
+                checkJDWPValuesChanged(testedFinalClassID, testedFinalFieldIDs, targetValues);
             } finally {
                 // quit debugee
                 log.display("\n>>> Finishing test \n");
@@ -399,7 +421,7 @@ public class setvalues001 {
     }
 
     /**
-     * Check confiramtion from debuggee that values are changed.
+     * Check confirmation from debuggee that values are changed.
      */
     void checkValuesChanged() {
         // send debugee signal RUN
@@ -426,4 +448,39 @@ public class setvalues001 {
         }
     }
 
+    /**
+     * Check confirmation using JDWP ClassType.GetValues that the values are changed.
+     */
+    void checkJDWPValuesChanged(long testedClassID, long testedFieldIDs[],
+                                JDWP.Value targetValues[]) {
+        // verify that JDWP ClassType.GetValues returns the expected values
+        int count = targetValues.length;
+        log.display("\n>>> Getting field values using JDWP ClassType.GetValues \n");
+        JDWP.Value[] actualValues = queryClassFieldValues(testedClassID, testedFieldIDs);
+        log.display("  got actual values: " + actualValues.length);
+        if (actualValues.length != count) {
+            throw new Failure("Unexpected number of static field values received: "
+                              + actualValues.length + "(expected: " + count + ")");
+        }
+        for (int i = 0; i < count; i++) {
+            log.display("    field #" + i +":");
+            log.display("      fieldID: " + testedFieldIDs[i]);
+
+            JDWP.Value actualValue = actualValues[i];
+            JDWP.Value targetValue = targetValues[i];
+            JDWP.UntaggedValue untaggedActualValue =
+                new JDWP.UntaggedValue(actualValue.getValue());
+            JDWP.UntaggedValue untaggedTargetValue =
+                new JDWP.UntaggedValue(targetValue.getValue());
+            log.display("      untaggedActualValue: " + untaggedActualValue.getValue());
+            log.display("      untaggedTargetValue: " + untaggedTargetValue.getValue());
+            if (!untaggedActualValue.getValue().equals(untaggedTargetValue.getValue())) {
+                log.complain("JDWP found a static field that was not correctly set");
+                success = false;
+            }
+        }
+        if (success) {
+            log.display("Verfied using JDWP ClassType.GetValues that all static fields values have been correctly set");
+        }
+    }
 }

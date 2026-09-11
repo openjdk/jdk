@@ -63,8 +63,8 @@ public class Mark extends VMObject {
     ageMaskInPlace      = db.lookupLongConstant("markWord::age_mask_in_place").longValue();
     hashMask            = db.lookupLongConstant("markWord::hash_mask").longValue();
     hashMaskInPlace     = db.lookupLongConstant("markWord::hash_mask_in_place").longValue();
-    lockedValue         = db.lookupLongConstant("markWord::locked_value").longValue();
-    unlockedValue       = db.lookupLongConstant("markWord::unlocked_value").longValue();
+    fastLockedValue     = db.lookupLongConstant("markWord::fast_locked_value").longValue();
+    neutralValue        = db.lookupLongConstant("markWord::lock_neutral_value").longValue();
     monitorValue        = db.lookupLongConstant("markWord::monitor_value").longValue();
     markedValue         = db.lookupLongConstant("markWord::marked_value").longValue();
     noHash              = db.lookupLongConstant("markWord::no_hash").longValue();
@@ -94,8 +94,8 @@ public class Mark extends VMObject {
   private static long hashMask;
   private static long hashMaskInPlace;
 
-  private static long lockedValue;
-  private static long unlockedValue;
+  private static long fastLockedValue;
+  private static long neutralValue;
   private static long monitorValue;
   private static long markedValue;
 
@@ -123,11 +123,11 @@ public class Mark extends VMObject {
   }
 
   // lock accessors (note that these assume lock_shift == 0)
-  public boolean isLocked() {
-    return (Bits.maskBitsLong(value(), lockMaskInPlace) != unlockedValue);
+  public boolean isNonNeutral() {
+    return (Bits.maskBitsLong(value(), lockMaskInPlace) != neutralValue);
   }
-  public boolean isUnlocked() {
-    return (Bits.maskBitsLong(value(), lockMaskInPlace) == unlockedValue);
+  public boolean isNeutral() {
+    return (Bits.maskBitsLong(value(), lockMaskInPlace) == neutralValue);
   }
   public boolean isMarked() {
     return (Bits.maskBitsLong(value(), lockMaskInPlace) == markedValue);
@@ -141,15 +141,15 @@ public class Mark extends VMObject {
 
   // Should this header be preserved during GC?
   public boolean mustBePreserved() {
-     return (!isUnlocked() || !hasNoHash());
+    return (isNonNeutral() || !hasNoHash());
   }
 
   // WARNING: The following routines are used EXCLUSIVELY by
   // synchronization functions. They are not really gc safe.
   // They must get updated if markWord layout get changed.
 
-  public boolean hasLocker() {
-    return ((value() & lockMaskInPlace) == lockedValue);
+  public boolean isFastLocked() {
+    return ((value() & lockMaskInPlace) == fastLockedValue);
   }
   public boolean hasMonitor() {
     return ((value() & monitorValue) != 0);
@@ -168,7 +168,7 @@ public class Mark extends VMObject {
     return null;
   }
   public boolean hasDisplacedMarkHelper() {
-    return ((value() & unlockedValue) == 0);
+    return ((value() & neutralValue) == 0);
   }
   public Mark displacedMarkHelper() {
     if (Assert.ASSERTS_ENABLED) {
@@ -195,13 +195,13 @@ public class Mark extends VMObject {
 
   // Debugging
   public void printOn(PrintStream tty) {
-    if (isLocked()) {
+    if (isNonNeutral()) {
       tty.print("locked(0x" +
                 Long.toHexString(value()) + ")->");
       displacedMarkHelper().printOn(tty);
     } else {
       if (Assert.ASSERTS_ENABLED) {
-        Assert.that(isUnlocked(), "just checking");
+        Assert.that(isNeutral(), "just checking");
       }
       tty.print("mark(");
       tty.print("hash " + Long.toHexString(hash()) + ",");

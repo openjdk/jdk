@@ -102,20 +102,26 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
     // cycle as e.g. remembered set entries will always be added.
     if (r->is_starts_humongous() && !g1h->is_potential_eager_reclaim_candidate(r)) {
       // Handle HC regions with the HS region.
+      G1CardSetGroup* group = r->rem_set()->card_set_group();
+
+      assert(group != nullptr, "humongous start must have a card set group");
+      assert(group->length() == 1, "humongous group must have only one region");
+
+      group->clear_card_set();
       g1h->humongous_obj_regions_iterate(r,
                                          [&] (G1HeapRegion* r) {
                                            assert(!r->is_continues_humongous() || r->rem_set()->is_empty(),
                                                   "Continues humongous region %u remset should be empty", r->hrm_index());
-                                           r->rem_set()->clear(true /* only_cardset */);
+                                           r->rem_set()->set_state_untracked();
                                          });
     }
 
     size_t remset_bytes = r->rem_set()->mem_size();
     size_t occupied = 0;
-    // per region cardset details only valid if group contains a single region.
-    if (r->rem_set()->has_cset_group() &&
-        r->rem_set()->cset_group()->length() == 1 ) {
-        G1CardSet *card_set = r->rem_set()->cset_group()->card_set();
+    // Per-region card set group statistics are only valid if group contains a single region.
+    if (r->rem_set()->has_card_set_group() &&
+        r->rem_set()->card_set_group()->length() == 1 ) {
+        G1CardSet *card_set = r->rem_set()->card_set_group()->card_set();
         remset_bytes += card_set->mem_size();
         occupied = card_set->occupied();
     }

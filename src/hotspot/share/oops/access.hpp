@@ -219,7 +219,7 @@ public:
     AccessInternal::clone<decorators>(src, dst, size);
   }
 
-  // inline type heap access (when flat)...
+  // value type heap access (when flat)...
 
   // Copy value type data from src to dst
   static inline void value_copy(const ValuePayload& src, const ValuePayload& dst) {

@@ -436,7 +436,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
-                               hr->rem_set()->code_roots_list_length(),
+                               hr->rem_set()->code_roots_length(),
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
                                hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
@@ -556,7 +556,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
     Tickspan task_time = run_task_timed(&g1_prep_task);
 
     G1MonotonicArenaMemoryStats sampled_card_set_stats = g1_prep_task.all_card_set_stats();
-    sampled_card_set_stats.add(_g1h->young_regions_cset_group()->card_set_memory_stats());
+    sampled_card_set_stats.add(_g1h->young_regions_card_set_group()->card_set_memory_stats());
     _g1h->set_young_gen_card_set_stats(sampled_card_set_stats);
     _g1h->set_humongous_stats(g1_prep_task.humongous_total(), g1_prep_task.humongous_candidates());
 

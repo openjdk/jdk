@@ -108,11 +108,11 @@ public:
 
     G1MonotonicArenaMemoryStats _total;
     G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
-    for (G1CSetCandidateGroup* gr : candidates->from_marking_groups()) {
+    for (G1CardSetGroup* gr : candidates->from_marking_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
 
-    for (G1CSetCandidateGroup* gr : candidates->retained_groups()) {
+    for (G1CardSetGroup* gr : candidates->retained_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
     g1h->set_collection_set_candidates_stats(_total);
