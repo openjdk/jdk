@@ -1185,7 +1185,7 @@ class InvokerBytecodeGenerator {
 
         Class<?> returnType = result.function.resolvedHandle().type().returnType();
         MethodType bodyType = args.function.resolvedHandle().type()
-                .dropParameterTypes(0, 1) // drop collector
+                .dropParameterTypes(0, 1) // drop lock
                 .changeReturnType(returnType);
         MethodTypeDesc bodyDesc = methodDesc(bodyType.basicType());
 
@@ -1200,7 +1200,7 @@ class InvokerBytecodeGenerator {
         emitPushArgument(cob, invoker, 0); // push lock
         cob.monitorenter();
         emitPushArgument(cob, invoker, 1); // push body handle
-        emitPushArguments(cob, args, 1); // push args, skip collector
+        emitPushArguments(cob, args, 1); // push args, skip lock
         cob.labelBinding(tryStart);
         cob.invokevirtual(CD_MethodHandle, "invokeBasic", bodyDesc); // return on the stack (if any)
         cob.labelBinding(tryEnd);
