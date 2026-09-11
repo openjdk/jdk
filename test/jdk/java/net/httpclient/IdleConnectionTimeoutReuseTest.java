@@ -68,9 +68,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          using platform threads, but it would be more difficult to reproduce
  *          reliably.
  *
- * @comment Why do we skip the test on Windows? On Windows, the selector
- *          implementation (i.e., `WEPollSelectorImpl`) blocks a virtual thread
- *          without releasing its carrier. With both
+ * @comment Why do we skip the test on Windows and AIX? On these platforms,
+ *          the selector implementation (`WEPollSelectorImpl` on Windows,
+ *          `PollSelectorImpl` on AIX) blocks a virtual thread without releasing
+ *          its carrier. With both
  *          `jdk.virtualThreadScheduler.{parallelism,maxPoolSize}` set to 1, no
  *          carrier remains to compensate for the blocked selector, and the
  *          initial client request cannot make progress. We could increase the
@@ -87,7 +88,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          carrier thread pool (i.e., FJP) requires `parallelism <= maxPoolSize`
  *          and having 1 thread in the pool is easier to make it starve.
  *
- * @requires os.family != "windows" & test.thread.factory != "Virtual"
+ * @requires os.family != "windows" & os.family != "aix" & test.thread.factory != "Virtual"
  *
  * @run junit/othervm
  *      -Djdk.httpclient.keepalive.timeout=1
