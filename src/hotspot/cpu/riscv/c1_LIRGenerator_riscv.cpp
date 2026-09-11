@@ -33,6 +33,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
+#include "ci/ciInstanceKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -102,6 +103,7 @@ LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
   set_vreg_flag(reg, LIRGenerator::byte_reg);
   return reg;
 }
+
 
 //--------- loading items into registers --------------------------------
 
@@ -279,11 +281,17 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   if (x->needs_null_check()) {
     info_for_exception = state_for(x);
   }
+
+  CodeStub* throw_ie_stub =
+      x->maybe_valuetype() ?
+      new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
+      nullptr;
+
   // this CodeEmitInfo must not have the xhandlers because here the
   // object is already locked (xhandlers expect object to be unlocked)
   CodeEmitInfo* info = state_for(x, x->state(), true);
   monitor_enter(obj.result(), lock, syncTempOpr(), scratch,
-                x->monitor_no(), info_for_exception, info);
+                x->monitor_no(), info_for_exception, info, throw_ie_stub);
 }
 
 void LIRGenerator::do_MonitorExit(MonitorExit* x) {
@@ -856,7 +864,75 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
 }
 
 void LIRGenerator::do_update_CRC32C(Intrinsic* x) {
-  ShouldNotReachHere();
+  assert(UseCRC32CIntrinsics, "why are we here?");
+  LIR_Opr result = rlock_result(x);
+
+  switch (x->id()) {
+    case vmIntrinsics::_updateBytesCRC32C:
+    case vmIntrinsics::_updateDirectByteBufferCRC32C: {
+      bool is_updateBytes = (x->id() == vmIntrinsics::_updateBytesCRC32C);
+      int offset = is_updateBytes ? arrayOopDesc::base_offset_in_bytes(T_BYTE) : 0;
+
+      LIRItem crc(x->argument_at(0), this);
+      LIRItem buf(x->argument_at(1), this);
+      LIRItem off(x->argument_at(2), this);
+      LIRItem end(x->argument_at(3), this);
+
+      buf.load_item();
+      off.load_nonconstant();
+      end.load_nonconstant();
+
+      // len = end - off
+      LIR_Opr tmpA = new_register(T_INT);
+      LIR_Opr tmpB = new_register(T_INT);
+      __ move(end.result(), tmpA);
+      __ move(off.result(), tmpB);
+      __ sub(tmpA, tmpB, tmpA);
+      LIR_Opr len = tmpA;
+
+      LIR_Opr index = off.result();
+      if (off.result()->is_constant()) {
+        index = LIR_OprFact::illegalOpr;
+        offset += off.result()->as_jint();
+      }
+      LIR_Opr base_op = buf.result();
+
+      if (index->is_valid()) {
+        LIR_Opr tmp = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, index, tmp);
+        index = tmp;
+      }
+
+      if (offset) {
+        LIR_Opr tmp = new_pointer_register();
+        __ add(base_op, LIR_OprFact::intConst(offset), tmp);
+        base_op = tmp;
+        offset = 0;
+      }
+
+      LIR_Address* a = new LIR_Address(base_op, index, offset, T_BYTE);
+      BasicTypeList signature(3);
+      signature.append(T_INT);
+      signature.append(T_ADDRESS);
+      signature.append(T_INT);
+      CallingConvention* cc = frame_map()->c_calling_convention(&signature);
+      const LIR_Opr result_reg = result_register_for(x->type());
+
+      LIR_Opr addr = new_register(T_ADDRESS);
+      __ leal(LIR_OprFact::address(a), addr);
+
+      crc.load_item_force(cc->at(0));
+      __ move(addr, cc->at(1));
+      __ move(len, cc->at(2));
+
+      __ call_runtime_leaf(StubRoutines::updateBytesCRC32C(), getThreadTemp(), result_reg, cc->args());
+      __ move(result_reg, result);
+      break;
+    }
+    default: {
+      ShouldNotReachHere();
+    }
+  }
 }
 
 void LIRGenerator::do_FmaIntrinsic(Intrinsic* x) {
@@ -910,15 +986,17 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
     tty->print_cr("   ###class not loaded at new bci %d", x->printable_bci());
   }
 #endif
-  CodeEmitInfo* info = state_for(x, x->state());
+  CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
+               !x->is_unresolved() && x->klass()->is_value_klass(),
                FrameMap::r12_oop_opr,
                FrameMap::r15_oop_opr,
                FrameMap::r14_oop_opr,
                LIR_OprFact::illegalOpr,
                FrameMap::r13_metadata_opr,
                info);
+
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
 }
@@ -974,13 +1052,20 @@ void LIRGenerator::do_NewObjectArray(NewObjectArray* x) {
   length.load_item_force(FrameMap::r9_opr);
   LIR_Opr len = length.result();
 
-  CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info);
-  ciKlass* obj = (ciKlass*) ciObjArrayKlass::make(x->klass());
+  ciKlass* obj = ciObjArrayKlass::make(x->klass());
+
+  // TODO 8265122 Implement a fast path for this
+  bool is_flat = obj->is_loaded() && obj->is_flat_array_klass();
+  bool is_null_free = obj->is_loaded() && obj->as_array_klass()->is_elem_null_free();
+
+  CodeStub* slow_path = new NewObjectArrayStub(klass_reg, len, reg, info, is_null_free);
+
   if (obj == ciEnv::unloaded_ciobjarrayklass()) {
     BAILOUT("encountered unloaded_ciobjarrayklass due to out of memory error");
   }
   klass2reg_with_patching(klass_reg, obj, patching_info);
-  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path);
+  bool always_slow_path = is_null_free || is_flat;
+  __ allocate_array(reg, len, tmp1, tmp2, tmp3, tmp4, T_OBJECT, klass_reg, slow_path, true /*zero_array*/, always_slow_path);
 
   LIR_Opr result = rlock_result(x);
   __ move(reg, result);
@@ -1077,7 +1162,7 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   __ checkcast(reg, obj.result(), x->klass(),
                new_register(objectType), new_register(objectType), tmp3,
                x->direct_compare(), info_for_exception, patching_info, stub,
-               x->profiled_method(), x->profiled_bci());
+               x->profiled_method(), x->profiled_bci(), x->is_null_free());
 }
 
 void LIRGenerator::do_InstanceOf(InstanceOf* x) {
@@ -1142,8 +1227,13 @@ void LIRGenerator::do_If(If* x) {
     __ safepoint(LIR_OprFact::illegalOpr, state_for(x, x->state_before()));
   }
 
+  if (x->substitutability_check()) {
+    substitutability_check(x, *xin, *yin);
+  } else {
+    __ cmp(lir_cond(cond), left, right);
+  }
+
   // Generate branch profiling. Profiling code doesn't kill flags.
-  __ cmp(lir_cond(cond), left, right);
   profile_branch(x, cond);
   move_to_phi(x->state());
   if (x->x()->type()->is_float_kind()) {

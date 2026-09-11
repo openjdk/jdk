@@ -68,7 +68,7 @@
   nonstatic_field(G1MonitoringSupport, _old_gen_committed,        size_t)     \
   nonstatic_field(G1MonitoringSupport, _old_gen_used,             size_t)     \
                                                                               \
-  nonstatic_field(G1HeapRegionSetBase,   _length,       uint)                 \
+  nonstatic_field(G1HeapRegionSetBase, _num_regions,    uint)                 \
                                                                               \
   nonstatic_field(SATBMarkQueue,       _active,         bool)                 \
   nonstatic_field(SATBMarkQueue,       _buf,            void**)               \

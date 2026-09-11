@@ -32,10 +32,9 @@
 
 // keep in synch with jdk.internal.foreign.abi.CapturableState
 enum PreservableValues {
-  NONE = 0,
-  GET_LAST_ERROR = 1,
-  WSA_GET_LAST_ERROR = 1 << 1,
-  ERRNO = 1 << 2
+  GET_LAST_ERROR      = 1 << 0,
+  WSA_GET_LAST_ERROR  = 1 << 1,
+  ERRNO               = 1 << 2
 };
 
 // We call this from _thread_in_native, right before a downcall

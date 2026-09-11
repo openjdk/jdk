@@ -24,6 +24,7 @@
  *
  */
 
+#include "code/aotCodeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
@@ -263,6 +264,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
 
     // Optimized cset-test
     __ movptr(tmp1, dst);
+#if INCLUDE_CDS
     if (AOTCodeCache::is_on_for_dump()) {
       assert_different_registers(tmp1, tmp2, rcx);
       __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
@@ -272,7 +274,9 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
       __ pop(rcx);
       __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::cset_base_address()));
       __ movptr(tmp2, Address(tmp2));
-    } else {
+    } else
+#endif
+    {
       __ shrptr(tmp1, ShenandoahHeapRegion::region_size_bytes_shift_jint());
       __ movptr(tmp2, (intptr_t) ShenandoahHeap::in_cset_fast_test_addr());
     }
@@ -407,19 +411,15 @@ void ShenandoahBarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet d
   }
 }
 
-void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj) {
+void ShenandoahBarrierSetAssembler::card_barrier(MacroAssembler* masm, Register obj, Register tmp) {
   assert(ShenandoahCardBarrier, "Should have been checked by caller");
+  assert_different_registers(obj, tmp);
 
   // Does a store check for the oop in register obj. The content of
   // register obj is destroyed afterwards.
   __ shrptr(obj, CardTable::card_shift());
 
-  // We'll use this register as the TLS base address and also later on
-  // to hold the byte_map_base.
-  Register thread = r15_thread;
-  Register tmp = rscratch1;
-
-  Address curr_ct_holder_addr(thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
+  Address curr_ct_holder_addr(r15_thread, in_bytes(ShenandoahThreadLocalData::card_table_offset()));
   __ movptr(tmp, curr_ct_holder_addr);
   Address card_addr(tmp, obj, Address::times_1);
 
@@ -468,7 +468,7 @@ void ShenandoahBarrierSetAssembler::store_at(MacroAssembler* masm, DecoratorSet 
   // 3: post-barrier: card barrier needs store address
   bool storing_non_null = (val != noreg);
   if (ShenandoahBarrierSet::need_card_barrier(decorators, type) && storing_non_null) {
-    card_barrier(masm, tmp1);
+    card_barrier(masm, tmp1, tmp2);
   }
 }
 
@@ -508,11 +508,23 @@ void ShenandoahBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembl
 }
 
 void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& L_error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // Check if the oop is in the right area of memory
   __ movptr(tmp1, obj);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
-  __ andptr(tmp1, tmp2);
-  __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ movptr(tmp2, Address(tmp2));
+    __ andptr(tmp1, tmp2);
+    __ lea(tmp2, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ movptr(tmp2, Address(tmp2));
+  } else
+#endif
+  {
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_mask());
+    __ andptr(tmp1, tmp2);
+    __ movptr(tmp2, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmpptr(tmp1, tmp2);
   __ jcc(Assembler::notZero, L_error);
 
@@ -843,7 +855,8 @@ void ShenandoahBarrierStubC2::keepalive(MacroAssembler& masm, Label* L_done) {
   // If buffer is already full, go slow.
   __ movptr(tmp, index);
   __ subptr(tmp, wordSize);
-  __ jccb(Assembler::below, L_pop_and_slow);
+  // VerifyOops adds code for decoded oop and needs long jump here
+  __ jcc(Assembler::below, L_pop_and_slow);
   __ movptr(index, tmp);
   __ addptr(tmp, buffer);
 

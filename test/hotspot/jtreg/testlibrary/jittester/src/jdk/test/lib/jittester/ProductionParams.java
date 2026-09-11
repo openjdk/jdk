@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public class ProductionParams {
     public static Option<Boolean> enableFinalizers = null;
     // workaraound: to reduce chance throwing ArrayIndexOutOfBoundsException
     public static Option<Integer> chanceExpressionIndex = null;
+    public static Option<Integer> identityValueClassBalance = null;
     public static Option<String> testbaseDir = null;
     public static Option<String> tempDir = null;
     public static Option<Integer> numberOfTests = null;
@@ -129,6 +130,7 @@ public class ProductionParams {
         disableArrays = optionResolver.addBooleanOption("disable-arrays", "Disable generation of arrays");
         enableFinalizers = optionResolver.addBooleanOption("enable-finalizers", "Enable finalizers (for stress testing)");
         chanceExpressionIndex = optionResolver.addIntegerOption("chance-expression-index", 0, "A non negative decimal integer used to restrict chane of generating expression in array index while creating or accessing by index");
+        identityValueClassBalance = optionResolver.addIntegerOption("identity-value-class-balance", 80, "Balance (0..100) between identity and value class generation: 0=identity only, 50=equal, 100=value only");
         testbaseDir = optionResolver.addStringOption("testbase-dir", ".", "Testbase dir");
         tempDir = optionResolver.addStringOption("temp-dir", ".", "Temp dir path");
         numberOfTests = optionResolver.addIntegerOption('n', "number-of-tests", 0, "Number of test classes to generate");

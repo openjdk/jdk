@@ -1281,6 +1281,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivI:
+      return new DivINode(control, in1, in2);
+    case Op_DivL:
+      return new DivLNode(control, in1, in2);
     case Op_DivF:
       return new DivFNode(control, in1, in2);
     case Op_DivD:
@@ -1451,9 +1455,12 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
+  bool inputs_have_been_swapped = false;
   // Sort inputs of commutative non-predicated vector operations to help value numbering.
   if (should_swap_inputs_to_help_global_value_numbering()) {
+    assert(in(1) != in(2), "it is useless to swap identical inputs");
     swap_edges(1, 2);
+    inputs_have_been_swapped = true;
   }
 
   n = push_through_replicate(phase);
@@ -1461,7 +1468,14 @@ Node* VectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
     return n;
   }
 
-  return reassociate_vector_operation(phase);
+  n = reassociate_vector_operation(phase);
+  if (n != nullptr) {
+    return n;
+  }
+  if (inputs_have_been_swapped) {
+    return this;
+  }
+  return nullptr;
 }
 
 // Traverses a chain of VectorMaskCast and returns the first non VectorMaskCast node.
@@ -2323,6 +2337,9 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
+        if (phase->type(value) == Type::TOP) {
+          return nullptr;
+        }
 
         bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
         if (is_vector_mask) {
@@ -2862,6 +2879,13 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   } else if (inner_xor->in(2) == a) {
     b = inner_xor->in(1);
   } else {
+    return nullptr;
+  }
+
+  // Dead code can leave TOP on the inputs. TOP is a unique node, so the
+  // identity checks above match it spuriously, and VectorBitwiseBlendNode
+  // requires all of its inputs to be vectors.
+  if (a->is_top() || b->is_top() || sel->is_top()) {
     return nullptr;
   }
 

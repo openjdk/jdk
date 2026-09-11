@@ -43,9 +43,9 @@ import java.util.function.Function;
 import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.MacDmgPackage;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.FileUtils;
 import jdk.jpackage.internal.util.PathGroup;
-import jdk.jpackage.internal.util.RootedPath;
 
 record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
         MacDmgSystemEnvironment sysEnv) implements Consumer<PackagingPipeline.Builder> {
@@ -128,8 +128,10 @@ record MacDmgPackager(BuildEnv env, MacDmgPackage pkg, Path outputDir,
     }
 
     private void copyDmgContent() throws IOException {
-        final var srcFolder = env.appImageDir();
-        RootedPath.copy(pkg.dmgRootDirSources().stream(), srcFolder);
+        final var dstFolder = env.appImageDir();
+        ExplodedPath.copy(pkg.dmgRootDirSources().stream().map(v -> {
+            return ExplodedPath.copySpec(v, dstFolder);
+        }).toList());
     }
 
     private Executor hdiutil(String... args) {

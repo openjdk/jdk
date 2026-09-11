@@ -763,8 +763,17 @@ class GoodCount {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_OF_FIELD, "myClassEmpty", "1", IRNode.STORE_OF_CLASS, "GoodCount", "1",
-                  IRNode.STORE_OF_CLASS, "/GoodCount", "1", IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"},
+    @IR(counts = {
+            IRNode.STORE_OF_FIELD, "myClassEmpty", "1",
+            IRNode.STORE_OF_CLASS, "oodCount", "0",
+            IRNode.STORE_OF_CLASS, "GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "ir_framework/tests/GoodCount", "1",
+            IRNode.STORE_OF_CLASS, "/ir_framework/tests/GoodCount", "0",
+            IRNode.STORE_OF_CLASS, "MyClassEmpty", "0"
+        },
         failOn = {IRNode.STORE_OF_CLASS, "MyClassEmpty"})
     public void good6() {
         myClassEmpty = new MyClassEmpty();

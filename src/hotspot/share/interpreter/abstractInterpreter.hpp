@@ -65,6 +65,7 @@ class AbstractInterpreter: AllStatic {
     getter,                                                     // getter method
     setter,                                                     // setter method
     abstract,                                                   // abstract method (throws an AbstractMethodException)
+    object_init,                                                // special barrier on entry
     method_handle_invoke_FIRST,                                 // java.lang.invoke.MethodHandles::invokeExact, etc.
     method_handle_invoke_LAST                                   = (method_handle_invoke_FIRST
                                                                    + (static_cast<int>(vmIntrinsics::LAST_MH_SIG_POLY)

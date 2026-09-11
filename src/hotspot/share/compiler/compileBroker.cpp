@@ -1744,7 +1744,7 @@ void CompileBroker::compiler_thread_loop() {
       // Never compile a method if breakpoints are present in it
       if (method()->number_of_breakpoints() == 0) {
         // Compile the method.
-        if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
+        if (UseCompiler && CompileBroker::should_compile_new_jobs()) {
           invoke_compiler_on_method(task);
           thread->start_idle_timer();
         } else {
@@ -2152,7 +2152,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  */
 void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
   UseInterpreter = true;
-  if (UseCompiler || AlwaysCompileLoopMethods ) {
+  if (UseCompiler) {
     if (xtty != nullptr) {
       stringStream s;
       // Dump code cache state into a buffer before locking the tty,
@@ -2169,8 +2169,12 @@ void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
 #ifndef PRODUCT
     if (ExitOnFullCodeCache) {
       codecache_print(/* detailed= */ true);
-      before_exit(JavaThread::current());
-      exit_globals(); // will delete tty
+      // handle_full_code_cache() can be called from a compiler thread while it
+      // is installing an nmethod, i.e. from a no-safepoint scope. before_exit()
+      // and exit_globals() acquire safepoint-checking locks (e.g. BeforeExit_lock)
+      // and would assert "Possible safepoint reached by thread that does not
+      // allow it". vm_direct_exit() terminates the VM without taking any such
+      // lock, which is sufficient for this diagnostic develop flag.
       vm_direct_exit(1);
     }
 #endif

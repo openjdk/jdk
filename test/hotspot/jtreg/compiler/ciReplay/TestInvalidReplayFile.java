@@ -29,8 +29,10 @@
  * @requires vm.compMode != "Xint"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver TestInvalidReplayFile
+ * @run driver ${test.main.class}
  */
+
+package compiler.ciReplay;
 
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;

@@ -27,8 +27,8 @@
 
 #include "gc/g1/g1EvacStats.hpp"
 
-inline uint G1EvacStats::regions_filled() const {
-  return _regions_filled.load_relaxed();
+inline uint G1EvacStats::num_filled_regions() const {
+  return _num_filled_regions.load_relaxed();
 }
 
 inline size_t G1EvacStats::num_plab_filled() const {
@@ -69,7 +69,7 @@ inline void G1EvacStats::add_num_direct_allocated(size_t value) {
 
 inline void G1EvacStats::add_region_end_waste(size_t value) {
   _region_end_waste.add_then_fetch(value, memory_order_relaxed);
-  _regions_filled.add_then_fetch(1u, memory_order_relaxed);
+  _num_filled_regions.add_then_fetch(1u, memory_order_relaxed);
 }
 
 inline void G1EvacStats::add_failure_used_and_waste(size_t used, size_t waste) {

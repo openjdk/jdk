@@ -25,6 +25,9 @@
  * @test
  * @bug 6298888 6992705 8161500 6304578 8322878
  * @summary Check Class.toGenericString()
+ * @enablePreview
+ * @compile GenericStringTest.java
+ * @run main/othervm GenericStringTest
  */
 
 import java.lang.reflect.*;
@@ -86,6 +89,7 @@ public class GenericStringTest {
                                      LocalMap.class,
                                      AnEnum.class,
                                      AnotherEnum.class,
+                                     AValueClass.class,
 
                                      SealedRootClass.class,
                                      SealedRootClass.ChildA.class,
@@ -155,6 +159,9 @@ enum AnEnum {
 enum AnotherEnum {
     BAR{};
 }
+
+@ExpectedGenericString("final value class AValueClass<E>")
+value class AValueClass<E> {}
 
 // Test cases for sealed/non-sealed _class_ hierarchy.
 @ExpectedGenericString("sealed class SealedRootClass")

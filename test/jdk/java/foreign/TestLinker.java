@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,12 @@
 /*
  * @test
  * @modules java.base/jdk.internal.foreign java.base/jdk.internal.foreign.abi.fallback
- * @run testng TestLinker
- * @run testng/othervm TestLinker
+ * @run junit TestLinker
+ * @run junit/othervm TestLinker
  */
 
 import jdk.internal.foreign.CABI;
 import jdk.internal.foreign.abi.fallback.FallbackLinker;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.Linker;
@@ -47,15 +45,22 @@ import java.util.List;
 
 import static java.lang.foreign.MemoryLayout.*;
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLinker extends NativeTestHelper {
 
     static final boolean IS_FALLBACK_LINKER = CABI.current() == CABI.FALLBACK;
 
     record LinkRequest(FunctionDescriptor descriptor, Linker.Option... options) {}
 
-    @Test(dataProvider = "notSameCases")
+    @ParameterizedTest
+    @MethodSource("notSameCases")
     public void testLinkerOptionsCache(LinkRequest l1, LinkRequest l2) {
         Linker linker = Linker.nativeLinker();
         MethodHandle mh1 = linker.downcallHandle(l1.descriptor(), l1.options());
@@ -64,7 +69,6 @@ public class TestLinker extends NativeTestHelper {
         assertNotSame(mh1, mh2);
     }
 
-    @DataProvider
     public static Object[][] notSameCases() {
         FunctionDescriptor fd_II_V = FunctionDescriptor.ofVoid(C_INT, C_INT);
         return new Object[][]{
@@ -74,7 +78,8 @@ public class TestLinker extends NativeTestHelper {
         };
     }
 
-    @Test(dataProvider = "namedDescriptors")
+    @ParameterizedTest
+    @MethodSource("namedDescriptors")
     public void testNamedLinkerCache(FunctionDescriptor f1, FunctionDescriptor f2) {
         Linker linker = Linker.nativeLinker();
         MethodHandle mh1 = linker.downcallHandle(f1);
@@ -83,7 +88,6 @@ public class TestLinker extends NativeTestHelper {
         assertSame(mh1, mh2);
     }
 
-    @DataProvider
     public static Object[][] namedDescriptors() {
         List<Object[]> cases = new ArrayList<>(Arrays.asList(new Object[][]{
             { FunctionDescriptor.ofVoid(C_INT),
@@ -120,7 +124,6 @@ public class TestLinker extends NativeTestHelper {
         return cases.toArray(Object[][]::new);
     }
 
-    @DataProvider
     public static Object[][] invalidIndexCases() {
         return new Object[][]{
                 { -1, },
@@ -128,22 +131,27 @@ public class TestLinker extends NativeTestHelper {
         };
     }
 
-    @Test(dataProvider = "invalidIndexCases",
-          expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*not in bounds for descriptor.*")
+    @ParameterizedTest
+    @MethodSource("invalidIndexCases")
     public void testInvalidOption(int invalidIndex) {
         Linker.Option option = Linker.Option.firstVariadicArg(invalidIndex);
         FunctionDescriptor desc = FunctionDescriptor.ofVoid();
-        Linker.nativeLinker().downcallHandle(desc, option); // throws
+        IllegalArgumentException e =assertThrows(IllegalArgumentException.class, () -> {
+            Linker.nativeLinker().downcallHandle(desc, option);
+        });
+        assertTrue(e.getMessage().matches(".*not in bounds for descriptor.*"));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class,
-          expectedExceptionsMessageRegExp = ".*Unknown name.*")
+    @Test
     public void testInvalidPreservedValueName() {
-        Linker.Option.captureCallState("foo"); // throws
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> {
+            Linker.Option.captureCallState("foo");
+        });
+        assertTrue(e.getMessage().matches(".*Unknown name.*"));
     }
 
-    @Test(dataProvider = "canonicalTypeNames")
+    @ParameterizedTest
+    @MethodSource("canonicalTypeNames")
     public void testCanonicalLayouts(String typeName) {
         MemoryLayout layout = LINKER.canonicalLayouts().get(typeName);
         assertNotNull(layout);
@@ -157,7 +165,7 @@ public class TestLinker extends NativeTestHelper {
         StructLayout struct = MemoryLayout.structLayout(sequence);
         FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
         Linker linker = Linker.nativeLinker();
-        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        var x = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertTrue(x.getMessage().contains("not supported because a sequence of a padding layout is not allowed"));
     }
 
@@ -167,7 +175,7 @@ public class TestLinker extends NativeTestHelper {
         StructLayout struct = MemoryLayout.structLayout(padding);
         FunctionDescriptor fd = FunctionDescriptor.of(struct, struct);
         Linker linker = Linker.nativeLinker();
-        var x = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        var x = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
         assertTrue(x.getMessage().contains("is non-empty and only has padding layouts"));
     }
 
@@ -180,9 +188,8 @@ public class TestLinker extends NativeTestHelper {
         var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, JAVA_INT);
 
         var fd = FunctionDescriptor.of(struct, struct, struct);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(),
-                "The padding layout x2 was preceded by another padding layout x1 in " + struct);
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(                "The padding layout x2 was preceded by another padding layout x1 in " + struct, e.getMessage());
     }
 
     @Test
@@ -198,9 +205,8 @@ public class TestLinker extends NativeTestHelper {
         var union = MemoryLayout.unionLayout(struct32, padding32);
         var struct = MemoryLayout.structLayout(JAVA_BYTE, padding1, padding2, padding4, padding8, padding16, union);
         var fd = FunctionDescriptor.of(struct, struct, struct);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(),
-                "The padding layout x2 was preceded by another padding layout x1 in " + struct);
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals(                "The padding layout x2 was preceded by another padding layout x1 in " + struct, e.getMessage());
     }
 
     @Test
@@ -208,8 +214,8 @@ public class TestLinker extends NativeTestHelper {
         Linker linker = Linker.nativeLinker();
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(3), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Superfluous padding x3 in " + union);
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals("Superfluous padding x3 in " + union, e.getMessage());
     }
 
     @Test
@@ -217,8 +223,8 @@ public class TestLinker extends NativeTestHelper {
         Linker linker = Linker.nativeLinker();
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(4), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Superfluous padding x4 in " + union);
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals("Superfluous padding x4 in " + union, e.getMessage());
     }
 
     @Test
@@ -226,8 +232,8 @@ public class TestLinker extends NativeTestHelper {
         Linker linker = Linker.nativeLinker();
         var union = MemoryLayout.unionLayout(MemoryLayout.paddingLayout(5), ValueLayout.JAVA_INT);
         var fd = FunctionDescriptor.of(union, union, union);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "Layout '" + union + "' has unexpected size: 5 != 4");
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals("Layout '" + union + "' has unexpected size: 5 != 4", e.getMessage());
     }
 
     @Test
@@ -239,8 +245,8 @@ public class TestLinker extends NativeTestHelper {
                 MemoryLayout.paddingLayout(16),
                 MemoryLayout.paddingLayout(16));
         var fd = FunctionDescriptor.of(union, union, union);
-        var e = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
-        assertEquals(e.getMessage(), "More than one padding in " + union);
+        var e = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+        assertEquals("More than one padding in " + union, e.getMessage());
     }
 
     @Test
@@ -253,14 +259,13 @@ public class TestLinker extends NativeTestHelper {
         var fd = FunctionDescriptor.of(struct8a8, struct8a8, struct8a8);
         if (linker.getClass().equals(FallbackLinker.class)) {
             // The fallback linker does not support empty layouts (FFI_BAD_TYPEDEF)
-            var iae = expectThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
+            var iae = assertThrows(IllegalArgumentException.class, () -> linker.downcallHandle(fd));
             assertTrue(iae.getMessage().contains("is empty"));
         } else {
             linker.downcallHandle(fd);
         }
     }
 
-    @DataProvider
     public static Object[][] canonicalTypeNames() {
         return new Object[][]{
                 { "bool" },
@@ -277,8 +282,10 @@ public class TestLinker extends NativeTestHelper {
         };
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test
     public void testCanonicalLayoutsUnmodifiable() {
-        LINKER.canonicalLayouts().put("asdf", C_INT);
+        assertThrows(UnsupportedOperationException.class, () -> {
+            LINKER.canonicalLayouts().put("asdf", C_INT);
+        });
     }
 }

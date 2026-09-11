@@ -45,6 +45,7 @@ import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.Executor;
 import jdk.jpackage.test.HelloApp;
 import jdk.jpackage.test.JPackageCommand;
+import jdk.jpackage.test.JPackageCommand.MessageCategory;
 import jdk.jpackage.test.JavaAppDesc;
 import jdk.jpackage.test.JavaTool;
 import jdk.jpackage.test.PackageType;
@@ -279,6 +280,7 @@ public final class ModularAppTest {
                             "error.no-module-in-path", theAppDesc.moduleName());
                 }
 
+                cmd.enableMessageCategories(MessageCategory.ERRORS);
                 cmd.validateErr(expectedErrorMessage).execute(1);
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -42,17 +42,22 @@ import java.util.function.UnaryOperator;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.StringSupport;
-import org.testng.annotations.*;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /*
  * @test
  * @modules java.base/jdk.internal.foreign
- * @run testng TestStringEncoding
+ * @run junit TestStringEncoding
  */
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestStringEncoding {
 
     @Test
@@ -61,7 +66,7 @@ public class TestStringEncoding {
             for (Arena arena : arenas()) {
                 try (arena) {
                     var segment = arena.allocate(0);
-                    var e = expectThrows(IndexOutOfBoundsException.class, () ->
+                    var e = assertThrows(IndexOutOfBoundsException.class, () ->
                             segment.getString(0, charset));
                     assertTrue(e.getMessage().contains("No null terminator found"));
                 }
@@ -69,7 +74,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testStrings(String testString) {
         for (Charset charset : Charset.availableCharsets().values()) {
             if (isStandard(charset)) {
@@ -89,11 +95,11 @@ public class TestStringEncoding {
                                 testString.getBytes(charset).length +
                                         terminatorSize;
 
-                        assertEquals(text.byteSize(), expectedByteLength);
+                        assertEquals(expectedByteLength, text.byteSize());
 
                         String roundTrip = text.getString(0, charset);
                         if (charset.newEncoder().canEncode(testString)) {
-                            assertEquals(roundTrip, testString);
+                            assertEquals(testString, roundTrip);
                         }
                     }
                 }
@@ -103,7 +109,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testStringsLength(String testString) {
         if (!testString.isEmpty()) {
             for (Charset charset : Charset.availableCharsets().values()) {
@@ -112,10 +119,10 @@ public class TestStringEncoding {
                         try (arena) {
                             MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
                             long length = text.byteSize();
-                            assertEquals(length, testString.getBytes(charset).length);
+                            assertEquals(testString.getBytes(charset).length, length);
                             String roundTrip = text.getString(0, charset, length);
                             if (charset.newEncoder().canEncode(testString)) {
-                                assertEquals(roundTrip, testString);
+                                assertEquals(testString, roundTrip);
                             }
                         }
                     }
@@ -124,7 +131,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testStringsCopy(String testString) {
         if (!testString.isEmpty()) {
             for (Charset charset : Charset.availableCharsets().values()) {
@@ -136,7 +144,7 @@ public class TestStringEncoding {
                             MemorySegment.copy(testString, charset, 0, text, 0, testString.length());
                             String roundTrip = text.getString(0, charset, bytes.length);
                             if (charset.newEncoder().canEncode(testString)) {
-                                assertEquals(roundTrip, testString);
+                                assertEquals(testString, roundTrip);
                             }
                         }
                     }
@@ -237,7 +245,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testStringsHeap(String testString) {
         for (Charset charset : singleByteCharsets()) {
             for (var arena : arenas()) {
@@ -248,11 +257,11 @@ public class TestStringEncoding {
                     int expectedByteLength =
                             testString.getBytes(charset).length + 1;
 
-                    assertEquals(text.byteSize(), expectedByteLength);
+                    assertEquals(expectedByteLength, text.byteSize());
 
                     String roundTrip = text.getString(0, charset);
                     if (charset.newEncoder().canEncode(testString)) {
-                        assertEquals(roundTrip, testString);
+                        assertEquals(testString, roundTrip);
                     }
                 }
             }
@@ -264,7 +273,8 @@ public class TestStringEncoding {
         return MemorySegment.ofArray(heapArray);
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void unboundedSegment(String testString) {
         testModifyingSegment(testString,
                 standardCharsets(),
@@ -272,7 +282,8 @@ public class TestStringEncoding {
                 UnaryOperator.identity());
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void unalignedSegmentSingleByte(String testString) {
         testModifyingSegment(testString,
                 singleByteCharsets(),
@@ -280,7 +291,8 @@ public class TestStringEncoding {
                 s -> s.length() > 0 ? s.substring(1) : s);
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void expandedSegment(String testString) {
         try (var arena = Arena.ofConfined()) {
             for (int i = 0; i < Long.BYTES; i++) {
@@ -309,7 +321,7 @@ public class TestStringEncoding {
                 String roundTrip = text.getString(0, charset);
                 String expected = stringMapper.apply(testString);
                 if (charset.newEncoder().canEncode(testString)) {
-                    assertEquals(roundTrip, expected);
+                    assertEquals(expected, roundTrip);
                 }
             }
         }
@@ -330,14 +342,15 @@ public class TestStringEncoding {
                     for (Charset charset : singleByteCharsets()) {
                         var s = segment.getString(0, charset);
                         var ref = referenceImpl(segment, 0, charset);
-                        assertEquals(s, ref);
+                        assertEquals(ref, s);
                     }
                 }
             }
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testOffset(String testString) {
         if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
             return;
@@ -349,14 +362,15 @@ public class TestStringEncoding {
                     for (int i = 0; i < 3; i++) {
                         String expected = testString.substring(i);
                         String actual = inSegment.getString(i, charset);
-                        assertEquals(actual, expected);
+                        assertEquals(expected, actual);
                     }
                 }
             }
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testSubstringGetString(String testString) {
         if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
             return;
@@ -370,7 +384,7 @@ public class TestStringEncoding {
                             // this test assumes single-byte charsets
                             String roundTrip = text.getString(srcIndex, charset, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(roundTrip, substring);
+                            assertEquals(substring, roundTrip);
                         }
                     }
                 }
@@ -378,7 +392,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testSubstringAllocate(String testString) {
         if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
             return;
@@ -390,9 +405,9 @@ public class TestStringEncoding {
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
                             MemorySegment text = arena.allocateFrom(testString, charset, srcIndex, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(text.byteSize(), substring.getBytes(charset).length);
+                            assertEquals(substring.getBytes(charset).length, text.byteSize());
                             String roundTrip = text.getString(0, charset, text.byteSize());
-                            assertEquals(roundTrip, substring);
+                            assertEquals(substring, roundTrip);
                         }
                     }
                 }
@@ -400,7 +415,8 @@ public class TestStringEncoding {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testSubstringCopy(String testString) {
         if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
             return;
@@ -415,8 +431,8 @@ public class TestStringEncoding {
                             MemorySegment text = arena.allocate(JAVA_BYTE, length);
                             long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
                             String roundTrip = text.getString(0, charset, length);
-                            assertEquals(roundTrip, substring);
-                            assertEquals(copied, length);
+                            assertEquals(substring, roundTrip);
+                            assertEquals(length, copied);
                         }
                     }
                 }
@@ -431,7 +447,8 @@ public class TestStringEncoding {
             LINKER.defaultLookup().find("strcat").orElseThrow(),
             FunctionDescriptor.of(CHAR_POINTER, CHAR_POINTER, CHAR_POINTER));
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void nativeSegFromNativeCall(String testString) {
         String addition = "123";
         try (var arena = Arena.ofConfined()) {
@@ -443,7 +460,7 @@ public class TestStringEncoding {
 
                 MemorySegment concatenation = (MemorySegment) STRCAT.invokeExact(destination, arena.allocateFrom(addition));
                 var actual = concatenation.getString(0);
-                assertEquals(actual, testString + addition);
+                assertEquals(testString + addition, actual);
             } catch (Throwable t) {
                 throw new AssertionError(t);
             }
@@ -469,7 +486,8 @@ public class TestStringEncoding {
 
     // This test ensures that we do not address outside the segment even though there
     // are odd bytes at the end.
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void offBoundaryTrailingBytes(String testString) {
         if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
             return;
@@ -485,7 +503,7 @@ public class TestStringEncoding {
                     inSegment.fill((byte) 1);
                     for (int i = 0; i < 4; i++) {
                         final int offset = i;
-                        var e = expectThrows(IndexOutOfBoundsException.class, () -> inSegment.getString(offset, charset));
+                        var e = assertThrows(IndexOutOfBoundsException.class, () -> inSegment.getString(offset, charset));
                         assertTrue(e.getMessage().contains("No null terminator found"));
                     }
                 }
@@ -516,12 +534,12 @@ public class TestStringEncoding {
                     segment.setAtIndex(JAVA_BYTE, len, (byte) 0);
                     for (int j = 0; j < len; j++) {
                         int actual = StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, j, segment.byteSize());
-                        assertEquals(actual, len - j);
+                        assertEquals(len - j, actual);
                     }
                     // Test end offset
                     for (int j = 0; j < len - 1; j++) {
                         final long toOffset = j;
-                        expectThrows(IndexOutOfBoundsException.class, () ->
+                        assertThrows(IndexOutOfBoundsException.class, () ->
                                 StringSupport.strlenByte((AbstractMemorySegmentImpl) segment, 0, toOffset));
                     }
                 }
@@ -546,7 +564,7 @@ public class TestStringEncoding {
                     segment.setAtIndex(JAVA_SHORT, len, (short) 0);
                     for (int j = 0; j < len; j++) {
                         int actual = StringSupport.strlenShort((AbstractMemorySegmentImpl) segment, j * Short.BYTES, segment.byteSize());
-                        assertEquals(actual, (len - j) * Short.BYTES);
+                        assertEquals((len - j) * Short.BYTES, actual);
                     }
                 }
             }
@@ -570,35 +588,37 @@ public class TestStringEncoding {
                     segment.setAtIndex(JAVA_INT, len, 0);
                     for (int j = 0; j < len; j++) {
                         int actual = StringSupport.strlenInt((AbstractMemorySegmentImpl) segment, j * Integer.BYTES, segment.byteSize());
-                        assertEquals(actual, (len - j) * Integer.BYTES);
+                        assertEquals((len - j) * Integer.BYTES, actual);
                     }
                 }
             }
         }
     }
 
-    @Test(dataProvider = "charsetsAndSegments")
+    @ParameterizedTest
+    @MethodSource("charsetsAndSegments")
     public void testStringGetWithCharset(Charset charset, MemorySegment segment) {
         for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             segment.getString(offset, charset);
         }
     }
 
-    @Test(dataProvider = "charsetsAndSegments")
+    @ParameterizedTest
+    @MethodSource("charsetsAndSegments")
     public void testStringSetWithCharset(Charset charset, MemorySegment segment) {
         for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             segment.setString(offset, "H", charset);
         }
     }
 
-    @Test(dataProvider = "charsetsAndSegments")
+    @ParameterizedTest
+    @MethodSource("charsetsAndSegments")
     public void testStringAllocateFromWithCharset(Charset charset, MemorySegment segment) {
         for (int offset = 0 ; offset < Long.BYTES ; offset++) {
             SegmentAllocator.prefixAllocator(segment.asSlice(offset)).allocateFrom("H", charset);
         }
     }
 
-    @DataProvider
     public static Object[][] strings() {
         return new Object[][]{
                 {"testing"},
@@ -733,7 +753,6 @@ public class TestStringEncoding {
         };
     }
 
-    @DataProvider
     public static Object[][] charsetsAndSegments() {
         List<Object[]> values = new ArrayList<>();
         for (Charset charset : standardCharsets()) {

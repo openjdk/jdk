@@ -1359,7 +1359,7 @@ public class LWWindowPeer
             if (focusLog.isLoggable(PlatformLogger.Level.FINE)) {
                 focusLog.fine("ungrabbing on " + grabbingWindow);
             }
-            // ungrab a simple window if its owner looses activation.
+            // ungrab a simple window if its owner loses activation.
             grabbingWindow.ungrab();
         }
 

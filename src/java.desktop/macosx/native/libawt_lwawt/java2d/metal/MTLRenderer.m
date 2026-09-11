@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ void MTLRenderer_DrawRect(MTLContext *mtlc, BMTLSDOps * dstOps, jint x, jint y, 
 
 const int POLYLINE_BUF_SIZE = 64;
 
-NS_INLINE void fillVertex(struct Vertex * vertex, int x, int y) {
+NS_INLINE void fillVertex(struct Vertex * vertex, jfloat x, jfloat y) {
     vertex->position[0] = x;
     vertex->position[1] = y;
 }

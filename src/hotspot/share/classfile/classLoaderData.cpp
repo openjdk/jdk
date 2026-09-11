@@ -70,6 +70,7 @@
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "oops/weakHandle.inline.hpp"
 #include "runtime/arguments.hpp"
@@ -80,6 +81,9 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfr.hpp"
+#endif
 
 ClassLoaderData * ClassLoaderData::_the_null_class_loader_data = nullptr;
 
@@ -428,6 +432,16 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   }
 }
 
+void ClassLoaderData::value_classes_do(void f(ValueKlass*)) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+    if (k->is_value_klass()) {
+      f(ValueKlass::cast(k));
+    }
+    assert(k != k->next_link(), "no loops!");
+  }
+}
+
 void ClassLoaderData::modules_do(void f(ModuleEntry*)) {
   assert_locked_or_safepoint(Module_lock);
   if (_unnamed_module != nullptr) {
@@ -605,6 +619,8 @@ void ClassLoaderData::unload() {
   // Some items on the _deallocate_list need to free their C heap structures
   // if they are not already on the _klasses list.
   free_deallocate_list_C_heap_structures();
+
+  value_classes_do(ValueKlass::cleanup);
 
   // Clean up class dependencies and tell serviceability tools
   // these classes are unloading.  This must be called
@@ -886,7 +902,12 @@ void ClassLoaderData::free_deallocate_list() {
         HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
-        MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        JFR_ONLY(Jfr::on_deallocation(static_cast<Klass*>(m));)
+        if (!((Klass*)m)->is_value_klass()) {
+          MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        } else {
+          MetadataFactory::free_metadata(this, (ValueKlass*)m);
+        }
       } else {
         ShouldNotReachHere();
       }

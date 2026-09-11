@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,13 @@ public interface ApplicationLayoutMixin {
     Path contentDirectory();
 
     /**
+     * Path to directory with additional application resources.
+     */
+    Path resourcesDirectory();
+
+    /**
      * Default implementation of {@link ApplicationLayoutMixin} interface.
      */
-    record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path desktopIntegrationDirectory, Path contentDirectory) implements ApplicationLayoutMixin {
+    record Stub(Path launchersDirectory, Path appDirectory, Path appModsDirectory, Path desktopIntegrationDirectory, Path contentDirectory, Path resourcesDirectory) implements ApplicationLayoutMixin {
     }
 }
