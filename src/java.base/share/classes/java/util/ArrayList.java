@@ -1043,7 +1043,9 @@ public class ArrayList<E> extends AbstractList<E>
      */
     private class Itr implements Iterator<E> {
         int cursor;       // index of next element to return
-        int lastRet = -1; // index of last element returned; -1 if no such
+        static final int LAST_RET_UNSET = -1;
+        static final int LAST_RET_CURSOR = -2; // special case: lastRet = cursor - 1
+        int lastRet = LAST_RET_UNSET; // index of last element returned, or a sentinel
         int expectedModCount = modCount;
 
         // prevent creating a synthetic constructor
@@ -1063,18 +1065,21 @@ public class ArrayList<E> extends AbstractList<E>
             if (i >= elementData.length)
                 throw new ConcurrentModificationException();
             cursor = i + 1;
-            return (E) elementData[lastRet = i];
+            // in place of "lastRet = i", which would make C2 keep two loop values live instead of one
+            lastRet = LAST_RET_CURSOR;
+            return (E) elementData[i];
         }
 
         public void remove() {
-            if (lastRet < 0)
+            if (lastRet == LAST_RET_UNSET)
                 throw new IllegalStateException();
             checkForComodification();
 
             try {
-                ArrayList.this.remove(lastRet);
-                cursor = lastRet;
-                lastRet = -1;
+                int removeIdx = lastRet == LAST_RET_CURSOR ? cursor - 1 : lastRet;
+                ArrayList.this.remove(removeIdx);
+                cursor = removeIdx;
+                lastRet = LAST_RET_UNSET;
                 expectedModCount = modCount;
             } catch (IndexOutOfBoundsException ex) {
                 throw new ConcurrentModificationException();
@@ -1140,12 +1145,12 @@ public class ArrayList<E> extends AbstractList<E>
         }
 
         public void set(E e) {
-            if (lastRet < 0)
+            if (lastRet == LAST_RET_UNSET)
                 throw new IllegalStateException();
             checkForComodification();
 
             try {
-                ArrayList.this.set(lastRet, e);
+                ArrayList.this.set(lastRet == LAST_RET_CURSOR ? cursor - 1 : lastRet, e);
             } catch (IndexOutOfBoundsException ex) {
                 throw new ConcurrentModificationException();
             }
@@ -1158,7 +1163,7 @@ public class ArrayList<E> extends AbstractList<E>
                 int i = cursor;
                 ArrayList.this.add(i, e);
                 cursor = i + 1;
-                lastRet = -1;
+                lastRet = LAST_RET_UNSET;
                 expectedModCount = modCount;
             } catch (IndexOutOfBoundsException ex) {
                 throw new ConcurrentModificationException();
