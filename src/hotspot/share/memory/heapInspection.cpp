@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,24 +99,45 @@ const char* KlassInfoEntry::name() const {
   return name;
 }
 
+const char* KlassInfoEntry::layout() const {
+  if (_klass->is_flatArray_klass()) {
+    switch (FlatArrayKlass::cast(_klass)->layout_kind()) {
+    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
+      return " [flat, null-restricted, non-atomic]";
+    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
+      return " [flat, null-restricted, atomic]";
+    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+      return " [flat, nullable, non-atomic]";
+    case LayoutKind::NULLABLE_ATOMIC_FLAT:
+      return " [flat, nullable, atomic]";
+    default:
+      return " [unknown layout]";
+    }
+  }
+  return "";
+}
+
+
 void KlassInfoEntry::print_on(outputStream* st) const {
   ResourceMark rm;
 
   // simplify the formatting (ILP32 vs LP64) - always cast the numbers to 64-bit
   ModuleEntry* module = _klass->module();
   if (module->is_named()) {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s (%s%s%s)",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s%s (%s%s%s)",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
                  name(),
+                 layout(),
                  module->name()->as_C_string(),
                  module->version() != nullptr ? "@" : "",
                  module->version() != nullptr ? module->version()->as_C_string() : "");
   } else {
-    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s",
+    st->print_cr(INT64_FORMAT_W(13) "  " UINT64_FORMAT_W(13) "  %s%s",
                  (int64_t)_instance_count,
                  (uint64_t)_instance_words * HeapWordSize,
-                 name());
+                 name(),
+                 layout());
   }
 }
 
