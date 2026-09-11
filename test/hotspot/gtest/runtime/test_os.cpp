@@ -172,7 +172,11 @@ TEST_VM(os, test_print_location) {
   // WizardMode (not available in release mode) prints details
 #ifndef PRODUCT
   FlagSetting fs(WizardMode, true);
+  bool using_wizardMode = true;
+#else
+  bool using_wizardMode = false;
 #endif
+
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, obj);
 
@@ -180,21 +184,33 @@ TEST_VM(os, test_print_location) {
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
     ObjectLocker ol(h_obj, THREAD);
-    assert_test_pattern(obj, "locked");
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "locked");
+    } else {
+      assert_test_pattern(obj, "locked", false);
+    }
     assert_test_pattern(obj, "is_lock_neutral", false);
   }
 
   // Unlocked again
   {
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_lock_neutral");
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral", false);
+    }
   }
 
   // Hash the object then print it.
   {
     intx hash = h_obj->identity_hash();
     MutexLocker lock(ClassLoaderDataGraph_lock);
-    assert_test_pattern(obj, "is_lock_neutral hash=");
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral hash=");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral hash=", false);
+    }
   }
 }
 
