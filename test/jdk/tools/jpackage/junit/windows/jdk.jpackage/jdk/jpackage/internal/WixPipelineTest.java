@@ -26,6 +26,8 @@
 package jdk.jpackage.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 
 import jdk.internal.util.Architecture;
@@ -76,13 +78,20 @@ class WixPipelineTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = Architecture.class, names = {"X86", "X64"}, mode = EnumSource.Mode.EXCLUDE)
-    void test_wix3ArchArg_unsupported(Architecture arch) {
-        // WiX v3 doesn't support arm64 (nor any other architecture); it must
-        // be rejected explicitly and clearly, including AArch64, with a
-        // self-contained, user-facing ConfigException (see above).
-        assertThrowsExactly(ConfigException.class, () -> {
+    @EnumSource(value = Architecture.class, names = {"AARCH64"})
+    void test_wix3ArchArg_aarch64(Architecture arch) {
+        var ex = assertThrowsExactly(ConfigException.class, () -> {
             WixPipeline.wix3ArchArg(arch);
         });
+        assertNotNull(ex.getAdvice());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Architecture.class, names = {"X86", "X64", "AARCH64"}, mode = EnumSource.Mode.EXCLUDE)
+    void test_wix3ArchArg_otherUnsupported(Architecture arch) {
+        var ex = assertThrowsExactly(ConfigException.class, () -> {
+            WixPipeline.wix3ArchArg(arch);
+        });
+        assertNull(ex.getAdvice());
     }
 }

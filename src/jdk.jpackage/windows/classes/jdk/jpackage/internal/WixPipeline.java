@@ -275,9 +275,13 @@ final class WixPipeline {
         return switch (arch) {
             case X86 -> "x86";
             case X64 -> "x64";
-            default -> throw I18N.buildConfigException("error.msi-arch-unsupported-wix3", arch)
-                    .advice("error.msi-arch-unsupported-wix3.advice")
-                    .create();
+            default -> {
+                var ex = I18N.buildConfigException("error.msi-arch-unsupported-wix3", arch);
+                if (arch == Architecture.AARCH64) {
+                    ex.advice("error.msi-arch-unsupported-wix3.advice");
+                }
+                throw ex.create();
+            }
         };
     }
 
