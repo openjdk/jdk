@@ -223,6 +223,17 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
+  // Restore stack bottom from last_sp when it is set, like the return entry
+  // does. A frame thawed for reexecution after a PopFrame arrives here with
+  // an aligned sp that can sit below the expression stack top.
+  {
+    Label L;
+    __ movptr(rscratch1, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+    __ testptr(rscratch1, rscratch1);
+    __ jcc(Assembler::zero, L);
+    __ lea(rsp, Address(rbp, rscratch1, Address::times_ptr));
+    __ bind(L);
+  }
 
   // null last_sp until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);

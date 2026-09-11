@@ -46,6 +46,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/continuation.hpp"
@@ -70,6 +71,7 @@
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "runtime/vframe_hp.hpp"
+#include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
@@ -3089,6 +3091,29 @@ void ThawBase::finish_thaw(frame& f) {
   }
   assert(chunk->is_empty() == (chunk->max_thawing_size() == 0), "");
 
+  // A frame popped by JVMTI PopFrame returned through the barrier into this
+  // frame, which was still frozen. The interpreter's popframe entry took the
+  // deoptimized caller path, preserved the arguments and left the reexecution
+  // to a deoptimization that never happens. The frozen caller was copied
+  // without the callee's arguments, so put the preserved arguments back on its
+  // expression stack and resume at the invoke instead of after it, like
+  // vframeArrayElement::unpack_on_stack does for a deoptimized caller.
+  if (JvmtiExport::can_pop_frame() && _thread->popframe_forcing_deopt_reexecution()) {
+    assert(f.is_interpreted_frame(), "popframe reexecution into a frozen compiled caller is not handled");
+    if (f.is_interpreted_frame()) {
+      int words = in_words(_thread->popframe_preserved_args_size_in_words());
+      if (words > 0) {
+        // the thawed frame's sp already covers the argument slots, last_sp was
+        // saved after the arguments were pushed
+        int top_element = f.interpreter_frame_expression_stack_size() - 1;
+        intptr_t* base = f.interpreter_frame_expression_stack_at(top_element);
+        Copy::conjoint_jbytes(_thread->popframe_preserved_args(), base, words * wordSize);
+      }
+      f = frame(f.sp(), f.unextended_sp(), f.fp(), Interpreter::deopt_entry(vtos, 0));
+    }
+    _thread->popframe_free_preserved_args();
+    _thread->clear_popframe_condition();
+  }
   if (!is_aligned(f.sp(), frame::frame_alignment)) {
     assert(f.is_interpreted_frame(), "");
     f.set_sp(align_down(f.sp(), frame::frame_alignment));
