@@ -307,6 +307,26 @@ class FieldLayoutBuilder : public ResourceObj {
 
   LayoutDescriptions& layouts() { return _available_layouts; }
 
+  template<typename T>
+  int least_restrictive_layout_of(T lk) {
+    if (layouts().has_a(lk)) {
+      return layouts().size_in_bytes_of(lk);
+    } else {
+      return -1;
+    }
+  }
+  template<typename T, typename... Ts>
+  int least_restrictive_layout_of(T lk, Ts... lks) {
+    auto max_rest = least_restrictive_layout_of(lks...);
+    if (layouts().has_a(lk)) {
+      auto max_lk = layouts().size_in_bytes_of(lk);
+      return max_rest > max_lk ? max_rest : max_lk;
+    } else {
+      return max_rest;
+    }
+  }
+
+
  public:
   FieldLayoutBuilder(const Symbol* classname, ClassLoaderData* loader_data, const InstanceKlass* super_klass, ConstantPool* constant_pool,
                      GrowableArray<FieldInfo>* field_info, bool is_contended, bool is_concrete_value, bool is_abstract_value,
