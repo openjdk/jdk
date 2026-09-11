@@ -254,7 +254,7 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
      * special characters with a preceding slash.
      *
      * This method was copied from java.util.Properties.saveConvert().
-     */          
+     */
     private static String convert(String theString,
                                   boolean escapeSpace) {
         int len = theString.length();

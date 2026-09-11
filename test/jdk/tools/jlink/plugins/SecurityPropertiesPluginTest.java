@@ -90,7 +90,7 @@ public class SecurityPropertiesPluginTest {
         # Property with ':' delimiter
         Truth:Beauty
         # Property with EOF immediately after continuation character
-        sport=baseball\
+        sport=baseball\\
         """;
 
     /**
