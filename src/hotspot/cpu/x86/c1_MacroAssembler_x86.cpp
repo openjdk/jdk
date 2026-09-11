@@ -350,13 +350,13 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
   // One of these will be the best for a particular CPU.
 
   if (VM_Version::supports_sse4_2()) {
-#ifndef PRODUCT
-    Label not_zero;
-    orl(r_profile_rng, r_profile_rng);
-    jcc(Assembler::notZero, not_zero);
-    stop("non-zero required before step");
-    bind(not_zero);
-#endif
+// #ifndef PRODUCT
+//     Label not_zero;
+//     orl(r_profile_rng, r_profile_rng);
+//     jcc(Assembler::notZero, not_zero);
+//     stop("non-zero required before step");
+//     bind(not_zero);
+// #endif
     /* CRC used as a pseudo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register.

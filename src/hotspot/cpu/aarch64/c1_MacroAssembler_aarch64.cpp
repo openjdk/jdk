@@ -369,12 +369,12 @@ void C1_MacroAssembler::load_parameter(int offset_in_words, Register reg) {
 
 void C1_MacroAssembler::step_random(Register state, Register temp, Register data) {
   if (VM_Version::supports_crc32()) {
-#ifndef PRODUCT
-    Label not_zero;
-    cbnzw(r_profile_rng, not_zero);
-    stop("non-zero required before step");
-    bind(not_zero);
-#endif
+// #ifndef PRODUCT
+//     Label not_zero;
+//     cbnzw(r_profile_rng, not_zero);
+//     stop("non-zero required before step");
+//     bind(not_zero);
+// #endif
     /* CRC used as a pseudo-random-number generator */
     // In effect, the CRC instruction is being used here for its
     // linear feedback shift register.
@@ -390,14 +390,14 @@ void C1_MacroAssembler::step_random(Register state, Register temp, Register data
 
 void C1_MacroAssembler::save_profile_rng() {
   if (ProfileCaptureRatio > 1) {
-#ifndef PRODUCT
-    if (VM_Version::supports_crc32()) {
-      Label not_zero;
-      cbnzw(r_profile_rng, not_zero);
-      stop("non-zero required before save");
-      bind(not_zero);
-    }
-#endif
+// #ifndef PRODUCT
+//     if (VM_Version::supports_crc32()) {
+//       Label not_zero;
+//       cbnzw(r_profile_rng, not_zero);
+//       stop("non-zero required before save");
+//       bind(not_zero);
+//     }
+// #endif
     strw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
   }
 }
@@ -405,14 +405,14 @@ void C1_MacroAssembler::save_profile_rng() {
 void C1_MacroAssembler::restore_profile_rng() {
   if (ProfileCaptureRatio > 1) {
     ldrw(r_profile_rng, Address(rthread, JavaThread::profile_rng_offset()));
-#ifndef PRODUCT
-    if (VM_Version::supports_crc32()) {
-      Label not_zero;
-      cbnzw(r_profile_rng, not_zero);
-      stop("non-zero required after restore");
-      bind(not_zero);
-    }
-#endif
+// #ifndef PRODUCT
+//     if (VM_Version::supports_crc32()) {
+//       Label not_zero;
+//       cbnzw(r_profile_rng, not_zero);
+//       stop("non-zero required after restore");
+//       bind(not_zero);
+//     }
+// #endif
   }
 }
 

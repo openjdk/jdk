@@ -30,7 +30,8 @@
 #include "memory/resourceArea.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
-#include "runtime/vmOperation.hpp"
+#include "prims/jvmtiRedefineClasses.hpp"
+#include "prims/jvmtiThreadState.hpp"
 
 // Introduction:
 //

@@ -2058,7 +2058,6 @@ class LIR_OpIncrementCounter : public LIR_Op {
     , _md_op(md_op)
     , _md_offset_op(md_offset_op)
     , _overflow_stub(overflow_stub) {
-    assert(type2aelembytes(dest->type()) == wordSize, "must be");
   }
 
   LIR_Opr   step()          const            { return _step;          }

@@ -3913,7 +3913,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
     ShouldNotReachHere();
   }
 
-  LIR_Opr result = new_pointer_register();
+  LIR_Opr result = new_register(T_INT);
   if (notify && (!backedge || UseOnStackReplacement)) {
     int ratio_shift = exact_log2(ProfileCaptureRatio);
     LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());

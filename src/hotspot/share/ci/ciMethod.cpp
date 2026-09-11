@@ -1072,6 +1072,8 @@ bool ciMethod::has_member_arg() const {
 // Generate new MethodData* objects at compile time.
 // Return true if allocation was successful or no MDO is required.
 bool ciMethod::ensure_method_data(const methodHandle& h_m) {
+  volatile auto data = h_m()->method_data();
+  bool result = false;
   EXCEPTION_CONTEXT;
   if (is_native() || is_abstract() || h_m()->is_accessor()) {
     return true;
@@ -1084,11 +1086,13 @@ bool ciMethod::ensure_method_data(const methodHandle& h_m) {
   }
   if (h_m()->method_data() != nullptr) {
     _method_data = CURRENT_ENV->get_method_data(h_m()->method_data());
-    return _method_data->load_data();
+    result = _method_data->load_data();
+    //_method_data->print(); tty->cr();
   } else {
     _method_data = CURRENT_ENV->get_empty_methodData();
-    return false;
+    result = false;
   }
+  return result;
 }
 
 // public, retroactive version
