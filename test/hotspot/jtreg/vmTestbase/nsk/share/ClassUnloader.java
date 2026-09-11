@@ -238,20 +238,24 @@ public class ClassUnloader {
      * @see ClassUnloadCommon#triggerUnloading()
      */
     public boolean unloadClass() {
-        // free references to class and class loader to be able for collecting by GC
+        releaseClassLoader();
+        ClassUnloadCommon.triggerUnloading();
+        return reportReclaimed(isClassLoaderReclaimed());
+    }
+
+    // free references to class and class loader to be able for collecting by GC
+    private void releaseClassLoader() {
         classObjects.removeAllElements();
         customClassLoader = null;
+    }
 
-        // force class unloading by triggering full GC
-        ClassUnloadCommon.triggerUnloading();
-
-        if (isClassLoaderReclaimed()) {
+    private static boolean reportReclaimed(boolean reclaimed) {
+        if (reclaimed) {
             System.out.println("ClassUnloader: class loader has been reclaimed.");
-            return true;
         } else {
             System.out.println("ClassUnloader: class loader is still reachable.");
-            return false;
         }
+        return reclaimed;
     }
 
     /**
@@ -263,15 +267,8 @@ public class ClassUnloader {
              or <i>false</i> otherwise
      */
     public boolean unloadClassAndWait(long timeout) {
-        classObjects.removeAllElements();
-        customClassLoader = null;
-        boolean wasUnloaded = ClassUnloadCommon.triggerUnloadingUntil(this::isClassLoaderReclaimed,
-                                                                      Utils.adjustTimeout(timeout));
-        if (wasUnloaded) {
-            System.out.println("ClassUnloader: class loader has been reclaimed.");
-        } else {
-            System.out.println("ClassUnloader: class loader is still reachable.");
-        }
-        return wasUnloaded;
+        releaseClassLoader();
+        return reportReclaimed(ClassUnloadCommon.triggerUnloadingUntil(this::isClassLoaderReclaimed,
+                                                                       Utils.adjustTimeout(timeout)));
     }
 }
