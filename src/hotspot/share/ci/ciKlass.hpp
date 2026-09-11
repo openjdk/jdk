@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "ci/ciType.hpp"
 #include "oops/klass.hpp"
+#include "runtime/arguments.hpp"
 
 // ciKlass
 //
@@ -44,8 +45,10 @@ class ciKlass : public ciType {
   friend class ciMethod;
   friend class ciMethodData;
   friend class ciObjArrayKlass;
-  friend class ciSignature;
   friend class ciReceiverTypeData;
+  friend class ciSignature;
+  friend class ciFlatArrayKlass;
+  friend class ciArrayKlass;
 
 private:
   ciSymbol* _name;
@@ -104,6 +107,10 @@ public:
     return false;
   }
 
+  virtual bool can_be_inline_array_klass() {
+    return Arguments::is_valhalla_enabled() && is_java_lang_Object();
+  }
+
   bool is_in_encoding_range() {
     Klass* k = get_Klass();
     bool is_in_encoding_range = CompressedKlassPointers::is_encodable(k);
@@ -121,6 +128,8 @@ public:
 
   // Fetch modifier flags.
   jint                   modifier_flags();
+
+  markWord prototype_header() const;
 
   // Fetch Klass::misc_flags.
   klass_flags_t          misc_flags();

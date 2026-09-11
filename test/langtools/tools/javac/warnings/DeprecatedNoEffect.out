@@ -1,0 +1,3 @@
+DeprecatedNoEffect.java:8:21: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable
+DeprecatedNoEffect.java:12:21: compiler.warn.deprecated.annotation.has.no.effect: kindname.variable
+2 warnings

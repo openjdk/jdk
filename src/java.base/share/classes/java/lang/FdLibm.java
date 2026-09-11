@@ -29,7 +29,8 @@ import jdk.internal.vm.annotation.Stable;
 
 /**
  * Port of the "Freely Distributable Math Library", version 5.3, from
- * C to Java.
+ * C to Java, with a fix to pow so that its error bounds conform to
+ * the quality of implementation criteria for the method.
  *
  * <p>The C version of fdlibm relied on the idiom of pointer aliasing
  * a 64-bit double floating-point value as a two-element array of
@@ -2207,8 +2208,8 @@ final class FdLibm {
             // |y| is huge
             if (y_abs > 0x1.00000_ffff_ffffp31) { // if |y| > ~2**31
                 final double INV_LN2   =  0x1.7154_7652_b82fep0;   //  1.44269504088896338700e+00 = 1/ln2
-                final double INV_LN2_H =  0x1.715476p0;            //  1.44269502162933349609e+00 = 24 bits of 1/ln2
-                final double INV_LN2_L =  0x1.4ae0_bf85_ddf44p-26; //  1.92596299112661746887e-08 = 1/ln2 tail
+                final double INV_LN2_H =  0x1.7154_7p+0;           //  1.4426946640014648438      = 21 bits of 1/ln2
+                final double INV_LN2_L =  0x1.94ae_0bf8_5ddf4p-22; //  3.7688749856360991145e-07  = 1/ln2 tail
 
                 // Over/underflow if x is not close to one
                 if (x_abs < 0x1.fffff_0000_0000p-1) // |x| < ~0.9999995231628418
@@ -3605,6 +3606,54 @@ final class FdLibm {
                 t = x - 1.0;
                 return Log1p.compute(t + Sqrt.compute(2.0 * t + t * t));
             }
+        }
+    }
+
+    /**
+     * Return the Inverse Hyperbolic Tangent of x
+     * Method :
+     *
+     *
+     *      atanh(x) is defined so that atanh(tanh(alpha)) = alpha, -&infin; &lt; alpha &lt; &infin;
+     *      and tanh(atanh(x)) = x, -1 &lt x &lt 1;
+     *      It can be written as atanh(x) = 0.5 * log1p(2 * x/(1-x)), -1 &lt; x &lt; 1;
+     *      1.
+     *          atanh(x) := 0.5 * log1p(2 * x/(1 - x)), if |x| >= 0.5,
+     *                   := 0.5 * log1p(2x + 2x * x/(1 - x)), if |x| < 0.5.
+     *
+     *
+     *
+     * Special cases:
+     *      only atanh(&plusmn;0)=&plusmn;0 is exact for finite x.
+     *      atanh(NaN) is NaN
+     *      atanh(&plusmn;1) is &plusmn;&infin;
+     */
+    static final class Atanh {
+
+        static double compute(double x) {
+            double t;
+            int hx,ix;
+            int lx;                                              // unsigned
+            hx = __HI(x);                                        // high word
+            lx = __LO(x);                                        // low word
+            ix = hx & 0x7fff_ffff;
+            if ((ix | ((lx | (-lx)) >>> 31)) > 0x3ff0_0000) {    // |x| > 1
+                return (x - x) / (x - x);
+            }
+            if (ix == 0x3ff0_0000) {
+                return x / 0.0;
+            }
+            if (ix < 0x3e30_0000 && (HUGE + x) > 0.0) {
+                return x;                                        // x<2**-28
+            }
+            x = __HI(x, ix);                                     // x <- |x|
+            if (ix < 0x3fe0_0000) {                              // x < 0.5
+                t = x + x;
+                t = 0.5 * Log1p.compute(t + t * x / (1.0 - x));
+            } else {
+                t = 0.5 * Log1p.compute((x + x) / (1.0 - x));
+            }
+            return hx >= 0 ? t : -t;
         }
     }
 }

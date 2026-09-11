@@ -160,8 +160,8 @@ static uint next_file_number(const char* filename,
     }
   }
 
-  FREE_C_HEAP_ARRAY(char, oldest_name);
-  FREE_C_HEAP_ARRAY(char, archive_name);
+  FREE_C_HEAP_ARRAY(oldest_name);
+  FREE_C_HEAP_ARRAY(archive_name);
   return next_num;
 }
 

@@ -52,6 +52,7 @@
 #include "jvmtifiles/jvmtiEnv.hpp"
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/memoryReserver.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspace/testHelpers.hpp"
@@ -60,8 +61,10 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "nmt/mallocSiteTable.hpp"
+#include "oops/access.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/constantPool.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
@@ -87,6 +90,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/lockStack.hpp"
 #include "runtime/os.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -107,6 +111,7 @@
 #if INCLUDE_G1GC
 #include "gc/g1/g1Arguments.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
@@ -122,10 +127,6 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #endif // INCLUDE_ZGC
-#if INCLUDE_JVMCI
-#include "jvmci/jvmciEnv.hpp"
-#include "jvmci/jvmciRuntime.hpp"
-#endif
 #ifdef LINUX
 #include "cgroupSubsystem_linux.hpp"
 #include "os_linux.hpp"
@@ -333,7 +334,6 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(void, WB_DecodeNKlassAndAccessKlass(JNIEnv* env, jobject o, jint nKlass))
-  assert(UseCompressedClassPointers, "Should only call for UseCompressedClassPointers");
   const narrowKlass nk = (narrowKlass)nKlass;
   const Klass* const k = CompressedKlassPointers::decode_not_null_without_asserts(nKlass);
   printf("WB_DecodeNKlassAndAccessKlass: nk %u k " PTR_FORMAT "\n", nk, p2i(k));
@@ -412,24 +412,6 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSupported(JNIEnv* env, jobject o, jint name))
   return GCConfig::is_gc_supported((CollectedHeap::Name)name);
-WB_END
-
-WB_ENTRY(jboolean, WB_HasLibgraal(JNIEnv* env, jobject o))
-#if INCLUDE_JVMCI
-  return JVMCI::shared_library_exists();
-#endif
-  return false;
-WB_END
-
-WB_ENTRY(jboolean, WB_IsGCSupportedByJVMCICompiler(JNIEnv* env, jobject o, jint name))
-#if INCLUDE_JVMCI
-  if (EnableJVMCI) {
-    // Enter the JVMCI env that will be used by the CompileBroker.
-    JVMCIEnv jvmciEnv(thread, __FILE__, __LINE__);
-    return jvmciEnv.init_error() == JNI_OK && jvmciEnv.runtime()->is_gc_supported(&jvmciEnv, (CollectedHeap::Name)name);
-  }
-#endif
-  return false;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsGCSelected(JNIEnv* env, jobject o, jint name))
@@ -578,7 +560,7 @@ WB_END
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
   if (UseG1GC) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
-    return g1h->concurrent_mark()->in_progress();
+    return g1h->collector_state()->is_in_concurrent_cycle();
   }
   THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(), "WB_G1InConcurrentMark: G1 GC is not enabled");
 WB_END
@@ -769,6 +751,14 @@ WB_ENTRY(void, WB_NMTArenaMalloc(JNIEnv* env, jobject o, jlong arena, jlong size
   a->Amalloc(size_t(size));
 WB_END
 
+WB_ENTRY(jboolean, WB_isC2Included(JNIEnv* env))
+#ifdef COMPILER2
+  return true;
+#else
+  return false;
+#endif
+WB_END
+
 static jmethodID reflected_method_to_jmid(JavaThread* thread, JNIEnv* env, jobject method) {
   assert(method != nullptr, "method should not be null");
   ThreadToNativeFromVM ttn(thread);
@@ -872,14 +862,12 @@ WB_ENTRY(jboolean, WB_IsMethodCompiled(JNIEnv* env, jobject o, jobject method, j
   return !code->is_marked_for_deoptimization();
 WB_END
 
-static bool is_excluded_for_compiler(AbstractCompiler* comp, methodHandle& mh) {
+static bool is_excluded_for_compiler(AbstractCompiler* comp, int comp_level, methodHandle& mh) {
   if (comp == nullptr) {
     return true;
   }
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
-  bool exclude = directive->ExcludeOption;
-  DirectivesStack::release(directive);
-  return exclude;
+  CompilerDirectiveMatcher matcher(mh, comp_level);
+  return matcher.directive_set()->ExcludeOption;
 }
 
 static bool can_be_compiled_at_level(methodHandle& mh, jboolean is_osr, int level) {
@@ -904,8 +892,10 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
   // to exclude a compilation of 'method'.
   if (comp_level == CompLevel_any) {
     // Both compilers could have ExcludeOption set. Check all combinations.
-    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), mh);
-    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), mh);
+    bool excluded_c1 = is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_simple, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_limited_profile, mh)
+                    && is_excluded_for_compiler(CompileBroker::compiler1(), CompLevel_full_profile, mh);
+    bool excluded_c2 = is_excluded_for_compiler(CompileBroker::compiler2(), CompLevel_full_optimization, mh);
     if (excluded_c1 && excluded_c2) {
       // Compilation of 'method' excluded by both compilers.
       return false;
@@ -916,9 +906,11 @@ WB_ENTRY(jboolean, WB_IsMethodCompilable(JNIEnv* env, jobject o, jobject method,
       return can_be_compiled_at_level(mh, is_osr, CompLevel_full_optimization);
     } else if (excluded_c2) {
       // C2 only has ExcludeOption set: Check if compilable with C1.
-      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple);
+      return can_be_compiled_at_level(mh, is_osr, CompLevel_simple)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_limited_profile)
+          || can_be_compiled_at_level(mh, is_osr, CompLevel_full_profile);
     }
-  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), mh)) {
+  } else if (comp_level > CompLevel_none && is_excluded_for_compiler(CompileBroker::compiler((int)comp_level), comp_level, mh)) {
     // Compilation of 'method' excluded by compiler used for 'comp_level'.
     return false;
   }
@@ -950,19 +942,17 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
 
-  DirectiveSet* directive;
   if (compilation_context != nullptr) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
-    directive = DirectivesStack::getMatchingDirective(cch, comp);
+    CompilerDirectiveMatcher matcher(cch, compLevel);
+    return comp->is_intrinsic_available(mh, matcher.directive_set());
   } else {
     // Calling with null matches default directive
-    directive = DirectivesStack::getDefaultDirective(comp);
+    CompilerDirectiveMatcher default_directive(comp);
+    return comp->is_intrinsic_available(mh, default_directive.directive_set());
   }
-  bool result = comp->is_intrinsic_available(mh, directive);
-  DirectivesStack::release(directive);
-  return result;
 WB_END
 
 WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -1136,9 +1126,8 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
 
   // Check if compilation is blocking
   methodHandle mh(THREAD, method);
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, comp);
-  bool is_blocking = !directive->BackgroundCompilationOption;
-  DirectivesStack::release(directive);
+  CompilerDirectiveMatcher matcher(mh, comp_level);
+  bool is_blocking = !matcher.directive_set()->BackgroundCompilationOption;
 
   // Compile method and check result
   nmethod* nm = CompileBroker::compile_method(mh, bci, comp_level, mh->invocation_count(), CompileTask::Reason_Whitebox, CHECK_false);
@@ -1156,7 +1145,7 @@ bool WhiteBox::compile_method(Method* method, int comp_level, int bci, JavaThrea
   } else if (mh->lookup_osr_nmethod_for(bci, comp_level, false) != nullptr) {
     return true;
   }
-  tty->print("WB error: failed to %s compile at level %d method ", is_blocking ? "blocking" : "", comp_level);
+  tty->print("WB error: failed to%s compile at level %d method ", is_blocking ? " blocking" : "", comp_level);
   mh->print_short_name(tty);
   tty->cr();
   if (is_blocking && is_queued) {
@@ -1189,11 +1178,8 @@ WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
 
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(comp_level));
-  bool result = directive->PrintAssemblyOption;
-  DirectivesStack::release(directive);
-
-  return result;
+  CompilerDirectiveMatcher matcher(mh, comp_level);
+  return matcher.directive_set()->PrintAssemblyOption;
 WB_END
 
 WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring pattern))
@@ -1280,8 +1266,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
   if (mdo != nullptr) {
     mdo->init();
     ResourceMark rm(THREAD);
-    int arg_count = mdo->method()->size_of_parameters();
-    for (int i = 0; i < arg_count; i++) {
+    int arg_size = mdo->method()->size_of_parameters();
+    for (int i = 0; i < arg_size; i++) {
       mdo->set_arg_modified(i, 0);
     }
     mdo->clean_method_data(/*always_clean*/true);
@@ -2015,6 +2001,109 @@ WB_ENTRY(jobjectArray, WB_GetResolvedReferences(JNIEnv* env, jobject wb, jclass 
   return (jobjectArray)JNIHandles::make_local(THREAD, resolved_refs);
 WB_END
 
+WB_ENTRY(jobjectArray, WB_getObjectsViaKlassOopMaps(JNIEnv* env, jobject wb, jobject thing))
+  oop aoop = JNIHandles::resolve(thing);
+  if (!aoop->is_instance()) {
+    return nullptr;
+  }
+  instanceHandle ih(THREAD, (instanceOop) aoop);
+  InstanceKlass* klass = InstanceKlass::cast(ih->klass());
+  if (klass->nonstatic_oop_map_count() == 0) {
+    return nullptr;
+  }
+  const OopMapBlock* map = klass->start_of_nonstatic_oop_maps();
+  const OopMapBlock* const end = map + klass->nonstatic_oop_map_count();
+  int oop_count = 0;
+  while (map < end) {
+    oop_count += map->count();
+    map++;
+  }
+
+  refArrayHandle result_array =
+      oopFactory::new_refArray_handle(vmClasses::Object_klass(), oop_count, CHECK_NULL);
+  map = klass->start_of_nonstatic_oop_maps();
+  int index = 0;
+  while (map < end) {
+    int offset = map->offset();
+    for (unsigned int j = 0; j < map->count(); j++) {
+      result_array->obj_at_put(index++, ih->obj_field(offset));
+      offset += heapOopSize;
+    }
+    map++;
+  }
+  return (jobjectArray)JNIHandles::make_local(THREAD, result_array());
+WB_END
+
+// Collect Object oops but not value objects...loaded from heap
+class CollectObjectOops : public BasicOopIterateClosure {
+  public:
+  GrowableArray<Handle>* _array;
+
+  CollectObjectOops() {
+      _array = new GrowableArray<Handle>(128);
+  }
+
+  void add_oop(oop o) {
+    Handle oh = Handle(Thread::current(), o);
+    if (oh != nullptr && oh->is_inline_type()) {
+      oh->oop_iterate(this);
+    } else {
+      _array->append(oh);
+    }
+  }
+
+  template <class T> inline void add_oop(T* p) { add_oop(HeapAccess<>::oop_load(p)); }
+  void do_oop(oop* o) { add_oop(o); }
+  void do_oop(narrowOop* v) { add_oop(v); }
+
+  jobjectArray create_jni_result(JNIEnv* env, TRAPS) {
+    refArrayHandle result_array =
+        oopFactory::new_refArray_handle(vmClasses::Object_klass(), _array->length(), CHECK_NULL);
+    for (int i = 0 ; i < _array->length(); i++) {
+      result_array->obj_at_put(i, _array->at(i)());
+    }
+    return (jobjectArray)JNIHandles::make_local(THREAD, result_array());
+  }
+};
+
+// Collect Object oops but not value objects...loaded from frames
+class CollectFrameObjectOops : public BasicOopIterateClosure {
+ public:
+  CollectObjectOops _collect;
+
+  template <class T> inline void add_oop(T* p) { _collect.add_oop(RawAccess<>::oop_load(p)); }
+  void do_oop(oop* o) { add_oop(o); }
+  void do_oop(narrowOop* v) { add_oop(v); }
+
+  jobjectArray create_jni_result(JNIEnv* env, TRAPS) {
+    return _collect.create_jni_result(env, THREAD);
+  }
+};
+
+// Collect Object oops for the given oop, iterate through value objects
+WB_ENTRY(jobjectArray, WB_getObjectsViaOopIterator(JNIEnv* env, jobject wb, jobject thing))
+  ResourceMark rm(thread);
+  Handle objh(thread, JNIHandles::resolve(thing));
+  CollectObjectOops collectOops;
+  objh->oop_iterate(&collectOops);
+  return collectOops.create_jni_result(env, THREAD);
+WB_END
+
+// Collect Object oops for the given frame deep, iterate through value objects
+WB_ENTRY(jobjectArray, WB_getObjectsViaFrameOopIterator(JNIEnv* env, jobject wb, jint depth))
+  KeepStackGCProcessedMark ksgcpm(THREAD);
+  ResourceMark rm(THREAD);
+  CollectFrameObjectOops collectOops;
+  StackFrameStream sfs(thread, true /* update */, true /* process_frames */);
+  while (depth > 0) { // Skip the native WB API frame
+    sfs.next();
+    frame* f = sfs.current();
+    f->oops_do(&collectOops, nullptr, sfs.register_map());
+    depth--;
+  }
+  return collectOops.create_jni_result(env, THREAD);
+WB_END
+
 WB_ENTRY(jint, WB_getFieldEntriesLength(JNIEnv* env, jobject wb, jclass klass))
   InstanceKlass* ik = java_lang_Class::as_InstanceKlass(JNIHandles::resolve(klass));
   ConstantPool* cp = ik->constants();
@@ -2215,23 +2304,8 @@ WB_ENTRY(jboolean, WB_CDSMemoryMappingFailed(JNIEnv* env, jobject wb))
   return FileMapInfo::memory_mapping_failed();
 WB_END
 
-WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject str))
-  if (!HeapShared::is_loading_mapping_mode()) {
-    return false;
-  }
-  ResourceMark rm(THREAD);
-  oop str_oop = JNIHandles::resolve(str);
-  int length;
-  jchar* chars = java_lang_String::as_unicode_string(str_oop, length, CHECK_(false));
-  return StringTable::lookup_shared(chars, length) == str_oop;
-WB_END
-
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))
   return (jboolean)AOTMetaspace::in_aot_cache(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz)));
-WB_END
-
-WB_ENTRY(jboolean, WB_AreSharedStringsMapped(JNIEnv* env))
-  return AOTMappedHeapLoader::is_mapped();
 WB_END
 
 WB_ENTRY(void, WB_LinkClass(JNIEnv* env, jobject wb, jclass clazz))
@@ -2256,22 +2330,6 @@ WB_ENTRY(jboolean, WB_IsCDSIncluded(JNIEnv* env))
 #else
   return false;
 #endif // INCLUDE_CDS
-WB_END
-
-WB_ENTRY(jboolean, WB_isC2OrJVMCIIncluded(JNIEnv* env))
-#if COMPILER2_OR_JVMCI
-  return true;
-#else
-  return false;
-#endif
-WB_END
-
-WB_ENTRY(jboolean, WB_IsJVMCISupportedByGC(JNIEnv* env))
-#if INCLUDE_JVMCI
-  return JVMCIGlobals::gc_supports_jvmci();
-#else
-  return false;
-#endif
 WB_END
 
 static bool canWriteJavaHeapArchive() {
@@ -2900,6 +2958,7 @@ static JNINativeMethod methods[] = {
   {CC"NMTNewArena",         CC"(J)J",                 (void*)&WB_NMTNewArena        },
   {CC"NMTFreeArena",        CC"(J)V",                 (void*)&WB_NMTFreeArena       },
   {CC"NMTArenaMalloc",      CC"(JJ)V",                (void*)&WB_NMTArenaMalloc     },
+  {CC"isC2Included",        CC"()Z",                  (void*)&WB_isC2Included       },
   {CC"deoptimizeFrames",   CC"(Z)I",                  (void*)&WB_DeoptimizeFrames  },
   {CC"isFrameDeoptimized", CC"(I)Z",                  (void*)&WB_IsFrameDeoptimized},
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
@@ -3030,6 +3089,12 @@ static JNINativeMethod methods[] = {
   {CC"forceClassLoaderStatsSafepoint", CC"()V",       (void*)&WB_ForceClassLoaderStatsSafepoint },
   {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getResolvedReferences0", CC"(Ljava/lang/Class;)[Ljava/lang/Object;", (void*)&WB_GetResolvedReferences},
+  {CC"getObjectsViaKlassOopMaps0",
+      CC"(Ljava/lang/Object;)[Ljava/lang/Object;",    (void*)&WB_getObjectsViaKlassOopMaps},
+  {CC"getObjectsViaOopIterator0",
+          CC"(Ljava/lang/Object;)[Ljava/lang/Object;",(void*)&WB_getObjectsViaOopIterator},
+  {CC"getObjectsViaFrameOopIterator",
+      CC"(I)[Ljava/lang/Object;",                     (void*)&WB_getObjectsViaFrameOopIterator},
   {CC"getFieldEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getFieldEntriesLength},
   {CC"getFieldCPIndex0",    CC"(Ljava/lang/Class;I)I", (void*)&WB_getFieldCPIndex},
   {CC"getMethodEntriesLength0", CC"(Ljava/lang/Class;)I",  (void*)&WB_getMethodEntriesLength},
@@ -3058,17 +3123,12 @@ static JNINativeMethod methods[] = {
   {CC"getCDSGenericHeaderMinVersion",     CC"()I",    (void*)&WB_GetCDSGenericHeaderMinVersion},
   {CC"getCurrentCDSVersion",              CC"()I",    (void*)&WB_GetCDSCurrentVersion},
   {CC"isSharingEnabled",   CC"()Z",                   (void*)&WB_IsSharingEnabled},
-  {CC"isSharedInternedString", CC"(Ljava/lang/String;)Z", (void*)&WB_IsSharedInternedString },
   {CC"isSharedClass",      CC"(Ljava/lang/Class;)Z",  (void*)&WB_IsSharedClass },
-  {CC"areSharedStringsMapped",            CC"()Z",    (void*)&WB_AreSharedStringsMapped },
   {CC"linkClass",          CC"(Ljava/lang/Class;)V",  (void*)&WB_LinkClass},
   {CC"areOpenArchiveHeapObjectsMapped",   CC"()Z",    (void*)&WB_AreOpenArchiveHeapObjectsMapped},
   {CC"isCDSIncluded",                     CC"()Z",    (void*)&WB_IsCDSIncluded },
   {CC"isJFRIncluded",                     CC"()Z",    (void*)&WB_IsJFRIncluded },
   {CC"isDTraceIncluded",                  CC"()Z",    (void*)&WB_IsDTraceIncluded },
-  {CC"hasLibgraal",                       CC"()Z",    (void*)&WB_HasLibgraal },
-  {CC"isC2OrJVMCIIncluded",               CC"()Z",    (void*)&WB_isC2OrJVMCIIncluded },
-  {CC"isJVMCISupportedByGC",              CC"()Z",    (void*)&WB_IsJVMCISupportedByGC},
   {CC"canWriteJavaHeapArchive",           CC"()Z",    (void*)&WB_CanWriteJavaHeapArchive },
   {CC"canWriteMappedJavaHeapArchive",     CC"()Z",    (void*)&WB_CanWriteMappedJavaHeapArchive },
   {CC"canWriteStreamedJavaHeapArchive",   CC"()Z",    (void*)&WB_CanWriteStreamedJavaHeapArchive },
@@ -3085,7 +3145,6 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_AddCompilerDirective },
   {CC"removeCompilerDirective",   CC"(I)V",           (void*)&WB_RemoveCompilerDirective },
   {CC"isGCSupported",             CC"(I)Z",           (void*)&WB_IsGCSupported},
-  {CC"isGCSupportedByJVMCICompiler", CC"(I)Z",        (void*)&WB_IsGCSupportedByJVMCICompiler},
   {CC"isGCSelected",              CC"(I)Z",           (void*)&WB_IsGCSelected},
   {CC"isGCSelectedErgonomically", CC"()Z",            (void*)&WB_IsGCSelectedErgonomically},
   {CC"supportsConcurrentGCBreakpoints", CC"()Z",      (void*)&WB_SupportsConcurrentGCBreakpoints},

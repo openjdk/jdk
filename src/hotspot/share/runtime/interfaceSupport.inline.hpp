@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -126,9 +126,11 @@ class ThreadStateTransition : public StackObj {
 };
 
 class ThreadInVMfromJava : public ThreadStateTransition {
+  AtNoAsyncEntryMark anaem;
   bool _check_asyncs;
  public:
-  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true) : ThreadStateTransition(thread), _check_asyncs(check_asyncs) {
+  ThreadInVMfromJava(JavaThread* thread, bool check_asyncs = true)
+    : ThreadStateTransition(thread), anaem(thread, !check_asyncs), _check_asyncs(check_asyncs) {
     transition_from_java(thread, _thread_in_vm);
   }
   ~ThreadInVMfromJava()  {
@@ -421,6 +423,14 @@ extern "C" {                                                         \
   result_type JNICALL header {                                       \
     VM_Exit::block_if_vm_exited();                                   \
     VM_LEAF_BASE(result_type, header)
+
+
+#define JVM_ENTRY_FROM_LEAF(env, result_type, header)                \
+  { {                                                                \
+    JavaThread* thread=JavaThread::thread_from_jni_environment(env); \
+    ThreadInVMfromNative __tiv(thread);                              \
+    DEBUG_ONLY(VMNativeEntryWrapper __vew;)                          \
+    VM_ENTRY_BASE_FROM_LEAF(result_type, header, thread)
 
 
 #define JVM_END } }

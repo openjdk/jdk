@@ -22,9 +22,9 @@
  */
 package test.astro;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-
 import org.xml.sax.InputSource;
+
+import java.nio.file.Path;
 
 /*
  * Default implementation of a input source factory. This is the most
@@ -38,7 +38,8 @@ public class InputSourceFactoryImpl implements InputSourceFactory {
 
     public InputSource newInputSource(String filename) {
         InputSource catSrc = new InputSource(filename);
-        catSrc.setSystemId(filenameToURL(filename));
+        String uri = Path.of(filename).toUri().toASCIIString();
+        catSrc.setSystemId(uri);
         return catSrc;
     }
 }

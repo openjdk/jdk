@@ -53,9 +53,7 @@ import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -603,11 +601,24 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void testMapCustomPath() throws IOException {
-        Path path = Path.of(URI.create("jrt:/"));
-        try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 0L, Arena.ofAuto());
+        // Zip file systems do support creating file channels
+        // but do not support memory mapping those files
+        Path scratch = Path.of("testMapCustomPath");
+        Files.createDirectories(scratch);
+        Path zipFile = scratch.resolve("test.zip");
+
+        try (FileSystem zipFs = FileSystems.newFileSystem(zipFile, Map.of("create", true))) {
+            // create test file
+            Path testFile = zipFs.getPath("/test_file.txt");
+            Files.writeString(testFile, "testing", StandardOpenOption.CREATE_NEW);
+
+            // now try to map it
+            try (FileChannel fileChannel = FileChannel.open(testFile, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                assertThrows(UnsupportedOperationException.class,
+                        () -> fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 0L, Arena.ofAuto()));
+            }
         }
     }
 

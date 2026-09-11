@@ -154,6 +154,14 @@ public abstract class JavacTemplateTestBase {
         }
     }
 
+    protected void assertCompileSucceededWithWarning(String warning, int numberOfWarnings) {
+        if (diags.errorsFound())
+            fail("Expected successful compilation");
+        if (!diags.containsWarningKey(warning, numberOfWarnings)) {
+            fail(String.format("Expected compilation warning with %s, found %s", warning, diags.keys()));
+        }
+    }
+
     /**
      * If the provided boolean is true, assert all previous compiles succeeded,
      * otherwise assert that a compile failed.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,6 +251,32 @@ TEST_VM(RegMask, find_first_set) {
   rm.insert(OptoReg::Name(18));
   rm.insert(OptoReg::Name(19));
   ASSERT_EQ(rm.find_first_set(lrg, 4), OptoReg::Name(19));
+}
+
+TEST_VM(RegMask, find_first_set_scalable_vector) {
+  RegMask rm;
+  LRG lrg{}; // Zero initialize
+  lrg._is_scalable = 1;
+  lrg._is_vector = 1;
+  lrg.set_num_regs(RegMask::SlotsPerVecA);
+  // This test only runs on hardware with scalable vector support (e.g.,
+  // AArch64, RISC-V). This condition ensures the expected execution path in
+  // RegMask::find_first_set().
+  if (lrg.is_scalable()) {
+    rm.insert(OptoReg::Name(rm.rm_size_in_bits() - 4));
+    rm.insert(OptoReg::Name(rm.rm_size_in_bits() - 3));
+    rm.insert(OptoReg::Name(rm.rm_size_in_bits() - 2));
+    rm.insert(OptoReg::Name(rm.rm_size_in_bits() - 1));
+    // Case-1: The physical length of scalable vector registers equals to
+    // RegMask::SlotsPerVecA, e.g., AArch64 Neoverse-V2.
+    uint scalable_reg_slots = RegMask::SlotsPerVecA;
+    ASSERT_EQ(rm.find_first_set(lrg, scalable_reg_slots),
+      OptoReg::Name(rm.rm_size_in_bits() - 1));
+    // Case-2: The physical length of scalable vector registers is bigger than
+    // RegMask::SlotsPerVecA, e.g., AArch64 Neoverse-V1.
+    scalable_reg_slots = RegMask::SlotsPerVecA * 2;
+    ASSERT_EQ(rm.find_first_set(lrg, scalable_reg_slots), OptoReg::Bad);
+  }
 }
 
 TEST_VM(RegMask, alignment) {

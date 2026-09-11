@@ -35,11 +35,11 @@ nmethod* ShenandoahNMethod::nm() const {
   return _nm;
 }
 
-ShenandoahReentrantLock* ShenandoahNMethod::lock() {
+ShenandoahNMethodLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
-ShenandoahReentrantLock* ShenandoahNMethod::ic_lock() {
+ShenandoahNMethodLock* ShenandoahNMethod::ic_lock() {
   return &_ic_lock;
 }
 
@@ -85,11 +85,11 @@ void ShenandoahNMethod::attach_gc_data(nmethod* nm, ShenandoahNMethod* gc_data) 
   nm->set_gc_data<ShenandoahNMethod>(gc_data);
 }
 
-ShenandoahReentrantLock* ShenandoahNMethod::lock_for_nmethod(nmethod* nm) {
+ShenandoahNMethodLock* ShenandoahNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
 }
 
-ShenandoahReentrantLock* ShenandoahNMethod::ic_lock_for_nmethod(nmethod* nm) {
+ShenandoahNMethodLock* ShenandoahNMethod::ic_lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->ic_lock();
 }
 

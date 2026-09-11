@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -368,12 +368,15 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     goto unlock_unwind_and_return;
 
   void **arguments;
-  void *mirror; {
+  // These locals must remain on stack until call completes
+  void *mirror;
+  void *env;
+  {
     arguments =
       (void **) stack->alloc(handler->argument_count() * sizeof(void **));
     void **dst = arguments;
 
-    void *env = thread->jni_environment();
+    env = thread->jni_environment();
     *(dst++) = &env;
 
     if (method->is_static()) {
@@ -579,6 +582,12 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     return normal_entry(method, 0, THREAD);
   }
 
+  // Flattened entries require handling beyond a direct field load.
+  // Bail to slow path.
+  if (entry->is_flat()) {
+    return normal_entry(method, 0, THREAD);
+  }
+
   ZeroStack* stack = thread->zero_stack();
   intptr_t* topOfStack = stack->sp();
 
@@ -667,6 +676,12 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   ConstantPoolCache* cache = method->constants()->cache();
   ResolvedFieldEntry* entry = cache->resolved_field_entry_at(index);
   if (!entry->is_resolved(Bytecodes::_putfield)) {
+    return normal_entry(method, 0, THREAD);
+  }
+
+  // Flattened entries require handling beyond a direct field store.
+  // Bail to slow path.
+  if (entry->is_flat()) {
     return normal_entry(method, 0, THREAD);
   }
 

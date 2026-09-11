@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,16 +130,18 @@ class Mutex : public CHeapObj<mtSynchronizer> {
     return _skip_rank_check;
   }
 
+  const char* rank_name() const;
+  void print_rank_name(outputStream* st) const;
+
  public:
   Rank   rank() const          { return _rank; }
-  const char*  rank_name() const;
   Mutex* next()  const         { return _next; }
 #endif // ASSERT
 
  protected:
   void set_owner_implementation(Thread* owner)                        NOT_DEBUG({ raw_set_owner(owner);});
   void check_block_state       (Thread* thread)                       NOT_DEBUG_RETURN;
-  void check_safepoint_state   (Thread* thread)                       NOT_DEBUG_RETURN;
+  void check_safepoint_state   (Thread* thread, bool allow_gcalot)    NOT_DEBUG_RETURN;
   void check_no_safepoint_state(Thread* thread)                       NOT_DEBUG_RETURN;
   void check_rank              (Thread* thread)                       NOT_DEBUG_RETURN;
   void assert_owner            (Thread* expected)                     NOT_DEBUG_RETURN;

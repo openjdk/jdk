@@ -198,6 +198,7 @@ public:
   CmpPNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int Opcode() const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual const Type* Value(PhaseGVN* phase) const;
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -217,7 +218,7 @@ class CmpLNode : public CmpNode {
 public:
   CmpLNode( Node *in1, Node *in2 ) : CmpNode(in1,in2) {}
   virtual int    Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type *sub( const Type *, const Type * ) const;
 };
 
@@ -309,6 +310,26 @@ public:
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
+//--------------------------FlatArrayCheckNode---------------------------------
+// Returns true if one of the input array objects or array klass ptrs (there
+// can be multiple) is flat.
+class FlatArrayCheckNode : public CmpNode {
+public:
+  enum {
+    Control,
+    Memory,
+    ArrayOrKlass
+  };
+  FlatArrayCheckNode(Compile* C, Node* mem, Node* array_or_klass) : CmpNode(mem, array_or_klass) {
+    init_class_id(Class_FlatArrayCheck);
+    init_flags(Flag_is_macro);
+    C->add_macro_node(this);
+  }
+  virtual int Opcode() const;
+  virtual const Type* sub(const Type*, const Type*) const { ShouldNotReachHere(); return nullptr; }
+  const Type* Value(PhaseGVN* phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
 
 //------------------------------BoolTest---------------------------------------
 // Convert condition codes to a boolean test value (0 or -1).
@@ -333,8 +354,11 @@ struct BoolTest {
   static mask negate_mask(mask btm) { return mask(btm ^ 4); }
   static mask unsigned_mask(mask btm);
   bool is_canonical( ) const { return (_test == BoolTest::ne || _test == BoolTest::lt || _test == BoolTest::le || _test == BoolTest::overflow); }
-  bool is_less( )  const { return _test == BoolTest::lt || _test == BoolTest::le; }
-  bool is_greater( ) const { return _test == BoolTest::gt || _test == BoolTest::ge; }
+  bool is_less( )  const { return is_less(_test); }
+  bool is_greater( ) const { return is_greater(_test); }
+  static bool is_less(mask btm) { return btm == BoolTest::lt || btm == BoolTest::le; }
+  static bool is_greater(mask btm) { return btm == BoolTest::gt || btm == BoolTest::ge; }
+
   void dump_on(outputStream *st) const;
   mask merge(BoolTest other) const;
 };
@@ -519,7 +543,12 @@ class SqrtDNode : public Node {
 public:
   SqrtDNode(Compile* C, Node *c, Node *in1) : Node(c, in1) {
     init_flags(Flag_is_expensive);
-    C->add_expensive_node(this);
+    // Treat node only as expensive if a control input is set because it might
+    // be created from SqrtVDNode in VectorNode::push_through_replicate which
+    // does not have control input.
+    if (c != nullptr) {
+      C->add_expensive_node(this);
+    }
   }
   virtual int Opcode() const;
   const Type *bottom_type() const { return Type::DOUBLE; }
@@ -564,6 +593,9 @@ public:
   const Type* bottom_type() const { return Type::HALF_FLOAT; }
   virtual uint ideal_reg() const { return Op_RegF; }
   virtual const Type* Value(PhaseGVN* phase) const;
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 

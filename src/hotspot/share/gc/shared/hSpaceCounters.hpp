@@ -54,13 +54,6 @@ class HSpaceCounters: public CHeapObj<mtGC> {
 
   void update_all(size_t capacity, size_t used);
 
-  DEBUG_ONLY(
-    // for security reasons, we do not allow arbitrary reads from
-    // the counters as they may live in shared memory.
-    jlong used();
-    jlong capacity();
-  )
-
   const char* name_space() const        { return _name_space; }
 };
 #endif // SHARE_GC_SHARED_HSPACECOUNTERS_HPP

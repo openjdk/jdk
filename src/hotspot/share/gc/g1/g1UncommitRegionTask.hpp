@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,6 @@ class G1UncommitRegionTask : public G1ServiceTask {
   // This limit is small enough to ensure that the duration of each invocation
   // is short, while still making reasonable progress.
   static const uint UncommitSizeLimit = 128 * M;
-  // Initial delay in milliseconds after GC before the regions are uncommitted.
-  static const uint UncommitInitialDelayMs = 100;
   // The delay between two uncommit task executions.
   static const uint UncommitTaskDelayMs = 10;
 

@@ -28,7 +28,9 @@
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 ShenandoahSynchronizePinnedRegionStates::ShenandoahSynchronizePinnedRegionStates() :
-  _lock(ShenandoahHeap::heap()->lock()) { }
+  _lock(ShenandoahHeap::heap()->lock()) {
+  ShenandoahHeap::heap()->flush_region_pin_cache();
+}
 
 void ShenandoahSynchronizePinnedRegionStates::heap_region_do(ShenandoahHeapRegion* r) {
   // Drop "pinned" state from regions that no longer have a pinned count. Put
@@ -80,6 +82,11 @@ void ShenandoahFinalMarkUpdateRegionStateClosure::heap_region_do(ShenandoahHeapR
     // Remember limit for updating refs. It's guaranteed that we get no
     // from-space-refs written from here on.
     r->set_update_watermark_at_safepoint(r->top());
+
+    if (r->is_old()) {
+      // Record where we need to start updating the remembered set
+      r->record_top_at_evac_start();
+    }
   } else {
     assert(!r->has_live(), "Region %zu should have no live data", r->index());
     assert(_ctx == nullptr || _ctx->top_at_mark_start(r) == r->top(),

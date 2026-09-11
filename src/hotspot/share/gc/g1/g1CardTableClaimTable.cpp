@@ -39,7 +39,7 @@ G1CardTableClaimTable::G1CardTableClaimTable(uint chunks_per_region) :
 }
 
 G1CardTableClaimTable::~G1CardTableClaimTable() {
-  FREE_C_HEAP_ARRAY(uint, _card_claims);
+  FREE_C_HEAP_ARRAY(_card_claims);
 }
 
 void G1CardTableClaimTable::initialize(uint max_reserved_regions) {

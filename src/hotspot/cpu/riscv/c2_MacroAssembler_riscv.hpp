@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,6 +49,8 @@
                                   const int STUB_THRESHOLD, Label *STUB, Label *DONE);
 
  public:
+  void entry_barrier();
+
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
   void fast_lock(Register object, Register box,
                  Register tmp1, Register tmp2, Register tmp3, Register tmp4);
@@ -296,7 +298,16 @@
 
   void vfcvt_rtz_x_f_v_safe(VectorRegister dst, VectorRegister src);
 
-  void extract_v(Register dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
-  void extract_fp_v(FloatRegister dst, VectorRegister src, BasicType bt, int idx, VectorRegister tmp);
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, int idx, VectorRegister vtmp);
+
+  void extract_v(Register dst, VectorRegister src,
+                 BasicType bt, Register idx, VectorRegister vtmp);
+
+  void extract_fp_v(FloatRegister dst, VectorRegister src,
+                    BasicType bt, int idx, VectorRegister vtmp);
+
+  void slidedown_v(VectorRegister dst, VectorRegister src,
+                   uint32_t offset, Register tmp = t0);
 
 #endif // CPU_RISCV_C2_MACROASSEMBLER_RISCV_HPP

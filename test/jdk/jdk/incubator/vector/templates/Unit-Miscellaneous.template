@@ -10,7 +10,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] < b[i]);
+                assertEquals(mv.laneIsSet(j), lt(a[i + j], b[i]));
             }
         }
     }
@@ -26,7 +26,7 @@
 
             // Check results as part of computation.
             for (int j = 0; j < SPECIES.length(); j++) {
-                assertEquals(mv.laneIsSet(j), a[i + j] == b[i]);
+                assertEquals(mv.laneIsSet(j), eq(a[i + j], b[i]));
             }
         }
     }
@@ -87,7 +87,12 @@
             String str = av.toString();
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
-            Assert.assertTrue(str.equals(Arrays.toString(subarr)), "at index " + i + ", string should be = " + Arrays.toString(subarr) + ", but is = " + str);
+#if[FP16]
+            String expectedStr = Arrays.toString(toFloat16Array(subarr));
+#else[FP16]
+            String expectedStr = Arrays.toString(subarr);
+#end[FP16]
+            Assert.assertTrue(str.equals(expectedStr), "at index " + i + ", string should be = " + expectedStr + ", but is = " + str);
         }
     }
 
@@ -100,11 +105,25 @@
             int hash = av.hashCode();
 
             $type$ subarr[] = Arrays.copyOfRange(a, i, i + SPECIES.length());
+#if[FP16]
+            int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(toFloat16Array(subarr)));
+#else[FP16]
             int expectedHash = Objects.hash(SPECIES, Arrays.hashCode(subarr));
+#end[FP16]
             Assert.assertTrue(hash == expectedHash, "at index " + i + ", hash should be = " + expectedHash + ", but is = " + hash);
         }
     }
 
+#if[FP16]
+    static Float16[] toFloat16Array(short[] bits) {
+        Float16[] a = new Float16[bits.length];
+        for (int j = 0; j < bits.length; j++) {
+            a[j] = shortBitsToFloat16(bits[j]);
+        }
+        return a;
+    }
+
+#end[FP16]
 #if[byte]
     @Test(dataProvider = "$type$UnaryOpProvider")
     static void reinterpretAsBytes$vectorteststype$SmokeTest(IntFunction<$type$[]> fa) {
@@ -123,7 +142,7 @@
     static long ADDReduceLong($type$[] a, int idx) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            res += a[i];
+            res = scalar_add(res, a[i]);
         }
 
         return (long)res;
@@ -132,7 +151,7 @@
     static long ADDReduceAllLong($type$[] a) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLong(a, i);
+            res = (long)scalar_add(($type$)res, ($type$)ADDReduceLong(a, i));
         }
 
         return res;
@@ -150,8 +169,8 @@
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add(($type$)ra, ($type$)r[i]);
         }
 
         assertReductionLongArraysEquals(r, ra, a,
@@ -161,8 +180,9 @@
     static long ADDReduceLongMasked($type$[] a, int idx, boolean[] mask) {
         $type$ res = 0;
         for (int i = idx; i < (idx + SPECIES.length()); i++) {
-            if(mask[i % SPECIES.length()])
-                res += a[i];
+            if (mask[i % SPECIES.length()]) {
+                res = scalar_add(res, a[i]);
+            }
         }
 
         return (long)res;
@@ -171,7 +191,7 @@
     static long ADDReduceAllLongMasked($type$[] a, boolean[] mask) {
         long res = 0;
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            res += ADDReduceLongMasked(a, i, mask);
+            res = (long)scalar_add(($type$)res, ($type$)ADDReduceLongMasked(a, i, mask));
         }
 
         return res;
@@ -191,8 +211,8 @@
         }
 
         ra = 0;
-        for (int i = 0; i < a.length; i ++) {
-            ra += r[i];
+        for (int i = 0; i < a.length; i++) {
+            ra = (long)scalar_add(($type$)ra, ($type$)r[i]);
         }
 
         assertReductionLongArraysEqualsMasked(r, ra, a, mask,
@@ -209,7 +229,7 @@
         $type$[] r = new $type$[a.length];
 
         for (int i = 0; i < a.length; i += SPECIES.length()) {
-            $abstractvectortype$.broadcast(SPECIES, (long)a[i]).intoArray(r, i);
+            $abstractvectortype$.broadcast(SPECIES, {#if[FP16]?shortBitsToFloat16(a[i]).longValue():(long)a[i]}).intoArray(r, i);
         }
         assertBroadcastArraysEquals(r, a);
     }
@@ -226,7 +246,7 @@
         for (int ic = 0; ic < INVOC_COUNT; ic++) {
             for (int i = 0; i < a.length; i += SPECIES.length()) {
                 $abstractvectortype$ av = $abstractvectortype$.fromArray(SPECIES, a, i);
-                av.blend((long)b[i], vmask).intoArray(r, i);
+                av.blend({#if[FP16]?shortBitsToFloat16(b[i]).longValue():(long)b[i]}, vmask).intoArray(r, i);
             }
         }
         assertBroadcastLongArraysEquals(r, a, b, mask, $vectorteststype$::blend);
@@ -587,14 +607,14 @@
     static void ShapeWithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
         VectorShape vsh = av.shape();
-        VectorSpecies species = vsh.withLanes($type$.class);
+        VectorSpecies species = vsh.withLanes({#if[FP16]?Float16.class:$type$.class});
         assert(species.equals(SPECIES));
     }
 
     @Test
     static void ElementType$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        assert(av.species().elementType() == $type$.class);
+        assert(av.species().elementType() == {#if[FP16]?Float16.class:$type$.class});
     }
 
     @Test
@@ -612,7 +632,7 @@
     @Test
     static void WithLanes$vectorteststype$SmokeTest() {
         $abstractvectortype$ av = $abstractvectortype$.zero(SPECIES);
-        VectorSpecies species = av.species().withLanes($type$.class);
+        VectorSpecies species = av.species().withLanes({#if[FP16]?Float16.class:$type$.class});
         assert(species.equals(SPECIES));
     }
 

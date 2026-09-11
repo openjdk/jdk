@@ -9,7 +9,7 @@ SPP=build.tools.spp.Spp
 # desirable to generate code using ASM which will allow more flexibility
 # in the kinds of tests that are generated.
 
-for type in boolean byte short char int long float double String
+for type in boolean byte short char int long float double String Value
 do
   Type="$(tr '[:lower:]' '[:upper:]' <<< ${type:0:1})${type:1}"
   args="-K$type -Dtype=$type -DType=$Type"
@@ -25,6 +25,17 @@ do
   case $type in
     boolean|byte|short|char|int|long)
       args="$args -KBitwise"
+      ;;
+  esac
+
+ # Object = objects of identity or value class
+ # Value = value class 
+  case $type in
+    String)
+      args="$args -KObject"
+      ;;
+    Value)
+      args="$args -KObject -KValue"
       ;;
   esac
 
@@ -76,6 +87,11 @@ do
       value1=\"foo\"
       value2=\"bar\"
       value3=\"baz\"
+      ;;
+    Value)
+      value1="Value.getInstance(10)"
+      value2="Value.getInstance(20)"
+      value3="Value.getInstance(30)"
       ;;
   esac
 

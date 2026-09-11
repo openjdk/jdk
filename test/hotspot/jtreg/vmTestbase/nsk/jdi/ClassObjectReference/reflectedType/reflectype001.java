@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.io.*;
  * of the JDI interface <code>ClassObjectReference</code> of com.sun.jdi package
  */
 
-public class reflectype001 extends Log {
+public class reflectype001 {
     static java.io.PrintStream out_stream;
     static boolean verbose_mode = false;  // test argument -vbs or -verbose switches to true
                                           // - for more easy failure evaluation

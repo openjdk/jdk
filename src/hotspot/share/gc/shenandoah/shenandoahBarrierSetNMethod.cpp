@@ -41,9 +41,9 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
-  ShenandoahReentrantLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
+  ShenandoahNMethodLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
   assert(lock != nullptr, "Must be");
-  ShenandoahReentrantLocker locker(lock);
+  ShenandoahNMethodLocker locker(lock);
 
   if (!is_armed(nm)) {
     // Some other thread managed to complete while we were
@@ -61,7 +61,7 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
     // We can end up calling nmethods that are unloading
     // since we clear compiled ICs lazily. Returning false
-    // will re-resovle the call and update the compiled IC.
+    // will re-resolve the call and update the compiled IC.
     return false;
   }
 

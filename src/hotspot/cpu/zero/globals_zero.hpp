@@ -73,6 +73,9 @@ define_pd_global(uintx, TypeProfileLevel, 0);
 
 define_pd_global(bool, PreserveFramePointer, false);
 
+define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
+define_pd_global(bool, InlineTypeReturnedAsFields, false);
+
 define_pd_global(bool, CompactStrings, true);
 
 #define ARCH_FLAGS(develop,                                                 \

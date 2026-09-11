@@ -499,6 +499,15 @@ public interface TreeVisitor<R,P> {
     R visitPrimitiveType(PrimitiveTypeTree node, P p);
 
     /**
+     * Visits a {@code VarTypeTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 27
+     */
+    R visitVarType(VarTypeTree node, P p);
+
+    /**
      * Visits a {@code TypeParameterTree} node.
      * @param node the node being visited
      * @param p a parameter value

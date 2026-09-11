@@ -41,6 +41,7 @@ import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.DiagnosticPart;
 import com.sun.tools.javac.api.DiagnosticFormatter.Configuration.MultilineLimit;
 import com.sun.tools.javac.api.DiagnosticFormatter.PositionKind;
 import com.sun.tools.javac.api.Formattable;
+import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Source;
@@ -229,6 +230,9 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
         else if (arg instanceof Tag tag) {
             return messages.getLocalizedString(l, "compiler.misc.tree.tag." +
                                                   StringUtils.toLowerCase(tag.name()));
+        }
+        else if (arg instanceof Attribute.Compound compound) {
+            return printer.printAnnotation(compound, l);
         }
         else {
             return String.valueOf(arg);

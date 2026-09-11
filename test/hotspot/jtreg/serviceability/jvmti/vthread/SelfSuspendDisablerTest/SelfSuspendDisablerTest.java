@@ -111,7 +111,7 @@ public class SelfSuspendDisablerTest {
         t3.start();
 
         while(!isSuspended(t3)) {
-            sleep(100);
+            sleep(1);
         }
 
         testJvmtiThreadState(t3, SUSPENDED);

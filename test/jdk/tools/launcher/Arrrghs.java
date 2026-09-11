@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
  * @test
  * @bug 5030233 6214916 6356475 6571029 6684582 6742159 4459600 6758881 6753938
  *      6894719 6968053 7151434 7146424 8007333 8077822 8143640 8132379 8218547
+ *      8385024
  * @summary Argument parsing validation.
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -497,6 +498,56 @@ public class Arrrghs extends TestHelper {
         TestResult tr = doExec(javaCmd, "-jar", elp.getAbsolutePath());
         tr.checkPositive();
         tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongPathJarFile failed:\n" + tr.status);
+        }
+    }
+
+    /*
+     * Tests -jar command where the path to the jar file is shorter than
+     * `MAX_PATH` (260 characters) but the absolute path to the file is longer
+     * than `MAX_PATH`
+     */
+
+    @Test
+    void testLongResolvedPathJarFile() throws IOException {
+        if (!isWindows) {
+            return;
+        }
+
+        final int MAX_PATH = 260;
+        String jarName = "elp.jar";
+        String dirSegment = "longpathtest_longpathtest/";
+        int cwdLen = Path.of(System.getProperty("user.dir")).toString().length();
+
+        // We want `cwdLen + 1 + relativeLen` to be longer than `MAX_PATH` and
+        // `relativeLen` to be shorter than `MAX_PATH`, where `relativeLen` is
+        // `repeats * dirSegment.length() + jarName.length()`.
+        int minRelative = MAX_PATH - cwdLen;
+        int repeats = (minRelative - jarName.length() + dirSegment.length() - 1) / dirSegment.length();
+        if (repeats < 1) repeats = 1;
+        int relativeLen = repeats * dirSegment.length() + jarName.length();
+        int absoluteLen = cwdLen + 1 + relativeLen;
+
+        if (relativeLen >= MAX_PATH || absoluteLen <= MAX_PATH) {
+            throw new RuntimeException("Error: invariant mismatch:"
+                + " cwdLen=" + cwdLen
+                + " relativeLen=" + relativeLen
+                + " absoluteLen=" + absoluteLen);
+        }
+
+        String longPathStr = dirSegment.repeat(repeats);
+        Path longPath = Paths.get(longPathStr);
+        Path jarPath = Files.createDirectories(longPath).resolve(jarName);
+        File elp = jarPath.toFile();
+        createJar(elp, new File("Foo"), "public static void main(String[] args){ System.out.println(\"Hello from ELP\"); }");
+
+        TestResult tr = doExec(javaCmd, "-jar", jarPath.toString());
+        tr.checkPositive();
+        tr.contains("Hello from ELP");
+        if (!tr.testStatus) {
+            throw new RuntimeException("testLongResolvedPathJarFile failed:\n" + tr.status);
+        }
     }
 
     /*

@@ -128,16 +128,6 @@ public final class AWTAccessor {
         void setRequestFocusController(RequestFocusController requestController);
 
         /**
-         * Returns the appContext of the component.
-         */
-        AppContext getAppContext(Component comp);
-
-        /**
-         * Sets the appContext of the component.
-         */
-        void setAppContext(Component comp, AppContext appContext);
-
-        /**
          * Returns the parent of the component.
          */
         Container getParent(Component comp);
@@ -361,13 +351,6 @@ public final class AWTAccessor {
          * Accessor for InputEvent.getButtonDownMasks()
          */
         int[] getButtonDownMasks();
-
-        /*
-         * Accessor for InputEvent.canAccessSystemClipboard field
-         */
-        boolean canAccessSystemClipboard(InputEvent event);
-        void setCanAccessSystemClipboard(InputEvent event,
-                boolean canAccessSystemClipboard);
     }
 
     /**
@@ -451,16 +434,6 @@ public final class AWTAccessor {
      * An accessor for the MenuComponent class.
      */
     public interface MenuComponentAccessor {
-        /**
-         * Returns the appContext of the menu component.
-         */
-        AppContext getAppContext(MenuComponent menuComp);
-
-        /**
-         * Sets the appContext of the menu component.
-         */
-        void setAppContext(MenuComponent menuComp, AppContext appContext);
-
         /**
          * Returns the peer of the menu component.
          */
@@ -562,6 +535,11 @@ public final class AWTAccessor {
          * Returns whether the file dialog allows the multiple file selection.
          */
         boolean isMultipleMode(FileDialog fileDialog);
+
+        /*
+         * Returns whether dispose is being run
+         */
+        boolean isBeingDisposed(FileDialog fileDialog);
     }
 
     /*
@@ -772,8 +750,6 @@ public final class AWTAccessor {
      * An accessor object for the AccessibleContext class
      */
     public interface AccessibleContextAccessor {
-        void setAppContext(AccessibleContext accessibleContext, AppContext appContext);
-        AppContext getAppContext(AccessibleContext accessibleContext);
         Object getNativeAXResource(AccessibleContext accessibleContext);
         void setNativeAXResource(AccessibleContext accessibleContext, Object value);
     }

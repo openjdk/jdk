@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,178 +26,168 @@
  * @bug 6425477 8141039 8324648
  * @library /test/lib
  * @summary Better support for generation of high entropy random numbers
- * @run main StrongSecureRandom
+ * @run junit StrongSecureRandom
  */
-import java.security.*;
-import java.util.*;
 
-import static jdk.test.lib.Asserts.assertTrue;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.security.SecureRandomParameters;
+import java.security.Security;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * This test assumes that the standard Sun providers are installed.
  */
 public class StrongSecureRandom {
 
-    private static final String os = System.getProperty("os.name", "unknown");
+    private static final String OS = System.getProperty("os.name", "unknown");
 
-    private static void testDefaultEgd() throws Exception {
-        String s = Security.getProperty("securerandom.source");
-
-        System.out.println("Testing:  default EGD: " + s);
-        if (!s.equals("file:/dev/random")) {
-            throw new Exception("Default is not 'file:/dev/random'");
-        }
+    private static Stream<String> nativePrngAlgorithms() {
+        return Stream.of("NativePRNG",
+                "NativePRNGNonBlocking",
+                "NativePRNGBlocking");
     }
 
-    private static void testNativePRNGImpls() throws Exception {
-        SecureRandom sr;
-        byte[] ba;
-
-        System.out.println("Testing new NativePRNGImpls");
-
-        if (os.startsWith("Windows")) {
-            System.out.println("Skip windows testing.");
-            return;
-        }
-
-        System.out.println("Testing regular");
-        sr = SecureRandom.getInstance("NativePRNG");
-        if (!sr.getAlgorithm().equals("NativePRNG")) {
-            throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
-        }
-        ba = sr.generateSeed(1);
-        sr.nextBytes(ba);
-        sr.setSeed(ba);
-
-        System.out.println("Testing NonBlocking");
-        sr = SecureRandom.getInstance("NativePRNGNonBlocking");
-        if (!sr.getAlgorithm().equals("NativePRNGNonBlocking")) {
-            throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
-        }
-        ba = sr.generateSeed(1);
-        sr.nextBytes(ba);
-        sr.setSeed(ba);
-
-        if (os.equals("Linux")) {
-            System.out.println("Skip Linux blocking test.");
-            return;
-        }
-
-        System.out.println("Testing Blocking");
-        sr = SecureRandom.getInstance("NativePRNGBlocking");
-        if (!sr.getAlgorithm().equals("NativePRNGBlocking")) {
-            throw new Exception("sr.getAlgorithm(): " + sr.getAlgorithm());
-        }
-        ba = sr.generateSeed(1);
-        sr.nextBytes(ba);
-        sr.setSeed(ba);
-
-        testParamsUnsupported("NativePRNG");
-        testParamsUnsupported("NativePRNGNonBlocking");
-        testParamsUnsupported("NativePRNGBlocking");
+    private static Stream<Arguments> strongAlgorithmsProperties() {
+        return Stream.of(Arguments.of("", false),
+                Arguments.of("SHA1PRNG", true),
+                Arguments.of(" SHA1PRNG", true),
+                Arguments.of("SHA1PRNG ", true),
+                Arguments.of(" SHA1PRNG ", true),
+                Arguments.of("SHA1PRNG:SUN", true),
+                Arguments.of("Sha1PRNG:SUN", true),
+                Arguments.of("SHA1PRNG:Sun", false),
+                Arguments.of(" SHA1PRNG:SUN", true),
+                Arguments.of("SHA1PRNG:SUN ", true),
+                Arguments.of(" SHA1PRNG:SUN ", true),
+                Arguments.of(" SHA1PRNG:SUn", false),
+                Arguments.of("SHA1PRNG:SUn ", false),
+                Arguments.of(" SHA1PRNG:SUn ", false),
+                Arguments.of(",,,SHA1PRNG", true),
+                Arguments.of(",,, SHA1PRNG", true),
+                Arguments.of(" , , ,SHA1PRNG ", true),
+                Arguments.of(",,,, SHA1PRNG ,,,", true),
+                Arguments.of(",,,, SHA1PRNG:SUN ,,,", true),
+                Arguments.of(",,,, SHA1PRNG:SUn ,,,", false),
+                Arguments.of(",,,SHA1PRNG:Sun,, SHA1PRNG:SUN", true),
+                Arguments.of(",,,Sha1PRNG:Sun, SHA1PRNG:SUN", true),
+                Arguments.of(" SHA1PRNG:Sun, Sha1PRNG:Sun,,,,Sha1PRNG:SUN",
+                        true),
+                Arguments.of(",,,SHA1PRNG:Sun,, SHA1PRNG:SUn", false),
+                Arguments.of(",,,Sha1PRNG:Sun, SHA1PRNG:SUn", false),
+                Arguments.of(" SHA1PRNG:Sun, Sha1PRNG:Sun,,,,Sha1PRNG:SUn",
+                        false),
+                Arguments.of(" @#%,%$#:!%^, NativePRNG:Sun, Sha1PRNG:Sun,,Sha1PRNG:SUN",
+                        true),
+                Arguments.of(" @#%,%$#!%^, NativePRNG:Sun, Sha1PRNG:Sun,,Sha1PRNG:SUn",
+                        false));
     }
 
-    private static void testParamsUnsupported(String alg) throws NoSuchAlgorithmException {
+    @Test
+    public void testDefaultEgd() {
+        final String src = Security.getProperty("securerandom.source");
+
+        System.out.println("Testing: default EGD: " + src);
+        assertEquals("file:/dev/random", src,
+                "Unexpected default");
+    }
+
+    @ParameterizedTest(name = "testNativePRNGImpl {0}")
+    @MethodSource("nativePrngAlgorithms")
+    public void testNativePRNGImpl(final String algorithm)
+            throws NoSuchAlgorithmException {
+        // 'assuming' in order to skip the test if needed
+        assumeFalse(OS.startsWith("Windows"), "Skip Windows testing");
+        assumeFalse(OS.equals("Linux") &&
+                    algorithm.equals("NativePRNGBlocking"),
+                "Skip Linux blocking test");
+
+
+        System.out.println("Testing " + algorithm);
+        final SecureRandom sr = SecureRandom.getInstance(algorithm);
+        assertEquals(algorithm, sr.getAlgorithm(), "Unexpected algorithm");
+
+        final byte[] seed = sr.generateSeed(1);
+        sr.nextBytes(seed);
+        sr.setSeed(seed);
+    }
+
+    @ParameterizedTest(name = "testUnsupportedParams {0}")
+    @MethodSource("nativePrngAlgorithms")
+    public void testUnsupportedParams(final String alg) {
+        // 'assuming' in order to skip the test if needed
+        assumeFalse(OS.startsWith("Windows"), "Skip Windows testing");
+        assumeFalse(OS.equals("Linux") &&
+                    alg.equals("NativePRNGBlocking"),
+                "Skip Linux blocking test");
+
         System.out.println("Testing that " + alg + " does not support params");
 
-        try {
-            SecureRandom.getInstance(alg, new SecureRandomParameters() {});
-            throw new RuntimeException("Params should not be supported");
-        } catch (NoSuchAlgorithmException nsae) {
-            Throwable cause = nsae.getCause();
-            if (cause instanceof IllegalArgumentException) {
-                assertTrue(cause.getMessage().contains("Unsupported params"),
-                        "Unexpected error message: " + cause.getMessage());
-            } else {
-                throw nsae;
-            }
+        final NoSuchAlgorithmException exception = assertThrows(
+                NoSuchAlgorithmException.class,
+                () -> SecureRandom.getInstance(
+                        alg, new SecureRandomParameters() {
+                        })
+        );
+
+        final Throwable cause = exception.getCause();
+        if (cause instanceof IllegalArgumentException) {
+            assertTrue(cause.getMessage().contains("Unsupported params"),
+                    "Unsupported params not recorded: " + cause.getMessage());
+        } else {
+            throw new AssertionError("Wrong exception ", exception);
         }
     }
 
-    private static void testStrongInstance(boolean expected) throws Exception {
-
-        boolean result;
-
-        try {
-            SecureRandom.getInstanceStrong();
-            result = true;
-        } catch (NoSuchAlgorithmException e) {
-            result = false;
-        }
-
-        if (expected != result) {
-            throw new Exception("Received: " + result);
-        }
+    @Test
+    public void testDefaultStrongInstance() {
+        testStrongInstanceAvailability(true);
     }
 
     /*
      * This test assumes that the standard providers are installed.
      */
-    private static void testProperty(String property, boolean expected)
-            throws Exception {
-
+    @ParameterizedTest(name = "testProperties value='{0}', expected={1}")
+    @MethodSource("strongAlgorithmsProperties")
+    public void testProperties(final String property, final boolean expected) {
         System.out.println("Testing: '" + property + "' " + expected);
         final String origStrongAlgoProp
                 = Security.getProperty("securerandom.strongAlgorithms");
         try {
             Security.setProperty("securerandom.strongAlgorithms", property);
-            testStrongInstance(expected);
+            testStrongInstanceAvailability(expected);
         } finally {
             Security.setProperty(
                     "securerandom.strongAlgorithms", origStrongAlgoProp);
         }
     }
 
-    private static void testProperties() throws Exception {
-        // Sets securerandom.strongAlgorithms, and then tests various combos.
-        testProperty("", false);
-
-        testProperty("SHA1PRNG", true);
-        testProperty(" SHA1PRNG", true);
-        testProperty("SHA1PRNG ", true);
-        testProperty(" SHA1PRNG ", true);
-
-        // Impls are case-insenstive, providers are sensitive.
-        testProperty("SHA1PRNG:SUN", true);
-        testProperty("Sha1PRNG:SUN", true);
-        testProperty("SHA1PRNG:Sun", false);
-
-        testProperty(" SHA1PRNG:SUN", true);
-        testProperty("SHA1PRNG:SUN ", true);
-        testProperty(" SHA1PRNG:SUN ", true);
-
-        testProperty(" SHA1PRNG:SUn", false);
-        testProperty("SHA1PRNG:SUn ", false);
-        testProperty(" SHA1PRNG:SUn ", false);
-
-        testProperty(",,,SHA1PRNG", true);
-        testProperty(",,, SHA1PRNG", true);
-        testProperty(" , , ,SHA1PRNG ", true);
-
-        testProperty(",,,, SHA1PRNG ,,,", true);
-        testProperty(",,,, SHA1PRNG:SUN ,,,", true);
-        testProperty(",,,, SHA1PRNG:SUn ,,,", false);
-
-        testProperty(",,,SHA1PRNG:Sun,, SHA1PRNG:SUN", true);
-        testProperty(",,,Sha1PRNG:Sun, SHA1PRNG:SUN", true);
-        testProperty(" SHA1PRNG:Sun, Sha1PRNG:Sun,,,,Sha1PRNG:SUN", true);
-
-        testProperty(",,,SHA1PRNG:Sun,, SHA1PRNG:SUn", false);
-        testProperty(",,,Sha1PRNG:Sun, SHA1PRNG:SUn", false);
-        testProperty(" SHA1PRNG:Sun, Sha1PRNG:Sun,,,,Sha1PRNG:SUn", false);
-
-        testProperty(
-                " @#%,%$#:!%^, NativePRNG:Sun, Sha1PRNG:Sun,,Sha1PRNG:SUN",
-                true);
-        testProperty(" @#%,%$#!%^, NativePRNG:Sun, Sha1PRNG:Sun,,Sha1PRNG:SUn",
-                false);
+    private void testStrongInstanceAvailability(
+            final boolean expected) {
+        if (expected) {
+            assertDoesNotThrow(SecureRandom::getInstanceStrong);
+        } else {
+            assertThrows(NoSuchAlgorithmException.class,
+                    SecureRandom::getInstanceStrong);
+        }
     }
 
     /*
      * Linux tends to block, so ignore anything that reads /dev/random.
      */
-    private static void handleLinuxRead(SecureRandom sr) throws Exception {
-        if (os.equals("Linux")) {
+    private void handleLinuxRead(final SecureRandom sr) {
+        if (OS.equals("Linux")) {
             if (!sr.getAlgorithm().equalsIgnoreCase("NativePRNGBlocking")) {
                 sr.nextBytes(new byte[34]);
             }
@@ -212,30 +202,16 @@ public class StrongSecureRandom {
      * This is duplicating stuff above, but just iterate over all impls
      * just in case we missed something.
      */
-    private static void testAllImpls() throws Exception {
+    @Test
+    public void testAllImpls() throws Exception {
         System.out.print("Testing:  AllImpls:  ");
 
-        Iterator<String> i = Security.getAlgorithms("SecureRandom").iterator();
-
-        while (i.hasNext()) {
-            String s = i.next();
-            System.out.print("/" + s);
-            SecureRandom sr = SecureRandom.getInstance(s);
-
-            handleLinuxRead(sr);
-            handleLinuxRead(sr);
+        for (final String algorithm : Security.getAlgorithms("SecureRandom")) {
+            System.out.print(" /" + algorithm);
+            SecureRandom secureRandom = SecureRandom.getInstance(algorithm);
+            handleLinuxRead(secureRandom);
+            handleLinuxRead(secureRandom);
         }
         System.out.println("/");
-    }
-
-    public static void main(String args[]) throws Exception {
-        testDefaultEgd();
-
-        testNativePRNGImpls();
-        testAllImpls();
-
-        // test default.
-        testStrongInstance(true);
-        testProperties();
     }
 }

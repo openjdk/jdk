@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "compiler/compilerDefinitions.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspaceClosure.hpp"
+#include "oops/array.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
@@ -217,11 +218,7 @@ public:
       return *prior;
     }
     template<typename Function>
-    void iterate(const Function& fn) const { // lambda enabled API
-      iterate(const_cast<Function&>(fn));
-    }
-    template<typename Function>
-    void iterate(Function& fn) const { // lambda enabled API
+    void iterate(Function fn) const { // lambda enabled API
       return _table.iterate_all([&](const TrainingData::Key* k, TrainingData* td) { fn(td); });
     }
     int size() const { return _table.number_of_entries(); }
@@ -304,13 +301,10 @@ private:
   }
 
   template<typename Function>
-  static void iterate(const Function& fn) { iterate(const_cast<Function&>(fn)); }
-
-  template<typename Function>
-  static void iterate(Function& fn) { // lambda enabled API
+  static void iterate(Function fn) { // lambda enabled API
     TrainingDataLocker l;
     if (have_data()) {
-      archived_training_data_dictionary()->iterate(fn);
+      archived_training_data_dictionary()->iterate_all(fn);
     }
     if (need_data()) {
       training_data_set()->iterate(fn);
@@ -431,6 +425,8 @@ private:
     }
     return nullptr;
   }
+
+  static void cleanup_after_redefinition();
 };
 
 // Training data that is associated with an InstanceKlass
@@ -536,6 +532,7 @@ class CompileTrainingData : public TrainingData {
 
   MethodTrainingData* _method;
   const short _level;
+  const bool _is_osr;
   const int _compile_id;
 
   // classes that should be initialized before this JIT task runs
@@ -652,9 +649,10 @@ private:
   CompileTrainingData();
   CompileTrainingData(MethodTrainingData* mtd,
                       int level,
+                      bool is_osr,
                       int compile_id)
       : TrainingData(),  // empty key
-        _method(mtd), _level(level), _compile_id(compile_id), _init_deps_left(0) { }
+        _method(mtd), _level(level), _is_osr(is_osr), _compile_id(compile_id), _init_deps_left(0) { }
 public:
   ciRecords& ci_records() { return _ci_records; }
   static CompileTrainingData* make(CompileTask* task) NOT_CDS_RETURN_(nullptr);
@@ -664,7 +662,7 @@ public:
   MethodTrainingData* method() const { return _method; }
 
   int level() const { return _level; }
-
+  bool is_osr() const { return _is_osr; }
   int compile_id() const { return _compile_id; }
 
   int init_dep_count() const {
@@ -723,8 +721,8 @@ public:
 
   void verify(bool verify_dep_counter);
 
-  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, int compile_id) {
-    return TrainingData::allocate<CompileTrainingData>(mtd, level, compile_id);
+  static CompileTrainingData* allocate(MethodTrainingData* mtd, int level, bool is_osr, int compile_id) {
+    return TrainingData::allocate<CompileTrainingData>(mtd, level, is_osr, compile_id);
   }
 };
 

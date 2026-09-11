@@ -95,8 +95,8 @@ public class TestVM {
     private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
-    private static final String TESTLIST = System.getProperty("Test", "");
-    private static final String EXCLUDELIST = System.getProperty("Exclude", "");
+    private static final String TESTLIST = SystemProperty.getTestList();
+    private static final String EXCLUDELIST = SystemProperty.getExcludeList();
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
@@ -104,6 +104,7 @@ public class TestVM {
     private static final boolean PRINT_VALID_IR_RULES = Boolean.getBoolean("ShouldDoIRVerification");
     protected static final long PER_METHOD_TRAP_LIMIT = (Long)WHITE_BOX.getVMFlag("PerMethodTrapLimit");
     protected static final boolean PROFILE_INTERPRETER = (Boolean)WHITE_BOX.getVMFlag("ProfileInterpreter");
+    protected static final boolean DEOPT_BARRIERS_ALOT = (Boolean)WHITE_BOX.getVMFlag("DeoptimizeNMethodBarriersALot");
     private static final boolean FLIP_C1_C2 = Boolean.getBoolean("FlipC1C2");
     private static final boolean IGNORE_COMPILER_CONTROLS = Boolean.getBoolean("IgnoreCompilerControls");
 
@@ -257,8 +258,11 @@ public class TestVM {
     }
 
     private void setupTests() {
-        for (Class<?> clazz : testClass.getDeclaredClasses()) {
-            checkAnnotationsInClass(clazz, "inner");
+        // TODO remove this once JDK-8273591 is fixed
+        if (!IGNORE_COMPILER_CONTROLS) {
+            for (Class<?> clazz : testClass.getDeclaredClasses()) {
+                checkAnnotationsInClass(clazz, "inner");
+            }
         }
         if (DUMP_REPLAY) {
             addReplay();
@@ -594,8 +598,8 @@ public class TestVM {
                 "Cannot overload @Test methods, but method " + m + " has " + overloads.size() + " overload" + (overloads.size() == 1 ? "" : "s") + ":" +
                 overloads.stream().map(String::valueOf).collect(Collectors.joining("\n    - ", "\n    - ", ""))
         );
-        TestFormat.check(!testMethodMap.containsKey(m.getName()),
-                         "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
+        TestFramework.check(!testMethodMap.containsKey(m.getName()),
+                            "Cannot overload two @Test methods: " + m + ", " + testMethodMap.get(m.getName()));
         TestFormat.check(testAnno != null, m + " must be a method with a @Test annotation");
 
         Check checkAnno = getAnnotation(m, Check.class);
@@ -836,7 +840,6 @@ public class TestVM {
      * Once all framework tests are collected, they are run in this method.
      */
     private void runTests() {
-        TreeMap<Long, String> durations = PRINT_TIMES ? new TreeMap<>() : null;
         long startTime = System.nanoTime();
         List<AbstractTest> testList;
         boolean testFilterPresent = testFilterPresent();
@@ -865,7 +868,7 @@ public class TestVM {
                 System.out.println("Run " + test.toString());
             }
             if (testFilterPresent) {
-                TestVmSocket.send(MessageTag.TEST_LIST + "Run " + test.toString());
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
             }
             try {
                 test.run();
@@ -880,22 +883,15 @@ public class TestVM {
             if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
                 long duration = (endTime - startTime);
-                durations.put(duration, test.getName());
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1000000) + " ms");
+                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
                 }
+                // Will be correctly formatted later.
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
                 WHITE_BOX.fullGC();
-            }
-        }
-
-        // Print execution times
-        if (PRINT_TIMES) {
-            TestVmSocket.send(MessageTag.PRINT_TIMES + " Test execution times:");
-            for (Map.Entry<Long, String> entry : durations.entrySet()) {
-                TestVmSocket.send(MessageTag.PRINT_TIMES + String.format("%-25s%15d ns%n", entry.getValue() + ":", entry.getKey()));
             }
         }
 
@@ -944,24 +940,23 @@ public class TestVM {
     }
 
     public static void assertDeoptimizedByC1(Method m) {
-        if (notUnstableDeoptAssertion(m, CompLevel.C1_SIMPLE)) {
-            TestRun.check(compiledByC1(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
-                          m + " should have been deoptimized by C1");
+        if (isStableDeopt(m, CompLevel.C1_SIMPLE)) {
+            TestRun.check(compiledByC1(m) != TriState.Yes, m + " should have been deoptimized by C1");
         }
     }
 
     public static void assertDeoptimizedByC2(Method m) {
-        if (notUnstableDeoptAssertion(m, CompLevel.C2)) {
-            TestRun.check(compiledByC2(m) != TriState.Yes || PER_METHOD_TRAP_LIMIT == 0 || !PROFILE_INTERPRETER,
-                          m + " should have been deoptimized by C2");
+        if (isStableDeopt(m, CompLevel.C2)) {
+            TestRun.check(compiledByC2(m) != TriState.Yes, m + " should have been deoptimized by C2");
         }
     }
 
     /**
      * Some VM flags could make the deopt assertions unstable.
      */
-    private static boolean notUnstableDeoptAssertion(Method m, CompLevel level) {
+    public static boolean isStableDeopt(Method m, CompLevel level) {
         return (USE_COMPILER && !XCOMP && !IGNORE_COMPILER_CONTROLS && !TEST_C1 &&
+                PER_METHOD_TRAP_LIMIT != 0 && PROFILE_INTERPRETER && !DEOPT_BARRIERS_ALOT &&
                 (!EXCLUDE_RANDOM || WHITE_BOX.isMethodCompilable(m, level.getValue(), false)));
     }
 
@@ -1017,7 +1012,7 @@ public class TestVM {
                 default -> throw new TestRunException("compiledAtLevel() should not be called with " + level);
             }
         }
-        if (!USE_COMPILER || XCOMP || TEST_C1 || IGNORE_COMPILER_CONTROLS || FLIP_C1_C2 ||
+        if (!USE_COMPILER || XCOMP || TEST_C1 || IGNORE_COMPILER_CONTROLS || FLIP_C1_C2 || DEOPT_BARRIERS_ALOT ||
             (EXCLUDE_RANDOM && !WHITE_BOX.isMethodCompilable(m, level.getValue(), false))) {
             return TriState.Maybe;
         }

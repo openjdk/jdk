@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,10 @@
  *      -Dtest.libs=N ReplayCacheTestProc
  */
 
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.nio.BufferUnderflowException;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
@@ -43,13 +46,19 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Base64;
+import java.util.HexFormat;
+import java.util.List;
+import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.Proc;
+import jtreg.SkippedException;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.rcache.AuthTime;
 
@@ -126,8 +135,7 @@ public class ReplayCacheTestProc {
             libs = userLibs.split(",");
             if (Arrays.asList(libs).contains("N") && !isNativeLibAvailable()) {
                 // Skip test when native GSS libs are not available in running platform
-                System.out.println("Native mode not available - skipped");
-                return;
+                throw new SkippedException("Native mode not available - skipped");
             }
 
             KDC kdc = KDC.create(OneKDC.REALM, HOST, 0, true);

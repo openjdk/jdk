@@ -28,7 +28,8 @@
 #include "gc/parallel/mutableSpace.hpp"
 #include "gc/parallel/objectStartArray.hpp"
 #include "gc/parallel/psVirtualspace.hpp"
-#include "gc/parallel/spaceCounters.hpp"
+#include "gc/shared/generationCounters.hpp"
+#include "gc/shared/hSpaceCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 
@@ -43,7 +44,7 @@ class PSOldGen : public CHeapObj<mtGC> {
 
   // Performance Counters
   GenerationCounters*      _gen_counters;
-  SpaceCounters*           _space_counters;
+  HSpaceCounters*          _space_counters;
 
   // Sizing information, in bytes, set in constructor
   const size_t _min_gen_size;
@@ -109,7 +110,7 @@ class PSOldGen : public CHeapObj<mtGC> {
   void shrink(size_t bytes);
 
   // Used by GC-workers during GC or for CDS at startup.
-  HeapWord* allocate(size_t word_size) {
+  HeapWord* cas_allocate_with_expansion(size_t word_size) {
     HeapWord* res;
     do {
       res = cas_allocate_noexpand(word_size);

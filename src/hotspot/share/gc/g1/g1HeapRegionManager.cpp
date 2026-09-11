@@ -34,7 +34,6 @@
 #include "jfr/jfrEvents.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "utilities/bitMap.inline.hpp"
@@ -512,7 +511,6 @@ void G1HeapRegionManager::iterate(G1HeapRegionClosure* blk) const {
     guarantee(at(i) != nullptr, "Tried to access region %u that has a null G1HeapRegion*", i);
     bool res = blk->do_heap_region(at(i));
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }
@@ -527,13 +525,12 @@ void G1HeapRegionManager::iterate(G1HeapRegionIndexClosure* blk) const {
     }
     bool res = blk->do_heap_region_index(i);
     if (res) {
-      blk->set_incomplete();
       return;
     }
   }
 }
 
-bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* commit_count, WorkerThreads* pretouch_workers) {
+bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* num_regions_committed, WorkerThreads* pretouch_workers) {
   size_t commits = 0;
   uint start_index = (uint)_regions.get_index_by_address(range.start());
   uint last_index = (uint)_regions.get_index_by_address(range.last());
@@ -552,7 +549,7 @@ bool G1HeapRegionManager::allocate_containing_regions(MemRegion range, size_t* c
   }
 
   allocate_free_regions_starting_at(start_index, (last_index - start_index) + 1);
-  *commit_count = commits;
+  *num_regions_committed = commits;
   return true;
 }
 
@@ -721,7 +718,7 @@ G1HeapRegionClaimer::G1HeapRegionClaimer(uint n_workers) :
 }
 
 G1HeapRegionClaimer::~G1HeapRegionClaimer() {
-  FREE_C_HEAP_ARRAY(uint, _claims);
+  FREE_C_HEAP_ARRAY(_claims);
 }
 
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
@@ -762,7 +759,7 @@ public:
     for (uint worker = 0; worker < _num_workers; worker++) {
       _worker_freelists[worker].~G1FreeRegionList();
     }
-    FREE_C_HEAP_ARRAY(G1FreeRegionList, _worker_freelists);
+    FREE_C_HEAP_ARRAY(_worker_freelists);
   }
 
   G1FreeRegionList* worker_freelist(uint worker) {

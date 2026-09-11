@@ -78,9 +78,6 @@ class Rewriter: public StackObj {
     _resolved_reference_limit = _resolved_references_map.length();
   }
 
-  int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
-  bool has_cp_cache(int i) { return (uint) i < (uint) _cp_map.length() && _cp_map.at(i) >= 0; }
-
   int add_map_entry(int cp_index, GrowableArray<int>* cp_map, GrowableArray<int>* cp_cache_map) {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");
     int cache_index = cp_cache_map->append(cp_index);

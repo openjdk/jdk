@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,12 +168,13 @@ int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
+
   SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
 
   VirtualMemoryAllocationSite* site;
   bool failed_oom = false;
-  _vma_allocations->visit_reserved_regions([&](ReservedMemoryRegion& rgn) {
-    VirtualMemoryAllocationSite tmp(*rgn.call_stack(), rgn.mem_tag());
+  _vma_allocations->visit_reserved_regions([&](VirtualMemoryRegion& rgn) {
+    VirtualMemoryAllocationSite tmp(*rgn.reserved_call_stack(), rgn.mem_tag());
     site = allocation_sites.find(tmp);
     if (site == nullptr) {
       LinkedListNode<VirtualMemoryAllocationSite>* node =

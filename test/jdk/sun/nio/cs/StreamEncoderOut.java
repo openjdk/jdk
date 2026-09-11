@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,8 @@
 /* @test
    @bug 8030179
    @summary test if the charset encoder deails with surrogate correctly
- * @run testng/othervm -esa StreamEncoderOut
+ * @run junit/othervm -esa StreamEncoderOut
  */
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -35,9 +33,12 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.Charset;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
 import static java.util.stream.Collectors.joining;
 
-@Test
 public class StreamEncoderOut {
 
     enum Input {
@@ -57,14 +58,11 @@ public class StreamEncoderOut {
         }
     }
 
-    @DataProvider(name = "CharsetAndString")
-    // [Charset, Input]
-    public static Object[][] makeStreamTestData() {
+    public static Stream<Arguments> makeStreamTestData() {
         // Cross product of supported charsets and inputs
-        return Charset.availableCharsets().values().stream().
-                filter(Charset::canEncode).
-                flatMap(cs -> Stream.of(Input.values()).map(i -> new Object[]{cs, i})).
-                toArray(Object[][]::new);
+        return Charset.availableCharsets().values().stream()
+                .filter(Charset::canEncode)
+                .flatMap(cs -> Stream.of(Input.values()).map(i -> Arguments.of(cs, i)));
     }
 
     private static String generate(String s, int n) {
@@ -79,7 +77,8 @@ public class StreamEncoderOut {
         public void write(int b) throws IOException {}
     };
 
-    @Test(dataProvider = "CharsetAndString")
+    @ParameterizedTest
+    @MethodSource("makeStreamTestData")
     public void test(Charset cs, Input input) throws IOException {
         OutputStreamWriter w = new OutputStreamWriter(DEV_NULL, cs);
         String t = generate(input.value, 8193);

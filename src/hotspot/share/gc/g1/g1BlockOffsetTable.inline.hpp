@@ -54,7 +54,7 @@ uint8_t G1BlockOffsetTable::offset_array(Atomic<uint8_t>* addr) const {
 inline Atomic<uint8_t>* G1BlockOffsetTable::entry_for_addr(const void* const p) const {
   assert(_reserved.contains(p),
          "out of bounds access to block offset table");
-  Atomic<uint8_t>* result = const_cast<Atomic<uint8_t>*>(&_offset_base[uintptr_t(p) >> CardTable::card_shift()]);
+  Atomic<uint8_t>* result = &_offset_base[uintptr_t(p) >> CardTable::card_shift()];
   return result;
 }
 

@@ -76,7 +76,7 @@ public class ShareTmpDir {
         Object lock = new Object();
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp/");
-        opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf+memops=debug", "-cp", "/test-classes/");
+        opts.addJavaOpts("-Xlog:os+container=trace", "-Xlog:perf*=debug", "-cp", "/test-classes/");
 
         Thread t1 = new Thread() {
                 public void run() {
@@ -115,12 +115,13 @@ public class ShareTmpDir {
         t1.join();
         t2.join();
 
-        Pattern pattern = Pattern.compile("perf,memops.*Trying to open (/tmp/hsperfdata_[a-z0-9]*/[0-9]*)");
+        Pattern pattern = Pattern.compile("perf,memops.*Trying to open (/tmp/hsperfdata_[a-z0-9]*/(\\d+))");
         Matcher matcher;
 
         matcher = pattern.matcher(out1.getStdout());
         Asserts.assertTrue(matcher.find());
         String file1 =  matcher.group(1);
+        String pid1  = matcher.group(2);
 
         matcher = pattern.matcher(out2.getStdout());
         Asserts.assertTrue(matcher.find());
@@ -134,8 +135,11 @@ public class ShareTmpDir {
             // have pid==1.
             // One of the two containers must fail to create the hsperf file.
             String s = "Cannot use file " + file1 + " because it is locked by another process";
+            String s2 = "could not create file " + pid1 + ": existing file is not provably stale";
             Asserts.assertTrue(out1.getStdout().contains(s) ||
-                               out2.getStdout().contains(s));
+                               out2.getStdout().contains(s) ||
+                               out1.getStdout().contains(s2) ||
+                               out2.getStdout().contains(s2));
         } else {
             throw new SkippedException("Java in the two containers don't have the same pid: " + file1 + " vs " + file2);
         }

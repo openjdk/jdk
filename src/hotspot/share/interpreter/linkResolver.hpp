@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -214,11 +214,9 @@ class LinkResolver: AllStatic {
 
   static Method* lookup_polymorphic_method(const LinkInfo& link_info,
                                            Handle *appendix_result_or_null, TRAPS);
- JVMCI_ONLY(public:) // Needed for CompilerToVM.resolveMethod()
   // Not Linktime so doesn't take LinkInfo
   static Method* lookup_instance_method_in_klasses (Klass* klass, Symbol* name, Symbol* signature,
                                                     Klass::PrivateLookupMode private_mode);
- JVMCI_ONLY(private:)
 
   // Similar loader constraint checking functions that throw
   // LinkageError with descriptive message.
@@ -368,7 +366,7 @@ class LinkResolver: AllStatic {
   // runtime resolving from attached method
   static void resolve_invoke(CallInfo& result, Handle& recv,
                              const methodHandle& attached_method,
-                             Bytecodes::Code byte, TRAPS);
+                             Bytecodes::Code byte, bool check_null_and_abstract, TRAPS);
 
   // Only resolved method known.
   static void throw_abstract_method_error(const methodHandle& resolved_method, TRAPS) {

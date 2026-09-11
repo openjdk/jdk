@@ -23,16 +23,17 @@
  *
  */
 
-
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
 ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info) :
-  ShenandoahHeuristics(space_info) {
+  ShenandoahHeuristics(space_info),
+  _bytes_used_at_end_of_gc(0) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
@@ -46,29 +47,28 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* sp
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
-  size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
-  size_t available = _space_info->soft_mutator_available();
-  size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
+  const size_t used = _space_info->used();
+  const size_t capacity = ShenandoahHeap::heap()->soft_max_capacity();
+  const size_t available = _space_info->soft_mutator_available();
+  const size_t bytes_allocated = used > _bytes_used_at_end_of_gc ? used - _bytes_used_at_end_of_gc : 0;
 
   log_debug(gc, ergo)("should_start_gc calculation: available: " PROPERFMT ", soft_max_capacity: "  PROPERFMT ", "
                 "allocated_since_gc_start: "  PROPERFMT,
                 PROPERFMTARGS(available), PROPERFMTARGS(capacity), PROPERFMTARGS(bytes_allocated));
 
-  size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
-  size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
+  const size_t threshold_bytes_allocated = capacity / 100 * ShenandoahAllocationThreshold;
+  const size_t min_threshold = capacity / 100 * ShenandoahMinFreeThreshold;
 
   if (available < min_threshold) {
-    log_trigger("Free (Soft) (%zu%s) is below minimum threshold (%zu%s)",
-                byte_size_in_proper_unit(available),     proper_unit_for_byte_size(available),
-                byte_size_in_proper_unit(min_threshold), proper_unit_for_byte_size(min_threshold));
+    log_trigger("Free (Soft) (" PROPERFMT ") is below minimum threshold (" PROPERFMT ")",
+                PROPERFMTARGS(available), PROPERFMTARGS(min_threshold));
     accept_trigger();
     return true;
   }
 
   if (bytes_allocated > threshold_bytes_allocated) {
-    log_trigger("Allocated since last cycle (%zu%s) is larger than allocation threshold (%zu%s)",
-                byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),
-                byte_size_in_proper_unit(threshold_bytes_allocated), proper_unit_for_byte_size(threshold_bytes_allocated));
+    log_trigger("Allocated since last cycle started (" PROPERFMT ") is larger than allocation threshold (" PROPERFMT ")",
+                PROPERFMTARGS(bytes_allocated), PROPERFMTARGS(threshold_bytes_allocated));
     accept_trigger();
     return true;
   }
@@ -76,22 +76,25 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
   return ShenandoahHeuristics::should_start_gc();
 }
 
+void ShenandoahCompactHeuristics::record_cycle_end() {
+  ShenandoahHeuristics::record_cycle_end();
+  _bytes_used_at_end_of_gc = _space_info->used();
+}
+
 void ShenandoahCompactHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                         RegionData* data, size_t size,
                                                                         size_t actual_free) {
   // Do not select too large CSet that would overflow the available free space
-  size_t max_cset = actual_free * 3 / 4;
+  const size_t max_cset = actual_free * 3 / 4;
 
-  log_info(gc, ergo)("CSet Selection. Actual Free: %zu%s, Max CSet: %zu%s",
-                     byte_size_in_proper_unit(actual_free), proper_unit_for_byte_size(actual_free),
-                     byte_size_in_proper_unit(max_cset),    proper_unit_for_byte_size(max_cset));
+  log_info(gc, ergo)("CSet Selection. Actual Free: " PROPERFMT ", Max CSet: " PROPERFMT,
+                     PROPERFMTARGS(actual_free), PROPERFMTARGS(max_cset));
 
-  size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
-
+  const size_t threshold = ShenandoahHeapRegion::region_size_bytes() * ShenandoahGarbageThreshold / 100;
   size_t live_cset = 0;
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx].get_region();
-    size_t new_cset = live_cset + r->get_live_data_bytes();
+    const size_t new_cset = live_cset + r->get_live_data_bytes();
     if (new_cset < max_cset && r->garbage() > threshold) {
       live_cset = new_cset;
       cset->add_region(r);

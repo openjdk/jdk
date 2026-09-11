@@ -85,6 +85,17 @@ public class ExceptionBoxTest {
     }
 
     @Test
+    public void test_unbox_reachedUnreachable() {
+        var err = new MyThrowable();
+        var thrown = assertThrowsExactly(AssertionError.class, () -> {
+            ExceptionBox.unbox(err);
+        });
+
+        assertEquals(ExceptionBox.reachedUnreachable().getMessage(), thrown.getMessage());
+        assertNull(thrown.getCause());
+    }
+
+    @Test
     public void test_reachedUnreachable() {
         var err = ExceptionBox.reachedUnreachable();
         assertEquals("Reached unreachable!", err.getMessage());
@@ -319,5 +330,10 @@ public class ExceptionBoxTest {
     private void trace(String format, Object... args) {
         Objects.requireNonNull(format);
         System.out.println(String.format("[%s]: %s", Thread.currentThread(), String.format(format, args)));
+    }
+
+    private static final class MyThrowable extends Throwable {
+
+        private static final long serialVersionUID = 1L;
     }
 }

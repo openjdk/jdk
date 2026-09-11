@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,35 +24,15 @@
 
 /*
  * @test
+ * @bug 8183390 8340010 8342095
  * @summary Vectorization test on array type conversions
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
  * @requires vm.compiler2.enabled
  *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_nAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest nCOH_yAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_nAV
- *
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   compiler.vectorization.runner.ArrayTypeConvertTest yCOH_yAV
+ * @run driver ${test.main.class} nCOH_nAV
+ * @run driver ${test.main.class} nCOH_yAV
+ * @run driver ${test.main.class} yCOH_nAV
+ * @run driver ${test.main.class} yCOH_yAV
  */
 
 package compiler.vectorization.runner;
@@ -108,10 +88,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     // ---------------- Integer Extension ----------------
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2I, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public int[] signExtension() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -122,7 +101,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public int[] zeroExtension() {
@@ -134,10 +113,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2I, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
     public int[] signExtensionFromByte() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -146,12 +124,23 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         return res;
     }
 
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_B2S, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
+    public short[] signExtensionFromByteToShort() {
+        short[] res = new short[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = bytes[i];
+        }
+        return res;
+    }
+
     // ---------------- Integer Narrow ----------------
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_short)", ">0" })
     public short[] narrowToSigned() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -161,10 +150,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE + "min(max_int, max_char)", ">0" })
     public char[] narrowToUnsigned() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -174,14 +162,25 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
-    // Assert the vectorization failure so that we are reminded to update
-    // the test when this limitation is addressed in the future.
-    public byte[] NarrowToByte() {
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE + "min(max_int, max_byte)", ">0" })
+    public byte[] narrowToByte() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = (byte) ints[i];
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = { "avx", "true" },
+        applyIfOr = {"AlignVector", "false", "UseCompactObjectHeaders", "false"},
+        counts = { IRNode.VECTOR_CAST_S2B, IRNode.VECTOR_SIZE + "min(max_short, max_byte)", ">0" })
+    public byte[] narrowShortToByte() {
+        byte[] res = new byte[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = (byte) shorts[i];
         }
         return res;
     }
@@ -268,7 +267,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public float[] convertCharToFloat() {
@@ -281,7 +280,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
 
     @Test
     @IR(failOn = {IRNode.STORE_VECTOR})
-    // Subword vector casts do not work currently, see JDK-8342095.
+    // Subword vector casts with char do not work currently, see JDK-8349562.
     // Assert the vectorization failure so that we are reminded to update
     // the test when this limitation is addressed in the future.
     public double[] convertCharToDouble() {

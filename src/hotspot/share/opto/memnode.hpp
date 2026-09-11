@@ -26,6 +26,7 @@
 #ifndef SHARE_OPTO_MEMNODE_HPP
 #define SHARE_OPTO_MEMNODE_HPP
 
+#include "memory/allocation.hpp"
 #include "opto/multnode.hpp"
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
@@ -45,6 +46,8 @@ private:
   bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
   bool _unsafe_access;     // Access of unsafe origin.
   uint8_t _barrier_data;   // Bit field with barrier information
+
+  friend class AccessAnalyzer;
 
 protected:
 #ifdef ASSERT
@@ -100,15 +103,15 @@ public:
   // Helpers for the optimizer.  Documented in memnode.cpp.
   static bool detect_ptr_independence(Node* p1, AllocateNode* a1,
                                       Node* p2, AllocateNode* a2,
-                                      PhaseTransform* phase);
+                                      PhaseGVN* phase);
   static bool adr_phi_is_loop_invariant(Node* adr_phi, Node* cast);
 
   static Node *optimize_simple_memory_chain(Node *mchain, const TypeOopPtr *t_oop, Node *load, PhaseGVN *phase);
   static Node *optimize_memory_chain(Node *mchain, const TypePtr *t_adr, Node *load, PhaseGVN *phase);
   // The following two should probably be phase-specific functions:
-  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub);
-  static bool all_controls_dominate(Node* dom, Node* sub) {
-    DomResult dom_result = maybe_all_controls_dominate(dom, sub);
+  static DomResult maybe_all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase);
+  static bool all_controls_dominate(Node* dom, Node* sub, PhaseGVN* phase) {
+    DomResult dom_result = maybe_all_controls_dominate(dom, sub, phase);
     return dom_result == DomResult::Dominate;
   }
 
@@ -125,6 +128,10 @@ public:
   const TypePtr *raw_adr_type() const {
     return DEBUG_ONLY(_adr_type) NOT_DEBUG(nullptr);
   }
+
+#ifdef ASSERT
+  void set_adr_type(const TypePtr* adr_type) { _adr_type = adr_type; }
+#endif
 
   // Return the barrier data of n, if available, or 0 otherwise.
   static uint8_t barrier_data(const Node* n);
@@ -153,7 +160,7 @@ public:
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
   // aliased stores.
-  Node* find_previous_store(PhaseValues* phase);
+  Node* find_previous_store(PhaseGVN* phase);
 
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
@@ -170,6 +177,53 @@ public:
   static void dump_adr_type(const TypePtr* adr_type, outputStream* st);
   virtual void dump_spec(outputStream *st) const;
 #endif
+
+  MemNode* clone_with_adr_type(const TypePtr* adr_type) const {
+    MemNode* new_node = clone()->as_Mem();
+#ifdef ASSERT
+    new_node->_adr_type = adr_type;
+#endif
+    return new_node;
+  }
+};
+
+// Analyze a MemNode to try to prove that it is independent from other memory accesses
+class AccessAnalyzer : StackObj {
+private:
+  PhaseGVN* const _phase;
+  MemNode* const _n;
+  Node* _base;
+  intptr_t _offset;
+  const int _memory_size;
+  bool _maybe_raw;
+  AllocateNode* _alloc;
+  const TypePtr* _adr_type;
+  int _alias_idx;
+
+public:
+  AccessAnalyzer(PhaseGVN* phase, MemNode* n);
+
+  // The result of deciding whether a memory node 'other' writes into the memory which '_n'
+  // observes.
+  class AccessIndependence {
+  public:
+    // Whether 'other' writes into the memory which '_n' observes. This value is conservative, that
+    // is, it is only true when it is provable that the memory accessed by the nodes is
+    // non-overlapping.
+    bool independent;
+
+    // If 'independent' is true, this is the memory input of 'other' that corresponds to the memory
+    // location that '_n' observes. For example, if 'other' is a StoreNode, then 'mem' is its
+    // memory input, if 'other' is a MergeMemNode, then 'mem' is the memory input corresponding to
+    // the alias class of '_n'.
+    // If 'independent' is false,
+    // - 'mem' is non-nullptr if it seems that 'other' writes to the exact memory location '_n'
+    // observes.
+    // - 'mem' is nullptr otherwise.
+    Node* mem;
+  };
+
+  AccessIndependence detect_access_independence(Node* other) const;
 };
 
 //------------------------------LoadNode---------------------------------------
@@ -216,6 +270,8 @@ protected:
   const Type* const _type;      // What kind of value is loaded?
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
+  Node* can_see_stored_value_through_membars(Node* st, PhaseValues* phase) const;
+  Node* Ideal_load_common(PhaseGVN* phase, bool can_reshape);
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -267,6 +323,7 @@ public:
   // Common methods for LoadKlass and LoadNKlass nodes.
   const Type* klass_value_common(PhaseGVN* phase) const;
   Node* klass_identity_common(PhaseGVN* phase);
+  Node* find_known_klass(PhaseGVN* phase) const;
 
   virtual uint ideal_reg() const;
   virtual const Type *bottom_type() const;
@@ -517,6 +574,7 @@ class LoadNNode : public LoadNode {
 public:
   LoadNNode(Node *c, Node *mem, Node *adr, const TypePtr *at, const Type* t, MemOrd mo, ControlDependency control_dependency = DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, t, mo, control_dependency) {}
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegN; }
   virtual int store_Opcode() const { return Op_StoreN; }
@@ -562,8 +620,8 @@ public:
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
-
 
 //------------------------------StoreNode--------------------------------------
 // Store value; requires Store, Address and Value
@@ -720,6 +778,25 @@ public:
 #endif
 };
 
+// Special StoreL for flat stores that emits GC barriers for field at 'oop_off' in the backend
+class StoreLSpecialNode : public StoreNode {
+
+public:
+  StoreLSpecialNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val, Node* oop_off, MemOrd mo)
+    : StoreNode(c, mem, adr, at, val, mo) {
+    set_mismatched_access();
+    if (oop_off != nullptr) {
+      add_req(oop_off);
+    }
+  }
+  virtual int Opcode() const;
+  virtual BasicType value_basic_type() const { return T_LONG; }
+
+  virtual uint match_edge(uint idx) const { return idx == MemNode::Address ||
+                                                   idx == MemNode::ValueIn ||
+                                                   idx == MemNode::ValueIn + 1; }
+};
+
 //------------------------------StoreFNode-------------------------------------
 // Store float to memory
 class StoreFNode : public StoreNode {
@@ -828,6 +905,10 @@ public:
 
   uint8_t barrier_data() { return _barrier_data; }
   void set_barrier_data(uint8_t barrier_data) { _barrier_data = barrier_data; }
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 
 private:
   virtual bool depends_only_on_test_impl() const { return false; }
@@ -1073,11 +1154,16 @@ public:
 //------------------------------ClearArray-------------------------------------
 class ClearArrayNode: public Node {
 private:
+  // True if cnt is larger than InitArrayShortSize
   bool _is_large;
+  // True if the fill value is a non-constant or non-zero 64-bit value. Such a
+  // value must be copied as a complete word and cannot use byte-wise zeroing.
+  bool _requires_word_fill;
   static Node* make_address(Node* dest, Node* offset, bool raw_base, PhaseGVN* phase);
 public:
-  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, bool is_large)
-    : Node(ctrl,arymem,word_cnt,base), _is_large(is_large) {
+  ClearArrayNode( Node *ctrl, Node *arymem, Node *word_cnt, Node *base, Node* val, bool is_large)
+    : Node(ctrl, arymem, word_cnt, base, val), _is_large(is_large),
+      _requires_word_fill(val->bottom_type()->isa_long() && (!val->bottom_type()->is_long()->is_con() || val->bottom_type()->is_long()->get_con() != 0)) {
     init_class_id(Class_ClearArray);
   }
   virtual int         Opcode() const;
@@ -1089,6 +1175,8 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const;
   bool is_large() const { return _is_large; }
+  bool is_zero_fill() const { return !_requires_word_fill; }
+  bool requires_word_fill() const { return _requires_word_fill; }
   virtual uint size_of() const { return sizeof(ClearArrayNode); }
   virtual uint hash() const { return Node::hash() + _is_large; }
   virtual bool cmp(const Node& n) const {
@@ -1100,16 +1188,21 @@ public:
   // The end offset must always be aligned mod BytesPerLong.
   // Return the new memory.
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* val,
+                            Node* raw_val,
                             intptr_t start_offset,
                             intptr_t end_offset,
                             bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* val,
+                            Node* raw_val,
                             intptr_t start_offset,
                             Node* end_offset,
                             bool raw_base,
                             PhaseGVN* phase);
   static Node* clear_memory(Node* control, Node* mem, Node* dest,
+                            Node* raw_val,
                             Node* start_offset,
                             Node* end_offset,
                             bool raw_base,
@@ -1165,7 +1258,7 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual uint match_edge(uint idx) const { return 0; }
   virtual const Type *bottom_type() const { return TypeTuple::MEMBAR; }
-  virtual Node *match( const ProjNode *proj, const Matcher *m );
+  virtual Node* match(const ProjNode* proj, const Matcher* m);
   // Factory method.  Builds a wide or narrow membar.
   // Optional 'precedent' becomes an extra edge if not null.
   static MemBarNode* make(Compile* C, int opcode,
@@ -1271,11 +1364,26 @@ public:
   virtual int Opcode() const;
 };
 
+class MemBarStoreLoadNode : public MemBarNode {
+public:
+  MemBarStoreLoadNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
 // Ordering between a volatile store and a following volatile load.
 // Requires multi-CPU visibility?
 class MemBarVolatileNode: public MemBarNode {
 public:
   MemBarVolatileNode(Compile* C, int alias_idx, Node* precedent)
+    : MemBarNode(C, alias_idx, precedent) {}
+  virtual int Opcode() const;
+};
+
+// A full barrier blocks all loads and stores from moving across it
+class MemBarFullNode : public MemBarNode {
+public:
+  MemBarFullNode(Compile* C, int alias_idx, Node* precedent)
     : MemBarNode(C, alias_idx, precedent) {}
   virtual int Opcode() const;
 };

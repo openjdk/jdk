@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,19 @@
 
 package catalog;
 
+import org.junit.jupiter.api.Test;
+
+import javax.xml.catalog.CatalogResolver;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import static catalog.CatalogTestUtils.DEFER_FALSE;
 import static catalog.CatalogTestUtils.FEATURE_DEFER;
 import static catalog.CatalogTestUtils.FEATURE_FILES;
@@ -36,27 +49,14 @@ import static catalog.CatalogTestUtils.createPropsContent;
 import static catalog.CatalogTestUtils.deleteJAXPProps;
 import static catalog.CatalogTestUtils.generateJAXPProps;
 import static catalog.CatalogTestUtils.getCatalogPath;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/isolatedjdk
  * @run shell/timeout=600 ../IsolatedJDK.sh JAXP_PROPS
- * @run testng catalog.PropertiesTest
+ * @run junit catalog.PropertiesTest
  * @run shell/timeout=600 ../IsolatedJDK.sh JAXP_PROPS remove
  * @summary This test case tests if the properties FILES, DEFER, PREFER,
  *          RESOLVE in jaxp.properties and system properties are used.
@@ -75,11 +75,11 @@ public class PropertiesTest {
     public void test() throws Exception {
         // get required properties and do some assertions
         String javaclasspath = System.getProperty("java.class.path");
-        Assert.assertNotNull(javaclasspath, "Test class path is null");
+        assertNotNull(javaclasspath, "Test class path is null");
         String testclasspath = System.getProperty("test.class.path");
-        Assert.assertNotNull(testclasspath, "Test class path is null");
+        assertNotNull(testclasspath, "Test class path is null");
         String testsourcepath = System.getProperty("test.src");
-        Assert.assertNotNull(testsourcepath, "Test source path is null");
+        assertNotNull(testsourcepath, "Test source path is null");
 
         // start the child process
         List<String> testCall = new ArrayList<>(6);
@@ -123,7 +123,7 @@ public class PropertiesTest {
         // trace exit value and assert 0
         int exitValue = test.exitValue();
         System.out.println("Process Exit code: " + exitValue);
-        Assert.assertEquals(exitValue, 0, "PropertiesTest returned nonzero exit code.");
+        assertEquals(0, exitValue, "PropertiesTest returned nonzero exit code.");
     }
 
     public static void main(String[] args) throws Exception {

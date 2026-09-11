@@ -194,9 +194,11 @@ static inline bool is_not_jdk_module(const ModuleEntry* module, JavaThread* jt) 
   return !is_jdk_module(module, jt);
 }
 
+#ifdef ASSERT
 static inline bool jfr_is_started_on_command_line() {
   return JfrRecorder::is_started_on_commandline();
 }
+#endif // ASSERT
 
 static bool should_record(const Method* method, const Method* sender, JavaThread* jt) {
   assert(method != nullptr, "invariant");

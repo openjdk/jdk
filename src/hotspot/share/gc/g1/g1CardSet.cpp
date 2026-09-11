@@ -145,7 +145,7 @@ G1CardSetConfiguration::G1CardSetConfiguration(uint inline_ptr_bits_per_card,
 }
 
 G1CardSetConfiguration::~G1CardSetConfiguration() {
-  FREE_C_HEAP_ARRAY(size_t, _card_set_alloc_options);
+  FREE_C_HEAP_ARRAY(_card_set_alloc_options);
 }
 
 void G1CardSetConfiguration::init_card_set_alloc_options() {

@@ -31,7 +31,7 @@
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetCandidates.inline.hpp"
-#include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
@@ -70,7 +70,6 @@
 class G1YoungGCTraceTime {
   G1YoungCollector* _collector;
 
-  G1GCPauseType _pause_type;
   GCCause::Cause _pause_cause;
 
   static const uint MaxYoungGCNameLength = 128;
@@ -90,10 +89,11 @@ class G1YoungGCTraceTime {
                            _collector->evacuation_alloc_failed() && _collector->evacuation_pinned() ? " / " : "",
                            _collector->evacuation_pinned() ? "Pinned" : "");
     }
+    G1CollectorState::Pause pause = _collector->collector_state()->gc_pause_type(_collector->concurrent_operation_is_full_mark());
     os::snprintf_checked(_young_gc_name_data,
                          MaxYoungGCNameLength,
                          "Pause Young (%s) (%s)%s",
-                         G1GCPauseTypeHelper::to_string(_pause_type),
+                         G1CollectorState::to_string(pause),
                          GCCause::to_string(_pause_cause),
                          evacuation_failed_string);
     return _young_gc_name_data;
@@ -102,10 +102,6 @@ class G1YoungGCTraceTime {
 public:
   G1YoungGCTraceTime(G1YoungCollector* collector, GCCause::Cause cause) :
     _collector(collector),
-    // Take snapshot of current pause type at start as it may be modified during gc.
-    // The strings for all Concurrent Start pauses are the same, so the parameter
-    // does not matter here.
-    _pause_type(_collector->collector_state()->young_gc_pause_type(false /* concurrent_operation_is_full_mark */)),
     _pause_cause(cause),
     // Fake a "no cause" and manually add the correct string in update_young_gc_name()
     // to make the string look more natural.
@@ -131,24 +127,23 @@ public:
 };
 
 class G1YoungGCJFRTracerMark : public G1JFRTracerMark {
+  G1YoungCollector* _young_collector;
   G1EvacInfo _evacuation_info;
 
   G1NewTracer* tracer() const { return (G1NewTracer*)_tracer; }
 
 public:
-
   G1EvacInfo* evacuation_info() { return &_evacuation_info; }
 
-  G1YoungGCJFRTracerMark(STWGCTimer* gc_timer_stw, G1NewTracer* gc_tracer_stw, GCCause::Cause cause) :
-    G1JFRTracerMark(gc_timer_stw, gc_tracer_stw), _evacuation_info() { }
-
-  void report_pause_type(G1GCPauseType type) {
-    tracer()->report_young_gc_pause(type);
-  }
+  G1YoungGCJFRTracerMark(G1YoungCollector* young_collector) :
+    G1JFRTracerMark(young_collector->gc_timer_stw(), young_collector->gc_tracer_stw()),
+    _young_collector(young_collector),
+    _evacuation_info() { }
 
   ~G1YoungGCJFRTracerMark() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
+    tracer()->report_young_gc_pause(g1h->collector_state()->gc_pause_type(_young_collector->concurrent_operation_is_full_mark()));
     tracer()->report_evacuation_info(&_evacuation_info);
     tracer()->report_tenuring_threshold(g1h->policy()->tenuring_threshold());
   }
@@ -160,9 +155,9 @@ class G1YoungGCVerifierMark : public StackObj {
 
   static G1HeapVerifier::G1VerifyType young_collection_verify_type() {
     G1CollectorState* state = G1CollectedHeap::heap()->collector_state();
-    if (state->in_concurrent_start_gc()) {
+    if (state->is_in_concurrent_start_gc()) {
       return G1HeapVerifier::G1VerifyConcurrentStart;
-    } else if (state->in_young_only_phase()) {
+    } else if (state->is_in_young_only_phase()) {
       return G1HeapVerifier::G1VerifyYoungNormal;
     } else {
       return G1HeapVerifier::G1VerifyMixed;
@@ -244,19 +239,11 @@ G1YoungGCAllocationFailureInjector* G1YoungCollector::allocation_failure_injecto
   return _g1h->allocation_failure_injector();
 }
 
-
-void G1YoungCollector::wait_for_root_region_scanning() {
+void G1YoungCollector::complete_root_region_scan() {
   Ticks start = Ticks::now();
-  // We have to wait until the CM threads finish scanning the
-  // root regions as it's the only way to ensure that all the
-  // objects on them have been correctly scanned before we start
-  // moving them during the GC.
-  bool waited = concurrent_mark()->wait_until_root_region_scan_finished();
-  Tickspan wait_time;
-  if (waited) {
-    wait_time = (Ticks::now() - start);
+  if (concurrent_mark()->complete_root_regions_scan_in_safepoint()) {
+    phase_times()->record_root_region_scan_time((Ticks::now() - start).seconds() * MILLIUNITS);
   }
-  phase_times()->record_root_region_scan_wait_time(wait_time.seconds() * MILLIUNITS);
 }
 
 class G1PrintCollectionSetClosure : public G1HeapRegionClosure {
@@ -273,7 +260,7 @@ void G1YoungCollector::calculate_collection_set(G1EvacInfo* evacuation_info, dou
   allocator()->release_mutator_alloc_regions();
 
   collection_set()->finalize_initial_collection_set(target_pause_time_ms, survivor_regions());
-  evacuation_info->set_collection_set_regions(collection_set()->initial_region_length() +
+  evacuation_info->set_collection_set_regions(collection_set()->num_initial_regions() +
                                               collection_set()->num_optional_regions());
 
   concurrent_mark()->verify_no_collection_set_oops();
@@ -341,13 +328,14 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // It also helps with G1 allocating humongous objects as old generation
       // objects although they might also die quite quickly.
       //
-      // TypeArray objects are allowed to be reclaimed even if allocated before
+      // Humongous objects without oops (typeArrays, flatArrays without oops in
+      // its elements) are allowed to be reclaimed even if allocated before
       // the start of concurrent mark.  For this we rely on mark stack insertion
-      // to exclude is_typeArray() objects, preventing reclaiming an object
-      // that is in the mark stack.  We also rely on the metadata for
-      // such objects to be built-in and so ensured to be kept live.
+      // to exclude them, preventing reclaiming an object
+      // that is in the mark stack.  That code also ensures that metadata (klass)
+      // is kept live.
       //
-      // Non-typeArrays that were allocated before marking are excluded from
+      // Other humongous objects that were allocated before marking are excluded from
       // eager reclaim during marking.  One issue is the problem described
       // above with scrubbing the mark stack, but there is also a problem
       // causing these humongous objects being collected incorrectly:
@@ -362,39 +350,45 @@ class G1PrepareEvacuationTask : public WorkerTask {
       // garbage collection. o1 still has the reference to o2, but since o1 had
       // already been scanned we do not detect o2 to be still live and reclaim it.
       //
-      // There is another minor problem with non-typeArray regions being the source
-      // of remembered set entries in other region's remembered sets.  There are
-      // two cases: first, the remembered set entry is in a Free region after reclaim.
-      // We handle this case by ignoring these cards during merging the remembered
-      // sets.
+      // There is another minor problem with these humongous objects with oops being
+      // the source of remembered set entries in other region's remembered sets.
+      // There are two cases: first, the remembered set entry is in a Free region
+      // after reclaim.  We handle this case by ignoring these cards during merging
+      // the remembered sets.
       //
-      // Second, there may be cases where eagerly reclaimed regions were already
-      // reallocated.  This may cause scanning of these outdated remembered set
-      // entries, containing some objects. But apart from extra work this does
-      // not cause correctness issues.
+      // Second, there may be cases where regions previously containing eagerly
+      // reclaimed objects were already allocated into again.
+      // This may cause scanning of these outdated remembered set entries,
+      // containing some objects. But apart from extra work this does not cause
+      // correctness issues.
       // There is no difference between scanning cards covering an effectively
       // dead humongous object vs. some other objects in reallocated regions.
       //
-      // TAMSes are only reset after completing the entire mark cycle, during
-      // bitmap clearing. It is worth to not wait until then, and allow reclamation
-      // outside of actual (concurrent) SATB marking.
+      // TAMSes are only reset in the Concurrent Start pause and when they are
+      // reclaimed/freed. It is worth to not wait for TAMS updates until either
+      // of these conditions applies and allow reclamation as much as possible.
       // This also applies to the concurrent start pause - we only set
-      // mark_in_progress() at the end of that GC: no mutator is running that can
+      // is_in_marking() at the end of that GC: no mutator is running that can
       // sneakily install a new reference to the potentially reclaimed humongous
       // object.
+      //
       // During the concurrent start pause the situation described above where we
       // miss a reference can not happen. No mutator is modifying the object
       // graph to install such an overlooked reference.
       //
       // After the pause, having reclaimed h, obviously the mutator can't fetch
       // the reference from h any more.
-      if (!obj->is_typeArray()) {
-        // All regions that were allocated before marking have a TAMS != bottom.
-        bool allocated_before_mark_start = region->bottom() != _g1h->concurrent_mark()->top_at_mark_start(region);
-        bool mark_in_progress = _g1h->collector_state()->mark_in_progress();
-
-        if (allocated_before_mark_start && mark_in_progress) {
-          return false;
+      bool marked_immediately = _g1h->can_be_marked_through_immediately(obj);
+      if (!marked_immediately) {
+        bool mark_in_progress = _g1h->collector_state()->is_in_marking();
+        // top_at_mark_start() will assert outside of marking, so check first.
+        if (mark_in_progress) {
+          // All regions that were allocated before marking have a TAMS != bottom.
+          G1ConcurrentMark* cm = _g1h->concurrent_mark();
+          bool allocated_before_mark_start = region->bottom() != cm->top_at_mark_start(region);
+          if (allocated_before_mark_start) {
+            return false;
+          }
         }
       }
       return _g1h->is_potential_eager_reclaim_candidate(region);
@@ -530,7 +524,7 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
   // Needs log buffers flushed.
   calculate_collection_set(evacuation_info, policy()->max_pause_time_ms());
 
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     Ticks start = Ticks::now();
     concurrent_mark()->pre_concurrent_start(_gc_cause);
     phase_times()->record_prepare_concurrent_task_time_ms((Ticks::now() - start).seconds() * 1000.0);
@@ -571,9 +565,9 @@ void G1YoungCollector::pre_evacuate_collection_set(G1EvacInfo* evacuation_info) 
 
   assert(_g1h->verifier()->check_region_attr_table(), "Inconsistency in the region attributes table.");
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 
   allocation_failure_injector()->arm_if_needed();
 }
@@ -586,7 +580,6 @@ class G1ParEvacuateFollowersClosure : public VoidClosure {
   void start_term_time() { _term_attempts++; _start_term = os::elapsedTime(); }
   void end_term_time() { _term_time += (os::elapsedTime() - _start_term); }
 
-  G1CollectedHeap*              _g1h;
   G1ParScanThreadState*         _par_scan_state;
   G1ScannerTasksQueueSet*       _queues;
   TaskTerminator*               _terminator;
@@ -598,22 +591,20 @@ class G1ParEvacuateFollowersClosure : public VoidClosure {
 
   inline bool offer_termination() {
     EventGCPhaseParallel event;
-    G1ParScanThreadState* const pss = par_scan_state();
     start_term_time();
     const bool res = (terminator() == nullptr) ? true : terminator()->offer_termination();
     end_term_time();
-    event.commit(GCId::current(), pss->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination));
+    event.commit(GCId::current(), par_scan_state()->worker_id(), G1GCPhaseTimes::phase_name(G1GCPhaseTimes::Termination));
     return res;
   }
 
 public:
-  G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
-                                G1ParScanThreadState* par_scan_state,
+  G1ParEvacuateFollowersClosure(G1ParScanThreadState* par_scan_state,
                                 G1ScannerTasksQueueSet* queues,
                                 TaskTerminator* terminator,
                                 G1GCPhaseTimes::GCParPhases phase)
     : _start_term(0.0), _term_time(0.0), _term_attempts(0),
-      _g1h(g1h), _par_scan_state(par_scan_state),
+      _par_scan_state(par_scan_state),
       _queues(queues), _terminator(terminator), _phase(phase) {}
 
   void do_void() {
@@ -638,23 +629,22 @@ class G1EvacuateRegionsBaseTask : public WorkerTask {
   // regions as there is no guarantee that there is a reference reachable by
   // Java code (i.e. only by native code) that adds it to the evacuation failed
   // regions.
-  void record_pinned_regions(G1ParScanThreadState* pss, uint worker_id) {
+  void record_pinned_regions(G1ParScanThreadState* pss) {
     class RecordPinnedRegionClosure : public G1HeapRegionClosure {
       G1ParScanThreadState* _pss;
-      uint _worker_id;
 
     public:
-      RecordPinnedRegionClosure(G1ParScanThreadState* pss, uint worker_id) : _pss(pss), _worker_id(worker_id) { }
+      RecordPinnedRegionClosure(G1ParScanThreadState* pss) : _pss(pss) { }
 
       bool do_heap_region(G1HeapRegion* r) {
         if (r->has_pinned_objects()) {
-          _pss->record_evacuation_failed_region(r, _worker_id, true /* cause_pinned */);
+          _pss->record_evacuation_failed_region(r, true /* cause_pinned */);
         }
         return false;
       }
-    } cl(pss, worker_id);
+    } cl(pss);
 
-    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+    _g1h->collection_set_iterate_increment_from(&cl, pss->worker_id());
   }
 
 protected:
@@ -665,18 +655,18 @@ protected:
   TaskTerminator _terminator;
 
   void evacuate_live_objects(G1ParScanThreadState* pss,
-                             uint worker_id,
                              G1GCPhaseTimes::GCParPhases objcopy_phase,
                              G1GCPhaseTimes::GCParPhases termination_phase) {
     G1GCPhaseTimes* p = _g1h->phase_times();
 
     Ticks start = Ticks::now();
-    G1ParEvacuateFollowersClosure cl(_g1h, pss, _task_queues, &_terminator, objcopy_phase);
+    G1ParEvacuateFollowersClosure cl(pss, _task_queues, &_terminator, objcopy_phase);
     cl.do_void();
 
     assert(pss->queue_is_empty(), "should be empty");
 
     Tickspan evac_time = (Ticks::now() - start);
+    uint worker_id = pss->worker_id();
     p->record_or_add_time_secs(objcopy_phase, worker_id, evac_time.seconds() - cl.term_time());
 
     if (termination_phase == G1GCPhaseTimes::Termination) {
@@ -695,9 +685,9 @@ protected:
 
   virtual void end_work(uint worker_id) { }
 
-  virtual void scan_roots(G1ParScanThreadState* pss, uint worker_id) = 0;
+  virtual void scan_roots(G1ParScanThreadState* pss) = 0;
 
-  virtual void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) = 0;
+  virtual void evacuate_live_objects(G1ParScanThreadState* pss) = 0;
 
 private:
   Atomic<bool> _pinned_regions_recorded;
@@ -725,10 +715,10 @@ public:
       pss->set_ref_discoverer(_g1h->ref_processor_stw());
 
       if (_pinned_regions_recorded.compare_set(false, true)) {
-        record_pinned_regions(pss, worker_id);
+        record_pinned_regions(pss);
       }
-      scan_roots(pss, worker_id);
-      evacuate_live_objects(pss, worker_id);
+      scan_roots(pss);
+      evacuate_live_objects(pss);
     }
 
     end_work(worker_id);
@@ -739,29 +729,26 @@ class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   G1RootProcessor* _root_processor;
   bool _has_optional_evacuation_work;
 
-  void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
-    _root_processor->evacuate_roots(pss, worker_id);
-    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
-    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
+  void scan_roots(G1ParScanThreadState* pss) {
+    _root_processor->evacuate_roots(pss);
+    _g1h->rem_set()->scan_heap_roots(pss, G1GCPhaseTimes::ScanHR, G1GCPhaseTimes::ObjCopy, _has_optional_evacuation_work);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, G1GCPhaseTimes::CodeRoots, G1GCPhaseTimes::ObjCopy);
     // There are no optional roots to scan right now.
 #ifdef ASSERT
     class VerifyOptionalCollectionSetRootsEmptyClosure : public G1HeapRegionClosure {
-      G1ParScanThreadState* _pss;
-
     public:
-      VerifyOptionalCollectionSetRootsEmptyClosure(G1ParScanThreadState* pss) : _pss(pss) { }
 
       bool do_heap_region(G1HeapRegion* r) override {
         assert(!r->has_index_in_opt_cset(), "must be");
         return false;
       }
-    } cl(pss);
-    _g1h->collection_set_iterate_increment_from(&cl, worker_id);
+    } cl;
+    _g1h->collection_set_iterate_increment_from(&cl, pss->worker_id());
 #endif
   }
 
-  void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
-    G1EvacuateRegionsBaseTask::evacuate_live_objects(pss, worker_id, G1GCPhaseTimes::ObjCopy, G1GCPhaseTimes::Termination);
+  void evacuate_live_objects(G1ParScanThreadState* pss) {
+    G1EvacuateRegionsBaseTask::evacuate_live_objects(pss, G1GCPhaseTimes::ObjCopy, G1GCPhaseTimes::Termination);
   }
 
   void start_work(uint worker_id) {
@@ -773,8 +760,7 @@ class G1EvacuateRegionsTask : public G1EvacuateRegionsBaseTask {
   }
 
 public:
-  G1EvacuateRegionsTask(G1CollectedHeap* g1h,
-                        G1ParScanThreadStateSet* per_thread_states,
+  G1EvacuateRegionsTask(G1ParScanThreadStateSet* per_thread_states,
                         G1ScannerTasksQueueSet* task_queues,
                         G1RootProcessor* root_processor,
                         uint num_workers,
@@ -797,8 +783,7 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
   Ticks start_processing = Ticks::now();
   {
     G1RootProcessor root_processor(_g1h, num_workers > 1 /* is_parallel */);
-    G1EvacuateRegionsTask g1_par_task(_g1h,
-                                      per_thread_states,
+    G1EvacuateRegionsTask g1_par_task(per_thread_states,
                                       task_queues(),
                                       &root_processor,
                                       num_workers,
@@ -820,14 +805,14 @@ void G1YoungCollector::evacuate_initial_collection_set(G1ParScanThreadStateSet* 
 
 class G1EvacuateOptionalRegionsTask : public G1EvacuateRegionsBaseTask {
 
-  void scan_roots(G1ParScanThreadState* pss, uint worker_id) {
-    _g1h->rem_set()->scan_heap_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy, true /* remember_already_scanned_cards */);
-    _g1h->rem_set()->scan_collection_set_code_roots(pss, worker_id, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
-    _g1h->rem_set()->scan_collection_set_optional_roots(pss, worker_id, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ObjCopy);
+  void scan_roots(G1ParScanThreadState* pss) {
+    _g1h->rem_set()->scan_heap_roots(pss, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::OptObjCopy, true /* remember_already_scanned_cards */);
+    _g1h->rem_set()->scan_collection_set_code_roots(pss, G1GCPhaseTimes::OptCodeRoots, G1GCPhaseTimes::OptObjCopy);
+    _g1h->rem_set()->scan_collection_set_optional_roots(pss, G1GCPhaseTimes::OptScanHR, G1GCPhaseTimes::ObjCopy);
   }
 
-  void evacuate_live_objects(G1ParScanThreadState* pss, uint worker_id) {
-    G1EvacuateRegionsBaseTask::evacuate_live_objects(pss, worker_id, G1GCPhaseTimes::OptObjCopy, G1GCPhaseTimes::OptTermination);
+  void evacuate_live_objects(G1ParScanThreadState* pss) {
+    G1EvacuateRegionsBaseTask::evacuate_live_objects(pss, G1GCPhaseTimes::OptObjCopy, G1GCPhaseTimes::OptTermination);
   }
 
 public:
@@ -896,17 +881,10 @@ public:
     assert(obj != nullptr, "the caller should have filtered out null values");
 
     const G1HeapRegionAttr region_attr =_g1h->region_attr(obj);
-    if (!region_attr.is_in_cset_or_humongous_candidate()) {
-      return;
-    }
+    assert(!region_attr.is_humongous_candidate(), "Humongous candidates should never be considered alive");
     if (region_attr.is_in_cset()) {
       assert(obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
-    } else {
-      assert(!obj->is_forwarded(), "invariant" );
-      assert(region_attr.is_humongous_candidate(),
-             "Only allowed G1HeapRegionAttr state is IsHumongous, but is %d", region_attr.type());
-     _g1h->set_humongous_is_live(obj);
     }
   }
 };
@@ -932,7 +910,8 @@ public:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
 
-    if (_g1h->is_in_cset_or_humongous_candidate(obj)) {
+    assert(!_g1h->region_attr(obj).is_humongous_candidate(), "Humongous candidates should never be considered alive");
+    if (_g1h->is_in_cset(obj)) {
       // If the referent object has been forwarded (either copied
       // to a new location or to itself in the event of an
       // evacuation failure) then we need to update the reference
@@ -994,7 +973,7 @@ public:
     G1STWIsAliveClosure is_alive(&_g1h);
     G1CopyingKeepAliveClosure keep_alive(&_g1h, pss);
     G1EnqueueDiscoveredFieldClosure enqueue(&_g1h, pss);
-    G1ParEvacuateFollowersClosure complete_gc(&_g1h, pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
+    G1ParEvacuateFollowersClosure complete_gc(pss, &_task_queues, _tm == RefProcThreadModel::Single ? nullptr : &_terminator, G1GCPhaseTimes::ObjCopy);
     _rp_task->rp_work(worker_id, &is_alive, &keep_alive, &enqueue, &complete_gc);
 
     // We have completed copying any necessary live referent objects.
@@ -1043,11 +1022,11 @@ void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thre
 }
 
 void G1YoungCollector::enqueue_candidates_as_root_regions() {
-  assert(collector_state()->in_concurrent_start_gc(), "must be");
+  assert(collector_state()->is_in_concurrent_start_gc(), "must be");
 
   G1CollectionSetCandidates* candidates = collection_set()->candidates();
   candidates->iterate_regions([&] (G1HeapRegion* r) {
-    _g1h->concurrent_mark()->add_root_region(r);
+    _g1h->concurrent_mark()->add_root_region_set_bottom(r);
   });
 }
 
@@ -1070,6 +1049,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   allocator()->release_gc_alloc_regions(evacuation_info);
 
 #if TASKQUEUE_STATS
+  _g1h->task_queues()->print_and_reset_taskqueue_stats("Young GC");
   // Logging uses thread states, which are deleted by cleanup, so this must
   // be done before cleanup.
   per_thread_states->print_partial_array_task_stats();
@@ -1082,7 +1062,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   // Regions in the collection set candidates are roots for the marking (they are
   // not marked through considering they are very likely to be reclaimed soon.
   // They need to be enqueued explicitly compared to survivor regions.
-  if (collector_state()->in_concurrent_start_gc()) {
+  if (collector_state()->is_in_concurrent_start_gc()) {
     enqueue_candidates_as_root_regions();
   }
 
@@ -1120,6 +1100,7 @@ G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause,
   _g1h(G1CollectedHeap::heap()),
   _gc_cause(gc_cause),
   _allocation_word_size(allocation_word_size),
+  _next_state(),
   _concurrent_operation_is_full_mark(false),
   _evac_failure_regions()
 {
@@ -1135,7 +1116,7 @@ void G1YoungCollector::collect() {
   G1YoungGCTraceTime tm(this, _gc_cause);
 
   // JFR
-  G1YoungGCJFRTracerMark jtm(gc_timer_stw(), gc_tracer_stw(), _gc_cause);
+  G1YoungGCJFRTracerMark jtm(this);
   // JStat/MXBeans
   G1YoungGCMonitoringScope ms(monitoring_support(),
                               !collection_set()->candidates()->is_empty() /* all_memory_pools_affected */);
@@ -1149,10 +1130,8 @@ void G1YoungCollector::collect() {
   // Individual parallel phases may override this.
   set_young_collection_default_active_worker_threads();
 
-  // Wait for root region scan here to make sure that it is done before any
-  // use of the STW workers to maximize cpu use (i.e. all cores are available
-  // just to do that).
-  wait_for_root_region_scanning();
+  // Complete root region scan before moving any objects to preserve the SATB invariant.
+  complete_root_region_scan();
 
   G1YoungGCVerifierMark vm(this);
   {
@@ -1183,11 +1162,6 @@ void G1YoungCollector::collect() {
     // evacuation, eventually aborting it.
     _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP", _allocation_word_size);
 
-    // Need to report the collection pause now since record_collection_pause_end()
-    // modifies it to the next state.
-    jtm.report_pause_type(collector_state()->young_gc_pause_type(_concurrent_operation_is_full_mark));
-
-    policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
+    _next_state = policy()->record_young_collection_end(_concurrent_operation_is_full_mark, evacuation_alloc_failed(), _allocation_word_size);
   }
-  TASKQUEUE_STATS_ONLY(_g1h->task_queues()->print_and_reset_taskqueue_stats("Oop Queue");)
 }

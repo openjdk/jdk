@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,15 @@ import java.util.Set;
 import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.FinalFieldMutationEvent;
+import jdk.internal.javac.PreviewFeature;
 import jdk.internal.loader.ClassLoaders;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
+import jdk.internal.reflect.AccessFlagSet;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.FieldAccessor;
+import jdk.internal.reflect.PreviewAccessFlags;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
@@ -80,7 +83,7 @@ class Field extends AccessibleObject implements Member {
     private final String              name;
     private final Class<?>            type;
     private final int                 modifiers;
-    private final boolean             trustedFinal;
+    private final int                 flags;
     // Generics and annotations support
     private final transient String    signature;
     private final byte[]              annotations;
@@ -130,7 +133,7 @@ class Field extends AccessibleObject implements Member {
           String name,
           Class<?> type,
           int modifiers,
-          boolean trustedFinal,
+          int flags,
           int slot,
           String signature,
           byte[] annotations)
@@ -139,7 +142,7 @@ class Field extends AccessibleObject implements Member {
         this.name = name;
         this.type = type;
         this.modifiers = modifiers;
-        this.trustedFinal = trustedFinal;
+        this.flags = flags;
         this.slot = slot;
         this.signature = signature;
         this.annotations = annotations;
@@ -161,7 +164,7 @@ class Field extends AccessibleObject implements Member {
         if (this.root != null)
             throw new IllegalArgumentException("Can not copy a non-root Field");
 
-        Field res = new Field(clazz, name, type, modifiers, trustedFinal, slot, signature, annotations);
+        Field res = new Field(clazz, name, type, modifiers, flags, slot, signature, annotations);
         res.root = this;
         // Might as well eagerly propagate this if already present
         res.fieldAccessor = fieldAccessor;
@@ -187,11 +190,12 @@ class Field extends AccessibleObject implements Member {
      * <li>static final fields declared in any class or interface</li>
      * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
      * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
+     * <li>fields declared in a {@linkplain Class#isValue() value class}</li>
+     * <li>{@linkplain #isStrictInit() strictly-initialized} final fields</li>
      * </ul>
-     * <p>If this reflected object represents a non-static final field in a class that
-     * is not a record class or hidden class, then enabling access will enable read
-     * access. Whether write access is allowed or not is checked when attempting to
-     * {@linkplain #set(Object, Object) set} the field value.
+     * <p>Final fields that are not covered by this list may be <em>modifiable</em>.
+     * Enabling access will enable read access. Whether write access is allowed is
+     * checked when attempting to {@linkplain #set(Object, Object) set} the field value.
      *
      * @throws InaccessibleObjectException {@inheritDoc}
      */
@@ -246,7 +250,7 @@ class Field extends AccessibleObject implements Member {
      */
     @Override
     public Set<AccessFlag> accessFlags() {
-        return reflectionFactory.parseAccessFlags(getModifiers(), AccessFlag.Location.FIELD, getDeclaringClass());
+        return AccessFlagSet.ofValidated(PreviewAccessFlags.FIELD_PREVIEW_FLAGS, getModifiers());
     }
 
     /**
@@ -275,6 +279,27 @@ class Field extends AccessibleObject implements Member {
      */
     public boolean isSynthetic() {
         return Modifier.isSynthetic(getModifiers());
+    }
+
+    /**
+     * Returns {@code true} if this field is a strictly-initialized field;
+     * returns {@code false} otherwise.
+     *
+     * <p>This method returns {@code true} if and only if the class or interface
+     * that declares this field uses preview features and this field is a
+     * strictly-initialized field. The {@link AccessFlag#STRICT_INIT
+     * ACC_STRICT_INIT} flag is considered not set for a field declared in a
+     * class or interface that does not use preview features; consequently,
+     * this method always returns {@code false} when preview features are disabled.
+     *
+     * @return {@code true} if and only if this field is a strictly-initialized
+     *         field, as defined by the Java Virtual Machine Specification
+     * @jvms strict-fields-4.5 Field access and property flags
+     * @since 28
+     */
+    @PreviewFeature(feature = PreviewFeature.Feature.STRICT_FIELDS, reflective = true)
+    public boolean isStrictInit() {
+        return accessFlags().contains(AccessFlag.STRICT_INIT);
     }
 
     /**
@@ -367,11 +392,24 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toString() {
-        int mod = getModifiers() & Modifier.fieldModifiers();
-        return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
+        return modifierPrefix()
             + getType().getTypeName() + " "
             + getDeclaringClass().getTypeName() + "."
-            + getName());
+            + getName();
+    }
+
+    private String modifierPrefix() {
+        StringBuilder sb = new StringBuilder();
+        Reflection.appendAccessControlModifiers(sb, modifiers);
+        if (Modifier.isStatic(modifiers))
+            sb.append("static ");
+        if (Modifier.isFinal(modifiers))
+            sb.append("final ");
+        if (Modifier.isTransient(modifiers))
+            sb.append("transient ");
+        if (Modifier.isVolatile(modifiers))
+            sb.append("volatile ");
+        return sb.toString();
     }
 
     @Override
@@ -400,12 +438,11 @@ class Field extends AccessibleObject implements Member {
      * @jls 8.3.1 Field Modifiers
      */
     public String toGenericString() {
-        int mod = getModifiers() & Modifier.fieldModifiers();
         Type fieldType = getGenericType();
-        return (((mod == 0) ? "" : (Modifier.toString(mod) + " "))
+        return modifierPrefix()
             + fieldType.getTypeName() + " "
             + getDeclaringClass().getTypeName() + "."
-            + getName());
+            + getName();
     }
 
     /**
@@ -454,6 +491,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      */
     @CallerSensitive
     @ForceInline // to ensure Reflection.getCallerClass optimization
@@ -489,6 +530,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -525,6 +570,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -563,6 +612,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see Field#get
      */
     @CallerSensitive
@@ -601,6 +654,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -639,6 +696,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -677,6 +738,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -715,6 +780,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see Field#get
      */
     @CallerSensitive
@@ -753,6 +822,10 @@ class Field extends AccessibleObject implements Member {
      *              and the field is an instance field.
      * @throws    ExceptionInInitializerError if the initialization provoked
      *              by this method fails.
+     * @throws    IllegalStateException if the current thread is initializing the
+     *              field's {@linkplain #getDeclaringClass() declaring class} and
+     *              the field is a {@linkplain #isStrictInit() strictly-initialized}
+     *              static field that has not been initialized.
      * @see       Field#get
      */
     @CallerSensitive
@@ -810,7 +883,9 @@ class Field extends AccessibleObject implements Member {
      * </li>
      * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
      * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
+     * <li>{@code D} is not a {@linkplain Class#isValue() value class}.</li>
      * <li>The field is non-static.</li>
+     * <li>The field is not a {@linkplain #isStrictInit() strictly-initialized} field. </li>
      * </ul>
      *
      * <p>If any of the above conditions is not met, this method throws an
@@ -839,7 +914,9 @@ class Field extends AccessibleObject implements Member {
      *     is {@linkplain Module#isExported(String) exported} to all modules.</li>
      * <li>{@code D} is not a {@linkplain Class#isRecord() record class}.</li>
      * <li>{@code D} is not a {@linkplain Class#isHidden() hidden class}.</li>
+     * <li>{@code D} is not a {@linkplain Class#isValue() value class}.</li>
      * <li>The field is non-static.</li>
+     * <li>The field is not a {@linkplain #isStrictInit() strictly-initialized} field. </li>
      * </ul>
      *
      * <p>If any of the above conditions is not met, this method throws an
@@ -1350,8 +1427,15 @@ class Field extends AccessibleObject implements Member {
         return root;
     }
 
+    private static final int TRUST_FINAL     = 0x0010;
+    private static final int NULL_RESTRICTED = 0x0020;
+
     /* package-private */ boolean isTrustedFinal() {
-        return trustedFinal;
+        return (flags & TRUST_FINAL) == TRUST_FINAL;
+    }
+
+    /* package-private */ boolean isNullRestricted() {
+        return (flags & NULL_RESTRICTED) == NULL_RESTRICTED;
     }
 
     /**
@@ -1537,8 +1621,7 @@ class Field extends AccessibleObject implements Member {
             VM.initialErr().println(sb);
         }
 
-        // record JFR event
-        FinalFieldMutationEvent.offer(getDeclaringClass(), getName());
+        FinalFieldMutationEvent.offer(root);
     }
 
     /**

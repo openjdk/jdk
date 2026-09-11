@@ -58,6 +58,7 @@ import jdk.jpackage.internal.cli.StandardOption.LauncherProperty;
 import jdk.jpackage.internal.model.AppImageBundleType;
 import jdk.jpackage.internal.model.BundleType;
 import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
 import jdk.jpackage.internal.util.RootedPath;
@@ -71,6 +72,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -256,6 +258,40 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         ).map(key -> {
             return new JPackageException(I18N.format(key, token.value(), spec.name().formatForCommandLine()));
         }).toList(), result.errors());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        ".",
+        "a-b.c",
+        "A",
+        "com.acme.Foo"
+    })
+    void test_MAC_BUNDLE_IDENTIFIER_valid(String id) {
+
+        var spec = StandardOption.MAC_BUNDLE_IDENTIFIER.getSpec();
+
+        var result = spec.convert(spec.name(), StringToken.of(id)).orElseThrow();
+
+        assertEquals(result, id);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+        "",
+        ",",
+        "Hello!"
+    })
+    void test_MAC_BUNDLE_IDENTIFIER_invalid(String id) {
+
+        var spec = StandardOption.MAC_BUNDLE_IDENTIFIER.getSpec();
+
+        var result = spec.convert(spec.name(), StringToken.of(id));
+
+        var ex = assertThrows(ConfigException.class, result::orElseThrow);
+
+        assertEquals(I18N.format("error.parameter-not-mac-bundle-identifier", id, spec.name().formatForCommandLine()), ex.getMessage());
+        assertEquals(I18N.format("error.parameter-not-mac-bundle-identifier.advice"), ex.getAdvice());
     }
 
     @ParameterizedTest

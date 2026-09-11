@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -274,6 +274,7 @@ final class FieldBuilder {
         case "int", "long", "short", "byte":
             field.integralType = true;
             field.alignLeft = false;
+            field.identifier = fieldName.equals("id") || fieldName.endsWith("Id") || field.label.endsWith("Identifier");
             break;
         case "float", "double":
             field.fractionalType = true;

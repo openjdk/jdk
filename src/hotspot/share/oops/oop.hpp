@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,13 +46,9 @@
 
 class oopDesc {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
  private:
   volatile markWord _mark;
-  union _metadata {
-    Klass*      _klass;
-    narrowKlass _compressed_klass;
-  } _metadata;
+  narrowKlass _compressed_klass;
 
   // There may be ordering constraints on the initialization of fields that
   // make use of the C++ copy/assign incorrect.
@@ -93,6 +89,7 @@ class oopDesc {
 
   void set_narrow_klass(narrowKlass nk) NOT_CDS_JAVA_HEAP_RETURN;
   inline narrowKlass narrow_klass() const;
+  inline narrowKlass narrow_klass_acquire() const;
   inline void set_klass(Klass* k);
   static inline void release_set_klass(HeapWord* mem, Klass* k);
 
@@ -119,20 +116,29 @@ class oopDesc {
   inline size_t size_given_klass(Klass* klass);
 
   // type test operations (inlined in oop.inline.hpp)
-  inline bool is_instance()    const;
-  inline bool is_instanceRef() const;
-  inline bool is_stackChunk()  const;
-  inline bool is_array()       const;
-  inline bool is_objArray()    const;
-  inline bool is_typeArray()   const;
+  inline bool is_instance()         const;
+  inline bool is_inline()           const;
+  inline bool is_instanceRef()      const;
+  inline bool is_stackChunk()       const;
+  inline bool is_array()            const;
+  inline bool is_objArray()         const;
+  inline bool is_typeArray()        const;
+  inline bool is_flatArray()        const;
+  inline bool is_refArray()         const;
+  inline bool is_refined_objArray() const;
+  inline bool is_array_with_oops()  const;
+
+  inline bool is_inline_type()      const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
-  bool is_instance_noinline()    const;
-  bool is_instanceRef_noinline() const;
-  bool is_stackChunk_noinline()  const;
-  bool is_array_noinline()       const;
-  bool is_objArray_noinline()    const;
-  bool is_typeArray_noinline()   const;
+  bool is_instance_noinline()         const;
+  bool is_instanceRef_noinline()      const;
+  bool is_stackChunk_noinline()       const;
+  bool is_array_noinline()            const;
+  bool is_objArray_noinline()         const;
+  bool is_refArray_noinline()         const;
+  bool is_typeArray_noinline()        const;
+  bool is_flatArray_noinline()        const;
 
  protected:
   inline oop        as_oop() const { return const_cast<oopDesc*>(this); }
@@ -332,13 +338,12 @@ class oopDesc {
   static int klass_offset_in_bytes()     {
 #ifdef _LP64
     if (UseCompactObjectHeaders) {
-      // NOTE: The only places where this is used with compact headers are the C2
-      // compiler and JVMCI.
+      // NOTE: The only place where this is used with compact headers is C2.
       return mark_offset_in_bytes() + markWord::klass_offset_in_bytes;
     } else
 #endif
     {
-      return (int)offset_of(oopDesc, _metadata._klass);
+      return (int)offset_of(oopDesc, _compressed_klass);
     }
   }
   static int klass_gap_offset_in_bytes() {

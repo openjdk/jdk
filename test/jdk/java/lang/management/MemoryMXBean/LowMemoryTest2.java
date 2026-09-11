@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,24 +35,22 @@
  * @test
  * @bug     4982128
  * @summary Test low memory detection of non-heap memory pool
- *
- * @run main/othervm/timeout=600 -Xnoclassgc -XX:MaxMetaspaceSize=32m
- * LowMemoryTest2
- */
-
-/*
- * @test
- * @bug     4982128
- * @summary Test low memory detection of non-heap memory pool
- *
- * @run main/othervm/timeout=600 -Xnoclassgc -XX:MaxMetaspaceSize=16m
- * -XX:CompressedClassSpaceSize=4m LowMemoryTest2
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               -Xnoclassgc -XX:MaxMetaspaceSize=32m LowMemoryTest2
+ * @run main/othervm/timeout=600 -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
+ *                               -Xnoclassgc -XX:MaxMetaspaceSize=16m
+ *                               -XX:CompressedClassSpaceSize=4m LowMemoryTest2
  */
 
 import java.lang.management.*;
 import javax.management.*;
 import javax.management.openmbean.CompositeData;
 import java.util.*;
+
+import jdk.test.whitebox.WhiteBox;
 
 public class LowMemoryTest2 {
 
@@ -177,7 +175,7 @@ public class LowMemoryTest2 {
                         // If we don't force a GC we may get an
                         // OutOfMemoryException before the counters are updated.
                         System.out.println("Force GC");
-                        System.gc();
+                        WhiteBox.getWhiteBox().fullGC();
                     }
                     isThresholdCountSet = isAnyThresholdCountSet(pools);
                 }

@@ -53,7 +53,7 @@ class CDSHeapVerifier : public KlassClosure {
       15889, // prime number
       AnyObj::C_HEAP,
       mtClassShared,
-      HeapShared::oop_hash> _table;
+      HeapShared::oop_address_hash> _table;
 
   GrowableArray<const char**> _exclusions;
   GrowableArray<oop> _shared_secret_accessors;

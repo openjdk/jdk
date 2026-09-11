@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import java.util.function.BiFunction;
  * </pre>
  * This class supports reading, writing, and converting between them.
  * <p>
- * Current code follows draft-ietf-lamps-kyber-certificates-11 and RFC 9881.
+ * Current code follows RFC 9935 and RFC 9881.
  */
 public final class KeyChoices {
 

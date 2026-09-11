@@ -54,7 +54,7 @@ public final class MacCertificateUtils {
 
         return toSupplier(() -> {
             final var output = Executor.of(args)
-                    .setQuiet(true).saveOutput(true).executeExpectSuccess()
+                    .quiet().saveOutput(true).executeExpectSuccess()
                     .getOutput();
 
             final byte[] pemCertificatesBuffer = output.stream()

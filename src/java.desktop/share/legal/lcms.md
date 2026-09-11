@@ -1,4 +1,4 @@
-## Little Color Management System (LCMS) v2.18
+## Little Color Management System (LCMS) v2.19.1
 
 ### LCMS License
 <pre>
@@ -86,6 +86,7 @@ Amyspark
 Lovell Fuller
 Eli Schwartz
 Diogo Teles Sant'Anna
+Vlad Erium
 
 Special Thanks
 --------------

@@ -31,6 +31,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
+import jdk.test.lib.Utils;
+
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.util.regex.Pattern.quote;
@@ -77,7 +79,7 @@ public class JImageBadFileTest extends JImageCliTest {
     private Path writeModifiedJimage(String label, int maxLen, Consumer<IntBuffer> headerFn)
             throws IOException {
         int remaining = maxLen >= 0 ? maxLen : Integer.MAX_VALUE;
-        Path dst = Files.createTempFile(Path.of("."), "modules-" + label, "");
+        Path dst = Utils.createTempFile("modules-" + label, "");
         try (InputStream rest = Files.newInputStream(Path.of(getImagePath()), READ);
              OutputStream out = Files.newOutputStream(dst, TRUNCATE_EXISTING)) {
             ByteBuffer bytes = ByteBuffer.wrap(rest.readNBytes(HEADER_SIZE_BYTES));
@@ -95,75 +97,52 @@ public class JImageBadFileTest extends JImageCliTest {
                 } while (rest.available() > 0 && remaining > 0);
             }
             return dst.toAbsolutePath();
-        } catch (IOException e) {
-            Files.deleteIfExists(dst);
-            throw e;
         }
     }
 
     public void testBadMagicNumber() throws IOException {
         // Flip some bits in the magic number.
         Path tempJimage = writeModifiedJimage("bad_magic", -1, b -> b.put(0, b.get(1) ^ 0x1010));
-        try {
-            JImageResult result = jimage("info", tempJimage.toString());
-            result.assertShowsError();
-            assertMatches(quote("Unable to open"), result.output);
-            assertMatches(quote("is not an image file"), result.output);
-        } finally {
-            Files.delete(tempJimage);
-        }
+        JImageResult result = jimage("info", tempJimage.toString());
+        result.assertShowsError();
+        assertMatches(quote("Unable to open"), result.output);
+        assertMatches(quote("is not an image file"), result.output);
     }
 
     public void testMismatchedVersion() throws IOException {
         // Add one to minor version (lowest bits).
         Path tempJimage = writeModifiedJimage("bad_version", -1, b -> b.put(1, b.get(1) + 1));
-        try {
-            JImageResult result = jimage("info", tempJimage.toString());
-            result.assertShowsError();
-            assertMatches(quote("Unable to open"), result.output);
-            assertMatches(quote("<JAVA_HOME>/bin/jimage"), result.output);
-            assertMatches(quote("not the correct version"), result.output);
-            assertMatches("Major: \\d+", result.output);
-            assertMatches("Minor: \\d+", result.output);
-        } finally {
-            Files.delete(tempJimage);
-        }
+        JImageResult result = jimage("info", tempJimage.toString());
+        result.assertShowsError();
+        assertMatches(quote("Unable to open"), result.output);
+        assertMatches(quote("<JAVA_HOME>/bin/jimage"), result.output);
+        assertMatches(quote("not the correct version"), result.output);
+        assertMatches("Major: \\d+", result.output);
+        assertMatches("Minor: \\d+", result.output);
     }
 
     public void testTruncatedHeader() throws IOException {
         // Copy less than the header.
         Path tempJimage = writeModifiedJimage("truncated_header", HEADER_SIZE_BYTES - 4, b -> {});
-        try {
-            JImageResult result = jimage("info", tempJimage.toString());
-            result.assertShowsError();
-            assertMatches(quote("Unable to open"), result.output);
-            assertMatches(quote("is not an image file"), result.output);
-        } finally {
-            Files.delete(tempJimage);
-        }
+        JImageResult result = jimage("info", tempJimage.toString());
+        result.assertShowsError();
+        assertMatches(quote("Unable to open"), result.output);
+        assertMatches(quote("is not an image file"), result.output);
     }
 
     public void testTruncatedData() throws IOException {
         // Copy more than the header, but definitely less than the whole file.
         Path tempJimage = writeModifiedJimage("truncated_data", HEADER_SIZE_BYTES + 1024, b -> {});
-        try {
-            JImageResult result = jimage("info", tempJimage.toString());
-            result.assertShowsError();
-            assertMatches(quote("Unable to open"), result.output);
-            assertMatches("image file \".*\" is corrupted", result.output);
-        } finally {
-            Files.delete(tempJimage);
-        }
+        JImageResult result = jimage("info", tempJimage.toString());
+        result.assertShowsError();
+        assertMatches(quote("Unable to open"), result.output);
+        assertMatches("image file \".*\" is corrupted", result.output);
     }
 
     public void testGoodFileCopy() throws IOException {
         // Self test that the file copying isn't itself corrupting anything.
         Path tempJimage = writeModifiedJimage("good_file", -1, b -> {});
-        try {
-            jimage("info", tempJimage.toString()).assertSuccess();
-        } finally {
-            Files.delete(tempJimage);
-        }
+        jimage("info", tempJimage.toString()).assertSuccess();
     }
 
     public static void main(String[] args) throws Throwable {

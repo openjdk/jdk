@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,8 +285,9 @@ class RegMask {
         _rm_word_ext = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
+        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, _rm_word_ext,
                                            old_ext_size, new_ext_size);
+
       }
       if (initialize_by_infinite_stack) {
         int fill = 0;
@@ -792,8 +793,6 @@ public:
     int rm_index_diff = _offset - rm._offset;
     int rm_hwm_tr = (int)rm._hwm - rm_index_diff;
     int rm_lwm_tr = (int)rm._lwm - rm_index_diff;
-    int rm_rm_max_tr = (int)rm.rm_word_max_index() - rm_index_diff;
-    int rm_rm_size_tr = (int)rm._rm_size_in_words - rm_index_diff;
     int hwm = MIN2((int)_hwm, rm_hwm_tr);
     int lwm = MAX2((int)_lwm, rm_lwm_tr);
     for (int i = lwm; i <= hwm; i++) {

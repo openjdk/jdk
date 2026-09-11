@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,20 +61,24 @@ import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
 import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.resources.CompilerProperties;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
 import com.sun.tools.javac.resources.CompilerProperties.LintWarnings;
 import com.sun.tools.javac.resources.CompilerProperties.Warnings;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
+import com.sun.tools.javac.util.Log.DeferredDiagnosticHandler;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 
 import com.sun.tools.javac.code.Scope.LookupKind;
 
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.ARRAY;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -109,6 +113,10 @@ public class ClassReader {
     /** Switch: allow modules.
      */
     boolean allowModules;
+
+    /** Switch: allow value classes.
+     */
+    boolean allowValueClasses;
 
     /** Switch: allow sealed
      */
@@ -289,6 +297,7 @@ public class ClassReader {
         Source source = Source.instance(context);
         preview = Preview.instance(context);
         allowModules     = Feature.MODULES.allowedInSource(source);
+        allowValueClasses = preview.isEnabled() && Feature.VALUE_CLASSES.allowedInSource(source);
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowSealedTypes = Feature.SEALED_CLASSES.allowedInSource(source);
         warnOnIllegalUtf8 = Feature.WARN_ON_ILLEGAL_UTF8.allowedInSource(source);
@@ -1366,9 +1375,7 @@ public class ClassReader {
         else
             self.fullname = ClassSymbol.formFullName(self.name, self.owner);
 
-        if (m != null) {
-            ((ClassType)sym.type).setEnclosingType(m.type);
-        } else if ((self.flags_field & STATIC) == 0) {
+        if ((self.flags_field & STATIC) == 0 && (m == null || (m.flags_field & STATIC) == 0)) {
             ((ClassType)sym.type).setEnclosingType(c.type);
         } else {
             ((ClassType)sym.type).setEnclosingType(Type.noType);
@@ -1560,12 +1567,12 @@ public class ClassReader {
                 } else if (proxy.type.tsym == syms.deprecatedType.tsym) {
                     sym.flags_field |= (DEPRECATED | DEPRECATED_ANNOTATION);
                     setFlagIfAttributeTrue(proxy, sym, names.forRemoval, DEPRECATED_REMOVAL);
-                }  else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
+                } else if (proxy.type.tsym == syms.previewFeatureType.tsym) {
                     sym.flags_field |= PREVIEW_API;
                     setFlagIfAttributeTrue(proxy, sym, names.reflective, PREVIEW_REFLECTIVE);
-                }  else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
+                } else if (proxy.type.tsym == syms.valueBasedType.tsym && sym.kind == TYP) {
                     sym.flags_field |= VALUE_BASED;
-                }  else if (proxy.type.tsym == syms.restrictedType.tsym) {
+                } else if (proxy.type.tsym == syms.restrictedType.tsym) {
                     Assert.check(sym.kind == MTH);
                     sym.flags_field |= RESTRICTED;
                 }  else if (proxy.type.tsym == syms.requiresIdentityType.tsym) {
@@ -2043,15 +2050,27 @@ public class ClassReader {
         }
 
         Attribute.Compound deproxyCompound(CompoundAnnotationProxy a) {
-            Type annotationType = resolvePossibleProxyType(a.type);
-            ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
-            for (List<Pair<Name,Attribute>> l = a.values;
-                 l.nonEmpty();
-                 l = l.tail) {
-                MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
-                buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+            DeferredDiagnosticHandler deferred = log.new DeferredDiagnosticHandler();
+            Type annotationType = syms.objectType;
+            try {
+                annotationType = resolvePossibleProxyType(a.type);
+                ListBuffer<Pair<Symbol.MethodSymbol,Attribute>> buf = new ListBuffer<>();
+                for (List<Pair<Name,Attribute>> l = a.values;
+                     l.nonEmpty();
+                     l = l.tail) {
+                    MethodSymbol meth = findAccessMethod(annotationType, l.head.fst);
+                    buf.append(new Pair<>(meth, deproxy(meth.type.getReturnType(), l.head.snd)));
+                }
+                return new Attribute.Compound(annotationType, buf.toList());
+            } finally {
+                if (!annotationType.tsym.type.hasTag(TypeTag.ERROR)) {
+                    //if the annotation type does not exists
+                    //throw away warnings reported while de-proxying the annotation,
+                    //as the annotation's library is probably missing from the classpath:
+                    deferred.reportDeferredDiagnostics();
+                }
+                log.popDiagnosticHandler(deferred);
             }
-            return new Attribute.Compound(annotationType, buf.toList());
         }
 
         MethodSymbol findAccessMethod(Type container, Name name) {
@@ -2146,15 +2165,21 @@ public class ClassReader {
                 failure = ex;
             }
             if (enumerator == null) {
-                if (failure != null) {
-                    log.warning(Warnings.UnknownEnumConstantReason(currentClassFile,
-                                                                   enumTypeSym,
-                                                                   proxy.enumerator,
-                                                                   failure.getDiagnostic()));
-                } else {
-                    log.warning(Warnings.UnknownEnumConstant(currentClassFile,
-                                                             enumTypeSym,
-                                                             proxy.enumerator));
+                // The enumerator wasn't found: emit a warning and recover
+                JavaFileObject prevSource = log.useSource(requestingOwner.classfile);
+                try {
+                    if (failure != null) {
+                        log.warning(LintWarnings.UnknownEnumConstantReason(currentClassFile,
+                                                                       enumTypeSym,
+                                                                       proxy.enumerator,
+                                                                       failure.getDiagnostic()));
+                    } else {
+                        log.warning(LintWarnings.UnknownEnumConstant(currentClassFile,
+                                                                 enumTypeSym,
+                                                                 proxy.enumerator));
+                    }
+                } finally {
+                    log.useSource(prevSource);
                 }
                 result = new Attribute.Enum(enumTypeSym.type,
                         new VarSymbol(0, proxy.enumerator, syms.botType, enumTypeSym));
@@ -2668,6 +2693,7 @@ public class ClassReader {
             // won't pass the "hasOuterInstance" check above, but those that don't have an
             // enclosing method (i.e. from initializers) will pass that check.
             boolean local = forceLocal =
+                    currentOwner.owner.kind != TYP ||
                     !currentOwner.owner.members().includes(currentOwner, LookupKind.NON_RECURSIVE);
             if (!currentOwner.name.isEmpty() && !local)
                 type = new MethodType(adjustMethodParams(flags, type.getParameterTypes()),
@@ -3019,7 +3045,9 @@ public class ClassReader {
      *  `typevars'.
      */
     protected void enterTypevars(Symbol sym, Type t) {
-        if (t.getEnclosingType() != null) {
+        if (sym.owner.kind == MTH) {
+            enterTypevars(sym.owner, sym.owner.type);
+        } else if (t.getEnclosingType() != null) {
             if (!t.getEnclosingType().hasTag(TypeTag.NONE)) {
                 enterTypevars(sym.owner, t.getEnclosingType());
             }
@@ -3055,7 +3083,7 @@ public class ClassReader {
 
         // read flags, or skip if this is an inner class
         long f = nextChar();
-        long flags = adjustClassFlags(f);
+        long flags = adjustClassFlags(c, f);
         if ((flags & MODULE) == 0) {
             if (c.owner.kind == PCK || c.owner.kind == ERR) c.flags_field = flags;
             // read own class name and check that it matches
@@ -3147,7 +3175,7 @@ public class ClassReader {
             ClassSymbol outer = optPoolEntry(outerIdx, poolReader::getClass, null);
             Name name = optPoolEntry(nameIdx, poolReader::getName, names.empty);
             if (name == null) name = names.empty;
-            long flags = adjustClassFlags(nextChar());
+            long flags = adjustClassFlags(c, nextChar());
             if (outer != null) { // we have a member class
                 if (name == names.empty)
                     name = names.one;
@@ -3293,6 +3321,11 @@ public class ClassReader {
  ***********************************************************************/
 
     long adjustFieldFlags(long flags) {
+        boolean previewClassFile = minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
+        if (allowValueClasses && previewClassFile && (flags & ACC_STRICT) != 0) {
+            flags &= ~ACC_STRICT;
+            flags |= STRICT;
+        }
         return flags;
     }
 
@@ -3308,12 +3341,30 @@ public class ClassReader {
         return flags;
     }
 
-    long adjustClassFlags(long flags) {
+    long adjustClassFlags(ClassSymbol c, long flags) {
         if ((flags & ACC_MODULE) != 0) {
             flags &= ~ACC_MODULE;
             flags |= MODULE;
         }
-        return flags & ~ACC_SUPER; // SUPER and SYNCHRONIZED bits overloaded
+        if (((flags & ACC_IDENTITY) != 0)
+                || (majorVersion <= Version.MAX().major && minorVersion != PREVIEW_MINOR_VERSION && (flags & INTERFACE) == 0)) {
+            flags |= IDENTITY_TYPE;
+        } else if (needsValueFlag(c, flags)) {
+            flags |= VALUE_CLASS;
+            flags &= ~IDENTITY_TYPE;
+        }
+        flags &= ~ACC_IDENTITY; // ACC_IDENTITY and SYNCHRONIZED bits overloaded
+        return flags;
+    }
+
+    private boolean needsValueFlag(Symbol c, long flags) {
+        boolean previewClassFile = minorVersion == ClassFile.PREVIEW_MINOR_VERSION;
+        if (allowValueClasses) {
+            if (previewClassFile && majorVersion >= Version.MAX().major && (flags & INTERFACE) == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

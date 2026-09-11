@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define SHARE_GC_G1_G1CONCURRENTREFINESWEEPTASK_HPP
 
 #include "gc/shared/workerThread.hpp"
+#include "runtime/atomic.hpp"
 
 class G1CardTableClaimTable;
 class G1ConcurrentRefineStats;
@@ -34,7 +35,7 @@ class G1ConcurrentRefineSweepTask : public WorkerTask {
   G1CardTableClaimTable* _scan_state;
   G1ConcurrentRefineStats* _stats;
   uint _max_workers;
-  bool _sweep_completed;
+  Atomic<bool> _sweep_completed;
 
 public:
 

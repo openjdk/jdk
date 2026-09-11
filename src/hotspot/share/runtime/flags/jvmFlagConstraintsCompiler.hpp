@@ -46,6 +46,7 @@
   f(uintx, ArraycopyDstPrefetchDistanceConstraintFunc)  \
   f(uintx, ArraycopySrcPrefetchDistanceConstraintFunc)  \
   f(int,   AVX3ThresholdConstraintFunc)                 \
+  f(int,   CopyAVX3ThresholdConstraintFunc)             \
   f(uint,  TypeProfileLevelConstraintFunc)              \
   f(uint,  VerifyIterativeGVNConstraintFunc)            \
   f(intx,  InitArrayShortSizeConstraintFunc)            \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,6 @@
  * questions.
  */
 
-/**
- * @test
- * @bug 6270015
- * @library /test/lib
- * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
- * @run main/othervm Test7a
- * @run main/othervm -Djava.net.preferIPv6Addresses=true Test7a
- * @summary Light weight HTTP server
- */
-
 import com.sun.net.httpserver.*;
 
 import java.util.concurrent.*;
@@ -44,15 +34,18 @@ import static com.sun.net.httpserver.HttpExchange.RSPBODY_EMPTY;
 /**
  * Test POST large file via chunked encoding (large chunks)
  */
-
+/*
+ * @test
+ * @bug 6270015
+ * @summary Light weight HTTP server
+ * @library /test/lib
+ * @build jdk.test.lib.net.SimpleSSLContext jdk.test.lib.net.URIBuilder
+ * @run main/othervm ${test.main.class}
+ * @run main/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
+ */
 public class Test7a extends Test {
 
     public static void main (String[] args) throws Exception {
-        //Logger log = Logger.getLogger ("com.sun.net.httpserver");
-        //log.setLevel (Level.FINE);
-        //ConsoleHandler h = new ConsoleHandler();
-        //h.setLevel (Level.ALL);
-        //log.addHandler (h);
         Handler handler = new Handler();
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);

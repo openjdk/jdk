@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -247,6 +247,11 @@ public final class RawBytecodeHelper {
             JSR_W = 201;
 
     public record CodeRange(byte[] array, int length) {
+        public CodeRange {
+            // Don't use IAE formatter - this length comes from implementation, any
+            // out-of-bounds is an implementation defect instead of a user error
+            Preconditions.checkIndex(length, array.length + 1, Preconditions.AIOOBE_FORMATTER);
+        }
         public RawBytecodeHelper start() {
             return new RawBytecodeHelper(this);
         }

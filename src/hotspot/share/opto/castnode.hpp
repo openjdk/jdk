@@ -195,6 +195,7 @@ protected:
 
 private:
   virtual Node* pin_node_under_control_impl() const;
+  Node* ideal_cast_of_inline_type_node(PhaseGVN* phase);
 };
 
 //------------------------------CastIINode-------------------------------------
@@ -303,14 +304,18 @@ public:
 
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
-class CastPPNode: public ConstraintCastNode {
-  public:
-  CastPPNode (Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
+class CastPPNode : public ConstraintCastNode {
+public:
+  CastPPNode(Node* ctrl, Node* n, const Type* t, const DependencyType& dependency = DependencyType::FloatingNarrowing, const TypeTuple* types = nullptr)
     : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastPP);
+    verify_type(n->bottom_type(), t);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
+
+private:
+  static void verify_type(const Type* in_type, const Type* out_type);
 };
 
 //------------------------------CheckCastPPNode--------------------------------
@@ -323,12 +328,14 @@ class CheckCastPPNode: public ConstraintCastNode {
     init_class_id(Class_CheckCastPP);
   }
 
+  virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
 
 private:
   virtual bool depends_only_on_test_impl() const { return !type()->isa_rawptr() && ConstraintCastNode::depends_only_on_test_impl(); }
+  virtual Node* pin_node_under_control_impl() const;
 };
 
 
@@ -343,6 +350,20 @@ class CastX2PNode : public Node {
   virtual Node* Identity(PhaseGVN* phase);
   virtual uint ideal_reg() const { return Op_RegP; }
   virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
+};
+
+// Cast an integer to a narrow oop
+class CastI2NNode : public TypeNode {
+  public:
+  CastI2NNode(Node* ctrl, Node* n, const Type* t) : TypeNode(t, 2) {
+    init_req(0, ctrl);
+    init_req(1, n);
+  }
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegN; }
+
+private:
+  virtual bool depends_only_on_test_impl() const { return false; }
 };
 
 //------------------------------CastP2XNode-------------------------------------
@@ -362,7 +383,5 @@ private:
   // Return false to keep node from moving away from an associated card mark.
   virtual bool depends_only_on_test_impl() const { return false; }
 };
-
-
 
 #endif // SHARE_OPTO_CASTNODE_HPP

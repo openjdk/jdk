@@ -76,7 +76,7 @@ void MethodHandles::verify_klass(MacroAssembler* _masm,
   __ verify_oop(obj);
   __ cbz(obj, L_bad);
   __ push(RegSet::of(temp, temp2), sp);
-  __ load_klass(temp, obj);
+  __ load_klass(temp, obj, temp2);
   __ cmpptr(temp, ExternalAddress((address) klass_addr));
   __ br(Assembler::EQ, L_ok);
   intptr_t super_check_offset = klass->super_check_offset();
@@ -161,7 +161,11 @@ void MethodHandles::jump_from_method_handle(MacroAssembler* _masm, Register meth
     __ BIND(run_compiled_code);
   }
 
-  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_offset() :
+  // The following jump might pass an inline type argument that was erased to Object as oop to a
+  // callee that expects inline type arguments to be passed as fields. We need to call the compiled
+  // value entry (_code->inline_entry_point() or _adapter->c2i_inline_entry()) which will take care
+  // of translating between the calling conventions.
+  const ByteSize entry_offset = for_compiler_entry ? Method::from_compiled_inline_offset() :
                                                      Method::from_interpreted_offset();
   __ ldr(rscratch1,Address(method, entry_offset));
   __ br(rscratch1);
@@ -368,7 +372,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
         __ null_check(receiver_reg);
       } else {
         // load receiver klass itself
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       BLOCK_COMMENT("check_receiver {");
@@ -376,7 +380,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
       // Check the receiver against the MemberName.clazz
       if (VerifyMethodHandles && iid == vmIntrinsics::_linkToSpecial) {
         // Did not load it above...
-        __ load_klass(temp1_recv_klass, receiver_reg);
+        __ load_klass(temp1_recv_klass, receiver_reg, temp2);
         __ verify_klass_ptr(temp1_recv_klass);
       }
       if (VerifyMethodHandles && iid != vmIntrinsics::_linkToInterface) {

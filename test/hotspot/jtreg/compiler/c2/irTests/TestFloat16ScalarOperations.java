@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2025, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8308363 8336406
+* @bug 8308363 8336406 8381617
 * @summary Validate compiler IR for various Float16 scalar operations.
 * @modules jdk.incubator.vector
 * @requires vm.compiler2.enabled
@@ -35,7 +35,6 @@ import compiler.lib.ir_framework.*;
 import compiler.lib.verify.*;
 import jdk.incubator.vector.Float16;
 import static jdk.incubator.vector.Float16.*;
-import java.util.Random;
 
 import compiler.lib.generators.Generator;
 import static compiler.lib.generators.Generators.G;
@@ -69,9 +68,9 @@ public class TestFloat16ScalarOperations {
     private static final Float16 RANDOM5 = Float16.valueOf(genF.next());
 
     // We have to ensure that the constants are not special values that lead the operations to
-    // constant fold. For example "x + 0" could constant fold to "x", so we need to avoid that
-    // the add constant is zero.
-    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.1f, 0.9f);
+    // constant fold. For example "x + 0" could constant fold to "x" or "x / 0.5" could fold
+    // to "x * 2", so we need to avoid that the constants are zero or a reciprocal power of two.
+    private static Generator<Float> genSmallRangeF = G.uniformFloats(0.6f, 0.9f);
     private static final Float16 RANDOM_CON_ADD = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_SUB = Float16.valueOf(genSmallRangeF.next());
     private static final Float16 RANDOM_CON_MUL = Float16.valueOf(genSmallRangeF.next());
@@ -99,9 +98,7 @@ public class TestFloat16ScalarOperations {
     private short GOLDEN_QNAN;
 
     public static void main(String args[]) {
-        Scenario s0 = new Scenario(0, "--add-modules=jdk.incubator.vector", "-Xint");
-        Scenario s1 = new Scenario(1, "--add-modules=jdk.incubator.vector");
-        new TestFramework().addScenarios(s1).start();
+        new TestFramework().addFlags("--add-modules=jdk.incubator.vector").start();
     }
 
     public TestFloat16ScalarOperations() {
@@ -714,9 +711,13 @@ public class TestFloat16ScalarOperations {
 
     @Test
     @IR(counts = {IRNode.FMA_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"},
+        // On Windows, both GCC and MSVC don't set __STDC_IEC_559__, so FMAs on constants are not folded.
+        applyIfPlatform = {"windows", "false"})
     @IR(counts = {IRNode.FMA_HF, " 0 ", IRNode.REINTERPRET_S2HF, " 0 ", IRNode.REINTERPRET_HF2S, " 0 "},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        // On Windows, both GCC and MSVC don't set __STDC_IEC_559__, so FMAs on constants are not folded.
+        applyIfPlatform = {"windows", "false"})
     @Warmup(10000)
     public void testFMAConstantFolding() {
         // If any argument is NaN, the result is NaN.
@@ -752,9 +753,13 @@ public class TestFloat16ScalarOperations {
 
     @Test
     @IR(failOn = {IRNode.ADD_HF, IRNode.SUB_HF, IRNode.MUL_HF, IRNode.DIV_HF, IRNode.SQRT_HF, IRNode.FMA_HF},
-        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"})
+        applyIfCPUFeatureOr = {"avx512_fp16", "true", "zfh", "true"},
+        // On Windows, both GCC and MSVC don't set __STDC_IEC_559__, so FMAs on constants are not folded.
+        applyIfPlatform = {"windows", "false"})
     @IR(failOn = {IRNode.ADD_HF, IRNode.SUB_HF, IRNode.MUL_HF, IRNode.DIV_HF, IRNode.SQRT_HF, IRNode.FMA_HF},
-        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
+        applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"},
+        // On Windows, both GCC and MSVC don't set __STDC_IEC_559__, so FMAs on constants are not folded.
+        applyIfPlatform = {"windows", "false"})
     @Warmup(10000)
     public void testRounding1() {
         dst[0] = float16ToRawShortBits(add(RANDOM1, RANDOM2));

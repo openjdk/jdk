@@ -211,7 +211,7 @@ public class Env {
 
     long getStartPos(TreePath p) {
         SourcePositions sp = trees.getSourcePositions();
-        return sp.getStartPosition(p.getCompilationUnit(), p.getLeaf());
+        return sp.getStartPosition(p.getLeaf());
     }
 
     boolean shouldCheck(CompilationUnitTree unit) {

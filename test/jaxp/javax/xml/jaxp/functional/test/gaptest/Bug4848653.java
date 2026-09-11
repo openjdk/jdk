@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,28 +22,27 @@
  */
 package test.gaptest;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static test.gaptest.GapTestConst.XML_DIR;
-
-import java.io.IOException;
-
-import javax.xml.XMLConstants;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 
+import javax.xml.XMLConstants;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.nio.file.Path;
+
+import static test.gaptest.GapTestConst.XML_DIR;
+
 /*
  * @test
  * @bug 4848653
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4848653
+ * @run junit/othervm test.gaptest.Bug4848653
  * @summary Verify JAXP schemaLanguage property is ignored if setValidating(false)
  */
 public class Bug4848653 {
@@ -56,7 +55,8 @@ public class Bug4848653 {
         parser.setProperty("http://java.sun.com/xml/jaxp/properties/schemaLanguage", XMLConstants.W3C_XML_SCHEMA_NS_URI);
 
         String filename = XML_DIR + "Bug4848653.xml";
-        InputSource is = new InputSource(filenameToURL(filename));
+        String uri = Path.of(filename).toUri().toASCIIString();
+        InputSource is = new InputSource(uri);
         XMLReader xmlReader = parser.getXMLReader();
         xmlReader.setErrorHandler(new MyErrorHandler());
         xmlReader.parse(is);

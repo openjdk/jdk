@@ -60,7 +60,6 @@ public class NMethod extends CodeBlob {
   private static CIntegerField nulChkTableOffsetField;
   private static CIntegerField scopesPCsOffsetField;
   private static CIntegerField scopesDataOffsetField;
-  private static CIntegerField speculationsOffsetField;
   private static CIntegerField immutableDataRefCountOffsetField;
 
   /** Offsets for entry points */
@@ -99,12 +98,6 @@ public class NMethod extends CodeBlob {
     stubOffsetField                    = type.getCIntegerField("_stub_offset");
     scopesPCsOffsetField               = type.getCIntegerField("_scopes_pcs_offset");
     scopesDataOffsetField              = type.getCIntegerField("_scopes_data_offset");
-
-    sun.jvm.hotspot.types.Field f = type.getField("_speculations_offset", false, false);
-    if (f != null) {
-      speculationsOffsetField          = type.getCIntegerField("_speculations_offset");
-    }
-
     immutableDataRefCountOffsetField   = type.getCIntegerField("_immutable_data_ref_count_offset");
     handlerTableOffsetField            = type.getCIntegerField("_handler_table_offset");
     nulChkTableOffsetField             = type.getCIntegerField("_nul_chk_table_offset");
@@ -171,11 +164,7 @@ public class NMethod extends CodeBlob {
   public Address scopesPCsBegin()             { return immutableDataBegin().addOffsetTo(getScopesPCsOffset());    }
   public Address scopesPCsEnd()               { return immutableDataBegin().addOffsetTo(getScopesDataOffset());                                        }
   public Address scopesDataBegin()            { return immutableDataBegin().addOffsetTo(getScopesDataOffset());   }
-  public Address scopesDataEnd()              {
-    return immutableDataBegin().addOffsetTo(speculationsOffsetField != null ?
-      getSpeculationsOffset() :
-      getImmutableDataRefCountOffset());
-  }
+  public Address scopesDataEnd()              { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
   public Address immutableDataRefCountBegin() { return immutableDataBegin().addOffsetTo(getImmutableDataRefCountOffset()); }
 
   public Address metadataBegin()              { return mutableDataBegin().addOffsetTo(getRelocationSize());   }
@@ -538,12 +527,6 @@ public class NMethod extends CodeBlob {
   private int getStubOffset()                   { return (int) stubOffsetField                  .getValue(NMethodHeaderBegin()); }
   private int getScopesDataOffset()             { return (int) scopesDataOffsetField            .getValue(NMethodHeaderBegin()); }
   private int getScopesPCsOffset()              { return (int) scopesPCsOffsetField             .getValue(NMethodHeaderBegin()); }
-  private int getSpeculationsOffset() {
-    if (speculationsOffsetField == null) {
-      throw new UnsupportedOperationException("nmethod::NMethodHeader::_speculations_offset is not present");
-    }
-    return (int) speculationsOffsetField.getValue(NMethodHeaderBegin());
-  }
   private int getHandlerTableOffset()           { return (int) handlerTableOffsetField          .getValue(NMethodHeaderBegin()); }
   private int getNulChkTableOffset()            { return (int) nulChkTableOffsetField           .getValue(NMethodHeaderBegin()); }
   private int getCompLevel()                    { return (int) compLevelField                   .getValue(NMethodHeaderBegin()); }

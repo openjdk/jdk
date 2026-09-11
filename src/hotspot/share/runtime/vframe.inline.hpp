@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,16 +60,6 @@ inline intptr_t* vframeStreamCommon::frame_id() const {
     return reinterpret_cast<intptr_t*>(id);
   }
   return _frame.id();
-}
-
-inline int vframeStreamCommon::vframe_id() const {
-  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
-  return _vframe_id;
-}
-
-inline int vframeStreamCommon::decode_offset() const {
-  assert(_mode == compiled_mode, "unexpected mode: %d", _mode);
-  return _decode_offset;
 }
 
 inline bool vframeStreamCommon::is_interpreted_frame() const { return _frame.is_interpreted_frame(); }
@@ -176,7 +166,8 @@ inline void vframeStreamCommon::fill_from_compiled_frame(int decode_offset) {
                   INTPTR_FORMAT " not found or invalid at %d",
                   p2i(_frame.pc()), decode_offset);
       nm()->print_on(&ss);
-      nm()->method()->print_codes_on(&ss);
+      // Buffering to a stringStream, disable internal buffering so it's not done twice.
+      nm()->method()->print_codes_on(&ss, 0, false);
       nm()->print_code_on(&ss);
       nm()->print_pcs_on(&ss);
       tty->print("%s", ss.as_string()); // print all at once

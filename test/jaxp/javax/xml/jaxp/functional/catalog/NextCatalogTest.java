@@ -23,22 +23,22 @@
 
 package catalog;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import javax.xml.catalog.CatalogResolver;
+
 import static catalog.CatalogTestUtils.catalogResolver;
 import static catalog.CatalogTestUtils.catalogUriResolver;
 import static catalog.ResolutionChecker.checkPubIdResolution;
 import static catalog.ResolutionChecker.checkSysIdResolution;
 import static catalog.ResolutionChecker.checkUriResolution;
 
-import javax.xml.catalog.CatalogResolver;
-
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 /*
  * @test
  * @bug 8077931
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm catalog.NextCatalogTest
+ * @run junit/othervm catalog.NextCatalogTest
  * @summary Get matched URIs from system, public and uri entries respectively,
  *          but some of the entries are defined in none-current catalog files.
  */
@@ -49,13 +49,13 @@ public class NextCatalogTest {
     private static final String CATALOG_NEXTCATALOGRIGHT
             = "nextCatalog-right.xml";
 
-    @Test(dataProvider = "systemId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnSysId")
     public void testNextCatalogOnSysId(String sytemId, String matchedUri) {
         checkSysIdResolution(createEntityResolver(), sytemId, matchedUri);
     }
 
-    @DataProvider(name = "systemId-matchedUri")
-    public Object[][] dataOnSysId() {
+    public static Object[][] dataOnSysId() {
         return new Object[][] {
                 // This matched URI of the specified system id is defined in a
                 // next catalog file.
@@ -81,13 +81,13 @@ public class NextCatalogTest {
                         "http://local/base/dtd/docDuplicateLeftSys.dtd" } };
     }
 
-    @Test(dataProvider = "publicId-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnPubId")
     public void testNextCatalogOnPubId(String publicId, String matchedUri) {
         checkPubIdResolution(createEntityResolver(), publicId, matchedUri);
     }
 
-    @DataProvider(name = "publicId-matchedUri")
-    public Object[][] dataOnPubId() {
+    public static Object[][] dataOnPubId() {
         return new Object[][] {
                 // This matched URI of the specified public id is defined in a
                 // next catalog file.
@@ -113,13 +113,13 @@ public class NextCatalogTest {
                         "http://local/base/dtd/docDuplicateLeftPub.dtd" } };
     }
 
-    @Test(dataProvider = "uri-matchedUri")
+    @ParameterizedTest
+    @MethodSource("dataOnUri")
     public void testNextCatalogOnUri(String uri, String matchedUri) {
         checkUriResolution(createUriResolver(), uri, matchedUri);
     }
 
-    @DataProvider(name = "uri-matchedUri")
-    public Object[][] dataOnUri() {
+    public static Object[][] dataOnUri() {
         return new Object[][] {
                 // This matched URI of the specified URI reference is defined in
                 // a next catalog file.
@@ -145,12 +145,12 @@ public class NextCatalogTest {
                         "http://local/base/dtd/docDuplicateLeftURI.dtd" } };
     }
 
-    private CatalogResolver createEntityResolver() {
+    private static CatalogResolver createEntityResolver() {
         return catalogResolver(CATALOG_NEXTCATALOGLEFT,
                 CATALOG_NEXTCATALOGRIGHT);
     }
 
-    private CatalogResolver createUriResolver() {
+    private static CatalogResolver createUriResolver() {
         return catalogUriResolver(CATALOG_NEXTCATALOGLEFT,
                 CATALOG_NEXTCATALOGRIGHT);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,6 @@ typedef Array<u1> AnnotationArray;
 
 class Annotations: public MetaspaceObj {
  friend class VMStructs;
- friend class JVMCIVMStructs;
 
   // If you add a new field that points to any metaspace object, you
   // must add this field to Annotations::metaspace_pointers_do().

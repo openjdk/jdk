@@ -98,7 +98,7 @@ G1RemSetSummary::G1RemSetSummary(bool should_update) :
 }
 
 G1RemSetSummary::~G1RemSetSummary() {
-  FREE_C_HEAP_ARRAY(jlong, _worker_threads_cpu_times);
+  FREE_C_HEAP_ARRAY(_worker_threads_cpu_times);
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {

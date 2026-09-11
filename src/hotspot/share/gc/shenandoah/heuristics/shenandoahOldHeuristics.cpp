@@ -79,7 +79,6 @@ ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* genera
 }
 
 bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* collection_set) {
-  _mixed_evac_cset = collection_set;
   _included_old_regions = 0;
   _evacuated_old_bytes = 0;
   _collected_old_bytes = 0;
@@ -105,10 +104,6 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
                               compare_by_live);
 
   _first_pinned_candidate = NOT_FOUND;
-
-  uint included_old_regions = 0;
-  size_t evacuated_old_bytes = 0;
-  size_t collected_old_bytes = 0;
 
   // If a region is put into the collection set, then this region's free (not yet used) bytes are no longer
   // "available" to hold the results of other evacuations.  This may cause a decrease in the remaining amount
@@ -152,7 +147,7 @@ bool ShenandoahOldHeuristics::prime_collection_set(ShenandoahCollectionSet* coll
   log_debug(gc)("Choose old regions for mixed collection: old evacuation budget: " PROPERFMT ", candidates: %u",
                 PROPERFMTARGS(_old_evacuation_budget),
                 unprocessed_old_collection_candidates());
-  return add_old_regions_to_cset();
+  return add_old_regions_to_cset(collection_set);
 }
 
 bool ShenandoahOldHeuristics::all_candidates_are_pinned() {
@@ -226,7 +221,7 @@ void ShenandoahOldHeuristics::slide_pinned_regions_to_front() {
   _next_old_collection_candidate = write_index + 1;
 }
 
-bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
+bool ShenandoahOldHeuristics::add_old_regions_to_cset(ShenandoahCollectionSet* collection_set) {
   if (unprocessed_old_collection_candidates() == 0) {
     return false;
   }
@@ -310,7 +305,7 @@ bool ShenandoahOldHeuristics::add_old_regions_to_cset() {
         break;
       }
     }
-    _mixed_evac_cset->add_region(r);
+    collection_set->add_region(r);
     _included_old_regions++;
     _evacuated_old_bytes += live_data_for_evacuation;
     _collected_old_bytes += r->garbage();
@@ -326,7 +321,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   }
   decrease_unprocessed_old_collection_candidates_live_memory(_evacuated_old_bytes);
   if (_included_old_regions > 0) {
-    log_info(gc)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
+    log_info(gc, ergo)("Old-gen mixed evac (%zu regions, evacuating %zu%s, reclaiming: %zu%s)",
                  _included_old_regions,
                  byte_size_in_proper_unit(_evacuated_old_bytes), proper_unit_for_byte_size(_evacuated_old_bytes),
                  byte_size_in_proper_unit(_collected_old_bytes), proper_unit_for_byte_size(_collected_old_bytes));
@@ -344,10 +339,10 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
     // if they are all pinned we transition to a state that will allow us to make these uncollected
     // (pinned) regions parsable.
     if (all_candidates_are_pinned()) {
-      log_info(gc)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
+      log_info(gc, ergo)("All candidate regions " UINT32_FORMAT " are pinned", unprocessed_old_collection_candidates());
       _old_generation->abandon_mixed_evacuations();
     } else {
-      log_info(gc)("No regions selected for mixed collection. "
+      log_info(gc, ergo)("No regions selected for mixed collection. "
                    "Old evacuation budget: " PROPERFMT ", Next candidate: " UINT32_FORMAT ", Last candidate: " UINT32_FORMAT,
                    PROPERFMTARGS(_old_evacuation_reserve),
                    _next_old_collection_candidate, _last_old_collection_candidate);
@@ -356,7 +351,7 @@ bool ShenandoahOldHeuristics::finalize_mixed_evacs() {
   return (_included_old_regions > 0);
 }
 
-bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old) {
+bool ShenandoahOldHeuristics::top_off_collection_set(ShenandoahCollectionSet* collection_set, size_t &add_regions_to_old) {
   if (unprocessed_old_collection_candidates() == 0) {
     add_regions_to_old = 0;
     return false;
@@ -367,15 +362,13 @@ bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old)
 
     // We have budgeted to assure the live_bytes_in_tenurable_regions() get evacuated into old generation.  Young reserves
     // only for untenurable region evacuations.
-    size_t planned_young_evac = _mixed_evac_cset->get_live_bytes_in_untenurable_regions();
+    size_t planned_young_evac = collection_set->get_live_bytes_in_untenurable_regions();
     size_t consumed_from_young_cset = (size_t) (planned_young_evac * ShenandoahEvacWaste);
 
     size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
-    size_t regions_required_for_collector_reserve = (consumed_from_young_cset + region_size_bytes - 1) / region_size_bytes;
 
     assert(consumed_from_young_cset <= max_young_cset, "sanity");
     assert(max_young_cset <= young_unaffiliated_regions * region_size_bytes, "sanity");
-
     size_t regions_for_old_expansion;
     if (consumed_from_young_cset < max_young_cset) {
       size_t excess_young_reserves = max_young_cset - consumed_from_young_cset;
@@ -389,7 +382,7 @@ bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old)
       regions_for_old_expansion = 0;
     }
     if (regions_for_old_expansion > 0) {
-      log_info(gc)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
+      log_info(gc, ergo)("Augmenting old-gen evacuation budget from unexpended young-generation reserve by %zu regions",
                    regions_for_old_expansion);
       add_regions_to_old = regions_for_old_expansion;
       size_t budget_supplement = region_size_bytes * regions_for_old_expansion;
@@ -398,8 +391,11 @@ bool ShenandoahOldHeuristics::top_off_collection_set(size_t &add_regions_to_old)
       _unspent_unfragmented_old_budget += supplement_without_waste;
       _old_generation->augment_evacuation_reserve(budget_supplement);
       young_generation->set_evacuation_reserve(max_young_cset - budget_supplement);
-
-      return add_old_regions_to_cset();
+      assert(young_generation->get_evacuation_reserve() >=
+             collection_set->get_live_bytes_in_untenurable_regions() * ShenandoahEvacWaste,
+             "adjusted evac reserve (%zu) must be large enough for planned evacuation (%zu)",
+             young_generation->get_evacuation_reserve(), collection_set->get_live_bytes_in_untenurable_regions());
+      return add_old_regions_to_cset(collection_set);
     } else {
       add_regions_to_old = 0;
       return false;
@@ -432,7 +428,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     }
     // else, regions that were promoted in place had 0 old live data at mark start
 
-    if (region->is_regular() || region->is_regular_pinned()) {
+    if (region->is_regular_or_regular_pinned()) {
       // Only place regular or pinned regions with live data into the candidate set.
       // Pinned regions cannot be evacuated, but we are not actually choosing candidates
       // for the collection set here. That happens later during the next young GC cycle,
@@ -543,7 +539,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
     while ((defrag_count < bound_on_additional_regions) &&
            (total_uncollected_old_regions < 7 * span_of_uncollected_regions / 8)) {
       ShenandoahHeapRegion* r = candidates[_last_old_collection_candidate].get_region();
-      assert(r->is_regular() || r->is_regular_pinned(), "Region %zu has wrong state for collection: %s",
+      assert(r->is_regular_or_regular_pinned(), "Region %zu has wrong state for collection: %s",
              r->index(), ShenandoahHeapRegion::region_state_to_string(r->state()));
       const size_t region_garbage = r->garbage();
       const size_t region_free = r->free();
@@ -580,7 +576,7 @@ void ShenandoahOldHeuristics::prepare_for_old_collections() {
   } else if (has_coalesce_and_fill_candidates()) {
     _old_generation->transition_to(ShenandoahOldGeneration::FILLING);
   } else {
-    _old_generation->transition_to(ShenandoahOldGeneration::WAITING_FOR_BOOTSTRAP);
+    _old_generation->transition_to(ShenandoahOldGeneration::IDLE);
   }
 }
 
@@ -848,7 +844,7 @@ void ShenandoahOldHeuristics::adjust_old_garbage_threshold() {
       } else {
         _old_garbage_threshold = ShenandoahOldGarbageThreshold - adjustment_potential / 3;
       }
-      log_info(gc)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
+      log_info(gc, ergo)("Adjusting old garbage threshold to %lu because Old Generation used regions represents %lu%% of heap",
                    _old_garbage_threshold, percent_used);
     }
   }
@@ -860,10 +856,10 @@ void ShenandoahOldHeuristics::record_success_concurrent() {
   this->ShenandoahHeuristics::record_success_concurrent();
 }
 
-void ShenandoahOldHeuristics::record_degenerated() {
+void ShenandoahOldHeuristics::record_degenerated(bool is_generational_global) {
   // Forget any triggers that occurred while OLD GC was ongoing.  If we really need to start another, it will retrigger.
   clear_triggers();
-  this->ShenandoahHeuristics::record_degenerated();
+  this->ShenandoahHeuristics::record_degenerated(is_generational_global);
 }
 
 void ShenandoahOldHeuristics::record_success_full() {

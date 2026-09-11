@@ -154,6 +154,7 @@ public:
   // entries for this region in other remsets.
   void clear(bool only_cardset = false, bool keep_tracked = false);
 
+  void reset_code_root_table_scanner();
   void reset_table_scanner();
 
   G1MonotonicArenaMemoryStats card_set_memory_stats() const;
@@ -167,7 +168,7 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return G1CardSet::static_mem_size();
+    return G1CardSet::static_mem_size() + G1FromCardCache::static_mem_size();
   }
 
   static void print_static_mem_size(outputStream* out);
@@ -181,6 +182,7 @@ public:
   void add_code_root(nmethod* nm);
   void remove_code_root(nmethod* nm);
   void bulk_remove_code_roots();
+  void prepare_for_adding_code_roots(size_t num_code_roots);
 
   // Applies blk->do_nmethod() to each of the entries in _code_roots
   void code_roots_do(NMethodClosure* blk) const;

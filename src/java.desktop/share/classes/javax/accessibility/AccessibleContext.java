@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.beans.PropertyChangeSupport;
 import java.util.Locale;
 
 import sun.awt.AWTAccessor;
-import sun.awt.AppContext;
 
 /**
  * {@code AccessibleContext} represents the minimum information all accessible
@@ -84,24 +83,8 @@ public abstract class AccessibleContext {
      */
     protected AccessibleContext() {}
 
-    /**
-     * The {@code AppContext} that should be used to dispatch events for this
-     * {@code AccessibleContext}.
-     */
-    private volatile AppContext targetAppContext;
-
     static {
         AWTAccessor.setAccessibleContextAccessor(new AWTAccessor.AccessibleContextAccessor() {
-            @Override
-            public void setAppContext(AccessibleContext accessibleContext, AppContext appContext) {
-                accessibleContext.targetAppContext = appContext;
-            }
-
-            @Override
-            public AppContext getAppContext(AccessibleContext accessibleContext) {
-                return accessibleContext.targetAppContext;
-            }
-
             @Override
             public Object getNativeAXResource(AccessibleContext accessibleContext) {
                 return accessibleContext.nativeAXResource;

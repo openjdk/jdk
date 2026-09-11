@@ -260,7 +260,8 @@ public abstract class VerifyJimage implements Runnable {
              */
             private boolean isJimageOnly(String entryName) {
                 return entryName.startsWith("/java.base/jdk/internal/module/SystemModules$")
-                        || entryName.startsWith("/java.base/java/lang/invoke/BoundMethodHandle$Species_");
+                        || entryName.startsWith("/java.base/java/lang/invoke/BoundMethodHandle$Species_")
+                        || entryName.startsWith("/jdk.jlink/jdk/tools/jlink/internal/runtimelink/");
             }
 
             private String getEntryName(Path path) {

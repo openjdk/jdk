@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,21 +24,25 @@
 /**
  * @test
  * @summary Basic test of jimage protocol handler
- * @run testng Basic
+ * @run junit ${test.main.class}
  */
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 public class Basic {
 
-    @DataProvider(name = "urls")
-    public Object[][] urls() {
+    public static Object[][] urls() {
         Object[][] data = {
                 {"jrt:/java.base/java/lang/Object.class", true},
                 // Valid resource with and without percent-encoding.
@@ -67,7 +71,8 @@ public class Basic {
         return data;
     }
 
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testConnect(String urlString, boolean exists) throws Exception {
         URL url = new URL(urlString);
         URLConnection uc = url.openConnection();
@@ -79,32 +84,35 @@ public class Basic {
         }
     }
 
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testInputStream(String urlString, boolean exists) throws Exception {
         URL url = new URL(urlString);
         URLConnection uc = url.openConnection();
         try {
             int b = uc.getInputStream().read();
-            assertTrue(b != -1);
+            assertNotEquals(-1, b);
             if (!exists) fail("IOException expected");
         } catch (IOException ioe) {
             if (exists) fail("IOException not expected");
         }
     }
 
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testContentLength(String urlString, boolean exists) throws Exception {
         URL url = new URL(urlString);
         int len = url.openConnection().getContentLength();
         assertTrue((exists && len > 0) || (!exists && len == -1));
     }
 
-    @Test(dataProvider = "urls")
+    @ParameterizedTest
+    @MethodSource("urls")
     public void testGetContent(String urlString, boolean exists) throws Exception {
         URL url = new URL(urlString);
         try {
             Object obj = url.getContent();
-            assertTrue(obj != null);
+            assertNotNull(obj);
             if (!exists) fail("IOException expected");
         } catch (IOException ioe) {
             if (exists) fail("IOException not expected");

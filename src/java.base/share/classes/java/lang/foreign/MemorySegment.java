@@ -1552,6 +1552,11 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * <p>
      * The {@linkplain MemorySegment#maxByteAlignment() maximum byte alignment} for
      * the {@code NULL} segment is of 2<sup>62</sup>.
+     *
+     * @apiNote Clients should avoid using {@code ==} to compare a segment with
+     *          {@code MemorySegment.NULL}. A segment with address {@code 0L} may be
+     *          {@linkplain #ofAddress(long) created independently} and may therefore
+     *          have a different identity.
      */
     MemorySegment NULL = MemorySegment.ofAddress(0L);
 

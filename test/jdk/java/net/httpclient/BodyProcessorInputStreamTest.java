@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import static java.lang.System.err;
  * @test
  * @bug 8187503
  * @summary An example on how to read a response body with InputStream.
- * @run main/othervm/manual -Dtest.debug=true BodyProcessorInputStreamTest
+ * @run main/othervm/manual -Dtest.debug=true ${test.main.class}
  * @author daniel fuchs
  */
 public class BodyProcessorInputStreamTest {

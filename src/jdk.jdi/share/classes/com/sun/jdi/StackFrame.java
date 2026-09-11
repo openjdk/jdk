@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,6 +96,14 @@ public interface StackFrame extends Mirror, Locatable {
      * Returns the value of 'this' for the current frame.
      * The {@link ObjectReference} for 'this' is only available for
      * non-native instance methods.
+     * <p>
+     * If 'this' is a {@linkplain
+     * ObjectReference##valueObjects value object<sup class="preview-mark">PREVIEW</sup>}
+     * under construction, the returned {@code ObjectReference} will refer to a
+     * <em>snapshot</em> of the value object, not a reference
+     * to the actual value object under construction. Consequently, the returned
+     * {@code ObjectReference} will not reflect changes to the value object that
+     * happen later during construction.
      *
      * @return an {@link ObjectReference}, or null if the frame represents
      * a native or static method.

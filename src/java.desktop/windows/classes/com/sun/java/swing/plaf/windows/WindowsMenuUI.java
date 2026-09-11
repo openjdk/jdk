@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ import com.sun.java.swing.plaf.windows.TMSchema.State;
 /**
  * Windows rendition of the component.
  */
-public final class WindowsMenuUI extends BasicMenuUI {
-    private Integer menuBarHeight;
-    private boolean hotTrackingOn;
+public class WindowsMenuUI extends BasicMenuUI {
+    protected Integer menuBarHeight;
+    protected boolean hotTrackingOn;
 
     final WindowsMenuItemUIAccessor accessor =
         new WindowsMenuItemUIAccessor() {
@@ -283,7 +283,7 @@ public final class WindowsMenuUI extends BasicMenuUI {
      * true when the mouse enters the menu and false when it exits.
      * @since 1.4
      */
-    protected final class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
+    protected class WindowsMouseInputHandler extends BasicMenuUI.MouseInputHandler {
         @Override
         public void mouseEntered(MouseEvent evt) {
             super.mouseEntered(evt);

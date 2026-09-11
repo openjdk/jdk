@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -257,10 +257,10 @@ static INLINE int vavailability_i(int name) {
 }
 
 
-static INLINE vfloat vload_vf_p(const float *ptr) { return vld1q_f32(__builtin_assume_aligned(ptr, 16)); }
+static INLINE vfloat vload_vf_p(const float *ptr) { return vld1q_f32((const float32_t*)__builtin_assume_aligned(ptr, 16)); }
 static INLINE vfloat vloadu_vf_p(const float *ptr) { return vld1q_f32(ptr); }
 
-static INLINE void vstore_v_p_vf(float *ptr, vfloat v) { vst1q_f32(__builtin_assume_aligned(ptr, 16), v); }
+static INLINE void vstore_v_p_vf(float *ptr, vfloat v) { vst1q_f32((float32_t*)__builtin_assume_aligned(ptr, 16), v); }
 static INLINE void vstoreu_v_p_vf(float *ptr, vfloat v) { vst1q_f32(ptr, v); }
 
 static INLINE vfloat vgather_vf_p_vi2(const float *ptr, vint2 vi2) {

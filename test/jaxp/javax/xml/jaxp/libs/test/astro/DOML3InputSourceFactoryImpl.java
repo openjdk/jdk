@@ -22,22 +22,6 @@
  */
 package test.astro;
 
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
-import static org.w3c.dom.traversal.NodeFilter.SHOW_ELEMENT;
-
-import java.io.ByteArrayInputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -49,6 +33,20 @@ import org.w3c.dom.ls.LSParserFilter;
 import org.w3c.dom.ls.LSSerializer;
 import org.w3c.dom.ls.LSSerializerFilter;
 import org.xml.sax.InputSource;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import static org.w3c.dom.ls.DOMImplementationLS.MODE_SYNCHRONOUS;
+import static org.w3c.dom.traversal.NodeFilter.SHOW_ELEMENT;
 
 /*
  * A specialized implementation of an Input Source factory that utilizes
@@ -72,7 +70,7 @@ public class DOML3InputSourceFactoryImpl implements InputSourceFactory {
         Document doc = null;
         LSInput src = impl.createLSInput();
         // register the input file with the input source...
-        String systemId = filenameToURL(filename);
+        String systemId = Path.of(filename).toUri().toASCIIString();
         src.setSystemId(systemId);
         try (Reader reader = new FileReader(filename)) {
             src.setCharacterStream(reader);
@@ -82,7 +80,7 @@ public class DOML3InputSourceFactoryImpl implements InputSourceFactory {
 
         // Use DOM L3 LSSerializer (previously called a DOMWriter)
         // to serialize the xml doc DOM to a file stream.
-        String tmpCatalog = Files.createTempFile(Paths.get(USER_DIR), "catalog.xml", null).toString();
+        String tmpCatalog = Files.createTempFile(Paths.get("."), "catalog.xml", null).toString();
 
         LSSerializer domserializer = impl.createLSSerializer();
         domserializer.setFilter(new MyDOMWriterFilter());

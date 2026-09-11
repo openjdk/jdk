@@ -30,7 +30,7 @@
  * @run main/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,ssl,trace
- *      SmokeTest
+ *      ${test.main.class}
  */
 
 import java.net.InetAddress;

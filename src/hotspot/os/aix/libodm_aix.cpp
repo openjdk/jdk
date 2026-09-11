@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,13 +63,12 @@ dynamicOdm::~dynamicOdm() {
 void odmWrapper::clean_data() { if (_data) { permit_forbidden_function::free(_data); _data = nullptr; } }
 
 
-int odmWrapper::class_offset(const char *field, bool is_aix_5)
+int odmWrapper::class_offset(const char *field)
 {
   assert(has_class(), "initialization");
   for (int i = 0; i < odm_class()->nelem; i++) {
     if (strcmp(odm_class()->elem[i].elemname, field) == 0) {
       int offset = odm_class()->elem[i].offset;
-      if (is_aix_5) { offset += LINK_VAL_OFFSET; }
       return offset;
     }
   }
@@ -88,11 +87,10 @@ void odmWrapper::determine_os_kernel_version(uint32_t* p_ver) {
     return;
   }
   int voff, roff, moff, foff;
-  bool is_aix_5 = (major_aix_version == 5);
-  voff = odm.class_offset("ver", is_aix_5);
-  roff = odm.class_offset("rel", is_aix_5);
-  moff = odm.class_offset("mod", is_aix_5);
-  foff = odm.class_offset("fix", is_aix_5);
+  voff = odm.class_offset("ver");
+  roff = odm.class_offset("rel");
+  moff = odm.class_offset("mod");
+  foff = odm.class_offset("fix");
   if (voff == -1 || roff == -1 || moff == -1 || foff == -1) {
     trcVerbose("try_determine_os_kernel_version: could not get offsets");
     return;

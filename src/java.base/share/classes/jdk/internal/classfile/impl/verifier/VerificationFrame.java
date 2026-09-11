@@ -24,7 +24,12 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import java.util.Arrays;
+import java.util.Set;
+
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /// From `stackMapFrame.cpp`.
 class VerificationFrame {
@@ -37,9 +42,11 @@ class VerificationFrame {
     private final int _max_locals, _max_stack;
     private int _flags;
     private final VerificationType[] _locals, _stack;
+    private Set<NameAndTypeEntry> _assert_unset_fields;
     private final VerifierImpl _verifier;
 
-    public VerificationFrame(int offset, int flags, int locals_size, int stack_size, int max_locals, int max_stack, VerificationType[] locals, VerificationType[] stack, VerifierImpl v) {
+    public VerificationFrame(int offset, int flags, int locals_size, int stack_size, int max_locals, int max_stack,
+                             VerificationType[] locals, VerificationType[] stack, Set<NameAndTypeEntry> assert_unset_fields, VerifierImpl v) {
         this._offset = offset;
         this._locals_size = locals_size;
         this._stack_size = stack_size;
@@ -49,6 +56,7 @@ class VerificationFrame {
         this._flags = flags;
         this._locals = locals;
         this._stack = stack;
+        this._assert_unset_fields = assert_unset_fields;
         this._verifier = v;
     }
 
@@ -107,6 +115,50 @@ class VerificationFrame {
 
     boolean flag_this_uninit() {
         return (_flags & FLAG_THIS_UNINIT) == FLAG_THIS_UNINIT;
+    }
+
+    Set<NameAndTypeEntry> assert_unset_fields() {
+        return _assert_unset_fields;
+    }
+
+    void set_assert_unset_fields(Set<NameAndTypeEntry> table) {
+        _assert_unset_fields = table;
+    }
+
+    // Called when verifying putfields to mark strict instance fields as satisfied
+    boolean satisfy_unset_field(Utf8Entry name, Utf8Entry signature) {
+        var nat = TemporaryConstantPool.INSTANCE.nameAndTypeEntry(name, signature);
+        return _assert_unset_fields.remove(nat);
+    }
+
+    // Verify that all strict fields have been initialized
+    // Strict fields must be initialized before the super constructor is called
+    boolean verify_unset_fields_satisfied() {
+        return _assert_unset_fields.isEmpty();
+    }
+
+    // Merge incoming unset strict fields from StackMapTable with
+    // initial strict instance fields
+    Set<NameAndTypeEntry> merge_unset_fields(Set<NameAndTypeEntry> new_fields) {
+        // ClassFile API: We track all strict fields in another structure, noop here
+        return new_fields;
+    }
+
+    boolean verify_unset_fields_compatibility(Set<NameAndTypeEntry> target_table) {
+        for (var e : _assert_unset_fields) {
+            if (!target_table.contains(e))
+                return false;
+        }
+        return true;
+    }
+
+    void unsatisfied_strict_fields_error(VerificationWrapper klass, int bci) {
+        _verifier.verifyError("All strict final fields must be initialized before super(): %d field(s), %s"
+                .formatted(_assert_unset_fields.size(), _assert_unset_fields));
+    }
+
+    void print_strict_fields(Set<NameAndTypeEntry> table) {
+        // ignore, we don't do stdout/err
     }
 
     void reset() {
@@ -181,7 +233,7 @@ class VerificationFrame {
         pop_stack_ex(type2);
     }
 
-    VerificationFrame(int max_locals, int max_stack, VerifierImpl verifier) {
+    VerificationFrame(int max_locals, int max_stack, Set<NameAndTypeEntry> initial_strict_fields, VerifierImpl verifier) {
         _offset = 0;
         _locals_size = 0;
         _stack_size = 0;
@@ -198,12 +250,13 @@ class VerificationFrame {
         for (int i = 0; i < max_stack; i++) {
             _stack[i] = VerificationType.bogus_type;
         }
+        _assert_unset_fields = initial_strict_fields;
     }
 
     VerificationFrame frame_in_exception_handler(int flags) {
         return new VerificationFrame(_offset, flags, _locals_size, 0,
                 _max_locals, _max_stack, _locals, new VerificationType[1],
-                _verifier);
+                _assert_unset_fields, _verifier);
     }
 
     void initialize_object(VerificationType old_object, VerificationType new_object) {
@@ -297,6 +350,16 @@ class VerificationFrame {
         mismatch_loc = is_assignable_to(_stack, target.stack(), _stack_size);
         if (mismatch_loc != _stack_size) {
             _verifier.verifyError("Bad type", this, target);
+        }
+
+        // Check that assert unset fields are compatible
+        boolean compatible = verify_unset_fields_compatibility(target.assert_unset_fields());
+        if (!compatible) {
+            print_strict_fields(assert_unset_fields());
+            print_strict_fields(target.assert_unset_fields());
+            _verifier.verifyError("Strict fields mismatch from %s to %s".formatted(
+                    assert_unset_fields(), target.assert_unset_fields()), this, target);
+            return false;
         }
 
         if ((_flags | target.flags()) == target.flags()) {

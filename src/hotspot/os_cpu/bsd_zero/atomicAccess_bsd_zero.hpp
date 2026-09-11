@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2011, 2015, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,6 @@
 #define OS_CPU_BSD_ZERO_ATOMICACCESS_BSD_ZERO_HPP
 
 #include "orderAccess_bsd_zero.hpp"
-#include "runtime/os.hpp"
 
 // Implementation of class AtomicAccess
 

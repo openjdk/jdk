@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import java.util.concurrent.Executor;
  *
  * <p>The following table shows some request URIs and which, if any context they would
  * match with:
- * <table class="striped"><caption style="display:none">description</caption>
+ * <table class="striped" style="text-align:left"><caption style="display:none">description</caption>
  *      <thead>
  *          <tr>
  *              <th scope="col"><i>Request URI</i></th>
@@ -278,10 +278,20 @@ public abstract class HttpServer {
      * <p>The class overview describes how incoming request URIs are
      * <a href="#mapping_description">mapped</a> to HttpContext instances.
      *
-     * @apiNote The path should generally, but is not required to, end with '/'.
-     * If the path does not end with '/', eg such as with {@code "/foo"} then
-     * this would match requests with a path of {@code "/foobar"} or
-     * {@code "/foo/bar"}.
+     * @apiNote
+     * The path should generally, but is not required to, end with {@code /}.
+     * If the path does not end with {@code /}, e.g., such as with {@code /foo},
+     * then some implementations may use <em>string prefix matching</em> where
+     * this context path matches request paths {@code /foo},
+     * {@code /foo/bar}, or {@code /foobar}. Others may use <em>path prefix
+     * matching</em> where {@code /foo} matches request paths {@code /foo} and
+     * {@code /foo/bar}, but not {@code /foobar}.
+     *
+     * @implNote
+     * By default, the JDK built-in implementation uses path prefix matching.
+     * String prefix matching can be enabled using the
+     * {@link jdk.httpserver/##sun.net.httpserver.pathMatcher sun.net.httpserver.pathMatcher}
+     * system property.
      *
      * @param path the root URI path to associate the context with
      * @param handler the handler to invoke for incoming requests
@@ -289,6 +299,8 @@ public abstract class HttpServer {
      * already exists for this path
      * @throws NullPointerException if either path, or handler are {@code null}
      * @return an instance of {@code HttpContext}
+     *
+     * @see jdk.httpserver/##sun.net.httpserver.pathMatcher sun.net.httpserver.pathMatcher
      */
     public abstract HttpContext createContext(String path, HttpHandler handler);
 
@@ -308,16 +320,28 @@ public abstract class HttpServer {
      * <p>The class overview describes how incoming request URIs are
      * <a href="#mapping_description">mapped</a> to {@code HttpContext} instances.
      *
-     * @apiNote The path should generally, but is not required to, end with '/'.
-     * If the path does not end with '/', eg such as with {@code "/foo"} then
-     * this would match requests with a path of {@code "/foobar"} or
-     * {@code "/foo/bar"}.
+     * @apiNote
+     * The path should generally, but is not required to, end with {@code /}.
+     * If the path does not end with {@code /}, e.g., such as with {@code /foo},
+     * then some implementations may use <em>string prefix matching</em> where
+     * this context path matches request paths {@code /foo},
+     * {@code /foo/bar}, or {@code /foobar}. Others may use <em>path prefix
+     * matching</em> where {@code /foo} matches request paths
+     * {@code /foo} and {@code /foo/bar}, but not {@code /foobar}.
+     *
+     * @implNote
+     * By default, the JDK built-in implementation uses path prefix matching.
+     * String prefix matching can be enabled using the
+     * {@link jdk.httpserver/##sun.net.httpserver.pathMatcher sun.net.httpserver.pathMatcher}
+     * system property.
      *
      * @param path the root URI path to associate the context with
      * @throws IllegalArgumentException if path is invalid, or if a context
      * already exists for this path
      * @throws NullPointerException if path is {@code null}
      * @return an instance of {@code HttpContext}
+     *
+     * @see jdk.httpserver/##sun.net.httpserver.pathMatcher sun.net.httpserver.pathMatcher
      */
     public abstract HttpContext createContext(String path);
 

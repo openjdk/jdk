@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 #include "classfile/classPrinter.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "utilities/ostream.hpp"
@@ -55,11 +56,20 @@ TEST_VM(ClassPrinter, print_classes) {
   ClassPrinter::print_classes("java.lang.Integer", 0x20, &s3);
   const char* o3 = s3.freeze();
   ASSERT_THAT(o3, HasSubstr("class: java/lang/Integer mirror:")) << "must find java/lang/Integer";
-  ASSERT_THAT(o3, HasSubstr("InstanceKlass: java.lang.Integer {0x")) << "must print InstanceKlass";
+  Klass::KlassKind kind = Arguments::is_valhalla_enabled()
+                              ? Klass::InlineKlassKind
+                              : Klass::InstanceKlassKind;
+  stringStream headerExpected;
+  headerExpected.print("InstanceKlass (kind=%d): java.lang.Integer {0x", kind);
+  ASSERT_THAT(o3, HasSubstr(headerExpected.freeze())) << "must print InstanceKlass";
   ASSERT_THAT(o3, HasSubstr("Java mirror oop for java/lang/Integer:")) << "must print mirror oop";
 #if GTEST_USES_POSIX_RE
   // Complex regex not available on Windows
-  ASSERT_THAT(o3, ContainsRegex("public static final 'MIN_VALUE' 'I'.* -2147483648 [(]0x80000000[)]")) << "must print static fields";
+  const char* re = Arguments::is_valhalla_enabled()
+                       ? "public static final value 'MIN_VALUE' [(]fields 0x00000008[)] 'I'.* -2147483648 [(]0x80000000[)]"
+                       : "public static final 'MIN_VALUE' [(]fields 0x00000008[)] 'I'.* -2147483648 [(]0x80000000[)]";
+
+  ASSERT_THAT(o3, ContainsRegex(re)) << "must print static fields";
 #endif
 }
 

@@ -284,9 +284,10 @@ template <class T> void G1RebuildRemSetClosure::do_oop_work(T* p) {
   G1HeapRegion* to = _g1h->heap_region_containing(obj);
   G1HeapRegionRemSet* rem_set = to->rem_set();
   if (rem_set->is_tracked()) {
-    if (to->is_young()) {
-      G1BarrierSet::g1_barrier_set()->write_ref_field_post(p);
-    } else {
+    // References into young regions are only indicated by the card mark, which
+    // has been dirtied when installing the reference already, so no further
+    // remembering needs to happen.
+    if (!to->is_young()) {
       G1HeapRegion* from = _g1h->heap_region_containing(p);
 
       if (from->rem_set()->cset_group() != rem_set->cset_group()) {

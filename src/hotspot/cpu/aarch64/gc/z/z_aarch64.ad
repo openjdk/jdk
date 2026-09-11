@@ -207,8 +207,7 @@ instruct zCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newva
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
     z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
-    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
-               false /* acquire */, true /* release */, false /* weak */, noreg);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword, memory_order_release);
     __ cset($res$$Register, Assembler::EQ);
   %}
 
@@ -231,8 +230,7 @@ instruct zCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP ne
     Address ref_addr($mem$$Register);
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
     z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
-    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
-               true /* acquire */, true /* release */, false /* weak */, noreg);
+    __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword, memory_order_seq_cst);
     __ cset($res$$Register, Assembler::EQ);
   %}
 
@@ -255,7 +253,7 @@ instruct zCompareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP n
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
     z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
-               false /* acquire */, true /* release */, false /* weak */, $res$$Register);
+               memory_order_release, $res$$Register);
     z_uncolor(masm, this, $res$$Register);
   %}
 
@@ -278,7 +276,7 @@ instruct zCompareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iReg
     z_store_barrier(masm, this, ref_addr, $newval$$Register, $newval_tmp$$Register, rscratch2, true /* is_atomic */);
     z_color(masm, this, $oldval_tmp$$Register, $oldval$$Register);
     __ cmpxchg($mem$$Register, $oldval_tmp$$Register, $newval_tmp$$Register, Assembler::xword,
-               true /* acquire */, true /* release */, false /* weak */, $res$$Register);
+               memory_order_seq_cst, $res$$Register);
     z_uncolor(masm, this, $res$$Register);
   %}
 

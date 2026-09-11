@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@ package nsk.jvmti.scenarios.hotswap.HS201;
 
 import java.io.*;
 import java.util.*;
+
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jvmti.*;
 
@@ -187,7 +189,7 @@ public class hs201t003 extends DebugeeClass {
     /**
      * Class executing a class to be redefined.
      */
-    class RedefClassWrapper extends Thread {
+    class RedefClassWrapper extends ThreadWrapper {
         boolean stopMe = false;
 
         RedefClassWrapper() {

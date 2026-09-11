@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,21 @@
  */
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertNull;
-import static org.testng.Assert.fail;
-
-import java.io.File;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.sax.SAXResult;
 import javax.xml.transform.stream.StreamSource;
+import java.io.File;
 
-import org.testng.annotations.Test;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  *  Basic test for TransformerException specification.
@@ -44,31 +44,28 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.TransformerExcpTest
+ * @run junit/othervm javax.xml.transform.ptests.TransformerExcpTest
  */
 public class TransformerExcpTest {
     /**
      * Transform an unformatted style-sheet file. TransformerException is thrown.
      */
     @Test
-    public void tfexception() {
-        try {
-            // invalid.xsl has well-formedness error. Therefore transform throws
-            // TransformerException
-            StreamSource streamSource
-                    = new StreamSource(new File(XML_DIR + "invalid.xsl"));
-            TransformerFactory tFactory = TransformerFactory.newInstance();
-            Transformer transformer = tFactory.newTransformer(streamSource);
-            transformer.transform(
-                    new StreamSource(new File(XML_DIR + "cities.xml")),
-                    new SAXResult());
-            fail("TransformerException is not thrown as expected");
-        } catch (TransformerException e) {
-            assertNotNull(e.getCause());
-            assertNotNull(e.getException());
-            assertNull(e.getLocationAsString());
-            assertEquals(e.getMessageAndLocation(),e.getMessage());
-        }
+    public void tfexception() throws TransformerConfigurationException {
+        // invalid.xsl has well-formedness error. Therefore transform throws
+        // TransformerException
+        StreamSource streamSource
+                = new StreamSource(new File(XML_DIR + "invalid.xsl"));
+        TransformerFactory tFactory = TransformerFactory.newInstance();
+
+        TransformerException e = assertThrows(
+                TransformerException.class,
+                () -> tFactory.newTransformer(streamSource));
+
+        assertNotNull(e.getCause());
+        assertNotNull(e.getException());
+        assertNull(e.getLocationAsString());
+        assertEquals(e.getMessageAndLocation(), e.getMessage());
     }
 
 
@@ -77,20 +74,20 @@ public class TransformerExcpTest {
      * TransformerException(Throwable), initCause should throw
      * IllegalStateException
      */
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void tfexception06() {
         TransformerException te = new TransformerException(new Throwable());
-        te.initCause(null);
+        assertThrows(IllegalStateException.class, () -> te.initCause(null));
     }
 
     /**
      * Spec says, "if the throwable was created with TransformerException(String,
      * Throwable), initCause should throw IllegalStateException
      */
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void tfexception07() {
         TransformerException te = new TransformerException("MyMessage", new Throwable());
-        te.initCause(null);
+        assertThrows(IllegalStateException.class, () -> te.initCause(null));
     }
 
     /**

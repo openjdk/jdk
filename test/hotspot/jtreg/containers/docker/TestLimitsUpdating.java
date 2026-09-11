@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,8 +49,12 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
+import jtreg.SkippedException;
 
 public class TestLimitsUpdating {
+    private static final int CPU_PERIOD = 100_000;
+    private static final int INITIAL_CPU_COUNT = 1;
+    private static final int UPDATED_CPU_COUNT = 2;
     private static final String TARGET_CONTAINER = "limitsUpdatingHS_" + Runtime.getRuntime().version().major();
     private static final String imageName = Common.imageName("limitsUpdating");
 
@@ -68,6 +72,10 @@ public class TestLimitsUpdating {
     }
 
     private static void testLimitUpdates() throws Exception {
+        if (Runtime.getRuntime().availableProcessors() < UPDATED_CPU_COUNT) {
+            throw new SkippedException("Need at least " + UPDATED_CPU_COUNT
+                    + " available CPUs to test CPU limit updates");
+        }
         File sharedtmpdir = new File("test-sharedtmp");
         File flag = new File(sharedtmpdir, "limitsUpdated"); // shared with LimitUpdateChecker
         File started = new File(sharedtmpdir, "started"); // shared with LimitUpdateChecker
@@ -77,8 +85,8 @@ public class TestLimitsUpdating {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "LimitUpdateChecker");
         opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
         opts.addDockerOpts("--volume", sharedtmpdir.getAbsolutePath() + ":/tmp");
-        opts.addDockerOpts("--cpu-period", "100000");
-        opts.addDockerOpts("--cpu-quota", "200000");
+        opts.addDockerOpts("--cpu-period", Integer.toString(CPU_PERIOD));
+        opts.addDockerOpts("--cpu-quota", Integer.toString(INITIAL_CPU_COUNT * CPU_PERIOD));
         opts.addDockerOpts("--memory", "500m");
         opts.addDockerOpts("--memory-swap", "500m");
         opts.addDockerOpts("--name", TARGET_CONTAINER);
@@ -103,7 +111,7 @@ public class TestLimitsUpdating {
             Thread.sleep(100);
         }
 
-        final List<String> containerCommand = getContainerUpdate(300_000, 100_000, "300m");
+        final List<String> containerCommand = getContainerUpdate(UPDATED_CPU_COUNT * CPU_PERIOD, CPU_PERIOD, "300m");
         // Run the update command so as to increase resources once the container signaled it has started.
         Thread t2 = new Thread() {
                 public void run() {
@@ -126,8 +134,8 @@ public class TestLimitsUpdating {
 
         // Do assertions based on the output in target container
         OutputAnalyzer targetOut = out[0];
-        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "2"); // initial value
-        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "3"); // updated value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "1"); // initial value
+        DockerTestUtils.shouldMatchWithValue(targetOut, "active_processor_count", "2"); // updated value
         DockerTestUtils.shouldMatchWithValue(targetOut, "memory_limit", "512000 kB"); // initial value
         DockerTestUtils.shouldMatchWithValue(targetOut, "memory_and_swap_limit", "512000 kB"); // initial value
         DockerTestUtils.shouldMatchWithValue(targetOut, "memory_limit", "307200 kB"); // updated value

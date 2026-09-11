@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,13 +145,16 @@ bool frame::safe_for_sender(JavaThread *thread) {
       if (!thread->is_in_full_stack_checked((address)sender_sp)) {
         return false;
       }
-      sender_unextended_sp = sender_sp;
       // On Intel the return_address is always the word on the stack
       sender_pc = (address) *(sender_sp-1);
       // Note: frame::sender_sp_offset is only valid for compiled frame
-      saved_fp = (intptr_t*) *(sender_sp - frame::sender_sp_offset);
-    }
+      intptr_t** saved_fp_addr = (intptr_t**) (sender_sp - frame::sender_sp_offset);
+      saved_fp = *saved_fp_addr;
 
+      // Repair the sender sp if this is a method with scalarized inline type args
+      sender_sp = repair_sender_sp(sender_sp, saved_fp_addr);
+      sender_unextended_sp = sender_sp;
+    }
     if (Continuation::is_return_barrier_entry(sender_pc)) {
       // sender_pc might be invalid so check that the frame
       // actually belongs to a Continuation.
@@ -298,7 +301,7 @@ void frame::patch_pc(Thread* thread, address pc) {
 
 #ifdef ASSERT
   {
-    frame f(this->sp(), this->unextended_sp(), this->fp(), pc);
+    frame f(sp(), unextended_sp(), fp(), pc, cb(), oop_map(), is_heap_frame());
     assert(f.is_deoptimized_frame() == this->is_deoptimized_frame() && f.pc() == this->pc() && f.raw_pc() == this->raw_pc(),
       "must be (f.is_deoptimized_frame(): %d this->is_deoptimized_frame(): %d "
       "f.pc(): " INTPTR_FORMAT " this->pc(): " INTPTR_FORMAT " f.raw_pc(): " INTPTR_FORMAT " this->raw_pc(): " INTPTR_FORMAT ")",
@@ -453,11 +456,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
   intptr_t* sender_fp = link();
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   address sender_pc = this->sender_pc();
 
@@ -610,13 +613,24 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       ret_pc_loc = fp() + return_addr_offset;
       fp_loc = fp();
     } else {
-      ret_pc_loc = real_fp() - return_addr_offset;
-      fp_loc = real_fp() - sender_sp_offset;
+      if (cb()->is_nmethod() && cb()->as_nmethod()->needs_stack_repair()) {
+        values.describe(frame_no, real_fp() - sender_sp_offset - 1, err_msg("fsize for #%d", frame_no), 1);
+      }
+      frame::CompiledFramePointers cfp = compiled_frame_details();
+      ret_pc_loc = (intptr_t*)cfp.sender_pc_addr;
+      fp_loc = (intptr_t*)cfp.saved_fp_addr;
     }
     address ret_pc = *(address*)ret_pc_loc;
     values.describe(frame_no, ret_pc_loc,
       Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
     values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender
+
+    intptr_t* ret_pc_loc2 = real_fp() - return_addr_offset;
+    if (ret_pc_loc2 != ret_pc_loc) {
+      intptr_t* fp_loc2 = real_fp() - sender_sp_offset;
+      values.describe(frame_no, ret_pc_loc2, "return address copy #2");
+      values.describe(-1, fp_loc2, "saved fp copy #2", 0);
+    }
   }
 }
 
@@ -634,6 +648,29 @@ frame::frame(void* sp, void* fp, void* pc) {
 }
 
 #endif
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  assert(nm != nullptr && nm->needs_stack_repair(), "");
+  // The stack increment resides just below the saved rbp on the stack
+  // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
+  intptr_t* real_frame_size_addr = (intptr_t*) (saved_fp_addr - 1);
+  int real_frame_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+  assert(real_frame_size >= nm->frame_size() && real_frame_size <= 1000000, "invalid frame size");
+  return sp + real_frame_size;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
+    // The stack increment resides just below the saved rbp on the stack
+    // and does not account for the return address and rbp (see MacroAssembler::remove_frame).
+    intptr_t* real_frame_size_addr = unextended_sp() + _cb->frame_size() - sender_sp_offset - 1;
+    real_size = (*real_frame_size_addr / wordSize) + metadata_words_at_bottom;
+    return real_size != _cb->frame_size();
+  }
+  real_size = _cb->frame_size();
+  return false;
+}
 
 void JavaFrameAnchor::make_walkable() {
   // last frame set?

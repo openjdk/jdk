@@ -321,8 +321,10 @@ void ArchiveBuilder::sort_klasses() {
 }
 
 address ArchiveBuilder::reserve_buffer() {
-  // AOTCodeCache::max_aot_code_size() accounts for aot code region.
-  size_t buffer_size = LP64_ONLY(CompressedClassSpaceSize) NOT_LP64(256 * M) + AOTCodeCache::max_aot_code_size();
+  // On 64-bit: reserve address space for archives up to the max encoded offset limit.
+  // On 32-bit: use 256MB + AOT code size due to limited virtual address space.
+  size_t buffer_size = LP64_ONLY(AOTCompressedPointers::MaxMetadataOffsetBytes)
+                       NOT_LP64(256 * M + AOTCodeCache::max_aot_code_size());
   ReservedSpace rs = MemoryReserver::reserve(buffer_size,
                                              AOTMetaspace::core_region_alignment(),
                                              os::vm_page_size(),
@@ -365,7 +367,7 @@ address ArchiveBuilder::reserve_buffer() {
     size_t static_archive_size = _mapped_static_archive_top - _mapped_static_archive_bottom;
 
     // At run time, we will mmap the dynamic archive at my_archive_requested_bottom
-    _requested_static_archive_top = _requested_static_archive_bottom + static_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, static_archive_size);
     my_archive_requested_bottom = align_up(_requested_static_archive_top, AOTMetaspace::core_region_alignment());
 
     _requested_dynamic_archive_bottom = my_archive_requested_bottom;
@@ -373,7 +375,7 @@ address ArchiveBuilder::reserve_buffer() {
 
   _buffer_to_requested_delta = my_archive_requested_bottom - _buffer_bottom;
 
-  address my_archive_requested_top = my_archive_requested_bottom + buffer_size;
+  address my_archive_requested_top = ArchiveUtils::offset_from_requested_base(my_archive_requested_bottom, buffer_size);
   if (my_archive_requested_bottom <  _requested_static_archive_bottom ||
       my_archive_requested_top    <= _requested_static_archive_bottom) {
     // Size overflow.
@@ -562,9 +564,8 @@ ArchiveBuilder::FollowMode ArchiveBuilder::get_follow_mode(MetaspaceClosure::Ref
     if (ref->type() == MetaspaceClosureType::ClassType) {
       Klass* klass = (Klass*)ref->obj();
       assert(klass->is_klass(), "must be");
-      if (RegeneratedClasses::has_been_regenerated(klass)) {
-        klass = RegeneratedClasses::get_regenerated_object(klass);
-      }
+      klass = RegeneratedClasses::maybe_get_regenerated_object(klass);
+
       if (is_excluded(klass)) {
         ResourceMark rm;
         aot_log_trace(aot)("pointer set to null: class (excluded): %s", klass->external_name());
@@ -625,6 +626,7 @@ void ArchiveBuilder::dump_ro_metadata() {
   start_dump_region(&_ro_region);
   make_shallow_copies(&_ro_region, &_ro_src_objs);
   RegeneratedClasses::record_regenerated_objects();
+  DumpRegion::report_gaps(&_alloc_stats);
 }
 
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
@@ -637,33 +639,10 @@ void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
 
 void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* src_info) {
   address src = src_info->source_addr();
-  int bytes = src_info->size_in_bytes(); // word-aligned
-  size_t alignment = SharedSpaceObjectAlignment; // alignment for the dest pointer
+  int bytes = src_info->size_in_bytes();
+  char* dest = dump_region->allocate_metaspace_obj(bytes, src, src_info->type(),
+                                                   src_info->read_only(), &_alloc_stats);
 
-  char* oldtop = dump_region->top();
-  if (src_info->type() == MetaspaceClosureType::ClassType) {
-    // Allocate space for a pointer directly in front of the future InstanceKlass, so
-    // we can do a quick lookup from InstanceKlass* -> RunTimeClassInfo*
-    // without building another hashtable. See RunTimeClassInfo::get_for()
-    // in systemDictionaryShared.cpp.
-    Klass* klass = (Klass*)src;
-    if (klass->is_instance_klass()) {
-      SystemDictionaryShared::validate_before_archiving(InstanceKlass::cast(klass));
-      dump_region->allocate(sizeof(address));
-    }
-#ifdef _LP64
-    // More strict alignments needed for UseCompressedClassPointers
-    if (UseCompressedClassPointers) {
-      alignment = nth_bit(ArchiveBuilder::precomputed_narrow_klass_shift());
-    }
-#endif
-  } else if (src_info->type() == MetaspaceClosureType::SymbolType) {
-    // Symbols may be allocated by using AllocateHeap, so their sizes
-    // may be less than size_in_bytes() indicates.
-    bytes = ((Symbol*)src)->byte_size();
-  }
-
-  char* dest = dump_region->allocate(bytes, alignment);
   memcpy(dest, src, bytes);
 
   // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
@@ -690,11 +669,6 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   log_trace(aot)("Copy: " PTR_FORMAT " ==> " PTR_FORMAT " %d", p2i(src), p2i(dest), bytes);
   src_info->set_buffered_addr((address)dest);
-
-  char* newtop = dump_region->top();
-  _alloc_stats.record(src_info->type(), int(newtop - oldtop), src_info->read_only());
-
-  DEBUG_ONLY(_alloc_stats.verify((int)dump_region->used(), src_info->read_only()));
 }
 
 // This is used by code that hand-assembles data structures, such as the LambdaProxyClassKey, that are
@@ -735,9 +709,8 @@ bool ArchiveBuilder::has_been_archived(address src_addr) const {
     // This is a class/method that belongs to one of the "original" classes that
     // have been regenerated by lambdaFormInvokers.cpp. We must have archived
     // the "regenerated" version of it.
-    if (RegeneratedClasses::has_been_regenerated(src_addr)) {
-      address regen_obj = RegeneratedClasses::get_regenerated_object(src_addr);
-      precond(regen_obj != nullptr && regen_obj != src_addr);
+    address regen_obj = RegeneratedClasses::maybe_get_regenerated_object(src_addr);
+    if (regen_obj != src_addr) {
       assert(has_been_archived(regen_obj), "must be");
       assert(get_buffered_addr(src_addr) == get_buffered_addr(regen_obj), "must be");
     }});
@@ -833,14 +806,20 @@ void ArchiveBuilder::make_klasses_shareable() {
       address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
       const int narrow_klass_shift = precomputed_narrow_klass_shift();
       narrowKlass nk = CompressedKlassPointers::encode_not_null_without_asserts(requested_k, narrow_klass_base, narrow_klass_shift);
-      k->set_prototype_header(markWord::prototype().set_narrow_klass(nk));
+      k->set_prototype_header_klass(nk);
     }
 #endif //_LP64
-    if (k->is_objArray_klass()) {
+    if (k->is_flatArray_klass()) {
+      num_obj_array_klasses ++;
+      type = "flat array";
+    } else if (k->is_refArray_klass()) {
+        num_obj_array_klasses ++;
+        type = "ref array";
+    } else if (k->is_objArray_klass()) {
       // InstanceKlass and TypeArrayKlass will in turn call remove_unshareable_info
       // on their array classes.
       num_obj_array_klasses ++;
-      type = "array";
+      type = "obj array";
     } else if (k->is_typeArray_klass()) {
       num_type_array_klasses ++;
       type = "array";
@@ -1009,7 +988,7 @@ size_t ArchiveBuilder::any_to_offset(address p) const {
 }
 
 address ArchiveBuilder::offset_to_buffered_address(size_t offset) const {
-  address requested_addr = _requested_static_archive_bottom + offset;
+  address requested_addr = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, offset);
   address buffered_addr = requested_addr - _buffer_to_requested_delta;
   assert(is_in_buffer_space(buffered_addr), "bad offset");
   return buffered_addr;
@@ -1075,7 +1054,7 @@ class RelocateBufferToRequested : public BitMapClosure {
 
     address bottom = _builder->buffer_bottom();
     address top = _builder->buffer_top();
-    address new_bottom = bottom + _buffer_to_requested_delta;
+    address new_bottom = bottom +  _buffer_to_requested_delta;
     address new_top = top + _buffer_to_requested_delta;
     aot_log_debug(aot)("Relocating archive from [" INTPTR_FORMAT " - " INTPTR_FORMAT "] to "
                    "[" INTPTR_FORMAT " - " INTPTR_FORMAT "]",
@@ -1117,20 +1096,17 @@ class RelocateBufferToRequested : public BitMapClosure {
   }
 };
 
-#ifdef _LP64
 int ArchiveBuilder::precomputed_narrow_klass_shift() {
-  // Legacy Mode:
-  //    We use 32 bits for narrowKlass, which should cover the full 4G Klass range. Shift can be 0.
+  // Standard Mode:
+  //    We use 32 bits for narrowKlass, which should cover a full 4G Klass range. Shift can be 0.
   // CompactObjectHeader Mode:
   //    narrowKlass is much smaller, and we use the highest possible shift value to later get the maximum
   //    Klass encoding range.
   //
   // Note that all of this may change in the future, if we decide to correct the pre-calculated
   // narrow Klass IDs at archive load time.
-  assert(UseCompressedClassPointers, "Only needed for compressed class pointers");
   return UseCompactObjectHeaders ?  CompressedKlassPointers::max_shift() : 0;
 }
-#endif // _LP64
 
 void ArchiveBuilder::relocate_to_requested() {
   if (!ro_region()->is_packed()) {
@@ -1139,7 +1115,7 @@ void ArchiveBuilder::relocate_to_requested() {
   size_t my_archive_size = buffer_top() - buffer_bottom();
 
   if (CDSConfig::is_dumping_static_archive()) {
-    _requested_static_archive_top = _requested_static_archive_bottom + my_archive_size;
+    _requested_static_archive_top = ArchiveUtils::offset_from_requested_base(_requested_static_archive_bottom, my_archive_size);
     RelocateBufferToRequested<true> patcher(this);
     patcher.doit();
   } else {
@@ -1199,7 +1175,7 @@ void ArchiveBuilder::write_archive(FileMapInfo* mapinfo, AOTMappedHeapInfo* mapp
     AOTMapLogger::dumptime_log(this, mapinfo, mapped_heap_info, streamed_heap_info, bitmap, bitmap_size_in_bytes);
   }
   CDS_JAVA_HEAP_ONLY(HeapShared::destroy_archived_object_cache());
-  FREE_C_HEAP_ARRAY(char, bitmap);
+  FREE_C_HEAP_ARRAY(bitmap);
 }
 
 void ArchiveBuilder::write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region, bool read_only,  bool allow_exec) {

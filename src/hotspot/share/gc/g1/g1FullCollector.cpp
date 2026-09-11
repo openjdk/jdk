@@ -23,7 +23,9 @@
  */
 
 #include "classfile/classLoaderDataGraph.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+#include "code/codeCache.hpp"
+#include "cppstdlib/new.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
@@ -47,21 +49,21 @@
 #include "utilities/debug.hpp"
 
 static void clear_and_activate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::clear();
-#endif
+#endif // COMPILER2
 }
 
 static void deactivate_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::set_active(false);
-#endif
+#endif // COMPILER2
 }
 
 static void update_derived_pointers() {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTable::update_pointers();
-#endif
+#endif // COMPILER2
 }
 
 G1CMBitMap* G1FullCollector::mark_bitmap() {
@@ -134,11 +136,12 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   _compaction_points = NEW_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _num_workers, mtGC);
 
   _live_stats = NEW_C_HEAP_ARRAY(G1RegionMarkStats, _heap->max_num_regions(), mtGC);
-  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
   for (uint j = 0; j < heap->max_num_regions(); j++) {
     _live_stats[j].clear();
-    ::new (&_compaction_tops[j]) Atomic<HeapWord*>{};
   }
+
+  _compaction_tops = NEW_C_HEAP_ARRAY(Atomic<HeapWord*>, _heap->max_num_regions(), mtGC);
+  ::new (_compaction_tops) Atomic<HeapWord*>[heap->max_num_regions()]{};
 
   _partial_array_state_manager = new PartialArrayStateManager(_num_workers);
 
@@ -165,10 +168,10 @@ G1FullCollector::~G1FullCollector() {
 
   delete _partial_array_state_manager;
 
-  FREE_C_HEAP_ARRAY(G1FullGCMarker*, _markers);
-  FREE_C_HEAP_ARRAY(G1FullGCCompactionPoint*, _compaction_points);
-  FREE_C_HEAP_ARRAY(Atomic<HeapWord*>, _compaction_tops);
-  FREE_C_HEAP_ARRAY(G1RegionMarkStats, _live_stats);
+  FREE_C_HEAP_ARRAY(_markers);
+  FREE_C_HEAP_ARRAY(_compaction_points);
+  FREE_C_HEAP_ARRAY(_compaction_tops);
+  FREE_C_HEAP_ARRAY(_live_stats);
 }
 
 class PrepareRegionsClosure : public G1HeapRegionClosure {
@@ -190,7 +193,7 @@ void G1FullCollector::prepare_collection() {
 
   // Verification needs the bitmap, so we should clear the bitmap only later.
   bool in_concurrent_cycle = _heap->abort_concurrent_cycle();
-  _heap->verify_before_full_collection();
+  _heap->verify_before_full_collection(in_concurrent_cycle);
   if (in_concurrent_cycle) {
     GCTraceTime(Debug, gc) debug("Clear Bitmap");
     _heap->concurrent_mark()->clear_bitmap(_heap->workers());
@@ -328,6 +331,8 @@ void G1FullCollector::phase1_mark_live_objects() {
     assert(marker(0)->task_queue()->is_empty(), "Should be no oops on the stack");
   }
 
+  CodeCache::on_gc_marking_cycle_finish();
+
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
     for (uint i = 0; i < workers(); i++) {
@@ -351,7 +356,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 #if TASKQUEUE_STATS
-  marking_task_queues()->print_and_reset_taskqueue_stats("Marking Task Queue");
+  marking_task_queues()->print_and_reset_taskqueue_stats("Full GC");
+
+  auto get_stats = [&](uint i) {
+    return marker(i)->partial_array_splitter().stats();
+  };
+  PartialArrayTaskStats::log_set(_num_workers, get_stats,
+                                 "Full GC Partial Array");
 #endif
 }
 
@@ -534,9 +545,9 @@ void G1FullCollector::verify_after_marking() {
     return;
   }
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   DerivedPointerTableDeactivate dpt_deact;
-#endif
+#endif // COMPILER2
   _heap->prepare_for_verify();
   // Note: we can verify only the heap here. When an object is
   // marked, the previous value of the mark word (including

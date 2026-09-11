@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ class CellTypeState {
   unsigned int _state;
 
   // Masks for separating the BITS and INFO portions of a CellTypeState
-  enum { info_mask            = right_n_bits(28),
+  enum { info_mask            = right_n_bits(27),
          bits_mask            = (int)(~info_mask) };
 
   // These constant are used for manipulating the BITS portion of a
@@ -104,18 +104,23 @@ class CellTypeState {
 
   // These constants are used for manipulating the INFO portion of a
   // CellTypeState
-  enum { top_info_bit         = nth_bit(27),
-         not_bottom_info_bit  = nth_bit(26),
-         info_data_mask       = right_n_bits(26),
+  enum { top_info_bit         = nth_bit(26),
+         not_bottom_info_bit  = nth_bit(25),
+         info_data_mask       = right_n_bits(25),
          info_conflict        = info_mask };
 
   // Within the INFO data, these values are used to distinguish different
   // kinds of references.
-  enum { ref_not_lock_bit     = nth_bit(25),  // 0 if this reference is locked as a monitor
-         ref_slot_bit         = nth_bit(24),  // 1 if this reference is a "slot" reference,
+  enum { ref_not_lock_bit     = nth_bit(24),  // 0 if this reference is locked as a monitor
+         ref_slot_bit         = nth_bit(23),  // 1 if this reference is a "slot" reference,
                                               // 0 if it is a "line" reference.
-         ref_data_mask        = right_n_bits(24) };
+         ref_data_mask        = right_n_bits(23) };
 
+  // Within the INFO data, these values are used to distinguish different
+  // kinds of value types.
+  enum { valuetype_slot_bit   = nth_bit(24),  // 1 if this reference is a "slot" value type,
+    // 0 if it is a "line" value type.
+    valuetype_data_mask  = right_n_bits(24) };
 
   // These values are used to initialize commonly used CellTypeState
   // constants.
@@ -307,6 +312,7 @@ class GenerateOopMap {
   bool         _did_relocation;             // was relocation necessary
   bool         _monitor_safe;               // The monitors in this method have been determined
                                             // to be safe.
+  bool         _all_exception_edges;        // All bytecodes can reach containing exception handler.
 
   // Working Cell type state
   int            _state_len;                // Size of states
@@ -348,17 +354,15 @@ class GenerateOopMap {
 
   // Basicblock info
   BasicBlock *    _basic_blocks;             // Array of basicblock info
-  int             _gc_points;
   int             _bb_count;
   ResourceBitMap  _bb_hdr_bits;
 
   // Basicblocks methods
   void          initialize_bb               ();
-  void          mark_bbheaders_and_count_gc_points();
+  void          mark_bbheaders();
   bool          is_bb_header                (int bci) const   {
     return _bb_hdr_bits.at(bci);
   }
-  int           gc_points                   () const                          { return _gc_points; }
   int           bb_count                    () const                          { return _bb_count; }
   void          set_bbmark_bit              (int bci);
   BasicBlock *  get_basic_block_at          (int bci) const;
@@ -397,7 +401,7 @@ class GenerateOopMap {
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
   void  do_field                            (int is_get, int is_static, int idx, int bci, Bytecodes::Code bc);
-  void  do_method                           (int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc);
+  void  do_method                           (int is_static, int idx, int bci, Bytecodes::Code bc);
   void  do_multianewarray                   (int dims, int bci);
   void  do_monitorenter                     (int bci);
   void  do_monitorexit                      (int bci);
@@ -450,14 +454,14 @@ class GenerateOopMap {
   int  binsToHold                           (int no)                      { return  ((no+(BitsPerWord-1))/BitsPerWord); }
   char *state_vec_to_string                 (CellTypeState* vec, int len);
 
-  // Helper method. Can be used in subclasses to fx. calculate gc_points. If the current instruction
+  // Helper method. If the current instruction
   // is a control transfer, then calls the jmpFct all possible destinations.
   void  ret_jump_targets_do                 (BytecodeStream *bcs, jmpFct_t jmpFct, int varNo,int *data);
   bool  jump_targets_do                     (BytecodeStream *bcs, jmpFct_t jmpFct, int *data);
 
   friend class RelocCallback;
  public:
-  GenerateOopMap(const methodHandle& method);
+  GenerateOopMap(const methodHandle& method, bool all_exception_edges);
 
   // Compute the map - returns true on success and false on error.
   bool compute_map(Thread* current);
@@ -480,14 +484,7 @@ class GenerateOopMap {
   bool monitor_safe()                              { return _monitor_safe; }
 
   // Specialization methods. Intended use:
-  // - possible_gc_point must return true for every bci for which the stackmaps must be returned
-  // - fill_stackmap_prolog is called just before the result is reported. The arguments tells the estimated
-  //   number of gc points
   // - fill_stackmap_for_opcodes is called once for each bytecode index in order (0...code_length-1)
-  // - fill_stackmap_epilog is called after all results has been reported. Note: Since the algorithm does not report
-  //   stackmaps for deadcode, fewer gc_points might have been encountered than assumed during the epilog. It is the
-  //   responsibility of the subclass to count the correct number.
-  // - fill_init_vars are called once with the result of the init_vars computation
   //
   // All these methods are used during a call to: compute_map. Note: Non of the return results are valid
   // after compute_map returns, since all values are allocated as resource objects.
@@ -496,14 +493,10 @@ class GenerateOopMap {
   virtual bool allow_rewrites             () const                        { return false; }
   virtual bool report_results             () const                        { return true;  }
   virtual bool report_init_vars           () const                        { return true;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { ShouldNotReachHere(); return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             { ShouldNotReachHere(); }
-  virtual void fill_stackmap_epilog       ()                              { ShouldNotReachHere(); }
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stackTop)                  { ShouldNotReachHere(); }
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) { ShouldNotReachHere();; }
 };
 
 //
@@ -513,19 +506,13 @@ class GenerateOopMap {
 class ResolveOopMapConflicts: public GenerateOopMap {
  private:
 
-  bool _must_clear_locals;
-
   virtual bool report_results() const     { return false; }
   virtual bool report_init_vars() const   { return true;  }
   virtual bool allow_rewrites() const     { return true;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             {}
-  virtual void fill_stackmap_epilog       ()                              {}
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top)                 {}
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) { _must_clear_locals = init_vars->length() > 0; }
 
 #ifndef PRODUCT
   // Statistics
@@ -535,10 +522,8 @@ class ResolveOopMapConflicts: public GenerateOopMap {
 #endif
 
  public:
-  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method) { _must_clear_locals = false; };
-
+  ResolveOopMapConflicts(const methodHandle& method) : GenerateOopMap(method, true) { }
   methodHandle do_potential_rewrite(TRAPS);
-  bool must_clear_locals() const { return _must_clear_locals; }
 };
 
 
@@ -551,16 +536,12 @@ class GeneratePairingInfo: public GenerateOopMap {
   virtual bool report_results() const     { return false; }
   virtual bool report_init_vars() const   { return false; }
   virtual bool allow_rewrites() const     { return false;  }
-  virtual bool possible_gc_point          (BytecodeStream *bcs)           { return false; }
-  virtual void fill_stackmap_prolog       (int nof_gc_points)             {}
-  virtual void fill_stackmap_epilog       ()                              {}
   virtual void fill_stackmap_for_opcodes  (BytecodeStream *bcs,
                                            CellTypeState* vars,
                                            CellTypeState* stack,
                                            int stack_top)                 {}
-  virtual void fill_init_vars             (GrowableArray<intptr_t> *init_vars) {}
  public:
-  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method)       {};
+  GeneratePairingInfo(const methodHandle& method) : GenerateOopMap(method, false)       {};
 
   // Call compute_map() to generate info.
 };

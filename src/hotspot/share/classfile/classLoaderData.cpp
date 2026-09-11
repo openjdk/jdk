@@ -1,5 +1,5 @@
  /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,7 @@
 // The bootstrap loader (represented by null) also has a ClassLoaderData,
 // the singleton class the_null_class_loader_data().
 
+#include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/dictionary.hpp"
@@ -65,6 +66,7 @@
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/inlineKlass.inline.hpp"
 #include "oops/jmethodIDTable.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -288,19 +290,6 @@ void ClassLoaderData::verify_not_claimed(int claim) {
 }
 #endif
 
-bool ClassLoaderData::try_claim(int claim) {
-  for (;;) {
-    int old_claim = AtomicAccess::load(&_claim);
-    if ((old_claim & claim) == claim) {
-      return false;
-    }
-    int new_claim = old_claim | claim;
-    if (AtomicAccess::cmpxchg(&_claim, old_claim, new_claim) == old_claim) {
-      return true;
-    }
-  }
-}
-
 void ClassLoaderData::demote_strong_roots() {
   // The oop handle area contains strong roots that the GC traces from. We are about
   // to demote them to strong native oops that the GC does *not* trace from. Conceptually,
@@ -368,11 +357,7 @@ void ClassLoaderData::dec_keep_alive_ref_count() {
   }
 }
 
-void ClassLoaderData::oops_do(OopClosure* f, int claim_value, bool clear_mod_oops) {
-  if (claim_value != ClassLoaderData::_claim_none && !try_claim(claim_value)) {
-    return;
-  }
-
+void ClassLoaderData::oops_do_slow(OopClosure* f, bool clear_mod_oops) {
   // Only clear modified_oops after the ClassLoaderData is claimed.
   if (clear_mod_oops) {
     clear_modified_oops();
@@ -439,6 +424,16 @@ void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
     if (k->is_instance_klass()) {
       f(InstanceKlass::cast(k));
+    }
+    assert(k != k->next_link(), "no loops!");
+  }
+}
+
+void ClassLoaderData::inline_classes_do(void f(InlineKlass*)) {
+  // Lock-free access requires load_acquire
+  for (Klass* k = AtomicAccess::load_acquire(&_klasses); k != nullptr; k = k->next_link()) {
+    if (k->is_inline_klass()) {
+      f(InlineKlass::cast(k));
     }
     assert(k != k->next_link(), "no loops!");
   }
@@ -621,6 +616,8 @@ void ClassLoaderData::unload() {
   // Some items on the _deallocate_list need to free their C heap structures
   // if they are not already on the _klasses list.
   free_deallocate_list_C_heap_structures();
+
+  inline_classes_do(InlineKlass::cleanup);
 
   // Clean up class dependencies and tell serviceability tools
   // these classes are unloading.  This must be called
@@ -899,9 +896,14 @@ void ClassLoaderData::free_deallocate_list() {
       if (m->is_method()) {
         MetadataFactory::free_metadata(this, (Method*)m);
       } else if (m->is_constantPool()) {
+        HeapShared::remove_scratch_resolved_references((ConstantPool*)m);
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
-        MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        if (!((Klass*)m)->is_inline_klass()) {
+          MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        } else {
+          MetadataFactory::free_metadata(this, (InlineKlass*)m);
+        }
       } else {
         ShouldNotReachHere();
       }

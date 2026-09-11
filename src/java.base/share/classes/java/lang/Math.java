@@ -109,7 +109,7 @@ import static java.lang.Double.*;
  * acos acos}, {@link atan atan}, {@link exp exp}, {@link expm1
  * expm1}, {@link log log}, {@link log10 log10}, {@link log1p log1p},
  * {@link sinh sinh}, {@link cosh cosh}, {@link tanh tanh}, {@link asinh asinh},
- * {@link acosh acosh}, {@link hypot hypot}, and {@link pow pow}.
+ * {@link acosh acosh}, {@link atanh atanh}, {@link hypot hypot}, and {@link pow pow}.
  * (The {@link sqrt sqrt} operation is a required part of IEEE 754
  * from a different section of the standard.) The special case behavior
  * of the recommended operations generally follows the guidance of the IEEE 754
@@ -2812,6 +2812,38 @@ public final class Math {
      */
     public static double acosh(double x) {
         return StrictMath.acosh(x);
+    }
+
+    /**
+     * Returns the inverse hyperbolic tangent of a {@code double} value.
+     * The inverse hyperbolic tangent of <i>x</i> is defined to be the function such that
+     * atanh({@linkplain Math#tanh tanh(<i>x</i>)}) = <i>x</i> for any <i>x</i>.
+     * Note that the domain of the exact atanh is (-1; 1), the range is unrestricted.
+     *
+     * <p>Special cases:
+     * <ul>
+     *
+     * <li>If the argument is NaN, then the result is NaN.
+     *
+     * <li>If the argument is zero, then the result is a zero with the
+     * same sign as the argument.
+     *
+     * <li>If the argument is {@code +1.0}, then the result is
+     * positive infinity.
+     *
+     * <li>If the argument is {@code -1.0}, then the result is
+     * negative infinity.
+     *
+     * <li>If the argument is greater than {@code 1.0} in magnitude, then the result is NaN.
+     *
+     * </ul>
+     * <p> The computed result must be within 2.5 ulps of the exact result.
+     * @param   x The number whose inverse hyperbolic tangent is to be returned.
+     * @return  The inverse hyperbolic tangent of {@code x}.
+     * @since 27
+     */
+    public static double atanh(double x) {
+        return StrictMath.atanh(x);
     }
 
     /**

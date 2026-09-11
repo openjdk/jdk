@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import jdk.internal.vm.vector.VectorSupport;
 
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.util.Locale;
 import java.util.function.IntFunction;
 
 import static jdk.incubator.vector.Util.requires;
@@ -42,7 +43,7 @@ import static jdk.internal.vm.vector.Utils.debug;
  * A wrapper for native vector math libraries bundled with the JDK (SVML and SLEEF).
  * Binds vector operations to native implementations provided by the libraries.
  */
-/*package-private*/ class VectorMathLibrary {
+/*package-private*/ final class VectorMathLibrary {
     private static final SymbolLookup LOOKUP = SymbolLookup.loaderLookup();
 
     interface Library {
@@ -139,9 +140,9 @@ import static jdk.internal.vm.vector.Utils.debug;
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
             String suffix = suffix(vspecies);
             String elemType = (vspecies.elementType() == float.class ? "f" : "");
-            boolean isFloat64Vector = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // Float64Vector or FloatMaxVector
-            int vlen = (isFloat64Vector ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
-            return String.format("__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vlen, suffix);
+            boolean isFloatVector64 = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // FloatVector64 or FloatVectorMax
+            int vlen = (isFloatVector64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
+            return String.format(Locale.ROOT, "__jsvml_%s%s%d_ha_%s", op.operatorName(), elemType, vlen, suffix);
         }
 
         @Override
@@ -211,10 +212,10 @@ import static jdk.internal.vm.vector.Utils.debug;
 
         @Override
         public String symbolName(Operator op, VectorSpecies<?> vspecies) {
-            boolean isFloat64Vector = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // Float64Vector or FloatMaxVector
-            int vlen = (isFloat64Vector ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
+            boolean isFloatVector64 = (vspecies.elementType() == float.class) && (vspecies.length() == 2); // FloatVector64 or FloatVectorMax
+            int vlen = (isFloatVector64 ? 4 : vspecies.length()); // reuse 128-bit variant for 64-bit float vectors
             boolean isShapeAgnostic = isRISCV64() || (isAARCH64() && vspecies.vectorBitSize() > 128);
-            return String.format("%s%s%s_%s%s", op.operatorName(),
+            return String.format(Locale.ROOT, "%s%s%s_%s%s", op.operatorName(),
                                  (vspecies.elementType() == float.class ? "f" : "d"),
                                  (isShapeAgnostic ? "x" : Integer.toString(vlen)),
                                  precisionLevel(op),
@@ -283,7 +284,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V unaryMathOp(Unary op, int opc, VectorSpecies<E> vspecies,
+    V unaryMathOp(Unary op, int opc, AbstractSpecies<E> vspecies,
                   IntFunction<VectorSupport.UnaryOperation<V,?>> implSupplier,
                   V v) {
         var entry = lookup(op, opc, vspecies, implSupplier);
@@ -293,7 +294,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryUnaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
+                    entry.entry.address(), vt, vspecies.laneTypeOrdinal(), vspecies.length(), entry.name,
                     v,
                     entry.impl);
         } else {
@@ -304,7 +305,7 @@ import static jdk.internal.vm.vector.Utils.debug;
     @ForceInline
     /*package-private*/ static
     <E, V extends Vector<E>>
-    V binaryMathOp(Binary op, int opc, VectorSpecies<E> vspecies,
+    V binaryMathOp(Binary op, int opc, AbstractSpecies<E> vspecies,
                    IntFunction<VectorSupport.BinaryOperation<V,?>> implSupplier,
                    V v1, V v2) {
         var entry = lookup(op, opc, vspecies, implSupplier);
@@ -314,7 +315,7 @@ import static jdk.internal.vm.vector.Utils.debug;
             @SuppressWarnings({"unchecked"})
             Class<V> vt = (Class<V>)vspecies.vectorType();
             return VectorSupport.libraryBinaryOp(
-                    entry.entry.address(), vt, vspecies.elementType(), vspecies.length(), entry.name,
+                    entry.entry.address(), vt, vspecies.laneTypeOrdinal(), vspecies.length(), entry.name,
                     v1, v2,
                     entry.impl);
         } else {

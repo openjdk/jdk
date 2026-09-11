@@ -36,13 +36,14 @@ ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahGenerationalContr
   _heap(ShenandoahHeap::heap()),
   _control_thread(control_thread),
   _sleep(ShenandoahControlIntervalMin),
-  _last_sleep_adjust_time(os::elapsedTime()) {
+  _most_recent_wake_time(os::elapsedTime()),
+  _last_sleep_adjust_time(_most_recent_wake_time) {
   shenandoah_assert_generational();
   _old_heuristics = _heap->old_generation()->heuristics();
   _young_heuristics = _heap->young_generation()->heuristics();
   _global_heuristics = _heap->global_generation()->heuristics();
 
-  set_name("Shenandoah Regulator Thread");
+  set_name("ShenRegulator");
   create_and_start();
 }
 
@@ -115,20 +116,21 @@ void ShenandoahRegulatorThread::regulator_sleep() {
   // Wait before performing the next action. If allocation happened during this wait,
   // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
   // back off exponentially.
-  double current = os::elapsedTime();
-
   if (ShenandoahHeap::heap()->has_changed()) {
     _sleep = ShenandoahControlIntervalMin;
-  } else if ((current - _last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
+  } else if ((_most_recent_wake_time - _last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
     _sleep = MIN2<uint>(ShenandoahControlIntervalMax, MAX2(1u, _sleep * 2));
-    _last_sleep_adjust_time = current;
+    _last_sleep_adjust_time = _most_recent_wake_time;
   }
 
   SuspendibleThreadSetLeaver leaver;
+  const double before_sleep_time = os::elapsedTime();
   os::naked_short_sleep(_sleep);
+  _most_recent_wake_time = os::elapsedTime();
+  _young_heuristics->update_should_start_query_times(_most_recent_wake_time, double(_sleep) / 1000.0);
   if (LogTarget(Debug, gc, thread)::is_enabled()) {
-    double elapsed = os::elapsedTime() - current;
-    double hiccup = elapsed - double(_sleep);
+    double elapsed = _most_recent_wake_time - before_sleep_time;
+    double hiccup = elapsed - double(_sleep) / 1000.0;
     if (hiccup > 0.001) {
       log_debug(gc, thread)("Regulator hiccup time: %.3fs", hiccup);
     }

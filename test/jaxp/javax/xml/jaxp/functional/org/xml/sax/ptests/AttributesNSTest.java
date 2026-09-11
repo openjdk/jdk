@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,17 @@
  */
 package org.xml.sax.ptests;
 
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
-
-import java.io.File;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-import org.testng.annotations.Test;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+import static org.xml.sax.ptests.SAXTestConst.GOLDEN_DIR;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * This tests the Attributes interface. Here the startElement() callback of
@@ -45,7 +44,7 @@ import org.testng.annotations.Test;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.AttributesNSTest
+ * @run junit/othervm org.xml.sax.ptests.AttributesNSTest
  */
 public class AttributesNSTest {
     /**
@@ -55,7 +54,7 @@ public class AttributesNSTest {
      */
     @Test
     public void testcase01() throws Exception {
-        String outputFile = USER_DIR + "AttributesNS.out";
+        String outputFile = "AttributesNS.out";
         String goldFile = GOLDEN_DIR + "AttributesNSGF.out";
         String xmlFile = XML_DIR + "namespace1.xml";
         SAXParserFactory spf = SAXParserFactory.newInstance();
@@ -68,6 +67,8 @@ public class AttributesNSTest {
         MyAttrCHandler myAttrCHandler = new MyAttrCHandler(outputFile);
         saxParser.parse(new File(xmlFile), myAttrCHandler);
         myAttrCHandler.flushAndClose();
-        assertTrue(compareWithGold(goldFile, outputFile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldFile)),
+                Files.readAllLines(Path.of(outputFile)));
     }
 }

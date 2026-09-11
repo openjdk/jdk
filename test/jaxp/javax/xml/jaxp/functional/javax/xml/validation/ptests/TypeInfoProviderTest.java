@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,12 @@
  */
 package javax.xml.validation.ptests;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.filenameToURL;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-
-import java.io.File;
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -38,18 +35,20 @@ import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.TypeInfoProvider;
 import javax.xml.validation.ValidatorHandler;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 
-import org.testng.annotations.Test;
-import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
-import org.xml.sax.XMLReader;
-import org.xml.sax.helpers.DefaultHandler;
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static javax.xml.validation.ptests.ValidationTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.validation.ptests.TypeInfoProviderTest
+ * @run junit/othervm javax.xml.validation.ptests.TypeInfoProviderTest
  * @summary test ValidatorHandler.getTypeInfoProvider()
  */
 public class TypeInfoProviderTest {
@@ -65,7 +64,8 @@ public class TypeInfoProviderTest {
         MyDefaultHandler myDefaultHandler = new MyDefaultHandler();
         validatorHandler.setContentHandler(myDefaultHandler);
 
-        InputSource is = new InputSource(filenameToURL(XML_DIR + "shiporder11.xml"));
+        String xmlPathUri = Path.of(XML_DIR).resolve("shiporder11.xml").toUri().toASCIIString();
+        InputSource is = new InputSource(xmlPathUri);
 
         SAXParserFactory parserFactory = SAXParserFactory.newInstance();
         parserFactory.setNamespaceAware(true);
@@ -77,13 +77,13 @@ public class TypeInfoProviderTest {
 
     private class MyDefaultHandler extends DefaultHandler {
 
-        public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
+        public void startElement(String namespaceURI, String localName, String qName, Attributes atts) {
             TypeInfoProvider typeInfoProvider = validatorHandler.getTypeInfoProvider();
             int index = atts.getIndex("orderid");
             if (index != -1) {
                 System.out.println(" Index " + index);
                 System.out.println(" ElementType " + typeInfoProvider.getElementTypeInfo().getTypeName());
-                assertEquals(typeInfoProvider.getAttributeTypeInfo(index).getTypeName(), "string");
+                assertEquals("string", typeInfoProvider.getAttributeTypeInfo(index).getTypeName());
                 assertTrue(typeInfoProvider.isSpecified(index));
                 assertFalse(typeInfoProvider.isIdAttribute(index));
             }

@@ -26,6 +26,7 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
 import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
+import static jdk.jpackage.test.JPackageCommand.DEFAULT_VERSION;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -41,7 +42,6 @@ import javax.xml.stream.XMLStreamWriter;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
-import jdk.internal.util.OperatingSystem;
 import jdk.jpackage.internal.util.XmlUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -66,7 +66,7 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     }
 
     public AppImageFile(String mainLauncherName, Optional<String> mainLauncherClassName) {
-        this(mainLauncherName, mainLauncherClassName, "1.0", false, Map.of(mainLauncherName, Map.of()));
+        this(mainLauncherName, mainLauncherClassName, DEFAULT_VERSION, false, Map.of(mainLauncherName, Map.of()));
     }
 
     public AppImageFile(String mainLauncherName, String mainLauncherClassName) {
@@ -195,13 +195,16 @@ public record AppImageFile(String mainLauncherName, Optional<String> mainLaunche
     }
 
     private static String getPlatform() {
-        return PLATFORM_LABELS.get(OperatingSystem.current());
+        if (TKit.isLinux()) {
+            return "linux";
+        } else if (TKit.isWindows()) {
+            return "windows";
+        } else if (TKit.isOSX()) {
+            return "macOS";
+        } else {
+            throw new IllegalStateException();
+        }
     }
 
     private static final String FILENAME = ".jpackage.xml";
-
-    private static final Map<OperatingSystem, String> PLATFORM_LABELS = Map.of(
-            OperatingSystem.LINUX, "linux",
-            OperatingSystem.WINDOWS, "windows",
-            OperatingSystem.MACOS, "macOS");
 }

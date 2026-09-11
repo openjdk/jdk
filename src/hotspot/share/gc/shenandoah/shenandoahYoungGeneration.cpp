@@ -39,7 +39,7 @@ ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
 void ShenandoahYoungGeneration::set_concurrent_mark_in_progress(bool in_progress) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->set_concurrent_young_mark_in_progress(in_progress);
-  if (is_bootstrap_cycle() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
+  if (is_old_marking_active() && in_progress && !heap->is_prepare_for_old_mark_in_progress()) {
     // This is not a bug. When the bootstrapping marking phase is complete,
     // the old generation marking is still in progress, unless it's not.
     // In the case that old-gen preparation for mixed evacuation has been
@@ -79,7 +79,7 @@ bool ShenandoahYoungGeneration::is_concurrent_mark_in_progress() {
 
 void ShenandoahYoungGeneration::reserve_task_queues(uint workers) {
   ShenandoahGeneration::reserve_task_queues(workers);
-  if (is_bootstrap_cycle()) {
+  if (is_old_marking_active()) {
     _old_gen_task_queues->reserve(workers);
   }
 }
@@ -98,11 +98,6 @@ ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(Shenandoa
 
 size_t ShenandoahYoungGeneration::used() const {
   return _free_set->young_used();
-}
-
-size_t ShenandoahYoungGeneration::bytes_allocated_since_gc_start() const {
-  assert(ShenandoahHeap::heap()->mode()->is_generational(), "Young implies generational");
-  return _free_set->get_bytes_allocated_since_gc_start();
 }
 
 size_t ShenandoahYoungGeneration::get_affiliated_region_count() const {
@@ -129,6 +124,14 @@ size_t ShenandoahYoungGeneration::max_capacity() const {
 
 size_t ShenandoahYoungGeneration::free_unaffiliated_regions() const {
   return _free_set->young_unaffiliated_regions();
+}
+
+size_t ShenandoahYoungGeneration::available_with_reserve() const {
+  shenandoah_assert_heaplocked();
+  ShenandoahFreeSet* free_set = ShenandoahHeap::heap()->free_set();
+  size_t mutator_available = free_set->available_locked();
+  size_t collector_available = free_set->collector_available_locked();
+  return mutator_available + collector_available;
 }
 
 size_t ShenandoahYoungGeneration::available() const {

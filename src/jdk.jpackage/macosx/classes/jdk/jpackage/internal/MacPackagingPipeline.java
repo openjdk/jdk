@@ -291,7 +291,7 @@ final class MacPackagingPipeline {
                 "--raw",
                 "--assess",
                 "--type", "exec",
-                bundle.root().toString()).setQuiet(true).saveOutput(true).binaryOutput()::execute).get();
+                bundle.root().toString()).quiet().saveOutput(true).binaryOutput()::execute).get();
 
         switch (result.getExitCode()) {
             case 0, 3 -> {
@@ -445,7 +445,7 @@ final class MacPackagingPipeline {
 
         final var infoPlistFile = macBundleFromAppImageLayout(env.resolvedLayout()).orElseThrow().infoPlistFile();
 
-        Log.verbose(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
+        Log.progress(I18N.format("message.preparing-info-plist", PathUtils.normalizedAbsolutePathString(infoPlistFile)));
 
         final String faXml = toSupplier(() -> {
             var buf = new StringWriter();
@@ -500,7 +500,7 @@ final class MacPackagingPipeline {
         };
 
         app.signingConfig().flatMap(AppImageSigningConfig::keychain).map(Keychain::new).ifPresentOrElse(keychain -> {
-            toBiConsumer(TempKeychain::withKeychain).accept(unused -> signAction.run(), keychain);
+            toBiConsumer(ActiveKeychainList::withKeychain).accept(unused -> signAction.run(), keychain);
         }, signAction);
     }
 

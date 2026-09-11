@@ -41,6 +41,7 @@ import javax.lang.model.SourceVersion;
 import javax.tools.*;
 
 import com.sun.source.util.JavacTask;
+import com.sun.tools.javac.code.Preview;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
@@ -195,6 +196,12 @@ public final class JavacTool implements JavaCompiler {
                 Target target = Target.instance(context);
                 List<String> list = List.of(target.multiReleaseValue());
                 fileManager.handleOption(Option.MULTIRELEASE.primaryName, list.iterator());
+            }
+
+            // pass preview mode to the file manager:
+            if (fileManager.isSupportedOption(Option.PREVIEWMODE.primaryName) == 1) {
+                Preview preview = Preview.instance(context);
+                fileManager.handleOption(Option.PREVIEWMODE.primaryName, List.of(String.valueOf(preview.isEnabled())).iterator());
             }
 
             return new JavacTaskImpl(context);

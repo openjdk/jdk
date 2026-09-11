@@ -32,7 +32,6 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -58,6 +57,7 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.platform.JDKPlatformProvider;
 import com.sun.tools.javac.platform.PlatformDescription;
 import com.sun.tools.javac.platform.PlatformUtils;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
@@ -278,12 +278,8 @@ public class Arguments {
      */
     public Set<JavaFileObject> getFileObjects() {
         if (fileObjects == null) {
-            fileObjects = new LinkedHashSet<>();
-        }
-        if (files != null) {
-            JavacFileManager jfm = (JavacFileManager) getFileManager();
-            for (JavaFileObject fo: jfm.getJavaFileObjectsFromPaths(files))
-                fileObjects.add(fo);
+            // see Arguments::validate
+            throw new IllegalStateException("file objects have not been initialized");
         }
         return fileObjects;
     }
@@ -317,8 +313,12 @@ public class Arguments {
                 Option.SYSTEM, Option.UPGRADE_MODULE_PATH);
 
         if (platformString != null) {
+            String platformAndOptions = platformString;
+            if (options.isSet(Option.PREVIEW)) {
+                platformAndOptions += ":" + JDKPlatformProvider.PREVIEW_OPTION;
+            }
             PlatformDescription platformDescription =
-                    PlatformUtils.lookupPlatformDescription(platformString);
+                    PlatformUtils.lookupPlatformDescription(platformAndOptions);
 
             if (platformDescription == null) {
                 reportDiag(Errors.UnsupportedReleaseVersion(platformString));
@@ -421,6 +421,9 @@ public class Arguments {
      */
     public boolean validate() {
         JavaFileManager fm = getFileManager();
+        if (fileObjects == null) {
+            fileObjects = new LinkedHashSet<>();
+        }
         if (options.isSet(Option.MODULE)) {
             if (!fm.hasLocation(StandardLocation.CLASS_OUTPUT)) {
                 log.error(Errors.OutputDirMustBeSpecifiedWithDashMOption);
@@ -433,19 +436,10 @@ public class Arguments {
                         Location sourceLoc = fm.getLocationForModule(StandardLocation.MODULE_SOURCE_PATH, module);
                         if (sourceLoc == null) {
                             log.error(Errors.ModuleNotFoundInModuleSourcePath(module));
-                        } else {
-                            Location classLoc = fm.getLocationForModule(StandardLocation.CLASS_OUTPUT, module);
-
-                            for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(JavaFileObject.Kind.SOURCE), true)) {
-                                String className = fm.inferBinaryName(sourceLoc, file);
-                                JavaFileObject classFile = fm.getJavaFileForInput(classLoc, className, Kind.CLASS);
-
-                                if (classFile == null || classFile.getLastModified() < file.getLastModified()) {
-                                    if (fileObjects == null)
-                                        fileObjects = new HashSet<>();
-                                    fileObjects.add(file);
-                                }
-                            }
+                            return false;
+                        }
+                        for (JavaFileObject file : fm.list(sourceLoc, "", EnumSet.of(Kind.SOURCE), true)) {
+                            fileObjects.add(file);
                         }
                     }
                 } catch (IOException ex) {
@@ -453,6 +447,12 @@ public class Arguments {
                     ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
                     return false;
                 }
+            }
+        }
+        if (files != null) {
+            JavacFileManager jfm = (JavacFileManager) getFileManager();
+            for (JavaFileObject fo : jfm.getJavaFileObjectsFromPaths(files)){
+                fileObjects.add(fo);
             }
         }
 

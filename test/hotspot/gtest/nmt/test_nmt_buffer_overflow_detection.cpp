@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2022 SAP SE. All rights reserved.
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@
                 "fake message ignore this - " expected_assertion_message);                \
     }                                                                                     \
   }
-
 ///////
 
 #if !INCLUDE_ASAN
@@ -83,31 +82,6 @@ static void test_overwrite_back_long_aligned_distance()   { test_overwrite_back_
 DEFINE_TEST(test_overwrite_back_long_aligned_distance, "footer canary broken")
 static void test_overwrite_back_long_unaligned_distance() { test_overwrite_back_long(0x2001); }
 DEFINE_TEST(test_overwrite_back_long_unaligned_distance, "footer canary broken")
-
-///////
-
-static void test_double_free() {
-  address p = (address) os::malloc(1, mtTest);
-  os::free(p);
-  // Now a double free. Note that this is susceptible to concurrency issues should
-  // a concurrent thread have done a malloc and gotten the same address after the
-  // first free. To decrease chance of this happening, we repeat the double free
-  // several times.
-  for (int i = 0; i < 100; i ++) {
-    os::free(p);
-  }
-}
-
-// What assertion message we will see depends on whether the VM wipes the memory-to-be-freed
-// on the first free(), and whether the libc uses the freed memory to store bookkeeping information.
-// If the death marker in the header is still intact after the first free, we will recognize this as
-// double free; if it got wiped, we should at least see a broken header canary.
-// The message would be either
-// - "header canary broken" or
-// - "header canary dead (double free?)".
-// However, since gtest regex expressions do not support unions (a|b), I search for a reasonable
-// subset here.
-DEFINE_TEST(test_double_free, "header canary")
 
 ///////
 

@@ -41,7 +41,7 @@ import gc.testlibrary.g1.MixedGCProvoker;
  * @modules java.management
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:NewSize=2m -XX:MaxNewSize=2m -Xmx14m -Xms14m -XX:+AlwaysTenure -XX:InitiatingHeapOccupancyPercent=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 gc.g1.mixedgc.TestOldGenCollectionUsage
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UseG1GC -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -verbose:gc -XX:NewSize=2m -XX:MaxNewSize=2m -Xmx14m -Xms14m -XX:+AlwaysTenure -XX:G1IHOP=100 -XX:-G1UseAdaptiveIHOP -XX:G1MixedGCCountTarget=4 -XX:MaxGCPauseMillis=30000 -XX:G1HeapRegionSize=1m -XX:G1HeapWastePercent=0 -XX:G1MixedGCLiveThresholdPercent=100 gc.g1.mixedgc.TestOldGenCollectionUsage
  */
 
 // 8195115 says that for the "G1 Old Gen" MemoryPool, CollectionUsage.used

@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_MUTABLENUMASPACE_HPP
 
 #include "gc/parallel/mutableSpace.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,66 @@ endef
 $(eval $(call SetupLogging))
 
 ################################################################################
+# Make does not have support for VARARGS, you can send variable amount
+# of arguments, but you can for example not append a list at the end.
+# It is therefore not easy to send the elements of a list of unknown
+# length as argument to a function. This can somewhat be worked around
+# by sending a list as an argument, and then interpreting each element
+# of the list as an argument to the function. However, Make is
+# limited, and using this method you can not easily send spaces.
+#
+# We need to quote strings for two reasons when sending them as
+# "variable append packs":
+#
+# 1) variable appends can include spaces, and those must be preserved
+# 2) variable appends can include assignment strings ":=", and those
+# must be quoted to a form so that we can recognise the "append pack".
+# We recognise an "append pack" by its lack of strict assignment ":="
+
+Q       := $(HASH)
+SpaceQ  := $(Q)s
+AppendQ := $(Q)+
+AssignQ := $(Q)a
+QQ      := $(Q)$(Q)
+
+# $(call Quote,echo "#trala:=") -> echo#s"##trala#a"
+Quote = $(subst :=,$(AssignQ),$(subst $(SPACE),$(SpaceQ),$(subst $(Q),$(QQ),$1)))
+
+# $(call Unquote,echo#s"##trala#a") -> echo "#trala:="
+Unquote = $(subst $(QQ),$(Q),$(subst $(SpaceQ),$(SPACE),$(subst $(AssignQ),:=,$1)))
+
+# $(call QuoteAppend,name,some value) -> name#+some#svalue
+# $(call QuoteAppend,bad+=name,some value) -> error
+QuoteAppend = $(if $(findstring +=,$1),$(error you can not have += in a variable name: "$1"),$(call Quote,$1)$(AppendQ)$(call Quote,$2))
+
+# $(call UnquoteAppendIndex,name#+some#svalue,1) -> name
+# $(call UnquoteAppendIndex,name#+some#svalue,2) -> some value
+UnquoteAppendIndex = $(call Unquote,$(word $2,$(subst $(AppendQ),$(SPACE),$1)))
+
+# $(call FilterFiles,dir,%.cpp) -> file1.cpp file2.cpp (without path)
+FilterFiles = $(filter $2,$(notdir $(call FindFiles,$1)))
+
+# $(call Unpack module_,file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion) -> module_file1.cpp_CXXFLAGS += -Wconversion
+#                                                                                             module_file2.cpp_CXXFLAGS += -Wconversion
+Unpack = $(foreach pair,$2,$1$(call UnquoteAppendIndex,$(pair),1) += $(call UnquoteAppendIndex,$(pair),2)$(NEWLINE))
+
+# This macro takes four arguments:
+# $1: directory where to find files (striped), example: $(TOPDIR)/src/hotspot/share/gc/g1
+# $2: filter to match what to keep (striped), example: g1Concurrent%.cpp
+# $3: what flags to override (striped), example: _CXXFLAGS
+# $4: what value to append to the flag (striped), example: $(CFLAGS_CONVERSION_WARNINGS)
+#
+# The result will be a quoted string that can be unpacked to a list of
+# variable appendings (see macro Unpack above). You do not need to take
+# care of unpacking, it is done in NamedParamsMacroTemplate.
+#
+# This feature should only be used for warnings that we want to
+# incrementally add to the rest of the code base.
+#
+# $(call ExtendFlags,dir,%.cpp,_CXXFLAGS,-Wconversion) -> file1.cpp_CXXFLAGS#+-Wconversion file2.cpp_CXXFLAGS#+-Wconversion
+ExtendFlags = $(foreach file,$(call FilterFiles,$(strip $1),$(strip $2)),$(call QuoteAppend,$(file)$(strip $3),$(strip $4)))
+
+################################################################################
 
 MAX_PARAMS := 96
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
@@ -166,7 +226,10 @@ define NamedParamsMacroTemplate
       Too many named arguments to macro, please update MAX_PARAMS in MakeBase.gmk))
   # Iterate over 2 3 4... and evaluate the named parameters with $1_ as prefix
   $(foreach i, $(PARAM_SEQUENCE), $(if $(strip $($i)), \
-    $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE)))
+    $(if $(findstring :=,$($i)), \
+      $(strip $1)_$(strip $(call EscapeHash, $(call DoubleDollar, $($i))))$(NEWLINE), \
+      $(call Unpack,$(strip $1)_,$($i)))))
+
   # Debug print all named parameter names and values
   $(if $(findstring $(LOG_LEVEL), trace), \
     $(info $0 $(strip $1) $(foreach i, $(PARAM_SEQUENCE), \

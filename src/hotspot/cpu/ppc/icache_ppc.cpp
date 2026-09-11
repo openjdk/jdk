@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "runtime/icache.hpp"
+#include "runtime/vm_version.hpp"
 
 // Use inline assembler to implement icache flush.
 int ICache::ppc64_flush_icache(address start, int lines, int magic) {
@@ -66,6 +67,9 @@ int ICache::ppc64_flush_icache(address start, int lines, int magic) {
 }
 
 void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
+
+  guarantee(VM_Version::get_icache_line_size() >= ICache::line_size,
+            "processors with smaller cache line size are no longer supported");
 
   *flush_icache_stub = (ICache::flush_icache_stub_t)ICache::ppc64_flush_icache;
 

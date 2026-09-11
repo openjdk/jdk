@@ -64,7 +64,6 @@ public class SigningAppImageTest {
 
         var testAL = new AdditionalLauncher("testAL");
         testAL.applyTo(cmd);
-        cmd.executeAndAssertHelloAppImageCreated();
 
         MacSign.withKeychain(keychain -> {
             sign.addTo(cmd);
@@ -82,10 +81,17 @@ public class SigningAppImageTest {
                 SigningBase.StandardCertificateRequest.CODESIGN_UNICODE
         )) {
             for (var signIdentityType : SignKeyOption.Type.defaultValues()) {
-                data.add(new SignKeyOptionWithKeychain(
-                        signIdentityType,
-                        certRequest,
-                        SigningBase.StandardKeychain.MAIN.keychain()));
+                SigningBase.StandardKeychain keychain;
+                if (signIdentityType == SignKeyOption.Type.SIGN_KEY_IMPLICIT) {
+                    keychain = SigningBase.StandardKeychain.SINGLE;
+                    if (!keychain.contains(certRequest)) {
+                        continue;
+                    }
+                } else {
+                    keychain = SigningBase.StandardKeychain.MAIN;
+                }
+
+                data.add(new SignKeyOptionWithKeychain(signIdentityType, certRequest, keychain.keychain()));
             }
         }
 

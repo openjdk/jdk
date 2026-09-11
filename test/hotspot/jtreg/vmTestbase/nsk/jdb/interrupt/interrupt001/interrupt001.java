@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,6 +75,7 @@ public class interrupt001 extends JdbTest {
     public static void main (String argv[]) {
         debuggeeClass =  DEBUGGEE_CLASS;
         firstBreak = FIRST_BREAK;
+        lastBreak = LAST_BREAK;
         new interrupt001().runTest(argv);
     }
 
@@ -83,6 +84,7 @@ public class interrupt001 extends JdbTest {
     static final String DEBUGGEE_CLASS  = TEST_CLASS + "a";
     static final String FIRST_BREAK     = DEBUGGEE_CLASS + ".main";
     static final String LAST_BREAK      = DEBUGGEE_CLASS + ".breakHere";
+    static final String THREAD_STARTED_BREAK = PACKAGE_NAME + ".interrupt001a$MyThread.threadStarted";
     static final String MYTHREAD        = "MyThread";
     static final String DEBUGGEE_THREAD = DEBUGGEE_CLASS + "$" + MYTHREAD;
     static final String DEBUGGEE_RESULT = DEBUGGEE_CLASS + ".notInterrupted";
@@ -91,11 +93,12 @@ public class interrupt001 extends JdbTest {
 
     /*
      * Pattern for finding the thread ID in a line like the following:
-     *   (nsk.jdb.interrupt.interrupt001.interrupt001a$MyThread)651 Thread-0          cond. waiting
-     * Note we can't match on DEBUGGEE_THREAD because it includes a $, which Pattern
-     * uses to match the end of a line.
+     *   (java.lang.Thread)651 MyThread-0          cond. waiting
+     * The tested threads are created via ThreadWrapper, so the class shown is
+     * java.lang.Thread or java.lang.VirtualThread rather than the test's own class.
+     * Match on the thread name instead.
      */
-    private static Pattern tidPattern = Pattern.compile("\\(.+" + MYTHREAD + "\\)(\\S+)");
+    private static Pattern tidPattern = Pattern.compile("\\(.+Thread\\)(\\S+)\\s+" + MYTHREAD);
 
     protected void runCases() {
         String[] reply;
@@ -104,9 +107,9 @@ public class interrupt001 extends JdbTest {
         String[] threads;
 
         jdb.setBreakpointInMethod(LAST_BREAK);
-        reply = jdb.receiveReplyFor(JdbCommand.cont);
+        waitForTestedThreadStarts(THREAD_STARTED_BREAK, numThreads);
 
-        threads = jdb.getThreadIds(DEBUGGEE_THREAD);
+        threads = jdb.getThreadIdsByName(MYTHREAD);
 
         if (threads.length != numThreads) {
             log.complain("jdb should report " + numThreads + " instance of " + DEBUGGEE_THREAD);

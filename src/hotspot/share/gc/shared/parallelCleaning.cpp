@@ -28,7 +28,6 @@
 #include "gc/shared/parallelCleaning.hpp"
 #include "logging/log.hpp"
 #include "oops/klass.inline.hpp"
-#include "runtime/atomicAccess.hpp"
 
 CodeCacheUnloadingTask::CodeCacheUnloadingTask(bool unloading_occurred) :
   _unloading_occurred(unloading_occurred),

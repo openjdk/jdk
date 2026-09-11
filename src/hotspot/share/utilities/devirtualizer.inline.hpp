@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,12 +74,14 @@
 //   p       - The oop (or narrowOop) field to pass to the closure
 
 template <typename T, typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<std::is_same<Receiver, Base>::value, void>::type
 call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
   closure->do_oop(p);
 }
 
 template <typename T, typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
 call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
   // Sanity check
@@ -95,12 +97,14 @@ inline void Devirtualizer::do_oop(OopClosureType* closure, T* p) {
 // Implementation of the non-virtual do_metadata dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<std::is_same<Receiver, Base>::value, bool>::type
 call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
   return closure->do_metadata();
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, bool>::type
 call_do_metadata(bool (Receiver::*)(), bool (Base::*)(), OopClosureType* closure) {
   return closure->OopClosureType::do_metadata();
@@ -114,12 +118,14 @@ inline bool Devirtualizer::do_metadata(OopClosureType* closure) {
 // Implementation of the non-virtual do_klass dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<std::is_same<Receiver, Base>::value, void>::type
 call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
   closure->do_klass(k);
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
 call_do_klass(void (Receiver::*)(Klass*), void (Base::*)(Klass*), OopClosureType* closure, Klass* k) {
   closure->OopClosureType::do_klass(k);
@@ -133,12 +139,14 @@ inline void Devirtualizer::do_klass(OopClosureType* closure, Klass* k) {
 // Implementation of the non-virtual do_cld dispatch.
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<std::is_same<Receiver, Base>::value, void>::type
 call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
   closure->do_cld(cld);
 }
 
 template <typename Receiver, typename Base, typename OopClosureType>
+ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
 call_do_cld(void (Receiver::*)(ClassLoaderData*), void (Base::*)(ClassLoaderData*), OopClosureType* closure, ClassLoaderData* cld) {
   closure->OopClosureType::do_cld(cld);
@@ -152,12 +160,14 @@ void Devirtualizer::do_cld(OopClosureType* closure, ClassLoaderData* cld) {
 // Implementation of the non-virtual do_derived_oop dispatch.
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
+ALWAYSINLINE
 static typename EnableIf<std::is_same<Receiver, Base>::value, void>::type
 call_do_derived_oop(void (Receiver::*)(derived_base*, derived_pointer*), void (Base::*)(derived_base*, derived_pointer*), DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived) {
   closure->do_derived_oop(base, derived);
 }
 
 template <typename Receiver, typename Base, typename DerivedOopClosureType>
+ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
 call_do_derived_oop(void (Receiver::*)(derived_base*, derived_pointer*), void (Base::*)(derived_base*, derived_pointer*), DerivedOopClosureType* closure, derived_base* base, derived_pointer* derived) {
   closure->DerivedOopClosureType::do_derived_oop(base, derived);

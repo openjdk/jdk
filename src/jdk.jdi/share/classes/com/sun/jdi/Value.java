@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,16 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
  * The mirror for a value in the target VM.
  * This interface is the root of a
  * value hierarchy encompassing primitive values and object values.
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ * When preview features are enabled, JDI supports value classes. A "value class"
+ * as supported in the Java language is not related to the JDI Value interface.
+ * A "value class" is a class declared with the "value" modifier. The JDI
+ * Value interface is used by JDI to mirror a value in the debuggee VM. For more
+ * information on value classes, see Section {@jls value-objects-8.1.1.5 Value Classes}
+ * of <cite>The Java Language Specification</cite>.
+ *      </div>
+ * </div>
  * <P>
  * Some examples of where values may be accessed:
  * <BLOCKQUOTE><TABLE role="presentation">

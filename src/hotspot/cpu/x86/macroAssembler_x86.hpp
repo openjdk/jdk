@@ -30,8 +30,11 @@
 #include "code/vmreg.inline.hpp"
 #include "compiler/oopMap.hpp"
 #include "utilities/macros.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/checkedCast.hpp"
+
+class ciInlineKlass;
 
 // MacroAssembler extends Assembler by frequently used macros.
 //
@@ -93,6 +96,26 @@ class MacroAssembler: public Assembler {
   void null_check(Register reg, int offset = -1);
   static bool needs_explicit_null_check(intptr_t offset);
   static bool uses_implicit_null_check(void* address);
+
+  // markWord tests, kills markWord reg
+  void test_markword_is_inline_type(Register markword, Label& is_inline_type);
+
+  // inlineKlass queries, kills temp_reg
+  void test_oop_is_not_inline_type(Register object, Register tmp, Label& not_inline_type, bool can_be_null = true);
+
+  void test_field_is_null_free_inline_type(Register flags, Register temp_reg, Label& is_null_free);
+  void test_field_is_not_null_free_inline_type(Register flags, Register temp_reg, Label& not_null_free);
+  void test_field_is_flat(Register flags, Register temp_reg, Label& is_flat);
+
+  // Check oops for special arrays, i.e. flat arrays and/or null-free arrays
+  void test_oop_prototype_bit(Register oop, Register temp_reg, int32_t test_bit, bool jmp_set, Label& jmp_label);
+  void test_flat_array_oop(Register oop, Register temp_reg, Label& is_flat_array);
+  void test_non_flat_array_oop(Register oop, Register temp_reg, Label& is_non_flat_array);
+  void test_null_free_array_oop(Register oop, Register temp_reg, Label& is_null_free_array);
+  void test_non_null_free_array_oop(Register oop, Register temp_reg, Label& is_non_null_free_array);
+
+  // Check array klass layout helper for flat or null-free arrays...
+  void test_flat_array_layout(Register lh, Label& is_flat_array);
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -161,6 +184,8 @@ class MacroAssembler: public Assembler {
   void incrementl(ArrayAddress   dst, Register rscratch);
 
   void incrementq(AddressLiteral dst, Register rscratch = noreg);
+
+  void movhlf(XMMRegister dst, XMMRegister src, Register rscratch = noreg);
 
   // Support optimal SSE move instructions.
   void movflt(XMMRegister dst, XMMRegister src) {
@@ -347,12 +372,15 @@ class MacroAssembler: public Assembler {
   void load_method_holder(Register holder, Register method);
 
   // oop manipulations
+
+  // Load oopDesc._metadata without decode (useful for direct Klass* compare from oops)
+  void load_metadata(Register dst, Register src);
   void load_narrow_klass_compact(Register dst, Register src);
+  void load_narrow_klass(Register dst, Register src);
   void load_klass(Register dst, Register src, Register tmp);
   void store_klass(Register dst, Register src, Register tmp);
 
-  // Compares the Klass pointer of an object to a given Klass (which might be narrow,
-  // depending on UseCompressedClassPointers).
+  // Compares the narrow Klass pointer of an object to a given narrow Klass.
   void cmp_klass(Register klass, Register obj, Register tmp);
 
   // Compares the Klass pointer of two objects obj1 and obj2. Result is in the condition flags.
@@ -364,6 +392,12 @@ class MacroAssembler: public Assembler {
   void access_store_at(BasicType type, DecoratorSet decorators, Address dst, Register val,
                        Register tmp1, Register tmp2, Register tmp3);
 
+  void flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info);
+
+  // inline type data payload offsets...
+  void payload_offset(Register inline_klass, Register offset);
+  void payload_addr(Register oop, Register data, Register inline_klass);
+
   void load_heap_oop(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void load_heap_oop_not_null(Register dst, Address src, Register tmp1 = noreg, DecoratorSet decorators = 0);
   void store_heap_oop(Address dst, Register val, Register tmp1 = noreg,
@@ -372,6 +406,8 @@ class MacroAssembler: public Assembler {
   // Used for storing null. All other oop constants should be
   // stored using routines that take a jobject.
   void store_heap_oop_null(Address dst);
+
+  void load_prototype_header(Register dst, Register src, Register tmp);
 
   void store_klass_gap(Register dst, Register src);
 
@@ -442,6 +478,9 @@ class MacroAssembler: public Assembler {
   // Sign extension
   void sign_extend_short(Register reg);
   void sign_extend_byte(Register reg);
+
+  // Clean up a subword typed value to the representation in compliance with JVMS §2.3
+  void narrow_subword_type(Register reg, BasicType bt);
 
   // Division by power of 2, rounding towards 0
   void division_with_shift(Register reg, int shift_value);
@@ -516,6 +555,8 @@ public:
     Label&   slow_case                 // continuation point if fast allocation fails
   );
   void zero_memory(Register address, Register length_in_bytes, int offset_in_bytes, Register temp);
+
+  void inline_layout_info(Register klass, Register index, Register layout_info);
 
   void population_count(Register dst, Register src, Register scratch1, Register scratch2);
 
@@ -765,6 +806,7 @@ public:
 
   void andptr(Register dst, int32_t src);
   void andptr(Register src1, Register src2) { andq(src1, src2); }
+  void andptr(Register dst, Address src) { andq(dst, src); }
 
   using Assembler::andq;
   void andq(Register dst, AddressLiteral src, Register rscratch = noreg);
@@ -1177,6 +1219,8 @@ public:
   using Assembler::vmovdqa;
   void vmovdqa(XMMRegister dst, AddressLiteral src,                 Register rscratch = noreg);
   void vmovdqa(XMMRegister dst, AddressLiteral src, int vector_len, Register rscratch = noreg);
+  void vmovdqa(XMMRegister dst, Address        src, int vector_len);
+  void vmovdqa(Address     dst, XMMRegister    src, int vector_len);
 
   // AVX512 Unaligned
   void evmovdqu(BasicType type, KRegister kmask, Address     dst, XMMRegister src, bool merge, int vector_len);
@@ -1309,21 +1353,29 @@ public:
   void subss(XMMRegister dst, Address        src) { Assembler::subss(dst, src); }
   void subss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
+  void evucomish(XMMRegister dst, XMMRegister    src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, Address        src) { Assembler::evucomish(dst, src); }
+  void evucomish(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
+  void evucomxsh(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, Address        src) { Assembler::evucomxsh(dst, src); }
+  void evucomxsh(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+
   void ucomiss(XMMRegister dst, XMMRegister    src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, Address        src) { Assembler::ucomiss(dst, src); }
   void ucomiss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxss(XMMRegister dst, XMMRegister    src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, Address        src) { Assembler::vucomxss(dst, src); }
-  void vucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxss(XMMRegister dst, XMMRegister    src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, Address        src) { Assembler::evucomxss(dst, src); }
+  void evucomxss(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   void ucomisd(XMMRegister dst, XMMRegister    src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, Address        src) { Assembler::ucomisd(dst, src); }
   void ucomisd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
-  void vucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, Address        src) { Assembler::vucomxsd(dst, src); }
-  void vucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
+  void evucomxsd(XMMRegister dst, XMMRegister    src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, Address        src) { Assembler::evucomxsd(dst, src); }
+  void evucomxsd(XMMRegister dst, AddressLiteral src, Register rscratch = noreg);
 
   // Bitwise Logical XOR of Packed Double-Precision Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister    src);
@@ -1869,6 +1921,9 @@ public:
   void mov_metadata(Register dst, Metadata* obj);
   void mov_metadata(Address  dst, Metadata* obj, Register rscratch);
 
+  void mov64(Register dst, int64_t imm64);
+  void mov64(Register dst, int64_t imm64, relocInfo::relocType rtype, int format);
+
   void movptr(Register     dst, Register       src);
   void movptr(Register     dst, Address        src);
   void movptr(Register     dst, AddressLiteral src);
@@ -1912,15 +1967,19 @@ public:
 
 
  public:
-  // clear memory of size 'cnt' qwords, starting at 'base';
-  // if 'is_large' is set, do not try to produce short loop
-  void clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, bool is_large, KRegister mask=knoreg);
+  // Inline type specific methods
+  #include "asm/macroAssembler_common.hpp"
+
+  // Clear or fill 'cnt' qwords starting at 'base'. If 'requires_word_fill' is
+  // set, use 'val' as the fill value; otherwise, create zero in 'val'. If
+  // 'is_large' is set, do not try to produce a short loop.
+  void clear_mem(Register base, Register cnt, Register val, XMMRegister xtmp, bool is_large, bool requires_word_fill, KRegister mask=knoreg);
 
   // clear memory initialization sequence for constant size;
   void clear_mem(Register base, int cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
 
-  // clear memory of size 'cnt' qwords, starting at 'base' using XMM/YMM registers
-  void xmm_clear_mem(Register base, Register cnt, Register rtmp, XMMRegister xtmp, KRegister mask=knoreg);
+  // Fill memory with 'val', for 'cnt' qwords starting at 'base', using XMM/YMM/ZMM registers.
+  void xmm_fill_mem(Register base, Register cnt, Register val, XMMRegister xtmp, KRegister mask=knoreg);
 
   // Fill primitive arrays
   void generate_fill(BasicType t, bool aligned,
@@ -2056,10 +2115,10 @@ public:
   void cache_wb(Address line);
   void cache_wbsync(bool is_pre);
 
-#ifdef COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   void generate_fill_avx3(BasicType type, Register to, Register value,
                           Register count, Register rtmp, XMMRegister xtmp);
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 
   void vallones(XMMRegister dst, int vector_len);
 
@@ -2070,6 +2129,7 @@ public:
 
   void save_legacy_gprs();
   void restore_legacy_gprs();
+  void load_aotrc_address(Register reg, address a);
   void setcc(Assembler::Condition comparison, Register dst);
 };
 

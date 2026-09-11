@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -944,7 +944,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = new_register(objectType);
   LIR_Opr tmp3 = FrameMap::LR_oop_opr;
 
-  new_instance(reg, x->klass(), x->is_unresolved(), tmp1, tmp2, tmp3,
+  new_instance(reg, x->klass(), x->is_unresolved(), /* allow_inline */ false, tmp1, tmp2, tmp3,
                LIR_OprFact::illegalOpr, klass_reg, info);
 
   LIR_Opr result = rlock_result(x);
@@ -1104,7 +1104,8 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
 
   __ checkcast(out_reg, obj.result(), x->klass(), tmp1, tmp2, tmp3, x->direct_compare(),
-               info_for_exception, patching_info, stub, x->profiled_method(), x->profiled_bci());
+               info_for_exception, patching_info, stub,
+               x->profiled_method(), x->profiled_bci(), /*is_null_free*/ false);
 }
 
 
@@ -1332,7 +1333,8 @@ void LIRGenerator::volatile_field_load(LIR_Address* address, LIR_Opr result,
       load_addr = address;
     }
     __ volatile_load_mem_reg(load_addr, result, info);
-    return;
+  } else {
+    __ load(address, result, info, lir_patch_none);
   }
-  __ load(address, result, info, lir_patch_none);
+  __ membar_acquire();
 }

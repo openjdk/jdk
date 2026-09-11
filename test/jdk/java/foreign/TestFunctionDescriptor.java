@@ -34,10 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.*;
 
 public class TestFunctionDescriptor extends NativeTestHelper {
 
@@ -114,16 +111,6 @@ public class TestFunctionDescriptor extends NativeTestHelper {
                 MemoryLayout.sequenceLayout(3, C_INT));
         MethodType cmt = fd.toMethodType();
         assertEquals(cmt, MethodType.methodType(int.class, int.class, MemorySegment.class, MemorySegment.class));
-    }
-
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testBadCarrierMethodType() {
-        FunctionDescriptor fd = FunctionDescriptor.of(C_INT,
-                C_INT,
-                MemoryLayout.structLayout(C_INT, C_INT),
-                MemoryLayout.sequenceLayout(3, C_INT),
-                MemoryLayout.paddingLayout(4));
-        fd.toMethodType(); // should throw
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)

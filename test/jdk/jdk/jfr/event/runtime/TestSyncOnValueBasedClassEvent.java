@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,9 +34,20 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
+ * @comment The name of this test (TestSyncOnValueBasedClassEvent) makes
+ *          the reader think that we should be able to synchronize on a
+ *          ValueBasedClass, but that IS NOT the case because that would
+ *          result in an IdentityException.
+ * @comment The purpose of this test is to verify that SyncOnValueBasedClass
+ *          JFR events are generated when we synchronize on classes that
+ *          WOULD BE ValueBasedClasses IF --enable-preview is enabled. The
+ *          purpose of those JFR events is to evaluate Java codebases and
+ *          determine if synchronization is used on objects that ARE NOT
+ *          compatible with ValueBasedClasses.
  * @bug 8242263
  * @requires vm.hasJFR
  * @requires vm.flagless
+ * @requires !java.enablePreview
  * @library /test/lib
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DiagnoseSyncOnValueBasedClasses=2 jdk.jfr.event.runtime.TestSyncOnValueBasedClassEvent
  */
@@ -44,7 +55,7 @@ public class TestSyncOnValueBasedClassEvent {
     static final String EVENT_NAME = EventNames.SyncOnValueBasedClass;
     static String[] classesWanted = {"java/lang/Character", "java/lang/Boolean", "java/lang/Byte", "java/lang/Short",
                                      "java/lang/Integer", "java/lang/Long", "java/lang/Float", "java/lang/Double",
-                                     "java/time/Duration", "java/util/OptionalInt", "java/lang/Runtime$Version"};
+                                     "java/lang/Runtime$Version"};
     static List<Object> testObjects = new ArrayList<Object>();
     static Integer counter = 0;
 
@@ -57,8 +68,6 @@ public class TestSyncOnValueBasedClassEvent {
         testObjects.add(Long.valueOf(0x4000000000000000L));
         testObjects.add(Float.valueOf(1.20f));
         testObjects.add(Double.valueOf(1.2345));
-        testObjects.add(Duration.ofMillis(5));
-        testObjects.add(OptionalInt.of(10));
         testObjects.add(Runtime.version());
     }
 

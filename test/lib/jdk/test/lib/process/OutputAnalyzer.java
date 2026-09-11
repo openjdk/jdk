@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,23 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process, Charset cs) throws IOException {
-        buffer = OutputBuffer.of(process, cs);
+        this(process, cs, true);
     }
+
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process, with a configurable verbosity level.
+     *
+     * @param process Process to analyze
+     * @param cs The charset used to convert stdout/stderr from bytes to chars
+     *           or null for the default charset.
+     * @param verbose Set to false to limit logging to stdout.
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, Charset cs, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, cs, verbose);
+    }
+
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
      * value from a Process
@@ -66,7 +81,19 @@ public final class OutputAnalyzer {
      * @throws IOException If an I/O error occurs.
      */
     public OutputAnalyzer(Process process) throws IOException {
-        buffer = OutputBuffer.of(process);
+        this(process, true);
+    }
+
+    /**
+     * Create an OutputAnalyzer, a utility class for verifying output and exit
+     * value from a Process, with a configurable verbosity level.
+     *
+     * @param process Process to analyze
+     * @param verbose Set to false to limit logging to stdout.
+     * @throws IOException If an I/O error occurs.
+     */
+    public OutputAnalyzer(Process process, boolean verbose) throws IOException {
+        buffer = OutputBuffer.of(process, verbose);
     }
 
     /**
@@ -534,6 +561,32 @@ public final class OutputAnalyzer {
      */
     public String firstMatch(String pattern) {
         return firstMatch(pattern, 0);
+    }
+
+    private List<Matcher> matchersForAllMatchingLinesInternal(Pattern needleRegex, List<String> haystack) {
+        List<Matcher> matchingMatchers = haystack.stream().
+                map(needleRegex::matcher).filter(Matcher::matches).collect(Collectors.toList());
+        return matchingMatchers;
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stderr output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStderr(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stderrAsLines());
+    }
+
+    /**
+     * Given a regular expression, matches the expression against every *line* of stdout output
+     * and returns a list of all matching matchers.
+     * @param needleRegex
+     * @return List of matchers
+     */
+    public  List<Matcher> matchersForAllMatchingLinesStdout(Pattern needleRegex) {
+        return matchersForAllMatchingLinesInternal(needleRegex, stdoutAsLines());
     }
 
     /**

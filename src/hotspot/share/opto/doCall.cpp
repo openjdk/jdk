@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,12 @@
 #include "ci/ciCallSite.hpp"
 #include "ci/ciMethodHandle.hpp"
 #include "ci/ciSymbols.hpp"
+#include "classfile/vmIntrinsics.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "interpreter/linkResolver.hpp"
+#include "jvm_io.h"
 #include "logging/log.hpp"
 #include "logging/logLevel.hpp"
 #include "logging/logMessage.hpp"
@@ -37,6 +39,8 @@
 #include "opto/callGenerator.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
+#include "opto/graphKit.hpp"
+#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
@@ -45,6 +49,7 @@
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -414,6 +419,22 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   }
 }
 
+// After Compile::over_inlining_cutoff, should we decline inlining the callee, or should we try
+// inlining again later
+bool Compile::should_delay_after_inlining_cutoff(ciMethod* callee, ciMethod* caller) {
+  if (!IncrementalInline) {
+    return false;
+  }
+
+  if (DelayAfterInliningCutoff) {
+    return true;
+  } else if (callee->force_inline() || caller->is_compiled_lambda_form()) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 // Return true for methods that shouldn't be inlined early so that
 // they are easier to analyze and optimize as intrinsics.
 bool Compile::should_delay_string_inlining(ciMethod* call_method, JVMState* jvms) {
@@ -550,6 +571,7 @@ void Parse::do_call() {
   // Bump max node limit for JSR292 users
   if (bc() == Bytecodes::_invokedynamic || orig_callee->is_method_handle_intrinsic()) {
     C->set_max_node_limit(3*MaxNodeLimit);
+    C->set_node_count_inlining_cutoff(LiveNodeCountInliningCutoff);
   }
 
   // uncommon-trap when callee is unloaded, uninitialized or will not link
@@ -614,7 +636,7 @@ void Parse::do_call() {
 
   // Additional receiver subtype checks for interface calls via invokespecial or invokeinterface.
   ciKlass* receiver_constraint = nullptr;
-  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_initializer()) {
+  if (iter().cur_bc_raw() == Bytecodes::_invokespecial && !orig_callee->is_object_constructor()) {
     ciInstanceKlass* calling_klass = method()->holder();
     ciInstanceKlass* sender_klass = calling_klass;
     if (sender_klass->is_interface()) {
@@ -629,9 +651,14 @@ void Parse::do_call() {
     Node* receiver_node = stack(sp() - nargs);
     Node* cls_node = makecon(TypeKlassPtr::make(receiver_constraint, Type::trust_interfaces));
     Node* bad_type_ctrl = nullptr;
-    Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl);
+    SafePointNode* new_cast_failure_map = nullptr;
+    Node* casted_receiver = gen_checkcast(receiver_node, cls_node, &bad_type_ctrl, &new_cast_failure_map);
     if (bad_type_ctrl != nullptr) {
       PreserveJVMState pjvms(this);
+      if (new_cast_failure_map != nullptr) {
+        // The current map on the success path could have been modified. Use the dedicated failure path map.
+        set_map(new_cast_failure_map);
+      }
       set_control(bad_type_ctrl);
       uncommon_trap(Deoptimization::Reason_class_check,
                     Deoptimization::Action_none);
@@ -656,6 +683,10 @@ void Parse::do_call() {
   // This call checks with CHA, the interpreter profile, intrinsics table, etc.
   // It decides whether inlining is desirable or not.
   CallGenerator* cg = C->call_generator(callee, vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type);
+  if (failing()) {
+    return;
+  }
+  assert(cg != nullptr, "must find a CallGenerator for callee %s", callee->name()->as_utf8());
 
   // NOTE:  Don't use orig_callee and callee after this point!  Use cg->method() instead.
   orig_callee = callee = nullptr;
@@ -742,7 +773,7 @@ void Parse::do_call() {
         BasicType rt = rtype->basic_type();
         BasicType ct = ctype->basic_type();
         if (ct == T_VOID) {
-          // It's OK for a method  to return a value that is discarded.
+          // It's OK for a method to return a value that is discarded.
           // The discarding does not require any special action from the caller.
           // The Java code knows this, at VerifyType.isNullConversion.
           pop_node(rt);  // whatever it was, pop it
@@ -799,6 +830,28 @@ void Parse::do_call() {
     BasicType ct = ctype->basic_type();
     if (is_reference_type(ct)) {
       record_profiled_return_for_speculation();
+    }
+
+    if (!rtype->is_void()) {
+      Node* retnode = peek();
+      const Type* rettype = gvn().type(retnode);
+      if (!cg->method()->return_value_is_larval() && !retnode->is_InlineType() && rettype->is_inlinetypeptr()) {
+        retnode = InlineTypeNode::make_from_oop(this, retnode, rettype->inline_klass());
+        dec_sp(1);
+        push(retnode);
+      }
+    }
+
+    if (cg->method()->receiver_maybe_larval() && receiver != nullptr &&
+        !receiver->is_InlineType() && gvn().type(receiver)->is_inlinetypeptr()) {
+      InlineTypeNode* non_larval = InlineTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->inline_klass());
+      // Relinquish the oop input, we will delay the allocation to the point it is needed, see the
+      // comments in InlineTypeNode::Ideal for more details
+      non_larval = non_larval->clone_if_required(&gvn(), nullptr);
+      non_larval->set_oop(gvn(), null());
+      non_larval->set_is_buffered(gvn(), false);
+      non_larval = gvn().transform(non_larval)->as_InlineType();
+      map()->replace_edge(receiver, non_larval);
     }
   }
 
@@ -909,8 +962,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     if (handler_bci < 0) {     // merge with corresponding rethrow node
       throw_to_exit(make_exception_state(ex_oop));
     } else {                      // Else jump to corresponding handle
-      push_ex_oop(ex_oop);        // Clear stack and push just the oop.
-      merge_exception(handler_bci);
+      push_and_merge_exception(handler_bci, ex_oop);
     }
   }
 
@@ -1008,13 +1060,10 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
     int handler_bci = handler->handler_bci();
 
     if (remaining == 1) {
-      push_ex_oop(ex_node);        // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print_cr("  Catching every inline exception bci:%d -> handler_bci:%d", bci(), handler_bci);
       }
-      // If this is a backwards branch in the bytecodes, add safepoint
-      maybe_add_safepoint(handler_bci);
-      merge_exception(handler_bci); // jump to handler
+      push_and_merge_exception(handler_bci, ex_node); // jump to handler
       return;                   // No more handling to be done here!
     }
 
@@ -1039,15 +1088,13 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
       const TypeInstPtr* tinst = TypeOopPtr::make_from_klass_unique(klass)->cast_to_ptr_type(TypePtr::NotNull)->is_instptr();
       assert(klass->has_subklass() || tinst->klass_is_exact(), "lost exactness");
       Node* ex_oop = _gvn.transform(new CheckCastPPNode(control(), ex_node, tinst));
-      push_ex_oop(ex_oop);      // Push exception oop for handler
       if (PrintOpto && WizardMode) {
         tty->print("  Catching inline exception bci:%d -> handler_bci:%d -- ", bci(), handler_bci);
         klass->print_name();
         tty->cr();
       }
       // If this is a backwards branch in the bytecodes, add safepoint
-      maybe_add_safepoint(handler_bci);
-      merge_exception(handler_bci);
+      push_and_merge_exception(handler_bci, ex_oop);
     }
     set_control(not_subtype_ctrl);
 
@@ -1086,13 +1133,13 @@ void Parse::catch_inline_exceptions(SafePointNode* ex_map) {
 
 #ifndef PRODUCT
 void Parse::count_compiled_calls(bool at_method_entry, bool is_inline) {
-  if( CountCompiledCalls ) {
-    if( at_method_entry ) {
+  if (CountCompiledCalls) {
+    if (at_method_entry) {
       // bump invocation counter if top method (for statistics)
       if (CountCompiledCalls && depth() == 1) {
         const TypePtr* addr_type = TypeMetadataPtr::make(method());
         Node* adr1 = makecon(addr_type);
-        Node* adr2 = basic_plus_adr(adr1, adr1, in_bytes(Method::compiled_invocation_counter_offset()));
+        Node* adr2 = off_heap_plus_addr(adr1, in_bytes(Method::compiled_invocation_counter_offset()));
         increment_counter(adr2);
       }
     } else if (is_inline) {

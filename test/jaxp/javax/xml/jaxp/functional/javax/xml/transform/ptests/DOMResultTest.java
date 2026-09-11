@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,7 @@
 
 package javax.xml.transform.ptests;
 
-import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
-import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
-import static jaxp.library.JAXPTestUtilities.USER_DIR;
-import static jaxp.library.JAXPTestUtilities.compareWithGold;
-import static org.testng.Assert.assertTrue;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.sax.SAXSource;
-import javax.xml.transform.sax.SAXTransformerFactory;
-import javax.xml.transform.sax.TransformerHandler;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Attr;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -48,6 +32,21 @@ import org.xml.sax.InputSource;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.sax.SAXSource;
+import javax.xml.transform.sax.SAXTransformerFactory;
+import javax.xml.transform.sax.TransformerHandler;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static javax.xml.transform.ptests.TransformerTestConst.GOLDEN_DIR;
+import static javax.xml.transform.ptests.TransformerTestConst.XML_DIR;
+import static org.junit.jupiter.api.Assertions.assertLinesMatch;
+
 /**
  * DOM parse on test file to be compared with golden output file. No Exception
  * is expected.
@@ -55,7 +54,7 @@ import org.xml.sax.helpers.XMLReaderFactory;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm javax.xml.transform.ptests.DOMResultTest
+ * @run junit/othervm javax.xml.transform.ptests.DOMResultTest
  */
 public class DOMResultTest {
     /**
@@ -64,8 +63,8 @@ public class DOMResultTest {
      */
     @Test
     public void testcase01() throws Exception {
-        String resultFile = USER_DIR  + "domresult01.out";
-        String goldFile = GOLDEN_DIR  + "domresult01GF.out";
+        String resultFile = "domresult01.out";
+        String goldFile = GOLDEN_DIR + "domresult01GF.out";
         String xsltFile = XML_DIR + "cities.xsl";
         String xmlFile = XML_DIR + "cities.xml";
 
@@ -86,7 +85,9 @@ public class DOMResultTest {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(resultFile))) {
             writeNodes(node, writer);
         }
-        assertTrue(compareWithGold(goldFile, resultFile));
+        assertLinesMatch(
+                Files.readAllLines(Path.of(goldFile)),
+                Files.readAllLines(Path.of(resultFile)));
     }
 
     /**

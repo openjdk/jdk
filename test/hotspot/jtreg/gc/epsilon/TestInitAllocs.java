@@ -23,54 +23,84 @@
 
 package gc.epsilon;
 
-/**
- * @test TestInitAllocs
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
+
+/* @test id=default
  * @requires vm.gc.Epsilon
- * @summary Test that allocation path taken in early JVM phases works
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   gc.epsilon.TestInitAllocs
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:+UseTLAB
- *                   -XX:+UseCompressedOops
- *                   -XX:EpsilonMinHeapExpand=1024
- *                   -XX:EpsilonUpdateCountersStep=1
- *                   -XX:EpsilonPrintHeapSteps=1000000
- *                   gc.epsilon.TestInitAllocs
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:+UseTLAB
- *                   -XX:-UseCompressedOops
- *                   -XX:EpsilonMinHeapExpand=1024
- *                   -XX:EpsilonUpdateCountersStep=1
- *                   -XX:EpsilonPrintHeapSteps=1000000
- *                   gc.epsilon.TestInitAllocs
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:-UseTLAB
- *                   -XX:+UseCompressedOops
- *                   -XX:EpsilonMinHeapExpand=1024
- *                   -XX:EpsilonUpdateCountersStep=1
- *                   -XX:EpsilonPrintHeapSteps=1000000
- *                   gc.epsilon.TestInitAllocs
- *
- * @run main/othervm -Xmx256m
- *                   -XX:+UnlockExperimentalVMOptions -XX:+UseEpsilonGC
- *                   -XX:-UseTLAB
- *                   -XX:-UseCompressedOops
- *                   -XX:EpsilonMinHeapExpand=1024
- *                   -XX:EpsilonUpdateCountersStep=1
- *                   -XX:EpsilonPrintHeapSteps=1000000
- *                   gc.epsilon.TestInitAllocs
+ * @summary Stress test that allocation path taken in early JVM phases works
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs
+ */
+
+/* @test id=nocoops
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:-UseCompressedOops
+ */
+
+/* @test id=notlabs
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:-UseTLAB
+ */
+
+/* @test id=notlabs-nocoops
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:-UseCompressedOops -XX:-UseTLAB
+ */
+
+/* @test id=coh
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:+UseCompactObjectHeaders
+ */
+
+/* @test id=coh-nocoops
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:+UseCompactObjectHeaders -XX:-UseCompressedOops
+ */
+
+/* @test id=coh-notlabs
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:+UseCompactObjectHeaders -XX:-UseTLAB
+ */
+
+/* @test id=coh-notlabs-nocoops
+ * @requires vm.gc.Epsilon
+ * @library /test/lib
+ * @run driver gc.epsilon.TestInitAllocs -XX:+UseCompactObjectHeaders -XX:-UseCompressedOops -XX:-UseTLAB
  */
 
 public class TestInitAllocs {
-  public static void main(String[] args) throws Exception {
-    System.out.println("Hello World");
+  static final Integer TRIES = Integer.getInteger("tries", 500);
+
+  public static void main(String... args) throws Exception {
+    List<String> testArgs = new ArrayList<>();
+    testArgs.add("-Xmx256m");
+    testArgs.add("-XX:+UnlockExperimentalVMOptions");
+    testArgs.add("-XX:+UseEpsilonGC");
+    testArgs.add("-XX:EpsilonMinHeapExpand=1024");
+    testArgs.add("-XX:EpsilonUpdateCountersStep=1");
+    testArgs.add("-XX:EpsilonPrintHeapSteps=1000000");
+    testArgs.addAll(Arrays.asList(args));
+    testArgs.add(TestInitAllocs.Main.class.getName());
+    for (int t = 0; t < TRIES; t++) {
+      OutputAnalyzer oa = ProcessTools.executeLimitedTestJava(testArgs);
+      oa.shouldHaveExitValue(0);
+    }
+  }
+
+  static class Main {
+    public static void main(String... args) {
+      // Do nothing
+    }
   }
 }
