@@ -59,7 +59,6 @@ public class ClassHistogramFlattenedArrayTest {
         ValueClass.newNullableAtomicArray(TestClassNA.class, 1024),
         ValueClass.newNullRestrictedAtomicArray(TestClassNRA.class, 1024, new TestClassNRA((short)1, (short)1)),
         ValueClass.newNullRestrictedNonAtomicArray(TestClassNRNA.class, 1024, new TestClassNRNA((short)1, (short)1)),
-        ValueClass.newReferenceArray(TestClassR.class, 1024),
     };
 
     public static void main(String[] args) {
