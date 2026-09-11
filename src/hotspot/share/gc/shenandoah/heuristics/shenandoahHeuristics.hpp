@@ -26,13 +26,16 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/numberSeq.hpp"
 
 class ShenandoahSpaceInfo;
 
