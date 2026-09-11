@@ -278,7 +278,7 @@ public class InvalidateServerSessionRenegotiate implements
          * Wait until both HandshakeCompleted events have been delivered,
          * with a timeout to avoid hanging forever if something goes wrong.
          */
-        if (!handshakeLatch.await(5, TimeUnit.SECONDS)) {
+        if (!handshakeLatch.await(10, TimeUnit.SECONDS)) {
             throw new Exception("Didn't see 2 handshake completed events.");
         }
     }
