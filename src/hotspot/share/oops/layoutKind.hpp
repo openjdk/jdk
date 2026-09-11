@@ -161,9 +161,9 @@ struct LayoutDescriptions {
   }
 
   // Returns default value if missing
-  int size_in_bytes_of(LayoutKind lk, int default_value = -1) const {
-    auto sz = _sizes[static_cast<size_t>(lk)];
-    return sz == NoValue ? default_value : sz;
+  int size_in_bytes_of(LayoutKind lk) const {
+    assert(_sizes[static_cast<size_t>(lk)] != NoValue, "layout must exist");
+    return _sizes[static_cast<size_t>(lk)];
   }
 
   int alignment_of(LayoutKind lk) const {

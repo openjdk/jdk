@@ -1259,8 +1259,10 @@ void FieldLayoutBuilder::compute_value_class_layout() {
     // and loosely consistent are supported.
     const int default_alignment = layouts().payload_alignment();
     const int required_alignment = MAX3(default_alignment,
-                                        layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT, default_alignment),
-                                        layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT, default_alignment));
+                                        layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT) ?
+                                          layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT) : 0,
+                                        layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT) ?
+                                          layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT) : 0 );
 
     int shift = (required_alignment - (first_field->offset() % required_alignment)) % required_alignment;
     if (shift != 0) {
@@ -1296,11 +1298,14 @@ void FieldLayoutBuilder::compute_value_class_layout() {
     // instances must have at least equal to the atomic layout to allow safe read/write atomic
     // operation.
     layouts().set_size_in_bytes_of(LayoutKind::BUFFERED,
-                                 MAXN(layouts().size_in_bytes_of(LayoutKind::BUFFERED),
-                                      layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT),
-                                      layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT),
-                                      layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT)));
-
+                                   MAXN(layouts().has_a(LayoutKind::BUFFERED) ?
+                                          layouts().size_in_bytes_of(LayoutKind::BUFFERED) : 0,
+                                        layouts().has_a(LayoutKind::NULLABLE_ATOMIC_FLAT) ?
+                                          layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT) : 0,
+                                        layouts().has_a(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) ?
+                                          layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT) : 0,
+                                        layouts().has_a(LayoutKind::NULL_FREE_ATOMIC_FLAT) ?
+                                          layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT) : 0));
   }
   // Warning:: InstanceMirrorKlass expects static oops to be allocated first
   _static_layout->add_contiguously(_static_fields->oop_fields());
