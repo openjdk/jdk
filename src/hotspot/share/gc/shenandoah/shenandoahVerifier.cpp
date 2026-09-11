@@ -65,6 +65,7 @@
 #include "oops/klass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"

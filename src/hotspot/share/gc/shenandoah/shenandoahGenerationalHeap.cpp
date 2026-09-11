@@ -70,6 +70,7 @@
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "services/memoryManager.hpp"

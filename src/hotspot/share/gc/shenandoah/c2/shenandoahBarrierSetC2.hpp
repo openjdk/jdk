@@ -61,7 +61,6 @@ static const uint8_t ShenandoahBitsReal = ShenandoahBitStrong | ShenandoahBitWea
                                           ShenandoahBitKeepAlive |
                                           ShenandoahBitCardMark;
 
-class MachNode;
 class ShenandoahBarrierStubC2;
 
 class ShenandoahBarrierSetC2State : public BarrierSetC2State {

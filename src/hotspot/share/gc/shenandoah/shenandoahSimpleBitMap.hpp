@@ -29,7 +29,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 #include <sys/types.h>
 

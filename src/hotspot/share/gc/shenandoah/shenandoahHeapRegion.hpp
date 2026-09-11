@@ -33,13 +33,11 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "jni.h"
-#include "jni_md.h"
 #include "oops/markWord.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class OopIterateClosure;
 class outputStream;

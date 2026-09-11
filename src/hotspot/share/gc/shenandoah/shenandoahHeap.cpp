@@ -125,6 +125,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/globals.hpp"

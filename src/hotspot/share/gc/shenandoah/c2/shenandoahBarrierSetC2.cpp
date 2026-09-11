@@ -29,7 +29,6 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "code/dependencies.hpp"
 #include "code/vmreg.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
@@ -50,6 +49,7 @@
 #include "utilities/ostream.hpp"
 
 class Arena;
+class PhaseRegAlloc;
 
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :
     BarrierSetC2State(comp_arena),

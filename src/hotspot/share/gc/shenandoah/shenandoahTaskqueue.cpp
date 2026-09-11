@@ -23,9 +23,10 @@
  */
 
 
-#include "gc/shared/taskqueue.hpp"
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
+#include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

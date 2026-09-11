@@ -78,6 +78,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/thread.hpp"

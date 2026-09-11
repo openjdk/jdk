@@ -27,19 +27,13 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
 #include "gc/shared/taskqueue.inline.hpp"
-#include "gc/shenandoah/shenandoahPadding.hpp"
-#include "jni.h"
-#include "jni_md.h"
 #include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/atomic.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stack.inline.hpp"
-#include "utilities/vmassert_reinstall.hpp"
 
 class ShenandoahHeap;
 

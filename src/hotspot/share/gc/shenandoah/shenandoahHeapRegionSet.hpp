@@ -27,7 +27,6 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "jni.h"
-#include "jni_md.h"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"

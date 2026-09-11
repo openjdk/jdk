@@ -27,7 +27,6 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahCycleDuration.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/globalDefinitions.hpp"

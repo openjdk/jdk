@@ -27,10 +27,8 @@
 
 
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class RegionData;
 class ShenandoahCollectionSet;
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
