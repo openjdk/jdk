@@ -52,7 +52,7 @@ void G1MonotonicArena::Segment::delete_segment(Segment* segment) {
     GlobalCounter::write_synchronize();
   }
   segment->~Segment();
-  FREE_C_HEAP_ARRAY(_mem_tag, segment);
+  FREE_C_HEAP_ARRAY(segment);
 }
 
 void G1MonotonicArena::SegmentFreeList::bulk_add(Segment& first,

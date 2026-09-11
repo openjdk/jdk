@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void write(int b) throws IOException;
 
     /**
@@ -87,6 +88,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void write(byte[] b) throws IOException;
 
     /**
@@ -114,6 +116,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void write(byte[] b, int off, int len) throws IOException;
 
     /**
@@ -131,6 +134,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeBoolean(boolean v) throws IOException;
 
     /**
@@ -149,6 +153,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeByte(int v) throws IOException;
 
     /**
@@ -179,6 +184,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeShort(int v) throws IOException;
 
     /**
@@ -191,6 +197,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @see #writeShort(int)
      */
+    @Override
     void writeChar(int v) throws IOException;
 
     /**
@@ -224,6 +231,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeInt(int v) throws IOException;
 
     /**
@@ -265,6 +273,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeLong(long v) throws IOException;
 
     /**
@@ -285,6 +294,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeFloat(float v) throws IOException;
 
     /**
@@ -306,6 +316,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      *
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeDouble(double v) throws IOException;
 
     /**
@@ -334,6 +345,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeBytes(String s) throws IOException;
 
     /**
@@ -362,6 +374,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * {@code null}.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeChars(String s) throws IOException;
 
     /**
@@ -433,6 +446,7 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * representation of {@code s} requires more than 65536 bytes.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void writeUTF(String s) throws IOException;
 
     /**
@@ -658,5 +672,6 @@ public interface ImageOutputStream extends ImageInputStream, DataOutput {
      * position.
      * @throws IOException if an I/O error occurs.
      */
+    @Override
     void flushBefore(long pos) throws IOException;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import test.java.awt.regtesthelpers.Util;
  *          java.desktop/java.awt.peer
  * @build java.desktop/java.awt.Helper
  * @build Util
- * @run main JMenuBarOverlapping
+ * @run main/timeout=180 JMenuBarOverlapping
  */
 public class JMenuBarOverlapping extends OverlappingTestBase {
 
@@ -73,6 +73,8 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame = new JFrame("Mixing : Dropdown Overlapping test");
         frame.setLayout(new GridLayout(0,1));
         frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
 
         menuBar = new JMenuBar();
         JMenu menu = new JMenu("Test Menu");
@@ -104,8 +106,6 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         frame.setJMenuBar(menuBar);
 
         propagateAWTControls(frame);
-        frame.setLocationRelativeTo(null);
-        frame.setVisible(true);
     }
 
     @Override
@@ -122,6 +122,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
         // run robot
         Robot robot = Util.createRobot();
         robot.setAutoDelay(ROBOT_DELAY);
+        robot.mouseMove(0, 0);// Avoid capturing mouse cursor
 
         loc2.translate(75, 75);
         pixelPreCheck(robot, loc2, currentAwtControl);

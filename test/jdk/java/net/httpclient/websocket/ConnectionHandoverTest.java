@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8164625
  * @summary Verifies HttpClient yields the connection to the WebSocket
  * @build DummyWebSocketServer
- * @run main/othervm -Djdk.httpclient.HttpClient.log=trace ConnectionHandoverTest
+ * @run main/othervm -Djdk.httpclient.HttpClient.log=trace ${test.main.class}
  */
 
 import java.io.IOException;

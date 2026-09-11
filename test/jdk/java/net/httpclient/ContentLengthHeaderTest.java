@@ -33,7 +33,7 @@
  * @run junit/othervm
  *          -Djdk.httpclient.allowRestrictedHeaders=content-length
  *          -Djdk.internal.httpclient.debug=true
- *          ContentLengthHeaderTest
+ *          ${test.main.class}
  */
 
 

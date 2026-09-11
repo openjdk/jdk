@@ -34,6 +34,7 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
 , _caller_state(caller_state)
 , _bci(-99)
 , _kind(Parsing)
+, _should_reexecute(false)
 , _locals(scope->method()->max_locals(), scope->method()->max_locals(), nullptr)
 , _stack(scope->method()->max_stack())
 , _locks(nullptr)
@@ -42,11 +43,12 @@ ValueStack::ValueStack(IRScope* scope, ValueStack* caller_state)
   verify();
 }
 
-ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci)
+ValueStack::ValueStack(ValueStack* copy_from, Kind kind, int bci, bool reexecute)
   : _scope(copy_from->scope())
   , _caller_state(copy_from->caller_state())
   , _bci(bci)
   , _kind(kind)
+  , _should_reexecute(reexecute)
   , _locals(copy_from->locals_size_for_copy(kind))
   , _stack(copy_from->stack_size_for_copy(kind))
   , _locks(copy_from->locks_size() == 0 ? nullptr : new Values(copy_from->locks_size()))
@@ -209,7 +211,6 @@ int ValueStack::unlock() {
   _locks->pop();
   return total_locks_size();
 }
-
 
 void ValueStack::setup_phi_for_stack(BlockBegin* b, int index) {
   assert(stack_at(index)->as_Phi() == nullptr || stack_at(index)->as_Phi()->block() != b, "phi function already created");

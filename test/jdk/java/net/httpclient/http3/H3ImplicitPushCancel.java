@@ -28,7 +28,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=errors,requests,responses,trace
- *      H3ImplicitPushCancel
+ *      ${test.main.class}
  * @summary This is a clone of http2/ImplicitPushCancel but for HTTP/3
  */
 

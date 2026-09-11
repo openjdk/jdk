@@ -26,6 +26,9 @@
 package java.lang;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.misc.PreviewFeatures;
+import jdk.internal.value.Deserializer;
+import jdk.internal.value.ValueClass;
 import jdk.internal.vm.annotation.AOTSafeClassInitializer;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -205,10 +208,18 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * <a href="http://www.unicode.org/glossary/">Unicode Glossary</a>.
  *
  * <p>This is a <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>
- * class; programmers should treat instances that are
- * {@linkplain #equals(Object) equal} as interchangeable and should not
- * use instances for synchronization, or unpredictable behavior may
- * occur. For example, in a future release, synchronization may fail.
+ * class; programmers should treat instances that are {@linkplain #equals(Object) equal}
+ * as interchangeable and should not use instances for synchronization or
+ * with {@linkplain java.lang.ref.Reference object references}.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ *          When preview features are enabled, {@code Character} is a {@linkplain Class#isValue value class}.
+ *          Use of value class instances for synchronization or with
+ *          {@linkplain java.lang.ref.Reference object references} result in
+ *          {@link IdentityException}.
+ *      </div>
+ * </div>
  *
  * @spec https://www.unicode.org/reports/tr44 Unicode Character Database
  * @author  Lee Boynton
@@ -219,8 +230,9 @@ import static java.lang.constant.ConstantDescs.DEFAULT_NAME;
  * @since   1.0
  */
 @jdk.internal.ValueBased
-public final
-class Character implements java.io.Serializable, Comparable<Character>, Constable {
+// See doc/value-class-preview.md for an overview of value class generation
+public final /*value*/ class Character
+        implements java.io.Serializable, Comparable<Character>, Constable {
     /**
      * The minimum radix available for conversion to and from strings.
      * The constant value of this field is the smallest value permitted
@@ -9412,10 +9424,14 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
      * likely to yield significantly better space and time performance.
      */
     @Deprecated(since="9")
+    @Deserializer("value")
     public Character(char value) {
         this.value = value;
     }
 
+    // When preview features are enabled, the cache does not affect object
+    // equality == semantics, but exists for performance.
+    // See doc/value-class-preview.md "Wrapper Class Caches" section.
     @AOTSafeClassInitializer
     private static final class CharacterCache {
         private CharacterCache(){}
@@ -9430,7 +9446,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             // Load and use the archived cache if it exists
             CDS.initializeFromArchive(CharacterCache.class);
             if (archivedCache == null) {
-                Character[] c = new Character[size];
+                Character[] c = newCacheArray(size);
                 for (int i = 0; i < size; i++) {
                     c[i] = new Character((char) i);
                 }
@@ -9439,20 +9455,39 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
             cache = archivedCache;
             assert cache.length == size;
         }
+
+        private static Character[] newCacheArray(int size) {
+            // ValueClass.newReferenceArray requires a value class component.
+            if (PreviewFeatures.isEnabled()) {
+                return (Character[]) ValueClass.newReferenceArray(Character.class, size);
+            }
+            return new Character[size];
+        }
     }
 
     /**
      * Returns a {@code Character} instance representing the specified
      * {@code char} value.
-     * If a new {@code Character} instance is not required, this method
-     * should generally be used in preference to the constructor
-     * {@link #Character(char)}, as this method is likely to yield
-     * significantly better space and time performance by caching
-     * frequently requested values.
-     *
-     * This method will always cache values in the range {@code
-     * '\u005Cu0000'} to {@code '\u005Cu007F'}, inclusive, and may
-     * cache other values outside of this range.
+     * <div class="preview-block">
+     *      <div class="preview-comment">
+     *          <p>
+     *              - When preview features are NOT enabled, {@code Character} is an identity class.
+     *              If a new {@code Character} instance is not required, this method
+     *              should generally be used in preference to the constructor
+     *              {@link #Character(char)}, as this method is likely to yield
+     *              significantly better space and time performance by caching
+     *              frequently requested values.
+     *              This method will always cache values in the range {@code
+     *              '\u005Cu0000'} to {@code '\u005Cu007F'}, inclusive, and may
+     *              cache other values outside of this range.
+     *          </p>
+     *          <p>
+     *             - When preview features are enabled, {@code Character} is a {@linkplain Class#isValue value class}.
+     *              The {@code valueOf} behavior is the same as invoking the constructor,
+     *              whether cached or not.
+     *          </p>
+     *      </div>
+     * </div>
      *
      * @param  c a char value.
      * @return a {@code Character} instance representing {@code c}.
@@ -9461,7 +9496,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
     @IntrinsicCandidate
     public static Character valueOf(char c) {
         if (c <= 127) { // must cache
-            return CharacterCache.cache[(int)c];
+            return CharacterCache.cache[(int) c];
         }
         return new Character(c);
     }

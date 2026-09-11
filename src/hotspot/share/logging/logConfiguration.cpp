@@ -123,7 +123,7 @@ void LogConfiguration::initialize(jlong vm_start_time) {
 
 void LogConfiguration::finalize() {
   disable_outputs();
-  FREE_C_HEAP_ARRAY(LogOutput*, _outputs);
+  FREE_C_HEAP_ARRAY(_outputs);
 }
 
 // Normalizes the given LogOutput name to type=name form.
@@ -206,7 +206,7 @@ LogOutput* LogConfiguration::new_output(const char* name,
 
 size_t LogConfiguration::add_output(LogOutput* output) {
   size_t idx = _n_outputs++;
-  _outputs = REALLOC_C_HEAP_ARRAY(LogOutput*, _outputs, _n_outputs, mtLogging);
+  _outputs = REALLOC_C_HEAP_ARRAY(_outputs, _n_outputs, mtLogging);
   _outputs[idx] = output;
   return idx;
 }
@@ -218,7 +218,7 @@ void LogConfiguration::delete_output(size_t idx) {
   LogOutput* output = _outputs[idx];
   // Swap places with the last output and shrink the array
   _outputs[idx] = _outputs[--_n_outputs];
-  _outputs = REALLOC_C_HEAP_ARRAY(LogOutput*, _outputs, _n_outputs, mtLogging);
+  _outputs = REALLOC_C_HEAP_ARRAY(_outputs, _n_outputs, mtLogging);
   delete output;
 }
 
@@ -546,7 +546,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
       }
     }
 
-    FREE_C_HEAP_ARRAY(char, normalized);
+    FREE_C_HEAP_ARRAY(normalized);
     if (idx == SIZE_MAX) {
       return false;
     }
@@ -724,8 +724,7 @@ void LogConfiguration::register_update_listener(UpdateListenerFunction cb) {
   assert(cb != nullptr, "Should not register nullptr as listener");
   ConfigurationLock cl;
   size_t idx = _n_listener_callbacks++;
-  _listener_callbacks = REALLOC_C_HEAP_ARRAY(UpdateListenerFunction,
-                                             _listener_callbacks,
+  _listener_callbacks = REALLOC_C_HEAP_ARRAY(_listener_callbacks,
                                              _n_listener_callbacks,
                                              mtLogging);
   _listener_callbacks[idx] = cb;

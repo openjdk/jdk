@@ -31,7 +31,7 @@
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Dtest.http.version=http3
  *      -Djdk.internal.httpclient.debug=true
- *      InvalidInputStreamSubscriptionRequest
+ *      ${test.main.class}
  */
 /*
  * @test id=http2
@@ -41,7 +41,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm -Dtest.http.version=http2 InvalidInputStreamSubscriptionRequest
+ * @run junit/othervm -Dtest.http.version=http2 ${test.main.class}
  */
 /*
  * @test id=http1
@@ -51,7 +51,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext ReferenceTracker
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm -Dtest.http.version=http1 InvalidInputStreamSubscriptionRequest
+ * @run junit/othervm -Dtest.http.version=http1 ${test.main.class}
  */
 
 import com.sun.net.httpserver.HttpServer;

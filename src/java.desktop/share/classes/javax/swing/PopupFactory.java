@@ -865,7 +865,6 @@ public class PopupFactory {
         /**
          * Returns the cache to use for medium weight popups.
          */
-        @SuppressWarnings("unchecked")
         private static List<MediumWeightPopup> getMediumWeightPopupCache() {
             synchronized (MediumWeightPopup.class) {
                 if (cache == null) {

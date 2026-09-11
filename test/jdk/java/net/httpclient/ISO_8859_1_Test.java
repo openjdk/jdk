@@ -29,7 +29,7 @@
  *       ReferenceTracker
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                     ISO_8859_1_Test
+ *                     ${test.main.class}
  * @summary Tests that a client is able to receive ISO-8859-1 encoded header values.
  */
 

@@ -68,8 +68,8 @@ import java.util.Set;
 public class TestHugePageDecisionsAtVMStartup {
 
     // End user warnings, printing with Xlog:pagesize at warning level, should be unconditional
-    static final String warningNoTHP = "[warning][pagesize] UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system.";
-    static final String warningNoLP = "[warning][pagesize] UseLargePages disabled, no large pages configured and available on the system.";
+    static final String warningNoTHP = "\\[warning\\]\\[pagesize *\\] UseTransparentHugePages disabled, transparent huge pages are not supported by the operating system\\.";
+    static final String warningNoLP = "\\[warning\\]\\[pagesize *\\] UseLargePages disabled, no large pages configured and available on the system\\.";
 
     static final String buildSizeString(long l) {
         String units[] = { "K", "M", "G" };
@@ -119,27 +119,27 @@ public class TestHugePageDecisionsAtVMStartup {
         }
 
         if (!useLP) {
-            out.shouldContain("[info][pagesize] Large page support disabled");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support disabled");
         } else if (useLP && !useTHP &&
                  (!configuration.supportsExplicitHugePages() || !haveUsableExplicitHugePages)) {
-            out.shouldContain(warningNoLP);
+            out.shouldMatch(warningNoLP);
         } else if (useLP && useTHP && !configuration.supportsTHP()) {
-            out.shouldContain(warningNoTHP);
+            out.shouldMatch(warningNoTHP);
         } else if (useLP && !useTHP &&
                  configuration.supportsExplicitHugePages() && haveUsableExplicitHugePages) {
             if (configuration.getExplicitAvailableHugePageNumber() == 0) {
                 throw new SkippedException("No usable explicit hugepages configured on the system, skipping test");
             }
-            out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
-            out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=0");
-            out.shouldContain("[info][pagesize] Large page support enabled");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=0");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support enabled");
         } else if (useLP && useTHP && configuration.supportsTHP()) {
             long thpPageSize = configuration.getThpPageSizeOrFallback();
             String thpPageSizeString = buildSizeString(thpPageSize);
             // We expect to see exactly two "Usable page sizes" :  the system page size and the THP page size. The system
             // page size differs, but its always in KB).
-            out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=1");
-            out.shouldMatch(".*\\[info]\\[pagesize] Large page support enabled. Usable page sizes: \\d+[kK], " + thpPageSizeString + ". Default large page size: " + thpPageSizeString + ".*");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] UseLargePages=1, UseTransparentHugePages=1");
+            out.shouldMatch("\\[info *\\]\\[pagesize *\\] Large page support enabled\\. Usable page sizes: \\d+[kK], " + thpPageSizeString + "\\. Default large page size: " + thpPageSizeString);
         }
     }
 

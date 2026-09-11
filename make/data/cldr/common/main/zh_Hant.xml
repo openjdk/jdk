@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2025 Unicode, Inc.
+<!-- Copyright © 1991-2026 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-3.0
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1529,7 +1529,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}{0}</pattern>
+							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -1822,6 +1822,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hm">Bh:mm</dateFormatItem>
 						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">ah v</dateFormatItem>
+						<dateFormatItem id="Hv">H時 v</dateFormatItem>
 						<dateFormatItem id="M">MMM</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">M/dE</dateFormatItem>
@@ -2162,7 +2163,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -2214,6 +2215,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hms">Bh:mm:ss</dateFormatItem>
 						<dateFormatItem id="Hms">H:mm:ss</dateFormatItem>
 						<dateFormatItem id="hv">ah v</dateFormatItem>
+						<dateFormatItem id="Hv">H時 v</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">M/d（E）</dateFormatItem>
@@ -2473,10 +2475,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
 							<pattern>{1}{0}</pattern>
@@ -2484,10 +2486,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
 							<pattern>{1}{0}</pattern>
@@ -2495,10 +2497,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="medium">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="atTime">
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
 							<pattern>{1}{0}</pattern>
@@ -2506,7 +2508,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}{0}</pattern>
+							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 						<dateTimeFormat type="relative">
 							<pattern>{1}{0}</pattern>
@@ -2540,6 +2542,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="hmv">Bh:mm [v]</dateFormatItem>
 						<dateFormatItem id="Hmv">HH:mm [v]</dateFormatItem>
 						<dateFormatItem id="hv">ah v</dateFormatItem>
+						<dateFormatItem id="Hv">H時 v</dateFormatItem>
 						<dateFormatItem id="M">M月</dateFormatItem>
 						<dateFormatItem id="Md">M/d</dateFormatItem>
 						<dateFormatItem id="MEd">M/d（E）</dateFormatItem>
@@ -2763,7 +2766,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}{0}</pattern>
+							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -2871,7 +2874,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}{0}</pattern>
+							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
@@ -3512,7 +3515,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<dateTimeFormats>
 					<dateTimeFormatLength type="full">
 						<dateTimeFormat>
-							<pattern draft="contributed">{1}{0}</pattern>
+							<pattern draft="contributed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">

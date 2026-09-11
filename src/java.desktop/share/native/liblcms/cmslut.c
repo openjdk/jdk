@@ -489,25 +489,26 @@ void EvaluateCLUTfloatIn16(const cmsFloat32Number In[], cmsFloat32Number Out[], 
 static
 cmsUInt32Number CubeSize(const cmsUInt32Number Dims[], cmsUInt32Number b)
 {
-    cmsUInt32Number rv, dim;
+    cmsUInt32Number dim;
+    cmsUInt64Number rv;
 
     _cmsAssert(Dims != NULL);
 
     for (rv = 1; b > 0; b--) {
 
         dim = Dims[b-1];
-        if (dim <= 1) return 0;  // Error
-
-        rv *= dim;
+        if (dim <= 1) return 0;
 
         // Check for overflow
         if (rv > UINT_MAX / dim) return 0;
+
+        rv *= dim;
     }
 
     // Again, prevent overflow
     if (rv > UINT_MAX / 15) return 0;
 
-    return rv;
+    return (cmsUInt32Number) rv;
 }
 
 static

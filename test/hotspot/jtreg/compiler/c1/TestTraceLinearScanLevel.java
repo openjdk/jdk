@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,8 @@
  * @summary Sanity check the flag TraceLinearScanLevel with the highest level in a silent HelloWorld program.
  *
  * @requires vm.debug == true & vm.compiler1.enabled & vm.compMode != "Xcomp"
- * @run main/othervm -Xbatch -XX:TraceLinearScanLevel=4 compiler.c1.TestTraceLinearScanLevel
+ * @run main/othervm -Xbatch -XX:-DisplayVMOutput -XX:TraceLinearScanLevel=4
+ *                   compiler.c1.TestTraceLinearScanLevel
  */
 package compiler.c1;
 

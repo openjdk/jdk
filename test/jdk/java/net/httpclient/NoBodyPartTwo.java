@@ -30,7 +30,7 @@
  * @run junit/othervm
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.HttpClient.log=all
- *      NoBodyPartTwo
+ *      ${test.main.class}
  */
 
 import java.io.InputStream;

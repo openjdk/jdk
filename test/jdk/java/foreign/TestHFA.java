@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,16 +26,17 @@
  * @test
  * @summary Test passing of Homogeneous Float Aggregates.
  *
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestHFA
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestHFA
  */
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.*;
+
+import org.junit.jupiter.api.Test;
 
 public class TestHFA {
 
@@ -108,7 +109,7 @@ public class TestHFA {
         fdpass_large_struct_after_structs);
 
     @Test
-    public static void testAddFloatStructs() {
+    public void testAddFloatStructs() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFFFFFFLayout);
@@ -136,7 +137,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToStructAfterFloats() {
+    public void testAddFloatToStructAfterFloats() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -156,7 +157,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToStructAfterStructs() {
+    public void testAddFloatToStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -175,7 +176,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddDoubleToStructAfterStructs() {
+    public void testAddDoubleToStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -194,7 +195,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToLargeStructAfterStructs() {
+    public void testAddFloatToLargeStructAfterStructs() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFFFFFFLayout);
@@ -270,7 +271,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatStructsUpcall() {
+    public void testAddFloatStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFFFFFFLayout);
@@ -302,7 +303,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToStructAfterFloatsUpcall() {
+    public void testAddFloatToStructAfterFloatsUpcall() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -326,7 +327,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToStructAfterStructsUpcall() {
+    public void testAddFloatToStructAfterStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -349,7 +350,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddDoubleToStructAfterStructsUpcall() {
+    public void testAddDoubleToStructAfterStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFLayout);
@@ -372,7 +373,7 @@ public class TestHFA {
     }
 
     @Test
-    public static void testAddFloatToLargeStructAfterStructsUpcall() {
+    public void testAddFloatToLargeStructAfterStructsUpcall() {
         float p0 = 0.0f, p1 = 0.0f, p2 = 0.0f, p3 = 0.0f, p4 = 0.0f, p5 = 0.0f, p6 = 0.0f;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment s = arena.allocate(S_FFFFFFFLayout);

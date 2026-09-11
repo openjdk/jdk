@@ -25,11 +25,17 @@
 package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.cli.StandardValidator.IS_VALID_MAC_BUNDLE_IDENTIFIER;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -39,15 +45,19 @@ import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.AppImageSigningConfig;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLaunchers;
+import jdk.jpackage.internal.model.ApplicationLayout.Directory;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.ExternalApplication;
 import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.MacApplicationMixin;
+import jdk.jpackage.internal.summary.StandardWarning;
+import jdk.jpackage.internal.summary.StandardProperty;
+import jdk.jpackage.internal.summary.SummaryAccumulator;
+import jdk.jpackage.internal.util.ExplodedPath;
 import jdk.jpackage.internal.util.PListReader;
 import jdk.jpackage.internal.util.Result;
-import jdk.jpackage.internal.util.RootedPath;
 
 final class MacApplicationBuilder {
 
@@ -64,6 +74,7 @@ final class MacApplicationBuilder {
         appStore = other.appStore;
         externalInfoPlistFile = other.externalInfoPlistFile;
         signingBuilder = other.signingBuilder;
+        summary = other.summary;
     }
 
     MacApplicationBuilder icon(Path v) {
@@ -101,6 +112,11 @@ final class MacApplicationBuilder {
         return this;
     }
 
+    MacApplicationBuilder summary(SummaryAccumulator v) {
+        summary = v;
+        return this;
+    }
+
     Optional<ExternalApplication> externalApplication() {
         return superBuilder.externalApplication();
     }
@@ -117,7 +133,9 @@ final class MacApplicationBuilder {
         var app = superBuilder.create();
 
         validateAppVersion(app);
-        validateAppContentDirs(app);
+        summary().ifPresent(s -> {
+            validateAppContentDirs(s, app);
+        });
 
         final var mixin = new MacApplicationMixin.Stub(
                 validatedIcon(),
@@ -127,7 +145,14 @@ final class MacApplicationBuilder {
                 appStore,
                 createSigningConfig());
 
-        return MacApplication.create(app, mixin);
+        var macApp = MacApplication.create(app, mixin);
+
+        summary().ifPresent(s -> {
+            s.put(StandardProperty.MAC_BUNDLE_IDENTIFIER, macApp.bundleIdentifier());
+            s.put(StandardProperty.MAC_BUNDLE_NAME, macApp.bundleName());
+        });
+
+        return macApp;
     }
 
     static MacApplication overrideAppImageLayout(MacApplication app, AppImageLayout appImageLayout) {
@@ -149,18 +174,61 @@ final class MacApplicationBuilder {
         }
     }
 
-    private static void validateAppContentDirs(Application app) {
-        app.contentDirSources().stream().filter(rootedPath -> {
-            return rootedPath.branch().getNameCount() == 1;
-        }).map(RootedPath::fullPath).forEach(contentDir -> {
-            if (!Files.isDirectory(contentDir)) {
-                Log.info(I18N.format("warning.app.content.is.not.dir",
-                        contentDir));
-            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName())) {
-                Log.info(I18N.format("warning.non.standard.contents.sub.dir",
-                        contentDir));
-            }
+    private static Stream<Path> appContentTopPaths(Application app) {
+        return app.filterUserContent(Directory.CONTENT_DIR).flatMap(explodedPath -> {
+            return explodedPath.children().stream().map(ExplodedPath.Node::path).filter(childPath -> {
+                return childPath.getNameCount() == 1;
+            }).map(explodedPath.root()::resolve);
         });
+    }
+
+    private static void validateAppContentDirs(SummaryAccumulator summary, Application app) {
+        var warnings = appContentTopPaths(app)
+                .map(NonStandardAppContentWarning::createMapEntry)
+                .flatMap(Optional::stream)
+                .collect(groupingBy(
+                        Map.Entry::getKey,
+                        mapping(Map.Entry::getValue, toList())
+                )).entrySet().stream()
+                .sorted(Comparator.comparing(
+                        Map.Entry::getKey,
+                        Comparator.comparing(Enum::ordinal)
+                ))
+                .map(Map.Entry::getValue)
+                .flatMap(Collection::stream)
+                .toList();
+        if (!warnings.isEmpty()) {
+            summary.putMultiValue(StandardWarning.MAC_NON_STANDARD_APP_CONTENT, warnings);
+        }
+    }
+
+    private enum NonStandardAppContentWarning {
+        NOT_DIRECTORY("warning.non-standard-app-content.not-dir"),
+        NON_STANDARD_DIRECTOTY_NAME("warning.non-standard-app-content.non-standard-dir-name"),
+        ;
+
+        NonStandardAppContentWarning(String formatKey) {
+            this.formatKey = Objects.requireNonNull(formatKey);
+        }
+
+        static Optional<Map.Entry<NonStandardAppContentWarning, String>> createMapEntry(Path contentDir) {
+            if (!Files.isDirectory(contentDir)) {
+                return Optional.of(Map.entry(NOT_DIRECTORY, NOT_DIRECTORY.format(contentDir)));
+            } else if (!CONTENTS_SUB_DIRS.contains(contentDir.getFileName())) {
+                return Optional.of(Map.entry(
+                        NON_STANDARD_DIRECTOTY_NAME,
+                        NON_STANDARD_DIRECTOTY_NAME.format(contentDir.getFileName(), contentDir)
+                ));
+            } else {
+                return Optional.empty();
+            }
+        }
+
+        private String format(Object... formatArgs) {
+            return I18N.format(formatKey, formatArgs);
+        }
+
+        private final String formatKey;
     }
 
     private MacApplicationBuilder createCopyForExternalInfoPlistFile() {
@@ -186,7 +254,10 @@ final class MacApplicationBuilder {
             }
 
             if (builder.superBuilder.version().isEmpty()) {
-                plist.findValue("CFBundleVersion").ifPresent(builder.superBuilder::version);
+                plist.findValue("CFBundleVersion").ifPresent(ver -> {
+                    Log.trace("Derive bundle version [%s] from [%s] file", ver, externalInfoPlistFile);
+                    builder.superBuilder.version(ver);
+                });
             }
         });
 
@@ -227,9 +298,11 @@ final class MacApplicationBuilder {
             return appName;
         });
 
-        if (value.length() > MAX_BUNDLE_NAME_LENGTH && (bundleName != null)) {
-            Log.error(I18N.format("message.bundle-name-too-long-warning", "--mac-package-name", value));
-        }
+        summary().ifPresent(s -> {
+            if (value.length() > MAX_BUNDLE_NAME_LENGTH && (bundleName != null)) {
+                s.put(StandardWarning.MAC_BUNDLE_NAME_TOO_LONG, (Object)value);
+            }
+        });
 
         return value;
     }
@@ -261,7 +334,7 @@ final class MacApplicationBuilder {
                 }
             }
 
-            Log.verbose(I18N.format("message.derived-bundle-identifier", derivedValue));
+            Log.trace("Derived bundle identifier: %s", derivedValue);
             return derivedValue;
         });
     }
@@ -274,6 +347,10 @@ final class MacApplicationBuilder {
         return Optional.ofNullable(icon).map(LauncherBuilder::validateIcon);
     }
 
+    private Optional<SummaryAccumulator> summary() {
+        return Optional.ofNullable(summary);
+    }
+
     private record Defaults(String category) {
     }
 
@@ -284,6 +361,7 @@ final class MacApplicationBuilder {
     private boolean appStore;
     private Path externalInfoPlistFile;
     private AppImageSigningConfigBuilder signingBuilder;
+    private SummaryAccumulator summary;
 
     private final ApplicationBuilder superBuilder;
 

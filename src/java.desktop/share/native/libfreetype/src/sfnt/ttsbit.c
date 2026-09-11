@@ -4,7 +4,7 @@
  *
  *   TrueType and OpenType embedded bitmap support (body).
  *
- * Copyright (C) 2005-2025 by
+ * Copyright (C) 2005-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * Copyright 2013 by Google, Inc.

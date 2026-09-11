@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.step_up.step_up001;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -54,7 +55,7 @@ public class step_up001a {
         Thread holder [] = new Thread[numThreads];
 
         for (int i = 0; i < numThreads ; i++) {
-            holder[i] = new MyThread();
+            holder[i] = new MyThread(MYTHREAD + "-" + i).getThread();
             holder[i].start();
             try {
                 holder[i].join();
@@ -70,7 +71,11 @@ public class step_up001a {
 }
 
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
+    public MyThread(String name) {
+        super(name);
+    }
+
     public void run() {
         int runLocal = func1(100);
     }

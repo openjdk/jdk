@@ -27,13 +27,13 @@
  * @key intermittent
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
- * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ManyRequests
- * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ManyRequests
- * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ManyRequests
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=ssl,channel ${test.main.class}
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true ${test.main.class}
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.chunkSize=64 ${test.main.class}
+ * @run main/othervm/timeout=160 -Djdk.httpclient.HttpClient.log=channel -Dtest.insertDelay=true -Dtest.chunkSize=64 ${test.main.class}
  * @summary Send a large number of requests asynchronously
  */
- // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ManyRequests
+ // * @run main/othervm/timeout=40 -Djdk.httpclient.HttpClient.log=ssl,channel ${test.main.class}
 
 import java.io.IOException;
 import java.io.InputStream;

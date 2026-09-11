@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1NUMA.hpp"
 
-uint G1FreeRegionList::_unrealistically_long_length = 0;
+uint G1FreeRegionList::_unrealistically_large_num_regions = 0;
 
 #ifndef PRODUCT
 void G1HeapRegionSetBase::verify_region(G1HeapRegion* hr) {
@@ -47,8 +47,8 @@ void G1HeapRegionSetBase::verify() {
   // verification might fail and send us on a wild goose chase.
   check_mt_safety();
 
-  guarantee_heap_region_set(( is_empty() && length() == 0) ||
-                            (!is_empty() && length() > 0),
+  guarantee_heap_region_set(( is_empty() && num_regions() == 0) ||
+                            (!is_empty() && num_regions() > 0),
                             "invariant");
 }
 
@@ -75,17 +75,17 @@ void G1HeapRegionSetBase::print_on(outputStream* out, bool print_contents) {
   out->cr();
   out->print_cr("Set: %s (" PTR_FORMAT ")", name(), p2i(this));
   out->print_cr("  Region Type         : %s", _checker->get_description());
-  out->print_cr("  Length              : %14u", length());
+  out->print_cr("  Regions             : %14u", num_regions());
 }
 
 G1HeapRegionSetBase::G1HeapRegionSetBase(const char* name, G1HeapRegionSetChecker* checker)
-  : _checker(checker), _length(0), _name(name), _verify_in_progress(false)
+  : _checker(checker), _num_regions(0), _name(name), _verify_in_progress(false)
 {
 }
 
-void G1FreeRegionList::set_unrealistically_long_length(uint len) {
-  guarantee(_unrealistically_long_length == 0, "should only be set once");
-  _unrealistically_long_length = len;
+void G1FreeRegionList::set_unrealistically_large_num_regions(uint num_regions) {
+  guarantee(_unrealistically_large_num_regions == 0, "should only be set once");
+  _unrealistically_large_num_regions = num_regions;
 }
 
 void G1FreeRegionList::abandon() {
@@ -107,7 +107,7 @@ void G1FreeRegionList::remove_all() {
     curr->set_prev(nullptr);
     curr->set_containing_set(nullptr);
 
-    decrease_length(curr->node_index());
+    decrease_num_regions(curr->node_index());
 
     curr = next;
   }
@@ -144,7 +144,7 @@ void G1FreeRegionList::add_list_common_start(G1FreeRegionList* from_list) {
 }
 
 void G1FreeRegionList::add_list_common_end(G1FreeRegionList* from_list) {
-  _length += from_list->length();
+  _num_regions += from_list->num_regions();
   from_list->clear();
 
   verify_optional();
@@ -160,7 +160,7 @@ void G1FreeRegionList::append_ordered(G1FreeRegionList* from_list) {
 
   if (is_empty()) {
     // Make from_list the current list.
-    assert_free_region_list(length() == 0 && _tail == nullptr, "invariant");
+    assert_free_region_list(num_regions() == 0 && _tail == nullptr, "invariant");
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
@@ -184,7 +184,7 @@ void G1FreeRegionList::add_ordered(G1FreeRegionList* from_list) {
   }
 
   if (is_empty()) {
-    assert_free_region_list(length() == 0 && _tail == nullptr, "invariant");
+    assert_free_region_list(num_regions() == 0 && _tail == nullptr, "invariant");
     _head = from_list->_head;
     _tail = from_list->_tail;
   } else {
@@ -243,14 +243,14 @@ void G1FreeRegionList::verify_region_to_remove(G1HeapRegion* curr, G1HeapRegion*
 }
 #endif
 
-void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions) {
+void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions_to_remove) {
   check_mt_safety();
-  assert_free_region_list(num_regions >= 1, "pre-condition");
+  assert_free_region_list(num_regions_to_remove >= 1, "pre-condition");
   assert_free_region_list(!is_empty(), "pre-condition");
-  assert_free_region_list(length() >= num_regions, "pre-condition");
+  assert_free_region_list(num_regions() >= num_regions_to_remove, "pre-condition");
 
   verify_optional();
-  DEBUG_ONLY(uint old_length = length();)
+  DEBUG_ONLY(uint old_num_regions = num_regions();)
 
   // prev points to the node right before first or null when first == _head
   G1HeapRegion* const prev = first->prev();
@@ -260,8 +260,8 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions)
   G1HeapRegion* next = first->next();
 
   G1HeapRegion* curr = first;
-  uint count = 0;
-  while (count < num_regions) {
+  uint num_regions_removed = 0;
+  while (num_regions_removed < num_regions_to_remove) {
     verify_region(curr);
     next = curr->next();
     verify_region_to_remove(curr, next);
@@ -274,9 +274,9 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions)
     curr->set_prev(nullptr);
     remove(curr);
 
-    count++;
+    num_regions_removed++;
 
-    decrease_length(curr->node_index());
+    decrease_num_regions(curr->node_index());
 
     curr = next;
   }
@@ -292,13 +292,13 @@ void G1FreeRegionList::remove_starting_at(G1HeapRegion* first, uint num_regions)
     next->set_prev(prev);
   }
 
-  assert(count == num_regions,
-         "[%s] count: %u should be == num_regions: %u",
-         name(), count, num_regions);
-  assert(length() + num_regions == old_length,
-         "[%s] new length should be consistent "
-         "new length: %u old length: %u num_regions: %u",
-         name(), length(), old_length, num_regions);
+  assert(num_regions_removed == num_regions_to_remove,
+         "[%s] removed: %u should be equal to num_regions_to_remove: %u",
+         name(), num_regions_removed, num_regions_to_remove);
+  assert(num_regions() + num_regions_to_remove == old_num_regions,
+         "[%s] new num_regions should be equal "
+         "new num_regions: %u old num_regions: %u num_regions_to_remove: %u",
+         name(), num_regions(), old_num_regions, num_regions_to_remove);
 
   verify_optional();
 }
@@ -317,7 +317,7 @@ void G1FreeRegionList::verify() {
 }
 
 void G1FreeRegionList::clear() {
-  _length = 0;
+  _num_regions = 0;
   _head = nullptr;
   _tail = nullptr;
   _last = nullptr;
@@ -331,26 +331,23 @@ void G1FreeRegionList::verify_list() {
   G1HeapRegion* curr = _head;
   G1HeapRegion* prev1 = nullptr;
   G1HeapRegion* prev0 = nullptr;
-  uint count = 0;
-  size_t capacity = 0;
+  uint actual_num_regions = 0;
   uint last_index = 0;
 
   guarantee(_head == nullptr || _head->prev() == nullptr, "_head should not have a prev");
   while (curr != nullptr) {
     verify_region(curr);
 
-    count++;
-    guarantee(count < _unrealistically_long_length,
-              "[%s] the calculated length: %u seems very long, is there maybe a cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " length: %u",
-              name(), count, p2i(curr), p2i(prev0), p2i(prev1), length());
+    actual_num_regions++;
+    guarantee(actual_num_regions < _unrealistically_large_num_regions,
+              "[%s] the calculated number of regions: %u seems unrealistically large, cycle? curr: " PTR_FORMAT " prev0: " PTR_FORMAT " " "prev1: " PTR_FORMAT " num_regions: %u",
+              name(), actual_num_regions, p2i(curr), p2i(prev0), p2i(prev1), num_regions());
 
     if (curr->next() != nullptr) {
       guarantee(curr->next()->prev() == curr, "Next or prev pointers messed up");
     }
     guarantee(curr->hrm_index() == 0 || curr->hrm_index() > last_index, "List should be sorted");
     last_index = curr->hrm_index();
-
-    capacity += curr->capacity();
 
     prev1 = prev0;
     prev0 = curr;
@@ -359,7 +356,7 @@ void G1FreeRegionList::verify_list() {
 
   guarantee(_tail == prev0, "Expected %s to end with %u but it ended with %u.", name(), _tail->hrm_index(), prev0->hrm_index());
   guarantee(_tail == nullptr || _tail->next() == nullptr, "_tail should not have a next");
-  guarantee(length() == count, "%s count mismatch. Expected %u, actual %u.", name(), length(), count);
+  guarantee(num_regions() == actual_num_regions, "%s num_regions mismatch. Expected %u, actual %u.", name(), num_regions(), actual_num_regions);
 }
 
 
@@ -376,25 +373,25 @@ G1FreeRegionList::~G1FreeRegionList() {
   }
 }
 
-G1FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _length_of_node(nullptr),
+G1FreeRegionList::NodeInfo::NodeInfo() : _numa(G1NUMA::numa()), _num_regions_on_node(nullptr),
                                          _num_nodes(_numa->num_active_nodes()) {
   assert(UseNUMA, "Invariant");
 
-  _length_of_node = NEW_C_HEAP_ARRAY(uint, _num_nodes, mtGC);
+  _num_regions_on_node = NEW_C_HEAP_ARRAY(uint, _num_nodes, mtGC);
 }
 
 G1FreeRegionList::NodeInfo::~NodeInfo() {
-  FREE_C_HEAP_ARRAY(uint, _length_of_node);
+  FREE_C_HEAP_ARRAY(_num_regions_on_node);
 }
 
 void G1FreeRegionList::NodeInfo::clear() {
   for (uint i = 0; i < _num_nodes; ++i) {
-    _length_of_node[i] = 0;
+    _num_regions_on_node[i] = 0;
   }
 }
 
 void G1FreeRegionList::NodeInfo::add(NodeInfo* info) {
   for (uint i = 0; i < _num_nodes; ++i) {
-    _length_of_node[i] += info->_length_of_node[i];
+    _num_regions_on_node[i] += info->_num_regions_on_node[i];
   }
 }

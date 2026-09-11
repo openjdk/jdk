@@ -1,4 +1,4 @@
- // The original code for simplex algorithm is taken from Haruhiko Okumura's book.
+// The original code for simplex algorithm is taken from Haruhiko Okumura's book.
 // https://oku.edu.mie-u.ac.jp/~okumura/algo/
 // The code is distributed under the Creative Commons Attribution 4.0 International License.
 // https://creativecommons.org/licenses/by/4.0/
@@ -156,7 +156,7 @@ static void tableau(mpfr_t ret, int i, int j) {
 
   if (j <= n) {
     mpfr_t s;
-    mpfr_zinit(s);
+    mpfr_init(s);
     mpfr_set_d(s, 0, GMP_RNDN);
 
     mpfr_t *tab = malloc(sizeof(mpfr_t) * (m + 1));
@@ -190,9 +190,7 @@ static void tableau(mpfr_t ret, int i, int j) {
 static void pivot(int ipivot, int jpivot) {
   int i, j;
   mpfr_t u;
-
-  mpfr_zinit(u);
-
+  mpfr_init(u);
   mpfr_set(u, pivotcolumn[ipivot], GMP_RNDN);
 
   for (j = 1; j <= m; j++) {
@@ -254,7 +252,8 @@ static int minimize() {
 static int phase1() {
   int i, j;
   mpfr_t u;
-  mpfr_zinit(u);
+  mpfr_init(u);
+  mpfr_set_d(u, 0, GMP_RNDN);
 
   jmax = n3;
   for (i = 0; i <= m; i++) {
@@ -309,7 +308,8 @@ int solve_fr(mpfr_t *result, int n0, int m0, mpfr_t **a0, int *ineq0, mpfr_t *c0
   init(n, m);
 
   mpfr_t csum;
-  mpfr_zinit(csum);
+  mpfr_init(csum);
+  mpfr_set_d(csum, 0, GMP_RNDN);
 
   for(j=0;j<n0+1;j++) {
     mpfr_set(c[j], c0[j], GMP_RNDN);
@@ -370,7 +370,8 @@ int solve_fr(mpfr_t *result, int n0, int m0, mpfr_t **a0, int *ineq0, mpfr_t *c0
   }
 
   mpfr_t cs;
-  mpfr_zinit(cs);
+  mpfr_init(cs);
+  mpfr_set_d(cs, 0, GMP_RNDN);
   if (row[n] != 0) tableau(cs, row[n], 0);
 
   for (j = 1; j < n; j++) {

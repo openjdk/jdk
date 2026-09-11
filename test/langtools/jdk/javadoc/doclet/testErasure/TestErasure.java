@@ -103,9 +103,9 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
                 <ol class="toc-list">
-                <li><a href="#%3Cinit%3E(T)" tabindex="0">Foo(T)</a></li>
-                <li><a href="#%3Cinit%3E(X)" tabindex="0">Foo(T)</a></li>
-                <li><a href="#%3Cinit%3E(Y)" tabindex="0">Foo(T)</a></li>
+                <li><a href="#%3Cinit%3E(T)" tabindex="0">Foo(<wbr>T)</a></li>
+                <li><a href="#%3Cinit%3E(X)" tabindex="0">Foo(<wbr>T)</a></li>
+                <li><a href="#%3Cinit%3E(Y)" tabindex="0">Foo(<wbr>T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """
@@ -145,9 +145,9 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#method-detail" tabindex="0">Method Details</a>
                 <ol class="toc-list">
-                <li><a href="#m(T)" tabindex="0">m(T)</a></li>
-                <li><a href="#m(X)" tabindex="0">m(T)</a></li>
-                <li><a href="#m(Y)" tabindex="0">m(T)</a></li>
+                <li><a href="#m(T)" tabindex="0">m(<wbr>T)</a></li>
+                <li><a href="#m(X)" tabindex="0">m(<wbr>T)</a></li>
+                <li><a href="#m(Y)" tabindex="0">m(<wbr>T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """
@@ -210,8 +210,8 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#constructor-detail" tabindex="0">Constructor Details</a>
                 <ol class="toc-list">
-                <li><a href="#%3Cinit%3E(T)" tabindex="0">Foo(T)</a></li>
-                <li><a href="#%3Cinit%3E(X)" tabindex="0">Foo(T)</a></li>
+                <li><a href="#%3Cinit%3E(T)" tabindex="0">Foo(<wbr>T)</a></li>
+                <li><a href="#%3Cinit%3E(X)" tabindex="0">Foo(<wbr>T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """
@@ -242,8 +242,8 @@ public class TestErasure extends JavadocTester {
         checkOutput("Foo.html", true, """
                 <li><a href="#method-detail" tabindex="0">Method Details</a>
                 <ol class="toc-list">
-                <li><a href="#m(T)" tabindex="0">m(T)</a></li>
-                <li><a href="#m(X)" tabindex="0">m(T)</a></li>
+                <li><a href="#m(T)" tabindex="0">m(<wbr>T)</a></li>
+                <li><a href="#m(X)" tabindex="0">m(<wbr>T)</a></li>
                 </ol>
                 </li>""");
         checkOutput("index-all.html", true, """

@@ -38,7 +38,7 @@ private:
   Arena *_arena;
   GrowableArray<ciBlock *>  *_blocks;
   ciBlock  **_bci_to_block;
-  int _num_blocks;
+  u2 _num_blocks;
   int _code_size;
 
   void do_analysis();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,28 +203,28 @@ class valuetobe001aCheckedClass {
         X0  = new Class();
         X1  = new Class[]     {X0};
         X2  = new Class[][]   {X1};
-        Z0  = new Boolean(true);
+        Z0  = new Boolean(z0);
         Z1  = new Boolean[]   {Z0};
         Z2  = new Boolean[][] {Z1};
-        B0  = new Byte(java.lang.Byte.MIN_VALUE);
+        B0  = new Byte(b0);
         B1  = new Byte[]      {B0};
         B2  = new Byte[][]    {B1};
-        C0  = new Character(java.lang.Character.MIN_VALUE);
+        C0  = new Character(c0);
         C1  = new Character[] {C0};
         C2  = new Character[][]{C1};
-        D0  = Double.valueOf(java.lang.Double.MIN_VALUE);
+        D0  = Double.valueOf(d0);
         D1  = new Double[]    {D0};
         D2  = new Double[][]  {D1};
-        F0  = Float.valueOf(java.lang.Float.MIN_VALUE);
+        F0  = Float.valueOf(f0);
         F1  = new Float[]     {F0};
         F2  = new Float[][]   {F1};
-        I0  = Integer.valueOf(java.lang.Integer.MIN_VALUE);
+        I0  = Integer.valueOf(i0);
         I1  = new Integer[]   {I0};
         I2  = new Integer[][] {I1};
-        L0  = Long.valueOf(java.lang.Long.MIN_VALUE);
+        L0  = Long.valueOf(l0);
         L1  = new Long[]      {L0};
         L2  = new Long[][]    {L1};
-        S0  = Short.valueOf(java.lang.Short.MIN_VALUE);
+        S0  = Short.valueOf(s0);
         S1  = new Short[]     {S0};
         S2  = new Short[][]   {S1};
         W0  = new String();
@@ -234,22 +234,22 @@ class valuetobe001aCheckedClass {
         O1  = new Object[]    {O0};
         O2  = new Object[][]  {O1};
 
-        LS0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LS0 = Long.valueOf(l0);
         LS1 = new Long[]      {LS0};
         LS2 = new Long[][]    {LS1};
-        LP0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LP0 = Long.valueOf(l0);
         LP1 = new Long[]      {LP0};
         LP2 = new Long[][]    {LP1};
-        LU0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LU0 = Long.valueOf(l0);
         LU1 = new Long[]      {LU0};
         LU2 = new Long[][]    {LU1};
-        LR0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LR0 = Long.valueOf(l0);
         LR1 = new Long[]      {LR0};
         LR2 = new Long[][]    {LR1};
-        LT0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LT0 = Long.valueOf(l0);
         LT1 = new Long[]      {LT0};
         LT2 = new Long[][]    {LT1};
-        LV0 = Long.valueOf(java.lang.Long.MAX_VALUE);
+        LV0 = Long.valueOf(l0);
         LV1 = new Long[]      {LV0};
         LV2 = new Long[][]    {LV1};
 

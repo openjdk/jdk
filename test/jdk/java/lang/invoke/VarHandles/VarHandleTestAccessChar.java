@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,14 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessChar
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessChar
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessChar
@@ -50,17 +52,17 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestAccessChar extends VarHandleBaseTest {
     static final char static_final_v = '\u0123';
 
-    static char static_v;
+    static char static_v = '\u0123';
 
-    final char final_v = '\u0123';
+    final char final_v;
 
     char v;
 
     static final char static_final_v2 = '\u0123';
 
-    static char static_v2;
+    static char static_v2 = '\u0123';
 
-    final char final_v2 = '\u0123';
+    final char final_v2;
 
     char v2;
 
@@ -74,6 +76,13 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
 
     VarHandle vhArray;
 
+    public VarHandleTestAccessChar() {
+        final_v = '\u0123';
+        v = '\u0123';
+        final_v2 = '\u0123';
+        v2 = '\u0123';
+        super();
+    }
 
     VarHandle[] allocate(boolean same) {
         List<VarHandle> vhs = new ArrayList<>();
@@ -308,7 +317,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Lazy
         {
             char x = (char) vh.getAcquire(recv);
-            assertEquals('\u0123', x, "getRelease char value");
+            assertEquals('\u0123', x, "getAcquire char value");
         }
 
         // Opaque
@@ -357,7 +366,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
         // Lazy
         {
             char x = (char) vh.getAcquire();
-            assertEquals('\u0123', x, "getRelease char value");
+            assertEquals('\u0123', x, "getAcquire char value");
         }
 
         // Opaque
@@ -601,7 +610,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set(recv, '\u0123');
 
             char o = (char) vh.getAndAddRelease(recv, '\u4567');
-            assertEquals('\u0123', o, "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddRelease char");
             char x = (char) vh.get(recv);
             assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
@@ -909,7 +918,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             vh.set('\u0123');
 
             char o = (char) vh.getAndAddRelease('\u4567');
-            assertEquals('\u0123', o, "getAndAddReleasechar");
+            assertEquals('\u0123', o, "getAndAddRelease char");
             char x = (char) vh.get();
             assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
         }
@@ -1220,7 +1229,7 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
                 vh.set(array, i, '\u0123');
 
                 char o = (char) vh.getAndAddRelease(array, i, '\u4567');
-                assertEquals('\u0123', o, "getAndAddReleasechar");
+                assertEquals('\u0123', o, "getAndAddRelease char");
                 char x = (char) vh.get(array, i);
                 assertEquals((char)('\u0123' + '\u4567'), x, "getAndAddRelease char value");
             }
@@ -1450,6 +1459,5 @@ public class VarHandleTestAccessChar extends VarHandleBaseTest {
             });
         }
     }
-
 }
 

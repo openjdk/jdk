@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@
  */
 
 import jdk.test.lib.Utils;
+import jdk.test.lib.Platform;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.whitebox.WhiteBox;
@@ -70,7 +71,12 @@ public class NMTPrintMallocSiteOfCorruptedMemory {
             case HEADER_AND_SITE_ARG, FOOTER_AND_SITE_ARG -> output.shouldContain("allocation-site cannot be shown since the marker is also corrupted.");
             case HEADER_ARG, FOOTER_ARG -> {
                 output.shouldContain("allocated from:");
-                output.shouldMatch("\\[.*\\]WB_NMTMalloc\\+0x.*");
+                // We will only have this if NMT can determine the name of the symbols in the stack trace.
+                // This will most likely be true if the platform is Linux and it's a debug build,
+                // so we only check it for that platform and build.
+                if (Platform.isLinux() && Platform.isDebugBuild()) {
+                    output.shouldMatch("\\[.*\\]WB_NMTMalloc\\+0x.*");
+                }
             }
         }
     }

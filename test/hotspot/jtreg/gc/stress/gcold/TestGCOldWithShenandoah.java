@@ -71,6 +71,11 @@ package gc.stress.gcold;
  *
  * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
+ *      -XX:ShenandoahPinRegionRate=1000
+ *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
+ *
+ * @run main/othervm -Xmx384M -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=aggressive
  *      gc.stress.gcold.TestGCOld 50 1 20 10 10000
  */
 

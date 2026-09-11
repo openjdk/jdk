@@ -77,7 +77,7 @@ double G1ConcurrentMarkThread::mmu_delay_end(G1Policy* policy, bool remark) {
 void G1ConcurrentMarkThread::delay_to_keep_mmu(bool remark) {
   G1Policy* policy = G1CollectedHeap::heap()->policy();
 
-  if (policy->use_adaptive_young_list_length()) {
+  if (policy->use_adaptive_num_young_regions()) {
     double delay_end_sec = mmu_delay_end(policy, remark);
     // Wait for timeout or thread termination request.
     MonitorLocker ml(G1CGC_lock, Monitor::_no_safepoint_check_flag);
@@ -120,10 +120,10 @@ void G1ConcurrentMarkThread::run_service() {
 
     concurrent_cycle_start();
 
-    if (_state == FullCycleMarking) {
+    if (state() == FullCycleMarking) {
       concurrent_mark_cycle_do();
     } else {
-      assert(_state == UndoCycleResetForNextCycle, "Must do undo mark but is %d", _state);
+      assert(state() == UndoCycleResetForNextCycle, "Must do undo mark but is %d", state());
       concurrent_undo_cycle_do();
     }
 
@@ -262,23 +262,6 @@ void G1ConcurrentMarkThread::concurrent_cycle_start() {
 void G1ConcurrentMarkThread::concurrent_mark_cycle_do() {
   HandleMark hm(Thread::current());
   ResourceMark rm;
-
-  // We have to ensure that we finish scanning the root regions
-  // before the next GC takes place. To ensure this we have to
-  // make sure that we do not join the STS until the root regions
-  // have been scanned. If we did then it's possible that a
-  // subsequent GC could block us from joining the STS and proceed
-  // without the root regions have been scanned which would be a
-  // correctness issue.
-  //
-  // So do not return before the scan root regions phase as a GC waits for a
-  // notification from it.
-  //
-  // For the same reason ConcurrentGCBreakpoints (in the phase methods) before
-  // here risk deadlock, because a young GC must wait for root region scanning.
-  //
-  // We can not easily abort before root region scan either because of the
-  // reasons mentioned in G1CollectedHeap::abort_concurrent_cycle().
 
   // Phase 1: Scan root regions.
   if (phase_scan_root_regions()) return;

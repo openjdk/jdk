@@ -28,7 +28,7 @@
  *          immediately with a Publisher<List<ByteBuffer>>
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.HttpServerAdapters
- * @run junit/othervm/timeout=480 ResponsePublisher
+ * @run junit/othervm/timeout=480 ${test.main.class}
  */
 
 import jdk.internal.net.http.common.OperationTrackers;

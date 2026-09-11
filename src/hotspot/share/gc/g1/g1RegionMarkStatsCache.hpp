@@ -44,6 +44,8 @@ struct G1RegionMarkStats {
   Atomic<size_t> _live_words;
   Atomic<size_t> _incoming_refs;
 
+  G1RegionMarkStats() : _live_words(0), _incoming_refs(0) { }
+
   // Clear all members.
   void clear() {
     _live_words.store_relaxed(0);
@@ -119,6 +121,16 @@ public:
     // This method is only ever called single-threaded, so we do not need atomic
     // update here.
     cur->_stats._live_words.store_relaxed(cur->_stats.live_words() + live_words);
+  }
+
+  void verify_no_mark_stats_for(uint region_idx) {
+    uint const cache_idx = hash(region_idx);
+    G1RegionMarkStatsCacheEntry* const cur = &_cache[cache_idx];
+    if (cur->_region_idx != region_idx) {
+      return;
+    }
+    assert(cur->_stats.incoming_refs() == 0, "must be");
+    assert(cur->_stats.live_words() == 0, "must be");
   }
 
   void inc_incoming_refs(uint region_idx) {

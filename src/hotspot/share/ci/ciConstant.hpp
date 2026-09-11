@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,6 +109,7 @@ public:
     return _value._object;
   }
 
+  static ciConstant make_zero_or_null(BasicType);
   bool is_null_or_zero() const;
 
   bool is_valid() const {
@@ -118,7 +119,7 @@ public:
   bool is_loaded() const;
 
   // Debugging output
-  void print();
+  void print() const;
 };
 
 #endif // SHARE_CI_CICONSTANT_HPP

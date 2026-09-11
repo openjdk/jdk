@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
@@ -274,6 +276,17 @@ public class Date extends java.util.Date {
     static final long serialVersionUID = 1511598038487230103L;
 
     /**
+     * The epoch millisecond value of 0002-01-01T00:00:00.000 at UTC in
+     * the Julian-Gregorian hybrid calendar system.
+     * We cannot use 1st January 1AD as different timezones could possibly
+     * offset the date back into BC, thus resulting in the incorrect BC year.
+     * While a one year margin is considerably larger than any possible
+     * timezone offset, it gives us a comfortable distance while still
+     * providing a faster code path for almost 1970 years.
+     */
+    private static final long TWO_AD_AT_UTC_EPOCH_MILLIS = -62104233600000L;
+
+    /**
      * Obtains an instance of {@code Date} from a {@link LocalDate} object
      * with the same year, month and day of month value as the given
      * {@code LocalDate}.
@@ -300,7 +313,40 @@ public class Date extends java.util.Date {
      */
     @SuppressWarnings("deprecation")
     public LocalDate toLocalDate() {
-        return LocalDate.of(getYear() + 1900, getMonth() + 1, getDate());
+        return LocalDate.of(
+            toGregorianProlepticYear(getYear() + 1900, getTime()),
+            getMonth() + 1,
+            getDate());
+    }
+
+    /**
+     * Converts an era-relative calendar year into the correct proleptic year.
+     * <p>
+     * The milliseconds is required to determine if the given year is a BC or AD year.
+     *
+     * @param year the era-relative calendar year.
+     * @param millis the epoch millisecond represented by the date with the given year
+     * used to determine the calendar era.
+     * @return the proleptic year corresponding to {@code year} and {@code millis}
+     */
+    static int toGregorianProlepticYear(int year, long millis) {
+        // We need to determine the era of the year using the given millis.
+        // However, deriving a new calendar is a relatively expensive operation
+        // that we would ideally avoid if possible.
+        // Given that we can comfortably state that any dates on or after
+        // 0002-01-01 are AD, we only need to test dates earlier than this cutoff.
+        if (millis < TWO_AD_AT_UTC_EPOCH_MILLIS) {
+            final GregorianCalendar calendar = new GregorianCalendar();
+            calendar.setTimeInMillis(millis);
+            if (calendar.get(Calendar.ERA) == GregorianCalendar.BC) {
+                // Adjust the BC date into a negative astronomical date.
+                // As there is no year 0 in the Gregorian calendar
+                // we also have to adjust the BC year by 1.
+                // 1 BC becomes year 0, 2 BC becomes year -1 and so on.
+                year = 1 - year;
+            }
+        }
+        return year;
     }
 
    /**

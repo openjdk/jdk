@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,16 @@
  * @test
  * @bug 8231358
  * @compile ../../nio/file/spi/testfsp/testfsp/TestProvider.java AddressTest.java
- * @run testng/othervm AddressTest
+ * @run junit/othervm ${test.main.class}
  */
 
 import java.net.UnixDomainSocketAddress;
 import java.net.URI;
 import java.nio.file.FileSystems;
-import java.nio.file.spi.FileSystemProvider;
 import java.nio.file.Path;
 
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertThrows;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Verify that UnixDomainSocketAddress.of(path) throws IAE
@@ -50,7 +48,7 @@ public class AddressTest {
         IllegalArgumentException.class;
 
     @Test
-    public static void runTest() throws Exception {
+    public void runTest() throws Exception {
         var fsp = new testfsp.TestProvider(FileSystems.getDefault().provider());
         Path path = fsp.getPath(URI.create("file:/"));
         assertThrows(IAE, () -> UnixDomainSocketAddress.of(path));

@@ -29,7 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm/timeout=40  -Djdk.internal.httpclient.debug=false -Djdk.httpclient.HttpClient.log=trace,errors,headers
- *                              CancelledPartialResponseTest
+ *                              ${test.main.class}
  */
 
 import jdk.httpclient.test.lib.common.HttpServerAdapters;

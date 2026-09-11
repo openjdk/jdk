@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package compiler.lib.compile_framework;
 /**
  * Exception thrown in the Compilation Framework. Most likely, the user is responsible for the failure.
  */
+@SuppressWarnings("serial")
 public class CompileFrameworkException extends RuntimeException {
     public CompileFrameworkException(String message) {
         super("Exception in Compile Framework:" + System.lineSeparator() + message);

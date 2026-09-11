@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,64 +26,84 @@
  * @bug 8148609
  * @library /test/lib
  * @summary Assert that the set of socket options are immutable
- * @run testng/othervm ImmutableOptions
- * @run testng/othervm -Djava.net.preferIPv4Stack=true ImmutableOptions
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
  */
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.DatagramSocketImpl;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketException;
+import java.net.SocketImpl;
+import java.net.SocketImplFactory;
+import java.net.SocketOption;
 import java.util.Set;
 
-import jdk.test.lib.net.IPSupport;
+import static jdk.test.lib.net.IPSupport.diagnoseConfigurationIssue;
 
-import org.testng.annotations.BeforeTest;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ImmutableOptions {
 
-    @BeforeTest
-    void setupServerSocketFactory() throws IOException {
-        IPSupport.throwSkippedExceptionIfNonOperational();
+    @BeforeAll
+    public static void setupServerSocketFactory() throws IOException {
+        diagnoseConfigurationIssue().ifPresent(Assumptions::abort);
         ServerSocket.setSocketFactory(new ServerSocketImplFactory());
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void socketThrows() throws IOException {
         CustomSocketImpl impl = new CustomSocketImpl();
         Socket socket = new CustomSocket(impl);
-        socket.supportedOptions().clear();
+        Set<SocketOption<?>> options = socket.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void socketImplThrows() throws IOException {
         CustomSocketImpl impl = new CustomSocketImpl();
-        impl.supportedOptions().clear();
+        var options = impl.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void serverSocketThrows() throws IOException {
         ServerSocket ss = new ServerSocket();
-        ss.supportedOptions().clear();
+        Set<SocketOption<?>> options = ss.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void serverSocketImplThrows() throws IOException {
         ServerSocket ss = new ServerSocket();
-        ServerSocketImplFactory.mostRecentlyCreated.supportedOptions().clear();
+        Set<SocketOption<?>> options =
+                ServerSocketImplFactory.mostRecentlyCreated.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void datagramSocketThrows() throws IOException {
         CustomDatagramSocketImpl impl = new CustomDatagramSocketImpl();
         DatagramSocket socket = new CustomDatagramSocket(impl);
-        socket.supportedOptions().clear();
+        Set<SocketOption<?>> options = socket.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void datagramSocketImplThrows() throws IOException {
         CustomDatagramSocketImpl impl = new CustomDatagramSocketImpl();
-        impl.supportedOptions().clear();
+        Set<SocketOption<?>> options = impl.supportedOptions();
+        assertThrows(UnsupportedOperationException.class, options::clear);
     }
 
 

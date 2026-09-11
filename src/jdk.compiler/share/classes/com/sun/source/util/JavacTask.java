@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import com.sun.tools.javac.util.Context;
  * @author Jonathan Gibbons
  * @since 1.6
  */
-public abstract class JavacTask implements CompilationTask {
+public abstract class JavacTask implements CompilationTask, AutoCloseable {
     /**
      * Constructor for subclasses to call.
      */
@@ -100,6 +100,19 @@ public abstract class JavacTask implements CompilationTask {
      * @throws IllegalStateException if the operation cannot be performed at this time.
      */
     public abstract Iterable<? extends JavaFileObject> generate() throws IOException;
+
+    /**
+     * Releases any resources opened by this task, either directly or
+     * indirectly. After this method is called, the task becomes unusable,
+     * and subsequent calls to its methods may throw an {@code IllegalStateException}.
+     * Closing a task that has already been closed has no effect.
+     *
+     * @throws IOException if an error occurs while releasing resources.
+     * @throws IllegalStateException if the operation cannot be performed at this time.
+     * @since 28
+     */
+    @Override
+    public abstract void close() throws IOException;
 
     /**
      * Sets a specified listener to receive notification of events

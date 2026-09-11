@@ -62,7 +62,7 @@ import org.junit.jupiter.api.Test;
  * @summary HttpClient[.Builder] API and behaviour checks
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
- * @run junit HttpClientBuilderTest
+ * @run junit ${test.main.class}
  */
 
 public class HttpClientBuilderTest {

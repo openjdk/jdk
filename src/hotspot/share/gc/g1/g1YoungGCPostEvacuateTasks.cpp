@@ -54,12 +54,12 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ticks.hpp"
 
-class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
+class G1PostEvacuateCollectionSetCleanupTask1::FlushPssTask : public G1AbstractSubTask {
   G1ParScanThreadStateSet* _per_thread_states;
 
 public:
-  MergePssTask(G1ParScanThreadStateSet* per_thread_states) :
-    G1AbstractSubTask(G1GCPhaseTimes::MergePSS),
+  FlushPssTask(G1ParScanThreadStateSet* per_thread_states) :
+    G1AbstractSubTask(G1GCPhaseTimes::FlushPSS),
     _per_thread_states(per_thread_states) { }
 
   double worker_cost() const override { return 1.0; }
@@ -108,14 +108,63 @@ public:
 
     G1MonotonicArenaMemoryStats _total;
     G1CollectionSetCandidates* candidates = g1h->collection_set()->candidates();
-    for (G1CSetCandidateGroup* gr : candidates->from_marking_groups()) {
+    for (G1CardSetGroup* gr : candidates->from_marking_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
 
-    for (G1CSetCandidateGroup* gr : candidates->retained_groups()) {
+    for (G1CardSetGroup* gr : candidates->retained_groups()) {
       _total.add(gr->card_set_memory_stats());
     }
     g1h->set_collection_set_candidates_stats(_total);
+  }
+};
+
+class G1PostEvacuateCollectionSetCleanupTask1::UpdateCodeRootsTask
+  : public G1AbstractSubTask
+{
+  G1ParScanThreadStateSet* _psss;
+
+public:
+  UpdateCodeRootsTask(G1ParScanThreadStateSet* per_thread_states)
+    : G1AbstractSubTask(G1GCPhaseTimes::UpdateCodeRoots), _psss(per_thread_states) { }
+
+  double worker_cost() const override { return 1.0; }
+
+  // Add code roots serially to avoid lock and resize contention.
+  void do_work(uint worker_id) override {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    uint max_num_regions = g1h->max_num_regions();
+
+    uint* counts = NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC);
+    memset(counts, 0, max_num_regions * sizeof(uint));
+
+    // Pass 1: count the number of nmethods to add per region across all workers.
+    for (uint i = 0; i < _psss->num_workers(); i++) {
+      G1ParScanThreadState* pss = _psss->state_for_worker(i);
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>& pairs = pss->code_root_pairs();
+      for (const G1CodeRootPair& pair : pairs) {
+        counts[pair._region_idx]++;
+      }
+    }
+
+    // Pass 2: pre-size each region's code root set once, then add all nmethods.
+    for (uint i = 0; i < _psss->num_workers(); i++) {
+      G1ParScanThreadState* pss = _psss->state_for_worker(i);
+      const GrowableArrayCHeap<G1CodeRootPair, mtGC>& pairs = pss->code_root_pairs();
+      for (const G1CodeRootPair& pair : pairs) {
+        uint region_idx = pair._region_idx;
+        G1HeapRegion* region = g1h->region_at(region_idx);
+        if (counts[region_idx] > 0) {
+          // First occurrence of this region: pre-size its code root set to the
+          // final size so it never needs to grow under the (single-threaded) add.
+          region->rem_set()->prepare_for_adding_code_roots(counts[region_idx]);
+          counts[region_idx] = 0;
+        }
+        region->add_code_root(pair._nmethod);
+      }
+    }
+
+    FREE_C_HEAP_ARRAY(counts);
   }
 };
 
@@ -127,7 +176,7 @@ class G1PostEvacuateCollectionSetCleanupTask1::RestoreEvacFailureRegionsTask : p
   CHeapBitMap _chunk_bitmap;
 
   uint _num_chunks_per_region;
-  uint _num_evac_fail_regions;
+  uint _num_evac_failed_regions;
   size_t _chunk_size;
 
   class PhaseTimesStat {
@@ -288,7 +337,7 @@ public:
     _evac_failure_regions(evac_failure_regions),
     _chunk_bitmap(mtGC) {
 
-    _num_evac_fail_regions = _evac_failure_regions->num_regions_evac_failed();
+    _num_evac_failed_regions = _evac_failure_regions->num_evac_failed_regions();
     _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region_for_scan();
 
     _chunk_size = static_cast<uint>(G1HeapRegion::GrainWords / _num_chunks_per_region);
@@ -296,19 +345,19 @@ public:
     log_debug(gc, ergo)("Initializing removing self forwards with %u chunks per region",
                         _num_chunks_per_region);
 
-    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_fail_regions);
+    _chunk_bitmap.resize(_num_chunks_per_region * _num_evac_failed_regions);
   }
 
   double worker_cost() const override {
-    assert(_evac_failure_regions->has_regions_evac_failed(), "Should not call this if there were no evacuation failures");
+    assert(_evac_failure_regions->has_evac_failed_regions(), "Should not call this if there were no evacuation failures");
 
     double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region_for_scan() / G1RestoreRetainedRegionChunksPerWorker;
-    return workers_per_region * _evac_failure_regions->num_regions_evac_failed();
+    return workers_per_region * _evac_failure_regions->num_evac_failed_regions();
   }
 
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
-    const uint total_chunks = _num_chunks_per_region * _num_evac_fail_regions;
+    const uint total_chunks = _num_chunks_per_region * _num_evac_failed_regions;
     const uint start_chunk_idx = worker_id * total_chunks / total_workers;
 
     for (uint i = 0; i < total_chunks; i++) {
@@ -324,14 +373,16 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
-  bool evac_failed = evac_failure_regions->has_regions_evac_failed();
-  bool alloc_failed = evac_failure_regions->has_regions_alloc_failed();
+  bool evac_failed = evac_failure_regions->has_evac_failed_regions();
+  bool alloc_failed = evac_failure_regions->has_alloc_failed_regions();
 
-  add_serial_task(new MergePssTask(per_thread_states));
+  add_serial_task(new FlushPssTask(per_thread_states));
   add_serial_task(new RecalculateUsedTask(evac_failed, alloc_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
+  add_serial_task(new UpdateCodeRootsTask(per_thread_states));
+
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
   if (evac_failed) {
     add_parallel_task(new RestoreEvacFailureRegionsTask(evac_failure_regions));
@@ -339,8 +390,8 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
 }
 
 class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
-  uint _humongous_objects_reclaimed;
-  uint _humongous_regions_reclaimed;
+  uint _num_humongous_objects_reclaimed;
+  uint _num_humongous_regions_reclaimed;
   size_t _freed_bytes;
   G1CollectedHeap* _g1h;
 
@@ -378,8 +429,8 @@ class G1FreeHumongousRegionClosure : public G1HeapRegionIndexClosure {
 
 public:
   G1FreeHumongousRegionClosure() :
-    _humongous_objects_reclaimed(0),
-    _humongous_regions_reclaimed(0),
+    _num_humongous_objects_reclaimed(0),
+    _num_humongous_regions_reclaimed(0),
     _freed_bytes(0),
     _g1h(G1CollectedHeap::heap())
   {}
@@ -394,12 +445,17 @@ public:
     oop obj = cast_to_oop(r->bottom());
     {
       ResourceMark rm;
-      bool allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
       bool mark_in_progress = _g1h->collector_state()->is_in_marking();
-      guarantee(obj->is_typeArray() || (allocated_after_mark_start || !mark_in_progress),
-                "Only eagerly reclaiming primitive arrays is supported, other humongous objects only if allocated after mark start, but the object "
-                PTR_FORMAT " (%s) is not (mark %d allocated after mark: %d).",
-                p2i(r->bottom()), obj->klass()->name()->as_C_string(), mark_in_progress, allocated_after_mark_start);
+      bool allocated_after_mark_start = false;
+      if (mark_in_progress) {
+        // top_at_mark_start() will assert if we are not in marking, so check first.
+        allocated_after_mark_start = r->bottom() == _g1h->concurrent_mark()->top_at_mark_start(r);
+      }
+
+      guarantee(_g1h->can_be_marked_through_immediately(obj) || (allocated_after_mark_start || !mark_in_progress),
+                "Only eagerly reclaiming arrays without oops is always supported, other humongous objects only if allocated after mark start, but the object "
+                PTR_FORMAT " (%s) is not (allocated after mark: %d mark in progress %d marked immediately %d is_array %d array_with_oops %d).",
+                p2i(r->bottom()), obj->klass()->name()->as_C_string(), allocated_after_mark_start, mark_in_progress, _g1h->can_be_marked_through_immediately(obj), obj->is_array(), obj->is_array_with_oops());
     }
     log_debug(gc, humongous)("Reclaimed humongous region %u (object size %zu @ " PTR_FORMAT ")",
                              region_index,
@@ -413,12 +469,12 @@ public:
            "Eagerly reclaimed humongous region %u should not be marked at all but is in bitmap %s",
            region_index,
            BOOL_TO_STR(cm->is_marked_in_bitmap(obj)));
-    _humongous_objects_reclaimed++;
+    _num_humongous_objects_reclaimed++;
 
     auto free_humongous_region = [&] (G1HeapRegion* r) {
       _freed_bytes += r->used();
       r->set_containing_set(nullptr);
-      _humongous_regions_reclaimed++;
+      _num_humongous_regions_reclaimed++;
       G1HeapRegionPrinter::eager_reclaim(r);
       // Humongous non-typeArrays may have dirty card tables. Need to be cleared. Do it
       // for all types just in case.
@@ -431,12 +487,12 @@ public:
     return false;
   }
 
-  uint humongous_objects_reclaimed() {
-    return _humongous_objects_reclaimed;
+  uint num_humongous_objects_reclaimed() {
+    return _num_humongous_objects_reclaimed;
   }
 
-  uint humongous_regions_reclaimed() {
-    return _humongous_regions_reclaimed;
+  uint num_humongous_regions_reclaimed() {
+    return _num_humongous_regions_reclaimed;
   }
 
   size_t bytes_freed() const {
@@ -444,7 +500,7 @@ public:
   }
 };
 
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
 class G1PostEvacuateCollectionSetCleanupTask2::UpdateDerivedPointersTask : public G1AbstractSubTask {
 public:
   UpdateDerivedPointersTask() : G1AbstractSubTask(G1GCPhaseTimes::UpdateDerivedPointers) { }
@@ -452,7 +508,7 @@ public:
   double worker_cost() const override { return 1.0; }
   void do_work(uint worker_id) override {   DerivedPointerTable::update_pointers(); }
 };
-#endif
+#endif // COMPILER2
 
 class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
   uint _humongous_regions_reclaimed;
@@ -480,9 +536,9 @@ public:
 
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumTotal, g1h->num_humongous_objects());
     record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumCandidates, g1h->num_humongous_reclaim_candidates());
-    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.humongous_objects_reclaimed());
+    record_work_item(worker_id, G1GCPhaseTimes::EagerlyReclaimNumReclaimed, cl.num_humongous_objects_reclaimed());
 
-    _humongous_regions_reclaimed = cl.humongous_regions_reclaimed();
+    _humongous_regions_reclaimed = cl.num_humongous_regions_reclaimed();
     _bytes_freed = cl.bytes_freed();
   }
 };
@@ -498,20 +554,22 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       G1CollectedHeap* g1h = G1CollectedHeap::heap();
       G1ConcurrentMark* cm = g1h->concurrent_mark();
 
-      // Concurrent mark does not mark through regions that we retain (they are root
-      // regions wrt to marking), so we must clear their mark data (tams, bitmap, ...)
-      // set eagerly or during evacuation failure.
+      // Retained regions are root regions for marking, so we must clear their mark data
+      // (tams, bitmap, ...). Outside of Concurrent Start GC we must always clear the mark data
+      // for the next GC.
       bool clear_mark_data = !g1h->collector_state()->is_in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
+        // Must be because this is a region that should not have been selected to
+        // be marked through.
+        cm->assert_top_at_mark_start_is_bottom(r);
       } else {
         // This evacuation failed region is going to be marked through. Update mark data.
-        cm->update_top_at_mark_start(r);
-        cm->set_live_bytes(r->hrm_index(), r->live_bytes());
-        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), cm->top_at_mark_start(r)) != cm->top_at_mark_start(r),
-               "Marks must be on bitmap for region %u", r->hrm_index());
+        // Since we have some marked live data information, pass that too.
+        cm->assert_statistics_clear(r);
+        cm->notify_new_region(r, r->live_bytes());
       }
       return false;
     }
@@ -525,11 +583,11 @@ public:
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   double worker_cost() const override {
-    return _evac_failure_regions->num_regions_evac_failed();
+    return _evac_failure_regions->num_evac_failed_regions();
   }
 
   void do_work(uint worker_id) override {
@@ -542,32 +600,32 @@ public:
 class FreeCSetStats {
   size_t _before_used_bytes;   // Usage in regions successfully evacuate
   size_t _after_used_bytes;    // Usage in regions failing evacuation
-  size_t _bytes_allocated_in_old_since_last_gc; // Size of young regions turned into old
+  size_t _bytes_allocated_in_old_since_last_pause; // Size of young regions turned into old
   size_t _failure_used_words;  // Live size in failed regions
   size_t _failure_waste_words; // Wasted size in failed regions
-  uint _regions_freed;         // Number of regions freed
+  uint _num_regions_freed;         // Number of regions freed
 
 public:
   FreeCSetStats() :
       _before_used_bytes(0),
       _after_used_bytes(0),
-      _bytes_allocated_in_old_since_last_gc(0),
+      _bytes_allocated_in_old_since_last_pause(0),
       _failure_used_words(0),
       _failure_waste_words(0),
-      _regions_freed(0) { }
+      _num_regions_freed(0) { }
 
   void merge_stats(FreeCSetStats* other) {
     assert(other != nullptr, "invariant");
     _before_used_bytes += other->_before_used_bytes;
     _after_used_bytes += other->_after_used_bytes;
-    _bytes_allocated_in_old_since_last_gc += other->_bytes_allocated_in_old_since_last_gc;
+    _bytes_allocated_in_old_since_last_pause += other->_bytes_allocated_in_old_since_last_pause;
     _failure_used_words += other->_failure_used_words;
     _failure_waste_words += other->_failure_waste_words;
-    _regions_freed += other->_regions_freed;
+    _num_regions_freed += other->_num_regions_freed;
   }
 
   void report(G1CollectedHeap* g1h, G1EvacInfo* evacuation_info) {
-    evacuation_info->set_regions_freed(_regions_freed);
+    evacuation_info->add_to_num_freed_regions(_num_regions_freed);
     evacuation_info->set_collection_set_used_before(_before_used_bytes + _after_used_bytes);
     evacuation_info->increment_collection_set_used_after(_after_used_bytes);
 
@@ -575,7 +633,7 @@ public:
     g1h->alloc_buffer_stats(G1HeapRegionAttr::Old)->add_failure_used_and_waste(_failure_used_words, _failure_waste_words);
 
     G1Policy *policy = g1h->policy();
-    policy->old_gen_alloc_tracker()->add_allocated_bytes_since_last_gc(_bytes_allocated_in_old_since_last_gc);
+    policy->old_gen_alloc_tracker()->add_allocated_non_humongous_bytes(_bytes_allocated_in_old_since_last_pause);
 
     policy->cset_regions_freed();
   }
@@ -592,7 +650,7 @@ public:
     // additional allocation: both the objects still in the region and the
     // ones already moved are accounted for elsewhere.
     if (r->is_young()) {
-      _bytes_allocated_in_old_since_last_gc += G1HeapRegion::GrainBytes;
+      _bytes_allocated_in_old_since_last_pause += G1HeapRegion::GrainBytes;
     }
   }
 
@@ -600,7 +658,7 @@ public:
     size_t used = r->used();
     assert(used > 0, "region %u %s zero used", r->hrm_index(), r->get_short_type_str());
     _before_used_bytes += used;
-    _regions_freed += 1;
+    _num_regions_freed += 1;
   }
 };
 
@@ -649,9 +707,9 @@ class FreeCSetClosure : public G1HeapRegionClosure {
 
   void assert_tracks_surviving_words(G1HeapRegion* r) {
     assert(r->young_index_in_cset() != 0 &&
-           (uint)r->young_index_in_cset() <= _g1h->collection_set()->young_region_length(),
+           (uint)r->young_index_in_cset() <= _g1h->collection_set()->num_young_regions(),
            "Young index %u is wrong for region %u of type %s with %u young regions",
-           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->young_region_length());
+           r->young_index_in_cset(), r->hrm_index(), r->get_type_str(), _g1h->collection_set()->num_young_regions());
   }
 
   void handle_evacuated_region(G1HeapRegion* r) {
@@ -746,7 +804,7 @@ public:
     }
   }
 
-  bool num_retained_regions() const { return _num_retained_regions; }
+  uint num_retained_regions() const { return _num_retained_regions; }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::FreeCollectionSetTask : public G1AbstractSubTask {
@@ -802,7 +860,7 @@ public:
     for (uint worker = 0; worker < _active_workers; worker++) {
       _worker_stats[worker].~FreeCSetStats();
     }
-    FREE_C_HEAP_ARRAY(FreeCSetStats, _worker_stats);
+    FREE_C_HEAP_ARRAY(_worker_stats);
 
     _g1h->clear_collection_set();
 
@@ -810,13 +868,13 @@ public:
     p->record_serial_free_cset_time_ms((Ticks::now() - serial_time).seconds() * 1000.0);
   }
 
-  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->initial_region_length(); }
+  double worker_cost() const override { return G1CollectedHeap::heap()->collection_set()->num_initial_regions(); }
 
   void set_max_workers(uint max_workers) override {
     _active_workers = max_workers;
     _worker_stats = NEW_C_HEAP_ARRAY(FreeCSetStats, max_workers, mtGC);
     ::new (_worker_stats) FreeCSetStats[_active_workers]{};
-    _claimer.set_n_workers(_active_workers);
+    _claimer.set_num_workers(_active_workers);
   }
 
   void do_work(uint worker_id) override {
@@ -864,21 +922,19 @@ public:
   }
 };
 
-class G1PostEvacuateCollectionSetCleanupTask2::ResetPartialArrayStateManagerTask
-  : public G1AbstractSubTask
-{
-public:
-  ResetPartialArrayStateManagerTask()
-    : G1AbstractSubTask(G1GCPhaseTimes::ResetPartialArrayStateManager)
-  {}
+class G1PostEvacuateCollectionSetCleanupTask2::DestroyPssTask : public G1AbstractSubTask {
+  G1ParScanThreadStateSet* _per_thread_states;
 
-  double worker_cost() const override {
-    return AlmostNoWork;
-  }
+public:
+  DestroyPssTask(G1ParScanThreadStateSet* per_thread_states) :
+    G1AbstractSubTask(G1GCPhaseTimes::DestroyPSS),
+    _per_thread_states(per_thread_states) { }
+
+  double worker_cost() const override { return 1.0; }
 
   void do_work(uint worker_id) override {
-    // This must be in phase2 cleanup, after phase1 has destroyed all of the
-    // associated allocators.
+    _per_thread_states->destroy_worker_states();
+    // This must be here after above destroyed the per-thread allocators.
     G1CollectedHeap::heap()->partial_array_state_manager()->reset();
   }
 };
@@ -888,15 +944,15 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
 {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   add_serial_task(new UpdateDerivedPointersTask());
-#endif
+#endif // COMPILER2
   if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
-  add_serial_task(new ResetPartialArrayStateManagerTask());
+  add_serial_task(new DestroyPssTask(per_thread_states));
 
-  if (evac_failure_regions->has_regions_evac_failed()) {
+  if (evac_failure_regions->has_evac_failed_regions()) {
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
 

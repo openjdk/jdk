@@ -23,7 +23,6 @@
  * questions.
  */
 
-
 package sun.net.www.protocol.https;
 
 import java.io.IOException;
@@ -36,7 +35,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.security.Principal;
 import java.security.cert.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -242,8 +240,11 @@ final class HttpsClient extends HttpClient
             if (ret != null && httpuc != null &&
                 httpuc.streaming() &&
                 "POST".equals(httpuc.getRequestMethod())) {
-                if (!ret.available())
+                if (!ret.available()) {
+                    ret.inCache = false;
+                    ret.closeServer();
                     ret = null;
+                }
             }
 
             if (ret != null) {

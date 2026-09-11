@@ -66,6 +66,7 @@ public class DottedVersionTest {
         var dv = cfg.createVersion.apply(cfg.input());
         assertEquals(cfg.expectedSuffix(), dv.getUnprocessedSuffix());
         assertEquals(cfg.expectedComponentCount(), dv.getComponents().length);
+        assertEquals(cfg.expectedComponentCount(), dv.getComponentsCount());
         assertEquals(cfg.expectedToComponent(), dv.toComponentsString());
         assertEquals(dv.toString(), cfg.input());
     }

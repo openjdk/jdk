@@ -4,7 +4,7 @@
  *
  *   FreeType convenience functions to handle glyphs (body).
  *
- * Copyright (C) 1996-2025 by
+ * Copyright (C) 1996-2026 by
  * David Turner, Robert Wilhelm, and Werner Lemberg.
  *
  * This file is part of the FreeType project, and may only be used,
@@ -856,9 +856,9 @@
       goto Exit;
 
     /* in case of success, copy the bitmap to the glyph bitmap */
-    error = ft_bitmap_glyph_init( (FT_Glyph)bitmap, &dummy );
-    if ( error )
-      goto Exit;
+    bitmap->left   = dummy.bitmap_left;
+    bitmap->top    = dummy.bitmap_top;
+    bitmap->bitmap = dummy.bitmap;
 
     /* copy advance */
     bitmap->root.advance = glyph->advance;

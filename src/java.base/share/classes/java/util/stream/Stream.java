@@ -1002,8 +1002,8 @@ public interface Stream<T> extends BaseStream<T, Stream<T>> {
 
     /**
      * Performs a <a href="package-summary.html#Reduction">reduction</a> on the
-     * elements of this stream, using the provided identity, accumulation and
-     * combining functions.  This is equivalent to:
+     * elements of this stream using the provided identity value, accumulation
+     * function, and combining function.  This is equivalent to:
      * <pre>{@code
      *     U result = identity;
      *     for (T element : this stream)

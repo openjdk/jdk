@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.SequentialScheduler;
-import jdk.internal.net.http.common.SequentialScheduler.CompleteRestartableTask;
 import jdk.internal.net.http.common.Utils;
 
 import java.io.IOException;
@@ -58,7 +57,7 @@ public class TransportImpl implements Transport {
     /* Used for correlating enters to and exists from a method */
     private final AtomicLong counter = new AtomicLong();
 
-    private final SequentialScheduler sendScheduler = new SequentialScheduler(new SendTask());
+    private final SequentialScheduler sendScheduler = SequentialScheduler.lockingScheduler(new SendTask());
 
     private final MessageQueue queue;
     private final MessageEncoder encoder = new MessageEncoder();
@@ -93,7 +92,7 @@ public class TransportImpl implements Transport {
         // To ensure the initial non-final `data` will be visible
         // (happens-before) when `readEvent.handle()` invokes `receiveScheduler`
         // the following assignment is done last:
-        receiveScheduler = new SequentialScheduler(new ReceiveTask());
+        receiveScheduler = SequentialScheduler.lockingScheduler(new ReceiveTask());
     }
 
     private ByteBuffer createWriteBuffer() {
@@ -361,7 +360,7 @@ public class TransportImpl implements Transport {
     }
 
     @SuppressWarnings({"rawtypes"})
-    private class SendTask extends CompleteRestartableTask {
+    private class SendTask implements Runnable {
 
         private final MessageQueue.QueueCallback<Boolean, IOException>
                 encodingCallback = new MessageQueue.QueueCallback<>() {
@@ -654,7 +653,7 @@ public class TransportImpl implements Transport {
         }
     }
 
-    private class ReceiveTask extends CompleteRestartableTask {
+    private class ReceiveTask implements Runnable {
 
         @Override
         public void run() {

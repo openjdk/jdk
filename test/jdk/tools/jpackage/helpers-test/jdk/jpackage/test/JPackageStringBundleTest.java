@@ -28,14 +28,10 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -106,63 +102,12 @@ class JPackageStringBundleTest {
         });
     }
 
-    @ParameterizedTest
-    @MethodSource
-    void test_toPattern(TestSpec test) {
-        var pattern = JPackageStringBundle.toPattern(new MessageFormat(test.formatter()), test.formatArgMapper(), test.args().toArray());
-        assertEquals(test.expectedPattern().toString(), pattern.toString());
-    }
-
     private static Collection<CannedFormattedString> test_cannedFormattedString_wrong_argument_count() {
         return List.of(
                 JPackageStringBundle.MAIN.cannedFormattedString("error.version-string-empty", "foo"),
                 JPackageStringBundle.MAIN.cannedFormattedString("message.error-header"),
                 JPackageStringBundle.MAIN.cannedFormattedString("message.error-header", "foo", "bar")
         );
-    }
-
-    private static Collection<TestSpec> test_toPattern() {
-
-        var testCases = new ArrayList<TestSpec>();
-
-        testCases.addAll(List.of(
-                TestSpec.create("", Pattern.compile("")),
-                TestSpec.create("", Pattern.compile(""), "foo")
-        ));
-
-        for (List<Object> args : List.of(List.<Object>of(), List.<Object>of("foo"))) {
-            Stream.of(
-                    "Stop."
-            ).map(formatter -> {
-                return new TestSpec(formatter, args, Pattern.compile(Pattern.quote(formatter)));
-            }).forEach(testCases::add);
-        }
-
-        testCases.add(TestSpec.create("Hello {1} {0}{1}!", Pattern.compile("\\QHello \\E.*\\Q \\E.*.*\\Q!\\E"), "foo", "bar"));
-        testCases.add(TestSpec.create("Hello {1} {0}{0} {0}{0}{0} {0}", Pattern.compile("\\QHello \\E.*\\Q \\E.*\\Q \\E.*\\Q \\E.*"), "foo", "bar"));
-        testCases.add(TestSpec.create("{0}{0}", Pattern.compile(".*"), "foo"));
-
-        return testCases;
-    }
-
-    record TestSpec(String formatter, List<Object> args, Pattern expectedPattern) {
-        TestSpec {
-            Objects.requireNonNull(formatter);
-            Objects.requireNonNull(args);
-            Objects.requireNonNull(expectedPattern);
-        }
-
-        Function<Object, Pattern> formatArgMapper() {
-            if (Pattern.compile(Pattern.quote(formatter)).toString().equals(expectedPattern.toString())) {
-                return UNREACHABLE_FORMAT_ARG_MAPPER;
-            } else {
-                return DEFAULT_FORMAT_ARG_MAPPER;
-            }
-        }
-
-        static TestSpec create(String formatter, Pattern expectedPattern, Object... args) {
-            return new TestSpec(formatter, List.of(args), expectedPattern);
-        }
     }
 
     private static final Pattern DEFAULT_FORMAT_ARG_PATTERN = Pattern.compile(".*");

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, 2025, Red Hat. All rights reserved.
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Red Hat. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,11 @@
 /*
  * @test
  * @summary Test the various CPU-specific reservation schemes
- * @requires vm.bits == 64 & !vm.graal.enabled & vm.debug == true
+ * @requires vm.bits == 64 & vm.debug == true
  * @requires vm.flagless
  * @requires vm.cds
  * @requires vm.cds.default.archive.available
+ * @requires vm.cds.nocoh.archive.available
  * @requires (os.family != "windows") & (os.family != "aix")
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
@@ -42,6 +43,9 @@ import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CompressedCPUSpecificClassSpaceReservation {
     // Note: windows: On windows, we currently have the issue that os::reserve_memory_aligned relies on
@@ -67,7 +71,11 @@ public class CompressedCPUSpecificClassSpaceReservation {
         final String tryReserveForUnscaled = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveBelow4G = "reserve_between (range [0x0000000000000000-0x0000000100000000)";
         final String tryReserveForZeroBased = "reserve_between (range [0x0000000100000000-0x0000000800000000)";
-        final String tryReserveFor16bitMoveIntoQ3 = "reserve_between (range [0x0000000100000000-0x0001000000000000)";
+        // Failing zero-based allocation, platforms will often attempt allocation suitable for a disjointed move:
+        // an insert of the base address bits into the register holding the nK. That requires the base to not
+        // intersect with nK bits (for simplicity, we always assume nK range of 32bits).
+        // The upper limit of this reservation attempt is platform-dependent, though.
+        final String tryReserveFor16bitMoveIntoQ3Regex = "reserve_between.*0x0000000100000000-0x\\d{8}00000000.*alignment 0x100000000";
         if (Platform.isAArch64()) {
             if (CDS) {
                 output.shouldNotContain(tryReserveForUnscaled);
@@ -76,7 +84,6 @@ public class CompressedCPUSpecificClassSpaceReservation {
             }
             output.shouldContain("Trying to reserve at an EOR-compatible address");
             output.shouldNotContain(tryReserveForZeroBased);
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
         } else if (Platform.isPPC()) {
             if (CDS) {
                 output.shouldNotContain(tryReserveForUnscaled);
@@ -85,7 +92,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
                 output.shouldContain(tryReserveForUnscaled);
                 output.shouldContain(tryReserveForZeroBased);
             }
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
+            output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isRISCV64()) {
             output.shouldContain(tryReserveForUnscaled); // unconditionally
             // bits 32..44
@@ -99,7 +106,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             } else {
                 output.shouldContain(tryReserveForZeroBased);
             }
-            output.shouldContain(tryReserveFor16bitMoveIntoQ3);
+            output.shouldMatch(tryReserveFor16bitMoveIntoQ3Regex);
         } else if (Platform.isX64()) {
             output.shouldContain(tryReserveBelow4G);
             if (CDS) {
@@ -118,6 +125,24 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain("CDS archive(s) not mapped");
         }
         output.shouldContain("Compressed class space mapped at:");
+
+        // S390: Make very sure every reserve_between attempt we do (which we do
+        // for class space only, currently) never probes beyond 2^42 to avoid
+        // page table expansion
+        if (Platform.isS390x()) {
+            Pattern pat = Pattern.compile(".*reserve_between \\(range \\[0x[0-9a-f]{16}-0x([0-9a-f]{16})\\).*");
+            List<Matcher> matches = output.matchersForAllMatchingLinesStdout(pat);
+            if (matches.size() == 0) {
+                throw new RuntimeException("Expected matches");
+            }
+            for (Matcher mat : matches) {
+                long address_to = Long.parseLong(mat.group(1), 16);
+                if (address_to > Math.powExact(2L, 42)) {
+                    System.out.println(mat.group(0));
+                    throw new RuntimeException("Address space probing beyond 2^42?");
+                }
+            }
+        }
     }
 
     public static void main(String[] args) throws Exception {

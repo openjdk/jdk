@@ -1308,6 +1308,7 @@ class ConsoleIOContext extends IOContext {
                     case COMPLETE:
                     case COMPLETE_WITH_SEMI:
                     case CONSIDERED_INCOMPLETE:
+                    case PREFIX:
                         break;
                     case EMPTY:
                         return reject(repl, "jshell.console.empty");
