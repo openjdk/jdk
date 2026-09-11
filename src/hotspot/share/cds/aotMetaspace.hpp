@@ -30,6 +30,7 @@
 #include "memory/reservedSpace.hpp"
 #include "memory/virtualspace.hpp"
 #include "oops/oop.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
 class ArchiveBuilder;
