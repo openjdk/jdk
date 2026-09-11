@@ -646,7 +646,7 @@ void Canonicalizer::do_CheckCast      (CheckCast*       x) {
       // Interface casts can't be statically optimized away since verifier doesn't
       // enforce interface types in bytecode.
       if (!is_interface && klass->is_subtype_of(x->klass())) {
-        assert(!x->klass()->is_inlinetype() || x->klass() == klass, "Inline klasses can't have subtypes");
+        assert(!x->klass()->is_value_klass() || x->klass() == klass, "Value klasses can't have subtypes");
         set_canonical(obj);
         return;
       }
@@ -724,9 +724,17 @@ void Canonicalizer::do_If(If* x) {
     return;
   }
 
-  // Simplify further when we have two constants. However, if we have a substitutability check
-  // we must not constant fold as this would loose the substitutability semantics.
-  if (lt->is_constant() && rt->is_constant() && !x->substitutability_check()) {
+  // Simplify further when we have two constants.
+  if (lt->is_constant() && rt->is_constant()) {
+    const ciType* l_exact_type = l->exact_type();
+    const ciType* r_exact_type = r->exact_type();
+    if (l_exact_type != nullptr && l_exact_type->is_value_klass() &&
+        r_exact_type != nullptr && r_exact_type->is_value_klass() && x->substitutability_check()) {
+      // If we have a substitutability check and both sides are known value types we must
+      // preserve it instead of performing a pointer comparison during compile time.
+      return;
+    }
+
     if (x->x()->as_Constant() != nullptr) {
       // pattern: If (lc cond rc) => simplify to: Goto
       BlockBegin* sux = x->x()->as_Constant()->compare(x->cond(), x->y(),
@@ -801,6 +809,10 @@ void Canonicalizer::do_If(If* x) {
 
 
 void Canonicalizer::do_TableSwitch(TableSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
@@ -813,6 +825,10 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
 
 
 void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();

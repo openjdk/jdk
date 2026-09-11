@@ -2734,7 +2734,7 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
     // Check for monitor (0b10) or locked (0b00).
     ld(mark, oopDesc::mark_offset_in_bytes(), obj);
     andi_(R0, mark, markWord::lock_mask_in_place);
-    cmpldi(CR0, R0, markWord::unlocked_value);
+    cmpldi(CR0, R0, markWord::lock_neutral_value);
     bgt(CR0, inflated);
     bne(CR0, slow_path);
 
@@ -2913,7 +2913,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 #ifdef ASSERT
     // Check header not unlocked (0b01).
     Label not_unlocked;
-    andi_(t, mark, markWord::unlocked_value);
+    andi_(t, mark, markWord::lock_neutral_value);
     beq(CR0, not_unlocked);
     stop("fast_unlock already unlocked");
     bind(not_unlocked);
@@ -3295,32 +3295,32 @@ void MacroAssembler::load_method_holder(Register holder, Register method) {
   ld(holder, ConstantPool::pool_holder_offset(), holder);
 }
 
-void MacroAssembler::test_markword_is_inline_type(Register markword, Label& is_inline_type) {
+void MacroAssembler::test_markword_is_value_type(Register markword, Label& is_value_type) {
   assert_different_registers(markword, R0);
-  andi(R0, markword, markWord::inline_type_pattern_mask);
-  cmpwi(CR0, R0, markWord::inline_type_pattern);
-  beq(CR0, is_inline_type);
+  andi(R0, markword, markWord::value_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::value_type_pattern);
+  beq(CR0, is_value_type);
 }
 
-void MacroAssembler::test_oop_is_not_inline_type(Register object, Label& not_inline_type, bool can_be_null) {
+void MacroAssembler::test_oop_is_not_value_type(Register object, Label& not_value_type, bool can_be_null) {
   if (can_be_null) {
     cmpdi(CR0, object, 0);
-    beq(CR0, not_inline_type);
+    beq(CR0, not_value_type);
   }
   ld(R0, oopDesc::mark_offset_in_bytes(), object);
-  andi(R0, R0, markWord::inline_type_pattern_mask);
-  cmpwi(CR0, R0, markWord::inline_type_pattern);
-  bne(CR0, not_inline_type);
+  andi(R0, R0, markWord::value_type_pattern_mask);
+  cmpwi(CR0, R0, markWord::value_type_pattern);
+  bne(CR0, not_value_type);
 }
 
-void MacroAssembler::test_field_is_null_free_inline_type(Register flags, Label& is_null_free_inline_type) {
-  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  bne(CR0, is_null_free_inline_type);
+void MacroAssembler::test_field_is_null_free_value_type(Register flags, Label& is_null_free_value_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  bne(CR0, is_null_free_value_type);
 }
 
-void MacroAssembler::test_field_is_not_null_free_inline_type(Register flags, Label& not_null_free_inline_type) {
-  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_inline_type_shift);
-  beq(CR0, not_null_free_inline_type);
+void MacroAssembler::test_field_is_not_null_free_value_type(Register flags, Label& not_null_free_value_type) {
+  testbitdi(CR0, R0, flags, ResolvedFieldEntry::is_null_free_value_type_shift);
+  beq(CR0, not_null_free_value_type);
 }
 
 void MacroAssembler::test_field_is_flat(Register flags, Label& is_flat) {
@@ -3374,38 +3374,33 @@ void MacroAssembler::load_metadata(Register dst, Register src) {
   }
 }
 
-void MacroAssembler::load_prototype_header(Register dst, Register src) {
-  load_klass(dst, src);
-  ld(dst, Klass::prototype_header_offset(), dst);
-}
-
-void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register inline_layout_info) {
+void MacroAssembler::flat_field_copy(DecoratorSet decorators, Register src, Register dst, Register value_field_layout_info) {
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  bs->flat_field_copy(this, decorators, src, dst, inline_layout_info);
+  bs->flat_field_copy(this, decorators, src, dst, value_field_layout_info);
 }
 
-void MacroAssembler::payload_offset(Register inline_klass, Register offset) {
-  ld(offset, in_bytes(InlineKlass::adr_members_offset()), inline_klass);
-  lwz(offset, in_bytes(InlineKlass::payload_offset_offset()), offset);
+void MacroAssembler::payload_offset(Register value_klass, Register offset) {
+  ld(offset, in_bytes(ValueKlass::adr_members_offset()), value_klass);
+  lwz(offset, in_bytes(ValueKlass::payload_offset_offset()), offset);
 }
 
-void MacroAssembler::payload_address(Register oop, Register data, Register inline_klass, Register t1) {
+void MacroAssembler::payload_address(Register oop, Register data, Register value_klass, Register t1) {
   // ((address) (void*) o) + vk->payload_offset();
-  payload_offset(inline_klass, t1);
+  payload_offset(value_klass, t1);
   add(data, oop, t1);
 }
 
-void MacroAssembler::inline_layout_info(Register holder_klass, Register index, Register layout_info) {
+void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {
   assert_different_registers(holder_klass, index, layout_info);
-  InlineLayoutInfo array[2];
+  ValueFieldLayoutInfo array[2];
   int size = (char*)&array[1] - (char*)&array[0]; // computing size of array elements
   if (is_power_of_2(size)) {
     sldi(index, index, log2i_exact(size)); // Scale index by power of 2
   } else {
     mulld(index, index, size); // Scale the index to be the entry index * array_element_size
   }
-  ld(layout_info, InstanceKlass::inline_layout_info_array_offset(), holder_klass);
-  addi(layout_info, layout_info, Array<InlineLayoutInfo>::base_offset_in_bytes());
+  ld(layout_info, InstanceKlass::value_field_layout_info_array_offset(), holder_klass);
+  addi(layout_info, layout_info, Array<ValueFieldLayoutInfo>::base_offset_in_bytes());
   add(layout_info, layout_info, index);
 }
 
@@ -4660,15 +4655,8 @@ void MacroAssembler::asm_assert_mems_zero(AsmAssertCond cond, int size, int mem_
 }
 #endif // ASSERT
 
-void MacroAssembler::verify_coop(Register coop, const char* msg) {
-  if (!VerifyOops) { return; }
-  if (UseCompressedOops) { decode_heap_oop(coop); }
-  verify_oop(coop, msg);
-  if (UseCompressedOops) { encode_heap_oop(coop, coop); }
-}
-
 // READ: oop. KILL: R0. Volatile floats perhaps.
-void MacroAssembler::verify_oop(Register oop, const char* msg) {
+void MacroAssembler::verify_oop(Register oop, const char* msg, bool compressed) {
   if (!VerifyOops) {
     return;
   }
@@ -4682,6 +4670,9 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   save_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   mr_if_needed(R4_ARG2, oop);
+  if (compressed) {
+    decode_heap_oop(R4_ARG2);
+  }
   save_LR_CR(tmp); // save in old frame
   push_frame_reg_args(nbytes_save, tmp);
   // load FunctionDescriptor** / entry_address *
@@ -4838,17 +4829,18 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 
   bind(retry);
-  STATIC_ASSERT(markWord::locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
+  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
-    xori(tmp, tmp, markWord::unlocked_value); // flip unlocked bit
-    andi_(R0, tmp, markWord::lock_mask_in_place | markWord::inline_type_bit_in_place);
-    bne(CR0, failed); // failed if new header doesn't contain locked_value (which is 0) or belongs to an inline type
+    xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit
+    andi_(R0, tmp, markWord::lock_mask_in_place | markWord::value_type_bit_in_place);
+    bne(CR0, failed); // failed if new header doesn't contain fast_locked_value (which is 0) or belongs to a value type
   } else {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_release_lock());
     andi_(R0, tmp, markWord::lock_mask_in_place);
-    bne(CR0, failed); // failed if old header doesn't contain locked_value (which is 0)
-    ori(tmp, tmp, markWord::unlocked_value); // set unlocked bit
+    bne(CR0, failed); // failed if old header doesn't contain fast_locked_value (which is 0)
+    ori(tmp, tmp, markWord::lock_neutral_value); // set lock-neutral bit
   }
   stdcx_(tmp, obj);
   bne(CR0, retry);
@@ -4900,7 +4892,7 @@ void MacroAssembler::fast_lock(Register box, Register obj, Register t1, Register
 
   // Check header for monitor (0b10) or locked (0b00).
   ld(mark, oopDesc::mark_offset_in_bytes(), obj);
-  xori(t, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::lock_neutral_value);
   andi_(t, t, markWord::lock_mask_in_place);
   bne(CR0, slow);
 
@@ -4974,7 +4966,7 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
 #ifdef ASSERT
   // Check header not unlocked (0b01).
   Label not_unlocked;
-  andi_(t, mark, markWord::unlocked_value);
+  andi_(t, mark, markWord::lock_neutral_value);
   beq(CR0, not_unlocked);
   stop("fast_unlock already unlocked");
   bind(not_unlocked);
@@ -4996,8 +4988,8 @@ void MacroAssembler::fast_unlock(Register obj, Register t1, Label& slow) {
   bind(unlocked);
 }
 
-// Unimplemented methods for inline types.
-int MacroAssembler::store_inline_type_fields_to_buf(ciInlineKlass* vk, bool from_interpreter) {
+// Unimplemented methods for value types.
+int MacroAssembler::store_value_type_fields_to_buf(ciValueKlass* vk, bool from_interpreter) {
    Unimplemented();
 }
 
@@ -5005,19 +4997,19 @@ bool MacroAssembler::move_helper(VMReg from, VMReg to, BasicType bt, RegState re
   Unimplemented();
 }
 
-bool MacroAssembler::unpack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
+bool MacroAssembler::unpack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index,
                             VMReg from, int& from_index, VMRegPair* to, int to_count, int& to_index,
                             RegState reg_state[]) {
   Unimplemented();
 }
 
-bool MacroAssembler::pack_inline_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
+bool MacroAssembler::pack_value_helper(const GrowableArray<SigEntry>* sig, int& sig_index, int vtarg_index,
                           VMRegPair* from, int from_count, int& from_index, VMReg to,
                           RegState reg_state[], Register val_array) {
   Unimplemented();
 }
 
-int MacroAssembler::extend_stack_for_inline_args(int args_on_stack) {
+int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   Unimplemented();
 }
 

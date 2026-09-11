@@ -435,12 +435,12 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
             case StubId::c1_new_object_array_id:
               __ compare32_and_branch(t0, Klass::_lh_array_tag_ref_value, Assembler::bcondEqual, ok);
               __ compare32_and_branch(t0, Klass::_lh_array_tag_flat_value, Assembler::bcondEqual, ok);
-              __ stop("assert(is an object or inline type array klass)");
+              __ stop("assert(is an object or value type array klass)");
               break;
             case StubId::c1_new_null_free_array_id:
               __ compare32_and_branch(t0, Klass::_lh_array_tag_flat_value, Assembler::bcondEqual, ok);
               __ compare32_and_branch(t0, Klass::_lh_array_tag_ref_value, Assembler::bcondEqual, ok);
-              __ stop("assert(is an object or inline type array klass)");
+              __ stop("assert(is an object or value type array klass)");
               break;
             default: ShouldNotReachHere();
           }
@@ -487,20 +487,20 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
       }
       break;
 
-    case StubId::c1_buffer_inline_args_id:
-    case StubId::c1_buffer_inline_args_no_receiver_id:
+    case StubId::c1_buffer_value_args_id:
+    case StubId::c1_buffer_value_args_no_receiver_id:
       {
-        __ untested("c1_buffer_inline_args");
-        const char* name = (id == StubId::c1_buffer_inline_args_id) ?
-          "buffer_inline_args" : "buffer_inline_args_no_receiver";
+        __ untested("c1_buffer_value_args");
+        const char* name = (id == StubId::c1_buffer_value_args_id) ?
+          "buffer_value_args" : "buffer_value_args_no_receiver";
         __ set_info(name, dont_gc_arguments);
 
         // This is called from a C1 method's scalarized entry point
         OopMap* map = save_live_registers(sasm);
         Register method = Z_R13;   // Incoming
-        address entry = (id == StubId::c1_buffer_inline_args_id) ?
-          CAST_FROM_FN_PTR(address, buffer_inline_args) :
-          CAST_FROM_FN_PTR(address, buffer_inline_args_no_receiver);
+        address entry = (id == StubId::c1_buffer_value_args_id) ?
+          CAST_FROM_FN_PTR(address, buffer_value_args) :
+          CAST_FROM_FN_PTR(address, buffer_value_args_no_receiver);
 
         int call_offset = __ call_RT(Z_R14, noreg, entry, method);
         oop_maps = new OopMapSet();
@@ -514,19 +514,17 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
     case StubId::c1_load_flat_array_id:
       {
-        __ untested("c1_load_flat_array");
         __ set_info("load_flat_array", dont_gc_arguments);
         OopMap* map = save_live_registers(sasm);
 
         // Called with store_parameter and not C abi
-        int arg_offset = FrameMap::first_available_sp_in_frame;
+        // Parameters were stored before save_live_registers pushed a frame,
+        // so we need to account for the frame size when loading them
+        const int frame_size = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
+        int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 1 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 0 * BytesPerWord, Z_SP); // index
         int call_offset = __ call_RT(Z_R2, noreg, CAST_FROM_FN_PTR(address, load_flat_array), Z_ARG2, Z_ARG3);
-
-        // Ensure the stores that initialize the buffer are visible
-        // before many subsequent store that publishes this reference.
-        __ z_fence();
 
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
@@ -540,12 +538,14 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
     case StubId::c1_store_flat_array_id:
       {
-        __ untested("c1_store_flat_array");
         __ set_info("store_flat_array", dont_gc_arguments);
         OopMap* map = save_live_registers(sasm);
 
         // Called with store_parameter and not C abi
-        int arg_offset = FrameMap::first_available_sp_in_frame;
+        // Parameters were stored before save_live_registers pushed a frame,
+        // so we need to account for the frame size when loading them
+        const int frame_size = sasm->frame_size() * VMRegImpl::slots_per_word * VMRegImpl::stack_slot_size;
+        int arg_offset = FrameMap::first_available_sp_in_frame + frame_size;
         __ z_lg(Z_ARG2, arg_offset + 2 * BytesPerWord, Z_SP); // array
         __ z_lg(Z_ARG3, arg_offset + 1 * BytesPerWord, Z_SP); // index
         __ z_lg(Z_ARG4, arg_offset + 0 * BytesPerWord, Z_SP); // value
@@ -553,7 +553,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
 
         oop_maps = new OopMapSet();
         oop_maps->add_gc_map(call_offset, map);
-        restore_live_registers_except_r2(sasm);
+        restore_live_registers(sasm);
         __ z_br(Z_R14);
       }
       break;

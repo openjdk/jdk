@@ -127,15 +127,6 @@ public:
     }
   }
 
-  bool remove(nmethod* method) {
-    HashTableLookUp lookup(method);
-    bool removed = _table.remove(Thread::current(), lookup);
-    if (removed) {
-      _num_entries.sub_then_fetch(1u);
-    }
-    return removed;
-  }
-
   bool contains(nmethod* method) {
     HashTableLookUp lookup(method);
     HashTableIgnore ignore;
@@ -246,7 +237,9 @@ public:
     _table_scanner.set(&_table, BucketClaimSize);
   }
 
-  size_t mem_size() { return sizeof(*this) + _table.get_mem_size(Thread::current()); }
+  size_t mem_size() {
+    return sizeof(*this) - sizeof(_table) + _table.get_mem_size(Thread::current());
+  }
 
   size_t number_of_entries() const { return _num_entries.load_relaxed(); }
 };
@@ -279,11 +272,6 @@ G1CodeRootSet::G1CodeRootSet() :
 
 G1CodeRootSet::~G1CodeRootSet() {
   delete _table;
-}
-
-bool G1CodeRootSet::remove(nmethod* method) {
-  assert(!_is_iterating, "should not mutate while iterating the table");
-  return _table->remove(method);
 }
 
 void G1CodeRootSet::bulk_remove() {

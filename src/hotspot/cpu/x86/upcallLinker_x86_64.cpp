@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,7 +351,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
   __ lea(c_rarg0, Address(rsp, frame_data_offset));
   // stack already aligned
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, UpcallLinker::on_exit)));
-  __ reinit_heapbase();
+  assert(!UseCompressedOops || !abi.is_volatile_reg(r12_heapbase), "r12_heapbase is not a volatile_reg!");
   __ block_comment("} on_exit");
 
   restore_callee_saved_registers(_masm, abi, reg_save_area_offset);
@@ -363,7 +363,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Symbol* signature,
 
   //////////////////////////////////////////////////////////////////////////////
 
-  _masm->flush();
+  // Code will be copied. No ICache sync required.
 
 #ifndef PRODUCT
   stringStream ss;

@@ -131,14 +131,14 @@ bool DwarfParser::process_cie(unsigned char *start_of_entry, uint32_t id) {
   init_state(_state);
   _state.return_address_reg = initial_ra;
 
-  parse_dwarf_instructions(0L, static_cast<uintptr_t>(-1L), end);
+  bool result = parse_dwarf_instructions(0L, static_cast<uintptr_t>(-1L), end);
 
   _initial_state = _state;
   _buf = orig_pos;
-  return true;
+  return result;
 }
 
-void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end) {
+bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const unsigned char *end) {
   uintptr_t operand1;
   _current_pc = begin;
   std::stack<struct DwarfState> remember_state;
@@ -152,7 +152,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
 
     switch (op) {
       case 0x0:  // DW_CFA_nop
-        return;
+        break;
       case 0x01: // DW_CFA_set_loc
         operand1 = get_decoded_value(_fde_ptr_encoding);
         if (_current_pc != 0L) {
@@ -200,6 +200,17 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         break;
       }
+      case 0x05: { // DW_CFA_offset_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        uintptr_t operand2 = read_leb(false);
+        _state.offset_from_cfa[reg] = operand2 * _data_factor;
+        break;
+      }
+      case 0x06: { // DW_CFA_restore_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
+        break;
+      }
       case 0x07: { // DW_CFA_undefined
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
         _state.offset_from_cfa[reg] = INT_MAX;
@@ -215,12 +226,15 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       case 0x0b: // DW_CFA_restore_state
         if (remember_state.empty()) {
           print_debug("DWARF Error: DW_CFA_restore_state with empty stack.\n");
-          return;
+          return false;
         }
         _state = remember_state.top();
         remember_state.pop();
         restore_arch_specific_state();
         break;
+      case 0x0f: // DW_CFA_def_cfa_expression
+        print_debug("DWARF: DW_CFA_def_cfa_expression is not yet supported.\n");
+        return false;
       case 0xc0: {// DW_CFA_restore
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(opa);
         _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
@@ -228,11 +242,13 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       }
       default:
         if (!process_arch_specific_dwarf_instructions(op)) {
-          print_debug("DWARF: Unknown opcode: 0x%x\n", op);
-          return;
+          print_error("DWARF: Unknown opcode: 0x%x\n", op);
+          return false;
         }
     }
   }
+
+  return true;
 }
 
 /* from dwarf.c in binutils */
@@ -347,8 +363,7 @@ bool DwarfParser::process_dwarf(const uintptr_t pc) {
         }
 
         // Process FDE
-        parse_dwarf_instructions(pc_begin, pc, next_entry);
-        return true;
+        return parse_dwarf_instructions(pc_begin, pc, next_entry);
       }
     }
 
