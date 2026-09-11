@@ -143,7 +143,7 @@ public class CorrectlyRestoreRfp {
                     var v = compile_me_C1_testLargeValueWithOopsHelper(val);
                     LargeValueWithOops.compile_me_C2_verify(v, "return", val, false);
                 }
-            }, task -> Thread.ofPlatform().start(task)).join();
+            }, Thread.ofPlatform()::start).join();
         } finally {
             garbage_producer.interrupt();
             garbage_producer.join();
