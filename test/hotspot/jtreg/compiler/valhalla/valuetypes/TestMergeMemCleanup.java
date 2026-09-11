@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8391658
  * @summary Test cleanup of nested MergeMems after incremental inlining.
  * @key stress randomness
  * @requires vm.compiler2.enabled
