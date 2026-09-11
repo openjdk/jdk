@@ -3533,6 +3533,13 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         describe the kind of reference
         being reported.
 
+        <p/>
+        <b>Implementation Note:</b>
+        In the HotSpot VM implementation, a reference from a class loader to each
+        non-hidden class defined by the class loader is reported with reference kind
+        <datalink id="JVMTI_HEAP_REFERENCE_OTHER"/>.
+        <p/>
+
         <constants id="jvmtiHeapReferenceKind"
                    label="Heap Reference Enumeration"
                    kind="enum"
@@ -3593,8 +3600,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
             Heap root reference: Thread.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_OTHER" num="27">
-            Heap root reference: other heap root reference. Implementation note: this will also
-            be used to refer to classes from a declaring class loader.
+            Other reference from an object to another object, or other heap root reference.
           </constant>
         </constants>
 
@@ -4284,7 +4290,7 @@ class C2 extends C1 implements I2 {
       <description>
         Agent supplied callback function.
         Describes a reference from an object or the VM (the referrer) to another object
-        (the referree) or a heap root to a referree.
+        (the referree) or a heap root.
         <p/>
         This function should return a bit vector of the desired
         <datalink id="jvmtiHeapVisitControl">visit control flags</datalink>.
