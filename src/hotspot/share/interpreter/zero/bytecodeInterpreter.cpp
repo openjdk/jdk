@@ -2677,7 +2677,7 @@ run:
         int field_offset = entry->field_offset();
         oop val = STACK_OBJECT(-1);
 
-        if (entry->is_null_free_inline_type()) {
+        if (entry->is_null_free_value_type()) {
           CHECK_NULL_MSG(val, "Value is null");
         }
 

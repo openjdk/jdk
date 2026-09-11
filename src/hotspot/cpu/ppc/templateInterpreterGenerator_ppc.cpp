@@ -619,9 +619,9 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
     default  : ShouldNotReachHere();
   }
 
-  if (state == atos && InlineTypeReturnedAsFields) {
-    __ unimplemented("return entry InlineTypeReturnedAsFields");
-    //__ store_inline_type_fields_to_buf(nullptr, true);
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ unimplemented("return entry ValueTypeReturnedAsFields");
+    //__ store_value_type_fields_to_buf(nullptr, true);
   }
 
   __ restore_interpreter_state(R11_scratch1, false /*bcp_and_mdx_only*/, true /*restore_top_frame_sp*/);

@@ -114,10 +114,12 @@ void VM_G1TryInitiateConcMark::doit() {
   }
 }
 
-VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t word_size,
+VM_G1CollectForAllocation::VM_G1CollectForAllocation(uint node_index,
+                                                     size_t word_size,
                                                      uint gc_count_before,
                                                      GCCause::Cause gc_cause) :
-  VM_CollectForAllocation(word_size, gc_count_before, gc_cause) {}
+  VM_CollectForAllocation(word_size, gc_count_before, gc_cause),
+  _node_index(node_index) {}
 
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -128,7 +130,7 @@ void VM_G1CollectForAllocation::doit() {
   if (_word_size > 0) {
     // An allocation had been requested. Do it, eventually trying a stronger
     // kind of GC.
-    _result = g1h->satisfy_failed_allocation(_word_size);
+    _result = g1h->satisfy_failed_allocation(_node_index, _word_size);
   } else if (g1h->should_upgrade_to_full_gc()) {
     // There has been a request to perform a GC to free some space. We have no
     // information on how much memory has been asked for. In case there are

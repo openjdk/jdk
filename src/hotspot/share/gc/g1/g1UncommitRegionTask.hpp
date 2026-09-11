@@ -49,13 +49,13 @@ class G1UncommitRegionTask : public G1ServiceTask {
   // Members to keep a summary of the current concurrent uncommit
   // work. Used for printing when no more work is available.
   Tickspan _summary_duration;
-  uint _summary_region_count;
+  uint _summary_num_regions;
 
   G1UncommitRegionTask();
   bool is_active();
   void set_active(bool state);
 
-  void report_execution(Tickspan time, uint regions);
+  void report_execution(Tickspan uncommit_time, uint num_uncommitted_regions);
   void report_summary();
   void clear_summary();
 
