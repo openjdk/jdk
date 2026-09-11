@@ -156,6 +156,7 @@ protected:
     virtual void post_restore(CodeBlob* instance) const {
       instance->post_restore_impl();
     };
+    virtual void cleanup(CodeBlob* instance) const { (void) instance; }
   };
 
   static const Vptr* vptr(CodeBlobKind kind);

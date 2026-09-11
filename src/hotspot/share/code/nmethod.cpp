@@ -128,6 +128,7 @@
 struct java_nmethod_stats_struct {
   uint nmethod_count;
   uint total_nm_size;
+  uint total_hdr_size;
   uint total_immut_size;
   uint total_mut_size;
   uint relocation_size;
@@ -145,6 +146,7 @@ struct java_nmethod_stats_struct {
   void note_nmethod(nmethod* nm) {
     nmethod_count += 1;
     total_nm_size       += nm->size();
+    total_hdr_size      += nm->hdr_size();
     total_immut_size    += nm->immutable_data_size();
     total_mut_size      += nm->mutable_data_size();
     relocation_size     += nm->relocation_size();
@@ -162,7 +164,7 @@ struct java_nmethod_stats_struct {
   void print_nmethod_stats(const char* name) {
     if (nmethod_count == 0)  return;
     tty->print_cr("Statistics for %u bytecoded nmethods for %s:", nmethod_count, name);
-    uint total_size = total_nm_size + total_immut_size + total_mut_size;
+    uint total_size = total_nm_size + total_hdr_size + total_immut_size + total_mut_size;
     if (total_nm_size != 0) {
       tty->print_cr(" total size      = %u (100%%)", total_size);
       tty->print_cr(" in CodeCache    = %u (%f%%)", total_nm_size, (total_nm_size * 100.0f)/total_size);
@@ -182,6 +184,9 @@ struct java_nmethod_stats_struct {
     }
     if (oops_size != 0) {
       tty->print_cr("   oops          = %u (%f%%)", oops_size, (oops_size * 100.0f)/total_nm_size);
+    }
+    if (total_hdr_size != 0) {
+      tty->print_cr(" external header = %u (%f%%)", total_hdr_size, (total_hdr_size * 100.0f)/total_size);
     }
     if (total_mut_size != 0) {
       tty->print_cr(" mutable data    = %u (%f%%)", total_mut_size, (total_mut_size * 100.0f)/total_size);
@@ -459,8 +464,8 @@ const char* nmethod::state() const {
 
 void nmethod::set_deoptimized_done() {
   ConditionalMutexLocker ml(NMethodState_lock, !NMethodState_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
-  if (_hdr->_deoptimization_status != NMethodHeader::deoptimize_done) { // can't go backwards
-    AtomicAccess::store(&_hdr->_deoptimization_status, NMethodHeader::deoptimize_done);
+  if (deoptimization_status() != deoptimize_done) { // can't go backwards
+    set_deoptimization_status(deoptimize_done);
   }
 }
 
@@ -1100,7 +1105,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   CompLevel comp_level,
-  NMethodHeader::Flags flags)
+  Flags flags)
 {
   assert(debug_info->oop_recorder() == code_buffer->oop_recorder(), "shared OR");
   code_buffer->finalize_oop_references(method);
@@ -1172,39 +1177,129 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   return nm;
 }
 
-// Fill in default values for various fields
-void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
-  assert(frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+nmethod::header::header(bool is_native,
+                        CodeBlob* cb,
+                        CodeBuffer *code_buffer,
+                        CodeOffsets* offsets,
+                        Method* method,
+                        Flags flags)
+  : _flags(flags) {
+  assert(cb->frame_complete_offset() == offsets->value(CodeOffsets::Frame_Complete), "offset truncated?");
+
+  _deoptimization_generation = 0;
+  _gc_epoch = CodeCache::gc_epoch();
+  _method = method;
 
   // avoid uninitialized fields, even for short time periods
-  _hdr->_exception_cache            = nullptr;
-  _hdr->_gc_data                    = nullptr;
-  _hdr->_oops_do_mark_link          = nullptr;
-  _hdr->_compiled_ic_data           = nullptr;
+  if (is_native) {
+    _native_receiver_sp_offset   = in_ByteSize(0);
+    _native_basic_lock_sp_offset = in_ByteSize(0);
+  } else {
+    _osr_link = nullptr;
+  }
 
-  _hdr->_is_unloading_state         = 0;
-  _hdr->_state                      = not_installed;
+  _exception_cache            = nullptr;
+  _gc_data                    = nullptr;
+  _oops_do_mark_link          = nullptr;
+  _compiled_ic_data           = nullptr;
 
-  _hdr->_has_flushed_dependencies   = 0;
-  _hdr->_is_unlinked                = 0;
-  _hdr->_load_reported              = 0; // jvmti state
+  _is_unloading_state         = 0;
+  _state                      = not_installed;
 
-  _hdr->_deoptimization_status      = NMethodHeader::not_marked;
+  _has_flushed_dependencies   = 0;
+  _is_unlinked                = 0;
+  _load_reported              = 0; // jvmti state
+
+  _deoptimization_status      = not_marked;
 
   // SECT_CONSTS is first in code buffer so the offset should be 0.
   int consts_offset = code_buffer->total_offset_of(code_buffer->consts());
   assert(consts_offset == 0, "const_offset: %d", consts_offset);
 
-  _hdr->_stub_offset = content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
+  _stub_offset = cb->content_offset() + code_buffer->total_offset_of(code_buffer->stubs());
 
-  CHECKED_CAST(_hdr->_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
-  CHECKED_CAST(_hdr->_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
+  CHECKED_CAST(_entry_offset,              uint16_t, (offsets->value(CodeOffsets::Entry)));
+  CHECKED_CAST(_verified_entry_offset,     uint16_t, (offsets->value(CodeOffsets::Verified_Entry)));
 
-  _hdr->_inline_entry_offset             = _hdr->_entry_offset;
-  _hdr->_verified_inline_entry_offset    = _hdr->_verified_entry_offset;
-  _hdr->_verified_inline_ro_entry_offset = _hdr->_verified_entry_offset;
+  _inline_entry_offset             = _entry_offset;
+  _verified_inline_entry_offset    = _verified_entry_offset;
+  _verified_inline_ro_entry_offset = _verified_entry_offset;
 
-  _hdr->_skipped_instructions_size = code_buffer->total_skipped_instructions_size();
+  _skipped_instructions_size = code_buffer->total_skipped_instructions_size();
+}
+
+nmethod::header::header(bool is_native,
+                        CodeBlob* new_cb,
+                        const header& hdr,
+                        ptrdiff_t nm_addr_diff)
+  : _flags(hdr._flags) {
+  _deoptimization_generation    = 0;
+  _gc_epoch                     = CodeCache::gc_epoch();
+  _method                       = hdr._method;
+
+  assert(!is_native, "native nmethods are not expected to be relocatable");
+  _osr_link                     = nullptr;
+
+  _exception_cache              = nullptr;
+  _gc_data                      = nullptr;
+  _oops_do_mark_link            = nullptr;
+  _compiled_ic_data             = nullptr;
+
+  // Relocate the OSR entry point from nm to the new nmethod.
+  if (hdr._osr_entry_point == nullptr) {
+    _osr_entry_point            = nullptr;
+  } else {
+    address new_addr = hdr._osr_entry_point + nm_addr_diff;
+    assert(new_addr >= new_cb->code_begin() && new_addr < new_cb->code_end(),
+           "relocated address must be within code bounds");
+    _osr_entry_point = new_addr;
+  }
+
+  _entry_offset                    = hdr._entry_offset;
+  _verified_entry_offset           = hdr._verified_entry_offset;
+  _inline_entry_offset             = hdr._inline_entry_offset;
+  _verified_inline_entry_offset    = hdr._verified_inline_entry_offset;
+  _verified_inline_ro_entry_offset = hdr._verified_inline_ro_entry_offset;
+  _entry_bci                       = hdr._entry_bci;
+  _immutable_data_size             = hdr._immutable_data_size;
+
+  _skipped_instructions_size       = hdr._skipped_instructions_size;
+  _stub_offset                     = hdr._stub_offset;
+  _exception_offset                = hdr._exception_offset;
+  _deopt_handler_entry_offset      = hdr._deopt_handler_entry_offset;
+  _unwind_handler_offset           = hdr._unwind_handler_offset;
+  _num_stack_arg_slots             = hdr._num_stack_arg_slots;
+  _nul_chk_table_offset            = hdr._nul_chk_table_offset;
+  _handler_table_offset            = hdr._handler_table_offset;
+  _scopes_pcs_offset               = hdr._scopes_pcs_offset;
+  _scopes_data_offset              = hdr._scopes_data_offset;
+  _immutable_data_ref_count_offset = hdr._immutable_data_ref_count_offset;
+
+  // Increment number of references to immutable data to share it between nmethods
+  if (_immutable_data_size > 0) {
+    _immutable_data                = hdr._immutable_data;
+  } else {
+    _immutable_data                = new_cb->blob_end();
+  }
+
+  _orig_pc_offset                  = hdr._orig_pc_offset;
+  _compile_id                      = hdr._compile_id;
+  _comp_level                      = hdr._comp_level;
+  _compiler_type                   = hdr._compiler_type;
+  _is_unloading_state              = hdr._is_unloading_state;
+  _state                           = not_installed;
+
+  _has_flushed_dependencies        = hdr._has_flushed_dependencies;
+  _is_unlinked                     = hdr._is_unlinked;
+  _load_reported                   = hdr._load_reported;
+
+  _deoptimization_status           = hdr._deoptimization_status;
+
+  if (hdr._pc_desc_container != nullptr) {
+    _pc_desc_container             = new PcDescContainer(scopes_pcs_begin());
+  } else {
+    _pc_desc_container             = nullptr;
+  }
 }
 
 // Post initialization
@@ -1248,17 +1343,12 @@ nmethod::nmethod(
     assert_locked_or_safepoint(CodeCache_lock);
     assert(!method->has_scalarized_args(), "scalarized native wrappers not supported yet");
 
-    // Allocate space for NMethodHeader in C Heap
-    _hdr = new NMethodHeader();
+    // Allocate space for header in C Heap
+    _hdr = new header(/*is_native=*/ true, this, code_buffer, offsets, method);
     if (_hdr == nullptr) {
-      vm_exit_out_of_memory(sizeof(NMethodHeader), OOM_MALLOC_ERROR, "no space for NMethodHeader");
+      vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
     }
 
-    init_defaults(code_buffer, offsets);
-
-    _hdr->_deoptimization_generation = 0;
-    _hdr->_gc_epoch = CodeCache::gc_epoch();
-    _hdr->_method = method;
     _hdr->_native_receiver_sp_offset = basic_lock_owner_sp_offset;
     _hdr->_native_basic_lock_sp_offset = basic_lock_sp_offset;
     _hdr->_osr_entry_point         = nullptr;
@@ -1387,74 +1477,16 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
     _mutable_data               = nullptr;
   }
 
-   // Allocate space for NMethodHeader in C Heap
-  _hdr = new NMethodHeader(nm._hdr->_flags);
+   // Allocate space for header in C Heap
+  _hdr = new header(/*is_native=*/ false, this, *nm._hdr, (address) this - (address) &nm);
   if (_hdr == nullptr) {
-    vm_exit_out_of_memory(sizeof(NMethodHeader), OOM_MALLOC_ERROR, "no space for NMethodHeader");
+    vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
   }
-
-  _hdr->_deoptimization_generation    = 0;
-  _hdr->_gc_epoch                     = CodeCache::gc_epoch();
-  _hdr->_method                       = nm._hdr->_method;
-  _hdr->_osr_link                     = nullptr;
-
-  _hdr->_exception_cache              = nullptr;
-  _hdr->_gc_data                      = nullptr;
-  _oops_do_mark_nmethods        = nullptr;
-  _hdr->_oops_do_mark_link            = nullptr;
-  _hdr->_compiled_ic_data             = nullptr;
-
-  if (nm._hdr->_osr_entry_point != nullptr) {
-    _hdr->_osr_entry_point            = (nm._hdr->_osr_entry_point - (address) &nm) + (address) this;
-  } else {
-    _hdr->_osr_entry_point            = nullptr;
-  }
-
-  _hdr->_entry_offset                 = nm._hdr->_entry_offset;
-  _hdr->_verified_entry_offset        = nm._hdr->_verified_entry_offset;
-  _hdr->_inline_entry_offset             = nm._hdr->_inline_entry_offset;
-  _hdr->_verified_inline_entry_offset    = nm._hdr->_verified_inline_entry_offset;
-  _hdr->_verified_inline_ro_entry_offset = nm._hdr->_verified_inline_ro_entry_offset;
-  _hdr->_entry_bci                    = nm._hdr->_entry_bci;
-  _hdr->_immutable_data_size          = nm._hdr->_immutable_data_size;
-
-  _hdr->_skipped_instructions_size    = nm._hdr->_skipped_instructions_size;
-  _hdr->_stub_offset                  = nm._hdr->_stub_offset;
-  _hdr->_exception_offset             = nm._hdr->_exception_offset;
-  _hdr->_deopt_handler_entry_offset   = nm._hdr->_deopt_handler_entry_offset;
-  _hdr->_unwind_handler_offset        = nm._hdr->_unwind_handler_offset;
-  _hdr->_num_stack_arg_slots          = nm._hdr->_num_stack_arg_slots;
-  _hdr->_nul_chk_table_offset         = nm._hdr->_nul_chk_table_offset;
-  _hdr->_handler_table_offset         = nm._hdr->_handler_table_offset;
-  _hdr->_scopes_pcs_offset            = nm._hdr->_scopes_pcs_offset;
-  _hdr->_scopes_data_offset           = nm._hdr->_scopes_data_offset;
-  _hdr->_immutable_data_ref_count_offset = nm._hdr->_immutable_data_ref_count_offset;
 
   // Increment number of references to immutable data to share it between nmethods
   if (_hdr->_immutable_data_size > 0) {
-    _hdr->_immutable_data             = nm._hdr->_immutable_data;
+    assert(_hdr->_immutable_data == nm._hdr->_immutable_data, "wrong immutable_data link");
     inc_immutable_data_ref_count();
-  } else {
-    _hdr->_immutable_data             = blob_end();
-  }
-
-  _hdr->_orig_pc_offset               = nm._hdr->_orig_pc_offset;
-  _hdr->_compile_id                   = nm._hdr->_compile_id;
-  _hdr->_comp_level                   = nm._hdr->_comp_level;
-  _hdr->_compiler_type                = nm._hdr->_compiler_type;
-  _hdr->_is_unloading_state           = nm._hdr->_is_unloading_state;
-  _hdr->_state                        = not_installed;
-
-  _hdr->_has_flushed_dependencies     = nm._hdr->_has_flushed_dependencies;
-  _hdr->_is_unlinked                  = nm._hdr->_is_unlinked;
-  _hdr->_load_reported                = nm._hdr->_load_reported;
-
-  _hdr->_deoptimization_status        = nm._hdr->_deoptimization_status;
-
-  if (nm._hdr->_pc_desc_container != nullptr) {
-    _hdr->_pc_desc_container          = new PcDescContainer(scopes_pcs_begin());
-  } else {
-    _hdr->_pc_desc_container          = nullptr;
   }
 
   // Copy nmethod contents excluding header
@@ -1637,7 +1669,7 @@ nmethod::nmethod(
   ImplicitExceptionTable* nul_chk_table,
   AbstractCompiler* compiler,
   CompLevel comp_level,
-  NMethodHeader::Flags flags)
+  Flags flags)
   : CodeBlob("nmethod", CodeBlobKind::Nmethod, code_buffer, nmethod_size, sizeof(nmethod),
              offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, mutable_data_size)
 {
@@ -1646,18 +1678,12 @@ nmethod::nmethod(
     DEBUG_ONLY(NoSafepointVerifier nsv;)
     assert_locked_or_safepoint(CodeCache_lock);
 
-    // Allocate space for NMethodHeader in C Heap
-    _hdr = new NMethodHeader(flags);
+    // Allocate space for header in C Heap
+    _hdr = new header(/*is_native=*/ false, this, code_buffer, offsets, method, flags);
     if (_hdr == nullptr) {
-      vm_exit_out_of_memory(sizeof(NMethodHeader), OOM_MALLOC_ERROR, "no space for NMethodHeader");
+      vm_exit_out_of_memory(sizeof(header), OOM_MALLOC_ERROR, "no space for header");
     }
 
-    init_defaults(code_buffer, offsets);
-
-    _hdr->_deoptimization_generation = 0;
-    _hdr->_gc_epoch = CodeCache::gc_epoch();
-    _hdr->_method = method;
-    _hdr->_osr_link = nullptr;
     _hdr->_osr_entry_point = code_begin() + offsets->value(CodeOffsets::OSR_Entry);
     _hdr->_entry_bci       = entry_bci;
     _hdr->_compile_id      = compile_id;
@@ -2782,32 +2808,32 @@ void nmethod::oops_do_set_strong_done(nmethod* old_head) {
   _hdr->_oops_do_mark_link = mark_link(old_head, claim_strong_done_tag);
 }
 
-nmethod::NMethodHeader::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
+nmethod::header::oops_do_mark_link* nmethod::oops_do_try_claim_strong_done() {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
 
-  nmethod::NMethodHeader::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, mark_link(nullptr, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, mark_link(nullptr, claim_weak_request_tag), mark_link(this, claim_strong_done_tag));
   if (old_next == nullptr) {
     oops_do_log_change("oops_do, mark strong done");
   }
   return old_next;
 }
 
-nmethod::NMethodHeader::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(NMethodHeader::oops_do_mark_link* next) {
+nmethod::header::oops_do_mark_link* nmethod::oops_do_try_add_strong_request(header::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(next == mark_link(this, claim_weak_request_tag), "Should be claimed as weak");
 
-  nmethod::NMethodHeader::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(this, claim_strong_request_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark strong request");
   }
   return old_next;
 }
 
-bool nmethod::oops_do_try_claim_weak_done_as_strong_done(NMethodHeader::oops_do_mark_link* next) {
+bool nmethod::oops_do_try_claim_weak_done_as_strong_done(header::oops_do_mark_link* next) {
   assert(SafepointSynchronize::is_at_safepoint(), "only at safepoint");
   assert(extract_state(next) == claim_weak_done_tag, "Should be claimed as weak done");
 
-  nmethod::NMethodHeader::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
+  nmethod::header::oops_do_mark_link* old_next = AtomicAccess::cmpxchg(&_hdr->_oops_do_mark_link, next, mark_link(extract_nmethod(next), claim_strong_done_tag));
   if (old_next == next) {
     oops_do_log_change("oops_do, mark weak done -> mark strong done");
     return true;
@@ -2876,7 +2902,7 @@ void nmethod::oops_do_process_weak(OopsDoProcessor* p) {
 }
 
 void nmethod::oops_do_process_strong(OopsDoProcessor* p) {
-  NMethodHeader::oops_do_mark_link* next_raw = oops_do_try_claim_strong_done();
+  header::oops_do_mark_link* next_raw = oops_do_try_claim_strong_done();
   if (next_raw == nullptr) {
     p->do_regular_processing(this);
     oops_do_add_to_list_as_strong_done();
@@ -2884,7 +2910,7 @@ void nmethod::oops_do_process_strong(OopsDoProcessor* p) {
   }
   // Claim failed. Figure out why and handle it.
   if (oops_do_has_weak_request(next_raw)) {
-    NMethodHeader::oops_do_mark_link* old = next_raw;
+    header::oops_do_mark_link* old = next_raw;
     // Claim failed because being weak processed (state == "weak request").
     // Try to request deferred strong processing.
     next_raw = oops_do_try_add_strong_request(old);

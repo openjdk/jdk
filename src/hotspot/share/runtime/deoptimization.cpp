@@ -138,15 +138,15 @@ void DeoptimizationScope::mark(nmethod* nm, bool inc_recompile_counts) {
   }
 
   MACOS_AARCH64_ONLY(os::thread_wx_enable_write());
-  nmethod::NMethodHeader::DeoptimizationStatus status =
-    inc_recompile_counts ? nmethod::NMethodHeader::deoptimize : nmethod::NMethodHeader::deoptimize_noupdate;
-  AtomicAccess::store(&nm->_hdr->_deoptimization_status, status);
+  nmethod::DeoptimizationStatus status =
+    inc_recompile_counts ? nmethod::deoptimize : nmethod::deoptimize_noupdate;
+  nm->set_deoptimization_status(status);
 
   // Make sure active is not committed
   assert(DeoptimizationScope::_committed_deopt_gen < DeoptimizationScope::_active_deopt_gen, "Must be");
-  assert(nm->_hdr->_deoptimization_generation == 0, "Is already marked");
+  assert(nm->deoptimization_generation() == 0, "Is already marked");
 
-  nm->_hdr->_deoptimization_generation = DeoptimizationScope::_active_deopt_gen;
+  nm->set_deoptimization_generation(DeoptimizationScope::_active_deopt_gen);
   _required_gen                  = DeoptimizationScope::_active_deopt_gen;
 }
 
@@ -155,8 +155,8 @@ void DeoptimizationScope::dependent(nmethod* nm) {
 
   // A method marked by someone else may have a _required_gen lower than what we marked with.
   // Therefore only store it if it's higher than _required_gen.
-  if (_required_gen < nm->_hdr->_deoptimization_generation) {
-    _required_gen = nm->_hdr->_deoptimization_generation;
+  if (_required_gen < nm->deoptimization_generation()) {
+    _required_gen = nm->deoptimization_generation();
   }
 }
 

@@ -1768,8 +1768,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ beq(CR0, Lforward);
 
     // Has the nmethod been invalidated already?
-    __ ld(R0, in_bytes(nmethod::hdr_offset()), R3_RET);
-    __ lbz(R0, in_bytes(nmethod::state_offset()), R0);
+    __ ld(Rscratch1, in_bytes(nmethod::hdr_offset()), R3_RET);
+    __ lbz(R0, in_bytes(nmethod::state_offset()), Rscratch1);
     __ cmpwi(CR0, R0, nmethod::in_use);
     __ bne(CR0, Lforward);
 

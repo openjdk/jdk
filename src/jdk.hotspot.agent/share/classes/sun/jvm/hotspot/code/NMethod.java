@@ -48,7 +48,7 @@ public class NMethod extends CodeBlob {
   private static AddressField  osrLinkField;
   private static AddressField  immutableDataField;
   private static CIntegerField immutableDataSizeField;
-  // Size of NMethodHeader
+  // Size of nmethod::header
   private static long          NMethodHeaderSize;
 
   /** Offsets for different nmethod parts */
@@ -83,7 +83,7 @@ public class NMethod extends CodeBlob {
   }
 
   private static void initialize(TypeDataBase db) {
-    Type type = db.lookupType("nmethod::NMethodHeader");
+    Type type = db.lookupType("nmethod::header");
 
     headerField                        = db.lookupType("nmethod").getAddressField("_hdr");
     methodField                        = type.getAddressField("_method");
@@ -129,13 +129,13 @@ public class NMethod extends CodeBlob {
 
   /** Boundaries for different parts */
   public Address NMethodHeaderBegin() throws UnmappedAddressException {
-    // read _hdr out of the nmethod object
-    Address nmethod_hdr = headerField.getAddress(getAddress());
-    if (nmethod_hdr == null) {
+    Address nmethod_addr = getAddress();
+    Address nmethod_hdr_addr = headerField.getValue(nmethod_addr);
+    if (nmethod_hdr_addr == null) {
       throw new UnmappedAddressException("nmethod header is missing", 0);
     }
 
-    return nmethod_hdr;
+    return nmethod_hdr_addr;
   }
 
   public Address NMethodHeaderEnd() throws UnmappedAddressException {
