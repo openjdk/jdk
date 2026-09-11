@@ -81,11 +81,6 @@ private:
 public:
   ShenandoahGenerationalControlThread();
 
-  void run_service() override;
-  void stop_service() override;
-
-  void request_gc(GCCause::Cause cause) override;
-
   // Return true if the request to start a concurrent GC for the given generation succeeded.
   bool request_concurrent_gc(ShenandoahGeneration* generation);
 
@@ -93,6 +88,14 @@ public:
   GCMode gc_mode() const {
     return _gc_mode;
   }
+
+protected:
+  void run_service() override;
+  void stop_service() override;
+
+  void notify_alloc_stall(GCCause::Cause cause) override;
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+
 private:
 
   // Executes one GC cycle
@@ -107,12 +110,6 @@ private:
   void service_concurrent_normal_cycle(const ShenandoahGCRequest& request);
   void service_concurrent_old_cycle(const ShenandoahGCRequest& request);
 
-  // Blocks until at least one cycle is complete. WARNING: it doesn't know what kind of cycle will be run.
-  void handle_requested_gc(GCCause::Cause cause, ShenandoahGeneration* generation);
-
-  // Blocks until at least one full GC cycle is comp
-  void handle_alloc_failure_full();
-
   // Returns true if the old generation marking was interrupted to allow a young cycle.
   bool preempt_old_marking(ShenandoahGeneration* generation);
 
@@ -126,10 +123,9 @@ private:
 
   // These notify the control thread after updating _requested_gc_cause and (optionally) _requested_generation.
   // Updating the requested generation is not necessary for allocation failures nor when stopping the thread.
-  void notify_control_thread(GCCause::Cause cause);
   void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause);
-  void notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation);
-  void notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  bool notify_control_thread(MonitorLocker& ml, GCCause::Cause cause, ShenandoahGeneration* generation);
+  void request_gc_and_interrupt_old(GCCause::Cause cause, ShenandoahGeneration* generation);
 
   // Take the _control_lock and check for a request to run a gc cycle. If a request is found,
   // the `prepare` methods are used to configure the heap and update heuristics accordingly.
@@ -141,6 +137,9 @@ private:
 
   // Print table for young region ages if log is enabled
   void maybe_print_young_region_ages() const;
+
+  // Will also schedule an immediate full gc if old evacuations failed
+  void clear_allocation_failure_and_notify_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALCONTROLTHREAD_HPP

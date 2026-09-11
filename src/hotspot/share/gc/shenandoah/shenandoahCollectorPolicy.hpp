@@ -38,9 +38,12 @@ class ShenandoahCollectorPolicy : public CHeapObj<mtGC> {
 private:
   size_t _success_concurrent_gcs;
   size_t _abbreviated_concurrent_gcs;
-  // Written by control thread, read by mutators
+
+  // Written by control thread, read by mutators (infrequently)
+  Atomic<size_t> _last_whole_heap_gc_id;
   volatile size_t _success_full_gcs;
   volatile size_t _consecutive_young_gcs;
+
   size_t _mixed_gcs;
   size_t _success_old_gcs;
   size_t _interrupted_old_gcs;
@@ -65,9 +68,9 @@ public:
   // end after final mark, skipping the evacuation and reference-updating phases. Such
   // cycles are very efficient and are worth tracking. Note that both degenerated and
   // concurrent cycles can be abbreviated.
-  void record_success_concurrent(bool is_young, bool is_abbreviated);
+  void record_success_concurrent(size_t gc_id, bool is_young, bool is_abbreviated);
 
-  void record_success_full();
+  void record_success_full(size_t gc_id);
   void record_allocation_stall(ShenandoahController::ShenandoahCollectorPhase phase);
   void record_alloc_failure_to_full();
   void record_collection_cause(GCCause::Cause cause);
@@ -81,6 +84,10 @@ public:
 
   size_t full_gc_count() const {
     return _success_full_gcs;
+  }
+
+  size_t last_whole_heap_gc_id() const {
+    return _last_whole_heap_gc_id.load_relaxed();
   }
 
   static bool is_allocation_failure(GCCause::Cause cause);

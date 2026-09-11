@@ -25,15 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
 
-#include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahController.hpp"
-#include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
+class ShenandoahGeneration;
+
 class ShenandoahControlThread: public ShenandoahController {
-private:
   typedef enum {
     none,
     concurrent_normal,
@@ -46,27 +44,21 @@ private:
   // protecting _requested_gc_cause.
   Monitor _control_lock;
 
+public:
+  ShenandoahControlThread();
+
 protected:
   void run_service() override;
   void stop_service() override;
 
-public:
-  ShenandoahControlThread();
-  void request_gc(GCCause::Cause cause) override;
+  // Sets the requested cause, flag and notifies the control thread
+  bool notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* generation) override;
+  void notify_alloc_stall(GCCause::Cause cause) override;
 
 private:
-  // Sets the requested cause and notifies the control thread
-  void notify_control_thread(GCCause::Cause cause);
-
-  bool check_cancellation();
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
 
-  // Handle GC request.
-  // Blocks until GC is over.
-  void handle_requested_gc(GCCause::Cause cause);
-
-  void handle_alloc_failure_full();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
