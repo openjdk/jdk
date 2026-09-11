@@ -23,6 +23,7 @@
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -127,6 +128,13 @@ public class SecurityPropertiesPluginTest {
         {"zzz", "multi-line\\nvalue", "zzz", "multi-line\nvalue"}
     };
 
+    private static final String DUPLICATE_PROPS =
+        """
+        foo=123
+        bar=789
+        foo=456
+        """;
+
     public static void main(String[] args) throws Throwable {
 
         helper = Helper.newHelper(LINKABLE_RUNTIME);
@@ -177,27 +185,8 @@ public class SecurityPropertiesPluginTest {
             .option("java.base.jmod.extracted");
         jmodTask.extract().assertSuccess();
 
-        // Replace JDK's java.security file with test version. First, sanity
-        // check syntax of replacement by loading it in Properties object.
-        Properties props = new Properties();
-        props.load(new ByteArrayInputStream(
-            JAVA_SECURITY_REPLACEMENT.getBytes(StandardCharsets.ISO_8859_1)));
-
-        // Now replace the extracted JDK's java.security file
-        Path extractedPath = Path.of(TEST_DIR, "java.base.jmod.extracted");
-        Files.copy(new ByteArrayInputStream(
-            JAVA_SECURITY_REPLACEMENT.getBytes(StandardCharsets.ISO_8859_1)),
-            extractedPath.resolve(SECPROPS_PATH),
-            StandardCopyOption.REPLACE_EXISTING);
-
         // Create a new java.base.jmod with replacement java.security file
-        jmodTask = JImageGenerator.getJModTask()
-            .addClassPath(extractedPath.resolve("classes"))
-            .addCmds(extractedPath.resolve("bin"))
-            .addConfig(extractedPath.resolve("conf"))
-            .addNativeLibraries(extractedPath.resolve("lib"))
-            .jmod(Path.of(TEST_DIR, "jmods/java.base.jmod"));
-        jmodTask.create().assertSuccess();
+        createReplacementJmod(JAVA_SECURITY_REPLACEMENT);
 
         // Create default module for testing
         Path customModule =
@@ -215,6 +204,45 @@ public class SecurityPropertiesPluginTest {
         jLinkTask.call().assertSuccess();
 
         testImage(customImage);
+
+        Files.delete(Path.of(TEST_DIR, "jmods/java.base.jmod"));
+        createReplacementJmod(DUPLICATE_PROPS);
+
+        // Create second image using custom module and new java.base.jmod
+        // Expect failure because java.security file has duplicate properties.
+        customImage = Path.of(TEST_DIR, "images/customModule2.image");
+        jLinkTask = JImageGenerator.getJLinkTask()
+            .modulePath(Path.of(TEST_DIR, "jmods").toString())
+            .output(customImage)
+            .addMods("customModule")
+            .limitMods("customModule")
+            .option("--security-properties")
+            .option("test.security");
+        jLinkTask.call().assertFailure("Parsing error, duplicate property");
+    }
+
+    private static void createReplacementJmod(String jsProps) throws IOException{
+        // Replace JDK's java.security file with test version. First, sanity
+        // check syntax of replacement by loading it in Properties object.
+        Properties props = new Properties();
+        props.load(new ByteArrayInputStream(
+            jsProps.getBytes(StandardCharsets.ISO_8859_1)));
+
+        // Now replace the extracted JDK's java.security file
+        Path extractedPath = Path.of(TEST_DIR, "java.base.jmod.extracted");
+        Files.copy(new ByteArrayInputStream(
+            jsProps.getBytes(StandardCharsets.ISO_8859_1)),
+            extractedPath.resolve(SECPROPS_PATH),
+            StandardCopyOption.REPLACE_EXISTING);
+
+        // Create a new java.base.jmod with replacement java.security file
+        JModTask jmodTask = JImageGenerator.getJModTask()
+            .addClassPath(extractedPath.resolve("classes"))
+            .addCmds(extractedPath.resolve("bin"))
+            .addConfig(extractedPath.resolve("conf"))
+            .addNativeLibraries(extractedPath.resolve("lib"))
+            .jmod(Path.of(TEST_DIR, "jmods/java.base.jmod"));
+        jmodTask.create().assertSuccess();
     }
 
     private static void testImage(Path image) throws Exception {

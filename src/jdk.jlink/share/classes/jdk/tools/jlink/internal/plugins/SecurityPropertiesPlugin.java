@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
@@ -108,6 +109,7 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
     private byte[] processProperties(InputStream content) {
 
         List<String> lines = new ArrayList<>();
+        Set<String> keys = new HashSet<>();
 
         // Read in contents of java.security file into separate list,
         // replacing values of overridden properties as we go.
@@ -144,6 +146,11 @@ public class SecurityPropertiesPlugin extends AbstractPlugin {
 
                 // check if property should be overridden
                 String propName = propNames.iterator().next();
+                if (keys.contains(propName)) {
+                    throw new PluginException("Parsing error, " +
+                        "duplicate property: " + propName);
+                }
+                keys.add(propName);
                 String propValue = (String) extraProps.remove(propName);
                 if (propValue != null) {
                     // override value

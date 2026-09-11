@@ -245,8 +245,9 @@ Description
     configuration file with the properties in the specified *filename*.
     Security properties with the same name are overridden and security
     properties not present are added to the end of the
-    `conf/security/java.security` configuration file. Comments in the
-    properties file are ignored and not copied. If the properties file
+    `conf/security/java.security` configuration file. Duplicate properties in
+    the `java.security` file are disallowed and treated as an error. Comments
+    in the properties file are ignored and not copied. If the properties file
     contains an include statement, it is always added as the last line of the
     `conf/security/java.security` configuration file, after any new security
     properties that may have been added. The include filename does not need to
