@@ -1526,6 +1526,24 @@ void CodeCache::verify() {
   }
 }
 
+void CodeCache::report_code_heap_full_event(CodeHeap* heap) {
+  assert(heap != nullptr, "heap is null");
+  EventCodeCacheFull event;
+  if (event.should_commit()) {
+    event.set_codeBlobType((u1)heap->code_blob_type());
+    event.set_startAddress((u8)heap->low_boundary());
+    event.set_commitedTopAddress((u8)heap->high());
+    event.set_reservedTopAddress((u8)heap->high_boundary());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
+    event.set_unallocatedCapacity(heap->unallocated_capacity());
+    event.set_fullCount(heap->full_count());
+    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
+    event.commit();
+  }
+}
+
 // A CodeHeap is full. Print out warning and report event.
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
@@ -1579,20 +1597,7 @@ void CodeCache::report_codemem_full(CodeBlobType code_blob_type, bool print) {
     }
   }
 
-  EventCodeCacheFull event;
-  if (event.should_commit()) {
-    event.set_codeBlobType((u1)code_blob_type);
-    event.set_startAddress((u8)heap->low_boundary());
-    event.set_commitedTopAddress((u8)heap->high());
-    event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(heap->blob_count());
-    event.set_methodCount(heap->nmethod_count());
-    event.set_adaptorCount(heap->adapter_count());
-    event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
-    event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
-    event.commit();
-  }
+  report_code_heap_full_event(heap);
 }
 PRAGMA_DIAG_POP
 
