@@ -84,8 +84,8 @@ JVMFlag::Error G1HeapRegionSizeConstraintFunc(size_t value, bool verbose) {
   if (value != 0 && value < G1HeapRegionBounds::min_size()) {
     JVMFlag::printError(verbose,
                         "G1HeapRegionSize (%zu) must be "
-                        "greater than or equal to ergonomic heap region minimum size (%zu)\n",
-                        value, G1HeapRegionBounds::min_size());
+                        "greater than or equal to ergonomic heap region minimum size (%zuM)\n",
+                        value, G1HeapRegionBounds::min_size() / M);
     return JVMFlag::VIOLATES_CONSTRAINT;
   } else {
     return JVMFlag::SUCCESS;
