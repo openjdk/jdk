@@ -29,9 +29,9 @@
  * @requires vm.compiler2.enabled
  * @enablePreview
  * @run main ${test.main.class}
- * @run main/othervm -Xbatch -XX:-TieredCompilation
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:+StressIncrementalInlining -XX:StressSeed=3860063970
- *                   -XX:CompileCommand=compileonly,${test.main.class}::test 
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressIGVN -XX:+StressIncrementalInlining -XX:StressSeed=3860063970
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   ${test.main.class}
  */
 
