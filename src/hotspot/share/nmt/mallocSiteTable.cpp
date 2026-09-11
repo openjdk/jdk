@@ -32,7 +32,7 @@
 Atomic<MallocSiteHashtableEntry*>*  MallocSiteTable::_table = nullptr;
 const NativeCallStack* MallocSiteTable::_hash_entry_allocation_stack = nullptr;
 const MallocSiteHashtableEntry* MallocSiteTable::_hash_entry_allocation_site = nullptr;
-Atomic<size_t> MallocSiteTable::_entry_count(0);
+Atomic<int> MallocSiteTable::_entry_count(0);
 
 /*
  * Initialize malloc site table.
@@ -83,7 +83,7 @@ bool MallocSiteTable::initialize() {
   // Add the allocation site to hashtable.
   int index = hash_to_index(entry.hash());
   _table[index].store_relaxed(const_cast<MallocSiteHashtableEntry*>(&entry));
-  _entry_count.add_then_fetch(1ul, memory_order_relaxed);
+  _entry_count.add_then_fetch(1, memory_order_relaxed);
 
   return true;
 }
@@ -129,7 +129,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
 
     // swap in the head
     if (_table[index].compare_set(nullptr, entry)) {
-      _entry_count.add_then_fetch(1ul, memory_order_relaxed);
+      _entry_count.add_then_fetch(1, memory_order_relaxed);
       *marker = build_marker(index, 0);
       return entry->data();
     }
@@ -155,7 +155,7 @@ MallocSite* MallocSiteTable::lookup_or_add(const NativeCallStack& key, uint32_t*
       if (head->atomic_insert(entry)) {
         pos_idx ++;
         *marker = build_marker(index, pos_idx);
-        _entry_count.add_then_fetch(1ul, memory_order_relaxed);
+        _entry_count.add_then_fetch(1, memory_order_relaxed);
         return entry->data();
       }
       // contended, other thread won
@@ -242,7 +242,7 @@ void MallocSiteTable::print_tuning_statistics(outputStream* st) {
   st->print_cr("Malloc allocation site table:");
 #ifdef ASSERT
   // This is solely for testing
-  st->print_cr("\tExpected entry count: %zu", _entry_count.load_relaxed());
+  st->print_cr("\tExpected entry count: %d", _entry_count.load_relaxed());
 #endif
   st->print_cr("\tTotal entries: %d", total_entries);
   st->print_cr("\tEmpty entries (no outstanding mallocs): %d (%2.2f%%)",
