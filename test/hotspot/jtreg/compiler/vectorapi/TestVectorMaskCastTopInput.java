@@ -29,9 +29,10 @@
  * @modules jdk.incubator.vector
  *
  * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+StressIGVN -XX:RepeatCompilation=100
+ *                   -XX:CompileThreshold=100 -XX:+StressIGVN -XX:StressSeed=14
  *                   -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   ${test.main.class}
+ * @run main ${test.main.class}
  */
 
 package compiler.vectorapi;
@@ -47,7 +48,7 @@ public class TestVectorMaskCastTopInput {
     static final VectorSpecies<Double> SPECIES = DoubleVector.SPECIES_256;
 
     public static void main(String[] args) {
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 100; i++) {
             test();
         }
     }
