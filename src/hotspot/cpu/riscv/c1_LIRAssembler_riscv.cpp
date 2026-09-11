@@ -795,7 +795,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
-                          CodeEmitInfo* info, bool wide, bool is_volatile) {
+                            CodeEmitInfo* info, bool wide, bool is_volatile) {
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
 
@@ -812,7 +812,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   }
 
   if (is_volatile) {
-    load_volatile(from_addr, dest, type, info);
+    load_volatile(from_addr, dest, type, wide, info);
   } else {
     load_unordered(from_addr, dest, type, wide, info);
   }
@@ -880,8 +880,8 @@ void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicTy
   }
 }
 
-void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  load_unordered(from_addr, dest, type, false, info);
+void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info) {
+  load_unordered(from_addr, dest, type, wide, info);
   membar_acquire();
 }
 
