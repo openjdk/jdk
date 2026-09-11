@@ -8538,6 +8538,20 @@ instruct convI2L_subI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %
   ins_pipe(ialu_reg_reg);
 %}
 
+instruct convI2L_negI_reg(iRegLNoSp dst, iRegIorL2I src, immI0 zero) %{
+  match(Set dst (ConvI2L (SubI zero src)));
+
+  ins_cost(ALU_COST);
+  format %{ "subw  $dst, x0, $src\t# int, #@convI2L_negI_reg" %}
+
+  ins_encode %{
+    __ negw(as_Register($dst$$reg),
+            as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
 instruct convI2L_mulI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
   match(Set dst (ConvI2L (MulI src1 src2)));
 
@@ -8551,6 +8565,66 @@ instruct convI2L_mulI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %
   %}
 
   ins_pipe(imul_reg_reg);
+%}
+
+instruct convI2L_divI(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (DivI src1 src2)));
+
+  ins_cost(IDIVSI_COST);
+  format %{ "divw  $dst, $src1, $src2\t#@convI2L_divI" %}
+
+  ins_encode %{
+    __ divw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+instruct convI2L_UdivI(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (UDivI src1 src2)));
+
+  ins_cost(IDIVSI_COST);
+  format %{ "divuw  $dst, $src1, $src2\t#@convI2L_UdivI" %}
+
+  ins_encode %{
+    __ divuw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(idiv_reg_reg);
+%}
+
+instruct convI2L_modI(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (ModI src1 src2)));
+
+  ins_cost(IDIVSI_COST);
+  format %{ "remw  $dst, $src1, $src2\t#@convI2L_modI" %}
+
+  ins_encode %{
+    __ remw(as_Register($dst$$reg),
+            as_Register($src1$$reg),
+            as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
+%}
+
+instruct convI2L_UmodI(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
+  match(Set dst (ConvI2L (UModI src1 src2)));
+
+  ins_cost(IDIVSI_COST);
+  format %{ "remuw  $dst, $src1, $src2\t#@convI2L_UmodI" %}
+
+  ins_encode %{
+    __ remuw(as_Register($dst$$reg),
+             as_Register($src1$$reg),
+             as_Register($src2$$reg));
+  %}
+
+  ins_pipe(ialu_reg_reg);
 %}
 
 instruct convI2L_lShiftI_reg_reg(iRegLNoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
