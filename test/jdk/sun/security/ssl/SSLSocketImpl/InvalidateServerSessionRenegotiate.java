@@ -56,6 +56,7 @@ public class InvalidateServerSessionRenegotiate implements
             System.out.println("Session: " + event.getSession().toString());
             System.out.println("Seen handshake completed #" +
                 handshakesCompleted);
+            notifyAll();
         }
     }
 
@@ -273,11 +274,16 @@ public class InvalidateServerSessionRenegotiate implements
         }
 
         /*
-         * Give the Handshaker Thread a chance to run
+         * Wait until both HandshakeCompleted events have been delivered,
+         * with a timeout to avoid hanging forever if something goes wrong.
          */
-        Thread.sleep(1000);
-
         synchronized (this) {
+            long deadline = System.currentTimeMillis() + 5000;
+            while (handshakesCompleted < 2) {
+                long remaining = deadline - System.currentTimeMillis();
+                if (remaining <= 0) break;
+                wait(remaining);
+            }
             if (handshakesCompleted != 2) {
                 throw new Exception("Didn't see 2 handshake completed events.");
             }
