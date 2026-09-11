@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,22 @@
 #include "gc/g1/g1HeapRegion.hpp"
 #include "utilities/macros.hpp"
 
-#define assert_heap_region_set(p, message) \
-  do {                                     \
-    assert((p), "[%s] %s ln: %u",          \
-           name(), message, length());     \
+#define assert_heap_region_set(p, message)  \
+  do {                                      \
+    assert((p), "[%s] %s num regions: %u",  \
+           name(), message, num_regions()); \
   } while (0)
 
-#define guarantee_heap_region_set(p, message) \
-  do {                                        \
-    guarantee((p), "[%s] %s ln: %u",          \
-              name(), message, length());     \
+#define guarantee_heap_region_set(p, message)  \
+  do {                                         \
+    guarantee((p), "[%s] %s num regions: %u",  \
+              name(), message, num_regions()); \
   } while (0)
 
 #define assert_free_region_list(p, message)                          \
   do {                                                               \
     assert((p), "[%s] %s ln: %u hd: " PTR_FORMAT " tl: " PTR_FORMAT, \
-           name(), message, length(), p2i(_head), p2i(_tail));       \
+           name(), message, num_regions(), p2i(_head), p2i(_tail));  \
   } while (0)
 
 
@@ -59,10 +59,9 @@ public:
   virtual const char* get_description() = 0;
 };
 
-// Base class for all the classes that represent heap region sets. It
-// contains the basic attributes that each set needs to maintain
-// (e.g., length, region num, used bytes sum) plus any shared
-// functionality (e.g., verification).
+// Base class for all the classes that represent heap region sets. It contains the
+// basic attributes that each set needs to maintain (e.g., number of regions) plus
+// any shared functionality (e.g., verification).
 
 class G1HeapRegionSetBase {
   friend class VMStructs;
@@ -70,8 +69,8 @@ class G1HeapRegionSetBase {
   G1HeapRegionSetChecker* _checker;
 
 protected:
-  // The number of regions in to the set.
-  uint _length;
+  // The number of regions in the set.
+  uint _num_regions;
 
   const char* _name;
 
@@ -92,9 +91,9 @@ protected:
 public:
   const char* name() { return _name; }
 
-  uint length() const { return _length; }
+  uint num_regions() const { return _num_regions; }
 
-  bool is_empty() { return _length == 0; }
+  bool is_empty() { return _num_regions == 0; }
 
   // It updates the fields of the set to reflect hr being added to
   // the set and tags the region appropriately.
@@ -126,7 +125,7 @@ public:
   }
 
   void bulk_remove(const uint removed) {
-    _length -= removed;
+    _num_regions -= removed;
   }
 };
 
@@ -146,17 +145,17 @@ private:
   // This class is only initialized if there are multiple active nodes.
   class NodeInfo : public CHeapObj<mtGC> {
     G1NUMA* _numa;
-    uint*   _length_of_node;
+    uint*   _num_regions_on_node;
     uint    _num_nodes;
 
   public:
     NodeInfo();
     ~NodeInfo();
 
-    inline void increase_length(uint node_index);
-    inline void decrease_length(uint node_index);
+    inline void increase_num_regions(uint node_index);
+    inline void decrease_num_regions(uint node_index);
 
-    inline uint length(uint index) const;
+    inline uint num_regions_on_node(uint index) const;
 
     void clear();
 
@@ -170,15 +169,15 @@ private:
   // time. It helps to improve performance when adding several ordered items in a row.
   G1HeapRegion* _last;
 
-  NodeInfo*   _node_info;
+  NodeInfo* _node_info;
 
-  static uint _unrealistically_long_length;
+  static uint _unrealistically_large_num_regions;
 
   inline G1HeapRegion* remove_from_head_impl();
   inline G1HeapRegion* remove_from_tail_impl();
 
-  inline void increase_length(uint node_index);
-  inline void decrease_length(uint node_index);
+  inline void increase_num_regions(uint node_index);
+  inline void decrease_num_regions(uint node_index);
 
   // Common checks for adding a list.
   void add_list_common_start(G1FreeRegionList* from_list);
@@ -201,7 +200,7 @@ public:
   }
 #endif
 
-  static void set_unrealistically_long_length(uint len);
+  static void set_unrealistically_large_num_regions(uint num_regions);
 
   // Add hr to the list. The region should not be a member of another set.
   // Assumes that the list is ordered and will preserve that order. The order
@@ -235,8 +234,8 @@ public:
 
   virtual void verify();
 
-  using G1HeapRegionSetBase::length;
-  uint length(uint node_index) const;
+  using G1HeapRegionSetBase::num_regions;
+  uint num_regions_on_node(uint node_index) const;
 };
 
 // Iterator class that provides a convenient way to iterate over the

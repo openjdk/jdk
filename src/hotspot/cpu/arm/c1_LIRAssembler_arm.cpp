@@ -2559,7 +2559,7 @@ void LIR_Assembler::emit_profile_type(LIR_OpProfileType* op) {
   fatal("Type profiling not implemented on this platform");
 }
 
-void LIR_Assembler::emit_profile_inline_type(LIR_OpProfileInlineType* op) {
+void LIR_Assembler::emit_profile_value_type(LIR_OpProfileValueType* op) {
   Unimplemented();
 }
 
@@ -2868,7 +2868,7 @@ void LIR_Assembler::check_orig_pc() {
   Unimplemented();
 }
 
-int LIR_Assembler::store_inline_type_fields_to_buf(ciInlineKlass* vk) {
+int LIR_Assembler::store_value_type_fields_to_buf(ciValueKlass* vk) {
   Unimplemented();
   return 0;
 }
@@ -2878,7 +2878,10 @@ void LIR_Assembler::emit_opFlattenedArrayCheck(LIR_OpFlattenedArrayCheck* op) {
 }
 
 void LIR_Assembler::emit_opNullFreeArrayCheck(LIR_OpNullFreeArrayCheck* op) {
-  Unimplemented();
+  // Since there is no markWord::null_free_array_bit_in_place on ARM32,
+  // setting the EQ flag by cmp(tmp, tmp) by will tell C1 that the array is NOT null-free.
+  Register tmp = op->tmp()->as_register();
+  __ cmp(tmp, tmp);
 }
 
 void LIR_Assembler::emit_opSubstitutabilityCheck(LIR_OpSubstitutabilityCheck* op) {

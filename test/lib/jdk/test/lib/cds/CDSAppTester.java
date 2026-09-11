@@ -542,7 +542,7 @@ abstract public class CDSAppTester {
     }
 
     // See JEP 483; stop at the assembly run; do not execute production run
-    public void runAOTAssemblyWorkflow() throws Exception {
+    public void runAOTTrainingAndAssemblyWorkflow() throws Exception {
         this.workflow = Workflow.AOT;
         recordAOTConfiguration();
         createAOTCache();

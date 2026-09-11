@@ -265,7 +265,7 @@ void MonitorEnterStub::emit_code(LIR_Assembler* ce) {
   if (_throw_ie_stub != nullptr) {
     // When we come here, _obj_reg has already been checked to be non-null.
     __ ld(t0, Address(_obj_reg->as_register(), oopDesc::mark_offset_in_bytes()));
-    __ mv(t1, markWord::inline_type_pattern);
+    __ mv(t1, markWord::value_type_pattern);
     __ andr(t0, t0, t1);
     __ beq(t0, t1, *_throw_ie_stub->entry(), /* is_far */ true);
   }

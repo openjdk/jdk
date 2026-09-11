@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,10 +159,15 @@ public interface HttpResponse<T> {
      * {@code String}, or {@code Path}) or it may represent an object with
      * which the body is read, such as an {@link java.io.InputStream}.
      *
-     * <p> If this {@code HttpResponse} was returned from an invocation of
-     * {@link #previousResponse()} then this method returns {@code null}
+     * <p> Depending on the response's {@linkplain #statusCode() status code} or
+     * the {@link BodyHandler} used for the request, a body may not always be
+     * available. It is therefore recommended that the caller always check for
+     * {@code null} while dereferencing the result.
      *
-     * @return the body
+     * <p> If this {@code HttpResponse} was returned from an invocation of
+     * {@link #previousResponse()} then this method always returns {@code null}
+     *
+     * @return the body, or {@code null} if the body is not available
      */
     public T body();
 

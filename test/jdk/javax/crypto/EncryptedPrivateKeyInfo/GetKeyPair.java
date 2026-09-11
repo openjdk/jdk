@@ -28,7 +28,6 @@
  * @bug 8360563
  * @library /test/lib
  * @summary Testing getKeyPair using ML-KEM
- * @enablePreview
  * @modules java.base/sun.security.util
  */
 

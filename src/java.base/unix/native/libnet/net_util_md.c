@@ -106,8 +106,6 @@ jint  IPv6_supported()
 {
     int fd;
     void *ipv6_fn;
-    SOCKETADDRESS sa;
-    socklen_t sa_len = sizeof(SOCKETADDRESS);
 
     fd = socket(AF_INET6, SOCK_STREAM, 0) ;
     if (fd < 0) {

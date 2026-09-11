@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "memory/resourceArea.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/javaThread.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/semaphore.hpp"
 #include "runtime/thread.inline.hpp"
 #include "utilities/macros.hpp"
@@ -59,6 +60,7 @@ class JfrSerializerRegistration : public JfrCHeapObj {
   }
 
   void on_rotation() const {
+    assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     _serializer->on_rotation();
   }
 
@@ -160,11 +162,16 @@ Semaphore SerializerRegistrationGuard::_mutex_semaphore(1);
 typedef JfrLinkedList<JfrSerializerRegistration> List;
 static List types;
 
+template <typename Processor>
+static inline void iterate(Processor& p) {
+  SerializerRegistrationGuard guard;
+  types.iterate(p);
+}
+
 void JfrTypeManager::destroy() {
   SerializerRegistrationGuard guard;
-  JfrSerializerRegistration* registration;
   while (types.is_nonempty()) {
-    registration = types.remove();
+    JfrSerializerRegistration* registration = types.remove();
     assert(registration != nullptr, "invariant");
     delete registration;
   }
@@ -180,8 +187,9 @@ class InvokeOnRotation {
 };
 
 void JfrTypeManager::on_rotation() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   InvokeOnRotation ior;
-  types.iterate(ior);
+  iterate(ior);
 }
 
 #ifdef ASSERT
@@ -211,12 +219,13 @@ static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer*
     delete serializer;
     return false;
   }
-  assert(!types.in_list(registration), "invariant");
-  DEBUG_ONLY(assert_not_registered_twice(id, types);)
   if (JfrRecorder::is_recording()) {
-    JfrCheckpointWriter writer(Thread::current(), true, STATICS);
+    JfrCheckpointWriter writer(Thread::current(), true, STATICS, JFR_THREADLOCAL);
     registration->invoke(writer);
   }
+  SerializerRegistrationGuard guard;
+  assert(!types.in_list(registration), "invariant");
+  DEBUG_ONLY(assert_not_registered_twice(id, types);)
   types.add(registration);
   return true;
 }
@@ -232,7 +241,6 @@ static bool load_thread_constants(TRAPS) {
 }
 
 bool JfrTypeManager::initialize() {
-  SerializerRegistrationGuard guard;
   register_static_type(TYPE_FLAGVALUEORIGIN, true, new FlagValueOriginConstant());
   register_static_type(TYPE_INFLATECAUSE, true, new MonitorInflateCauseConstant());
   register_static_type(TYPE_GCCAUSE, true, new GCCauseConstant());
@@ -256,7 +264,6 @@ bool JfrTypeManager::initialize() {
 
 // implementation for the static registration function exposed in the JfrSerializer api
 bool JfrSerializer::register_serializer(JfrTypeId id, bool permit_cache, JfrSerializer* serializer) {
-  SerializerRegistrationGuard guard;
   return register_static_type(id, permit_cache, serializer);
 }
 
@@ -274,6 +281,5 @@ class InvokeSerializer {
 
 void JfrTypeManager::write_static_types(JfrCheckpointWriter& writer) {
   InvokeSerializer is(writer);
-  SerializerRegistrationGuard guard;
-  types.iterate(is);
+  iterate(is);
 }

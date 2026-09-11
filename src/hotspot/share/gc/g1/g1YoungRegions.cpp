@@ -39,12 +39,12 @@ void G1YoungRegions::clear_data() {
 void G1EdenRegions::add(G1HeapRegion* r) {
   assert(r->is_eden(), "must be");
   add_to_nodes(r);
-  _length++;
+  _num_regions++;
 }
 
 void G1EdenRegions::clear() {
   clear_data();
-  _length = 0;
+  _num_regions = 0;
 }
 
 void G1SurvivorRegions::add(G1HeapRegion* r) {

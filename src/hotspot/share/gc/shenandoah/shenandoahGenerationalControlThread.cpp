@@ -184,7 +184,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread::prepare_for_explicit_gc(ShenandoahGCRequest &request) const {
   ShenandoahHeuristics* global_heuristics = _heap->global_generation()->heuristics();
   request.generation = _heap->global_generation();
-  global_heuristics->log_trigger("GC request (%s)", GCCause::to_string(request.cause));
+  global_heuristics->log_trigger("GC Request (%s)", GCCause::to_string(request.cause));
   global_heuristics->record_requested_gc();
 
   if (ShenandoahCollectorPolicy::should_run_full_gc(request.cause)) {
@@ -218,10 +218,12 @@ void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const 
     LogStream ls(lt);
     AgeTable young_region_ages(false);
     for (uint i = 0; i < _heap->num_regions(); ++i) {
-      const ShenandoahHeapRegion* r = _heap->get_region(i);
-      if (r->is_young()) {
-        young_region_ages.add(r->age(), r->get_live_data_words());
+      if (!_heap->is_region_young(i)) {
+        continue;
       }
+
+      const ShenandoahHeapRegion* r = _heap->get_region(i);
+      young_region_ages.add(r->age(), r->get_live_data_words());
     }
 
     ls.print("Young regions: ");
@@ -403,7 +405,8 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       // acknowledge the cancellation request, the subsequent young cycle will observe
       // the request and essentially cancel itself.
       if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        log_info(gc, thread)("Preparation for old generation cycle was cancelled");
+        // Need to report at "gc" level to report GC ID proper.
+        log_info(gc)("Preparation for old generation cycle was cancelled");
         return;
       }
 
@@ -425,7 +428,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_old_cycle(const She
       if (_heap->cancelled_gc()) {
         // Young generation bootstrap cycle has failed. Concurrent mark for old generation
         // is going to resume after degenerated bootstrap cycle completes.
-        log_info(gc)("Bootstrap cycle for old generation was cancelled");
+        log_info(gc, phases)("Bootstrap cycle for old generation was cancelled");
         return;
       }
 
@@ -656,7 +659,7 @@ bool ShenandoahGenerationalControlThread::request_concurrent_gc(ShenandoahGenera
     }
 
     // Cancel the old GC and wait for the control thread to start servicing the new request.
-    log_info(gc)("Preempting old generation mark to allow %s GC", generation->name());
+    log_info(gc, phases)("Preempting old generation mark to allow %s GC", generation->name());
     while (gc_mode() == servicing_old) {
       _heap->cancel_gc(GCCause::_shenandoah_concurrent_gc);
       notify_control_thread(ml, GCCause::_shenandoah_concurrent_gc, generation);
