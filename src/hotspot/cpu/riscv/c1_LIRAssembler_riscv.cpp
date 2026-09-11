@@ -791,6 +791,11 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
+  mem2reg(src, dest, type, patch_code, info, wide, false);
+}
+
+void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
+                          CodeEmitInfo* info, bool wide, bool is_volatile) {
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
 
@@ -806,11 +811,26 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     return;
   }
 
+  if (is_volatile) {
+    load_volatile(from_addr, dest, type, info);
+  } else {
+    load_unordered(from_addr, dest, type, wide, info);
+  }
+
+  if (is_reference_type(type)) {
+    if (UseCompressedOops && !wide) {
+      __ decode_heap_oop(dest->as_register());
+    }
+
+    __ verify_oop(dest->as_register());
+  }
+}
+
+void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info) {
   if (info != nullptr) {
     add_debug_info_for_null_check_here(info);
   }
 
-  int null_check_here = code_offset();
   switch (type) {
     case T_FLOAT:
       __ flw(dest->as_float_reg(), as_Address(from_addr));
@@ -858,14 +878,11 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
     default:
       ShouldNotReachHere();
   }
+}
 
-  if (is_reference_type(type)) {
-    if (UseCompressedOops && !wide) {
-      __ decode_heap_oop(dest->as_register());
-    }
-
-    __ verify_oop(dest->as_register());
-  }
+void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+  load_unordered(from_addr, dest, type, false, info);
+  membar_acquire();
 }
 
 void LIR_Assembler::move(LIR_Opr src, LIR_Opr dst) {
@@ -1965,7 +1982,9 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 }
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  if (dest->is_address() || src->is_address()) {
+  if (src->is_address()) {
+    mem2reg(src, dest, type, lir_patch_none, info, /* wide */ false, /* is_volatile */ true);
+  } else if (dest->is_address()) {
     move_op(src, dest, type, lir_patch_none, info, /* wide */ false);
   } else {
     ShouldNotReachHere();
