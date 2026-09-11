@@ -43,10 +43,6 @@ inline bool os::must_commit_stack_guard_pages() {
   return true;
 }
 
-inline bool os::uses_stack_growth_guard_page() {
-  return true;
-}
-
 // Bang the shadow pages if they need to be touched to be mapped.
 inline void os::map_stack_shadow_pages(address sp) {
   // Write to each page of our new frame to force OS mapping.

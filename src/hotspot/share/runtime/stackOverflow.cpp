@@ -54,7 +54,7 @@ void StackOverflow::initialize_stack_zone_sizes() {
   // Windows uses an additional guard page to grow the stack. Keep it separate
   // from the configured yellow zone so that StackYellowPages has the same
   // meaning on every platform.
-  _stack_growth_guard_zone_size = os::uses_stack_growth_guard_page() ? page_size : 0;
+  _stack_growth_guard_zone_size = WINDOWS_ONLY(page_size) NOT_WINDOWS(0);
 
   assert(_stack_reserved_zone_size == 0, "This should be called only once.");
   _stack_reserved_zone_size = align_up(StackReservedPages * unit, page_size);

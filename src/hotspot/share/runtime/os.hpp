@@ -424,7 +424,6 @@ class os: AllStatic {
   // pages for stack overflow checking.
   inline static bool uses_stack_guard_pages();
   inline static bool must_commit_stack_guard_pages();
-  inline static bool uses_stack_growth_guard_page();
   inline static void map_stack_shadow_pages(address sp);
   static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method, address sp);
 
