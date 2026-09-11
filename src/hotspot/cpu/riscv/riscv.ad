@@ -1066,6 +1066,11 @@ public:
 
 bool is_CAS(int opcode, bool maybe_volatile);
 
+// predicate controlling emit of fence before and after CAS
+bool cas_membar_elidable(int opcode);
+bool unnecessary_acquire(const Node *barrier);
+bool unnecessary_release(const Node *barrier);
+
 // predicate controlling translation of CompareAndSwapX
 bool needs_acquiring_load_reserved(const Node *load);
 
@@ -1174,20 +1179,150 @@ bool is_CAS(int opcode, bool maybe_volatile)
   }
 }
 
-constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
+// predicates controlling emit of fence before and after CAS
+
+// Return true if the leading MemBarRelease and trailing MemBarAcquire around a
+// CAS-like LoadStore node may be elided, that is if the node is matched to a
+// single AMO instruction carrying both the aq and rl annotations:
+// amoswap/amoadd/amocas with .aqrl.
+//
+// Such an AMO is fully-ordered under RVWMO: PPO rule 5 orders it, including
+// its store, before every subsequent memory access, and PPO rule 6 orders
+// every preceding access before it. That subsumes both membars.
+//
+// An LR/SC based CAS is weaker. lr.aq + sc.rl only provides release-acquire,
+// not a sequentially consistent read-modify-write: the aq annotation sits on
+// the LR, so PPO rule 5 orders the *load* before later accesses, while the rl
+// annotation sits on the SC, so PPO rule 6 only orders earlier accesses before
+// the *store*. Nothing orders the SC's store before a subsequent load, so that
+// store may still be buffered when a load of an unrelated address is
+// satisfied.
+//
+// Emitting the membars does not supply that missing StoreLoad edge either,
+// since MemBarAcquire lowers to `fence r,rw`, whose predecessor set holds only
+// reads. Java code that needs the edge has to request it explicitly, and code
+// which fails to do so can lose a wakeup; see JDK-8387644. Elision is
+// nevertheless restricted here to the fully-ordered AMO forms, so that the
+// LR/SC path keeps the strength it had before the membars started being
+// elided. The leading MemBarRelease on its own would be safe to elide for
+// LR/SC too, since the rl annotation on the SC covers it by PPO rule 6, but
+// both are gated together to keep the two predicates symmetric.
+//
+// Whether the aq annotation is actually set is decided per node by
+// needs_acquiring_load_reserved(), which selects the *Acq instruct variants.
+// It holds for every opcode listed below on the paths reaching the two callers,
+// which assert as much.
+bool cas_membar_elidable(int opcode)
+{
+  assert(is_CAS(opcode, true), "expecting a compare and swap");
+
+  switch (opcode) {
+    // Always matched to the acquiring variant, hence amoswap/amoadd.aqrl.
+    case Op_GetAndSetI:
+    case Op_GetAndSetL:
+    case Op_GetAndSetP:
+    case Op_GetAndSetN:
+    case Op_GetAndAddI:
+    case Op_GetAndAddL:
+      return true;
+    // Matched to amocas.{w|d}.aqrl only when Zacas is available.
+    case Op_CompareAndSwapI:
+    case Op_CompareAndSwapL:
+    case Op_CompareAndSwapP:
+    case Op_CompareAndSwapN:
+    case Op_CompareAndExchangeI:
+    case Op_CompareAndExchangeL:
+    case Op_CompareAndExchangeP:
+    case Op_CompareAndExchangeN:
+    case Op_WeakCompareAndSwapI:
+    case Op_WeakCompareAndSwapL:
+    case Op_WeakCompareAndSwapP:
+    case Op_WeakCompareAndSwapN:
+      return UseZacas;
+    // Sub-word forms additionally require Zabha for amocas.{b|h}. Without it
+    // they are open coded around a narrow lr.w/sc.w or amocas.w, see
+    // cmpxchg_narrow_value(). The Zacas variant of that sequence can leave
+    // through its failure path having executed nothing but a plain lw, so it
+    // carries no ordering at all and its membars must be kept.
+    case Op_CompareAndSwapB:
+    case Op_CompareAndSwapS:
+    case Op_CompareAndExchangeB:
+    case Op_CompareAndExchangeS:
+    case Op_WeakCompareAndSwapB:
+    case Op_WeakCompareAndSwapS:
+      return UseZacas && UseZabha;
+    default:
+      return false;
+  }
+}
+
+bool unnecessary_acquire(const Node *barrier)
+{
+  assert(barrier->is_MemBar(), "expecting a membar");
+
+  MemBarNode* mb = barrier->as_MemBar();
+
+  if (mb->trailing_load()) {
+    // A regular RISC-V load cannot provide acquire semantics on its own, so
+    // the trailing MemBarAcquire must be kept. This may return true when the
+    // Zalasr extension is supported and the load is matched to l{b|h|w|d}.aq.
+    return false;
+  }
+
+  if (mb->trailing_load_store()) {
+    Node* load_store = mb->in(MemBarNode::Precedent);
+    assert(load_store->is_LoadStore(), "unexpected graph shape");
+    return cas_membar_elidable(load_store->Opcode());
+  }
+
+  return false;
+}
+
+bool unnecessary_release(const Node *barrier)
+{
+  assert((barrier->is_MemBar() &&
+          barrier->Opcode() == Op_MemBarRelease),
+          "expecting a release membar");
+
+  MemBarNode *mb = barrier->as_MemBar();
+  if (!mb->leading()) {
+    return false;
+  } else {
+    Node* trailing = mb->trailing_membar();
+    MemBarNode* trailing_mb = trailing->as_MemBar();
+    assert(trailing_mb->trailing(), "Not a trailing membar?");
+    assert(trailing_mb->leading_membar() == barrier, "inconsistent leading/trailing membars");
+
+    Node* mem = trailing_mb->in(MemBarNode::Precedent);
+    if (mem->is_Store()) {
+      assert(mem->as_Store()->is_release(), "");
+      assert(trailing_mb->Opcode() == Op_MemBarVolatile, "");
+      // A regular RISC-V store cannot provide release semantics on its own,
+      // so the leading MemBarRelease must be kept. This may return true when
+      // the Zalasr extension is supported and the store is matched to
+      // s{b|h|w|d}.rl (with the trailing MemBarVolatile handled accordingly).
+      return false;
+    } else {
+      assert(mem->is_LoadStore(), "");
+      assert(trailing_mb->Opcode() == Op_MemBarAcquire, "");
+      return cas_membar_elidable(mem->Opcode());
+    }
+  }
+  return false;
+}
 
 // predicate controlling translation of CAS
 //
 // returns true if CAS needs to use an acquiring load otherwise false
 bool needs_acquiring_load_reserved(const Node *n)
 {
-  assert(n != nullptr && is_CAS(n->Opcode(), true), "expecting a compare and swap");
+  assert(is_CAS(n->Opcode(), true), "expecting a compare and swap");
 
   LoadStoreNode* ldst = n->as_LoadStore();
-  if (n != nullptr && is_CAS(n->Opcode(), false)) {
-    assert(ldst != nullptr && ldst->trailing_membar() != nullptr, "expected trailing membar");
+  if (is_CAS(n->Opcode(), false)) {
+    assert(ldst->trailing_membar() != nullptr, "expected trailing membar");
   } else {
-    return ldst != nullptr && ldst->trailing_membar() != nullptr;
+    return ldst->trailing_membar() != nullptr;
   }
   // so we can just return true here
   return true;
@@ -1368,11 +1503,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
   if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
 
-  if (VerifyStackAtCalls) {
-    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
-    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
-  }
-
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
@@ -1391,13 +1521,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
   __ verified_entry(C, 0);
-
-  if (VerifyStackAtCalls) {
-    // n.b. frame size includes space for return pc and fp
-    const long framesize = C->output()->frame_size_in_bytes();
-    __ mv(t2, MAJIK_DWORD);
-    __ sd(t2, Address(sp, framesize - 3 * wordSize));
-  }
 
   if (C->stub_function() == nullptr) {
     __ entry_barrier();
@@ -1898,9 +2021,10 @@ bool Matcher::match_rule_supported(int opcode) {
     case Op_ReinterpretS2HF:
     case Op_ReinterpretHF2S:
       return UseZfh || UseZfhmin;
+    case Op_FmaHF:
+      return UseFMA && UseZfh;
     case Op_AddHF:
     case Op_DivHF:
-    case Op_FmaHF:
     case Op_MaxHF:
     case Op_MinHF:
     case Op_MulHF:
@@ -2394,18 +2518,7 @@ encode %{
     __ post_call_nop();
   %}
 
-  enc_class riscv_enc_call_epilog() %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
-      Label stack_ok;
-      __ ld(t1, Address(sp, framesize));
-      __ mv(t2, MAJIK_DWORD);
-      __ beq(t2, t1, stack_ok);
-      __ stop("MAJIK_DWORD not found");
-      __ bind(stack_ok);
-    }
-  %}
+  enc_class riscv_enc_call_epilog() %{ %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset
@@ -2540,15 +2653,9 @@ frame %{
   // return address specifies a type (REG or STACK) and a number
   // representing the register number (i.e. - use a register name) or
   // stack slot.
-  // Ret Addr is on stack in slot 0 if no locks or verification or alignment.
-  // Otherwise, it is above the locks and verification slot and alignment word
-  // TODO this may well be correct but need to check why that - 2 is there
-  // ppc port uses 0 but we definitely need to allow for fixed_slots
-  // which folds in the space used for monitors
-  return_addr(STACK - 2 +
-              align_up((Compile::current()->in_preserve_stack_slots() +
-                        Compile::current()->fixed_slots()),
-                       stack_alignment_in_slots()));
+  // Ret Addr is on stack 2 slots below _old_SP, i.e. in slot 0 if no locks
+  // or verification or alignment.
+  return_addr(STACK OptoReg::reg2stack(_old_SP) - 2);
 
   // Location of compiled Java return values.  Same as C for now.
   return_value
@@ -2850,6 +2957,19 @@ operand immIpowerOf2() %{
   interface(CONST_INTER);
 %}
 
+// Int immediate: the mask of a bitfield extract, i.e. contiguous low-order
+// ones, whose width is log2i_exact(mask + 1), e.g. 0xfff, 0xffff, 0x7fffffff.
+// Masks that fit into a 12-bit immediate are excluded: a shift followed by
+// andi is already as short as the shift pair used to extract the field.
+operand immI_bitmask() %{
+  predicate(is_power_of_2((juint)n->get_int() + 1) &&
+            !Assembler::is_simm12((int64_t)n->get_int()));
+  match(ConI);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
 // Long Immediate: low 16-bit mask
 operand immL_16bits()
 %{
@@ -2864,6 +2984,17 @@ operand immL_16bits()
 operand immL_32bits()
 %{
   predicate(n->get_long() == 0xFFFFFFFFL);
+  match(ConL);
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// Long immediate: the mask of a bitfield extract, see immI_bitmask above,
+// e.g. 0xfff, 0xffffffff, 0x7fffffffffffffff.
+operand immL_bitmask() %{
+  predicate(is_power_of_2((julong)n->get_long() + 1) &&
+            !Assembler::is_simm12(n->get_long()));
   match(ConL);
   op_cost(0);
   format %{ %}
@@ -5217,188 +5348,11 @@ instruct prefetchalloc( memory mem ) %{
 // ============================================================================
 // Atomic operation instructions
 //
+// CompareAndSwapX, GetAndSetX, and GetAndAddX represent sequentially
+// consistent operations. C2 emits a trailing MemBarAcquire for
+// these nodes, so their RISC-V implementation always needs acquire semantics.
+// Non-acquiring match rules would consequently be unreachable.
 
-// standard CompareAndSwapX when we are using barriers
-// these have higher priority than the rules selected by a predicate
-instruct compareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
-%{
-  predicate(!UseZabha || !UseZacas);
-
-  match(Set res (CompareAndSwapB mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapB_narrow"
-  %}
-
-  ins_encode %{
-    __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-                            Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
-%{
-  predicate(UseZabha && UseZacas);
-
-  match(Set res (CompareAndSwapB mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (byte) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapB"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int8,
-               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result as bool */);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
-                                iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
-%{
-  predicate(!UseZabha || !UseZacas);
-
-  match(Set res (CompareAndSwapS mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  effect(TEMP_DEF res, USE_KILL oldval, USE_KILL newval, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapS_narrow"
-  %}
-
-  ins_encode %{
-    __ cmpxchg_narrow_value(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-                            Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-                            true /* result as bool */, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
-%{
-  predicate(UseZabha && UseZacas);
-
-  match(Set res (CompareAndSwapS mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (short) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapS"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int16,
-               Assembler::relaxed /* acquire */, Assembler::rl /* release */, $res$$Register,
-               true /* result as bool */);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
-%{
-  match(Set res (CompareAndSwapI mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (int) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapI"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval)
-%{
-  match(Set res (CompareAndSwapL mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (long) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapL"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-
-  match(Set res (CompareAndSwapP mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (ptr) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapP"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::int64,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-instruct compareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-
-  match(Set res (CompareAndSwapN mem (Binary oldval newval)));
-
-  ins_cost(2 * VOLATILE_REF_COST);
-
-  format %{
-    "cmpxchg $mem, $oldval, $newval\t# (narrow oop) if $mem == $oldval then $mem <-- $newval\n\t"
-    "mv $res, $res == $oldval\t# $res <-- ($res == $oldval ? 1 : 0), #@compareAndSwapN"
-  %}
-
-  ins_encode %{
-    __ cmpxchg(as_Register($mem$$base), $oldval$$Register, $newval$$Register, Assembler::uint32,
-               /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, $res$$Register,
-               /*result as bool*/ true);
-  %}
-
-  ins_pipe(pipe_slow);
-%}
-
-// alternative CompareAndSwapX when we are eliding barriers
 instruct compareAndSwapBAcq_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                    iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
@@ -5590,7 +5544,7 @@ instruct compareAndSwapNAcq(iRegINoSp res, indirect mem, iRegN oldval, iRegN new
 instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
@@ -5613,7 +5567,7 @@ instruct compareAndExchangeB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeB mem (Binary oldval newval)));
 
@@ -5634,7 +5588,7 @@ instruct compareAndExchangeB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
@@ -5657,7 +5611,7 @@ instruct compareAndExchangeS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (CompareAndExchangeS mem (Binary oldval newval)));
 
@@ -5677,6 +5631,8 @@ instruct compareAndExchangeS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (CompareAndExchangeI mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5695,6 +5651,8 @@ instruct compareAndExchangeI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (CompareAndExchangeL mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -5713,7 +5671,7 @@ instruct compareAndExchangeL(iRegLNoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (CompareAndExchangeN mem (Binary oldval newval)));
 
@@ -5733,7 +5691,7 @@ instruct compareAndExchangeN(iRegNNoSp res, indirect mem, iRegN oldval, iRegN ne
 
 instruct compareAndExchangeP(iRegPNoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == 0));
 
   match(Set res (CompareAndExchangeP mem (Binary oldval newval)));
 
@@ -5922,7 +5880,7 @@ instruct compareAndExchangePAcq(iRegPNoSp res, indirect mem, iRegP oldval, iRegP
 instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
@@ -5946,7 +5904,7 @@ instruct weakCompareAndSwapB_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapB mem (Binary oldval newval)));
 
@@ -5968,7 +5926,7 @@ instruct weakCompareAndSwapB(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldval, iRegI_R13 newval,
                                     iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3, rFlagsReg cr)
 %{
-  predicate(!UseZabha || !UseZacas);
+  predicate((!UseZabha || !UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
@@ -5992,7 +5950,7 @@ instruct weakCompareAndSwapS_narrow(iRegINoSp res, indirect mem, iRegI_R12 oldva
 
 instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
-  predicate(UseZabha && UseZacas);
+  predicate((UseZabha && UseZacas) && !needs_acquiring_load_reserved(n));
 
   match(Set res (WeakCompareAndSwapS mem (Binary oldval newval)));
 
@@ -6013,6 +5971,8 @@ instruct weakCompareAndSwapS(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (WeakCompareAndSwapI mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -6032,6 +5992,8 @@ instruct weakCompareAndSwapI(iRegINoSp res, indirect mem, iRegI oldval, iRegI ne
 
 instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL newval)
 %{
+  predicate(!needs_acquiring_load_reserved(n));
+
   match(Set res (WeakCompareAndSwapL mem (Binary oldval newval)));
 
   ins_cost(2 * VOLATILE_REF_COST);
@@ -6051,7 +6013,7 @@ instruct weakCompareAndSwapL(iRegINoSp res, indirect mem, iRegL oldval, iRegL ne
 
 instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && n->as_LoadStore()->barrier_data() == 0);
 
   match(Set res (WeakCompareAndSwapN mem (Binary oldval newval)));
 
@@ -6072,7 +6034,7 @@ instruct weakCompareAndSwapN(iRegINoSp res, indirect mem, iRegN oldval, iRegN ne
 
 instruct weakCompareAndSwapP(iRegINoSp res, indirect mem, iRegP oldval, iRegP newval)
 %{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
+  predicate(!needs_acquiring_load_reserved(n) && (n->as_LoadStore()->barrier_data() == 0));
 
   match(Set res (WeakCompareAndSwapP mem (Binary oldval newval)));
 
@@ -6267,69 +6229,6 @@ instruct weakCompareAndSwapPAcq(iRegINoSp res, indirect mem, iRegP oldval, iRegP
   ins_pipe(pipe_slow);
 %}
 
-instruct get_and_setI(indirect mem, iRegI newv, iRegINoSp prev)
-%{
-  match(Set prev (GetAndSetI mem newv));
-
-  ins_cost(ALU_COST);
-
-  format %{ "atomic_xchgw  $prev, $newv, [$mem]\t#@get_and_setI" %}
-
-  ins_encode %{
-    __ atomic_xchgw($prev$$Register, $newv$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_setL(indirect mem, iRegL newv, iRegLNoSp prev)
-%{
-  match(Set prev (GetAndSetL mem newv));
-
-  ins_cost(ALU_COST);
-
-  format %{ "atomic_xchg  $prev, $newv, [$mem]\t#@get_and_setL" %}
-
-  ins_encode %{
-    __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_setN(indirect mem, iRegN newv, iRegINoSp prev)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-
-  match(Set prev (GetAndSetN mem newv));
-
-  ins_cost(ALU_COST);
-
-  format %{ "atomic_xchgwu $prev, $newv, [$mem]\t#@get_and_setN" %}
-
-  ins_encode %{
-    __ atomic_xchgwu($prev$$Register, $newv$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_setP(indirect mem, iRegP newv, iRegPNoSp prev)
-%{
-  predicate(n->as_LoadStore()->barrier_data() == 0);
-  match(Set prev (GetAndSetP mem newv));
-
-  ins_cost(ALU_COST);
-
-  format %{ "atomic_xchg  $prev, $newv, [$mem]\t#@get_and_setP" %}
-
-  ins_encode %{
-    __ atomic_xchg($prev$$Register, $newv$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
 instruct get_and_setIAcq(indirect mem, iRegI newv, iRegINoSp prev)
 %{
   predicate(needs_acquiring_load_reserved(n));
@@ -6393,134 +6292,6 @@ instruct get_and_setPAcq(indirect mem, iRegP newv, iRegPNoSp prev)
 
   ins_encode %{
     __ atomic_xchgal($prev$$Register, $newv$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addL(indirect mem, iRegLNoSp newval, iRegL incr)
-%{
-  match(Set newval (GetAndAddL mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addL $newval, [$mem], $incr\t#@get_and_addL" %}
-
-  ins_encode %{
-    __ atomic_add($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addL_no_res(indirect mem, Universe dummy, iRegL incr)
-%{
-  predicate(n->as_LoadStore()->result_not_used());
-
-  match(Set dummy (GetAndAddL mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addL [$mem], $incr\t#@get_and_addL_no_res" %}
-
-  ins_encode %{
-    __ atomic_add(noreg, $incr$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addLi(indirect mem, iRegLNoSp newval, immLAdd incr)
-%{
-  match(Set newval (GetAndAddL mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addL $newval, [$mem], $incr\t#@get_and_addLi" %}
-
-  ins_encode %{
-    __ atomic_add($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addLi_no_res(indirect mem, Universe dummy, immLAdd incr)
-%{
-  predicate(n->as_LoadStore()->result_not_used());
-
-  match(Set dummy (GetAndAddL mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addL [$mem], $incr\t#@get_and_addLi_no_res" %}
-
-  ins_encode %{
-    __ atomic_add(noreg, $incr$$constant, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addI(indirect mem, iRegINoSp newval, iRegIorL2I incr)
-%{
-  match(Set newval (GetAndAddI mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addI $newval, [$mem], $incr\t#@get_and_addI" %}
-
-  ins_encode %{
-    __ atomic_addw($newval$$Register, $incr$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addI_no_res(indirect mem, Universe dummy, iRegIorL2I incr)
-%{
-  predicate(n->as_LoadStore()->result_not_used());
-
-  match(Set dummy (GetAndAddI mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addI [$mem], $incr\t#@get_and_addI_no_res" %}
-
-  ins_encode %{
-    __ atomic_addw(noreg, $incr$$Register, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addIi(indirect mem, iRegINoSp newval, immIAdd incr)
-%{
-  match(Set newval (GetAndAddI mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addI $newval, [$mem], $incr\t#@get_and_addIi" %}
-
-  ins_encode %{
-    __ atomic_addw($newval$$Register, $incr$$constant, as_Register($mem$$base));
-  %}
-
-  ins_pipe(pipe_serial);
-%}
-
-instruct get_and_addIi_no_res(indirect mem, Universe dummy, immIAdd incr)
-%{
-  predicate(n->as_LoadStore()->result_not_used());
-
-  match(Set dummy (GetAndAddI mem incr));
-
-  ins_cost(ALU_COST);
-
-  format %{ "get_and_addI [$mem], $incr\t#@get_and_addIi_no_res" %}
-
-  ins_encode %{
-    __ atomic_addw(noreg, $incr$$constant, as_Register($mem$$base));
   %}
 
   ins_pipe(pipe_serial);
@@ -7259,6 +7030,86 @@ instruct urShiftP_reg_imm(iRegLNoSp dst, iRegP src1, immI src2) %{
     __ srli(as_Register($dst$$reg),
             as_Register($src1$$reg),
             (unsigned) $src2$$constant & 0x3f);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Unsigned bitfield extract: (src >>> rshift) & (2^width - 1)
+instruct bitfieldExtractI(iRegINoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (AndI (URShiftI src rshift) mask));
+  // The field must not extend past the high end of the int.
+  predicate(log2i_exact((juint)n->in(2)->get_int() + 1) + (n->in(1)->in(2)->get_int() & 0x1f) <= 32);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x1f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractI" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x1f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Unsigned bitfield extract from an int with a zero-extending conversion to long.
+instruct bitfieldExtractI2L(iRegLNoSp dst, iRegIorL2I src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (ConvI2L (AndI (URShiftI src rshift) mask)));
+  predicate(log2i_exact((juint)n->in(1)->in(2)->get_int() + 1) +
+            (n->in(1)->in(1)->in(2)->get_int() & 0x1f) <= 32);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x1f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractI2L" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x1f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+instruct bitfieldExtractL(iRegLNoSp dst, iRegL src, immI rshift, immL_bitmask mask) %{
+  match(Set dst (AndL (URShiftL src rshift) mask));
+  // The field must not extend past the high end of the long.
+  predicate(log2i_exact((julong)n->in(2)->get_long() + 1) + (n->in(1)->in(2)->get_int() & 0x3f) <= 64);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x3f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractL" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x3f;
+    int width = log2i_exact((julong)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
+  %}
+
+  ins_pipe(ialu_reg_shift);
+%}
+
+// Extract an int sized field out of a long. The mask is at most 31 bits wide,
+// so the zero extended result is a valid int. This is the shape emitted by
+// LibraryCallKit::inline_native_hashcode.
+instruct bitfieldExtractL2I(iRegINoSp dst, iRegL src, immI rshift, immI_bitmask mask) %{
+  match(Set dst (AndI (ConvL2I (URShiftL src rshift)) mask));
+  predicate(log2i_exact((juint)n->in(2)->get_int() + 1) + (n->in(1)->in(1)->in(2)->get_int() & 0x3f) <= 64);
+
+  ins_cost(ALU_COST * 2);
+  format %{ "slli  $dst, $src, 64 - (($rshift & 0x3f) + width($mask))\n\t"
+            "srli  $dst, $dst, 64 - width($mask)\t#@bitfieldExtractL2I" %}
+
+  ins_encode %{
+    int rshift = $rshift$$constant & 0x3f;
+    int width = log2i_exact((juint)$mask$$constant + 1);
+    __ slli(as_Register($dst$$reg), as_Register($src$$reg), 64 - (rshift + width));
+    __ srli(as_Register($dst$$reg), as_Register($dst$$reg), 64 - width);
   %}
 
   ins_pipe(ialu_reg_shift);
@@ -8243,25 +8094,79 @@ instruct membar_full_rvtso() %{
 
 // RVWMO
 
-instruct membar_aqcuire_rvwmo() %{
+instruct load_fence_rvwmo() %{
   predicate(!UseZtso);
   match(LoadFence);
-  match(MemBarAcquire);
   ins_cost(VOLATILE_REF_COST);
 
-  format %{ "#@membar_aqcuire_rvwmo\n\t"
+  format %{ "#@load_fence_rvwmo\n\t"
             "fence r, rw" %}
 
   ins_encode %{
-    __ block_comment("membar_aqcuire_rvwmo");
+    __ block_comment("load_fence_rvwmo");
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   %}
   ins_pipe(pipe_serial);
 %}
 
-instruct membar_release_rvwmo() %{
+instruct unnecessary_membar_acquire_rvwmo() %{
+  predicate(!UseZtso && unnecessary_acquire(n));
+  match(MemBarAcquire);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_acquire_rvwmo (elided)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_acquire_rvwmo (elided)");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_acquire_rvwmo() %{
+  predicate(!UseZtso);
+  match(MemBarAcquire);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@membar_acquire_rvwmo\n\t"
+            "fence r, rw" %}
+
+  ins_encode %{
+    __ block_comment("membar_acquire_rvwmo");
+    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct store_fence_rvwmo() %{
   predicate(!UseZtso);
   match(StoreFence);
+  ins_cost(VOLATILE_REF_COST);
+
+  format %{ "#@store_fence_rvwmo\n\t"
+            "fence rw, w" %}
+
+  ins_encode %{
+    __ block_comment("store_fence_rvwmo");
+    __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
+  %}
+  ins_pipe(pipe_serial);
+%}
+
+instruct unnecessary_membar_release_rvwmo() %{
+  predicate(!UseZtso && unnecessary_release(n));
+  match(MemBarRelease);
+  ins_cost(0);
+
+  size(0);
+  format %{ "#@unnecessary_membar_release_rvwmo (elided)" %}
+  ins_encode %{
+    __ block_comment("unnecessary_membar_release_rvwmo (elided)");
+  %}
+  ins_pipe(real_empty);
+%}
+
+instruct membar_release_rvwmo() %{
+  predicate(!UseZtso);
   match(MemBarRelease);
   ins_cost(VOLATILE_REF_COST);
 

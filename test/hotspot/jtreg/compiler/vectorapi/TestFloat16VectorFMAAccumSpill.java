@@ -23,7 +23,7 @@
 
 /**
 * @test
-* @bug 8387213
+* @bug 8387213 8391717
 * @summary Float16Vector.fma must accumulate in-place (231-form) so a register
 *          blocked FMA reduction does not spill accumulators to the stack.
 * @modules jdk.incubator.vector
@@ -81,9 +81,11 @@ public class TestFloat16VectorFMAAccumSpill {
     // reintroduces the accumulator-preserving copies/spills and fails this test.
     @Test
     @IR(counts = {IRNode.FMA_VHF, ">0"},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     @IR(failOn = {IRNode.MEM_TO_REG_SPILL_COPY_TYPE, "vector[xyz]"},
         phase = {CompilePhase.FINAL_CODE},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeature = {"avx512_fp16", "true"})
     void fmaAccum() {
         Float16Vector c00 = (Float16Vector) SPECIES.zero();
