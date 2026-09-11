@@ -376,7 +376,6 @@ instruct shaddP_reg_reg_uxtw_b(iRegPNoSp dst, iRegP src1, iRegIorL2I src2, immL_
     __ shadd_uw(as_Register($dst$$reg),
                 as_Register($src2$$reg),
                 as_Register($src1$$reg),
-                t0,
                 $imm$$constant);
   %}
 
@@ -431,7 +430,6 @@ instruct shaddL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_
     __ shadd_uw(as_Register($dst$$reg),
                 as_Register($src2$$reg),
                 as_Register($src1$$reg),
-                t0,
                 $imm$$constant);
   %}
 

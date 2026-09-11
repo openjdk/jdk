@@ -1471,7 +1471,7 @@ public:
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
   // shift left by shamt and add (unsigned word variant: zext(src1) << shamt + src2)
-  void shadd_uw(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  void shadd_uw(Register Rd, Register Rs1, Register Rs2, int shamt);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
