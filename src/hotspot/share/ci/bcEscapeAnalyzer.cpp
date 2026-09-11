@@ -46,7 +46,7 @@
   #define TRACE_BCEA(level, code)
 #endif
 
-static const int INDENTATION_WIDTH = 4;
+static const int INDENTATION_WIDTH = 2;
 
 static void print_header(int level) {
   tty->print("[EA] ");
