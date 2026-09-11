@@ -1440,11 +1440,15 @@ void BCEscapeAnalyzer::read_escape_info() {
 
 #ifndef PRODUCT
 
+static const char* const COMMA_SEPARATOR = ", ";
+
 void BCEscapeAnalyzer::dump_arg_set(const VectorSet &set) {
   tty->print("{");
+  const char* sep = "";
   for (int i = 0; i < _arg_size; i++) {
     if (set.test(i)) {
-      tty->print("%d ", i);
+      tty->print("%s%d", sep, i);
+      sep = COMMA_SEPARATOR;
     }
   }
   tty->print("}");
@@ -1477,22 +1481,32 @@ void BCEscapeAnalyzer::dump() {
   print_header(level());
   tty->print("- modified args:          ");
   tty->print("[");
+  const char* sep = "";
   for (int i = 0; i < _arg_size; i++) {
-    if (_arg_modified[i] == 0)
+    tty->print("%s", sep);
+    if (_arg_modified[i] == 0) {
       tty->print("0");
-    else
+    } else {
       tty->print("0x%x", _arg_modified[i]);
-    tty->print(" ");
+    }
+    sep = COMMA_SEPARATOR;
   }
   tty->print_cr("]");
   print_header(level());
   tty->print("- flags:                  {");
-  if (_return_allocated)
-    tty->print("return_allocated ");
-  if (_allocated_escapes)
-    tty->print("allocated_escapes ");
-  if (_unknown_modified)
-    tty->print("unknown_modified ");
+  sep = "";
+  if (_return_allocated) {
+    tty->print("%sreturn_allocated", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_allocated_escapes) {
+    tty->print("%sallocated_escapes", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_unknown_modified) {
+    tty->print("%sunknown_modified", sep);
+    sep = COMMA_SEPARATOR;
+  }
   tty->print_cr("}");
 }
 #endif
