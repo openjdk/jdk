@@ -373,6 +373,7 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
+  CountedLoopEndNode* find_post_loop_end();
 
   Node* uncasted_init_trip(bool uncasted);
 
