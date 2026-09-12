@@ -1025,6 +1025,7 @@ public:
   jint size()                     const { assert(_is_valid, "must be valid"); return mem_pointer().size(); }
   jint iv_scale()                 const { assert(_is_valid, "must be valid"); return _iv_scale; }
   jint con()                      const { return mem_pointer().con().value(); }
+  int iv_stride()                 const { return _vloop.iv_stride();}
 
   template<typename Callback>
   void for_each_invar_summand(Callback callback) const {
@@ -1126,6 +1127,17 @@ public:
   static int cmp_summands_and_con(const VPointer& vp1, const VPointer& vp2) {
     int cmp = cmp_summands(vp1, vp2);
     if (cmp != 0) { return cmp; }
+    return cmp_con(vp1, vp2);
+  }
+
+  static int cmp_priority_order(const VPointer& vp1, const VPointer& vp2) {
+    int cmp = cmp_summands(vp1, vp2);
+    if (cmp != 0) { return cmp; }
+    long times = vp1.iv_scale() * vp1.iv_stride();
+    if (times != 0) {
+      assert(times == vp2.iv_scale() * vp2.iv_stride(), "");
+      return cmp_con(vp1, vp2) * times;
+    }
     return cmp_con(vp1, vp2);
   }
 
