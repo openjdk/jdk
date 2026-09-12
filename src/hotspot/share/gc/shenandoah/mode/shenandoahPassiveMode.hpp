@@ -29,11 +29,11 @@
 
 class ShenandoahPassiveMode : public ShenandoahMode {
 public:
-  virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const;
-  virtual const char* name()     { return "Passive"; }
-  virtual bool is_diagnostic()   { return true; }
-  virtual bool is_experimental() { return false; }
+  void initialize_flags() const override;
+  ShenandoahHeuristics* initialize_heuristics(ShenandoahSpaceInfo* space_info) const override;
+  const char* name()     override { return "Passive"; }
+  bool is_diagnostic()   override { return true; }
+  bool is_experimental() override { return false; }
 };
 
 #endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHPASSIVEMODE_HPP

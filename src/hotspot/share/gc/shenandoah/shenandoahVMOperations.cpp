@@ -24,7 +24,6 @@
 
 
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
-#include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -103,16 +102,6 @@ void VM_ShenandoahFullGC::doit() {
   ShenandoahGCPauseMark mark(_gc_id, "Full GC", SvcGCMarker::FULL);
   set_active_generation();
   _full_gc->entry_full(_gc_cause);
-}
-
-VM_ShenandoahDegeneratedGC::VM_ShenandoahDegeneratedGC(ShenandoahDegenGC* gc)
-  : VM_ShenandoahReferenceOperation(gc->generation()), _gc(gc) {
-}
-
-void VM_ShenandoahDegeneratedGC::doit() {
-  ShenandoahGCPauseMark mark(_gc_id, "Degenerated GC", SvcGCMarker::CONCURRENT);
-  set_active_generation();
-  _gc->entry_degenerated();
 }
 
 VM_ShenandoahInitUpdateRefs::VM_ShenandoahInitUpdateRefs(ShenandoahConcurrentGC* gc)

@@ -29,6 +29,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
@@ -135,6 +136,15 @@ public:
 
 typedef Stack<oop, mtGC>                     ShenandoahScanObjectStack;
 
+class ShenandoahSelfForwardTask : public WorkerTask {
+  ShenandoahHeap*          const _heap;
+  ShenandoahCollectionSet* const _cs;
+
+public:
+  ShenandoahSelfForwardTask(ShenandoahHeap* heap, ShenandoahCollectionSet* cs);
+  void work(uint worker_id) override;
+};
+
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
 // for concurent evacuation and a snapshot-at-the-beginning write barrier for
 // concurrent marking. See ShenandoahControlThread for GC cycle structure.
@@ -150,13 +160,11 @@ class ShenandoahHeap : public CollectedHeap {
   // Supported GC
   friend class ShenandoahConcurrentGC;
   friend class ShenandoahOldGC;
-  friend class ShenandoahDegenGC;
   friend class ShenandoahFullGC;
   friend class ShenandoahUnload;
 
 // ---------- Locks that guard important data structures in Heap
 //
-private:
   ShenandoahHeapLock _lock;
 
   // This is set and cleared by only the VMThread
@@ -184,9 +192,6 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
-// ---------- Initialization, termination, identification, printing routines
-//
-public:
   static ShenandoahHeap* heap();
 
   const char* name()          const override { return "Shenandoah"; }
@@ -212,7 +217,7 @@ public:
   void prepare_for_verify() override;
   void verify(VerifyOption vo) override;
 
-// WhiteBox testing support.
+  // WhiteBox testing support.
   bool supports_concurrent_gc_breakpoints() const override {
     return true;
   }
@@ -357,7 +362,6 @@ private:
   bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
   ShenandoahSharedFlag   _heap_changed;
-  ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_move_in_progress;
   ShenandoahSharedFlag   _concurrent_strong_root_in_progress;
@@ -407,7 +411,6 @@ public:
   void set_concurrent_old_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
   void set_update_refs_in_progress(bool in_progress);
-  void set_degenerated_gc_in_progress(bool in_progress);
   void set_full_gc_in_progress(bool in_progress);
   void set_full_gc_move_in_progress(bool in_progress);
   void set_has_forwarded_objects(bool cond);
@@ -420,7 +423,6 @@ public:
   inline bool is_concurrent_old_mark_in_progress() const;
   inline bool is_update_refs_in_progress() const;
   inline bool is_evacuation_in_progress() const;
-  inline bool is_degenerated_gc_in_progress() const;
   inline bool is_full_gc_in_progress() const;
   inline bool is_full_gc_move_in_progress() const;
   inline bool has_forwarded_objects() const;
@@ -437,14 +439,14 @@ private:
   // the responsiveness of the heuristic when starting a cycle.
   double _cancel_requested_time;
 
-  // Indicates the reason the current GC has been cancelled (GCCause::_no_gc means the gc is not cancelled).
-  ShenandoahSharedEnumFlag<GCCause::Cause> _cancelled_gc;
+  // True when gc threads should stop
+  ShenandoahSharedFlag _cancelled_gc;
 
   // Returns true if cancel request was successfully communicated.
   // Returns false if some other thread already communicated cancel
   // request.  A true return value does not mean GC has been
   // cancelled, only that the process of cancelling GC has begun.
-  bool try_cancel_gc(GCCause::Cause cause);
+  bool try_cancel_gc();
 
 public:
   // True if gc has been cancelled
@@ -453,15 +455,8 @@ public:
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
   inline bool check_cancelled_gc_and_yield(bool sts_active = true);
 
-  // This indicates the reason the last GC cycle was cancelled.
-  inline GCCause::Cause cancelled_cause() const;
-
-  // Clears the cancellation cause and resets the oom handler
+  // Clears the cancellation
   inline void clear_cancelled_gc();
-
-  // Clears the cancellation cause iff the current cancellation reason equals the given
-  // expected cancellation cause. Does not reset the oom handler.
-  inline GCCause::Cause clear_cancellation(GCCause::Cause expected);
 
   void cancel_concurrent_mark();
 
@@ -471,25 +466,29 @@ public:
   // Returns true if the soft maximum heap has been changed using management APIs.
   bool check_soft_max_changed();
 
-protected:
-  // This is shared between shConcurrentGC and shDegenerateGC so that degenerated
-  // GC can resume update refs from where the concurrent GC was cancelled. It is
-  // also used in shGenerationalHeap, which uses a different closure for update refs.
-  ShenandoahRegionIterator _update_refs_iterator;
+  // True if self forwarded objects exist in the heap
+  bool has_self_forwarded_objects() const {
+    return _has_self_forwarded_objects.is_set();
+  }
+
+  // Set whether self forwarded objects exist in the heap
+  void set_has_self_forwarded_objects(bool value) {
+    _has_self_forwarded_objects.set_cond(value);
+  }
 
 private:
+  ShenandoahSharedFlag _has_self_forwarded_objects;
+
   inline void reset_cancellation_time();
 
   // GC support
   // Evacuation
-  virtual void evacuate_collection_set(ShenandoahGeneration* generation, bool concurrent);
+  virtual void evacuate_collection_set(ShenandoahGeneration* generation);
   // Concurrent root processing
   void prepare_concurrent_roots();
   void finish_concurrent_roots();
   // Concurrent class unloading support
   void do_class_unloading();
-  // Reference updating
-  void prepare_update_heap_references();
 
   // Retires LABs used for evacuation
   void concurrent_prepare_for_update_refs();
@@ -497,16 +496,16 @@ private:
   // Turn off weak roots flag
   void concurrent_final_roots();
 
-  virtual void update_heap_references(ShenandoahGeneration* generation, bool concurrent);
+  virtual void update_heap_references(ShenandoahGeneration* generation);
   // Final update region states
-  void update_heap_region_states(bool concurrent);
+  void update_heap_region_states();
   virtual void final_update_refs_update_region_states();
 
   void rendezvous_threads(const char* name);
   void recycle_trash();
 public:
   // The following two functions rebuild the free set at the end of GC, in preparation for an idle phase.
-  void rebuild_free_set(bool concurrent);
+  void rebuild_free_set();
   void rebuild_free_set_within_phase();
   void notify_gc_progress();
   void notify_gc_no_progress();
@@ -543,6 +542,7 @@ private:
 
 public:
   ShenandoahController*   control_thread() const { return _control_thread; }
+  inline bool is_stopping() const;
 
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahYoungGeneration* young_generation()  const {
@@ -568,7 +568,7 @@ public:
     return _evac_tracker;
   }
 
-  void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation, bool is_degenerated, bool is_out_of_cycle);
+  void on_cycle_start(GCCause::Cause cause, ShenandoahGeneration* generation);
   void on_cycle_end(ShenandoahGeneration* generation);
 
   ShenandoahVerifier*        verifier();
@@ -604,13 +604,7 @@ public:
   void set_unload_classes(bool uc);
   bool unload_classes() const;
 
-  // Perform STW class unloading and weak root cleaning
-  void parallel_cleaning(ShenandoahGeneration* generation, bool full_gc);
-
 private:
-  void stw_unload_classes(bool full_gc);
-  void stw_process_weak_roots(bool full_gc);
-  void stw_weak_refs(ShenandoahGeneration* generation, bool full_gc);
 
   inline void assert_lock_for_affiliation(ShenandoahAffiliation orig_affiliation,
                                           ShenandoahAffiliation new_affiliation);
@@ -727,9 +721,6 @@ private:
   HeapWord* allocate_from_gclab_slow(Thread* thread, size_t size);
   HeapWord* allocate_new_gclab(size_t min_size, size_t word_size, size_t* actual_size);
 
-  // We want to retry an unsuccessful attempt at allocation until at least a full gc.
-  bool should_retry_allocation(size_t original_full_gc_count) const;
-
 public:
   HeapWord* allocate_memory(ShenandoahAllocRequest& request);
   HeapWord* mem_allocate(size_t size) override;
@@ -839,11 +830,6 @@ public:
   // by this thread, or by some other thread. On allocation failure, installs the
   // self-forwarded bit on src, flags src's region, and returns src.
   virtual oop evacuate_object(oop src, Thread* thread);
-
-  // Parallel scan of flagged cset regions to clear self-forwarded bits on live
-  // objects. Must be called at a safepoint; intended for the degenerated and
-  // full GC entry paths.
-  void un_self_forward_cset_regions();
 
   DEBUG_ONLY(void assert_no_self_forwards() const;)
 

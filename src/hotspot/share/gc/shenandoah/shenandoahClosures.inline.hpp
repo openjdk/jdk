@@ -150,6 +150,10 @@ void ShenandoahEvacuateUpdateRootClosureBase<CONCURRENT, STABLE_THREAD>::do_oop_
       assert(_heap->is_evacuation_in_progress(), "Only do this when evacuation is in progress");
       shenandoah_assert_marked(p, obj);
       oop resolved = ShenandoahForwarding::get_forwardee(obj);
+      if (resolved->is_self_forwarded()) {
+        return;
+      }
+
       if (resolved == obj) {
         Thread* thr = STABLE_THREAD ? _thread : Thread::current();
         assert(thr == Thread::current(), "Wrong thread");
@@ -208,25 +212,6 @@ void ShenandoahNMethodAndDisarmClosure::do_nmethod(nmethod* nm) {
 //
 // ========= Update References
 //
-
-template <ShenandoahGenerationType GENERATION>
-ShenandoahMarkUpdateRefsClosure<GENERATION>::ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q,
-                                                                             ShenandoahReferenceProcessor* rp,
-                                                                             ShenandoahObjToScanQueue* old_q) :
-  ShenandoahMarkRefsSuperClosure(q, rp, old_q) {
-  assert(_heap->is_stw_gc_in_progress(), "Can only be used for STW GC");
-}
-
-template<ShenandoahGenerationType GENERATION>
-template<class T>
-inline void ShenandoahMarkUpdateRefsClosure<GENERATION>::work(T* p) {
-  // Update the location
-  _heap->non_conc_update_with_forwarded(p);
-
-  // ...then do the usual thing
-  ShenandoahMarkRefsSuperClosure::work<T, GENERATION, false>(p);
-}
-
 template<class T>
 inline void ShenandoahNonConcUpdateRefsClosure::work(T* p) {
   _heap->non_conc_update_with_forwarded(p);
