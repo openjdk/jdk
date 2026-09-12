@@ -9716,6 +9716,30 @@ void MacroAssembler::kxor(BasicType type, KRegister dst, KRegister src1, KRegist
   }
 }
 
+void MacroAssembler::kxnor(BasicType type, KRegister dst, KRegister src1, KRegister src2) {
+  switch(type) {
+    case T_BOOLEAN:
+    case T_BYTE:
+       kxnorbl(dst, src1, src2);
+       break;
+    case T_CHAR:
+    case T_SHORT:
+       kxnorwl(dst, src1, src2);
+       break;
+    case T_INT:
+    case T_FLOAT:
+       kxnordl(dst, src1, src2);
+       break;
+    case T_LONG:
+    case T_DOUBLE:
+       kxnorql(dst, src1, src2);
+       break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
 void MacroAssembler::evperm(BasicType type, XMMRegister dst, KRegister mask, XMMRegister nds, XMMRegister src, bool merge, int vector_len) {
   switch(type) {
     case T_BOOLEAN:
