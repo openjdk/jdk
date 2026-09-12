@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package java.security.cert;
 
 import java.math.BigInteger;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Date;
 import javax.security.auth.x500.X500Principal;
@@ -155,6 +156,23 @@ public abstract class X509CRLEntry implements X509Extension {
      * @return the revocation date.
      */
     public abstract Date getRevocationDate();
+
+    /**
+     * Gets the revocation date as an {@code Instant} from this X509CRLEntry.
+     *
+     * @apiNote Subclasses should override this method to directly return an
+     * instant.
+     *
+     * @implSpec
+     * The default implementation calls {@code getRevocationDate()}
+     * and returns the date as an {@code Instant}.
+     *
+     * @return the revocation date.
+     */
+    public Instant getRevocationInstant() {
+        final Date date = getRevocationDate();
+        return date == null ? null : date.toInstant();
+    }
 
     /**
      * Returns true if this CRL entry has extensions.
