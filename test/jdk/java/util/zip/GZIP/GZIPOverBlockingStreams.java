@@ -27,6 +27,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Field;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -62,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.net.URIBuilder jdk.test.lib.RandomFactory
+ * @modules java.base/java.util.zip:open
  * @run junit GZIPOverBlockingStreams
  * @comment verify it behaves the same when jdk.util.gzip.tryReadAheadAfterTrailer system property
  *          is set to false
@@ -76,6 +78,21 @@ class GZIPOverBlockingStreams {
     private static Server nonHttpServer;
     private static HttpServer httpServer;
 
+    // 'GZIPInputStream.alwaysReadNextMember' configures whether GZIPInputStream skips the call to
+    // 'InputStream.available()' when checking for additional GZIP members in a stream. Tests which
+    // specifically test the non-blocking behavior (i.e. for the 'alwaysReadNextMember=false' case)
+    // have to be skipped if 'GZIPInputStream.alwaysReadNextMember' is 'true'.
+    static boolean alwaysReadNextMember = false;
+    static {
+        try {
+            Field alwaysReadNextMemberField = GZIPInputStream.class.getDeclaredField("alwaysReadNextMember");
+            alwaysReadNextMemberField.setAccessible(true);
+            alwaysReadNextMember = alwaysReadNextMemberField.getBoolean(null);
+        } catch (Exception e) {
+            System.out.println("Warning: can't get value of 'GZIPInputStream.alwaysReadNextMember'");
+            e.printStackTrace(System.out);
+        }
+    }
 
     @BeforeAll
     static void beforeAll() throws Exception {
@@ -119,7 +136,7 @@ class GZIPOverBlockingStreams {
     static List<Arguments> socketStreamTestArgs() {
         final List<Arguments> args = new ArrayList<>();
         final List<Integer> numMembers = numGZIPMembers();
-        for (boolean shouldCloseSocket : new boolean[]{true, false}) {
+        for (boolean shouldCloseSocket : new boolean[]{true, alwaysReadNextMember ? true : false}) {
             for (int n : numMembers) {
                 args.add(Arguments.of(n, shouldCloseSocket));
             }
@@ -166,7 +183,7 @@ class GZIPOverBlockingStreams {
     static List<Arguments> httpTestArgs() {
         final List<Arguments> args = new ArrayList<>();
         final List<Integer> numMembers = numGZIPMembers();
-        for (boolean chunkedOrNot : new boolean[]{true, false}) {
+        for (boolean chunkedOrNot : new boolean[]{alwaysReadNextMember ? false : true, false}) {
             for (int n : numMembers) {
                 args.add(Arguments.of(n, chunkedOrNot));
             }
