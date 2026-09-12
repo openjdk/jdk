@@ -325,11 +325,6 @@ function makeFilterWidget(sidebar, updateToc) {
 }
 
 const osDarkTheme = window.matchMedia("(prefers-color-scheme: dark)");
-osDarkTheme.addEventListener("change", e => {
-    if (getTheme() === THEME_OS) {
-        setTheme(THEME_OS);
-    }
-});
 function getTheme() {
     return [
         localStorage.getItem(THEME) ?? THEME_LIGHT,
@@ -418,6 +413,11 @@ document.addEventListener("DOMContentLoaded", function(e) {
         closeThemePanel();
     });
     var [currentTheme, underlineLinks] = getTheme();
+    osDarkTheme.addEventListener("change", e => {
+        if (currentTheme === THEME_OS) {
+            setTheme([currentTheme, underlineLinks]);
+        }
+    });
     themePanel.querySelectorAll("input").forEach(input => {
         input.removeAttribute("disabled");
         if (input.id === currentTheme) {
