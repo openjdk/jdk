@@ -280,7 +280,11 @@ template <class Callback> ProjNode* MultiNode::apply_to_projs(DUIterator_Fast& i
  * after the current IGVN.
  */
 class TupleNode : public MultiNode {
+private:
   const TypeTuple* _tf;
+  const TypePtr* _adr_type;
+
+  TupleNode(const TypeTuple* tf, const TypePtr* adr_type) : MultiNode(tf->cnt()), _tf(tf), _adr_type(adr_type) {}
 
   template <typename... NN>
   static void make_helper(TupleNode* tn, uint i, Node* node, NN... nn) {
@@ -291,21 +295,21 @@ class TupleNode : public MultiNode {
   static void make_helper(TupleNode*, uint) {}
 
 public:
-  TupleNode(const TypeTuple* tf) : MultiNode(tf->cnt()), _tf(tf) {}
-
-  int Opcode() const override;
-  const Type* bottom_type() const override { return _tf; }
-
   /* Give as many `Node*` as you want in the `nn` pack:
    * TupleNode::make(tf, input1)
    * TupleNode::make(tf, input1, input2, input3, input4)
    */
   template <typename... NN>
-  static TupleNode* make(const TypeTuple* tf, NN... nn) {
-    TupleNode* tn = new TupleNode(tf);
+  static TupleNode* make(const TypeTuple* tf, const TypePtr* adr_type, NN... nn) {
+    TupleNode* tn = new TupleNode(tf, adr_type);
     make_helper(tn, 0, nn...);
     return tn;
   }
+
+  int            Opcode()      const override;
+  const Type*    bottom_type() const override { return _tf; }
+  const TypePtr* adr_type()    const override { return _adr_type; }
+  uint           size_of()     const override { return sizeof(TupleNode); }
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP
