@@ -219,10 +219,10 @@ class UModINode : public DivModIntegerNode {
 public:
   UModINode(Node* c, Node* in1, Node* in2) : DivModIntegerNode(c, in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
-  virtual uint ideal_reg() const { return Op_RegI; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual uint ideal_reg() const { return Op_RegI; }
 };
 
 //------------------------------UModLNode---------------------------------------
@@ -231,10 +231,10 @@ class UModLNode : public DivModIntegerNode {
 public:
   UModLNode(Node* c, Node* in1, Node* in2) : DivModIntegerNode(c, in1, in2) {}
   virtual int Opcode() const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *bottom_type() const { return TypeLong::LONG; }
-  virtual uint ideal_reg() const { return Op_RegL; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual const Type* Value(PhaseGVN* phase) const;
+  virtual const Type* bottom_type() const { return TypeLong::LONG; }
+  virtual uint ideal_reg() const { return Op_RegL; }
 };
 
 //------------------------------DivModNode---------------------------------------
