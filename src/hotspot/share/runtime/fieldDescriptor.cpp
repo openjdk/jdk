@@ -194,7 +194,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
       if (is_flat()) { // only some value types can be flat
         bool is_null = false;
         ValueKlass* vk = ValueKlass::cast(field_holder()->get_value_type_field_klass(index()));
-        int field_offset = offset() - vk->payload_offset();
+        int field_offset = offset() - vk->layouts().payload_offset();
         int nm_offset = 0;
 
         if (!is_null_free_value_type()) {

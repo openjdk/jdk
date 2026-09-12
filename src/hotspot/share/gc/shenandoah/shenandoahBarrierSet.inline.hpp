@@ -406,8 +406,8 @@ void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_copy_in
     ShenandoahBarrierSet* bs = barrier_set();
     // addr() points at the payload start, the oop map offset are relative to
     // the object header, adjust address to account for this discrepancy.
-    const address oop_map_adjusted_src_addr = src.addr() - md->payload_offset();
-    const address oop_map_adjusted_dst_addr = dst.addr() - md->payload_offset();
+    const address oop_map_adjusted_src_addr = src.addr() - md->layouts().payload_offset();
+    const address oop_map_adjusted_dst_addr = dst.addr() - md->layouts().payload_offset();
     typedef typename ValueOopType<decorators>::type OopType;
 
     // Oop maps tell us where the array-like structures are in the value payload.
@@ -450,7 +450,7 @@ void ShenandoahBarrierSet::AccessBarrier<decorators, BarrierSetT>::value_store_n
     ShenandoahBarrierSet* bs = ShenandoahBarrierSet::barrier_set();
     // addr() points at the payload start, the oop map offset are relative to
     // the object header, adjust address to account for this discrepancy.
-    const address oop_map_adjusted_dst_addr = dst.addr() - md->payload_offset();
+    const address oop_map_adjusted_dst_addr = dst.addr() - md->layouts().payload_offset();
     typedef typename ValueOopType<decorators>::type OopType;
 
     // Oop maps tell us where the array-like structures are in the value payload.
