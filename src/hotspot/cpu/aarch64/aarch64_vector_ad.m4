@@ -126,17 +126,7 @@ source %{
           (opcode == Op_VectorCastL2X && bt == T_FLOAT) ||
           (opcode == Op_CountLeadingZerosV && bt == T_LONG) ||
           (opcode == Op_CountTrailingZerosV && bt == T_LONG) ||
-          opcode == Op_MulVL ||
-          // The implementations of Op_AddReductionVD/F in Neon are for the Vector API only.
-          // They are not suitable for auto-vectorization because the result would not conform
-          // to the JLS, Section Evaluation Order.
-          // Note: we could implement sequential reductions for these reduction operators, but
-          //       this will still almost never lead to speedups, because the sequential
-          //       reductions are latency limited along the reduction chain, and not
-          //       throughput limited. This is unlike unordered reductions (associative op)
-          //       and element-wise ops which are usually throughput limited.
-          opcode == Op_AddReductionVD || opcode == Op_AddReductionVF ||
-          opcode == Op_MulReductionVD || opcode == Op_MulReductionVF) {
+          opcode == Op_MulVL) {
         return false;
       }
     }
@@ -2250,7 +2240,33 @@ REDUCE_ADD_INT_NEON_SVE_PAIRWISE(I, iRegIorL2I)
 // reduction addL
 REDUCE_ADD_INT_NEON_SVE_PAIRWISE(L, iRegL)
 
+dnl REDUCE_STRICT_ORDER_ADD_FP_NEON($1,   $2,          $3          )
+dnl                                 type, insn suffix, element size
+define(`REDUCE_STRICT_ORDER_ADD_FP_NEON', `
+instruct reduce_strict_order_add$1_neon(vReg$1 dst_src1, vReg vsrc, vReg$1 tmp) %{
+  predicate(UseSVE == 0 &&
+            ifelse($1, F, `Matcher::vector_length(n->in(2)) <= 4',
+                   `Matcher::vector_length(n->in(2)) == 2') &&
+            n->as_Reduction()->requires_strict_order());
+  match(Set dst_src1 (AddReductionV$1 dst_src1 vsrc));
+  effect(TEMP tmp);
+  format %{ "reduce_strict_order_add$1_neon $dst_src1, $dst_src1, $vsrc\t# strict order" %}
+  ins_encode %{
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $vsrc);
+    assert(length_in_bytes == 8 || length_in_bytes == 16, "unsupported");
+    Assembler::SIMD_Arrangement T = length_in_bytes == 8 ? __ T8B : __ T16B;
+    __ fadd$2($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $vsrc$$FloatRegister);
+    for (uint offset = $3; offset < length_in_bytes; offset += $3) {
+      __ ext($tmp$$FloatRegister, T, $vsrc$$FloatRegister, $vsrc$$FloatRegister, offset);
+      __ fadd$2($dst_src1$$FloatRegister, $dst_src1$$FloatRegister, $tmp$$FloatRegister);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+
 // reduction addF
+
+REDUCE_STRICT_ORDER_ADD_FP_NEON(F, s, 4)
 
 instruct reduce_non_strict_order_add2F_neon(vRegF dst, vRegF fsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for a 64-bits-long vector. This rule is
@@ -2314,8 +2330,9 @@ define(`REDUCE_ADD_FP_SVE', `
 instruct reduce_add$1_sve(vReg`'ifelse($1, HF, F, $1) dst_src1, vReg src2) %{
   ifelse($1, HF,
        `predicate(UseSVE > 0);',
-       `predicate(!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) ||
-            n->as_Reduction()->requires_strict_order());')
+       `predicate(UseSVE > 0 &&
+            (!VM_Version::use_neon_for_vector(Matcher::vector_length_in_bytes(n->in(2))) ||
+             n->as_Reduction()->requires_strict_order()));')
   match(Set dst_src1 (AddReductionV$1 dst_src1 src2));
   format %{ "reduce_add$1_sve $dst_src1, $dst_src1, $src2" %}
   ins_encode %{
@@ -2333,6 +2350,8 @@ REDUCE_ADD_FP_SVE(HF, H)
 REDUCE_ADD_FP_SVE(F,  S)
 
 // reduction addD
+
+REDUCE_STRICT_ORDER_ADD_FP_NEON(D, d, 8)
 
 instruct reduce_non_strict_order_add2D_neon(vRegD dst, vRegD dsrc, vReg vsrc) %{
   // Non-strictly ordered floating-point add reduction for doubles. This rule is
