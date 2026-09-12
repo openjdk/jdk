@@ -176,6 +176,7 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 // |---..---|
 // |---f0---|
 // |---x27--|
+// |---x9---|
 // |---x23--|
 // |---x8---|
 // |---x4---|
@@ -183,10 +184,12 @@ LIR_Opr FrameMap::_caller_save_fpu_regs[] = {};
 // |---x2---|
 // |---x1---|
 // |---x0---|
-// |---x26--|<---pd_last_callee_saved_reg
+// |---x26--|
+// |---x25--|
+// |---x24--|
+// |---x22--|
 // |---..---|
 // |---x18--|
-// |---x9---|<---pd_first_callee_saved_reg
 // |---x31--|
 // |---..---|
 // |---x28--|
@@ -214,9 +217,6 @@ void FrameMap::initialize() {
   map_register(i, x29); r29_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x30); r30_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x31); r31_opr = LIR_OprFact::single_cpu(i); i++;
-
-  // callee save register
-  map_register(i, x9);  r9_opr  = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x18); r18_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x19); r19_opr = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x20); r20_opr = LIR_OprFact::single_cpu(i); i++;
@@ -234,6 +234,7 @@ void FrameMap::initialize() {
   map_register(i, x4);  r4_opr  = LIR_OprFact::single_cpu(i); i++;  // thread
   map_register(i, x8);  r8_opr  = LIR_OprFact::single_cpu(i); i++;  // fp
   map_register(i, x23); r23_opr = LIR_OprFact::single_cpu(i); i++;  // java thread
+  map_register(i, x9);  r9_opr  = LIR_OprFact::single_cpu(i); i++;
   map_register(i, x27); r27_opr = LIR_OprFact::single_cpu(i); i++;  // heapbase
 
   // tmp register
@@ -265,6 +266,14 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[i++]  = r29_opr;
   _caller_save_cpu_regs[i++]  = r30_opr;
   _caller_save_cpu_regs[i++]  = r31_opr;
+  _caller_save_cpu_regs[i++]  = r18_opr;
+  _caller_save_cpu_regs[i++]  = r19_opr;
+  _caller_save_cpu_regs[i++]  = r20_opr;
+  _caller_save_cpu_regs[i++]  = r21_opr;
+  _caller_save_cpu_regs[i++]  = r22_opr;
+  _caller_save_cpu_regs[i++]  = r24_opr;
+  _caller_save_cpu_regs[i++]  = r25_opr;
+  _caller_save_cpu_regs[i++]  = r26_opr;
 
   _init_done = true;
 
