@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
  */
 package common.dtd;
@@ -12,7 +12,7 @@ import javax.xml.validation.SchemaFactory;
 import common.util.TestBase;
 
 /**
- * @bug 8306632
+ * @bug 8306632 8357394
  * @summary tests the DTD property jdk.xml.dtd.support.
  * The DTD property controls how DTDs are processed.
  */
@@ -126,7 +126,7 @@ public class DTDTestBase extends TestBase {
              * Expect: error as the parser processes DTD and tries to access the invalid site
              * Error: JAXP00010008 java.net.UnknownHostException: invalid.site.com
              */
-            {fileDTDNotInC, null, null, null, null, null, isErrExpected, expected},
+            {fileDTDNotInC, null, null, null, null, null, isErrExpected, expected1},
 
             /**
              * Case 1-2: DTD=deny in config file
