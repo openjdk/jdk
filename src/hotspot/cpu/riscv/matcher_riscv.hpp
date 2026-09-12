@@ -73,6 +73,10 @@
     return 0;
   }
 
+  static bool supports_conditional_zero_arithmetic() {
+    return UseZicond;
+  }
+
   // This affects two different things:
   //  - how Decode nodes are matched
   //  - how ImplicitNullCheck opportunities are recognized
