@@ -28,9 +28,19 @@
 #include "gc/shared/concurrentGCThread.hpp"
 
 class ShenandoahHeap;
+class ShenandoahHeapRegion;
 
 class ShenandoahUncommitThread : public ConcurrentGCThread {
   ShenandoahHeap* const _heap;
+
+  // Candidate regions
+  struct Candidate {
+    ShenandoahHeapRegion* _region;
+    int64_t _empty_time;
+  };
+
+  Candidate* _candidates;
+  size_t _candidates_count;
 
   // Indicates that `SoftMaxHeapSize` has changed
   ShenandoahSharedFlag _soft_max_changed;
@@ -44,30 +54,34 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
+  // Indicates that termination is in progress
+  ShenandoahSharedFlag _terminating;
+
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;
 
-  // True if there are regions to uncommit and uncommits are allowed
-  bool should_uncommit(double shrink_before, size_t shrink_until) const;
-
-  // True if there are regions that have been empty for longer than ShenandoahUncommitDelay and the committed
-  // memory is higher than soft max capacity or minimum capacity
-  bool has_work(double shrink_before, size_t shrink_until) const;
+  // Plan work, fill out candidate regions. True if there is work.
+  bool plan_work(double shrink_delay, size_t shrink_until);
 
   // Perform the work of uncommitting empty regions
-  void uncommit(double shrink_before, size_t shrink_until);
+  void uncommit(double shrink_delay, size_t shrink_until);
 
   // True if the control thread has allowed this thread to uncommit regions
   bool is_uncommit_allowed() const;
 
-  // Iterate over and uncommit eligible regions until committed heap falls below
-  // `shrink_until` bytes. A region is eligible for uncommit if the timestamp at which
-  // it was last made empty is before `shrink_before` seconds since jvm start.
-  // Returns the number of regions uncommitted. May be interrupted by `forbid_uncommit`.
-  size_t do_uncommit_work(double shrink_before, size_t shrink_until) const;
+  // Try to set progress, potentially stalling until uncommits are allowed
+  bool try_set_progress(int delay_ms);
+
+  // Unset progress
+  void unset_progress();
+
+  static int compare_uncommit_priority(Candidate& a, Candidate& b);
 
 public:
   explicit ShenandoahUncommitThread(ShenandoahHeap* heap);
+
+  // Permanent thread, no cleanup
+  ~ShenandoahUncommitThread() override { ShouldNotReachHere(); }
 
   // Periodically check for regions to uncommit
   void run_service() override;
