@@ -496,7 +496,7 @@ public:
     Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
-  int find_edge(Node* n);
+  int find_edge(const Node* n) const;
   int find_prec_edge(Node* n) {
     for (uint i = req(); i < len(); i++) {
       if (_in[i] == n) return i;
