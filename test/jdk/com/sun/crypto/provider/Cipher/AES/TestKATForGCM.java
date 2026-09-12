@@ -33,6 +33,7 @@
  */
 
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.*;
 import javax.crypto.*;
@@ -42,6 +43,8 @@ import java.math.*;
 import java.util.*;
 
 public class TestKATForGCM {
+
+    enum BufferType { DIRECT, HEAP, MEMORY_SEGMENT };
 
     // Utility methods
     private static byte[] HexToBytes(String hexVal) {
@@ -320,7 +323,7 @@ public class TestKATForGCM {
         }
     }
 
-    void executeByteBuffer(TestVector tv, boolean direct, int offset) throws Exception {
+    void executeByteBuffer(TestVector tv, BufferType bufferType, int offset) throws Exception {
         Cipher c = Cipher.getInstance("AES/GCM/NoPadding",
                 System.getProperty("test.provider.name", "SunJCE"));
 
@@ -328,76 +331,92 @@ public class TestKATForGCM {
         ByteBuffer ctdst;
         ByteBuffer ptdst;
 
-        if (direct) {
-            System.out.print("Test #" + tv.id + ": ByteBuffer Direct.");
-            src = ByteBuffer.allocateDirect(tv.plainText.length + offset);
-            ctdst = ByteBuffer.allocateDirect(tv.cipherText.length + tv.tag.length + offset);
-            ptdst = ByteBuffer.allocateDirect(tv.plainText.length + offset);
-        } else {
-            System.out.print("Test #" + tv.id + ": ByteBuffer Heap.");
-            src = ByteBuffer.allocate(tv.plainText.length + offset);
-            ctdst = ByteBuffer.allocate(tv.cipherText.length + tv.tag.length + offset);
-            ptdst = ByteBuffer.allocate(tv.plainText.length + offset);
-        }
-
-        byte[] plainText;
-
-        if (offset > 0) {
-            System.out.println("  offset = " + offset);
-            plainText = new byte[tv.plainText.length + offset];
-            System.arraycopy(tv.plainText, 0, plainText, offset,
-                tv.plainText.length);
-        } else {
-            System.out.println();
-            plainText = tv.plainText;
-        }
-
-        src.put(plainText);
-        src.position(offset);
-        ctdst.position(offset);
-        ctdst.mark();
-        ptdst.position(offset);
-        ptdst.mark();
-
-        try {
-            c.init(Cipher.ENCRYPT_MODE, tv.key, tv.spec);
-            c.updateAAD(tv.aad);
-            c.doFinal(src, ctdst);
-
-            ctdst.reset();
-            ByteBuffer tag = ctdst.duplicate();
-            tag.position(tag.limit() - tv.tag.length);
-
-            c.init(Cipher.DECRYPT_MODE, tv.key, tv.spec);
-            c.updateAAD(tv.aad);
-            c.doFinal(ctdst, ptdst); // should fail if tag mismatched
-
-            ptdst.reset();
-            // check encryption/decryption results just to be sure
-            if (ptdst.compareTo(ByteBuffer.wrap(tv.plainText)) != 0) {
-                System.out.println("\t PlainText diff failed for test# " + tv.id);
-                testFailed = true;
+        try (Arena arena = Arena.ofConfined()) {
+            switch (bufferType) {
+                case DIRECT: {
+                    System.out.print("Test #" + tv.id + ": ByteBuffer Direct.");
+                    src = ByteBuffer.allocateDirect(tv.plainText.length + offset);
+                    ctdst = ByteBuffer.allocateDirect(tv.cipherText.length + tv.tag.length + offset);
+                    ptdst = ByteBuffer.allocateDirect(tv.plainText.length + offset);
+                }
+                break;
+                case HEAP: {
+                    System.out.print("Test #" + tv.id + ": ByteBuffer Heap.");
+                    src = ByteBuffer.allocate(tv.plainText.length + offset);
+                    ctdst = ByteBuffer.allocate(tv.cipherText.length + tv.tag.length + offset);
+                    ptdst = ByteBuffer.allocate(tv.plainText.length + offset);
+                }
+                break;
+                case MEMORY_SEGMENT: {
+                    System.out.print("Test #" + tv.id + ": ByteBuffer MemorySegment.");
+                    src = arena.allocate(tv.plainText.length + offset).asByteBuffer();
+                    ctdst = arena.allocate(tv.cipherText.length + tv.tag.length + offset).asByteBuffer();
+                    ptdst = arena.allocate(tv.plainText.length + offset).asByteBuffer();
+                }
+                break;
+                default:
+                    throw new RuntimeException("Unsupported buffer type " + bufferType);
             }
 
-            ctdst.reset();
-            ctdst.limit(ctdst.limit() - tv.tag.length);
-            if (ctdst.compareTo(ByteBuffer.wrap(tv.cipherText)) != 0) {
-                System.out.println("\t CipherText diff failed for test# " + tv.id);
-                testFailed = true;
+            byte[] plainText;
+
+            if (offset > 0) {
+                System.out.println("  offset = " + offset);
+                plainText = new byte[tv.plainText.length + offset];
+                System.arraycopy(tv.plainText, 0, plainText, offset,
+                        tv.plainText.length);
+            } else {
+                System.out.println();
+                plainText = tv.plainText;
             }
 
-            int mismatch = 0;
-            for (int i = 0; i < tv.tag.length; i++) {
-                mismatch |= tag.get() ^ tv.tag[i];
+            src.put(plainText);
+            src.position(offset);
+            ctdst.position(offset);
+            ctdst.mark();
+            ptdst.position(offset);
+            ptdst.mark();
+
+            try {
+                c.init(Cipher.ENCRYPT_MODE, tv.key, tv.spec);
+                c.updateAAD(tv.aad);
+                c.doFinal(src, ctdst);
+
+                ctdst.reset();
+                ByteBuffer tag = ctdst.duplicate();
+                tag.position(tag.limit() - tv.tag.length);
+
+                c.init(Cipher.DECRYPT_MODE, tv.key, tv.spec);
+                c.updateAAD(tv.aad);
+                c.doFinal(ctdst, ptdst); // should fail if tag mismatched
+
+                ptdst.reset();
+                // check encryption/decryption results just to be sure
+                if (ptdst.compareTo(ByteBuffer.wrap(tv.plainText)) != 0) {
+                    System.out.println("\t PlainText diff failed for test# " + tv.id);
+                    testFailed = true;
+                }
+
+                ctdst.reset();
+                ctdst.limit(ctdst.limit() - tv.tag.length);
+                if (ctdst.compareTo(ByteBuffer.wrap(tv.cipherText)) != 0) {
+                    System.out.println("\t CipherText diff failed for test# " + tv.id);
+                    testFailed = true;
+                }
+
+                int mismatch = 0;
+                for (int i = 0; i < tv.tag.length; i++) {
+                    mismatch |= tag.get() ^ tv.tag[i];
+                }
+                if (mismatch != 0) {
+                    System.out.println("\t Tag diff failed for test# " + tv.id);
+                    testFailed = true;
+                }
+            } catch (Exception ex) {
+                // continue testing other test vectors
+                System.out.println("\t Failed Test Vector ( #" + tv.id + ") : " + tv);
+                ex.printStackTrace();
             }
-            if (mismatch != 0) {
-                System.out.println("\t Tag diff failed for test# " + tv.id);
-                testFailed = true;
-            }
-        } catch (Exception ex) {
-            // continue testing other test vectors
-            System.out.println("\t Failed Test Vector ( #" + tv.id + ") : " + tv);
-            ex.printStackTrace();
         }
     }
 
@@ -405,10 +424,12 @@ public class TestKATForGCM {
         TestKATForGCM test = new TestKATForGCM();
         for (TestVector tv : testValues) {
             test.executeArray(tv);
-            test.executeByteBuffer(tv, false, 0);
-            test.executeByteBuffer(tv, true, 0);
-            test.executeByteBuffer(tv, false, 2);
-            test.executeByteBuffer(tv, true, 2);
+            test.executeByteBuffer(tv, BufferType.HEAP, 0);
+            test.executeByteBuffer(tv, BufferType.DIRECT, 0);
+            test.executeByteBuffer(tv, BufferType.MEMORY_SEGMENT, 0);
+            test.executeByteBuffer(tv, BufferType.HEAP, 2);
+            test.executeByteBuffer(tv, BufferType.DIRECT, 2);
+            test.executeByteBuffer(tv, BufferType.MEMORY_SEGMENT, 2);
         }
         if (!testFailed) {
             System.out.println("Tests passed");

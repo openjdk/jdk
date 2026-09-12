@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,10 +31,15 @@
  * @run main ByteBuffers SHA256withDSA 2048
  */
 
-import java.util.*;
-import java.nio.*;
-
-import java.security.*;
+import java.lang.foreign.Arena;
+import java.lang.foreign.MemorySegment;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.Provider;
+import java.security.Security;
+import java.security.Signature;
+import java.util.Random;
+import java.nio.ByteBuffer;
 
 public class ByteBuffers {
 
@@ -79,6 +84,15 @@ public class ByteBuffers {
         b2.clear();
         ByteBuffer b4 = b2.asReadOnlyBuffer();
         verify(sig, signature, b4, random);
+
+        // test 4: ByteBuffer with backing MemorySegment
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(t.length);
+            ByteBuffer b5 = segment.asByteBuffer();
+            b5.put(t);
+            b5.clear();
+            verify(sig, signature, b5, random);
+        }
 
         System.out.println("All tests passed");
     }
