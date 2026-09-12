@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,6 +121,21 @@ final class Rfc2253Parser {
                 }
                 ++cur;          // consume '+'
             }
+
+            // RFC 2253: an RDN MUST contain at least one
+            // attributeTypeAndValue. If the outer loop above never ran
+            // (e.g. the string was empty, or we were invoked right after
+            // a trailing ',' / ';' with nothing left to parse), "rdn" has
+            // no entries. Returning it as-is would let a malformed Rdn
+            // escape into Rdn(String) *and* LdapName(String)/add(String),
+            // later crashing getType()/getValue() with an uncaught
+            // IndexOutOfBoundsException instead of the documented
+            // InvalidNameException.
+            if (rdn.size() == 0) {
+            throw new InvalidNameException(
+                "Invalid name: \"" + name + "\" (empty RDN)");
+            }
+
             rdn.sort();
             return rdn;
         }
