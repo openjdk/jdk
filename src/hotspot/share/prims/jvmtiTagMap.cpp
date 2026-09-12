@@ -1349,7 +1349,7 @@ void IterateThroughHeapObjectClosure::visit_object(const JvmtiHeapwalkObject& ob
 
   // If the object has flat fields, report them as heap objects.
   if (obj.klass()->is_instance_klass()) {
-    if (InstanceKlass::cast(obj.klass())->has_inlined_fields()) {
+    if (InstanceKlass::cast(obj.klass())->has_flat_fields()) {
       visit_flat_fields(obj);
       // check if iteration has been halted
       if (is_iteration_aborted()) {
@@ -1376,7 +1376,7 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
 
     int field_offset = field->field_offset();
     if (obj.is_flat()) {
-      // the object is inlined, its fields are stored without the header
+      // the object is flattened, its fields are stored without the header
       field_offset += obj.offset() - obj.value_klass()->payload_offset();
     }
     // check for possible nulls
@@ -3109,7 +3109,7 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     int slot = field->field_index();
     int field_offset = field->field_offset();
     if (o.is_flat()) {
-      // the object is inlined, its fields are stored without the header
+      // the object is flattened, its fields are stored without the header
       field_offset += o.offset() - o.value_klass()->payload_offset();
     }
     if (!is_primitive_field_type(type)) {
