@@ -2516,36 +2516,41 @@ class SimpleRootsClosure : public OopClosure {
 };
 
 // A supporting closure used to process ClassLoaderData roots.
-class CLDRootsClosure: public OopClosure {
+class CLDRootsClosure: public CLDClosure {
 private:
   bool _continue;
 public:
   CLDRootsClosure(): _continue(true) {}
 
-  inline bool stopped() {
-    return !_continue;
+  class CLDKlassClosure : public KlassClosure {
+    bool _continue;
+   public:
+    CLDKlassClosure(): _continue(true) {}
+    inline bool stopped() {
+      return !_continue;
+    }
+
+    void do_klass(Klass* k) {
+      if (stopped()) {
+        return;
+      }
+
+      oop o = k->java_mirror();
+      if (o != nullptr) {
+        jvmtiHeapReferenceKind kind = JVMTI_HEAP_REFERENCE_SYSTEM_CLASS;
+        // invoke the callback
+        _continue = CallbackInvoker::report_simple_root(kind, o);
+      }
+    }
+  };
+
+  void do_cld(ClassLoaderData* cld) {
+    CLDKlassClosure clk;
+    cld->classes_do(&clk);
+    _continue = !clk.stopped();
   }
 
-  void do_oop(oop* obj_p) {
-    if (stopped()) {
-      return;
-    }
-
-    oop o = NativeAccess<AS_NO_KEEPALIVE>::oop_load(obj_p);
-    // ignore null
-    if (o == nullptr) {
-      return;
-    }
-
-    jvmtiHeapReferenceKind kind = JVMTI_HEAP_REFERENCE_OTHER;
-    if (o->klass() == vmClasses::Class_klass()) {
-      kind = JVMTI_HEAP_REFERENCE_SYSTEM_CLASS;
-    }
-
-    // invoke the callback
-    _continue = CallbackInvoker::report_simple_root(kind, o);
-  }
-  virtual void do_oop(narrowOop* obj_p) { ShouldNotReachHere(); }
+  inline bool stopped() const { return !_continue; }
 };
 
 // A supporting closure used to process JNI locals
@@ -3177,8 +3182,7 @@ inline bool VM_HeapWalkOperation::collect_simple_roots() {
 
   // Preloaded classes and loader from the system dictionary
   CLDRootsClosure cld_roots_closure;
-  CLDToOopClosure cld_closure(&cld_roots_closure, ClassLoaderData::_claim_none);
-  ClassLoaderDataGraph::always_strong_cld_do(&cld_closure);
+  ClassLoaderDataGraph::always_strong_cld_do(&cld_roots_closure);
   if (cld_roots_closure.stopped()) {
     return false;
   }
