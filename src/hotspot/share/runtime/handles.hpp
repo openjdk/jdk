@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,15 +65,17 @@ class Thread;
 
 class Handle {
  private:
-  oop* _handle;
+  oop* _raw_handle;
 
  protected:
-  oop     obj() const                            { return _handle == nullptr ? (oop)nullptr : *_handle; }
-  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving null handle"); return *_handle; }
+  oop     obj() const                            { return _raw_handle == nullptr ? (oop)nullptr : *_raw_handle; }
+  oop     non_null_obj() const                   { assert(_raw_handle != nullptr, "resolving null handle"); return *_raw_handle; }
+
+  explicit Handle(oop* raw_handle)               { _raw_handle = raw_handle; }
 
  public:
   // Constructors
-  Handle()                                       { _handle = nullptr; }
+  Handle()                                       { _raw_handle = nullptr; }
   inline Handle(Thread* thread, oop obj);
 
   // General access
@@ -86,51 +88,59 @@ class Handle {
   bool operator != (const Handle& h) const       { return obj() != h.obj(); }
 
   // Null checks
-  bool    is_null() const                        { return _handle == nullptr; }
-  bool    not_null() const                       { return _handle != nullptr; }
+  bool    is_null() const                        { return _raw_handle == nullptr; }
+  bool    not_null() const                       { return _raw_handle != nullptr; }
 
   // Debugging
   void    print()                                { obj()->print(); }
 
   // Direct interface, use very sparingly.
   // Used by JavaCalls to quickly convert handles and to create handles static data structures.
-  // Constructor takes a dummy argument to prevent unintentional type conversion in C++.
-  Handle(oop *handle, bool dummy)                { _handle = handle; }
+  static Handle make(oop* raw_handle)            { return Handle(raw_handle); }
 
   // Raw handle access. Allows easy duplication of Handles. This can be very unsafe
   // since duplicates is only valid as long as original handle is alive.
-  oop* raw_value() const                         { return _handle; }
-  static oop raw_resolve(oop *handle)            { return handle == nullptr ? (oop)nullptr : *handle; }
+  oop* raw_value() const                         { return _raw_handle; }
+  static oop raw_resolve(oop* raw_handle)        { return raw_handle == nullptr ? (oop)nullptr : *raw_handle; }
 
   inline void replace(oop obj);
 };
-
 // Specific Handles for different oop types
-#define DEF_HANDLE(type, is_a)                   \
-  class type##Handle: public Handle {            \
-   protected:                                    \
-    type##Oop    obj() const                     { return (type##Oop)Handle::obj(); } \
-    type##Oop    non_null_obj() const            { return (type##Oop)Handle::non_null_obj(); } \
-                                                 \
-   public:                                       \
-    /* Constructors */                           \
-    type##Handle ()                              : Handle() {} \
-    inline type##Handle (Thread* thread, type##Oop obj); \
-    type##Handle (oop *handle, bool dummy)       : Handle(handle, dummy) {} \
-                                                 \
-    /* Operators for ease of use */              \
-    type##Oop    operator () () const            { return obj(); } \
-    type##Oop    operator -> () const            { return non_null_obj(); } \
+#define DEF_HANDLE_IMPL(HandleType, OopType, BaseType)                         \
+  class HandleType : public BaseType {                                         \
+  protected:                                                                   \
+    OopType obj() const { return (OopType)Handle::obj(); }                     \
+    OopType non_null_obj() const { return (OopType)Handle::non_null_obj(); }   \
+                                                                               \
+    explicit HandleType(oop* raw_handle) : BaseType(raw_handle) {}             \
+                                                                               \
+  public:                                                                      \
+    /* Constructors */                                                         \
+    HandleType() : BaseType() {}                                               \
+    inline HandleType(Thread* thread, OopType obj);                            \
+                                                                               \
+    static HandleType make(oop* raw_handle) { return HandleType(raw_handle); } \
+                                                                               \
+    /* Operators for ease of use */                                            \
+    OopType operator()() const { return obj(); }                               \
+    OopType operator->() const { return non_null_obj(); }                      \
   };
 
+#define DEF_HANDLE_BASE(type, base)                                            \
+  DEF_HANDLE_IMPL(type##Handle, type##Oop, base##Handle)
+#define DEF_HANDLE(type) DEF_HANDLE_IMPL(type##Handle, type##Oop, Handle)
 
-DEF_HANDLE(instance         , is_instance_noinline         )
-DEF_HANDLE(stackChunk       , is_stackChunk_noinline       )
-DEF_HANDLE(array            , is_array_noinline            )
-DEF_HANDLE(objArray         , is_objArray_noinline         )
-DEF_HANDLE(typeArray        , is_typeArray_noinline        )
-DEF_HANDLE(flatArray        , is_flatArray_noinline        )
-DEF_HANDLE(refArray         , is_refArray_noinline         )
+DEF_HANDLE(instance)
+DEF_HANDLE_BASE(stackChunk, instance)
+DEF_HANDLE(array)
+DEF_HANDLE_BASE(objArray, array)
+DEF_HANDLE_BASE(typeArray, array)
+DEF_HANDLE_BASE(flatArray, objArray)
+DEF_HANDLE_BASE(refArray, objArray)
+
+#undef DEF_HANDLE
+#undef DEF_HANDLE_BASE
+#undef DEF_HANDLE_IMPL
 
 //------------------------------------------------------------------------------------------------------------------------
 
@@ -177,6 +187,8 @@ DEF_HANDLE(refArray         , is_refArray_noinline         )
 DEF_METADATA_HANDLE(method, Method)
 DEF_METADATA_HANDLE(constantPool, ConstantPool)
 
+#undef DEF_METADATA_HANDLE
+
 //------------------------------------------------------------------------------------------------------------------------
 // Thread local handle area
 class HandleArea: public Arena {
@@ -196,18 +208,18 @@ class HandleArea: public Arena {
 
   // Handle allocation
  private:
-  oop* real_allocate_handle(oop obj) {
-    oop* handle = (oop*)internal_amalloc(oopSize);
-    *handle = obj;
-    return handle;
+  oop* allocate_raw_handle_internal(oop obj) {
+    oop* raw_handle = (oop*)internal_amalloc(oopSize);
+    *raw_handle = obj;
+    return raw_handle;
   }
  public:
 #ifdef ASSERT
-  oop* allocate_handle(oop obj);
-  oop* allocate_null_handle();
+  oop* allocate_raw_handle(oop obj);
+  oop* allocate_raw_handle();
 #else
-  oop* allocate_handle(oop obj) { return real_allocate_handle(obj); }
-  oop* allocate_null_handle()   { return allocate_handle(nullptr); }
+  oop* allocate_raw_handle(oop obj) { return allocate_raw_handle_internal(obj); }
+  oop* allocate_raw_handle()   { return allocate_raw_handle_internal(nullptr); }
 #endif
 
   // Garbage collection support

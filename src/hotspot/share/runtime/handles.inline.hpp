@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@
 inline Handle::Handle(Thread* thread, oop obj) {
   assert(thread == Thread::current(), "sanity check");
   if (obj == nullptr) {
-    _handle = nullptr;
+    _raw_handle = nullptr;
   } else {
-    _handle = thread->handle_area()->allocate_handle(obj);
+    _raw_handle = thread->handle_area()->allocate_raw_handle(obj);
   }
 }
 
@@ -47,22 +47,36 @@ inline void Handle::replace(oop obj) {
   // Unlike in OopHandle::replace, we shouldn't use a barrier here.
   // OopHandle has its storage in OopStorage, which is walked concurrently and uses barriers.
   // Handle is thread private, and iterated by Thread::oops_do, which is why it shouldn't have any barriers at all.
-  assert(_handle != nullptr, "should not use replace");
-  *_handle = obj;
+  assert(_raw_handle != nullptr, "should not use replace");
+  *_raw_handle = obj;
 }
 
 // Inline constructors for Specific Handles for different oop types
-#define DEF_HANDLE_CONSTR(type, is_a)                   \
-inline type##Handle::type##Handle (Thread* thread, type##Oop obj) : Handle(thread, (oop)obj) { \
-  assert(is_null() || ((oop)obj)->is_a(), "illegal type");                \
-}
+#define DEF_HANDLE_CONSTR_IMPL(HandleType, OopType, BaseHandleType,            \
+                               BaseOopType, TypeCheckFn)                       \
+  inline HandleType::HandleType(Thread* thread, OopType obj)                   \
+      : BaseHandleType(thread, (BaseOopType)obj) {                             \
+    assert(is_null() || ((oop)obj)->TypeCheckFn(), "illegal type");            \
+  }
 
-DEF_HANDLE_CONSTR(instance , is_instance_noinline )
-DEF_HANDLE_CONSTR(array    , is_array_noinline    )
-DEF_HANDLE_CONSTR(objArray , is_objArray_noinline )
-DEF_HANDLE_CONSTR(typeArray, is_typeArray_noinline)
-DEF_HANDLE_CONSTR(flatArray, is_flatArray_noinline)
-DEF_HANDLE_CONSTR(refArray , is_refArray_noinline )
+#define DEF_HANDLE_CONSTR_BASE(type, base)                                     \
+  DEF_HANDLE_CONSTR_IMPL(type##Handle, type##Oop, base##Handle, base##Oop,     \
+                         is_##type##_noinline)
+#define DEF_HANDLE_CONSTR(type)                                                \
+  DEF_HANDLE_CONSTR_IMPL(type##Handle, type##Oop, Handle, oop,                 \
+                         is_##type##_noinline)
+
+DEF_HANDLE_CONSTR(instance)
+DEF_HANDLE_CONSTR_BASE(stackChunk, instance)
+DEF_HANDLE_CONSTR(array)
+DEF_HANDLE_CONSTR_BASE(objArray, array)
+DEF_HANDLE_CONSTR_BASE(typeArray, array)
+DEF_HANDLE_CONSTR_BASE(flatArray, objArray)
+DEF_HANDLE_CONSTR_BASE(refArray, objArray)
+
+#undef DEF_HANDLE_CONSTR
+#undef DEF_HANDLE_CONSTR_BASE
+#undef DEF_HANDLE_CONSTR_IMPL
 
 // Constructor for metadata handles
 #define DEF_METADATA_HANDLE_FN(name, type) \
@@ -77,6 +91,8 @@ inline name##Handle::name##Handle(Thread* thread, type* obj) : _value(obj), _thr
 
 DEF_METADATA_HANDLE_FN(method, Method)
 DEF_METADATA_HANDLE_FN(constantPool, ConstantPool)
+
+#undef DEF_METADATA_HANDLE_FN
 
 inline void HandleMark::push() {
   // This is intentionally a NOP. pop_and_restore will reset
