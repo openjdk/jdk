@@ -273,7 +273,7 @@ enum NamedGroup {
 
     // performance optimization
     private static final Set<CryptoPrimitive> KEY_AGREEMENT_PRIMITIVE_SET =
-        Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.KEY_AGREEMENT));
+        Set.of(CryptoPrimitive.KEY_AGREEMENT);
 
     NamedGroup(int id, String name,
             NamedGroupSpec namedGroupSpec,
