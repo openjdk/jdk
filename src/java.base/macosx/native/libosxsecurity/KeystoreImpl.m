@@ -760,7 +760,6 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
     OSStatus err;
     jlong returnValue = 0;
 
-    NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init]; \
     @try {
         jsize dataSize = (*env)->GetArrayLength(env, rawDataObj);
         jbyte *rawData = (*env)->GetByteArrayElements(env, rawDataObj, NULL);
@@ -848,8 +847,6 @@ JNIEXPORT jlong JNICALL Java_apple_security_KeychainStore__1addItemToKeychain
         }
     } @catch (NSException *e) {
         NSLog(@"%@", [e callStackSymbols]);
-    } @finally {
-        [pool drain];
     }
     return returnValue;
 }

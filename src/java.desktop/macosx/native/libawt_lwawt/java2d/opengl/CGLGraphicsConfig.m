@@ -57,14 +57,12 @@ OGLGC_DestroyOGLGraphicsConfig(jlong pConfigInfo)
 
         CGLCtxInfo *ctxinfo = (CGLCtxInfo *)oglc->ctxInfo;
         if (ctxinfo != NULL) {
-            NSAutoreleasePool * pool = [[NSAutoreleasePool alloc] init];
             [NSOpenGLContext clearCurrentContext];
             [ctxinfo->context clearDrawable];
             [ctxinfo->context release];
-            if (ctxinfo->scratchSurface != 0) {
+            if (ctxinfo->scratchSurface != NULL) {
                 [ctxinfo->scratchSurface release];
             }
-            [pool drain];
             free(ctxinfo);
             oglc->ctxInfo = NULL;
         }
@@ -127,167 +125,165 @@ Java_sun_java2d_opengl_CGLGraphicsConfig_getCGLConfigInfo
 
         J2dRlsTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo");
 
-        NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+        @autoreleasepool {
+            if (sharedContext == NULL) {
+                NSOpenGLPixelFormatAttribute attrs[] = {
+                    NSOpenGLPFAAllowOfflineRenderers,
+                    NSOpenGLPFAClosestPolicy,
+                    NSOpenGLPFAWindow,
+                    NSOpenGLPFAPixelBuffer,
+                    NSOpenGLPFADoubleBuffer,
+                    NSOpenGLPFAColorSize, 32,
+                    NSOpenGLPFAAlphaSize, 8,
+                    NSOpenGLPFADepthSize, 16,
+                    0
+                };
 
-        if (sharedContext == NULL) {
-
-            NSOpenGLPixelFormatAttribute attrs[] = {
-                NSOpenGLPFAAllowOfflineRenderers,
-                NSOpenGLPFAClosestPolicy,
-                NSOpenGLPFAWindow,
-                NSOpenGLPFAPixelBuffer,
-                NSOpenGLPFADoubleBuffer,
-                NSOpenGLPFAColorSize, 32,
-                NSOpenGLPFAAlphaSize, 8,
-                NSOpenGLPFADepthSize, 16,
-                0
-            };
-
-            sharedPixelFormat =
-                [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
-            if (sharedPixelFormat == nil) {
-                J2dRlsTraceLn(J2D_TRACE_ERROR,
+                sharedPixelFormat =
+                    [[NSOpenGLPixelFormat alloc] initWithAttributes:attrs];
+                if (sharedPixelFormat == nil) {
+                    J2dRlsTraceLn(J2D_TRACE_ERROR,
                               "CGLGraphicsConfig_getCGLConfigInfo: shared NSOpenGLPixelFormat is NULL");
-               return;
+                    return;
+                }
+
+                sharedContext =
+                    [[NSOpenGLContext alloc]
+                        initWithFormat:sharedPixelFormat
+                        shareContext: NULL];
+                if (sharedContext == nil) {
+                    J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: shared NSOpenGLContext is NULL");
+                    return;
+                }
             }
 
-            sharedContext =
-                [[NSOpenGLContext alloc]
-                    initWithFormat:sharedPixelFormat
-                    shareContext: NULL];
-            if (sharedContext == nil) {
-                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: shared NSOpenGLContext is NULL");
+#if USE_NSVIEW_FOR_SCRATCH
+            NSRect contentRect = NSMakeRect(0, 0, 64, 64);
+            NSWindow *window =
+                [[NSWindow alloc]
+                    initWithContentRect: contentRect
+                    styleMask: NSWindowStyleMaskBorderless
+                    backing: NSBackingStoreBuffered
+                    defer: false];
+            if (window == nil) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSWindow is NULL");
                 return;
             }
-        }
 
-#if USE_NSVIEW_FOR_SCRATCH
-        NSRect contentRect = NSMakeRect(0, 0, 64, 64);
-        NSWindow *window =
-            [[NSWindow alloc]
-                initWithContentRect: contentRect
-                styleMask: NSWindowStyleMaskBorderless
-                backing: NSBackingStoreBuffered
-                defer: false];
-        if (window == nil) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSWindow is NULL");
-            return;
-        }
-
-        NSView *scratchSurface =
-            [[NSView alloc]
-                initWithFrame: contentRect];
-        if (scratchSurface == nil) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSView is NULL");
-            return;
-        }
-        [window setContentView: scratchSurface];
+            NSView *scratchSurface =
+                [[NSView alloc]
+                    initWithFrame: contentRect];
+            if (scratchSurface == nil) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSView is NULL");
+                return;
+            }
+            [window setContentView: scratchSurface];
 #else
-        NSOpenGLPixelBuffer *scratchSurface =
-            [[NSOpenGLPixelBuffer alloc]
-                initWithTextureTarget:GL_TEXTURE_2D
-                textureInternalFormat:GL_RGB
-                textureMaxMipMapLevel:0
-                pixelsWide:64
-                pixelsHigh:64];
+            NSOpenGLPixelBuffer *scratchSurface =
+                [[NSOpenGLPixelBuffer alloc]
+                    initWithTextureTarget:GL_TEXTURE_2D
+                    textureInternalFormat:GL_RGB
+                    textureMaxMipMapLevel:0
+                    pixelsWide:64
+                    pixelsHigh:64];
 #endif
 
-        NSOpenGLContext *context =
-            [[NSOpenGLContext alloc]
-                initWithFormat: sharedPixelFormat
-                shareContext: sharedContext];
-        if (context == nil) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSOpenGLContext is NULL");
-            return;
-        }
+            NSOpenGLContext *context =
+                [[NSOpenGLContext alloc]
+                    initWithFormat: sharedPixelFormat
+                    shareContext: sharedContext];
+            if (context == nil) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: NSOpenGLContext is NULL");
+                return;
+            }
 
-        GLint contextVirtualScreen = [context currentVirtualScreen];
+            GLint contextVirtualScreen = [context currentVirtualScreen];
 #if USE_NSVIEW_FOR_SCRATCH
-        [context setView: scratchSurface];
+            [context setView: scratchSurface];
 #else
-        [context
-            setPixelBuffer: scratchSurface
-            cubeMapFace:0
-            mipMapLevel:0
-            currentVirtualScreen: contextVirtualScreen];
+            [context
+                setPixelBuffer: scratchSurface
+                cubeMapFace:0
+                mipMapLevel:0
+                currentVirtualScreen: contextVirtualScreen];
 #endif
-        [context makeCurrentContext];
+            [context makeCurrentContext];
 
-        // get version and extension strings
-        const unsigned char *versionstr = j2d_glGetString(GL_VERSION);
-        if (!OGLContext_IsVersionSupported(versionstr)) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL 1.2 is required");
-            [NSOpenGLContext clearCurrentContext];
-            return;
-        }
-        J2dRlsTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL version=%s", versionstr);
+            // get version and extension strings
+            const unsigned char *versionstr = j2d_glGetString(GL_VERSION);
+            if (!OGLContext_IsVersionSupported(versionstr)) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL 1.2 is required");
+                [NSOpenGLContext clearCurrentContext];
+                return;
+            }
+            J2dRlsTraceLn(J2D_TRACE_INFO, "CGLGraphicsConfig_getCGLConfigInfo: OpenGL version=%s", versionstr);
 
-        jint caps = CAPS_EMPTY;
-        OGLContext_GetExtensionInfo(env, &caps);
+            jint caps = CAPS_EMPTY;
+            OGLContext_GetExtensionInfo(env, &caps);
 
-        GLint value = 0;
-        [sharedPixelFormat
-            getValues: &value
-            forAttribute: NSOpenGLPFADoubleBuffer
-            forVirtualScreen: contextVirtualScreen];
-        if (value != 0) {
-            caps |= CAPS_DOUBLEBUFFERED;
-        }
+            GLint value = 0;
+            [sharedPixelFormat
+                getValues: &value
+                forAttribute: NSOpenGLPFADoubleBuffer
+                forVirtualScreen: contextVirtualScreen];
+            if (value != 0) {
+                caps |= CAPS_DOUBLEBUFFERED;
+            }
 
-        J2dRlsTraceLn(J2D_TRACE_INFO,
-                      "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
-                      (caps & CAPS_DOUBLEBUFFERED) != 0);
+            J2dRlsTraceLn(J2D_TRACE_INFO,
+                        "CGLGraphicsConfig_getCGLConfigInfo: db=%d",
+                        (caps & CAPS_DOUBLEBUFFERED) != 0);
 
         // remove before shipping (?)
 #if 1
-        [sharedPixelFormat
-            getValues: &value
-            forAttribute: NSOpenGLPFAAccelerated
-            forVirtualScreen: contextVirtualScreen];
-        if (value == 0) {
             [sharedPixelFormat
                 getValues: &value
-                forAttribute: NSOpenGLPFARendererID
+                forAttribute: NSOpenGLPFAAccelerated
                 forVirtualScreen: contextVirtualScreen];
-            fprintf(stderr, "WARNING: GL pipe is running in software mode (Renderer ID=0x%x)\n", (int)value);
-        }
+            if (value == 0) {
+                [sharedPixelFormat
+                    getValues: &value
+                    forAttribute: NSOpenGLPFARendererID
+                    forVirtualScreen: contextVirtualScreen];
+                fprintf(stderr, "WARNING: GL pipe is running in software mode (Renderer ID=0x%x)\n", (int)value);
+            }
 #endif
-        CGLCtxInfo *ctxinfo = (CGLCtxInfo *)malloc(sizeof(CGLCtxInfo));
-        if (ctxinfo == NULL) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGC_InitOGLContext: could not allocate memory for ctxinfo");
-            [NSOpenGLContext clearCurrentContext];
-            return;
-        }
-        memset(ctxinfo, 0, sizeof(CGLCtxInfo));
-        ctxinfo->context = context;
-        ctxinfo->scratchSurface = scratchSurface;
+            CGLCtxInfo *ctxinfo = (CGLCtxInfo *)malloc(sizeof(CGLCtxInfo));
+            if (ctxinfo == NULL) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGC_InitOGLContext: could not allocate memory for ctxinfo");
+                [NSOpenGLContext clearCurrentContext];
+                return;
+            }
+            memset(ctxinfo, 0, sizeof(CGLCtxInfo));
+            ctxinfo->context = context;
+            ctxinfo->scratchSurface = scratchSurface;
 
-        OGLContext *oglc = (OGLContext *)malloc(sizeof(OGLContext));
-        if (oglc == 0L) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGC_InitOGLContext: could not allocate memory for oglc");
-            [NSOpenGLContext clearCurrentContext];
-            free(ctxinfo);
-            return;
-        }
-        memset(oglc, 0, sizeof(OGLContext));
-        oglc->ctxInfo = ctxinfo;
-        oglc->caps = caps;
+            OGLContext *oglc = (OGLContext *)malloc(sizeof(OGLContext));
+            if (oglc == 0L) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGC_InitOGLContext: could not allocate memory for oglc");
+                [NSOpenGLContext clearCurrentContext];
+                free(ctxinfo);
+                return;
+            }
+            memset(oglc, 0, sizeof(OGLContext));
+            oglc->ctxInfo = ctxinfo;
+            oglc->caps = caps;
 
-        // create the CGLGraphicsConfigInfo record for this config
-        CGLGraphicsConfigInfo *cglinfo = (CGLGraphicsConfigInfo *)malloc(sizeof(CGLGraphicsConfigInfo));
-        if (cglinfo == NULL) {
-            J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: could not allocate memory for cglinfo");
-            [NSOpenGLContext clearCurrentContext];
-            free(oglc);
-            free(ctxinfo);
-            return;
-        }
-        memset(cglinfo, 0, sizeof(CGLGraphicsConfigInfo));
-        cglinfo->context = oglc;
+            // create the CGLGraphicsConfigInfo record for this config
+            CGLGraphicsConfigInfo *cglinfo = (CGLGraphicsConfigInfo *)malloc(sizeof(CGLGraphicsConfigInfo));
+            if (cglinfo == NULL) {
+                J2dRlsTraceLn(J2D_TRACE_ERROR, "CGLGraphicsConfig_getCGLConfigInfo: could not allocate memory for cglinfo");
+                [NSOpenGLContext clearCurrentContext];
+                free(oglc);
+                free(ctxinfo);
+                return;
+            }
+            memset(cglinfo, 0, sizeof(CGLGraphicsConfigInfo));
+            cglinfo->context = oglc;
 
-        [NSOpenGLContext clearCurrentContext];
-        ret = ptr_to_jlong(cglinfo);
-        [pool drain];
+            [NSOpenGLContext clearCurrentContext];
+            ret = ptr_to_jlong(cglinfo);
+        }
 
     }];
     JNI_COCOA_EXIT(env);
