@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.lang.classfile.Label;
 import java.lang.classfile.TypeAnnotation;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import java.util.List;
@@ -90,6 +91,7 @@ class ListValidationTest {
     @Test
     void testStackMapFrame() {
         Label label = dummyLabel();
+        // No-unset version
         assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
                 nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
                 nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.DOUBLE)));
@@ -99,6 +101,24 @@ class ListValidationTest {
         assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
                 nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.INTEGER),
                 nCopies(66000, StackMapFrameInfo.SimpleVerificationTypeInfo.DOUBLE)));
+        // Unset field version
+        NameAndTypeEntry nat = ConstantPoolBuilder.of().nameAndTypeEntry("dummy",  CD_int);
+        assertDoesNotThrow(() -> StackMapFrameInfo.of(label,
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, nat)));
+        assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
+                nCopies(66000, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, nat)));
+        assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(66000, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, nat)));
+        assertThrows(IllegalArgumentException.class, () -> StackMapFrameInfo.of(label,
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(65535, StackMapFrameInfo.SimpleVerificationTypeInfo.UNINITIALIZED_THIS),
+                nCopies(66000, nat)));
     }
 
     @Test
