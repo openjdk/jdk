@@ -22,7 +22,6 @@
  *
  */
 
-#include "memory/arena.hpp"
 #include "nmt/mallocTracker.hpp"
 #include "nmt/memoryFileTracker.hpp"
 #include "nmt/memTracker.hpp"
@@ -55,32 +54,16 @@ void NMTUsage::walk_thread_stacks() {
 }
 
 void NMTUsage::update_malloc_usage() {
-  MallocMemorySnapshot* ms;
-  // Lock needed to keep values in sync, total area size
-  // is deducted from mtChunk in the end to give correct values.
-  {
-    ChunkPoolLocker::LockStrategy ls = ChunkPoolLocker::LockStrategy::Lock;
-    if (VMError::is_error_reported() && VMError::is_error_reported_in_current_thread()) {
-      ls = ChunkPoolLocker::LockStrategy::Try;
-    }
-    ChunkPoolLocker cpl(ls);
-    ms = MallocMemorySummary::as_snapshot();
-  }
+  MallocMemorySnapshot* ms = MallocMemorySummary::as_snapshot();
 
-  size_t total_arena_size = 0;
   for (int i = 0; i < mt_number_of_tags; i++) {
     MemTag mem_tag = NMTUtil::index_to_tag(i);
     const MallocMemory* mm = ms->by_tag(mem_tag);
     _malloc_by_type[i] = mm->malloc_size() + mm->arena_size();
-    total_arena_size +=  mm->arena_size();
   }
 
   // Total malloc size.
   _malloc_total = ms->total();
-
-  // Adjustment due to mtChunk double counting.
-  _malloc_by_type[NMTUtil::tag_to_index(mtChunk)] -= total_arena_size;
-  _malloc_total -= total_arena_size;
 
   // Adjust mtNMT to include malloc overhead.
   _malloc_by_type[NMTUtil::tag_to_index(mtNMT)] += ms->malloc_overhead();
