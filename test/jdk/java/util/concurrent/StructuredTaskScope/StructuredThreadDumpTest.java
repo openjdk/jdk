@@ -25,7 +25,6 @@
  * @test
  * @bug 8284199 8296779 8306647
  * @summary Test thread dumps with StructuredTaskScope
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm ${test.main.class}
  */

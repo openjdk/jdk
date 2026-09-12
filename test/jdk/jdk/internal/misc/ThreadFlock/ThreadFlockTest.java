@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -895,12 +895,7 @@ class ThreadFlockTest {
     void testStructureViolation() {
         try (var flock1 = ThreadFlock.open("flock1")) {
             try (var flock2 = ThreadFlock.open("flock2")) {
-                try {
-                    flock1.close();
-                    fail("close did not throw");
-                } catch (RuntimeException e) {
-                    assertTrue(e.toString().contains("Structure"));
-                }
+                assertThrows(StructureViolationException.class, flock1::close);
                 assertTrue(flock1.isClosed());
                 assertTrue(flock2.isClosed());
             }
