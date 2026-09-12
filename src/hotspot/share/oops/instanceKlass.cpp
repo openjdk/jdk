@@ -4306,21 +4306,7 @@ void InstanceKlass::print_value_on(outputStream* st) const {
   name()->print_value_on(st);
 }
 
-void FieldPrinter::do_field(fieldDescriptor* fd) {
-  for (int i = 0; i < _indent; i++) _st->print("  ");
-  _st->print(BULLET);
-  // Handles the cases of static fields or instance fields but no oop is given.
-  if (_obj == nullptr) {
-    fd->print_on(_st, _base_offset);
-    _st->cr();
-  } else {
-    fd->print_on_for(_st, _obj, _indent, _base_offset);
-    if (!fd->field_flags().is_flat()) _st->cr();
-  }
-}
-
-
-void InstanceKlass::oop_print_on(oop obj, outputStream* st, int indent, int base_offset) {
+void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
   Klass::oop_print_on(obj, st);
 
   if (this == vmClasses::String_klass()) {
@@ -4336,7 +4322,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st, int indent, int base
   }
 
   st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj));
-  FieldPrinter print_field(st, obj, indent, base_offset);
+  FieldPrinter print_field(st, obj);
   print_nonstatic_fields(&print_field);
 
   if (this == vmClasses::Class_klass()) {

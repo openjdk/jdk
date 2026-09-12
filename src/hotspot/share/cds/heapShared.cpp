@@ -62,6 +62,7 @@
 #include "oops/compressedOops.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
+#include "oops/instanceKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopCast.inline.hpp"
@@ -1743,54 +1744,38 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
-// Used by HeapShared::find_value_classes().
-class HeapShared::ValueKlassFinder : public FieldClosure {
+// Used by HeapShared::find_flat_field_klasses().
+class HeapShared::FlatFieldKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
-  InstanceKlass* _ik;
-  address _obj;
+  oop _obj;
+  const ValuePayloadContext* _vpc;
 public:
-  // obj points to the "logical address" of:
-  //     (a) a regular heap object, or
-  //     (b) an element of a flattened array, or
-  //     (c) a flattened field embedded inside a heap object.
-  // For (a), obj is the same as the address of the heap object.
-  // For (b) and (c), obj points to ValueKlass::cast(_ik)->payload_offset() bytes below
-  // the payload.
-  ValueKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
-    : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
+  FlatFieldKlassFinder(KlassSubGraphInfo* subgraph_info, oop obj, const ValuePayloadContext* vpc = nullptr)
+    : FieldClosure(), _subgraph_info(subgraph_info), _obj(obj), _vpc(vpc) {
     precond(obj != nullptr);
-    precond(ik->has_inlined_fields());
+    assert(vpc == nullptr || obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
   }
 
-  // This function is called on every field of _ik.
   void do_field(fieldDescriptor* fd) override {
     if (fd->is_flat()) {
       precond(fd->field_type() == T_OBJECT);
-      precond(_ik == fd->field_holder());
 
-      // The type of this flattened field
-      ValueKlass* vk = _ik->get_value_type_field_klass(fd->index());
-
-      // The "logical address" of this flattened field
-      address field_addr = _obj + fd->offset() - vk->payload_offset();
-
-      if (fd->is_null_free_value_type() || !vk->is_payload_marked_as_null(field_addr)) {
-        // Found a non-null flattened instance of vk. Let's record vk.
-        add_value_class(_subgraph_info, vk);
+      if (!fd->is_flat_field_marked_as_null(_obj, _vpc)) {
+        // Found a non-null flat field of type vk. Let's record vk.
+        ValueKlass* vk = fd->flat_field_klass();
+        add_flat_field_klass(_subgraph_info, vk);
         if (vk->has_inlined_fields()) {
-          ValueKlassFinder finder(_subgraph_info, vk, field_addr);
-          finder.find();
+          // Scan the fields inside the flat field of type vk whose payload is at field_offset_in_obj.
+          ValuePayloadContext field_vpc{vk, fd->field_offset_in_obj(_vpc)};
+          FlatFieldKlassFinder finder(_subgraph_info, _obj, &field_vpc);
+          vk->do_nonstatic_fields(&finder);
         }
       }
     }
   }
-
-  void find() {
-    _ik->do_nonstatic_fields(this);
-  }
 };
 
-void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
+void HeapShared::add_flat_field_klass(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
   subgraph_info->add_subgraph_object_klass(k);
   if (InstanceKlass::cast(k)->is_enum_subclass()
       || (subgraph_info == _dump_time_special_subgraph)) {
@@ -1798,8 +1783,8 @@ void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k
   }
 }
 
-// Recursively scan for any ValueKlass K that has least one non-null flattened instance
-// inside orig_obj. K should be recorded with add_value_class().
+// Recursively scan for any ValueKlass K that has least one non-null flat field
+// inside orig_obj. K should be recorded with add_flat_field_klass().
 //
 // Reason for doing this:
 //
@@ -1808,12 +1793,12 @@ void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k
 //         @NullRestricted Point p1;
 //         @NullRestricted Point p2; ... }
 //
-// Klasses of non-flattened instances are already recorded by HeapShared::archive_object().
+// Klasses of non-flat fields are already recorded by HeapShared::archive_object().
 //
 // If only a single instance of Line is archived, HeapShared::archive_object() would
-// have never visited a (non-flattened) instance of Point, but we must store Point in
+// have never visited a heap oop instance of Point, but we must store Point in
 // AOT-initialized state. This function finds Point.
-void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
 
   if (klass->is_flatArray_klass()) {
@@ -1825,21 +1810,25 @@ void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_o
     for (int i = 0; i < fa->length(); i++) {
       if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
         if (!added) {
-          add_value_class(subgraph_info, elem_k);
+          // add elem_k for the first non-null element that we found.
+          add_flat_field_klass(subgraph_info, elem_k);
+          added = true;
         }
+
+        // Each element in fa may have different null flat fields, so we must scan
+        // all elements to ensure discovery of all non-null flat fields.
         if (elem_k->has_inlined_fields()) {
-          // "logical address" of the i-th array element.
-          address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
-          ValueKlassFinder finder(subgraph_info, elem_k, elem);
-          finder.find();
+          ValuePayloadContext vpc{elem_k, fa->value_offset_as_int(i, fak->layout_helper())};
+          FlatFieldKlassFinder finder(subgraph_info, orig_obj, &vpc);
+          elem_k->do_nonstatic_fields(&finder);
         }
       }
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     if (ik->has_inlined_fields()) {
-      ValueKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
-      finder.find();
+      FlatFieldKlassFinder finder(subgraph_info, orig_obj);
+      ik->do_nonstatic_fields(&finder);
     }
   }
 }
@@ -1979,7 +1968,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     orig_obj->oop_iterate(&pusher);
   }
 
-  find_value_classes(subgraph_info, orig_obj);
+  find_flat_field_klasses(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.

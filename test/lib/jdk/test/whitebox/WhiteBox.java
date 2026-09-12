@@ -104,6 +104,8 @@ public class WhiteBox {
   // printed by the VM.
   public native String printString(String str, int maxLength);
 
+  public native String printObject(Object obj);
+
   public native void lockAndStuckInSafepoint();
 
   public int countAliveClasses(String name) {
