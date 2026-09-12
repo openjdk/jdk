@@ -530,6 +530,9 @@
   product(bool, UseJumpTables, true,                                        \
           "Use JumpTables instead of a binary search tree for switches")    \
                                                                             \
+  product(bool, Force32BitJumpTable, false, DIAGNOSTIC,                     \
+          "Use only 32-bit entries for compressed jump tables")             \
+                                                                            \
   product(bool, UseDivMod, true,                                            \
           "Use combined DivMod instruction if available")                   \
                                                                             \
