@@ -138,12 +138,24 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
   using Group = AOTClassLocation::Group;
   using GrowableClassLocationArray = GrowableArrayCHeap<AOTClassLocation*, mtClassShared>;
 
+  struct RuntimePathInfo {
+    bool use_lcp_match;
+    const char* runtime_lcp;
+    size_t runtime_lcp_len;
+  };
+
   // Note: both of the following are non-null if we are dumping a dynamic archive.
   static AOTClassLocationConfig* _dumptime_instance;
   static const AOTClassLocationConfig* _runtime_instance;
 
   Array<AOTClassLocation*>* _class_locations; // jrt -> -Xbootclasspath/a -> -classpath -> --module_path
   static Array<ClassPathZipEntry*>* _dumptime_jar_files;
+
+  // Used to translate dumptime boot/app classpaths to their runtime equivalent in case
+  // the runtime classpath is different.
+  static const char* _runtime_lcp;
+  static size_t _runtime_lcp_len;
+  static bool _use_lcp_match;
 
   int _boot_classpath_end;
   int _app_classpath_end;
@@ -163,12 +175,11 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
                        Group group, bool parse_manifest, bool from_cpattr);
   void dumptime_init_helper(TRAPS);
 
-  bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph) const;
+  bool validate_helper(const char* cache_filename, bool has_aot_linked_classes, bool has_full_module_graph, RuntimePathInfo& path_info) const;
   bool check_jrt(bool has_aot_linked_classes) const;
-  bool check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css) const;
+  bool check_classpaths(bool has_aot_linked_classes, AllClassLocationStreams& all_css, RuntimePathInfo& path_info) const;
   bool check_classpaths(bool is_boot_classpath, bool has_aot_linked_classes,
-                        int index_start, int index_end, ClassLocationStream& runtime_css,
-                        bool use_lcp_match, const char* runtime_lcp, size_t runtime_lcp_len) const;
+                        int index_start, int index_end, ClassLocationStream& runtime_css, RuntimePathInfo& path_info) const;
   bool check_module_paths(bool has_aot_linked_classes, bool has_full_module_graph, ModulePathClassLocationStream& runtime_module_css) const;
   bool check_module_paths_exact_match(ModulePathClassLocationStream& runtime_module_css) const;
   bool file_exists(const char* filename) const;
@@ -221,6 +232,8 @@ public:
     assert(_runtime_instance != nullptr, "can only be called when using an AOT cache");
     return _runtime_instance;
   }
+
+  const char* get_runtime_path(int shared_path_index, const char* path) const;
 
   // Common accessors
   int boot_cp_start_index()          const { return 1; }
