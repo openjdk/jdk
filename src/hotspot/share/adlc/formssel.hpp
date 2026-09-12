@@ -157,7 +157,6 @@ public:
   virtual int         is_ideal_copy() const;    // node matches ideal 'Copy*'
   virtual bool        is_ideal_negD() const;    // node matches ideal 'NegD'
   virtual bool        is_ideal_if()   const;    // node matches ideal 'If'
-  virtual bool        is_ideal_fastlock() const; // node matches 'FastLock'
   virtual bool        is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   virtual bool        is_ideal_loadPC() const;  // node matches ideal 'LoadPC'
   virtual bool        is_ideal_box() const;     // node matches ideal 'Box'
@@ -1051,7 +1050,6 @@ public:
   int        is_ideal_copy() const;
   int        is_expensive() const;     // node matches ideal 'CosD'
   bool       is_ideal_if()   const;    // node matches ideal 'If'
-  bool       is_ideal_fastlock() const; // node matches ideal 'FastLock'
   bool       is_ideal_jump()   const;  // node matches ideal 'Jump'
   bool       is_ideal_membar() const;  // node matches ideal 'MemBarXXX'
   bool       is_ideal_loadPC() const;  // node matches ideal 'LoadPC'

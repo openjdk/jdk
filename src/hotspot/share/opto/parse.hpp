@@ -363,7 +363,9 @@ class Parse : public GraphKit {
   Block*            _block;     // block currently getting parsed
   ciBytecodeStream  _iter;      // stream of this method's bytecodes
 
-  const FastLockNode* _synch_lock; // FastLockNode for synchronized method
+  // Lock info for synchronized method
+  BoxLockNode* _sync_lock_box;
+  Node*        _sync_lock_obj;
 
 #ifndef PRODUCT
   int _max_switch_depth;        // Debugging SwitchRanges.
