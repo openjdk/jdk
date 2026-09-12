@@ -22,6 +22,7 @@
  *
  */
 
+#include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
@@ -1862,6 +1863,7 @@ class CallbackInvoker : AllStatic {
 
   // functions to report references
   static inline bool report_array_element_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index);
+  static inline bool report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_class_loader_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
   static inline bool report_signers_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree);
@@ -2465,6 +2467,15 @@ inline bool CallbackInvoker::report_field_reference(const JvmtiHeapwalkObject& r
   }
 }
 
+inline bool CallbackInvoker::report_other_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree) {
+  // Reporting classes from the class loader is not supported for old Heap 1.0 functions.
+  if (is_basic_heap_walk()) {
+    return true;
+  } else {
+    return invoke_advanced_object_reference_callback(JVMTI_HEAP_REFERENCE_OTHER, referrer, referree, -1);
+  }
+}
+
 // report an array referencing an element object
 inline bool CallbackInvoker::report_constant_pool_reference(const JvmtiHeapwalkObject& referrer, const JvmtiHeapwalkObject& referree, jint index) {
   if (is_basic_heap_walk()) {
@@ -2791,7 +2802,10 @@ class VM_HeapWalkOperation: public VM_Operation {
   inline bool iterate_over_flat_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_type_array(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_class(const JvmtiHeapwalkObject& o);
+  inline bool iterate_over_class_loader(const JvmtiHeapwalkObject& o);
   inline bool iterate_over_object(const JvmtiHeapwalkObject& o);
+
+  class CollectDeclaredKlasses;
 
   // root collection
   inline bool collect_simple_roots();
@@ -3092,6 +3106,43 @@ inline bool VM_HeapWalkOperation::iterate_over_class(const JvmtiHeapwalkObject& 
   return true;
 }
 
+class VM_HeapWalkOperation::CollectDeclaredKlasses : public KlassClosure {
+  GrowableArray<Klass*>* _klasses;
+ public:
+  CollectDeclaredKlasses(GrowableArray<Klass*>* klasses) : _klasses(klasses) {}
+  void do_klass(Klass* k) {
+    if (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded() && !k->is_hidden()) {
+      _klasses->push(k);
+    }
+  }
+};
+
+inline bool VM_HeapWalkOperation::iterate_over_class_loader(const JvmtiHeapwalkObject& o) {
+  assert(!o.is_flat(), "ClassLoaderKlass object cannot be flattened");
+  bool res = iterate_over_object(o);
+  // For a class loader, iterate over the loaded classes also to maintain compatibility
+  // for when ClassLoader had a vector of loaded classes.
+  ClassLoaderData* data = java_lang_ClassLoader::loader_data_acquire(o.obj());
+
+  if (res && data != nullptr) {
+    ResourceMark rm;
+    GrowableArray<Klass*>* klasses = new GrowableArray<Klass*>(10);
+    CollectDeclaredKlasses itr(klasses);
+    data->classes_do(&itr);
+
+    for (int i = 0; i < klasses->length(); i++) {
+      Klass* k = klasses->at(i);
+      JvmtiHeapwalkObject m(k->java_mirror());
+      // Pretend the classes are referred indirectly by the class loader. They are
+      // root objects, so make them other references.
+      if (!CallbackInvoker::report_other_reference(o, m)) {
+        return false;
+      }
+    }
+  }
+  return res;
+}
+
 // an object references a class and its instance fields
 // (static fields are ignored here as we report these as
 // references from the class).
@@ -3331,6 +3382,8 @@ bool VM_HeapWalkOperation::visit(const JvmtiHeapwalkObject& o) {
         // a java.lang.Class
         return iterate_over_class(o);
       }
+    } else if (java_lang_ClassLoader::is_instance(o.obj())) {
+      return iterate_over_class_loader(o);
     } else {
       // we report stack references only when initial object is not specified
       // (in the case we start from heap roots which include platform thread stack references)
