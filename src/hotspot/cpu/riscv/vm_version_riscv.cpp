@@ -34,6 +34,22 @@
 
 #include <ctype.h>
 
+// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
+// accesses only interoperate with C++ code compiled using the psABI atomics
+// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
+// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
+// libraries are the closest such C++ code, so gate UseZalasr on the
+// toolchain that built this VM. See riscv-elf-psabi-doc,
+// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+#if defined(__clang_major__)
+  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS (__clang_major__ >= 19)
+#elif defined(__GNUC__)
+  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS \
+    ((__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3))
+#else
+  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS 0
+#endif
+
 uint32_t VM_Version::_initial_vector_length = 0;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
@@ -148,6 +164,26 @@ void VM_Version::common_initialize() {
     }
   }
 
+  if (UseZalasr) {
+    if (!ext_Zalasr.enabled()) {
+      warning("Zalasr is not supported on this CPU");
+      FLAG_SET_DEFAULT(UseZalasr, false);
+    } else if (!JVM_TOOLCHAIN_USES_PSABI_ATOMICS) {
+      // A JVM built by a pre-psABI toolchain contains C++ atomics whose
+      // mapping is incompatible with the Zalasr sequences the JIT would
+      // emit; mixing them can break Java volatile semantics. Only warn when
+      // Zalasr was asked for explicitly: it is enabled by default whenever
+      // the CPU supports it, and a plain start-up should stay quiet.
+      if (!FLAG_IS_DEFAULT(UseZalasr)) {
+        warning("UseZalasr requires a JVM built with a toolchain using the "
+                "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+                "disabling Zalasr");
+      }
+      FLAG_SET_DEFAULT(UseZalasr, false);
+    }
+  }
+#undef JVM_TOOLCHAIN_USES_PSABI_ATOMICS
+
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
@@ -175,6 +211,13 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseZtso, true);
   }
 #endif
+
+  // Under Ztso the fences that Zalasr would elide are already free, so the
+  // load-acquire/store-release forms bring no benefit. Keep Zalasr off by
+  // default there; an explicit -XX:+UseZalasr is still honored.
+  if (UseZtso && FLAG_IS_DEFAULT(UseZalasr)) {
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {

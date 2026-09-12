@@ -31,37 +31,75 @@ source %{
 instruct load_P_shenandoah(iRegPNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadP mem));
-  predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP_DEF dst, KILL cr);
   // The main load is a candidate to implement implicit null checks.
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "ld  $dst, $mem\t# ptr, shenandoah late-barrier, #@loadP_shenandoah" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), t0, t1, false);
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg),
+        Address(as_Register($mem$$base), $mem$$disp), t0, t1,
+        /* is_narrow = */ false, /* is_acquire = */ false);
   %}
   ins_cost(3 * LOAD_COST);
   ins_pipe(iload_reg_mem);
+%}
+
+instruct load_P_volatile_shenandoah(iRegPNoSp dst, indirect mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadP mem));
+  predicate(UseShenandoahGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  effect(TEMP_DEF dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "ld.aq  $dst, $mem\t# ptr, shenandoah late-barrier, #@load_P_volatile_shenandoah" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg),
+        Address($mem$$Register), t0, t1,
+        /* is_narrow = */ false, /* is_acquire = */ true);
+  %}
+  ins_cost(VOLATILE_REF_COST);
+  ins_pipe(pipe_serial);
 %}
 
 instruct load_N_shenandoah(iRegNNoSp dst, memory mem, rFlagsReg cr)
 %{
   match(Set dst (LoadN mem));
-  predicate(UseShenandoahGC && n->as_Load()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
   effect(TEMP_DEF dst, KILL cr);
   // The main load is a candidate to implement implicit null checks.
   ins_is_late_expanded_null_check_candidate(true);
   format %{ "lwu  $dst, $mem\t# compressed ptr, shenandoah late-barrier, #@loadN_shenandoah" %}
   ins_encode %{
-    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg), Address(as_Register($mem$$base), $mem$$disp), t0, t1, true);
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg),
+        Address(as_Register($mem$$base), $mem$$disp), t0, t1,
+        /* is_narrow = */ true, /* is_acquire = */ false);
   %}
   ins_cost(3 * LOAD_COST);
   ins_pipe(iload_reg_mem);
 %}
 
+instruct load_N_volatile_shenandoah(iRegNNoSp dst, indirect mem, rFlagsReg cr)
+%{
+  match(Set dst (LoadN mem));
+  predicate(UseShenandoahGC && needs_acquiring_load(n) && n->as_Load()->barrier_data() != 0);
+  effect(TEMP_DEF dst, KILL cr);
+  // The main load is a candidate to implement implicit null checks.
+  ins_is_late_expanded_null_check_candidate(true);
+  format %{ "lw.aq  $dst, $mem\t# compressed ptr, shenandoah late-barrier, #@load_N_volatile_shenandoah" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->load_c2(this, masm, as_Register($dst$$reg),
+        Address($mem$$Register), t0, t1,
+        /* is_narrow = */ true, /* is_acquire = */ true);
+  %}
+  ins_cost(VOLATILE_REF_COST);
+  ins_pipe(pipe_serial);
+%}
+
 instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreP mem src));
-  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
   format %{ "sd  $src, $mem\t# ptr, shenandoah late-barrier, #@storeP_shenandoah" %}
   ins_encode %{
@@ -70,16 +108,36 @@ instruct storeP_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
       as_Register($src$$reg),                       /* src_narrow = */ false,
       as_Register($tmp$$reg),
       t0,
-      t1);
+      t1,
+      /* is_volatile = */ false);
   %}
   ins_cost(3 * STORE_COST);
   ins_pipe(istore_reg_mem);
 %}
 
+instruct storeP_volatile_shenandoah(iRegP src, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreP mem src));
+  predicate(UseShenandoahGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "sd.rl  $src, $mem\t# ptr, shenandoah late-barrier, #@storeP_volatile_shenandoah" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+      Address(as_Register($mem$$base)), /* dst_narrow = */ false,
+      as_Register($src$$reg),           /* src_narrow = */ false,
+      as_Register($tmp$$reg),
+      t0,
+      t1,
+      /* is_volatile = */ true);
+  %}
+  ins_cost(VOLATILE_REF_COST);
+  ins_pipe(pipe_serial);
+%}
+
 instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreN mem src));
-  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
   format %{ "sw  $src, $mem\t# compressed ptr, shenandoah late-barrier, #@storeN_shenandoah" %}
   ins_encode %{
@@ -88,16 +146,36 @@ instruct storeN_shenandoah(iRegN src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
         as_Register($src$$reg),                       /* src_narrow = */ true,
         as_Register($tmp$$reg),
         t0,
-        t1);
+        t1,
+        /* is_volatile = */ false);
   %}
   ins_cost(3 * STORE_COST);
   ins_pipe(istore_reg_mem);
 %}
 
+instruct storeN_volatile_shenandoah(iRegN src, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreN mem src));
+  predicate(UseShenandoahGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{ "sw.rl  $src, $mem\t# compressed ptr, shenandoah late-barrier, #@storeN_volatile_shenandoah" %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+        Address(as_Register($mem$$base)), /* dst_narrow = */ true,
+        as_Register($src$$reg),           /* src_narrow = */ true,
+        as_Register($tmp$$reg),
+        t0,
+        t1,
+        /* is_volatile = */ true);
+  %}
+  ins_cost(VOLATILE_REF_COST);
+  ins_pipe(pipe_serial);
+%}
+
 instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlagsReg cr)
 %{
   match(Set mem (StoreN mem (EncodeP src)));
-  predicate(UseShenandoahGC && n->as_Store()->barrier_data() != 0);
+  predicate(UseShenandoahGC && !needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
   effect(TEMP tmp, KILL cr);
   format %{
     "encode_heap_oop $tmp, $src\n\t"
@@ -109,10 +187,33 @@ instruct encodePAndStoreN_shenandoah(iRegP src, memory mem, iRegPNoSp tmp, rFlag
         as_Register($src$$reg),                       /* src_narrow = */ false,
         as_Register($tmp$$reg),
         t0,
-        t1);
+        t1,
+        /* is_volatile = */ false);
   %}
   ins_cost(4 * STORE_COST);
   ins_pipe(istore_reg_mem);
+%}
+
+instruct encodePAndStoreN_volatile_shenandoah(iRegP src, indirect mem, iRegPNoSp tmp, rFlagsReg cr)
+%{
+  match(Set mem (StoreN mem (EncodeP src)));
+  predicate(UseShenandoahGC && needs_releasing_store(n) && n->as_Store()->barrier_data() != 0);
+  effect(TEMP tmp, KILL cr);
+  format %{
+    "encode_heap_oop $tmp, $src\n\t"
+    "sw.rl  $tmp, $mem\t# compressed ptr, shenandoah late-barrier, #@encodePAndStoreN_volatile_shenandoah"
+  %}
+  ins_encode %{
+    ShenandoahBarrierSet::assembler()->store_c2(this, masm,
+        Address(as_Register($mem$$base)), /* dst_narrow = */ true,
+        as_Register($src$$reg),           /* src_narrow = */ false,
+        as_Register($tmp$$reg),
+        t0,
+        t1,
+        /* is_volatile = */ true);
+  %}
+  ins_cost(4 * STORE_COST);
+  ins_pipe(pipe_serial);
 %}
 
 instruct compareAndSwap_P_A_shenandoah(iRegINoSp res, indirect mem, iRegPNoSp oldval, iRegP newval, iRegPNoSp tmp, rFlagsReg cr) %{
