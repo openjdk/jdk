@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,26 +22,14 @@
  *
  */
 
-#include "cds/aotLinkedClassTable.hpp"
-#include "cds/cdsConfig.hpp"
-#include "cds/serializeClosure.hpp"
-#include "oops/array.hpp"
-
-AOTLinkedClassTable AOTLinkedClassTable::_instance;
-
-void AOTLinkedClassTable::serialize(SerializeClosure* soc) {
-  if (soc->writing() && CDSConfig::is_redumping_aot_configuration()) {
-    void* foo = nullptr;
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    soc->do_ptr((void**)&foo);
-    return;
-  }
-
-  soc->do_ptr((void**)&_boot1);
-  soc->do_ptr((void**)&_boot2);
-  soc->do_ptr((void**)&_platform);
-  soc->do_ptr((void**)&_app);
+public class Hey extends Greet {
+    public static void main(String args[]) {
+        Greet g = new Greet();
+        MyClass.doit(g.Greeting());
+    }
+    public static class MyClass {
+        public static void doit(String greeting) {
+            System.out.println("Hey" + greeting);
+        }
+    }
 }
-

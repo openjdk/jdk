@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(Function function) const
   auto wrapper = [&] (InstanceKlass* k, DumpTimeClassInfo& info) {
     assert(SafepointSynchronize::is_at_safepoint(), "invariant");
     assert_lock_strong(DumpTimeTable_lock);
-    if (CDSConfig::is_dumping_final_static_archive() && !k->is_loaded()) {
+    if ((CDSConfig::is_dumping_final_static_archive() || CDSConfig::is_redumping_aot_configuration()) && !k->is_loaded()) {
       assert(k->defined_by_other_loaders(), "must be");
       function(k, info);
     } else if (k->is_loader_alive()) {
