@@ -2813,7 +2813,7 @@ enum Nf {
     emit(insn);                                         \
   }
 
-  INSN(add_uw,    0b0111011, 0b000, 0b0000100);
+  INSN(_add_uw,    0b0111011, 0b000, 0b0000100);
   INSN(rolr,      0b0110011, 0b001, 0b0110000);
   INSN(rolrw,     0b0111011, 0b001, 0b0110000);
   INSN(rorr,      0b0110011, 0b101, 0b0110000);
