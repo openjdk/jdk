@@ -404,7 +404,6 @@ instruct shaddL_reg_reg_b(iRegLNoSp dst, iRegL src1, iRegL src2, immIScale imm) 
 instruct addL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_32bits mask) %{
   predicate(UseZba);
   match(Set dst (AddL src1 (AndL (ConvI2L src2) mask)));
-  match(Set dst (AddL (AndL (ConvI2L src2) mask) src1));
 
   ins_cost(ALU_COST);
   format %{ "add.uw $dst, $src2, $src1\t#@addL_reg_reg_uxtw_b" %}
@@ -421,7 +420,6 @@ instruct addL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_32
 instruct shaddL_reg_reg_uxtw_b(iRegLNoSp dst, iRegL src1, iRegIorL2I src2, immL_32bits mask, immIScale imm) %{
   predicate(UseZba);
   match(Set dst (AddL src1 (LShiftL (AndL (ConvI2L src2) mask) imm)));
-  match(Set dst (AddL (LShiftL (AndL (ConvI2L src2) mask) imm) src1));
 
   ins_cost(ALU_COST);
   format %{ "shadd.uw $dst, $src2, $src1, $imm\t#@shaddL_reg_reg_uxtw_b" %}
