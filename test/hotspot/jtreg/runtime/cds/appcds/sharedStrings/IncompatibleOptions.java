@@ -32,6 +32,7 @@
  * @summary Test options that are incompatible with use of shared strings
  *          Also test mismatch in oops encoding between dump time and run time
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
@@ -48,6 +49,7 @@
 /*
  * @test
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @requires (vm.gc=="null")
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
@@ -60,6 +62,7 @@
 /*
  * @test
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @requires (vm.gc=="null")
  * @requires vm.flagless
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
