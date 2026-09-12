@@ -328,21 +328,23 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
       }
     }
 
-    // Check ctrl input to see if the null-check dominates the memory op
     Block *cb = get_block_for_node(mach);
-    cb = cb->_idom;             // Always hoist at least 1 block
-    if( !was_store ) {          // Stores can be hoisted only one block
-      while( cb->_dom_depth > (block->_dom_depth + 1))
-        cb = cb->_idom;         // Hoist loads as far as we want
-      // The non-null-block should dominate the memory op, too. Live
-      // range spilling will insert a spill in the non-null-block if it is
-      // needs to spill the memory op for an implicit null check.
-      if (cb->_dom_depth == (block->_dom_depth + 1)) {
-        if (cb != not_null_block) continue;
-        cb = cb->_idom;
+
+    if (was_store) {
+      // A store can only be moved from the immediate non-null successor.
+      if (cb != not_null_block) {
+        continue;
+      }
+    } else {
+      // A load can be moved from any block dominated by the non-null successor.
+      if (!not_null_block->dominates(cb)) {
+        continue;
       }
     }
-    if( cb != block ) continue;
+
+    if (not_null_block->_idom != block) {
+      continue;
+    }
 
     // Found a memory user; see if it can be hoisted to check-block
     uint vidx = 0;              // Capture index of value into memop
