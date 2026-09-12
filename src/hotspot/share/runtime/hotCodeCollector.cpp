@@ -26,6 +26,7 @@
 
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
+#include "code/nmethod.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
@@ -112,13 +113,17 @@ void HotCodeCollector::thread_entry(JavaThread* thread, TRAPS) {
 }
 
 void HotCodeCollector::do_grouping(Candidates& candidates) {
+  // Number of nmethods relocated (candidate + callees)
   int num_relocated = 0;
+  int num_skipped = 0;
+  int num_invalidated = 0;
+
+  bool hot_code_heap_full = false;
 
   // Sort nmethods by increasing sample count so pop() returns the hottest
   candidates.sort();
 
-  while (candidates.has_candidates()) {
-
+  while (candidates.has_candidates() && !hot_code_heap_full) {
     double percent_from_hot = candidates.get_hot_sample_percent();
     log_debug(hotcode)("Percentage of samples from hot code heap: %f", percent_from_hot);
     if (percent_from_hot >= HotCodeSamplePercent) {
@@ -132,27 +137,50 @@ void HotCodeCollector::do_grouping(Candidates& candidates) {
     MutexLocker ml_CompiledIC_lock(CompiledIC_lock, Mutex::_no_safepoint_check_flag);
     MutexLocker ml_CodeCache_lock(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
-    num_relocated += do_relocation(candidate, 0);
+    switch (do_relocation(candidate, 0, &num_relocated)) {
+      case nmethod::RelocationResult::SUCCESS:
+        break;
+      case nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP: {
+        CodeHeap* heap = CodeCache::get_code_heap(CodeBlobType::MethodHot);
+        log_warning(codecache)("Allocation failed in MethodHot heap (%zu bytes free). "
+                               "Stopping hot methods relocation.",
+                               heap->unallocated_capacity());
+        log_warning(codecache)("Try increasing the code heap size using -XX:HotCodeHeapSize=");
+        heap->report_full();
+        CodeCache::report_code_heap_full_event(heap);
+        hot_code_heap_full = true;
+        break;
+      }
+      case nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD:
+        num_skipped++;
+        break;
+      case nmethod::RelocationResult::FAILED_INVALIDATED_NMETHOD:
+        num_invalidated++;
+        break;
+    }
   }
 
-  log_info(hotcode)("Collection done. Relocated %d nmethods to the MethodHot heap", num_relocated);
+  log_info(hotcode)("Collection done. Relocated %d nmethods (candidates and callees) to the MethodHot heap. "
+                    "Skipped %d candidates. %d candidates invalidated during relocation.", num_relocated, num_skipped, num_invalidated);
 }
 
-int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
+nmethod::RelocationResult HotCodeCollector::do_relocation(void* candidate, uint call_level, int* num_relocated) {
+  assert(num_relocated != nullptr, "num_relocated must be provided");
+
   if (candidate == nullptr) {
-    return 0;
+    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
   }
 
   // Verify that address still points to CodeBlob
   CodeBlob* blob = CodeCache::find_blob(candidate);
   if (blob == nullptr) {
-    return 0;
+    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
   }
 
   // Verify that blob is nmethod
   nmethod* nm = blob->as_nmethod_or_null();
   if (nm == nullptr || nm->method() == nullptr) {
-    return 0;
+    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
   }
 
   // The candidate may have been recompiled or already relocated.
@@ -161,34 +189,27 @@ int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
 
   // Verify the nmethod is still valid for relocation
   if (nm == nullptr || !nm->is_in_use() || !nm->is_compiled_by_c2()) {
-    return 0;
+    return nmethod::RelocationResult::FAILED_NOT_RELOCATABLE_NMETHOD;
   }
-
-  // Verify code heap has space
-  if (CodeCache::get_code_heap(CodeBlobType::MethodHot)->unallocated_capacity() < (size_t)nm->size()) {
-    log_info(hotcode)("Not enough free space in MethodHot heap (%zd bytes) to relocate nm (%d bytes). Bailing out",
-      CodeCache::get_code_heap(CodeBlobType::MethodHot)->unallocated_capacity(), nm->size());
-    return 0;
-  }
-
-  // Number of nmethods relocated (candidate + callees)
-  int num_relocated = 0;
 
   // Pointer to nmethod in hot heap
   nmethod* hot_nm = nullptr;
 
   if (CodeCache::get_code_blob_type(nm) != CodeBlobType::MethodHot) {
     CompiledICLocker ic_locker(nm);
-    hot_nm = nm->relocate(CodeBlobType::MethodHot);
+
+    nmethod::RelocationResult relocation_result;
+    hot_nm = nm->relocate(CodeBlobType::MethodHot, &relocation_result);
 
     if (hot_nm != nullptr) {
+      assert(CodeCache::get_code_blob_type(hot_nm) == CodeBlobType::MethodHot, "Must be relocated to HotCodeHeap");
       // Successfully relocated nmethod. Update counts and proceed to callee relocation.
       log_debug(hotcode)("Successful relocation: nmethod (%p), method (%s), call level (%d)", nm, hot_nm->method()->name_and_sig_as_C_string(), call_level);
-      num_relocated++;
+      (*num_relocated)++;
     } else {
       // Relocation failed so return and do not attempt to relocate callees
-      log_debug(hotcode)("Failed relocation: nmethod (%p), call level (%d)", nm, call_level);
-      return 0;
+      log_debug(hotcode)("Failed relocation: nmethod (%p), call level (%d), reason (%s)", nm, call_level, nmethod::relocation_result_to_string(relocation_result));
+      return relocation_result;
     }
   } else {
     // Skip relocation since already in hot heap, but still relocate callees
@@ -213,11 +234,13 @@ int HotCodeCollector::do_relocation(void* candidate, uint call_level) {
       address dest = ((CallRelocation*) reloc)->destination();
 
       // Recursively relocate callees
-      num_relocated += do_relocation(dest, call_level + 1);
+      if (do_relocation(dest, call_level + 1, num_relocated) == nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP) {
+        return nmethod::RelocationResult::FAILED_NO_SPACE_IN_CODE_HEAP;
+      }
     }
   }
 
-  return num_relocated;
+  return nmethod::RelocationResult::SUCCESS;
 }
 
 void HotCodeCollector::unregister_nmethod(nmethod* nm) {

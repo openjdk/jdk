@@ -1691,9 +1691,14 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, CodeBlobType blob_type) {
   }
   {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type);
+    bool handle_alloc_failure = (blob_type != CodeBlobType::MethodHot);
+    blob = (BufferBlob*) CodeCache::allocate(full_size, blob_type, handle_alloc_failure);
     if (blob != nullptr) {
       ::new (blob) BufferBlob("WB::DummyBlob", CodeBlobKind::Buffer, full_size);
+    } else if (!handle_alloc_failure) {
+      CodeHeap* heap = CodeCache::get_code_heap(blob_type);
+      heap->report_full();
+      CodeCache::report_code_heap_full_event(heap);
     }
   }
   // Track memory usage statistic after releasing CodeCache_lock
