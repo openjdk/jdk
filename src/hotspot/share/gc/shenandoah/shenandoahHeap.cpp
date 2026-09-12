@@ -30,6 +30,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
+#include "cppstdlib/new.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -158,7 +159,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
-#include <new>
 #include <string.h>
 
 class GCTracer;

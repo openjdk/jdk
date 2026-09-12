@@ -32,7 +32,6 @@
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
-class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionSet;
 

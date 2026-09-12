@@ -24,7 +24,6 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
-#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/allocation.hpp"

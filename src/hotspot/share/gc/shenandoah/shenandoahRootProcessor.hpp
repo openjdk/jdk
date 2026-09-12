@@ -39,7 +39,6 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ShenandoahHeap;
 class ShenandoahNMethodTableSnapshot;
 class Thread;
 

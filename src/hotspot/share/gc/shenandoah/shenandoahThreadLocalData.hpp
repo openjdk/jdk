@@ -26,6 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP
 
+#include "cppstdlib/new.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcThreadLocalData.hpp"
@@ -41,8 +42,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
-
-#include <new>
 
 class ShenandoahThreadLocalData {
 private:

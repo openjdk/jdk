@@ -37,7 +37,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/numberSeq.hpp"
 
-class ShenandoahSpaceInfo;
 
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \

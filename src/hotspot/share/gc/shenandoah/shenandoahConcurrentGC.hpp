@@ -32,7 +32,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 class ShenandoahGeneration;
-class ShenandoahHeap;
 
 class ShenandoahConcurrentGC : public ShenandoahGC {
   friend class VM_ShenandoahInitMark;

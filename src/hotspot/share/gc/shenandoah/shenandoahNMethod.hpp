@@ -40,7 +40,6 @@ template <typename> class GrowableArray;
 class nmethod;
 class NMethodClosure;
 class OopClosure;
-class ShenandoahHeap;
 
 // Use ShenandoahReentrantLock as ShenandoahNMethodLock
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;

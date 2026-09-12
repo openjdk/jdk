@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "memory/universe.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "services/memoryPool.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -45,6 +44,7 @@ class ShenandoahMarkingContext;
 class ShenandoahRegulatorThread;
 class Thread;
 class ThreadClosure;
+class MemoryPool;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
   void stop() override;

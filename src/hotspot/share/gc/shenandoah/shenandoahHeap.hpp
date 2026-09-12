@@ -57,7 +57,6 @@ class ShenandoahYoungGeneration;
 class ShenandoahOldGeneration;
 class ShenandoahHeuristics;
 class ShenandoahMarkingContext;
-class ShenandoahMode;
 class ShenandoahPhaseTimings;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;

@@ -118,7 +118,7 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-          return pow(10.0, MagMinimum + mag) * val / ValBuckets;
+          return std::pow(10.0, MagMinimum + mag) * val / ValBuckets;
         }
       }
     }
