@@ -31,6 +31,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/vmOperations.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -49,6 +50,13 @@ struct UpcallContext {
   Thread* attachedThread;
 
   ~UpcallContext() {
+    if (VM_Exit::vm_exited()) {
+      // This thread terminated after VM exit
+      // and can't be detached anymore.
+      // Leaking it is preferable to deadlocking
+      // in DetachCurrentThread.
+      return;
+    }
     if (attachedThread != nullptr) {
       JavaVM_ *vm = (JavaVM *)(&main_vm);
       vm->functions->DetachCurrentThread(vm);
