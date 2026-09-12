@@ -393,6 +393,11 @@ public:
 
   void vector_mask_cast(XMMRegister dst, XMMRegister src, BasicType dst_bt, BasicType src_bt, int vlen);
 
+  // Clear the predicate (opmask) bits above the valid lane count. Required for masks
+  // freshly produced for partial (sub-128-bit) vectors, where the 128-bit-rounded
+  // producing operation writes more lanes than the vector actually has.
+  void clip_partial_mask(KRegister kdst, int mask_len);
+
   void vector_round_double_evex(XMMRegister dst, XMMRegister src, AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                                 Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2);
 
