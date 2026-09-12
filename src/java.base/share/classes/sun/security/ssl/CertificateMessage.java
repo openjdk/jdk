@@ -1038,6 +1038,19 @@ final class CertificateMessage {
                         SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
                     SSLLogger.warning("No available authentication scheme");
                 }
+            } else if (pos instanceof X509Possession x509Possession &&
+                    SignatureScheme.getSignerOfPreferableAlgorithm(
+                            hc.sslConfig,
+                            hc.algorithmConstraints,
+                            hc.peerRequestedSignatureSchemes,
+                            x509Possession,
+                            hc.negotiatedProtocol) == null) {
+                if (SSLLogger.isOn() &&
+                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE)) {
+                    SSLLogger.warning("No available authentication scheme " +
+                            "matching requested signature parameter");
+                }
+                return null;
             }
             return pos;
         }
