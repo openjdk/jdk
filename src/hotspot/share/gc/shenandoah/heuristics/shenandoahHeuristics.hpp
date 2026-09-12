@@ -254,9 +254,9 @@ public:
 
   virtual bool should_degenerate_cycle();
 
-  virtual void record_success_concurrent();
+  virtual void record_success_concurrent(bool abbreviated);
 
-  virtual void record_degenerated(bool is_generational_global);
+  virtual void record_degenerated(bool abbreviated, bool is_generational_global);
 
   virtual void record_success_full();
 

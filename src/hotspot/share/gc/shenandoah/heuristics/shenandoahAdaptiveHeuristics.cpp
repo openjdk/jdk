@@ -152,22 +152,74 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   }
 }
 
-void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time) {
-  // Conservatively add sample into linear model, if this time is above the predicted concurrent gc time
-  if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
-    _cycles.record_duration(time_at_start, gc_time);
+void ShenandoahAdaptiveHeuristics::add_degenerated_gc_time(double time_at_start, double gc_time, bool abbreviated) {
+  // Conservatively add sample into linear model under certain special conditions, described below.
+  bool add_sample = false;
+  double scale_factor = 1.0;
+  if (abbreviated) {
+    // In the case that an abbreviated cycle degenerated, it may be that our current prediction of GC time is too short,
+    // so add this approximation of GC time into the record even if we have already learned and even if the prediction
+    // was longer than our approximation of normal GC time. We have observed that failing to record duration of degenerated
+    // abbreviated GC cycles can result in cascading of degen and full GC cycles.
+
+    // See comment in record_success_concurrent() for doubling-of-gc_time rationale.
+    gc_time += gc_time;
+    scale_factor = 2.0;
+    add_sample = true;
+  } else if (_cycles.predict_duration(time_at_start, _margin_of_error_sd) < gc_time) {
+    add_sample = true;
+  }
+  // We do not add degenerated cycles into linear model if the degenerated cycle runs in less time that was predicted.
+  // The linear prediction model is based on normal numbers of concurrent GC worker threads.  We would expect that using
+  // all parallel GC threads on a degenerated cycle would allow degen to run faster than the linear model predicts.
+
+  if (add_sample) {
+    _cycles.record_duration(time_at_start, gc_time, scale_factor);
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
-  ShenandoahHeuristics::record_success_concurrent();
+void ShenandoahAdaptiveHeuristics::record_success_concurrent(bool abbreviated) {
+  ShenandoahHeuristics::record_success_concurrent(abbreviated);
 
-  // We add this time even if it is a shortened cycle. There is a risk that this pulls
-  // the gc time trend down, but it is still a more accurate view than excluding times
-  // from shortened cycles. Suppose we did excluded shortened times, the risk would then
-  // be running the collector more often than necessary because it continues to believe
-  // the average cycle time is much higher than it otherwise would be.
-  _cycles.record_duration(_cycle_start, elapsed_cycle_time());
+  double gc_time = elapsed_cycle_time();
+  double scale_factor = 1.0;
+  bool add_sample = false;
+  if (abbreviated) {
+    const size_t max_learn = ShenandoahLearningSteps;
+    // Assume a regular cycle takes twice as long as mark-only cycle. This is a rough approximation based on the following
+    // observations:
+    //  1. The time spent in safepoints to initialize or finalize marking or to finalize update refs is generally negligible
+    //     compared to the times required to run concurrent phases of GC.
+    //  2. The time spent in other minor concurrent phases, such as concurrent_reset and cleanup is also small in comparison
+    //     to times spent in the three major phases: mark, evacuation, update.
+    //  3. The concurrent mark phase has to "traverse" all live memory. Live memory not traversed by evacuation is going to
+    //     be traversed by updating.  Thus, the combined totals of memory traversed by evacuation and update are the same
+    //     as the memory traversed by marking. These are rough approximations, as new memory allocated (above TAMS) will
+    //     need to be updated but is not marked, for example. But this approximation is better than assuming that time
+    //     required for an abbreviated cycle is the same as the time required for a non-abbreviated cycle.
+    //  4. Generational workloads especially are vulnerable to abnormally long evacuation cycles (due to mixed-evacuation
+    //     workloads) and abnormally long update-ref cycles (due to high promotion or the need to update all of the old
+    //     generation following a mixed evacuation). In these scenarios, total GC effort is normally much higher than
+    //     twice the mark time. Global cycles are also not typical of a normal GC cycle behavior. For "typical normal"
+    //     GC cycles, doubling the mark GC time is considered a "reasonable approximation" of full GC cycle time. Handling
+    //     for non-typical GC cycles is being addressed in WIP: https://github.com/openjdk/jdk/pull/30318.
+    gc_time += gc_time;
+    scale_factor = 2.0;
+    // Only add adjusted abbreviated cycle times if we are still learning or if the new adjusted measurement is below the
+    // most current prediction. Workloads that have a large number of abbreviated cycles are vulnerable to overly conservative
+    // linear prediction of execution time based on learning cycles alone. This happens because any small error in the
+    // linear prediction model is amplified as the time between learning cycles and current prediction event increases.
+    if ((_gc_times_learned <= max_learn) || (gc_time < _cycles.predict_duration(_cycle_start, _margin_of_error_sd))) {
+      add_sample = true;
+    }
+  } else {
+    // Always add non-abbreviated GC cycles times into linear prediction history.
+    add_sample = true;
+  }
+
+  if (add_sample) {
+    _cycles.record_duration(_cycle_start, gc_time, scale_factor);
+  }
 
   double z_score = 0.0;
   const double available = static_cast<double>(_space_info->available());
@@ -213,10 +265,10 @@ void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   }
 }
 
-void ShenandoahAdaptiveHeuristics::record_degenerated(bool is_generational_global) {
-  ShenandoahHeuristics::record_degenerated(is_generational_global);
+void ShenandoahAdaptiveHeuristics::record_degenerated(bool abbreviated, bool is_generational_global) {
+  ShenandoahHeuristics::record_degenerated(abbreviated, is_generational_global);
   if (!is_generational_global) {
-    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time());
+    add_degenerated_gc_time(_precursor_cycle_start, elapsed_degenerated_cycle_time(), abbreviated);
   }
 }
 
