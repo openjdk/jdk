@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -115,7 +115,7 @@ public class PBMAC1Test {
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWithHmacSHA456");
         var reason = Asserts.assertThrows(NoSuchAlgorithmException.class,
                 () -> emptyP12()).getMessage();
-        Asserts.assertTrue(reason.contains("Algorithm hmacsha456 not available"), reason);
+        Asserts.assertTrue(reason.contains("Unknown Hmac algorithm: hmacsha456"), reason);
 
         // Verify that DEFAULT HmacSHA1 prf does not get encoded.
         System.setProperty("keystore.pkcs12.macAlgorithm", "PBEWITHHMACSHA1");
