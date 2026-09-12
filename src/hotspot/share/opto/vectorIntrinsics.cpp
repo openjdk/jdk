@@ -1392,11 +1392,17 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
     addr = array_element_address(base, index, elem_bt);
   }
 
-  const TypePtr* addr_type = gvn().type(addr)->isa_ptr();
-  const TypeAryPtr* arr_type = addr_type->isa_aryptr();
+  const TypeAryPtr* arr_type = gvn().type(addr)->isa_aryptr();
 
-  // The array must be consistent with vector type
-  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, false))) {
+  // Gather and scatter address an array, and the array must be consistent with
+  // the vector type.
+  if (arr_type == nullptr) {
+    log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=not an array",
+                    is_scatter, is_scatter ? "scatter" : "gather",
+                    num_elem, type2name(elem_bt));
+    return false;
+  }
+  if (!elem_consistent_with_arr(elem_bt, arr_type, false)) {
     log_if_needed("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
                     num_elem, type2name(elem_bt), type2name(arr_type->elem()->array_element_basic_type()));
@@ -1447,17 +1453,17 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
 
     Node* vstore = nullptr;
     if (mask != nullptr) {
-      vstore = gvn().transform(trace_vector(new StoreVectorScatterMaskedNode(control(), memory(addr), addr, addr_type, val, indexes, mask)));
+      vstore = gvn().transform(trace_vector(new StoreVectorScatterMaskedNode(control(), memory(addr), addr, arr_type, val, indexes, mask)));
     } else {
-      vstore = gvn().transform(trace_vector(new StoreVectorScatterNode(control(), memory(addr), addr, addr_type, val, indexes)));
+      vstore = gvn().transform(trace_vector(new StoreVectorScatterNode(control(), memory(addr), addr, arr_type, val, indexes)));
     }
-    set_memory(vstore, addr_type);
+    set_memory(vstore, arr_type);
   } else {
     Node* vload = nullptr;
     if (mask != nullptr) {
-      vload = gvn().transform(trace_vector(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, addr_type, vector_type, indexes, mask)));
+      vload = gvn().transform(trace_vector(new LoadVectorGatherMaskedNode(control(), memory(addr), addr, arr_type, vector_type, indexes, mask)));
     } else {
-      vload = gvn().transform(trace_vector(new LoadVectorGatherNode(control(), memory(addr), addr, addr_type, vector_type, indexes)));
+      vload = gvn().transform(trace_vector(new LoadVectorGatherNode(control(), memory(addr), addr, arr_type, vector_type, indexes)));
     }
     Node* box = box_vector(vload, vbox_type, elem_bt, num_elem);
     set_result(box);
