@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020, Microsoft Corporation. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +23,31 @@
  *
  */
 
-#ifndef OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
-#define OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
+#ifndef CPU_AARCH64_CNTVCTSS_AARCH64_HPP
+#define CPU_AARCH64_CNTVCTSS_AARCH64_HPP
 
-#include "runtime/os.hpp"
-#include "os_windows.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-inline bool os::register_code_area(char *low, char *high) {
-  // Using Vectored Exception Handling
-  return true;
-}
+// Interface to the AArch64 CNTVCTSS_EL0 counter (FEAT_ECV, Armv8.6+).
+// The Generic Timer is consistent across cores and does not require an ISB barrier.
+// FEAT_ECV is a requirement for auto-enablement.
 
-#define HAVE_PLATFORM_PRINT_NATIVE_STACK 1
-inline bool os::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size, address& lastpc) {
-  return os::win32::platform_print_native_stack(st, context, buf, buf_size, lastpc);
-}
+class Cntvctss : AllStatic {
+ private:
+  static jlong _epoch;
 
-inline jlong os::cntvctss() {
-  const int CNTVCTSS_EL0 = ARM64_SYSREG(3, 3, 14, 0, 6);
-  return (jlong)_ReadStatusReg(CNTVCTSS_EL0);
-}
+  static jlong set_epoch();
+  static bool  initialize();
 
-inline jlong os::cntfrq() {
-  const int CNTFRQ_EL0 = ARM64_SYSREG(3, 3, 14, 0, 0);
-  return (jlong)_ReadStatusReg(CNTFRQ_EL0);
-}
+ public:
+  static jlong elapsed_counter();
+  static jlong frequency();
+  static bool  is_supported();
+  static jlong raw();
+  static jlong epoch();
+  static bool  enabled();
+  static bool  ergonomics();
+};
 
-#endif // OS_CPU_WINDOWS_AARCH64_OS_WINDOWS_AARCH64_INLINE_HPP
+#endif // CPU_AARCH64_CNTVCTSS_AARCH64_HPP
