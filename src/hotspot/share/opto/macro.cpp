@@ -1648,8 +1648,7 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode* call) {
 
 Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offset, const Type* value_type, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
-  const TypePtr* adr_type = adr->bottom_type()->is_ptr();
-  Node* value = LoadNode::make(_igvn, ctl, mem, adr, adr_type, value_type, bt, MemNode::unordered);
+  Node* value = LoadNode::make(_igvn, ctl, mem, adr, value_type, bt, MemNode::unordered);
   transform_later(value);
   return value;
 }
@@ -1657,7 +1656,7 @@ Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offs
 
 Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
-  mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
+  mem = StoreNode::make(_igvn, ctl, mem, adr, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
 }
@@ -3125,7 +3124,7 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
       assert(t != nullptr, "Mixing array and klass inputs");
       assert(!t->is_flat() && !t->is_not_flat(), "Should have been optimized out");
       Node* mark_adr = basic_plus_adr(ary, oopDesc::mark_offset_in_bytes());
-      Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, mark_adr->bottom_type()->is_ptr(), TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
+      Node* mark_load = _igvn.transform(LoadNode::make(_igvn, nullptr, mem, mark_adr, TypeX_X, TypeX_X->basic_type(), MemNode::unordered));
       mark = _igvn.transform(new OrXNode(mark, mark_load));
     }
     assert(!mark->is_Con(), "Should have been optimized out");
@@ -3157,7 +3156,7 @@ void PhaseMacroExpand::expand_flatarraycheck_node(FlatArrayCheckNode* check) {
         klass = array_or_klass;
       }
       Node* lh_addr = basic_plus_adr(top(), klass, in_bytes(Klass::layout_helper_offset()));
-      Node* lh_val = _igvn.transform(LoadNode::make(_igvn, nullptr, C->immutable_memory(), lh_addr, lh_addr->bottom_type()->is_ptr(), TypeInt::INT, T_INT, MemNode::unordered));
+      Node* lh_val = _igvn.transform(LoadNode::make(_igvn, nullptr, C->immutable_memory(), lh_addr, TypeInt::INT, T_INT, MemNode::unordered));
       lhs = _igvn.transform(new OrINode(lhs, lh_val));
     }
     Node* masked = transform_later(new AndINode(lhs, intcon(Klass::_lh_array_tag_flat_value_bit_inplace)));

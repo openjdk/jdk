@@ -597,7 +597,6 @@ class GraphKit : public Phase {
 
   Node* access_store_at(Node* obj,   // containing obj
                         Node* adr,   // actual address to store val at
-                        const TypePtr* adr_type,
                         Node* val,
                         const Type* val_type,
                         BasicType bt,
@@ -607,7 +606,6 @@ class GraphKit : public Phase {
 
   Node* access_load_at(Node* obj,   // containing obj
                        Node* adr,   // actual address to load val at
-                       const TypePtr* adr_type,
                        const Type* val_type,
                        BasicType bt,
                        DecoratorSet decorators,
@@ -620,7 +618,6 @@ class GraphKit : public Phase {
 
   Node* access_atomic_cmpxchg_val_at(Node* obj,
                                      Node* adr,
-                                     const TypePtr* adr_type,
                                      int alias_idx,
                                      Node* expected_val,
                                      Node* new_val,
@@ -630,7 +627,6 @@ class GraphKit : public Phase {
 
   Node* access_atomic_cmpxchg_bool_at(Node* obj,
                                       Node* adr,
-                                      const TypePtr* adr_type,
                                       int alias_idx,
                                       Node* expected_val,
                                       Node* new_val,
@@ -640,7 +636,6 @@ class GraphKit : public Phase {
 
   Node* access_atomic_xchg_at(Node* obj,
                               Node* adr,
-                              const TypePtr* adr_type,
                               int alias_idx,
                               Node* new_val,
                               const Type* value_type,
@@ -649,7 +644,6 @@ class GraphKit : public Phase {
 
   Node* access_atomic_add_at(Node* obj,
                              Node* adr,
-                             const TypePtr* adr_type,
                              int alias_idx,
                              Node* new_val,
                              const Type* value_type,
