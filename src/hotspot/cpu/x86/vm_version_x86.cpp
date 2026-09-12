@@ -1116,7 +1116,7 @@ void VM_Version::amd_config() {
       FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
     }
   }
-  
+
 #ifdef COMPILER2
     // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
     // On Zen3 (family 0x19) and beyond it should be default off.
@@ -1124,8 +1124,9 @@ void VM_Version::amd_config() {
     if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
       FLAG_SET_DEFAULT(UseFPUForSpilling, true);
     }
-#endif
   }
+#endif
+
   // For AMD Processors use XMM/YMM MOVDQU instructions
   // for Object Initialization as default
   if (is_amd()) {
