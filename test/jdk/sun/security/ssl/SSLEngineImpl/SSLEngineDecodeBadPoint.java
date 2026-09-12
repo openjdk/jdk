@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
 import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLParameters;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
@@ -45,8 +46,10 @@ public class SSLEngineDecodeBadPoint {
             "040305030603080708080804080508060809080a080b040105010601" +
             "02030201002b0003020304002d000201010032002200200403050306" +
             "03080708080804080508060809080a080b0401050106010203020100" +
-            "33006b0069001d00209a4d13131f83cc4c5be46520f0b4d7a6f1d3f6" +
-            "ca7118e6dd115125090da6e044" +
+            "33006b0069" +
+            // X25519 key share, valid
+            "001d00209a4d13131f83cc4c5be46520f0b4d7a6f1d3f6ca7118e6dd" +
+            "115125090da6e044" +
             // ECDHE key share, 5th byte changed from 04 to (invalid) 05
             "0017004105d8c3734b9c729f6a9851" +
             "5049543ec5a9bb6c19b8c02ca0bdc3b20a77c44acdab226b6329b7c5" +
@@ -55,6 +58,13 @@ public class SSLEngineDecodeBadPoint {
     public static void main(String[] args) throws NoSuchAlgorithmException, SSLException {
         SSLContext ctx = SSLContext.getDefault();
         SSLEngine eng = ctx.createSSLEngine();
+
+        // After 8388484, server side no longer check all key shares.
+        // Therefore, restrict server to only accept the invalid key share.
+        SSLParameters params = eng.getSSLParameters();
+        params.setNamedGroups(new String[] {"secp256r1"});
+        eng.setSSLParameters(params);
+
         eng.setUseClientMode(false);
         eng.beginHandshake();
         ByteBuffer hello = ByteBuffer.wrap(clientHello);
