@@ -953,8 +953,11 @@ jobject AwtDropTarget::ConvertMemoryMappedData(JNIEnv* env, jlong fmt, STGMEDIUM
             HGLOBAL glob;
             OLE_HRT(GetHGlobalFromStream(spFileNames, &glob));
             jbyte *pFileListWithDoubleZeroTerminator = (jbyte *)::GlobalLock(glob);
+            if (pFileListWithDoubleZeroTerminator == NULL) {
+                OLE_HRT(E_INVALIDARG);
+            }
             env->SetByteArrayRegion(bytes, 0, st.cbSize.LowPart, pFileListWithDoubleZeroTerminator);
-            ::GlobalUnlock(pFileListWithDoubleZeroTerminator);
+            ::GlobalUnlock(glob);
             retObj = bytes;
         }
         //std::bad_alloc could happen in JStringBuffer
@@ -1165,6 +1168,9 @@ BOOL AwtDropTarget::IsLocalDataObject(IDataObject __RPC_FAR *pDataObject) {
                 DWORD id = ::CoGetCurrentProcess();
 
                 LPVOID data = ::GlobalLock(stgmedium.hGlobal);
+                if (data == NULL) {
+                    return FALSE;
+                }
                 if (memcmp(data, &id, sizeof(id)) == 0) {
                     local = TRUE;
                 }
