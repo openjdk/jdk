@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -82,7 +82,7 @@ public:
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahNMethodLocker locker(data->lock());
     ShenandoahIsUnloadingOopClosure cl;
-    data->oops_do(&cl);
+    data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
     return  cl.is_unloading();
   }
 };

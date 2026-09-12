@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ private:
   ThreadLocalAllocStats                _stats;
 
   // Closures
+  ShenandoahNoOpClosure                _no_op_cl;
   ShenandoahKeepAliveClosure           _keep_alive_cl;
   ShenandoahEvacuateUpdateRootsClosure _evac_update_oop_cl;
   ShenandoahOnStackNMethodClosure      _nm_cl;
