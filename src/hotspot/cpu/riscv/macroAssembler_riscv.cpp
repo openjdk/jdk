@@ -6955,6 +6955,20 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
   }
 }
 
+// shift left by shamt and add (unsigned word variant)
+// Rd = (zext32(Rs1) << shamt) + Rs2
+void MacroAssembler::shadd_uw(Register Rd, Register Rs1, Register Rs2, int shamt) {
+  assert(UseZba, "shadd_uw requires Zba");
+  assert(1 <= shamt && shamt <= 3, "shamt is invalid");
+  if (shamt == 1) {
+    sh1add_uw(Rd, Rs1, Rs2);
+  } else if (shamt == 2) {
+    sh2add_uw(Rd, Rs1, Rs2);
+  } else {
+    sh3add_uw(Rd, Rs1, Rs2);
+  }
+}
+
 void MacroAssembler::zext(Register dst, Register src, int bits) {
   switch (bits) {
     case 32:
