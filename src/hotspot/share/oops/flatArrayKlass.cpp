@@ -430,10 +430,10 @@ void FlatArrayKlass::oop_print_elements_on(flatArrayOop fa, outputStream* st) {
     int off = (address) fa->value_at_addr(index, layout_helper()) - cast_from_oop<address>(fa);
     st->print_cr(" - Index %3d offset %3d:", index, off);
     if (!fa->is_null_free_array() && fa->obj_at_is_null(index)) {
-      st->print_cr(" - (null)");
+      st->print_cr("   - (null)");
     } else {
       ValuePayloadContext vpc{vk, fa->value_offset_as_int(index, layout_helper())};
-      FieldPrinter print_field(st, fa, /* indent */1, &vpc);
+      FieldPrinter print_field(st, fa, /* indent */ 1, &vpc);
       vk->do_nonstatic_fields(&print_field);
     }
     st->cr();
