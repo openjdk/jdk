@@ -1694,8 +1694,17 @@ bool MacroAssembler::lookup_secondary_supers_table_const(Register r_sub_klass,
   if (bit != 0) {
     shld(vtemp, vtemp, Klass::SECONDARY_SUPERS_TABLE_MASK - bit);
     cnt(vtemp, T8B, vtemp);
-    addv(vtemp, T8B, vtemp);
-    fmovd(r_array_index, vtemp);
+    // If we know that the shift left will cause only one lane/byte to contain
+    // any bits then all lanes but the most significant will be zero and so the result
+    // will already be in that lane.
+    int msb = BytesPerLong - 1;
+    int single_lane_boundary = Klass::SECONDARY_SUPERS_TABLE_MASK - (BitsPerByte * msb);
+    if (bit <= single_lane_boundary) {
+      umov(r_array_index, vtemp, B, msb);
+    } else {
+      addv(vtemp, T8B, vtemp);
+      fmovd(r_array_index, vtemp);
+    }
   } else {
     mov(r_array_index, (u1)1);
   }
