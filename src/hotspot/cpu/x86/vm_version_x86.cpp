@@ -926,7 +926,7 @@ void VM_Version::set_vendor_agnostic_vm_config() {
     }
   }
 
-#if defined(ASSERT)
+#ifdef ASSERT
   if (MaxVectorSize > 0) {
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
@@ -1110,6 +1110,8 @@ void VM_Version::amd_config() {
 
   // Some defaults for AMD family >= 17h && Hygon family 18h
   if (cpu_family() >= 0x17) {
+    // On family >=17h processors use XMM and UnalignedLoadStores
+    // for Array Copy
     if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
       FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
     }
@@ -1296,7 +1298,7 @@ void VM_Version::set_vendor_specific_vm_config() {
 #endif
 
   // Use XMM/YMM MOVDQU instruction for Object Initialization
-  // UseFastStosb and UseUnalignedLoadStores is vendor dependent
+  // UseUnalignedLoadStores is vendor dependent
   if (UseUnalignedLoadStores) {
     if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
       FLAG_SET_DEFAULT(UseXMMForObjInit, true);
@@ -1417,8 +1419,9 @@ void VM_Version::configure_intrinsics() {
       UseGHASHIntrinsics = true;
     }
   } else if (UseGHASHIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics))
+    if (!FLAG_IS_DEFAULT(UseGHASHIntrinsics)) {
       warning("GHASH intrinsic requires CLMUL and SSE2 instructions on this CPU");
+    }
     FLAG_SET_DEFAULT(UseGHASHIntrinsics, false);
   }
 
@@ -1444,8 +1447,7 @@ void VM_Version::configure_intrinsics() {
     if (FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
       UseKyberIntrinsics = true;
     }
-  } else
-  if (UseKyberIntrinsics) {
+  } else if (UseKyberIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseKyberIntrinsics)) {
       warning("Intrinsics for ML-KEM are not available on this CPU.");
     }
@@ -1513,7 +1515,7 @@ void VM_Version::configure_intrinsics() {
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
   }
 
-  if (UseSHA && ((supports_evex() && supports_avx512bw()) ||
+  if (UseSHA && ((supports_evex() && supports_avx512vlbw()) ||
       (supports_avx2() && EnableX86ECoreOpts && !supports_hybrid()))) {
     if (FLAG_IS_DEFAULT(UseSHA3Intrinsics)) {
       FLAG_SET_DEFAULT(UseSHA3Intrinsics, true);
