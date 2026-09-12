@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.MethodSetting;
+import jdk.jfr.internal.settings.NativeStackSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.CPUThrottleSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
@@ -73,6 +74,7 @@ public final class EventControl {
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
+    private static final Type TYPE_NATIVE_STACK = TypeLibrary.createType(NativeStackSetting.class);
     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
     private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
     private static final Type TYPE_METHOD_FILTER = TypeLibrary.createType(MethodSetting.class);
@@ -98,6 +100,9 @@ public final class EventControl {
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
             eventType.setThrottler(new Throttler());
+        }
+        if (eventType.isCPUTimeMethodSampling()) {
+            addControl("nativeStack", defineNativeStack(eventType));
         }
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
@@ -339,6 +344,12 @@ public final class EventControl {
             return new Control(new CPUThrottleSetting(type), def);
         }
         return new Control(new ThrottleSetting(type, def), def);
+    }
+
+    private static Control defineNativeStack(PlatformEventType type) {
+        String def = "false";
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_NATIVE_STACK, "nativeStack", def, Collections.emptyList()));
+        return new Control(new NativeStackSetting(type, def), def);
     }
 
     private static Control defineLevel(PlatformEventType type) {

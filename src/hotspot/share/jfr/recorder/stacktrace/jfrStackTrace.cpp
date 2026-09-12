@@ -141,12 +141,30 @@ inline void JfrStackTrace::record_frame(const Method* method, int bci, u1 frame_
   _count++;
 }
 
-void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {
-  assert(_hash == 0, "invariant");
+// Prepends native frames starting from the topmost one.
+// Call before any Java frames are recorded.
+void JfrStackTrace::record_native_frames(const address* pcs, u4 count) {
+  assert(pcs != nullptr, "invariant");
   assert(_count == 0, "invariant");
-  assert(_frames != nullptr, "invariant");
   assert(_frames->length() == 0, "invariant");
-  _hash = 1;
+  if (_hash == 0) {
+    _hash = 1;
+  }
+  for (u4 i = 0; i < count && _count < _max_frames; i++) {
+    const traceid pc = reinterpret_cast<traceid>(pcs[i]);
+    _hash = (_hash * 31) + pc;
+    _hash = (_hash * 31) + JfrStackFrame::FRAME_NON_JAVA;
+    _frames->append(JfrStackFrame(pc, 0, JfrStackFrame::FRAME_NON_JAVA, nullptr));
+    _count++;
+  }
+}
+
+void JfrStackTrace::record_interpreter_top_frame(const JfrSampleRequest& request) {
+  assert(_frames != nullptr, "invariant");
+  assert(_count == static_cast<u4>(_frames->length()), "invariant");
+  if (_hash == 0) {
+    _hash = 1;
+  }
   const Method* method = reinterpret_cast<Method*>(request._sample_pc);
   assert(method != nullptr, "invariant");
   const int bci = method->is_native() ? 0 : method->bci_from(reinterpret_cast<address>(request._sample_bcp));
@@ -259,6 +277,7 @@ bool JfrStackTrace::record_inner(JavaThread* jt, const frame& frame, bool in_con
   assert(jt != nullptr, "invariant");
   assert(!_lineno, "invariant");
   assert(_frames != nullptr, "invariant");
+  assert(_count == static_cast<u4>(_frames->length()), "invariant");
   assert(!in_continuation || is_in_continuation(frame, jt), "invariant");
   Thread* const current_thread = Thread::current();
   HandleMark hm(current_thread); // RegisterMap uses Handles to support continuations.

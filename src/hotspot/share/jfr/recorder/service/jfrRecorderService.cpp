@@ -34,6 +34,7 @@
 #include "jfr/recorder/repository/jfrRepository.hpp"
 #include "jfr/recorder/service/jfrPostBox.hpp"
 #include "jfr/recorder/service/jfrRecorderService.hpp"
+#include "jfr/recorder/stacktrace/jfrNativeFunctionRepository.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrStorage.hpp"
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
@@ -297,6 +298,35 @@ static u4 write_stacktrace(JfrStackTraceRepository& stack_trace_repo, JfrChunkWr
   StackTraceRepository str(stack_trace_repo, chunkwriter, clear);
   WriteStackTrace wst(chunkwriter, str, TYPE_STACKTRACE);
   return invoke(wst);
+}
+
+template <size_t (*WriteFunc)(JfrChunkWriter& cw, bool clear)>
+class NativeFunctionRepository : public StackObj {
+ private:
+  JfrChunkWriter& _cw;
+  size_t _elements;
+  bool _clear;
+
+ public:
+  NativeFunctionRepository(JfrChunkWriter& cw, bool clear) : _cw(cw), _elements(0), _clear(clear) {}
+  bool process() {
+    _elements = WriteFunc(_cw, _clear);
+    return true;
+  }
+  size_t elements() const { return _elements; }
+};
+
+typedef NativeFunctionRepository<&JfrNativeFunctionRepository::write_functions> NativeFunctions;
+typedef NativeFunctionRepository<&JfrNativeFunctionRepository::write_libraries> NativeLibraries;
+
+static u4 write_native_functions(JfrChunkWriter& chunkwriter, bool clear) {
+  NativeFunctions functions(chunkwriter, clear);
+  WriteCheckpointEvent wnf(chunkwriter, functions, TYPE_NATIVEFUNCTION);
+  const u4 elements = invoke(wnf);
+  // Writing functions may update libraries
+  NativeLibraries libraries(chunkwriter, clear);
+  WriteCheckpointEvent wnl(chunkwriter, libraries, TYPE_LIBRARY);
+  return elements + invoke(wnl);
 }
 
 typedef Content<JfrStorage, &JfrStorage::write> Storage;
@@ -601,6 +631,7 @@ void JfrRecorderService::post_safepoint_write() {
   // Type tagging is epoch relative which entails we are able to write out the
   // already tagged artifacts for the previous epoch. We can accomplish this concurrently
   // with threads now tagging artifacts in relation to the new, now updated, epoch and remain outside of a safepoint.
+  write_native_functions(_chunkwriter, true);
   write_stringpool(_string_pool, _chunkwriter);
   _checkpoint_manager.write_type_set();
   if (LeakProfiler::is_running()) {
@@ -644,6 +675,7 @@ size_t JfrRecorderService::flush() {
     total_elements += flush_stringpool(_string_pool, _chunkwriter);
   }
   total_elements += flush_stacktrace(_stack_trace_repository, _chunkwriter);
+  total_elements += write_native_functions(_chunkwriter, false);
   return flush_typeset(_checkpoint_manager, _chunkwriter) + total_elements;
 }
 
