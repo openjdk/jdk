@@ -83,7 +83,9 @@ public class TestNavigation extends JavadocTester {
                     abled name="theme" value="theme-os"><span>System Setting</span></label></div>
                     <div><label for="underline-links"><input type="checkbox" id="underline-links" di\
                     sabled onclick><span>Underline links in text</span></label></div>
-                    <button id="theme-panel-close-button"></button></div>""");
+                    <button id="theme-panel-close-button"></button></div>
+                    <script type="text/javascript">initTheme();
+                    </script>""");
 
         checkOutput("pkg/package-summary.html", true,
                 """

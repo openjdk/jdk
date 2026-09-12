@@ -48,6 +48,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
 
 /**
@@ -551,6 +552,7 @@ public class Navigation {
                                                 .put(HtmlAttr.ONCLICK, ""))
                                 .add(HtmlTree.SPAN(contents.getContent("doclet.theme.underline_links")))))
                 .add(HtmlTree.BUTTON(HtmlId.of("theme-panel-close-button"))));
+        target.add(new Script().append("initTheme();\n").asContent());
     }
 
     private void addSearch(Content target) {

@@ -423,7 +423,6 @@ document.addEventListener("DOMContentLoaded", function(e) {
         if (input.id === currentTheme) {
             input.checked = true;
         } else if (input.id === UNDERLINE_LINKS) {
-            input.checked = (underlineLinks === "on" || (!underlineLinks && currentTheme === THEME_DARK));
             input.addEventListener("change", e => {
                 underlineLinks = e.target.checked ? "on" : "off";
                 localStorage.setItem(UNDERLINE_LINKS, underlineLinks);
