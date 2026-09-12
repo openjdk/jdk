@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,8 +104,6 @@ private:
     UINT    GetAdapterOrdinalByHmon(HMONITOR hMon);
     HRESULT CheckAdaptersInfo();
     HRESULT CheckDeviceCaps(UINT Adapter);
-    // Check the OS, succeeds if the OS is XP or newer client-class OS
-static HRESULT CheckOSVersion();
     // used to check attached adapters using GDI against known bad hw database
     // prior to the instantiation of the pipeline manager
 static HRESULT GDICheckForBadHardware();
@@ -135,15 +133,14 @@ private:
 };
 
 #define OS_UNDEFINED    (0 << 0)
-#define OS_VISTA        (1 << 0)
-#define OS_WINSERV_2008 (1 << 1)
-#define OS_WINXP        (1 << 2)
-#define OS_WINXP_64     (1 << 3)
-#define OS_WINSERV_2003 (1 << 4)
-#define OS_WINDOWS7     (1 << 5)
-#define OS_WINSERV_2008R2 (1 << 6)
-#define OS_ALL (OS_VISTA|OS_WINSERV_2008|OS_WINXP|OS_WINXP_64|OS_WINSERV_2003|\
-                OS_WINDOWS7|OS_WINSERV_2008R2)
+#define OS_WINDOWS_7_OR_8 (1 << 0)
+#define OS_WINSERV_2008R2 (1 << 1)
+// Windows 10 and 11
+#define OS_WINDOWS10_OR_LATER (1 << 2)
+// Windows server 2016 or higher
+#define OS_WINSERV_2016_PLUS (1 << 3)
+
+#define OS_ALL (OS_WINDOWS_7_OR_8|OS_WINSERV_2008R2|OS_WINDOWS10_OR_LATER|OS_WINSERV_2016_PLUS)
 #define OS_UNKNOWN      (~OS_ALL)
 BOOL D3DPPLM_OsVersionMatches(USHORT osInfo);
 
