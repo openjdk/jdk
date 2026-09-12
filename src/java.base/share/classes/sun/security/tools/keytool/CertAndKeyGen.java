@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -315,7 +315,8 @@ public final class CertAndKeyGen {
             }
 
             CertificateValidity interval =
-                                   new CertificateValidity(firstDate,lastDate);
+                                   new CertificateValidity(firstDate.toInstant(),
+                                           lastDate.toInstant());
 
             X509CertInfo info = new X509CertInfo();
             // Add all mandatory attributes
