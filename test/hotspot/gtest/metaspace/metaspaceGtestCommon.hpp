@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,7 @@
 #define GTEST_METASPACE_METASPACEGTESTCOMMON_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
 
@@ -101,13 +101,13 @@ public:
   size_t get() const {
     size_t l1 = _min;
     size_t l2 = _max;
-    int r = os::random() % 1000;
+    int r = GtestRandom::random() % 1000;
     if ((float)r < _outlier_chance * 1000.0) {
       l1 = _outlier_min;
       l2 = _outlier_max;
     }
     const size_t d = l2 - l1;
-    return l1 + (os::random() % d);
+    return l1 + (GtestRandom::random() % d);
   }
 
 }; // end RandSizeGenerator

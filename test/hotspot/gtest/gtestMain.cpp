@@ -26,6 +26,7 @@
 #include "jni.h"
 #include "runtime/os.hpp"
 #include "runtime/thread.inline.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/permitForbiddenFunctions.hpp"
 #include "unittest.hpp"
@@ -135,6 +136,30 @@ class JVMInitializerListener : public ::testing::EmptyTestEventListener {
       if (ret != 0) {
         fprintf(stderr, "Warning: DestroyJavaVM error %d\n", ret);
       }
+    }
+  }
+};
+
+class RandomSeedListener : public ::testing::EmptyTestEventListener {
+ private:
+  int _seed = 0;
+
+ public:
+  virtual void OnTestIterationStart(const ::testing::UnitTest& unit_test, int) {
+    _seed = unit_test.random_seed();
+    printf("Random seed: %d (reproduce with --gtest_random_seed=%d)\n", _seed, _seed);
+    fflush(stdout);
+  }
+
+  virtual void OnTestStart(const ::testing::TestInfo&) {
+    GtestRandom::init(static_cast<unsigned int>(_seed));
+  }
+
+  virtual void OnTestEnd(const ::testing::TestInfo& test_info) {
+    if (test_info.result()->Failed()) {
+      printf("Random seed for failed test: %d "
+             "(reproduce with --gtest_random_seed=%d)\n", _seed, _seed);
+      fflush(stdout);
     }
   }
 };
@@ -270,6 +295,7 @@ static void runUnitTestsInner(int argc, char** argv) {
   argv = remove_test_runner_arguments(&argc, argv);
 
 
+  ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
   JVMInitializerListener* jvm_listener = nullptr;
 
   if (is_vmassert_test || is_othervm_test) {
@@ -282,10 +308,10 @@ static void runUnitTestsInner(int argc, char** argv) {
       abort();
     }
   } else {
-    ::testing::TestEventListeners& listeners = ::testing::UnitTest::GetInstance()->listeners();
     jvm_listener = new JVMInitializerListener(argc, argv);
     listeners.Append(jvm_listener);
   }
+  listeners.Append(new RandomSeedListener());
 
   int result = RUN_ALL_TESTS();
 

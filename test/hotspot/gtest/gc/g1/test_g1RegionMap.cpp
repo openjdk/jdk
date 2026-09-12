@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  */
 
 #include "gc/g1/g1CommittedRegionMap.inline.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "unittest.hpp"
 
 class G1CommittedRegionMapSerial : public G1CommittedRegionMap {
@@ -41,7 +41,7 @@ protected:
 };
 
 static bool mutate() {
-  return os::random() % 2 == 0;
+  return GtestRandom::random() % 2 == 0;
 }
 
 static void generate_random_map(G1CommittedRegionMap* map) {

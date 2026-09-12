@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -28,6 +28,7 @@
 #include "memory/metaspace/metachunk.hpp"
 //#define LOG_PLEASE
 #include "metaspaceGtestCommon.hpp"
+#include "gtestRandom.hpp"
 
 using metaspace::ChunkHeaderPool;
 using metaspace::Metachunk;
@@ -92,7 +93,7 @@ class ChunkHeaderPoolTest {
   void test_random_alloc_free(int num_iterations) {
 
     for (int iter = 0; iter < num_iterations; iter++) {
-      size_t index = (size_t)os::random() % max_cap;
+      size_t index = (size_t)GtestRandom::random() % max_cap;
       attempt_allocate_or_free_at(index);
     }
 
