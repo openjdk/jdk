@@ -99,6 +99,7 @@ public class Oop {
   }
 
   // Type test operations
+  public boolean isValue()             { return false; }
   public boolean isInstance()          { return false; }
   public boolean isInstanceRef()       { return false; }
   public boolean isArray()             { return false; }
