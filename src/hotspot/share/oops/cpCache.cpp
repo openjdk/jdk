@@ -401,9 +401,7 @@ void ConstantPoolCache::record_gc_epoch() {
 void ConstantPoolCache::remove_unshareable_info() {
   assert(CDSConfig::is_dumping_archive(), "sanity");
 
-  if (_resolved_indy_entries != nullptr) {
-    remove_resolved_indy_entries_if_non_archivable();
-  }
+  remove_resolved_indy_entries_if_non_archivable();
   remove_resolved_field_entries_if_non_archivable();
   remove_resolved_method_entries_if_non_archivable();
 
@@ -452,7 +450,6 @@ void ConstantPoolCache::remove_resolved_field_entries_if_non_archivable() {
     } else {
       rfi->remove_unshareable_info();
     }
-
     LogStreamHandle(Trace, aot, resolve) log;
     if (log.is_enabled()) {
       ResourceMark rm;
@@ -537,10 +534,57 @@ void ConstantPoolCache::remove_resolved_method_entries_if_non_archivable() {
   });
 }
 
+template <typename FUNC>
+void ConstantPoolCache::iterate_resolved_indy_entries_with_archivability_check(FUNC f) {
+  if (_resolved_indy_entries == nullptr) {
+    return;
+  }
+  ConstantPool* cp = constant_pool();
+  ConstantPool* src_cp = ArchiveBuilder::current()->is_in_buffer_space(cp) ? ArchiveBuilder::current()->get_source_addr(cp) : cp;
+  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+    ResolvedIndyEntry* rie = _resolved_indy_entries->adr_at(i);
+    int cp_index = rie->constant_pool_index();
+    bool resolved = rie->is_resolved();
+    bool archivable = (resolved && !CDSConfig::is_dumping_preimage_static_archive() &&
+                       AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index));
+    f(cp, src_cp, i, cp_index, rie, resolved, archivable);
+  }
+}
+
+void ConstantPoolCache::remove_resolved_indy_entries_if_non_archivable() {
+  iterate_resolved_indy_entries_with_archivability_check([&] (ConstantPool* cp, ConstantPool* src_cp, int i, int cp_index,
+                                                              ResolvedIndyEntry* rie, bool resolved,
+                                                              bool archivable) {
+    if (archivable) {
+      rie->mark_and_relocate();
+    } else {
+      rie->remove_unshareable_info();
+    }
+    LogStreamHandle(Trace, aot, resolve) log;
+    if (log.is_enabled()) {
+      ResourceMark rm;
+      int bsm = cp->bootstrap_method_ref_index_at(cp_index);
+      int bsm_ref = cp->method_handle_index_at(bsm);
+      Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
+      Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
+      Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
+      if (resolved) {
+        log.print("%s indy   CP entry [%3d]: %s (%d)",
+                  (archivable ? "archived" : "reverted"),
+                  cp_index, cp->pool_holder()->name()->as_C_string(), i);
+        log.print(" %s %s.%s:%s%s", (archivable ? "=>" : "  "), bsm_klass->as_C_string(),
+                  bsm_name->as_C_string(), bsm_signature->as_C_string(),
+                  (archivable ? "" : " (resolution is not deterministic)"));
+      }
+    }
+    ArchiveBuilder::alloc_stats()->record_indy_cp_entry(archivable, resolved && !archivable);
+  });
+}
+
 // Called from AOTArtifactFinder.
 void ConstantPoolCache::record_classes_in_archivable_entries() {
   record_classes_in_archivable_field_entries();
-  //record_classes_in_archivable_indy_entries();
+  record_classes_in_archivable_indy_entries();
   record_classes_in_archivable_method_entries();
 }
 
@@ -554,6 +598,16 @@ void ConstantPoolCache::record_classes_in_archivable_field_entries() {
   });
 }
 
+void ConstantPoolCache::record_classes_in_archivable_indy_entries() {
+  iterate_resolved_indy_entries_with_archivability_check([&] (ConstantPool* cp, ConstantPool* src_cp, int i, int cp_index,
+                                                                ResolvedIndyEntry* rie, bool resolved,
+                                                                bool archivable) {
+    if (archivable) {
+      rie->record_archivable_classes();
+    }
+  });
+}
+
 void ConstantPoolCache::record_classes_in_archivable_method_entries() {
   iterate_resolved_method_entries_with_archivability_check([&] (ConstantPool* cp, ConstantPool* src_cp, int cp_index,
                                                                 ResolvedMethodEntry* rme, bool resolved,
@@ -562,42 +616,6 @@ void ConstantPoolCache::record_classes_in_archivable_method_entries() {
       rme->record_archivable_classes();
     }
   });
-}
-
-void ConstantPoolCache::remove_resolved_indy_entries_if_non_archivable() {
-  ConstantPool* cp = constant_pool();
-  ConstantPool* src_cp =  ArchiveBuilder::current()->get_source_addr(cp);
-  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
-    ResolvedIndyEntry* rei = _resolved_indy_entries->adr_at(i);
-    int cp_index = rei->constant_pool_index();
-    bool archived = false;
-    bool resolved = rei->is_resolved();
-    if (resolved && !CDSConfig::is_dumping_preimage_static_archive()
-        && AOTConstantPoolResolver::is_resolution_deterministic(src_cp, cp_index)) {
-      rei->mark_and_relocate();
-      archived = true;
-    } else {
-      rei->remove_unshareable_info();
-    }
-    LogStreamHandle(Trace, aot, resolve) log;
-    if (log.is_enabled()) {
-      ResourceMark rm;
-      int bsm = cp->bootstrap_method_ref_index_at(cp_index);
-      int bsm_ref = cp->method_handle_index_at(bsm);
-      Symbol* bsm_name = cp->uncached_name_ref_at(bsm_ref);
-      Symbol* bsm_signature = cp->uncached_signature_ref_at(bsm_ref);
-      Symbol* bsm_klass = cp->klass_name_at(cp->uncached_klass_ref_index_at(bsm_ref));
-      if (resolved) {
-        log.print("%s indy   CP entry [%3d]: %s (%d)",
-                  (archived ? "archived" : "reverted"),
-                  cp_index, cp->pool_holder()->name()->as_C_string(), i);
-        log.print(" %s %s.%s:%s%s", (archived ? "=>" : "  "), bsm_klass->as_C_string(),
-                  bsm_name->as_C_string(), bsm_signature->as_C_string(),
-                  (archived ? "" : " (resolution is not deterministic)"));
-      }
-    }
-    ArchiveBuilder::alloc_stats()->record_indy_cp_entry(archived, resolved && !archived);
-  }
 }
 
 bool ConstantPoolCache::can_archive_resolved_method(ConstantPool* src_cp, ResolvedMethodEntry* method_entry, const char*& rejection_reason) {

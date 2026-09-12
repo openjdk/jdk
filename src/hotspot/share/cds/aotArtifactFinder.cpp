@@ -270,6 +270,9 @@ void AOTArtifactFinder::add_cached_instance_class(InstanceKlass* ik) {
     }
     ConstantPoolCache* cpCache = ik->constants()->cache();
     if (cpCache != nullptr) {
+      // Resolved{Field,Indy,Method}Entries in cpCache are not walked by MetaspaceClosure,
+      // because only some of the resolved entries are archivable. The following call will
+      // discover the anonymous classes that are reachable only from the archivable entries.
       cpCache->record_classes_in_archivable_entries();
     }
     scan_oops_in_instance_class(ik);
