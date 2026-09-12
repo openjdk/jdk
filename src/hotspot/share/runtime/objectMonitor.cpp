@@ -286,7 +286,6 @@ static void check_object_context() {
 }
 
 ObjectMonitor::ObjectMonitor(oop object) :
-  _metadata(0),
   _object(_oop_storage, object),
   _owner(NO_OWNER),
   _previous_owner_tid(0),
@@ -344,25 +343,11 @@ void ObjectMonitor::ExitOnSuspend::operator()(JavaThread* current) {
   }
 }
 
-#define assert_mark_word_consistency()                                         \
-  assert(UseObjectMonitorTable || object()->mark() == markWord::encode(this),  \
-         "object mark must match encoded this: mark=" INTPTR_FORMAT            \
-         ", encoded this=" INTPTR_FORMAT, object()->mark().value(),            \
-         markWord::encode(this).value());
-
 // -----------------------------------------------------------------------------
 // Enter support
 
 bool ObjectMonitor::enter_is_async_deflating() {
   if (is_being_async_deflated()) {
-    if (!UseObjectMonitorTable) {
-      const oop l_object = object();
-      if (l_object != nullptr) {
-        // Attempt to restore the header/dmw to the object's header so that
-        // we only retry once if the deflater thread happens to be slow.
-        install_displaced_markword_in_object(l_object);
-      }
-    }
     return true;
   }
 
@@ -489,7 +474,6 @@ bool ObjectMonitor::spin_enter(JavaThread* current) {
   if (try_spin(current)) {
     assert(has_owner(current), "must be current: owner=" INT64_FORMAT, owner_raw());
     assert(_recursions == 0, "must be 0: recursions=%zd", _recursions);
-    assert_mark_word_consistency();
     return true;
   }
 
@@ -629,7 +613,6 @@ void ObjectMonitor::enter_with_contention_mark(JavaThread* current, ObjectMonito
   assert(_recursions == 0, "invariant");
   assert(has_owner(current), "invariant");
   assert(!has_successor(current), "invariant");
-  assert_mark_word_consistency();
 
   // The thread -- now the owner -- is back in vm mode.
   // Report the glorious news via TI,DTrace and jvmstat.
@@ -856,12 +839,7 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
     }
   }
 
-  if (UseObjectMonitorTable) {
-    ObjectSynchronizer::deflate_monitor(obj, this);
-  } else if (obj != nullptr) {
-    // Install the old mark word if nobody else has already done it.
-    install_displaced_markword_in_object(obj);
-  }
+  ObjectSynchronizer::deflate_monitor(obj, this);
 
   if (event.should_commit()) {
     post_monitor_deflate_event(&event, obj);
@@ -872,60 +850,6 @@ bool ObjectMonitor::deflate_monitor(Thread* current) {
   return true;  // Success, ObjectMonitor has been deflated.
 }
 
-// Install the displaced mark word (dmw) of a deflating ObjectMonitor
-// into the header of the object associated with the monitor. This
-// idempotent method is called by a thread that is deflating a
-// monitor and by other threads that have detected a race with the
-// deflation process.
-void ObjectMonitor::install_displaced_markword_in_object(const oop obj) {
-  assert(!UseObjectMonitorTable, "ObjectMonitorTable has no dmw");
-  // This function must only be called when (owner == DEFLATER_MARKER
-  // && contentions <= 0), but we can't guarantee that here because
-  // those values could change when the ObjectMonitor gets moved from
-  // the global free list to a per-thread free list.
-
-  guarantee(obj != nullptr, "must be non-null");
-
-  // Separate loads in is_being_async_deflated(), which is almost always
-  // called before this function, from the load of dmw/header below.
-
-  // _contentions and dmw/header may get written by different threads.
-  // Make sure to observe them in the same order when having several observers.
-  OrderAccess::loadload_for_IRIW();
-
-  const oop l_object = object_peek();
-  if (l_object == nullptr) {
-    // ObjectMonitor's object ref has already been cleared by async
-    // deflation or GC so we're done here.
-    return;
-  }
-  assert(l_object == obj, "object=" INTPTR_FORMAT " must equal obj="
-         INTPTR_FORMAT, p2i(l_object), p2i(obj));
-
-  markWord dmw = header();
-  // The dmw has to be neutral (not null, not locked and not marked).
-  assert(dmw.is_neutral(), "must be neutral: dmw=" INTPTR_FORMAT, dmw.value());
-
-  // Install displaced mark word if the object's header still points
-  // to this ObjectMonitor. More than one racing caller to this function
-  // can rarely reach this point, but only one can win.
-  markWord res = obj->cas_set_mark(dmw, markWord::encode(this));
-  if (res != markWord::encode(this)) {
-    // This should be rare so log at the Info level when it happens.
-    log_info(monitorinflation)("install_displaced_markword_in_object: "
-                               "failed cas_set_mark: new_mark=" INTPTR_FORMAT
-                               ", old_mark=" INTPTR_FORMAT ", res=" INTPTR_FORMAT,
-                               dmw.value(), markWord::encode(this).value(),
-                               res.value());
-  }
-
-  // Note: It does not matter which thread restored the header/dmw
-  // into the object's header. The thread deflating the monitor just
-  // wanted the object's header restored and it is. The threads that
-  // detected a race with the deflation process also wanted the
-  // object's header restored before they retry their operation and
-  // because it is restored they will only retry once.
-}
 
 // Convert the fields used by is_busy() to a string that can be
 // used for diagnostic output.
@@ -1977,7 +1901,6 @@ void ObjectMonitor::wait(jlong millis, bool interruptible, TRAPS) {
   // Verify a few postconditions
   assert(has_owner(current), "invariant");
   assert(!has_successor(current), "invariant");
-  assert_mark_word_consistency();
 
   if (ce != nullptr && ce->is_virtual_thread()) {
     current->post_vthread_pinned_event(&vthread_pinned_event, "Object.wait", result);
@@ -2662,16 +2585,10 @@ void ObjectMonitor::print() const { print_on(tty); }
 // Print the ObjectMonitor like a debugger would:
 //
 // (ObjectMonitor) 0x00007fdfb6012e40 = {
-//   _metadata = 0x0000000000000001
 //   _object = 0x000000070ff45fd0
-//   _pad_buf0 = {
-//     [0] = '\0'
-//     ...
-//     [43] = '\0'
-//   }
 //   _owner = 0x0000000000000000
 //   _previous_owner_tid = 0
-//   _pad_buf1 = {
+//   _pad_buf0 = {
 //     [0] = '\0'
 //     ...
 //     [47] = '\0'
@@ -2690,19 +2607,13 @@ void ObjectMonitor::print() const { print_on(tty); }
 //
 void ObjectMonitor::print_debug_style_on(outputStream* st) const {
   st->print_cr("(ObjectMonitor*) " INTPTR_FORMAT " = {", p2i(this));
-  st->print_cr("  _metadata = " INTPTR_FORMAT, _metadata);
   st->print_cr("  _object = " INTPTR_FORMAT, p2i(object_peek()));
+  st->print_cr("  _owner = " INT64_FORMAT, owner_raw());
+  st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
   st->print_cr("  _pad_buf0 = {");
   st->print_cr("    [0] = '\\0'");
   st->print_cr("    ...");
   st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf0) - 1);
-  st->print_cr("  }");
-  st->print_cr("  _owner = " INT64_FORMAT, owner_raw());
-  st->print_cr("  _previous_owner_tid = " UINT64_FORMAT, _previous_owner_tid);
-  st->print_cr("  _pad_buf1 = {");
-  st->print_cr("    [0] = '\\0'");
-  st->print_cr("    ...");
-  st->print_cr("    [%d] = '\\0'", (int)sizeof(_pad_buf1) - 1);
   st->print_cr("  }");
   st->print_cr("  _next_om = " INTPTR_FORMAT, p2i(next_om()));
   st->print_cr("  _recursions = %zd", _recursions);

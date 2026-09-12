@@ -620,7 +620,7 @@ frame::frame(void* ptr_sp, void* ptr_fp, void* pc) : _on_heap(false) {
 
 #endif
 
-// Check for a method with scalarized inline type arguments that needs
+// Check for a method with scalarized value type arguments that needs
 // a stack repair and return the repaired sender stack pointer.
 
 intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
@@ -629,8 +629,8 @@ intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp
 }
 
 bool frame::was_augmented_on_entry(int& real_size) const {
-  assert(is_compiled_frame(), "");
-  assert(!_cb->as_nmethod_or_null()->needs_stack_repair(), "unimplemented");
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  assert(!_cb->as_nmethod()->needs_stack_repair(), "unimplemented");
   real_size = _cb->frame_size();
   return false;
 }

@@ -473,7 +473,7 @@ class methodHandle;
                                                                                                                         \
   do_class(jdk_internal_util_ArraysSupport, "jdk/internal/util/ArraysSupport")                                                          \
   do_intrinsic(_vectorizedMismatch, jdk_internal_util_ArraysSupport, vectorizedMismatch_name, vectorizedMismatch_signature, F_S)\
-   do_name(vectorizedMismatch_name, "vectorizedMismatch")                                                               \
+   do_name(vectorizedMismatch_name, "vectorizedMismatchInternal")                                                       \
    do_signature(vectorizedMismatch_signature, "(Ljava/lang/Object;JLjava/lang/Object;JII)I")                            \
                                                                                                                         \
   /* java/lang/ref/Reference */                                                                                         \
@@ -1025,6 +1025,17 @@ class methodHandle;
   do_intrinsic(_getAndSetReference,       jdk_internal_misc_Unsafe,     getAndSetReference_name, getAndSetReference_signature, F_R)   \
    do_name(     getAndSetReference_name,                                "getAndSetReference")                                         \
    do_signature(getAndSetReference_signature,                           "(Ljava/lang/Object;JLjava/lang/Object;)Ljava/lang/Object;" ) \
+                                                                                                                             \
+  do_class(jdk_internal_math_Int128Math,                                "jdk/internal/math/Int128Math")                      \
+  do_signature(int128t_addsub_signature,                                "(JJJJ)J")                                           \
+  do_intrinsic(_addInt128TLo,             jdk_internal_math_Int128Math, addInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128TLo_name,                                      "addLo")                                             \
+  do_intrinsic(_addInt128THi,             jdk_internal_math_Int128Math, addInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     addInt128THi_name,                                      "addHi")                                             \
+  do_intrinsic(_subInt128TLo,             jdk_internal_math_Int128Math, subInt128TLo_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128TLo_name,                                      "subLo")                                             \
+  do_intrinsic(_subInt128THi,             jdk_internal_math_Int128Math, subInt128THi_name, int128t_addsub_signature, F_S)    \
+   do_name(     subInt128THi_name,                                      "subHi")                                             \
                                                                                                                              \
   /* Float16Math API intrinsification support */                                                                             \
   /* Float16 signatures */                                                                                                   \

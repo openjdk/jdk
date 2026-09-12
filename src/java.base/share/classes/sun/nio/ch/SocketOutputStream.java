@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,10 @@ import java.io.OutputStream;
  * An OutputStream that writes bytes to a socket channel.
  */
 class SocketOutputStream extends OutputStream {
+    // Flag set by jdk.internal.event.JFRTracing to indicate if
+    // socket writes should be traced by JFR.
+    private static boolean jfrTracing;
+
     private final SocketChannelImpl sc;
 
     /**
@@ -57,13 +61,13 @@ class SocketOutputStream extends OutputStream {
 
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        if (!SocketWriteEvent.enabled()) {
+        if (jfrTracing && SocketWriteEvent.enabled()) {
+            long start = SocketWriteEvent.timestamp();
             sc.blockingWriteFully(b, off, len);
+            SocketWriteEvent.offer(start, len, sc.remoteAddress());
             return;
         }
-        long start = SocketWriteEvent.timestamp();
         sc.blockingWriteFully(b, off, len);
-        SocketWriteEvent.offer(start, len, sc.remoteAddress());
     }
 
     @Override

@@ -587,29 +587,59 @@ Modules::ArchivedProperty& Modules::archived_prop(size_t i) {
 
 void Modules::ArchivedProperty::runtime_check() const {
   ResourceMark rm;
-  const char* runtime_value = get_flattened_value();
+  const char* old_value = _archived_value;
+  const char* new_value = get_flattened_value();
   aot_log_info(aot)("archived module property %s: %s", _prop,
-                _archived_value != nullptr ? _archived_value : "(null)");
+                old_value != nullptr ? old_value : "(null)");
 
-  bool disable = false;
-  if (runtime_value == nullptr) {
-    if (_archived_value != nullptr) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during dump time but not during runtime", _prop, _archived_value);
-      disable = true;
+  bool mismatch = false;
+  const char* old_label1;
+  const char* old_label2;
+  const char* new_label1;
+  const char* new_label2;
+
+  if (CDSConfig::is_dumping_final_static_archive()) {
+    old_label1 = "in AOTConfiguration";
+    old_label2 = ", AOTConfiguration =";
+    new_label1 = "for current JVM";
+    new_label2 = "current =";
+  } else if (CDSConfig::new_aot_flags_used()) {
+    old_label1 = "in AOTCache";
+    old_label2 = ", AOTCache =";
+    new_label1 = "for current JVM";
+    new_label2 = "current =";
+  } else {
+    old_label1 = "during dump time";
+    old_label2 = " dump time";
+    new_label1 = "during runtime";
+    new_label2 = "runtime";
+  }
+
+  if (new_value == nullptr) {
+    if (old_value != nullptr) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s",
+                                         _prop, old_value, old_label1, new_label1);
+      mismatch = true;
     }
   } else {
-    if (_archived_value == nullptr) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified during runtime but not during dump time", _prop, runtime_value);
-      disable = true;
-    } else if (strcmp(runtime_value, _archived_value) != 0) {
-      AOTMetaspace::report_loading_error("Mismatched values for property %s: runtime %s dump time %s", _prop, runtime_value, _archived_value);
-      disable = true;
+    if (old_value == nullptr) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s specified %s but not %s",
+                                         _prop, new_value, new_label1, old_label1);
+      mismatch = true;
+    } else if (strcmp(new_value, old_value) != 0) {
+      AOTMetaspace::report_loading_error("Mismatched values for property %s: %s %s%s %s",
+                                         _prop, new_label2, new_value, old_label2, old_value);
+      mismatch = true;
     }
   }
 
-  if (disable) {
-    AOTMetaspace::report_loading_error("Disabling optimized module handling");
-    CDSConfig::stop_using_optimized_module_handling();
+  if (mismatch) {
+    AOTMetaspace::report_loading_error("Disabling full module graph");
+    CDSConfig::disable_full_module_graph();
+
+    if (CDSConfig::is_dumping_final_static_archive()) {
+      AOTMetaspace::unrecoverable_writing_error("mismatched module options");
+    }
   }
 }
 
@@ -686,7 +716,6 @@ void Modules::serialize_archived_module_info(SerializeClosure* soc) {
     archived_prop(i).serialize(soc);
   }
   if (soc->reading()) {
-    aot_log_info(aot)("optimized module handling: %s", CDSConfig::is_using_optimized_module_handling() ? "enabled" : "disabled");
     aot_log_info(aot)("full module graph: %s", CDSConfig::is_using_full_module_graph() ? "enabled" : "disabled");
   }
 }

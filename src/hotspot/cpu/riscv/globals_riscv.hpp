@@ -76,8 +76,8 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
-define_pd_global(bool, InlineTypePassFieldsAsArgs, false);
-define_pd_global(bool, InlineTypeReturnedAsFields, false);
+define_pd_global(bool, ValueTypePassFieldsAsArgs, false);
+define_pd_global(bool, ValueTypeReturnedAsFields, false);
 
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
@@ -104,6 +104,7 @@ define_pd_global(bool, InlineTypeReturnedAsFields, false);
   product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
+  product(bool, UseZbc, false, DIAGNOSTIC, "Use Zbc instructions")               \
   product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
   product(bool, UseZfa, false, DIAGNOSTIC, "Use Zfa instructions")               \

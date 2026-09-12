@@ -747,7 +747,7 @@ public class BasicListUI extends ListUI
     /**
      * Unregisters keyboard actions installed from
      * <code>installKeyboardActions</code>.
-     * This method is called at uninstallUI() time - subclassess should
+     * This method is called at uninstallUI() time - subclasses should
      * ensure that all of the keyboard actions registered at installUI
      * time are removed here.
      *

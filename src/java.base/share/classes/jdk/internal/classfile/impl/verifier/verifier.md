@@ -17,4 +17,4 @@ for example, this should not fail upon encountering new language features, and
 should at best include all new checks hotspot has as long as the required
 information are accessible to the Class-File API.
 
-Last sync: jdk-26+5, July 3rd 2025
+Last sync: jdk-28+11, Aug 14th 2026

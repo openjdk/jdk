@@ -16,6 +16,8 @@ ValueClassSuperInitFails.java:175:49: compiler.err.cant.ref.before.ctor.called: 
 ValueClassSuperInitFails.java:179:15: compiler.err.cant.ref.before.ctor.called: this
 ValueClassSuperInitFails.java:183:13: compiler.err.cant.ref.before.ctor.called: b
 ValueClassSuperInitFails.java:184:19: compiler.err.cant.ref.before.ctor.called: b
+ValueClassSuperInitFails.java:187:21: compiler.err.cant.ref.before.ctor.called: x
+ValueClassSuperInitFails.java:188:29: compiler.err.cant.ref.before.ctor.called: x
 ValueClassSuperInitFails.java:43:13: compiler.err.call.must.only.appear.in.ctor
 ValueClassSuperInitFails.java:47:14: compiler.err.call.must.only.appear.in.ctor
 ValueClassSuperInitFails.java:51:14: compiler.err.call.must.only.appear.in.ctor
@@ -27,4 +29,4 @@ ValueClassSuperInitFails.java:99:13: compiler.err.return.before.superclass.initi
 ValueClassSuperInitFails.java:170:18: compiler.err.call.must.only.appear.in.ctor
 - compiler.note.preview.filename: ValueClassSuperInitFails.java, DEFAULT
 - compiler.note.preview.recompile
-27 errors
+29 errors
