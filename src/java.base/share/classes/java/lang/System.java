@@ -2226,7 +2226,7 @@ public final class System {
             }
 
             public MemorySegment asReadOnlyMemorySegment(String str) {
-                return SegmentFactories.fromArrayReadOnly(str.value());
+                return str.asReadOnlyMemorySegment();
             }
 
             public String join(String prefix, String suffix, String delimiter, String[] elements, int size) {
