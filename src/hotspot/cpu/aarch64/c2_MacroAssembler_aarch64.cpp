@@ -3018,3 +3018,35 @@ void C2_MacroAssembler::sve_sdiv_short(FloatRegister dst_src1, FloatRegister src
   // Narrow the two INT result halves back to SHORT.
   sve_uzp1(dst_src1, H, vtmp1, src1);
 }
+
+void C2_MacroAssembler::jump_table_switch(Register switch_val,
+                                          const GrowableArray<Label*>& labels) {
+  assert(Matcher::use_branch_jump_table,
+         "jump_table_switch should only be used with branch jump tables");
+
+  const bool scratch_emit = in_scratch_emit_size();
+  assert(scratch_emit || labels.is_nonempty(), "must be");
+
+  const int table_size = scratch_emit ? 0 : labels.length() * instruction_size;
+  if (!scratch_emit &&
+      code()->insts()->maybe_expand_to_ensure_remaining(3 * instruction_size + table_size) &&
+      code()->blob() == nullptr) {
+    Compile::current()->record_failure("CodeCache is full");
+    return;
+  }
+
+  Label jump_table;
+  adr(rscratch1, jump_table);
+  lea(rscratch1, Address(rscratch1, switch_val,
+                        Address::uxtw(exact_log2(instruction_size))));
+  br(rscratch1);
+  bind(jump_table);
+
+  if (scratch_emit) {
+    return;
+  }
+
+  for (GrowableArrayIterator<Label*> iter = labels.begin(); iter != labels.end(); ++iter) {
+    b(**iter);
+  }
+}
