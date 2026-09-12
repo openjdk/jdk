@@ -37,6 +37,7 @@
 #include "oops/weakHandle.inline.hpp"
 #include "prims/jvmtiDeferredUpdates.hpp"
 #include "prims/jvmtiExport.hpp"
+#include "prims/jvmtiThreadState.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/continuationWrapper.inline.hpp"
 #include "runtime/globals.hpp"
@@ -153,11 +154,22 @@ static const jlong MAX_RECHECK_INTERVAL = 1000;
 //   the wakee will recontend for ownership of the monitor. The successor
 //   (wakee) will either acquire the lock or re-park/unmount itself.
 //
+//   If the successor is a suspended vthread then more work is needed as
+//   the vthread will block for suspension when it tries to unpark and
+//   reschedule itself. That can leave the monitor unowned yet still have
+//   threads blocked waiting to enter it. We have to try to select a
+//   non-suspended vthread, or a platform thread, as the successor, but also
+//   ensure that if the only candidate is a suspended vthread then it must
+//   not be allowed to get stranded, blocked on an unowned monitor, after
+//   it has been resumed.
+//
 //   Succession is provided for by a policy of competitive handoff.
 //   The exiting thread does _not_ grant or pass ownership to the
 //   successor thread. (This is also referred to as "handoff succession").
 //   Instead the exiting thread releases ownership and possibly wakes
 //   a successor, so the successor can (re)compete for ownership of the lock.
+//   Selecting a single successor is an optimisation; we could unpark multiple
+//   threads if needed and let them all (re)compete.
 //
 // * The entry_list forms a queue of threads stalled trying to acquire
 //   the lock. Within the entry_list the next pointers always form a
@@ -1436,17 +1448,22 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // If there is a successor we should release the lock as soon as
     // possible, so that the successor can acquire the lock. If there is
     // no successor, we might need to wake up a waiting thread.
-    if (!has_successor()) {
-      ObjectWaiter* w = AtomicAccess::load(&_entry_list);
+    ObjectWaiter* head = AtomicAccess::load(&_entry_list);
+    if (!has_successor() && head != nullptr) {
+      // Other threads are blocked trying to acquire the lock and
+      // there is no successor, so it appears that an heir-
+      // presumptive (successor) must be made ready. Since threads
+      // are woken up in FIFO order, we need to find the tail of the
+      // entry_list.
+      ObjectWaiter* w = find_successor(current);
+
+      // We have found a suitable successor w or else w is null as all candidates
+      // were suspended virtual threads. We can't make one of those successor as that
+      // will cause a later monitor exit to skip finding a replacement successor.
+      // We can only use exit_epilog if there is a successor.
       if (w != nullptr) {
-        // Other threads are blocked trying to acquire the lock and
-        // there is no successor, so it appears that an heir-
-        // presumptive (successor) must be made ready. Since threads
-        // are woken up in FIFO order, we need to find the tail of the
-        // entry_list.
-        w = entry_list_tail(current);
-        // I'd like to write: guarantee (w->_thread != current).
-        // But in practice an exiting thread may find itself on the entry_list.
+        // We'd like to write: guarantee (w->_thread != current), but in
+        // practice an exiting thread may find itself on the entry_list.
         // Let's say thread T1 calls O.wait(). Wait() enqueues T1 on O's waitset and
         // then calls exit(). Exit releases the lock by setting O._owner to null.
         // Let's say T1 then stalls. T2 acquires O and calls O.notify(). The
@@ -1463,7 +1480,7 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     }
 
     // Drop the lock.
-    // release semantics: prior loads and stores from within the critical section
+    // Release semantics: prior loads and stores from within the critical section
     // must not float (reorder) past the following store that drops the lock.
     // Uses a storeload to separate release_store(owner) from the
     // successor check. The try_set_owner_from() below uses cmpxchg() so
@@ -1496,7 +1513,10 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // the lock. Note that the dropped lock needs to become visible to the
     // spinner.
 
-    if (_entry_list == nullptr || has_successor()) {
+    // As all potential waiters could be suspended vthreads we have to ensure we don't
+    // livelock checking the same threads over and over again. If the current head of
+    // the entry-list is unchanged then we are done.
+    if (_entry_list == nullptr || _entry_list == head || has_successor()) {
       return;
     }
 
@@ -1515,8 +1535,83 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   }
 }
 
+#if INCLUDE_JVMTI
+// The nominal successor is the tail, but if the tail is a suspended vthread then
+// we need to find a different successor.
+ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
+  assert(AtomicAccess::load(&_entry_list) != nullptr, "must be");
+  bool do_vthread_unpark = false;
+  bool found = false;
+  ObjectWaiter* tail = entry_list_tail(current);
+  ObjectWaiter* w;
+  // fast-path: expected normal case
+  // We scan the current entry queue, from the tail, looking for an eligible
+  // successor. If the entry-queue is not in DLL form then this will be a short loop.
+  {
+    MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
+    for (w = tail; w != nullptr; w = w->prev()) {
+      if (!w->is_vthread() || !JvmtiVTSuspender::is_vthread_suspended(w->vthread())) {
+        found = true;
+        break; // w is the successor
+      }
+    }
+  }
+  if (!found) {
+    // The DLL part of the queue consists only of suspended vthreads, so we have
+    // to iterate through and unpark them all so they are not stranded if resumed.
+    ObjectWaiter* last;
+    for (w = tail, last = nullptr; w != nullptr; last = w, w = w->prev()) {
+      assert(w->is_vthread(), "must be");
+      // Note we can't assert the thread is still suspended as it may have been
+      // resumed. That doesn't change what we do here.
+      do_vthread_unpark |= java_lang_VirtualThread::set_onWaitingList(w->vthread(), vthread_list_head());
+    }
+
+    // The entry queue may not have been in DLL form, or may have had new entries
+    // enqueued since we checked, so reform the DLL and check again. If subsequent
+    // new waiters enqueue themselves we will not process those but the enclosing exit
+    // protocol will if needed. Note the key thing here is to reform the DLL so that all
+    // current waiters are considered.
+    if (last != AtomicAccess::load(&_entry_list)) {
+      entry_list_build_dll(current);
+      for (w = last; w != nullptr; w = w->prev()) {
+        if (!w->is_vthread()) {
+          break; // w is the successor
+        }
+        {
+          MutexLocker ml(JvmtiVThreadSuspend_lock, Mutex::_no_safepoint_check_flag);
+          if (!JvmtiVTSuspender::is_vthread_suspended(w->vthread())) {
+            break; // w is the successor
+          }
+          else {
+            // We found `w` so ensure it is not left stranded if resumed after
+            // the unlock completes.
+            do_vthread_unpark |= java_lang_VirtualThread::set_onWaitingList(w->vthread(), vthread_list_head());
+          }
+        }
+      }
+    }
+
+    // Finally do the actual unpark if needed.
+    if (do_vthread_unpark) {
+      ObjectMonitor::vthread_unparker_ParkEvent()->unpark();
+    }
+  }
+  return w;
+}
+#else
+// Without JVMTI we trivially return the tail.
+ObjectWaiter* ObjectMonitor::find_successor(JavaThread* current) {
+  assert(AtomicAccess::load(&_entry_list) != nullptr, "must be");
+  return entry_list_tail(current);
+}
+#endif // INCLUDE_JVMTI
+
 void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
   assert(has_owner(current), "invariant");
+  assert(Wakee != nullptr, "must have a successor to use this path");
+  oop vthread = nullptr;
+  ParkEvent * Trigger = nullptr;
 
   // Exit protocol:
   // 1. ST _succ = wakee
@@ -1524,8 +1619,6 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
   // 2. ST _owner = nullptr
   // 3. unpark(wakee)
 
-  oop vthread = nullptr;
-  ParkEvent * Trigger;
   if (!Wakee->is_vthread()) {
     JavaThread* t = Wakee->thread();
     assert(t != nullptr, "");
@@ -1551,12 +1644,14 @@ void ObjectMonitor::exit_epilog(JavaThread* current, ObjectWaiter* Wakee) {
 
   DTRACE_MONITOR_PROBE(contended__exit, this, object(), current);
 
-  if (vthread == nullptr) {
-    // Platform thread case.
-    Trigger->unpark();
-  } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
-    // Virtual thread case.
-    Trigger->unpark();
+  if (Trigger != nullptr) {
+    if (vthread == nullptr) {
+      // Platform thread case.
+      Trigger->unpark();
+    } else if (java_lang_VirtualThread::set_onWaitingList(vthread, vthread_list_head())) {
+      // Virtual thread case.
+      Trigger->unpark();
+    }
   }
 }
 
