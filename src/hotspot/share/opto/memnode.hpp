@@ -185,6 +185,10 @@ public:
 #endif
     return new_node;
   }
+
+  // Support for reinterpret variants used by StoreNode and LoadNode
+  static BasicType get_reinterpret_variant(BasicType bt);
+  bool has_reinterpret_variant(const Type* vt) const;
 };
 
 // Analyze a MemNode to try to prove that it is independent from other memory accesses
@@ -349,7 +353,6 @@ public:
   Node* convert_to_unsigned_load(PhaseGVN& gvn);
   Node* convert_to_signed_load(PhaseGVN& gvn);
 
-  bool  has_reinterpret_variant(const Type* rt);
   Node* convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt);
 
   ControlDependency control_dependency() const { return _control_dependency; }
@@ -711,7 +714,6 @@ public:
   // have all possible loads of the value stored been optimized away?
   bool value_never_loaded(PhaseValues* phase) const;
 
-  bool  has_reinterpret_variant(const Type* vt);
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
 
   MemBarNode* trailing_membar() const;
