@@ -128,7 +128,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
     } else if (region->is_humongous_start()) {
       // Reclaim humongous regions here, and count them as the immediate garbage
       DEBUG_ONLY(assert_humongous_mark_consistency(region));
-      if (!region->has_live()) {
+      if (!region->has_live() && !region->is_pinned()) {
         heap->trash_humongous_region_at(region);
 
         // Count only the start. Continuations would be counted on "trash" path

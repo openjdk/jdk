@@ -567,13 +567,18 @@ public:
       oop humongous_obj = cast_to_oop(r->bottom());
       if (!_ctx->is_marked(humongous_obj)) {
         assert(!r->has_live(), "Region %zu is not marked, should not have live", r->index());
-        _heap->trash_humongous_region_at(r);
+        if (!r->is_pinned()) {
+          _heap->trash_humongous_region_at(r);
+        }
       } else {
         assert(r->has_live(), "Region %zu should have live", r->index());
       }
     } else if (r->is_humongous_continuation()) {
       // If we hit continuation, the non-live humongous starts should have been trashed already
-      assert(r->humongous_start_region()->has_live(), "Region %zu should have live", r->index());
+      // unless it's pinned. Pinned regions cannot be reclaimed even when dead.
+      DEBUG_ONLY(ShenandoahHeapRegion* start = r->humongous_start_region();)
+      assert(start->has_live() || start->is_pinned(),
+             "Humongous start %zu of continuation %zu should have live or be pinned", start->index(), r->index());
     } else if (r->is_regular()) {
       if (!r->has_live()) {
         r->make_trash_immediate();
