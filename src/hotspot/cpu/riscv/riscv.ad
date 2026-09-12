@@ -7174,7 +7174,6 @@ instruct regL_not_reg(iRegLNoSp dst, iRegL src1, immL_M1 m1) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-
 // ============================================================================
 // Floating Point Arithmetic Instructions
 
