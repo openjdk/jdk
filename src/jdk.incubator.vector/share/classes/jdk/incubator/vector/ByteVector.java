@@ -27,13 +27,17 @@ package jdk.incubator.vector;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
 import java.nio.ByteOrder;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Function;
 
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
+import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -3786,6 +3790,88 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
                  int j = indexMap[mapOffset + i];
                  arr[off + j] = (e & 1) != 0;
              });
+    }
+
+    /**
+     * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} as 8-bit
+     * code units in the specified {@link Charset}}
+     *
+     * <p>This method runs in constant time, and is intended to be used as a guard for
+     * {@link ByteVector#fromString(VectorSpecies, String, Charset, int)}.
+     *
+     * @param string the string
+     * @param charset the charset representing the 8-bit character encoding
+     * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
+     * @see ByteVector#fromString(VectorSpecies, String, Charset, int)
+     * @since 28
+     */
+    @ForceInline
+    public static boolean compatibleWith(String string, Charset charset) {
+        Objects.requireNonNull(string);
+        Objects.requireNonNull(charset);
+        return StringSupport.stringCoder(string) == 0 && charset == StandardCharsets.ISO_8859_1;
+    }
+
+    @DontInline
+    private static void throwNotCompatible(Charset charset) {
+        throw new IllegalArgumentException("String is not compatible with: " + charset);
+    }
+
+    @ForceInline
+    private static void checkCompatibleWith(String string, Charset charset) {
+        if (!compatibleWith(string, charset)) {
+            throwNotCompatible(charset);
+        }
+    }
+
+    /**
+     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
+     *
+     * @param species the species of the desired vector
+     * @param string the string to load from
+     * @param charset the 8-bit charset
+     * @param offset the character index in the string to begin loading from
+     * @throws IllegalArgumentException if the string and charset are not
+     *         {@linkplain #compatibleWith(String, Charset) compatible}
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset < 0} or {@code offset > string.length() - species.length()}
+     * @throws NullPointerException if {@code species}, {@code string}, or {@code charset} is {@code null}
+     * @see #compatibleWith(String, Charset)
+     * @since 28
+     */
+    @ForceInline
+    public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset) {
+        Objects.requireNonNull(species);
+        checkCompatibleWith(string, charset);
+        offset = checkFromIndexSize(offset, species.length(), string.length());
+        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
+    }
+
+    /**
+     * {@return a {@link ByteVector} loaded with 8-bit code units from the given {@link String},
+     * interpreted using the specified {@link Charset}}
+     *
+     * @param species the species of the desired vector
+     * @param string the string to load from
+     * @param charset the 8-bit charset
+     * @param offset the character index in the string to begin loading from
+     * @param m the mask controlling lane selection
+     * @throws IllegalArgumentException if the string and charset are not
+     *         {@linkplain #compatibleWith(String, Charset) compatible}
+     * @throws IndexOutOfBoundsException
+     *         if {@code offset+N < 0} or {@code offset+N >= string.length()}
+     *         for any lane {@code N} in the vector where the mask is set
+     * @throws NullPointerException if {@code species}, {@code string}, {@code charset}, or {@code m} is {@code null}
+     * @see #compatibleWith(String, Charset)
+     * @since 28
+     */
+    @ForceInline
+    public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset, VectorMask<Byte> m) {
+        Objects.requireNonNull(species);
+        Objects.requireNonNull(m);
+        checkCompatibleWith(string, charset);
+        return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder(), m);
     }
 
     /**
