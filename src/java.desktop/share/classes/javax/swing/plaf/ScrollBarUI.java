@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 package javax.swing.plaf;
+import java.awt.Rectangle;
 
 /**
  * Pluggable look and feel interface for JScrollBar.
@@ -35,4 +36,20 @@ public abstract class ScrollBarUI extends ComponentUI {
      * Constructor for subclasses to call.
      */
     protected ScrollBarUI() {}
+
+   /**
+    * Returns the current bounds of the track
+    *
+    * @return the current bounds of the scrollbar track
+    * @since 27
+    */
+    protected Rectangle getTrackBounds() { return new Rectangle(0, 0, 0, 0);}
+
+   /**
+    * Return the current size/location of the thumb.
+    *
+    * @return The current size/location of the thumb.
+    * @since 27
+    */
+    protected Rectangle getThumbBounds() { return new Rectangle(0, 0, 0, 0);}
 }
