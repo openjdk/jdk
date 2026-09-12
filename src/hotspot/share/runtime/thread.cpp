@@ -494,7 +494,7 @@ void Thread::print_on(outputStream* st, bool print_extended_info) const {
     }
 
     st->print("tid=" INTPTR_FORMAT " ", p2i(this));
-    if (!is_Java_thread() || !JavaThread::cast(this)->is_vthread_mounted()) {
+    if (!is_Java_thread() || !java_lang_VirtualThread::is_instance(JavaThread::cast(this)->vthread())) {
       osthread()->print_on(st);
     }
   }
