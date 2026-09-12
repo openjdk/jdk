@@ -23,7 +23,6 @@
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
@@ -166,11 +165,27 @@ final class LazyConstantTestUtil {
         }
     }
 
-    static Object computingFunction(LazyConstant<?> o) {
+    static Object state(LazyConstant<?> o) {
         try {
-            final Field field = field(o.getClass(), "computingFunctionOrExceptionType");
+            final Field field = field(o.getClass(), "state");
             field.setAccessible(true);
             return field.get(o);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    static int waiterCount(LazyConstant<?> o) {
+        try {
+            Object state = state(o);
+            int count = 0;
+            while (state != null && state.getClass().getSimpleName().equals("Waiter")) {
+                count++;
+                final Field next = field(state.getClass(), "next");
+                next.setAccessible(true);
+                state = next.get(state);
+            }
+            return count;
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
