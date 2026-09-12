@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -871,5 +871,30 @@ public abstract class SSLSocket extends Socket
     public BiFunction<SSLSocket, List<String>, String>
             getHandshakeApplicationProtocolSelector() {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the names of the named groups which could be enabled for use
+     * on this connection.
+     * <P>
+     * The returned array includes named groups from the list of standard
+     * named group names in the
+     * <a href="{@docRoot}/../specs/security/standard-names.html#named-groups">
+     * Named Groups</a> section of the Java Security Standard Algorithm Names
+     * Specification, and may also include other named groups that the provider
+     * supports.
+     *
+     * @implSpec The implementation in this class throws
+     *           {@code UnsupportedOperationException} and performs no other
+     *           action.
+     * @return an array of named group names
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @spec security/standard-names.html Java Security Standard Algorithm Names
+     * @since 28
+     */
+    public String [] getSupportedNamedGroups() {
+        throw new UnsupportedOperationException(
+                "Underlying provider does not implement the method");
     }
 }

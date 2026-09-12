@@ -598,5 +598,15 @@ abstract class HandshakeContext implements ConnectionContext {
         return Objects.requireNonNullElse(requestedServerNames,
                 Collections.emptyList());
     }
+
+    NamedGroup getNegotiatedNamedGroup() {
+        for (SSLCredentials credentials : handshakeCredentials) {
+            if (credentials instanceof NamedGroupCredentials ngCredentials) {
+                return ngCredentials.getNamedGroup();
+            }
+        }
+
+        return null;
+    }
 }
 
