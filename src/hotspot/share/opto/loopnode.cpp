@@ -4632,17 +4632,34 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     PhiNode* phi2 = out->as_Phi();
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
+    // Look for an index that repeats the trip counter one iteration late:
+    //    int prev = -1;     for (int iv = 0;    iv < limit; iv++) { use(prev); prev = iv; }
+    //    int prev = init-1; for (int iv = init; iv < limit; iv++) { use(prev); prev = iv; }
+    bool lagging_index = false;
+    if (phi2->region() == loop->_head && (incr2 == phi ||
+          (incr2->Opcode() == Op_AddI && incr2->in(1) == phi && incr2->in(2)->is_Con()))) {
+      jint back_con = incr2 == phi ? 0 : incr2->in(2)->get_int();
+      jint offset = java_subtract(back_con, checked_cast<jint>(stride_con));
+      Node* start2 = phi2->in(LoopNode::EntryControl);
+      if (start2->Opcode() == Op_ConI && init->Opcode() == Op_ConI) {
+        lagging_index = start2->get_int() == java_add(init->get_int(), offset);
+      } else if (start2->Opcode() == Op_AddI && start2->in(1) == init && start2->in(2)->Opcode() == Op_ConI) {
+        lagging_index = start2->in(2)->get_int() == offset;
+      }
+    }
     // Look for induction variables of the form:  X += constant
-    if (phi2->region() != loop->_head ||
+    bool no_parallel_index = phi2->region() != loop->_head ||
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con()) {
+        !incr2->in(2)->is_Con();
+
+    if (!lagging_index && no_parallel_index) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() &&
+    if (!no_parallel_index && incr2->in(1)->is_ConstraintCast() &&
         !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
       // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
       continue;
@@ -4655,8 +4672,8 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     Node* init2 = phi2->in(LoopNode::EntryControl);
 
     // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
+    BasicType stride_con2_bt = lagging_index || incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = lagging_index ? stride_con : incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_jint (or min_jlong, respectively) and
