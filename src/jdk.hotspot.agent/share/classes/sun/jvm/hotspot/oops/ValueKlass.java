@@ -40,6 +40,8 @@ public class ValueKlass extends InstanceKlass {
 
   public static class Members extends VMObject {
 
+    private static long size;
+
     private static CIntField payloadOffsetField;
     private static CIntField nullMarkerOffsetField;
 
@@ -49,6 +51,7 @@ public class ValueKlass extends InstanceKlass {
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
       Type type = db.lookupType("ValueKlass::Members");
+      size = type.getSize();
       payloadOffsetField = new CIntField(type.getCIntegerField("_payload_offset"), 0);
       nullMarkerOffsetField = new CIntField(type.getCIntegerField("_null_marker_offset"), 0);
     }
@@ -63,6 +66,10 @@ public class ValueKlass extends InstanceKlass {
 
     public int nullMarkerOffset() {
       return (int)nullMarkerOffsetField.getValue(this);
+    }
+
+    public static long getSize() {
+      return size;
     }
 
   }
