@@ -786,11 +786,14 @@ class DumperSupport : AllStatic {
   static void dump_object_array(AbstractDumpWriter* writer, objArrayOop array, DumperFlatObjectList* flat_elements);
   // creates HPROF_GC_PRIM_ARRAY_DUMP record for the given type array
   static void dump_prim_array(AbstractDumpWriter* writer, typeArrayOop array);
+  // creates HPROF_GC_OBJ_ARRAY_DUMP record for the given filler array
+  static void dump_filler_array(AbstractDumpWriter* writer, typeArrayOop array);
   // create HPROF_FRAME record for the given method and bci
   static void dump_stack_frame(AbstractDumpWriter* writer, int frame_serial_num, int class_serial_num, Method* m, int bci);
 
   // check if we need to truncate an array
   static int calculate_array_max_length(AbstractDumpWriter* writer, arrayOop array, short header_size);
+  static int calculate_array_max_length(AbstractDumpWriter* writer, BasicType type, int length, short header_size);
 
   // fixes up the current dump record and writes HPROF_HEAP_DUMP_END record
   static void end_of_dump(AbstractDumpWriter* writer);
@@ -1433,14 +1436,15 @@ void DumperSupport::dump_array_class(AbstractDumpWriter* writer, Klass* k) {
 
 }
 
-// Hprof uses an u4 as record length field,
-// which means we need to truncate arrays that are too long.
 int DumperSupport::calculate_array_max_length(AbstractDumpWriter* writer, arrayOop array, short header_size) {
   BasicType type = ArrayKlass::cast(array->klass())->element_type();
   assert((type >= T_BOOLEAN && type <= T_OBJECT) || type == T_FLAT_ELEMENT, "invalid array element type");
+  return calculate_array_max_length(writer, type, array->length(), header_size);
+}
 
-  int length = array->length();
-
+// Hprof uses an u4 as record length field,
+// which means we need to truncate arrays that are too long.
+int DumperSupport::calculate_array_max_length(AbstractDumpWriter* writer, BasicType type, int length, short header_size) {
   int type_size;
   if (type == T_OBJECT || type == T_FLAT_ELEMENT) {
     type_size = sizeof(address);
@@ -1452,11 +1456,12 @@ int DumperSupport::calculate_array_max_length(AbstractDumpWriter* writer, arrayO
   uint max_bytes = max_juint - header_size;
 
   if (length_in_bytes > max_bytes) {
+    int orig_length = length;
     length = max_bytes / type_size;
     length_in_bytes = (size_t)length * type_size;
 
     warning("cannot dump array of type %s[] with length %d; truncating to length %d",
-            type2name_tab[type], array->length(), length);
+            type2name_tab[type], orig_length, length);
   }
   return length;
 }
@@ -1601,6 +1606,31 @@ void DumperSupport::dump_prim_array(AbstractDumpWriter* writer, typeArrayOop arr
       break;
     }
     default : ShouldNotReachHere();
+  }
+
+  writer->end_sub_record();
+}
+
+// Creates HPROF_GC_OBJ_ARRAY_DUMP record for the given filler array.
+//
+// Filler arrays are int typeArrays internally, but if we dump them as int[] they are not
+// identifiable as filler. So, dump as object array (FillerElement[]) with null elements.
+void DumperSupport::dump_filler_array(AbstractDumpWriter* writer, typeArrayOop array) {
+  // sizeof(u1) + 2 * sizeof(u4) + sizeof(objectID) + sizeof(classID)
+  short header_size = 1 + 2 * 4 + 2 * sizeof(address);
+  int length = calculate_array_max_length(writer, T_OBJECT, array->length(), header_size);
+  u4 size = checked_cast<u4>(header_size + length * sizeof(address));
+
+  writer->start_sub_record(HPROF_GC_OBJ_ARRAY_DUMP, size);
+  writer->write_objectID(array);
+  writer->write_u4(STACK_TRACE_ID);
+  writer->write_u4(length);
+
+  // array class ID
+  writer->write_classID(array->klass());
+
+  for (int index = 0; index < length; index++) {
+    writer->write_objectID(oop(nullptr));
   }
 
   writer->end_sub_record();
@@ -2231,8 +2261,13 @@ void HeapObjectDumper::do_object(oop o) {
       _flat_dumper->dump_flat_objects(writer(), o, &_class_cache, &flat_elements);
     }
   } else if (o->is_typeArray()) {
-    // create a HPROF_GC_PRIM_ARRAY_DUMP record for each type array
-    DumperSupport::dump_prim_array(writer(), typeArrayOop(o));
+    if (o->klass() == Universe::fillerArrayKlass()) {
+      // create a HPROF_GC_OBJ_ARRAY_DUMP record for each filler array
+      DumperSupport::dump_filler_array(writer(), typeArrayOop(o));
+    } else {
+      // create a HPROF_GC_PRIM_ARRAY_DUMP record for each type array
+      DumperSupport::dump_prim_array(writer(), typeArrayOop(o));
+    }
   }
 }
 
