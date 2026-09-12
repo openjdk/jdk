@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -146,15 +146,18 @@ void VM_Version::get_os_cpu_info() {
       check_feature(auxv,  BIT_MASK(CPU_SHA2),       HWCAP_SHA2) |
       check_feature(auxv,  BIT_MASK(CPU_CRC32),      HWCAP_CRC32) |
       check_feature(auxv,  BIT_MASK(CPU_LSE),        HWCAP_ATOMICS) |
+      check_feature(auxv,  BIT_MASK(CPU_FPHP),       HWCAP_FPHP) |
+      check_feature(auxv,  BIT_MASK(CPU_ASIMDHP),    HWCAP_ASIMDHP) |
       check_feature(auxv,  BIT_MASK(CPU_DCPOP),      HWCAP_DCPOP) |
       check_feature(auxv,  BIT_MASK(CPU_SHA3),       HWCAP_SHA3) |
       check_feature(auxv,  BIT_MASK(CPU_SHA512),     HWCAP_SHA512) |
       check_feature(auxv,  BIT_MASK(CPU_SVE),        HWCAP_SVE) |
+      check_feature(auxv,  BIT_MASK(CPU_SB),         HWCAP_SB) |
       check_feature(auxv,  BIT_MASK(CPU_PACA),       HWCAP_PACA) |
-      check_feature(auxv,  BIT_MASK(CPU_FPHP),       HWCAP_FPHP) |
-      check_feature(auxv,  BIT_MASK(CPU_ASIMDHP),    HWCAP_ASIMDHP) |
-      check_feature(auxv2, BIT_MASK(CPU_SVE2),       HWCAP2_SVE2) |
       check_feature(auxv2, BIT_MASK(CPU_SVEBITPERM), HWCAP2_SVEBITPERM) |
+      check_feature(auxv2, BIT_MASK(CPU_SVE2),       HWCAP2_SVE2) |
+      // The synthetic CPU_A53MAC flag is set in VM_Version::initialize(), as
+      // there is no corresponding HWCAP flag.
       check_feature(auxv2, BIT_MASK(CPU_ECV),        HWCAP2_ECV) |
       check_feature(auxv2, BIT_MASK(CPU_WFXT),       HWCAP2_WFXT);
 
