@@ -33,6 +33,7 @@ size_t StackOverflow::_stack_red_zone_size = 0;
 size_t StackOverflow::_stack_yellow_zone_size = 0;
 size_t StackOverflow::_stack_reserved_zone_size = 0;
 size_t StackOverflow::_stack_shadow_zone_size = 0;
+size_t StackOverflow::_stack_growth_guard_zone_size = 0;
 
 void StackOverflow::initialize_stack_zone_sizes() {
   // Stack zone sizes must be page aligned.
@@ -49,6 +50,11 @@ void StackOverflow::initialize_stack_zone_sizes() {
 
   assert(_stack_yellow_zone_size == 0, "This should be called only once.");
   _stack_yellow_zone_size = align_up(StackYellowPages * unit, page_size);
+
+  // Windows uses an additional guard page to grow the stack. Keep it separate
+  // from the configured yellow zone so that StackYellowPages has the same
+  // meaning on every platform.
+  _stack_growth_guard_zone_size = WINDOWS_ONLY(page_size) NOT_WINDOWS(0);
 
   assert(_stack_reserved_zone_size == 0, "This should be called only once.");
   _stack_reserved_zone_size = align_up(StackReservedPages * unit, page_size);
@@ -182,7 +188,7 @@ void StackOverflow::enable_stack_yellow_reserved_zone() {
   guarantee(base < stack_base(), "Error calculating stack yellow zone");
   guarantee(base < os::current_stack_pointer(), "Error calculating stack yellow zone");
 
-  if (os::guard_memory((char *) base, stack_yellow_reserved_zone_size())) {
+  if (os::guard_memory((char *) base, stack_yellow_reserved_guard_zone_size())) {
     _stack_guard_state = stack_guard_enabled;
   } else {
     warning("Attempt to guard stack yellow zone failed.");
@@ -200,7 +206,7 @@ void StackOverflow::disable_stack_yellow_reserved_zone() {
   // We need to adjust it to work correctly with guard_memory()
   address base = stack_red_zone_base();
 
-  if (os::unguard_memory((char *)base, stack_yellow_reserved_zone_size())) {
+  if (os::unguard_memory((char *)base, stack_yellow_reserved_guard_zone_size())) {
     _stack_guard_state = stack_guard_yellow_reserved_disabled;
   } else {
     warning("Attempt to unguard stack yellow zone failed.");
