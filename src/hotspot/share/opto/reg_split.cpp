@@ -1037,8 +1037,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // Need special logic to handle bound USES. Insert a split at this
             // bound use if we can't rematerialize the def, or if we need the
             // split to form a misaligned pair.
-            if (!umask.is_infinite_stack() &&
-                (int)umask.size() <= lrgs(useidx).num_regs() &&
+            if (((!umask.is_infinite_stack() &&
+                (int)umask.size() <= lrgs(useidx).num_regs()) || (mach && mach->has_killed_inputs() && mach->is_killed_input(inpidx))) &&
                 (!def->rematerialize() ||
                  (!is_vect && umask.is_misaligned_pair()))) {
               // These need a Split regardless of overlap or pressure

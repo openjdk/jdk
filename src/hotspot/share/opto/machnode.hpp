@@ -283,6 +283,12 @@ public:
   // output have choices - but they must use the same choice.
   virtual uint two_adr( ) const { return 0; }
 
+  virtual bool has_killed_inputs() const { return false; }
+  virtual bool is_killed_input(uint i) const {
+    ShouldNotReachHere();
+    return false;
+  }
+
   // Capture the type of the matched ideal node
   const Type* _bottom_type;
 
