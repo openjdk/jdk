@@ -26,6 +26,9 @@
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "utilities/debug.hpp"
+
+class Thread;
 
 ShenandoahSATBMarkQueueSet::ShenandoahSATBMarkQueueSet(BufferNode::Allocator* allocator) :
   SATBMarkQueueSet(allocator), _filter_out_young(false)

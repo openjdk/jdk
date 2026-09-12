@@ -28,10 +28,6 @@
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.hpp"
 
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahConcurrentMarkingTask;
-template <ShenandoahGenerationType GENERATION>
-class ShenandoahFinalMarkingTask;
 class ShenandoahGeneration;
 
 class ShenandoahConcurrentMark: public ShenandoahMark {

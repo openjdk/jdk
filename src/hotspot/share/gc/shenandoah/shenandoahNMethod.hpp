@@ -25,13 +25,22 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHNMETHOD_HPP
 
-#include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
+template <typename> class GrowableArray;
+class nmethod;
+class NMethodClosure;
+class OopClosure;
+class ShenandoahHeap;
 
 // Use ShenandoahReentrantLock as ShenandoahNMethodLock
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;

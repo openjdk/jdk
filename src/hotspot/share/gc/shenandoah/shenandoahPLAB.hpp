@@ -25,9 +25,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHPLAB_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHPLAB_HPP
 
-#include "gc/shared/plab.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+
+class PLAB;
 class ShenandoahGenerationalHeap;
 
 class ShenandoahPLAB : public CHeapObj<mtGC> {

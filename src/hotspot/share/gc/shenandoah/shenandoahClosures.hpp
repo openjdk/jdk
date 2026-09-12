@@ -24,18 +24,22 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLOSURES_HPP
 
-#include "gc/shared/stringdedup/stringDedup.hpp"
+#include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "runtime/javaThread.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/handshake.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
-class BarrierSetNMethod;
+class nmethod;
+class SATBMarkQueueSet;
 class ShenandoahBarrierSet;
 class ShenandoahHeap;
 class ShenandoahMarkingContext;
 class ShenandoahReferenceProcessor;
-class SATBMarkQueueSet;
 
 //
 // ========= Super

@@ -27,12 +27,17 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTIONSET_HPP
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "memory/allocation.hpp"
 #include "memory/reservedSpace.hpp"
-#include "memory/virtualspace.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class outputStream;
+class ShenandoahHeap;
+class ShenandoahHeapRegion;
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {
   friend class ShenandoahHeap;

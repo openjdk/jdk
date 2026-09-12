@@ -27,6 +27,7 @@
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "utilities/debug.hpp"
 
 ShenandoahAllocator::ShenandoahAllocator(ShenandoahFreeSet* free_set)
   : _free_set(free_set),

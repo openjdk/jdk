@@ -27,12 +27,18 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
-#include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
+#include "memory/referenceType.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class AlwaysClearPolicy;
+class ReferencePolicy;
+class ShenandoahGeneration;
 class ShenandoahMarkRefsSuperClosure;
 class WorkerThreads;
 

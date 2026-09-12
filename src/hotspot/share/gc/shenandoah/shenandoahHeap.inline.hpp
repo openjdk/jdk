@@ -57,6 +57,7 @@
 #include "runtime/prefetch.inline.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/integerCast.hpp"
 
 inline ShenandoahHeap* ShenandoahHeap::heap() {
   return named_heap<ShenandoahHeap>(CollectedHeap::Shenandoah);

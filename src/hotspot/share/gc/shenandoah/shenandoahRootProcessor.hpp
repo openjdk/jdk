@@ -25,16 +25,23 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTPROCESSOR_HPP
 
-#include "code/codeCache.hpp"
 #include "gc/shared/oopStorageSetParState.hpp"
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahHeap;
+class ShenandoahNMethodTableSnapshot;
+class Thread;
 
 template <bool CONCURRENT>
 class ShenandoahVMWeakRoots {

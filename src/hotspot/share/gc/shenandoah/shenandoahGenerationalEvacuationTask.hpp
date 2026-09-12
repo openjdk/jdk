@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 
 #include "gc/shared/workerThread.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;

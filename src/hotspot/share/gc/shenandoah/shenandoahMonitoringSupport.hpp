@@ -27,14 +27,15 @@
 
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "runtime/task.hpp"
 
-class HSpaceCounters;
-class ShenandoahHeap;
 class CollectorCounters;
+class HSpaceCounters;
+class ShenandoahGenerationCounters;
+class ShenandoahHeap;
 class ShenandoahHeapRegionCounters;
 class ShenandoahMonitoringSupport;
-class ShenandoahGenerationCounters;
 class ShenandoahYoungGenerationCounters;
 
 class ShenandoahPeriodicCountersUpdateTask : public PeriodicTask {

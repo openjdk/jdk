@@ -27,18 +27,22 @@
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
-#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
-#include "gc/shenandoah/shenandoahMarkingContext.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahCollectionSet;
+
+class ShenandoahFreeSet;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
 class ShenandoahHeuristics;
+class ShenandoahMarkingContext;
 class ShenandoahMode;
+class ShenandoahObjToScanQueueSet;
 class ShenandoahReferenceProcessor;
 
 class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {

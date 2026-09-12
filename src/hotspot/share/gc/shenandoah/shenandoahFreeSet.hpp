@@ -26,11 +26,24 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFREESET_HPP
 
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahSimpleBitMap.hpp"
-#include "logging/logStream.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
+#include <sys/types.h>
+
+class LogStream;
+class outputStream;
+class ShenandoahAllocRequest;
+class ShenandoahFreeSet;
 
 typedef ShenandoahLock                           ShenandoahRebuildLock;
 typedef ShenandoahLocker<ShenandoahRebuildLock>  ShenandoahRebuildLocker;

@@ -25,9 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCATOR_HPP
 
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahPartitionAllocator.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahAllocRequest;
 
 typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Mutator>      ShenandoahMutatorAllocator;
 typedef ShenandoahPartitionAllocator<ShenandoahFreeSetPartitionId::Collector>    ShenandoahCollectorAllocator;

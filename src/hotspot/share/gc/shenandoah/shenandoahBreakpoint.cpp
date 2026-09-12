@@ -25,6 +25,7 @@
 
 #include "gc/shared/concurrentGCBreakpoints.hpp"
 #include "gc/shenandoah/shenandoahBreakpoint.hpp"
+#include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
 

@@ -27,8 +27,14 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "runtime/atomicAccess.hpp"
+#include "jni.h"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 ShenandoahHeapRegionSetIterator::ShenandoahHeapRegionSetIterator(const ShenandoahHeapRegionSet* const set) :
         _set(set), _heap(ShenandoahHeap::heap()), _current_index(0) {}
