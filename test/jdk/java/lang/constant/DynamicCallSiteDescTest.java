@@ -22,6 +22,8 @@
  */
 
 import java.lang.constant.*;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 
 import org.junit.jupiter.api.Test;
 
@@ -125,10 +127,14 @@ public class DynamicCallSiteDescTest extends SymbolicDescTest {
                 "_",
                 MethodTypeDesc.ofDescriptor("()I")
         );
-        assertEquals(desc, DynamicCallSiteDesc.of((DirectMethodHandleDesc)desc.bootstrapMethod(), desc.invocationType()));
-        assertEquals(desc, DynamicCallSiteDesc.of((DirectMethodHandleDesc)desc.bootstrapMethod(),
+        assertEquals(desc, DynamicCallSiteDesc.of(desc.bootstrapMethod(), desc.invocationType()));
+        assertEquals(desc, DynamicCallSiteDesc.of(desc.bootstrapMethod(),
                 desc.invocationName(), desc.invocationType()));
-        assertEquals(desc, DynamicCallSiteDesc.of((DirectMethodHandleDesc)desc.bootstrapMethod(),
+        assertEquals(desc, DynamicCallSiteDesc.of(desc.bootstrapMethod(),
                 desc.invocationName(), desc.invocationType(), desc.bootstrapArgs()));
+
+        var legacyGetter = assertDoesNotThrow(() -> MethodHandles.publicLookup()
+                .findVirtual(DynamicCallSiteDesc.class, "bootstrapMethod", MethodType.methodType(MethodHandleDesc.class)));
+        assertEquals(desc.bootstrapMethod(), assertDoesNotThrow(() -> (MethodHandleDesc) legacyGetter.invokeExact(desc)));
     }
 }
