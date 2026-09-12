@@ -61,6 +61,7 @@ void ResolvedMethodEntry::remove_unshareable_info() {
   reset_entry();
 }
 
+// Called from AOTArtifactFinder.
 void ResolvedMethodEntry::record_archivable_classes() {
   if (_method == nullptr) {
     assert(bytecode2() == Bytecodes::_invokevirtual, "");
