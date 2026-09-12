@@ -5924,9 +5924,10 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         int foldArgs   = combinerType.parameterCount();
         Class<?> rtype = combinerType.returnType();
         int foldVals = rtype == void.class ? 0 : 1;
-        int afterInsertPos = foldPos + foldVals;
-        boolean ok = (targetType.parameterCount() >= afterInsertPos + foldArgs);
+        boolean ok = foldPos >= 0 &&
+                foldPos <= targetType.parameterCount() - foldVals - foldArgs;
         if (ok) {
+            int afterInsertPos = foldPos + foldVals;
             for (int i = 0; i < foldArgs; i++) {
                 if (combinerType.parameterType(i) != targetType.parameterType(i + afterInsertPos)) {
                     ok = false;

@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8139885
+ * @bug 8139885 8367022
  * @run junit/othervm -ea -esa test.java.lang.invoke.FoldTest
  */
 
@@ -39,6 +39,7 @@ import static java.lang.invoke.MethodType.methodType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * Tests for the new fold method handle combinator added in JEP 274.
@@ -90,6 +91,33 @@ public class FoldTest {
         MethodHandle catTrace = MethodHandles.foldArguments(cat, 1, trace);
         assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         assertEquals("jum", swr.toString());
+    }
+
+    @Test
+    public void testInvalidFoldPositions() {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class, int.class));
+        int[] invalidPositions = {
+                -1,
+                Integer.MIN_VALUE,
+                Fold.MH_multer.type().parameterCount(),
+                Integer.MAX_VALUE
+        };
+        for (int pos : invalidPositions) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> MethodHandles.foldArguments(Fold.MH_multer, pos, Fold.MH_adder1));
+            assertThrows(IllegalArgumentException.class,
+                    () -> MethodHandles.foldArguments(Fold.MH_multer, pos, voidCombiner));
+        }
+    }
+
+    @Test
+    public void testVoidFoldAtEnd() throws Throwable {
+        MethodHandle voidCombiner = MethodHandles.empty(methodType(void.class));
+        int position = Fold.MH_multer.type().parameterCount();
+        MethodHandle fold = MethodHandles.foldArguments(Fold.MH_multer, position, voidCombiner);
+
+        assertEquals(Fold.MT_multer, fold.type());
+        assertEquals(120, (int) fold.invoke(2, 3, 4, 5));
     }
 
     static class Fold {
