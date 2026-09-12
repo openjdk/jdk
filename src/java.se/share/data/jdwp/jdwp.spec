@@ -3396,4 +3396,7 @@ JDWP "Java(tm) Debug Wire Protocol"
         "otherwise, all threads started. ")
     (Constant INVOKE_NONVIRTUAL = 0x02
         "otherwise, normal virtual invoke (instance methods only)")
+    (Constant INVOKE_DISABLE_COllECTION = 0x04
+        "otherwise, the instance returned (if any) and exception thrown (if any) "
+        "may be collected")
 )

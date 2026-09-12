@@ -247,6 +247,15 @@ public final class ClassTypeImpl extends InvokableTypeImpl
             vm.notifySuspend();
         }
 
+        if ((options & INVOKE_DISABLE_COLLECTION) != 0) {
+            // Account for implicit disableCollection() done by JDWP.
+            if (ret.exception != null) {
+                ret.exception.incrementGcDisableCount();
+            } else {
+                ret.newObject.incrementGcDisableCount();
+            }
+        }
+
         if (ret.exception != null) {
             throw new InvocationException(ret.exception);
         } else {
