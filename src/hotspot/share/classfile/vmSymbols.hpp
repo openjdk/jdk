@@ -738,6 +738,9 @@ class SerializeClosure;
   template(componentType_name,                         "componentType")                                           \
   template(primaryType_name,                           "primaryType")                                             \
   template(secondaryType_name,                         "secondaryType")                                           \
+  template(showSettingsBytes_name,                     "showSettingsBytes")                                       \
+  template(showSettingsBytes_signature,                "(Ljava/lang/String;JJJ)[B")                               \
+  template(jdk_internal_util_ShowSettings,             "jdk/internal/util/ShowSettings")                          \
                                                                                                                   \
   /* forEachRemaining support */                                                                                  \
   template(java_util_stream_StreamsRangeIntSpliterator,          "java/util/stream/Streams$RangeIntSpliterator")  \
