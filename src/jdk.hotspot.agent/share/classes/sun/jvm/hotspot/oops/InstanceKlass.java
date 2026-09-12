@@ -278,6 +278,9 @@ public class InstanceKlass extends Klass {
     if (isInterface()) {
       size += wordLength;
     }
+    if (this instanceof ValueKlass) {
+      size += ValueKlass.Members.getSize();
+    }
     return alignSize(size);
   }
 
