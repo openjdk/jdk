@@ -902,6 +902,26 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
+     * Returns the system mnemonic key mask to be used
+     * for shortcut keymask and/or accelerator keymask.
+     * The returned key modifiers/mask is used by Swing
+     * to set up a focus accelerator key stroke.
+     * For example, if it returns ALT_MASK it can be mapped
+     * to its virtual keycode VK_ALT and use it as
+     * accelerator keystroke, for e.x.
+     * ALT+F to open a file menu if the menu mnemonic is set to VK_F
+     * and/or
+     * ALT+S to save file if menuitem accelerator is set to VK_S keycode
+     * and this keymask.
+     *
+     * @return the Swing's mnemonic key mask
+     * @since 27
+     */
+    public static int getSystemMnemonicKeyMask() {
+        return SwingUtilities2.getSystemMnemonicKeyMask();
+    }
+
+    /**
      * Compute the width of the string using a font with the specified
      * "metrics" (sizes).
      *
