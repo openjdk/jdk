@@ -486,10 +486,19 @@
   // Mark a frame as not fully initialized. Must not be used for frames in the valid back chain.
   void mark_not_fully_initialized() const { DEBUG_ONLY(own_abi()->callers_sp = NOT_FULLY_INITIALIZED;)  }
 
+  enum class kind {
+    unknown,    // The frame's pc is not necessarily in the CodeCache.
+                // CodeCache::find_blob_fast() can yield wrong results here and must not be used.
+    code_blob,  // The frame's pc is known to be in the CodeCache but not likely in an nmethod.
+                // CodeCache::find_blob_fast() is correct but not faster.
+    nmethod     // This frame is likely from an nmethod.
+                // CodeCache lookup is optimized via NativePostCallNop payload.
+  };
+
  private:
 
   // Initialize frame members (_pc and _sp must be given)
-  inline void setup();
+  inline void setup(kind knd);
 
  public:
 
@@ -497,6 +506,7 @@
   inline frame(intptr_t* sp, intptr_t* fp, address pc);
   // To be used, if sp was not extended to match callee's calling convention.
   inline frame(intptr_t* sp, address pc, intptr_t* unextended_sp = nullptr, intptr_t* fp = nullptr, CodeBlob* cb = nullptr);
+  inline frame(intptr_t* sp, address pc, kind knd);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map, bool on_heap);
   inline frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map = nullptr);
 

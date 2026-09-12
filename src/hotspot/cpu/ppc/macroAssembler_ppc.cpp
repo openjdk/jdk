@@ -1278,7 +1278,7 @@ void MacroAssembler::post_call_nop() {
   relocate(post_call_nop_Relocation::spec());
   InlineSkippedInstructionsCounter skipCounter(this);
   Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));
-  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call not not found");
+  assert(is_post_call_nop(*(int*)(pc() - 4)), "post call nop not found");
 }
 
 int MacroAssembler::ic_check_size() {
