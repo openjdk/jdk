@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026 IBM Corp. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
+ * published by the Free Software Foundation. Oracle designates this
  * particular file as subject to the "Classpath" exception as provided
  * by Oracle in the LICENSE file that accompanied this code.
  *
@@ -25,22 +25,19 @@
 
 package sun.nio.ch;
 
-/**
- * Creates this platform's default SelectorProvider
- */
+import java.io.IOException;
+import java.nio.channels.Channel;
+import java.nio.channels.spi.SelectorProvider;
+import java.nio.channels.spi.AbstractSelector;
 
-public class DefaultSelectorProvider {
-    private static final SelectorProviderImpl INSTANCE = new PollsetSelectorProvider();
+public class PollsetSelectorProvider
+        extends SelectorProviderImpl
+{
+    public AbstractSelector openSelector() throws IOException {
+        return new PollsetSelectorImpl(this);
+    }
 
-    /**
-     * Prevent instantiation.
-     */
-    private DefaultSelectorProvider() { }
-
-    /**
-     * Returns the default SelectorProvider implementation.
-     */
-    public static SelectorProviderImpl get() {
-        return INSTANCE;
+    public Channel inheritedChannel() throws IOException {
+        return InheritedChannel.getChannel();
     }
 }
