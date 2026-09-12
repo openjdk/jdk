@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 
 package com.sun.security.sasl;
 
-import javax.security.sasl.*;
+import java.lang.ref.Cleaner;
+import java.lang.ref.Reference;
 import java.security.NoSuchAlgorithmException;
-
+import java.util.Arrays;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import javax.security.sasl.*;
+import sun.security.util.KeyUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -47,6 +50,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 final class CramMD5Client extends CramMD5Base implements SaslClient {
     private String username;
 
+    private final byte[] pw;
+    private Cleaner.Cleanable cleanable;
+
     /**
      * Creates a SASL mechanism with client credentials that it needs
      * to participate in CRAM-MD5 authentication exchange with the server.
@@ -54,7 +60,7 @@ final class CramMD5Client extends CramMD5Base implements SaslClient {
      * @param authID A  non-null string representing the principal
      * being authenticated.
      *
-     * @param pw A non-null String or byte[]
+     * @param pw A non-null byte[]
      * containing the password. If it is an array, it is first cloned.
      */
     CramMD5Client(String authID, byte[] pw) throws SaslException {
@@ -65,11 +71,13 @@ final class CramMD5Client extends CramMD5Base implements SaslClient {
 
         username = authID;
         this.pw = pw;  // caller should have already cloned
+        this.cleanable = KeyUtil.getCleanable(this, pw);
     }
 
     /**
      * CRAM-MD5 has no initial response.
      */
+    @Override
     public boolean hasInitialResponse() {
         return false;
     }
@@ -87,6 +95,7 @@ final class CramMD5Client extends CramMD5Base implements SaslClient {
      * @throws SaslException if platform does not have MD5 support
      * @throws IllegalStateException if this method is invoked more than once.
      */
+    @Override
     public byte[] evaluateChallenge(byte[] challengeData)
         throws SaslException {
 
@@ -101,6 +110,11 @@ final class CramMD5Client extends CramMD5Base implements SaslClient {
                 "CRAM-MD5 authentication previously aborted due to error");
         }
 
+        if (cleanable == null) {
+            throw new IllegalStateException(
+                "CRAM-MD5 authentication already disposed");
+        }
+
         // generate a keyed-MD5 digest from the user's password and challenge.
         try {
             if (logger.isLoggable(Level.FINE)) {
@@ -110,20 +124,31 @@ final class CramMD5Client extends CramMD5Base implements SaslClient {
 
             String digest = HMAC_MD5(pw, challengeData);
 
-            // clear it when we no longer need it
-            clearPassword();
-
             // response is username + " " + digest
             String resp = username + " " + digest;
-
             logger.log(Level.FINE, "CRAMCLNT02:Sending response: {0}", resp);
-
             completed = true;
 
             return resp.getBytes(UTF_8);
         } catch (java.security.NoSuchAlgorithmException e) {
             aborted = true;
             throw new SaslException("MD5 algorithm not available on platform", e);
+        } finally {
+            // clear it when we no longer need it
+            clearPassword();
+            Reference.reachabilityFence(this);
+        }
+    }
+
+    @Override
+    public void dispose() throws SaslException {
+        clearPassword();
+    }
+
+    private void clearPassword() {
+        if (cleanable != null) {
+            cleanable.clean();
+            cleanable = null;
         }
     }
 }
