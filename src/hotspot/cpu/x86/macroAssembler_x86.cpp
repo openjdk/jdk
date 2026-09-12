@@ -9668,6 +9668,30 @@ void MacroAssembler::kand(BasicType type, KRegister dst, KRegister src1, KRegist
   }
 }
 
+void MacroAssembler::kandn(BasicType type, KRegister dst, KRegister src1, KRegister src2) {
+  switch(type) {
+    case T_BOOLEAN:
+    case T_BYTE:
+       kandnbl(dst, src1, src2);
+       break;
+    case T_CHAR:
+    case T_SHORT:
+       kandnwl(dst, src1, src2);
+       break;
+    case T_INT:
+    case T_FLOAT:
+       kandndl(dst, src1, src2);
+       break;
+    case T_LONG:
+    case T_DOUBLE:
+       kandnql(dst, src1, src2);
+       break;
+    default:
+      fatal("Unexpected type argument %s", type2name(type));
+      break;
+  }
+}
+
 void MacroAssembler::kor(BasicType type, KRegister dst, KRegister src1, KRegister src2) {
   switch(type) {
     case T_BOOLEAN:
