@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,20 @@
 
 #ifndef PRODUCT
   #define TRACE_BCEA(level, code)                                            \
-    if (EstimateArgEscape && BCEATraceLevel >= level) {                        \
+    if (EstimateArgEscape && BCEATraceLevel >= level) {                      \
+      print_header(_level);                                                  \
       code;                                                                  \
     }
 #else
   #define TRACE_BCEA(level, code)
 #endif
+
+static const int INDENTATION_WIDTH = 2;
+
+static void print_header(int level) {
+  tty->print("[EA] ");
+  tty->sp(INDENTATION_WIDTH * clamp(level, 0, max_jint / INDENTATION_WIDTH));
+}
 
 // Maintain a map of which arguments a local variable or
 // stack slot may contain.  In addition to tracking
@@ -298,7 +306,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
     skip_callee = true;
   }
   if (skip_callee) {
-    TRACE_BCEA(3, tty->print_cr("[EA] skipping method %s::%s", holder->name()->as_utf8(), target->name()->as_utf8()));
+    TRACE_BCEA(3, tty->print_cr("skipping method %s::%s", holder->name()->as_klass_external_name(), target->name()->as_utf8()));
     for (i = 0; i < arg_size; i++) {
       set_method_escape(state.raw_pop());
     }
@@ -360,7 +368,7 @@ void BCEscapeAnalyzer::invoke(StateInfo &state, Bytecodes::Code code, ciMethod* 
       _dependencies.appendAll(analyzer.dependencies());
     }
   } else {
-    TRACE_BCEA(1, tty->print_cr("[EA] virtual method %s is not monomorphic.",
+    TRACE_BCEA(1, tty->print_cr("virtual method %s is not monomorphic.",
                                 target->name()->as_utf8()));
     // conservatively mark all actual parameters as escaping globally
     for (i = 0; i < arg_size; i++) {
@@ -1326,7 +1334,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
       || _level > MaxBCEAEstimateLevel
       || method()->code_size() > MaxBCEAEstimateSize)) {
     if (BCEATraceLevel >= 1) {
-      tty->print("Skipping method because: ");
+      print_header(level());
+      tty->print("skipping method because: ");
       if (method()->is_abstract())
         tty->print_cr("method is abstract.");
       else if (method()->is_native())
@@ -1348,7 +1357,8 @@ void BCEscapeAnalyzer::compute_escape_info() {
   }
 
   if (BCEATraceLevel >= 1) {
-    tty->print("[EA] estimating escape information for");
+    print_header(level());
+    tty->print("estimating escape information for");
     if (iid != vmIntrinsics::_none)
       tty->print(" intrinsic");
     method()->print_short_name();
@@ -1429,38 +1439,75 @@ void BCEscapeAnalyzer::read_escape_info() {
 }
 
 #ifndef PRODUCT
-void BCEscapeAnalyzer::dump() {
-  tty->print("[EA] estimated escape information for");
-  method()->print_short_name();
-  tty->print_cr(has_dependencies() ? " (not stored)" : "");
-  tty->print("     non-escaping args:      ");
-  _arg_local.print();
-  tty->print("     stack-allocatable args: ");
-  _arg_stack.print();
-  if (_return_local) {
-    tty->print("     returned args:          ");
-    _arg_returned.print();
-  } else if (is_return_allocated()) {
-    tty->print_cr("     return allocated value");
-  } else {
-    tty->print_cr("     return non-local value");
-  }
-  tty->print("     modified args: ");
+
+static const char* const COMMA_SEPARATOR = ", ";
+
+void BCEscapeAnalyzer::dump_arg_set(const VectorSet &set) {
+  tty->print("{");
+  const char* sep = "";
   for (int i = 0; i < _arg_size; i++) {
-    if (_arg_modified[i] == 0)
-      tty->print("    0");
-    else
-      tty->print("    0x%x", _arg_modified[i]);
+    if (set.test(i)) {
+      tty->print("%s%d", sep, i);
+      sep = COMMA_SEPARATOR;
+    }
   }
+  tty->print("}");
+}
+
+void BCEscapeAnalyzer::dump() {
+  print_header(level());
+  tty->print("estimated escape information for");
+  method()->print_short_name();
+  tty->print(has_dependencies() ? " (not stored)" : "");
+  tty->print_cr(_arg_size == 1 ? " (%d arg slot):" : " (%d arg slots):", _arg_size);
+  print_header(level());
+  tty->print("- non-escaping args:      ");
+  dump_arg_set(_arg_local);
   tty->cr();
-  tty->print("     flags: ");
-  if (_return_allocated)
-    tty->print(" return_allocated");
-  if (_allocated_escapes)
-    tty->print(" allocated_escapes");
-  if (_unknown_modified)
-    tty->print(" unknown_modified");
+  print_header(level());
+  tty->print("- stack-allocatable args: ");
+  dump_arg_set(_arg_stack);
   tty->cr();
+  print_header(level());
+  if (_return_local) {
+    tty->print("- returned args:          ");
+    dump_arg_set(_arg_returned);
+    tty->cr();
+  } else if (is_return_allocated()) {
+    tty->print_cr("- return allocated value");
+  } else {
+    tty->print_cr("- return non-local value");
+  }
+  print_header(level());
+  tty->print("- modified args:          ");
+  tty->print("[");
+  const char* sep = "";
+  for (int i = 0; i < _arg_size; i++) {
+    tty->print("%s", sep);
+    if (_arg_modified[i] == 0) {
+      tty->print("0");
+    } else {
+      tty->print("0x%x", _arg_modified[i]);
+    }
+    sep = COMMA_SEPARATOR;
+  }
+  tty->print_cr("]");
+  print_header(level());
+  tty->print("- flags:                  {");
+  sep = "";
+  if (_return_allocated) {
+    tty->print("%sreturn_allocated", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_allocated_escapes) {
+    tty->print("%sallocated_escapes", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  if (_unknown_modified) {
+    tty->print("%sunknown_modified", sep);
+    sep = COMMA_SEPARATOR;
+  }
+  tty->print_cr("}");
 }
 #endif
 
@@ -1491,15 +1538,14 @@ BCEscapeAnalyzer::BCEscapeAnalyzer(ciMethod* method, BCEscapeAnalyzer* parent)
     if (methodData() == nullptr)
       return;
     if (methodData()->has_escape_info()) {
-      TRACE_BCEA(2, tty->print_cr("[EA] Reading previous results for %s.%s",
-                                  method->holder()->name()->as_utf8(),
+      TRACE_BCEA(2, tty->print_cr("reading previous results for %s::%s",
+                                  method->holder()->name()->as_klass_external_name(),
                                   method->name()->as_utf8()));
       read_escape_info();
     } else {
-      TRACE_BCEA(2, tty->print_cr("[EA] computing results for %s.%s",
-                                  method->holder()->name()->as_utf8(),
+      TRACE_BCEA(2, tty->print_cr("computing results for %s::%s",
+                                  method->holder()->name()->as_klass_external_name(),
                                   method->name()->as_utf8()));
-
       compute_escape_info();
       methodData()->update_escape_info();
     }
