@@ -26,6 +26,7 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.beans.*;
@@ -187,24 +188,55 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
     }
 
     protected void paint(final Graphics g) {
-        // this is questionable. We may want the insets to mean something different.
         final Insets i = progressBar.getInsets();
-        final int width = progressBar.getWidth() - (i.right + i.left);
-        final int height = progressBar.getHeight() - (i.bottom + i.top);
+        final int componentWidth = progressBar.getWidth();
+        final int componentHeight = progressBar.getHeight();
+        final int width = componentWidth - (i.right + i.left);
+        final int height = componentHeight - (i.bottom + i.top);
 
-        Graphics2D g2 = (Graphics2D) g;
+        Graphics2D g2;
+        BufferedImage image = null;
+
+        if (g instanceof Graphics2D) {
+            g2 = (Graphics2D) g;
+        } else {
+            image = new BufferedImage(componentWidth, componentHeight,
+                                      BufferedImage.TYPE_INT_RGB);
+            g2 = image.createGraphics();
+            g2.setColor(progressBar.getBackground());
+            g2.fillRect(0, 0, componentWidth, componentHeight);
+        }
+
         final AffineTransform savedAT = g2.getTransform();
         if (!progressBar.getComponentOrientation().isLeftToRight()) {
             //Scale operation: Flips component about pivot
             //Translate operation: Moves component back into original position
             g2.scale(-1, 1);
-            g2.translate(-progressBar.getWidth(), 0);
+            g2.translate(-componentWidth, 0);
         }
-        painter.paint(g, progressBar, i.left, i.top, width, height);
-
+        painter.paint(g2, progressBar, i.left, i.top, width, height);
         g2.setTransform(savedAT);
-        if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
-                paintString(g, i.left, i.top, width, height);
+
+        if (image != null) {
+            if (!isHorizontal()) {
+                if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+                    paintString(g2, i.left, i.top, width, height);
+                }
+                g2.dispose();
+                g.drawImage(image, 0, 0, null);
+            } else {
+                g.drawImage(image, 0, 0, null);
+                g2.dispose();
+                if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+                    paintString(g, i.left, i.top, width, height);
+                }
+            }
+        } else if (progressBar.isStringPainted() && !progressBar.isIndeterminate()) {
+            BufferedImage stringImage = new BufferedImage(componentWidth, componentHeight, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D stringGraphics = stringImage.createGraphics();
+            paintString(stringGraphics, i.left, i.top, width, height);
+            stringGraphics.dispose();
+            g.drawImage(stringImage, 0, 0, null);
         }
     }
 
@@ -215,18 +247,17 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
     }
 
     protected void paintString(final Graphics g, final int x, final int y, final int width, final int height) {
-        if (!(g instanceof Graphics2D)) return;
 
-        final Graphics2D g2 = (Graphics2D)g;
         final String progressString = progressBar.getString();
-        g2.setFont(progressBar.getFont());
-        final Point renderLocation = getStringPlacement(g2, progressString, x, y, width, height);
-        final Rectangle oldClip = g2.getClipBounds();
+        g.setFont(progressBar.getFont());
+        final Point renderLocation = getStringPlacement(g, progressString, x, y, width, height);
+        final Rectangle oldClip = g.getClipBounds();
 
         if (isHorizontal()) {
-            g2.setColor(selectionForeground);
-            SwingUtilities2.drawString(progressBar, g2, progressString, renderLocation.x, renderLocation.y);
+            g.setColor(selectionForeground);
+            SwingUtilities2.drawString(progressBar, g, progressString, renderLocation.x, renderLocation.y);
         } else { // VERTICAL
+            Graphics2D g2 = (Graphics2D) g;
             // We rotate it -90 degrees, then translate it down since we are going to be bottom up.
             final AffineTransform savedAT = g2.getTransform();
             g2.transform(AffineTransform.getRotateInstance(0.0f - (Math.PI / 2.0f), 0, 0));
@@ -240,7 +271,7 @@ public final class AquaProgressBarUI extends ProgressBarUI implements ChangeList
             g2.setTransform(savedAT);
         }
 
-        g2.setClip(oldClip);
+        g.setClip(oldClip);
     }
 
     /**

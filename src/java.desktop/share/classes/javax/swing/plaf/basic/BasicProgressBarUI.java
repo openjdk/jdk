@@ -773,7 +773,8 @@ public class BasicProgressBarUI extends ProgressBarUI {
                 } else {
                     g.drawRect(b.left, b.top, barRectWidth, barRectHeight);
                     if (cellSpacing == 0 && amountFull > 0) {
-                        g.fillRect(barRectWidth + b.left, b.top, amountFull, barRectHeight);
+                        g.fillRect(barRectWidth + b.left, b.top,
+                                   barRectWidth + b.left - amountFull, barRectHeight);
                     } else {
                         for (int i = 0; i < barRectWidth; i += cellLength + cellSpacing) {
                             g.fillRect( barRectWidth + b.left + i, b.top,

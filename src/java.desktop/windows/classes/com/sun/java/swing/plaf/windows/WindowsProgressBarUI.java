@@ -183,30 +183,29 @@ public class WindowsProgressBarUI extends BasicProgressBarUI
                         }
                     } else {
                         if (g instanceof Graphics2D) {
-                            g2d.drawLine(2 + barRectWidth,
-                                    barRectHeight / 2 + 1,
-                                    2 + barRectWidth - (amountFull - 2),
-                                    barRectHeight / 2 + 1);
+                            g2d.drawLine(progressBar.getWidth(),
+                                    progressBar.getHeight() / 2,
+                                     progressBar.getWidth() - amountFull,
+                                    progressBar.getHeight() / 2);
                         } else {
-                            g.drawRect(2 + barRectWidth, barRectHeight + 1,
-                                       barRectWidth, barRectHeight + 1);
-                            g.fillRect(2 + barRectWidth, barRectHeight + 1,
-                                        amountFull, barRectHeight + 1);
+                            g.drawRect(0, 0, barRectWidth, barRectHeight);
+                            g.fillRect(barRectWidth - amountFull, 0, amountFull, barRectHeight);
                         }
                     }
                     paintString(g, 0, 0, (int)(barRectWidth / scaleX),
                                 (int)(barRectHeight / scaleY), amountFull, null);
                 } else {
                     if (g instanceof Graphics2D) {
-                        g2d.drawLine(barRectWidth / 2 + 1, barRectHeight + 1,
-                                barRectWidth / 2 + 1, barRectHeight + 1 - amountFull + 2);
+                        int drawWidth = progressBar.getWidth();
+                        int drawHeight = progressBar.getHeight();
+                        g2d.drawLine(drawWidth / 2, drawHeight - 1,
+                                     drawWidth / 2, drawHeight - amountFull);
+                        paintString(g, 0, 0, drawWidth, drawHeight, amountFull, null);
                     } else {
-                        g.drawRect(barRectWidth + 1, barRectHeight + 1,
-                                barRectWidth + 1, barRectHeight + 1);
-                        g.fillRect(barRectWidth + 1, barRectHeight + 1,
-                                    barRectWidth + 1, amountFull);
+                        g.drawRect(0, 0, barRectWidth, barRectHeight);
+                        g.fillRect(0, barRectHeight - amountFull, barRectWidth, amountFull);
+                        paintString(g, 2, 2, barRectWidth, barRectHeight, amountFull, null);
                     }
-                    paintString(g, 2, 2, barRectWidth, barRectHeight, amountFull, null);
                 }
 
             } else {
