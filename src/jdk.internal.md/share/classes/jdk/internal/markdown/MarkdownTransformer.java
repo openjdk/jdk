@@ -172,6 +172,7 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                 case HIDDEN -> transform((DCTree.DCHidden) tree);
                 case INDEX -> transform((DCTree.DCIndex) tree);
                 case LINK, LINK_PLAIN -> transform((DCTree.DCLink) tree);
+                case NOTE -> transform((DCTree.DCNote) tree);
                 case PARAM -> transform((DCTree.DCParam) tree);
                 case PROVIDES -> transform((DCTree.DCProvides) tree);
                 case RETURN -> transform((DCTree.DCReturn) tree);
@@ -334,6 +335,13 @@ public class MarkdownTransformer implements JavacTrees.DocCommentTreeTransformer
                 case LINK_PLAIN -> m.at(tree.pos).newLinkPlainTree(tree.ref, label2).setEndPos(tree.getEndPos());
                 default -> throw new IllegalArgumentException(tree.getKind().toString());
             };
+        }
+
+        private DCTree.DCNote transform(DCTree.DCNote tree) {
+            var body2 = transform(tree.body);
+            return (equal(body2, tree.body))
+                    ? tree
+                    : m.at(tree.pos).newNoteTree(tree.tagName, tree.attributes, body2, tree.isInline);
         }
 
         private DCTree.DCParam transform(DCTree.DCParam tree) {

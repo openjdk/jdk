@@ -534,8 +534,9 @@ document.addEventListener("DOMContentLoaded", function(e) {
     document.querySelectorAll("h1, h2, h3, h4, h5, h6")
         .forEach((hdr, idx) => {
             // Create anchor links for headers with an associated id attribute
-            var id = hdr.parentElement.getAttribute("id") || hdr.getAttribute("id")
-                || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"));
+            var id = hdr.getAttribute("id")
+                || (hdr.querySelector("a") && hdr.querySelector("a").getAttribute("id"))
+                || hdr.parentElement.getAttribute("id");
             if (id) {
                 var template = document.createElement('template');
                 template.innerHTML =" <a href='#" + encodeURI(id) + "' class='anchor-link' aria-label='"

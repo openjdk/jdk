@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 
-import com.sun.source.doctree.UnknownBlockTagTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyles;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -87,15 +86,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
             target.add(HtmlTree.P(contents.getContent("doclet.Preview_API_Checkbox_Label")));
             Content list = HtmlTree.UL(HtmlStyles.previewFeatureList).addStyle(HtmlStyles.checkboxes);
             for (var jep : jeps) {
-                Content label;
-                if (jep.number() != 0) {
-                    String jepUrl = resources.getText("doclet.Preview_JEP_URL", String.valueOf(jep.number()));
-                    label = new ContentBuilder(Text.of(jep.number() + ": "))
-                            .add(HtmlTree.A(jepUrl, Text.of(jep.title() + " (" + jep.status() + ")")));
-                } else {
-                    // Pseudo-JEP created from javadoc tag - use description as label
-                    label = Text.of(jep.title());
-                }
+                Content label = getLabel(jep);
                 list.add(HtmlTree.LI(getCheckbox(label, String.valueOf(index++), "feature-")));
             }
             Content label = contents.getContent("doclet.Preview_API_Checkbox_Toggle_All");
@@ -163,5 +154,18 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
     @Override
     protected HtmlStyle[] getColumnStyles() {
         return new HtmlStyle[]{ HtmlStyles.colSummaryItemName, HtmlStyles.colSecond, HtmlStyles.colLast };
+    }
+
+    private Content getLabel(PreviewAPIListBuilder.JEP jep) {
+        var label = new ContentBuilder();
+        if (jep.number() != 0) {
+            label.add(jep.number() + ": ");
+        }
+        if (jep.url().isBlank()) {
+            label.add(Text.of(jep.titleAndStatus()));
+        } else {
+            label.add(HtmlTree.A(jep.url(), Text.of(jep.titleAndStatus())));
+        }
+        return label;
     }
 }
