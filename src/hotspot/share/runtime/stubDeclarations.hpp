@@ -1078,7 +1078,7 @@
   do_stub(final, method_entry_barrier)                                  \
   do_entry(final, method_entry_barrier, method_entry_barrier,           \
            method_entry_barrier)                                        \
-  do_stub(final, vectorizedMismatch) /* only used by x86! */            \
+  do_stub(final, vectorizedMismatch)                                    \
   do_entry(final, vectorizedMismatch, vectorizedMismatch,               \
            vectorizedMismatch)                                          \
   do_stub(final, upcall_stub_exception_handler)                         \
