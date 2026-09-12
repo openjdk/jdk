@@ -37,6 +37,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -3362,6 +3363,9 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as 16-bit
      * code units in the specified {@link Charset}}
      *
+     * <p>This method runs in constant time, and is intended to be used as a guard for
+     * {@link ShortVector#fromString(VectorSpecies, String, Charset, int)}.
+     *
      * @param string the string
      * @param charset the charset representing the 16-bit character encoding
      * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
@@ -3373,6 +3377,18 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
         return charset == StandardCharsets.UTF_16;
+    }
+
+    @DontInline
+    private static void throwNotCompatible(Charset charset) {
+        throw new IllegalArgumentException("String is not compatible with: " + charset);
+    }
+
+    @ForceInline
+    private static void checkCompatibleWith(String string, Charset charset) {
+        if (!compatibleWith(string, charset)) {
+            throwNotCompatible(charset);
+        }
     }
 
     /**
@@ -3394,11 +3410,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
     @ForceInline
     public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         offset = checkFromIndexSize(offset, species.length(), string.length());
         byte coder = StringSupport.stringCoder(string);
         MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
@@ -3438,12 +3450,8 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
     @ForceInline
     public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset, VectorMask<Short> m) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
         Objects.requireNonNull(m);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         byte coder = StringSupport.stringCoder(string);
         MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
         if (coder == 0) {

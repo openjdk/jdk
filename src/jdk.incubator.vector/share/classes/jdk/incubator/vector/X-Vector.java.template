@@ -41,6 +41,9 @@ import jdk.internal.foreign.StringSupport;
 #end[byteOrStrictShort]
 import jdk.internal.misc.ScopedMemoryAccess;
 import jdk.internal.misc.Unsafe;
+#if[byteOrStrictShort]
+import jdk.internal.vm.annotation.DontInline;
+#end[byteOrStrictShort]
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.vector.VectorSupport;
 
@@ -4263,6 +4266,9 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ShortVector} as 16-bit
      * code units in the specified {@link Charset}}
      *
+     * <p>This method runs in constant time, and is intended to be used as a guard for
+     * {@link ShortVector#fromString(VectorSpecies, String, Charset, int)}.
+     *
      * @param string the string
      * @param charset the charset representing the 16-bit character encoding
      * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
@@ -4274,6 +4280,18 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
         return charset == StandardCharsets.UTF_16;
+    }
+
+    @DontInline
+    private static void throwNotCompatible(Charset charset) {
+        throw new IllegalArgumentException("String is not compatible with: " + charset);
+    }
+
+    @ForceInline
+    private static void checkCompatibleWith(String string, Charset charset) {
+        if (!compatibleWith(string, charset)) {
+            throwNotCompatible(charset);
+        }
     }
 
     /**
@@ -4295,11 +4313,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         offset = checkFromIndexSize(offset, species.length(), string.length());
         byte coder = StringSupport.stringCoder(string);
         MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
@@ -4339,12 +4353,8 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public static ShortVector fromString(VectorSpecies<Short> species, String string, Charset charset, int offset, VectorMask<Short> m) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
         Objects.requireNonNull(m);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         byte coder = StringSupport.stringCoder(string);
         MemorySegment segment = StringSupport.asReadOnlyMemorySegment(string);
         if (coder == 0) {
@@ -5175,6 +5185,9 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
      * {@return {@code true} if the given {@link String} can be loaded into a {@link ByteVector} as 8-bit
      * code units in the specified {@link Charset}}
      *
+     * <p>This method runs in constant time, and is intended to be used as a guard for
+     * {@link ByteVector#fromString(VectorSpecies, String, Charset, int)}.
+     *
      * @param string the string
      * @param charset the charset representing the 8-bit character encoding
      * @throws NullPointerException if {@code string} or {@code charset} is {@code null}
@@ -5186,6 +5199,18 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
         Objects.requireNonNull(string);
         Objects.requireNonNull(charset);
         return StringSupport.stringCoder(string) == 0 && charset == StandardCharsets.ISO_8859_1;
+    }
+
+    @DontInline
+    private static void throwNotCompatible(Charset charset) {
+        throw new IllegalArgumentException("String is not compatible with: " + charset);
+    }
+
+    @ForceInline
+    private static void checkCompatibleWith(String string, Charset charset) {
+        if (!compatibleWith(string, charset)) {
+            throwNotCompatible(charset);
+        }
     }
 
     /**
@@ -5207,11 +5232,7 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         offset = checkFromIndexSize(offset, species.length(), string.length());
         return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder());
     }
@@ -5237,12 +5258,8 @@ public abstract sealed class $abstractvectortype$ extends AbstractVector<$Boxtyp
     @ForceInline
     public static ByteVector fromString(VectorSpecies<Byte> species, String string, Charset charset, int offset, VectorMask<Byte> m) {
         Objects.requireNonNull(species);
-        Objects.requireNonNull(string);
-        Objects.requireNonNull(charset);
         Objects.requireNonNull(m);
-        if (!compatibleWith(string, charset)) {
-            throw new IllegalArgumentException("String is not compatible with: " + charset);
-        }
+        checkCompatibleWith(string, charset);
         return fromMemorySegment(species, StringSupport.asReadOnlyMemorySegment(string), offset, ByteOrder.nativeOrder(), m);
     }
 #end[byte]

@@ -23,16 +23,18 @@
 
 /*
  * @test
+ * @bug 8390049
  * @modules jdk.incubator.vector
- * @run testng StringLoadTest
+ * @run junit/othervm -XX:+CompactStrings StringLoadTest
  */
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.incubator.vector.*;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -55,7 +57,8 @@ public class StringLoadTest {
                     ShortVector.SPECIES_512,
                     ShortVector.SPECIES_MAX);
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testShortVector(String string) {
         for (VectorSpecies<Short> species : SHORT_SPECIES) {
             assertTrue(ShortVector.compatibleWith(string, StandardCharsets.UTF_16));
@@ -64,8 +67,8 @@ public class StringLoadTest {
                         ShortVector.fromString(species, string, StandardCharsets.UTF_16, i);
                 for (int lane = 0; lane < species.length(); lane++) {
                     assertEquals(
-                            vec.lane(lane),
                             (short) string.charAt(i + lane),
+                            vec.lane(lane),
                             String.format(
                                     "mismatch at offset %d for lane %d in %s", i, lane, string));
                 }
@@ -73,7 +76,8 @@ public class StringLoadTest {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testShortVectorMask(String string) {
         for (VectorSpecies<Short> species : SHORT_SPECIES) {
             assertTrue(ShortVector.compatibleWith(string, StandardCharsets.UTF_16));
@@ -85,8 +89,8 @@ public class StringLoadTest {
                     short expected =
                             (i + lane < string.length()) ? (short) string.charAt(i + lane) : 0;
                     assertEquals(
-                            vec.lane(lane),
                             expected,
+                            vec.lane(lane),
                             String.format(
                                     "mismatch at offset %d for lane %d in %s", i, lane, string));
                 }
@@ -94,7 +98,8 @@ public class StringLoadTest {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testByteVector(String string) {
         boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
         if (!isLatin1) {
@@ -108,8 +113,8 @@ public class StringLoadTest {
                         ByteVector.fromString(species, string, StandardCharsets.ISO_8859_1, i);
                 for (int lane = 0; lane < species.length(); lane++) {
                     assertEquals(
-                            vec.lane(lane),
                             (byte) string.charAt(i + lane),
+                            vec.lane(lane),
                             String.format(
                                     "mismatch at offset %d for lane %d in %s", i, lane, string));
                 }
@@ -117,7 +122,8 @@ public class StringLoadTest {
         }
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void testByteVectorMask(String string) {
         boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
         if (!isLatin1) {
@@ -135,8 +141,8 @@ public class StringLoadTest {
                     byte expected =
                             (i + lane < string.length()) ? (byte) string.charAt(i + lane) : 0;
                     assertEquals(
-                            vec.lane(lane),
                             expected,
+                            vec.lane(lane),
                             String.format(
                                     "mismatch at offset %d for lane %d in %s", i, lane, string));
                 }
@@ -308,15 +314,16 @@ public class StringLoadTest {
                                 mask));
     }
 
-    @Test(dataProvider = "strings")
+    @ParameterizedTest
+    @MethodSource("strings")
     public void compatibleWith(String string) {
         for (Charset charset : Charset.availableCharsets().values()) {
             boolean isLatin1 = string.chars().allMatch(c -> c <= 0xFF);
             boolean byteCompatible = isLatin1 && charset == StandardCharsets.ISO_8859_1;
-            assertEquals(ByteVector.compatibleWith(string, charset), byteCompatible);
+            assertEquals(byteCompatible, ByteVector.compatibleWith(string, charset));
 
             boolean shortCompatible = charset == StandardCharsets.UTF_16;
-            assertEquals(ShortVector.compatibleWith(string, charset), shortCompatible);
+            assertEquals(shortCompatible, ShortVector.compatibleWith(string, charset));
         }
     }
 
@@ -324,7 +331,6 @@ public class StringLoadTest {
         return string.repeat((512 / string.length()) + 1);
     }
 
-    @DataProvider
     public static Object[][] strings() {
         return new Object[][] {
             {""},
