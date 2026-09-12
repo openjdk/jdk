@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,14 +83,10 @@ JfrCPUTimeTraceQueue::~JfrCPUTimeTraceQueue() {
 bool JfrCPUTimeTraceQueue::enqueue(JfrCPUTimeSampleRequest& request) {
   assert(JavaThread::current()->jfr_thread_local()->is_cpu_time_jfr_enqueue_locked(), "invariant");
   assert(&JavaThread::current()->jfr_thread_local()->cpu_time_jfr_queue() == this, "invariant");
-  u4 elementIndex;
-  do {
-    elementIndex = AtomicAccess::load_acquire(&_head);
-    if (elementIndex >= _capacity) {
-      return false;
-    }
-  } while (AtomicAccess::cmpxchg(&_head, elementIndex, elementIndex + 1) != elementIndex);
-  _data[elementIndex] = request;
+  if (_head >= _capacity) {
+    return false;
+  }
+  _data[_head++] = request;
   return true;
 }
 
@@ -100,20 +97,8 @@ JfrCPUTimeSampleRequest& JfrCPUTimeTraceQueue::at(u4 index) {
 
 static volatile u4 _lost_samples_sum = 0;
 
-u4 JfrCPUTimeTraceQueue::size() const {
-  return AtomicAccess::load_acquire(&_head);
-}
-
-void JfrCPUTimeTraceQueue::set_size(u4 size) {
-  AtomicAccess::release_store(&_head, size);
-}
-
-u4 JfrCPUTimeTraceQueue::capacity() const {
-  return AtomicAccess::load_acquire(&_capacity);
-}
-
 void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
-  if (capacity == AtomicAccess::load(&_capacity)) {
+  if (capacity == _capacity) {
     return;
   }
   _head = 0;
@@ -126,11 +111,7 @@ void JfrCPUTimeTraceQueue::set_capacity(u4 capacity) {
   } else {
     _data = nullptr;
   }
-  AtomicAccess::release_store(&_capacity, capacity);
-}
-
-bool JfrCPUTimeTraceQueue::is_empty() const {
-  return AtomicAccess::load_acquire(&_head) == 0;
+  _capacity = capacity;
 }
 
 u4 JfrCPUTimeTraceQueue::lost_samples() const {
@@ -155,11 +136,11 @@ u4 JfrCPUTimeTraceQueue::get_and_reset_lost_samples_due_to_queue_full() {
 }
 
 void JfrCPUTimeTraceQueue::init() {
-  set_capacity(JfrCPUTimeTraceQueue::CPU_TIME_QUEUE_INITIAL_CAPACITY);
+  set_capacity(CPU_TIME_QUEUE_INITIAL_CAPACITY);
 }
 
 void JfrCPUTimeTraceQueue::clear() {
-  AtomicAccess::release_store(&_head, (u4)0);
+  _head = 0;
 }
 
 void JfrCPUTimeTraceQueue::resize_if_needed() {
@@ -167,7 +148,7 @@ void JfrCPUTimeTraceQueue::resize_if_needed() {
   if (lost_samples_due_to_queue_full == 0) {
     return;
   }
-  u4 capacity = AtomicAccess::load(&_capacity);
+  u4 capacity = _capacity;
   if (capacity < CPU_TIME_QUEUE_MAX_CAPACITY) {
     float ratio = (float)lost_samples_due_to_queue_full / (float)capacity;
     int factor = 1;
@@ -364,8 +345,9 @@ void JfrCPUSamplerThread::disenroll() {
   if (!AtomicAccess::cmpxchg(&_disenrolled, false, true)) {
     log_trace(jfr)("Disenrolling CPU thread sampler");
     if (AtomicAccess::load_acquire(&_signal_handler_installed)) {
-      stop_timer();
+      // Ensure no signal handlers are running before deleting timers and queues
       stop_signal_handlers();
+      stop_timer();
     }
     _sample.wait();
     log_trace(jfr)("Disenrolled CPU thread sampler");
@@ -703,14 +685,19 @@ void JfrCPUSamplerThread::stop_signal_handlers() {
 
 // returns false if the stop signal bit was set, true otherwise
 bool JfrCPUSamplerThread::increment_signal_handler_count() {
-  // increment the count of active signal handlers
-  u4 old_value = AtomicAccess::fetch_then_add(&_active_signal_handlers, (u4)1, memory_order_acq_rel);
-  if ((old_value & STOP_SIGNAL_BIT) != 0) {
-    // if the stop signal bit was set, we are not allowed to increment
-    AtomicAccess::dec(&_active_signal_handlers, memory_order_acq_rel);
-    return false;
+  u4 count = AtomicAccess::load_acquire(&_active_signal_handlers);
+  while (true) {
+    if ((count & STOP_SIGNAL_BIT) != 0) {
+      // if the stop signal bit was set, we are not allowed to increment
+      return false;
+    }
+    // atomically increment the count of active signal handlers
+    u4 expected = count;
+    count = AtomicAccess::cmpxchg(&_active_signal_handlers, expected, expected + 1, memory_order_acq_rel);
+    if (count == expected) {
+      return true;
+    }
   }
-  return true;
 }
 
 void JfrCPUSamplerThread::decrement_signal_handler_count() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -617,7 +617,6 @@ bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
 }
 
 bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
-  CPUTimeLockState got;
   while (true)  {
     CPUTimeLockState got = AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
     if (got == UNLOCKED) {
