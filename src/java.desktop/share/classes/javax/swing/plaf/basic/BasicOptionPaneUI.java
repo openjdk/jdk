@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -993,8 +993,25 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         if (inputComponent != null)
             inputComponent.requestFocus();
         else {
-            if (initialFocusComponent != null)
-                initialFocusComponent.requestFocus();
+            if (hasCustomComponents) {
+                // If hasCustomComponents and the user specified an initial value use that
+                // otherwise leave it according to FocusTraversalPolicy
+                Object paneInitVal = op.getInitialValue();
+                // must be from pane because BasicOptionPane
+                // sets intialFocusComponent to the default button
+                if (paneInitVal != null) {
+                    if (paneInitVal instanceof JComponent) {
+                        // if JOptionPane initialValue is a JComponent
+                        ((JComponent) paneInitVal).requestFocus();
+                    } else if (initialFocusComponent != null) {
+                        // else custom option button gets
+                        // the focus if available
+                        initialFocusComponent.requestFocus();
+                    }
+                } //else FocusTraversalPolicy sets initial focus automatically
+            } else if ( initialFocusComponent != null ) {
+                initialFocusComponent.requestFocus(); // if no custom components then
+            } // internal default button gets focus
 
             if (initialFocusComponent instanceof JButton) {
                 JRootPane root = SwingUtilities.getRootPane(initialFocusComponent);
