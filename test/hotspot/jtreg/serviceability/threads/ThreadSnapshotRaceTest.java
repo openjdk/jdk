@@ -34,40 +34,43 @@ import static jdk.test.lib.Asserts.assertTrue;
  * @test
  * @bug 8392031
  * @summary Make sure that ThreadSnapshot::initialize does not crash JVM
+ * @requires vm.continuations
  * @library /test/lib
  * @modules java.management
  * @run main/othervm -Djdk.virtualThreadScheduler.parallelism=8 ThreadSnapshotRaceTest
  */
 public class ThreadSnapshotRaceTest {
 
+    private static volatile boolean SHOULD_STOP = false;
+
     public static void main(String[] args) throws Exception {
+
         Thread producer = new Thread(() -> {
             AtomicLong counter = new AtomicLong();
-            long total = 0;
-            while (true) {
+            while (!SHOULD_STOP) {
                 long c = counter.incrementAndGet();
-                total++;
                 Thread.ofVirtual().name("vthread").start(() -> {
                     counter.decrementAndGet();
                 });
-                if (c >= 20_000_000) {
+                if (c >= 1_000_000) {
                     do {
                         try {
                             Thread.sleep(50);
                         } catch (Exception e) {
                         }
-                    } while (counter.get() > 0);
+                    } while (!SHOULD_STOP && counter.get() > 0);
                 }
             }
         });
         producer.start();
 
-        Thread.sleep(1000);
-
         Thread consumer = new Thread(() -> {
             ThreadMXBean bean = ManagementFactory.getThreadMXBean();
             long[] ids = carrierIds(bean);
-            while (true) {
+            while (!SHOULD_STOP && ids.length == 0) {
+                ids = carrierIds(bean);
+            }
+            while (!SHOULD_STOP) {
                 ThreadInfo[] infos = bean.getThreadInfo(ids);
                 assertTrue(infos.length > 0);
             }
@@ -75,6 +78,9 @@ public class ThreadSnapshotRaceTest {
         consumer.start();
 
         Thread.sleep(10_000);
+        SHOULD_STOP = true;
+        consumer.join();
+        producer.join();
     }
 
     static long[] carrierIds(ThreadMXBean bean) {
