@@ -922,62 +922,42 @@ struct ShenandoahRegionChunk {
 // Some ranges hold primarily primitive (non-pointer) data.  We start with larger chunk sizes because larger chunks
 // reduce coordination overhead.  We expect that the GC worker threads that receive more difficult assignments
 // will work longer on those chunks.  Meanwhile, other worker threads will repeatedly accept and complete multiple
-// easier chunks.  As the total amount of work remaining to be completed decreases, we decrease the size of chunks
-// given to individual threads.  This reduces the likelihood of significant imbalance between worker thread assignments
-// when there is less meaningful work to be performed by the remaining worker threads while they wait for
-// worker threads with difficult assignments to finish, reducing the overall duration of the phase.
-
+// easier chunks.
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
-  // The largest chunk size is 4 MiB, measured in words.  Otherwise, remembered set scanning may become too unbalanced.
-  // If the largest chunk size is too small, there is too much overhead sifting out assignments to individual worker threads.
-  static const size_t _maximum_chunk_size_words = (4 * 1024 * 1024) / HeapWordSize;
-  static const size_t _clusters_in_smallest_chunk = 4;
-
-  size_t _largest_chunk_size_words;
-
-  // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
-  // This is computed from CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-  static size_t smallest_chunk_size_words() {
-      return _clusters_in_smallest_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+  static const size_t _clusters_in_chunk = 8;
+  static size_t chunk_size_words() {
+    // The standard work assignment is 8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
+    return _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
   }
 
-  // The total remembered set scanning effort is divided into chunks of work that are assigned to individual worker tasks.
-  // The chunks of assigned work are divided into groups, where the size of the typical group (_regular_group_size) is half the
-  // total number of regions.  The first group may be larger than
-  // _regular_group_size in the case that the first group's chunk
-  // size is less than the region size.  The last group may be larger
-  // than _regular_group_size because no group is allowed to
-  // have smaller assignments than _smallest_chunk_size, which is 128 KB.
+  // The implementation of ShenandoahRegionChunk is sufficiently general to support multiple groups of work assignments,
+  // with each group representing work assignments of a different size. In theory, as the total amount of work remaining
+  // to be completed decreases, we can decrease the size of chunks given to individual threads.  This reduces the likelihood
+  // of significant imbalance between worker thread assignments when there is less meaningful work to be performed by the
+  // remaining worker threads while they wait for worker threads with difficult assignments to finish, reducing the overall
+  // duration of the phase. We found that the original configuration of ShenandoahRegionChunkIterator did not effectively
+  // balance workloads because it started with assignments representing the entiree region size, and ended with
+  // with assignments spanning only 128K bytes. Certain threads which received initial assignments to process entire
+  // heap regions would still be working on these very large assignments after all other threads had finished their
+  // small assignments.
 
-  // Under normal circumstances, no configuration needs more than _maximum_groups (default value of 16).
-  // The first group "effectively" processes chunks of size 1 MiB (or smaller for smaller region sizes).
-  // The last group processes chunks of size 128 KiB.  There are four groups total.
+  // In the current configuration, we opt for a single group with all assignment of equal size. On the Retain.java
+  // worlkoad described in https://bugs.openjdk.org/browse/JDK-8391086, maximum times to scan remembered set and to
+  // perform concurrent marking are improved by approximately 50%.
 
-  // group[ 0] is 4 MiB chunk size (_maximum_chunk_size_words)
-  // group[ 1] is 2 MiB chunk size
-  // group[ 2] is 1 MiB chunk size
-  // group[ 3] is 512 KiB chunk size
-  // group[ 4] is 256 KiB chunk size
-  // group[ 5] is 128 KiB chunk size
-  // group[ 6] is  64 KiB chunk size
-  // group[ 7] is  32 KiB chunk size
-  // group[ 8] is  16 KiB chunk size
-  // group[ 9] is   8 KiB chunk size
-  // group[10] is   4 KiB chunk size
-  //   Note: 4 KiB is smallest possible chunk_size, computed from:
-  //         _clusters_in_smallest_chunk * MinimumCardSizeInWords * ShenandoahCardCluster::CardsPerCluster, which is
-  //         4 * 16 * 64 = 4096
+  // We preserve some of the original generality of the ShenandoahRegionChunkIterator in case a future effort wants to
+  // explore less extreme load balancing mechanisms with differently sized Chunk assignments. This approach reduces the
+  // likelihood that major refactoring will introduce new bugs.
 
-  // We set aside arrays to represent the maximum number of groups that may be required for any heap configuration
-  static const size_t _maximum_groups = 11;
-
+  static const size_t _maximum_groups = 1;
   const ShenandoahHeap* _heap;
 
-  const size_t _regular_group_size;                        // Number of chunks in each group
-  const size_t _first_group_chunk_size_b4_rebalance;
-  const size_t _num_groups;                        // Number of groups in this configuration
-  size_t _adjusted_num_groups;                     // Rebalancing may coalesce groups
+  // How many chunks in a group?
+  const size_t _group_size;
+  // All Chunks (assignments) are of the same size, and belong to a single group
+  const size_t _num_groups = 1;
+  // Total chunks is HeapSizeWords / chunk_size_in_words()
   const size_t _total_chunks;
 
   shenandoah_padding(0);
@@ -994,12 +974,6 @@ private:
 
   // Makes use of _heap.
   size_t calc_regular_group_size();
-
-  // Makes use of _regular_group_size, which must be initialized before call.
-  size_t calc_first_group_chunk_size_b4_rebalance();
-
-  // Makes use of _regular_group_size and _first_group_chunk_size_b4_rebalance, both of which must be initialized before call.
-  size_t calc_num_groups();
 
   // Makes use of _regular_group_size, _first_group_chunk_size_b4_rebalance, which must be initialized before call.
   size_t calc_total_chunks();

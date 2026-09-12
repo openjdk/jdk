@@ -44,7 +44,9 @@ void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
 // Process all objects starting within count clusters beginning with first_cluster and for which the start address is
 // less than end_of_range.  For any non-array object whose header lies on a dirty card, scan the entire object,
 // even if its end reaches beyond end_of_range. Object arrays, on the other hand, are precisely dirtied and
-// only the portions of the array on dirty cards need to be scanned.
+// only the portions of the array on dirty cards need to be scanned. An invocation of process_clusters only scans
+// the portion of an Object array that overlaps with dirty cards within its assigned range, both for Object arrays
+// that start within its range and for Object arrays that start before its range and extend into its assigned range.
 //
 // Do not CANCEL within process_clusters.  It is assumed that if a worker thread accepts responsibility for processing
 // a chunk of work, it will finish the work it starts.  Otherwise, the chunk of work will be lost in the transition to
@@ -245,6 +247,9 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           assert(p > left, "Should have processed into interior of dirty range");
         }
       }
+      // Either p >= left, or p points to a refArray.  In both cases, the BODY code below needs to (at least partially) scan
+      // the object p.  In the case that object p is a refArray, the BODY will only scan the portion of p that overlaps
+      // this range of dirty cards.
 
       size_t i = 0;
       HeapWord* last_p = nullptr;
@@ -395,37 +400,48 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
   }
   size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
   if (new_index > _total_chunks) {
-    // First worker that hits new_index == _total_chunks continues, other
-    // contending workers return false.
+    // First worker that hits new_index == _total_chunks continues, other contending workers return false.
     return false;
   }
   // convert to zero-based indexing
   new_index--;
   assert(new_index < _total_chunks, "Error");
-
-  // Find the group number for the assigned chunk index
-  size_t group_no;
-  for (group_no = 0; new_index >= _group_entries[group_no]; group_no++)
-    ;
-  assert(group_no < _num_groups, "Cannot have group no greater or equal to _num_groups");
-
-  // All size computations measured in HeapWord
   size_t region_size_words = ShenandoahHeapRegion::region_size_words();
-  size_t group_region_index = _region_index[group_no];
-  size_t group_region_offset = _group_offset[group_no];
-
-  size_t index_within_group = (group_no == 0)? new_index: new_index - _group_entries[group_no - 1];
-  size_t group_chunk_size = _group_chunk_size[group_no];
-  size_t offset_of_this_chunk = group_region_offset + index_within_group * group_chunk_size;
-  size_t regions_spanned_by_chunk_offset = offset_of_this_chunk / region_size_words;
-  size_t offset_within_region = offset_of_this_chunk % region_size_words;
-
-  size_t region_index = group_region_index + regions_spanned_by_chunk_offset;
-
-  assignment->_r = _heap->get_region(region_index);
-  assignment->_chunk_offset = offset_within_region;
-  assignment->_chunk_size = group_chunk_size;
-  return true;
+  size_t group_region_index = _region_index[0];
+  size_t group_region_offset = _group_offset[0];
+  size_t group_chunk_size = _group_chunk_size[0];
+  size_t chunks_per_region = region_size_words / group_chunk_size;
+  while (true) {
+    size_t index_within_group = new_index;
+    size_t offset_of_this_chunk = group_region_offset + index_within_group * group_chunk_size;
+    size_t regions_spanned_by_chunk_offset = offset_of_this_chunk / region_size_words;
+    size_t region_index = group_region_index + regions_spanned_by_chunk_offset;
+    ShenandoahHeapRegion* r = _heap->get_region(region_index);
+    size_t offset_within_region = offset_of_this_chunk % region_size_words;
+    if (!r->is_old()) {
+      // skip to the next region
+      size_t index_within_region = offset_within_region / group_chunk_size;
+      size_t skip_count = chunks_per_region - index_within_region;
+      size_t proposed_new_index = new_index + skip_count + 1;
+      if (_index.compare_set(new_index + 1, proposed_new_index, memory_order_relaxed)) {
+        new_index = proposed_new_index;
+      } else {
+        // Some other thread advanced beyond the current young region. See if following region is also young.
+        new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
+      }
+      if (new_index > _total_chunks) {
+        // First worker that hits new_index == _total_chunks continues, other contending workers return false.
+        return false;
+      }
+      // convert to zero-based indexing
+      new_index--;
+    } else {
+      assignment->_r = r;
+      assignment->_chunk_offset = offset_within_region;
+      assignment->_chunk_size = group_chunk_size;
+      return true;
+    }
+  }
 }
 
 void ShenandoahDirectCardMarkRememberedSet::mark_card_as_dirty(HeapWord* p) const {
