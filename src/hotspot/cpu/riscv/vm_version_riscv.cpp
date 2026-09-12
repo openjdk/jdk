@@ -87,7 +87,7 @@ void VM_Version::common_initialize() {
   setup_cpu_available_features();
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
+  if (satp_mode.value() > VM_SV48 || satp_mode.value() <= VM_MBARE) {
     vm_exit_during_initialization(
       err_msg(
          "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
