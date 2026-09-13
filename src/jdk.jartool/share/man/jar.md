@@ -41,9 +41,9 @@ individual classes or resources from an archive
 The `jar` command is a general-purpose archiving and compression tool, based on
 the ZIP and ZLIB compression formats. Initially, the `jar` command was designed
 to package Java applets (not supported since JDK 11) or applications; however,
-beginning with JDK 9, users can use the `jar` command to create modular JARs.
+beginning with JDK 9, users can use the `jar` command to create modular JAR files.
 For transportation and deployment, it's usually more convenient to package
-modules as modular JARs.
+modules as modular JAR files.
 
 The syntax for the `jar` command resembles the syntax for the `tar` command. It
 has several main operation modes, defined by one of the mandatory operation
@@ -51,7 +51,7 @@ arguments. Other arguments are either options that modify the behavior of the
 operation or are required to perform the operation.
 
 When modules or the components of an application (files, images and sounds) are
-combined into a single archive, they can be downloaded by a Java agent (such as
+combined into a single JAR file, they can be downloaded by a Java agent (such as
 a browser) in a single HTTP transaction, rather than requiring a new connection
 for each piece. This dramatically improves download times. The `jar` command
 also compresses files, which further improves download time. The `jar` command
@@ -59,11 +59,11 @@ also enables individual entries in a file to be signed so that their origin can
 be authenticated. A JAR file can be used as a class path entry, whether or not
 it's compressed.
 
-An archive becomes a modular JAR when you include a module descriptor,
+A JAR file becomes a modular JAR file when you include a module descriptor,
 `module-info.class`, in the root of the given directories or in the root of
-the `.jar` archive. The following operations described in [Operation Modifiers
+the JAR file itself. The following operations described in [Operation Modifiers
 Valid Only in Create and Update Modes] are valid only when creating or
-updating a modular jar or updating an existing non-modular jar:
+updating a modular JAR file or updating an existing non-modular JAR file:
 
 -   `--module-version`
 
@@ -85,22 +85,22 @@ operation argument with other one-letter options. Generally the operation
 argument is the first argument specified on the command line.
 
 [`-c`]{#option--create} or `--create`
-:   Creates the archive.
+:   Creates the JAR file.
 
 [`-i`]{#option--generate-index} *FILE* or `--generate-index=`*FILE*
 :   Generates index information for the specified JAR file.  This option is deprecated
     and may be removed in a future release.
 
 [`-t`]{#option--list} or `--list`
-:   Lists the table of contents for the archive.
+:   Lists the table of contents of the JAR file.
 
 [`-u`]{#option--update} or `--update`
 :   Updates an existing JAR file.
 
 [`-x`]{#option--extract} or `--extract`
-:   Extracts the named (or all) files from the archive.
+:   Extracts the named (or all) files from the JAR file.
     If a file with the same name appears more than once in
-    the archive, each copy will be extracted, with later copies
+    the JAR file, each copy will be extracted, with later copies
     overwriting (replacing) earlier copies unless -k is specified.
 
 [`-d`]{#option--describe-module} or `--describe-module`
@@ -116,18 +116,21 @@ You can use the following options to customize the actions of any operation
 mode included in the `jar` command.
 
 [`-C`]{#option-C} *DIR*
-:   When used with the create operation mode, changes the specified directory
-    and includes the *files* specified at the end of the command line.
+:   When used with the create operation mode, changes to the specified directory
+    and includes the *file* that follows in the command line.
 
     `jar` \[*OPTION* ...\] \[ \[`--release` *VERSION*\] \[`-C` *dir*\]
-    *files*\]
+    *file*\]
+
+    When used in create mode, if the file is a directory then it is
+    processed recursively.
 
     When used with the extract operation mode, specifies the destination directory
     where the JAR file will be extracted. Unlike with the create operation mode,
     this option can be specified only once with the extract operation mode.
 
 [`-f`]{#option--file} *FILE* or `--file=`*FILE*
-:   Specifies the archive file name.
+:   Specifies the JAR file name.
 
 [`--release`]{#option--release} *VERSION*
 :   Creates a multirelease JAR file. Places all files specified after the
@@ -135,11 +138,11 @@ mode included in the `jar` command.
     `META-INF/versions/`*VERSION*`/`, where *VERSION* must be must be a
     positive integer whose value is 9 or greater.
 
-    At run time, where more than one version of a class exists in the JAR, the
+    At run time, where more than one version of a class exists in the JAR file, the
     JDK will use the first one it finds, searching initially in the directory
     tree whose *VERSION* number matches the JDK's major version number. It will
     then look in directories with successively lower *VERSION* numbers, and
-    finally look in the root of the JAR.
+    finally look in the root of the JAR file.
 
 `-v` or `--verbose`
 :   Sends or prints verbose output to standard output.
@@ -196,9 +199,9 @@ or `--create`) the update (`-u` or `--update` ) and the generate-index (`-i` or
 
 [`-k`]{#option--keep-old-files} or `--keep-old-files`
 :   Do not overwrite existing files.
-    If a Jar file entry with the same name exists in the target directory, the
+    If a JAR file entry with the same name exists in the target directory, the
     existing file will not be overwritten.
-    As a result, if a file appears more than once in an archive, later copies will not overwrite
+    As a result, if a file appears more than once in a JAR file, later copies will not overwrite
     earlier copies.
     Also note that some file system can be case insensitive.
 
@@ -222,53 +225,54 @@ As a JAR file is based on ZIP format, it is possible to create a JAR file using 
 other than the `jar` command. The --validate option may be used to perform the following
 integrity checks against a JAR file:
 
-- That there are no duplicate Zip entry file names
-- Verify that the Zip entry file name:
+- That there are no duplicate ZIP entry file names
+- Verify that the ZIP entry file name:
     - is not an absolute path
     - the file name is not '.' or '..'
     - does not contain a backslash, '\\'
     - does not contain a drive letter
     - path element does not include '.' or '..
-- The API exported by a multi-release jar archive is consistent across all different release
+- The API exported by a multi-release JAR file is consistent across all different release
   versions.
 
-The jar tool exits with a status of 0 if there were no integrity issues encountered and >0 if an
-error/warning occurred.
+The `jar` tool exits with a status of `0` if there were no integrity issues encountered and `> 0`
+if an error/warning occurred.
 
 When an integrity issue is reported, it will often require that the JAR file is re-created by the
 original source of the JAR file.
 
 ## Examples of jar Command Syntax
 
--   Create an archive, `classes.jar`, that contains two class files,
+-   Create a JAR file, `classes.jar`, that contains two class files,
     `Foo.class` and `Bar.class`.
 
     >   `jar --create --file classes.jar Foo.class Bar.class`
 
--   Create an archive, `classes.jar`, that contains two class files,
+-   Create a JAR file, `classes.jar`, that contains two class files,
     `Foo.class` and `Bar.class` setting the last modified date and time to `2021 Jan 6 12:36:00`.
 
     >   `jar --create --date="2021-01-06T14:36:00+02:00" --file=classes.jar Foo.class Bar.class`
 
--   Create an archive, `classes.jar`, by using an existing manifest,
-    `mymanifest`, that contains all of the files in the directory `foo/`.
+-   Create a JAR file, `classes.jar`, using an existing manifest `mymanifest`,
+    and with all the files from the `foo` directory.
 
-    >   `jar --create --file classes.jar --manifest mymanifest -C foo/`
+    >   `jar --create --file classes.jar --manifest mymanifest -C foo/ .`
 
--   Create a modular JAR archive,`foo.jar`, where the module descriptor is
-    located in `classes/module-info.class`.
+-   Create a modular JAR file, `foo.jar`, whose module descriptor is located in the `foo/classes`
+    directory.
 
     >   `jar --create --file foo.jar --main-class com.foo.Main
-        --module-version 1.0 -C foo/classes resources`
+        --module-version 1.0 -C foo/classes module-info.class`
 
--   Update an existing non-modular JAR, `foo.jar`, to a modular JAR file.
+-   Update an existing non-modular JAR file, `foo.jar`, to a modular JAR file,
+    with the `module-info.class` located in the `resources` directory.
 
     >   `jar --update --file foo.jar --main-class com.foo.Main
-        --module-version 1.0 -C foo/module-info.class`
+        --module-version 1.0 -C resources module-info.class`
 
--   Create a versioned or multi-release JAR, `foo.jar`, that places the files
-    in the `classes` directory at the root of the JAR, and the files in the
-    `classes-10` directory in the `META-INF/versions/10` directory of the JAR.
+-   Create a versioned or multi-release JAR file, `foo.jar`, that places the files
+    in the `classes` directory at the root of the JAR file, and the files in the
+    `classes-10` directory in the `META-INF/versions/10` directory of the JAR file.
 
     In this example, the `classes/com/foo` directory contains two classes,
     `com.foo.Hello` (the entry point class) and `com.foo.NameProvider`, both
@@ -276,7 +280,7 @@ original source of the JAR file.
     version of the `com.foo.NameProvider` class, this one containing JDK 10
     specific code and compiled for JDK 10.
 
-    Given this setup, create a multirelease JAR file `foo.jar` by running the
+    Given this setup, create a multi-release JAR file `foo.jar` by running the
     following command from the directory containing the directories `classes`
     and `classes-10` .
 
@@ -300,7 +304,7 @@ original source of the JAR file.
     ```
 
     As well as other information, the file `META-INF/MANIFEST.MF`, will contain
-    the following lines to indicate that this is a multirelease JAR file with
+    the following lines to indicate that this is a multi-release JAR file with
     an entry point of `com.foo.Hello`.
 
     ```
@@ -314,9 +318,9 @@ original source of the JAR file.
     that the `com.foo.NameProvider` class is the one in
     `META-INF/versions/10/com/foo/`. Running the program using JDK 8 will
     ensure that the `com.foo.NameProvider` class is the one at the root of the
-    JAR, in `com/foo`.
+    JAR file, in `com/foo`.
 
--   Create an archive, `my.jar`, by reading options and lists of class files
+-   Create a JAR file, `my.jar`, by reading options and lists of class files
     from the file `classes.list`.
 
     **Note:**
@@ -327,7 +331,8 @@ original source of the JAR file.
 
     >   `jar --create --file my.jar @classes.list`
 
-    If one or more entries in the arg file cannot be found then the jar command fails without creating the JAR file.
+    If one or more entries in the arg file cannot be found then the `jar` command fails without
+    creating the JAR file.
 
 -   Extract the JAR file `foo.jar` to `/tmp/bar/` directory:
 
