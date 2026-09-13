@@ -26,12 +26,17 @@
 package com.sun.java.swing.plaf.windows;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.Window;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
+import javax.swing.JMenu;
+import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JRootPane;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
@@ -44,6 +49,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicPopupMenuUI;
 
+import com.sun.java.swing.SwingUtilities3;
 import com.sun.java.swing.plaf.windows.TMSchema.Part;
 import com.sun.java.swing.plaf.windows.TMSchema.State;
 import com.sun.java.swing.plaf.windows.XPStyle.Skin;
@@ -195,6 +201,48 @@ public class WindowsPopupMenuUI extends BasicPopupMenuUI {
                 c.getComponent(i).getComponentOrientation().isLeftToRight();
         }
         return leftToRight;
+    }
+
+    @Override
+    public Dimension getPreferredSize(JComponent c) {
+        Dimension size = null;
+
+        if (c.getLayout() != null) {
+            size = c.getLayout().preferredLayoutSize(c);
+        }
+
+        if (size == null) {
+            size = super.getPreferredSize(c);
+        }
+
+        if (size != null) {
+
+            if (hasCheckBulletAndIconPresent((JPopupMenu) c)) {
+                int afterCheckIconGap = UIManager.getInt("MenuItem" + ".afterCheckIconGap");
+                int gap = 2 * afterCheckIconGap;
+                size.width += gap;
+            }
+        }
+
+        return size;
+    }
+
+    private static boolean hasCheckBulletAndIconPresent(JPopupMenu popupMenu) {
+        for (Component child : popupMenu.getComponents()) {
+            if (child instanceof JRadioButtonMenuItem ||
+                    child instanceof JCheckBoxMenuItem) {
+                JMenuItem item = (JMenuItem) child;
+                if (item.getIcon() != null) {
+                    return true;
+                }
+            }
+            if (child instanceof JMenu) {
+                if (hasCheckBulletAndIconPresent(((JMenu) child).getPopupMenu())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
