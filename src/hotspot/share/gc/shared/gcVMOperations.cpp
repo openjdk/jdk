@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -204,7 +204,7 @@ void VM_GC_HeapInspection::doit() {
     }
   }
   HeapInspection inspect;
-  WorkerThreads* workers = Universe::heap()->safepoint_workers();
+  WorkerThreads* workers = !Thread::is_revived() ? Universe::heap()->safepoint_workers() : nullptr;
   if (workers != nullptr) {
     // The GC provided a WorkerThreads to be used during a safepoint.
     // Can't run with more threads than provided by the WorkerThreads.

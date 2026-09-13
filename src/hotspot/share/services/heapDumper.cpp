@@ -2652,7 +2652,7 @@ void VM_HeapDumper::doit() {
     }
   }
 
-  WorkerThreads* workers = ch->safepoint_workers();
+  WorkerThreads* workers = !Thread::is_revived() ? ch->safepoint_workers() : nullptr;
   prepare_parallel_dump(workers);
 
   if (!is_parallel_dump()) {

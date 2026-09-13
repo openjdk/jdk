@@ -24,12 +24,16 @@
  */
 package sun.tools.attach;
 
+import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
 
-import java.util.List;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import sun.jvmstat.monitor.HostIdentifier;
@@ -44,6 +48,24 @@ import sun.jvmstat.monitor.VmIdentifier;
 public abstract class HotSpotAttachProvider extends AttachProvider {
 
     public HotSpotAttachProvider() {
+    }
+
+    /**
+     * This method accepts a Map of parameters which is passed to the attach provider.
+     *
+     * This implementation is equivalent to attachVirtualMachine(String id) if
+     * vmid does not name a file that exists.
+     */
+    @Override
+    public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
+        throws AttachNotSupportedException, IllegalArgumentException, IOException {
+
+        // The 'vmid' existing as a file implies it is a core or minidump:
+        if (new File(vmid).exists()) {
+            return new VirtualMachineCoreDumpImpl(this, vmid, env);
+        } else {
+            return attachVirtualMachine(vmid);
+        }
     }
 
     /*
