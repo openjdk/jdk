@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,10 +195,14 @@ public final class ModelByteBufferWavetable implements ModelWavetable {
 
     @Override
     public AudioFloatInputStream openStream() {
-        if (buffer == null)
+        if (buffer == null) {
             return null;
+        }
         if (format == null) {
             InputStream is = buffer.getInputStream();
+            if (is == null) {
+                return null;
+            }
             AudioInputStream ais = null;
             try {
                 ais = AudioSystem.getAudioInputStream(is);
@@ -209,8 +213,12 @@ public final class ModelByteBufferWavetable implements ModelWavetable {
             return AudioFloatInputStream.getInputStream(ais);
         }
         if (buffer.array() == null) {
+            InputStream is = buffer.getInputStream();
+            if (is == null) {
+                return null;
+            }
             return AudioFloatInputStream.getInputStream(new AudioInputStream(
-                    buffer.getInputStream(), format,
+                    is, format,
                     buffer.capacity() / format.getFrameSize()));
         }
         if (buffer8 != null) {
@@ -237,7 +245,8 @@ public final class ModelByteBufferWavetable implements ModelWavetable {
 
     @Override
     public int getChannels() {
-        return getFormat().getChannels();
+        AudioFormat format = getFormat();
+        return (format != null) ? format.getChannels() : 1;
     }
 
     @Override
