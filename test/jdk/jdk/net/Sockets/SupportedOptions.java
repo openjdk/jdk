@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,57 @@
 
 /*
  * @test
- * @bug 8062744
+ * @bug 8062744 8392151
+ * @summary Check opt-in IP_TOS support on ServerSocket
  * @modules jdk.net
- * @run main SupportedOptions
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=false ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djdk.net.ServerSocket.IP_TOS=TrUe ${test.main.class}
  */
 
 import java.net.*;
-import java.io.IOException;
 import jdk.net.*;
 
-public class SupportedOptions {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        if (!Sockets.supportedOptions(ServerSocket.class)
-              .contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class SupportedOptions {
+
+    @Test
+    void serverSocketOptions() throws Exception {
+        var option = StandardSocketOptions.IP_TOS;
+        var property = "jdk.net.ServerSocket.IP_TOS";
+        boolean enabled = Boolean.getBoolean(property);
+
+        // The startup value determines support, even before either option set is initialized.
+        System.setProperty(property, Boolean.toString(!enabled));
+
+        assertEquals(enabled, Sockets.supportedOptions(ServerSocket.class).contains(option),
+                "Unexpected IP_TOS support in ServerSocket class options");
+
+        try (var ss = new ServerSocket()) {
+            assertEquals(enabled, ss.supportedOptions().contains(option),
+                    "Unexpected IP_TOS support in ServerSocket options");
+
+            if (enabled) {
+                ss.setOption(option, 128);
+                ss.getOption(option);
+                Sockets.setOption(ss, option, 128);
+                Sockets.getOption(ss, option);
+            } else {
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.setOption(option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.getOption(option));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.setOption(ss, option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.getOption(ss, option));
+            }
         }
-        // Now set the option
-        ServerSocket ss = new ServerSocket();
-        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
-        }
-        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
     }
 }
