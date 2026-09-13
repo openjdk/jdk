@@ -69,8 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          reliably.
  *
  * @comment Why do we only test on Linux and macOS? These platforms are known to
- *          have selector implementations that do *NOT* block the carrier thread
- *          when selectors are called using VTs (via `useVirtualThreads=always`)
+ *          have selector implementations that do *NOT* pin the carrier thread in 
+ *          select() when selectors are called using VTs (via `useVirtualThreads=always`).
  *          and `jdk.virtualThreadScheduler.{parallelism,maxPoolSize}` set to 1.
  *          We could increase the VT scheduler capacity, but this contradicts
  *          with the reason we fix it to 1 in the first place: to starve the
