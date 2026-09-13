@@ -95,14 +95,10 @@ public final class URLDecoder {
      * are represented by any consecutive sequences of the form
      * "<i>{@code %xy}</i>".
      * @param s the {@code String} to decode
-     * @deprecated The resulting string may vary depending on the
-     *          default charset. Instead, use the decode(String,String) method
-     *          to specify the encoding.
      * @return the newly decoded {@code String}
      * @throws IllegalArgumentException if the implementation encounters malformed
      * escape sequences
      */
-    @Deprecated
     public static String decode(String s) {
         return decode(s, Charset.defaultCharset());
     }
