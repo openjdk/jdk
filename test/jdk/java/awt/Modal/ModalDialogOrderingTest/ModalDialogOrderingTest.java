@@ -94,7 +94,7 @@ public class ModalDialogOrderingTest {
             robot.mouseMove(300, 300);
 
             if (!dialogOpened.await(10, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Modal dialog did not gain focus");
+                throw new RuntimeException("Modal dialog was not opened");
             }
             robot.waitForIdle(1000);
 
