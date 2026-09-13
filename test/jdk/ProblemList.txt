@@ -246,7 +246,6 @@ java/awt/Modal/FileDialog/FileDialogTKModal4Test.java 8196430 generic-all
 java/awt/Modal/FileDialog/FileDialogTKModal5Test.java 8196430 generic-all
 java/awt/Modal/FileDialog/FileDialogTKModal6Test.java 8196430 generic-all
 java/awt/Modal/FileDialog/FileDialogTKModal7Test.java 8196430 macosx-all
-java/awt/Modal/ModalDialogOrderingTest/ModalDialogOrderingTest.java 8066259 macosx-all
 java/awt/Modal/ModalExclusionTests/ApplicationExcludeFrameFileTest.java 8047179 linux-all,macosx-all
 java/awt/Modal/ModalExclusionTests/ApplicationExcludeDialogFileTest.java 8047179 linux-all,macosx-all
 java/awt/Modal/ModalExclusionTests/ApplicationExcludeDialogPageSetupTest.java 8196431 linux-all,macosx-all
