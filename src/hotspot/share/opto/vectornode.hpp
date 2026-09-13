@@ -947,6 +947,7 @@ class ShiftVNode : public VectorNode {
     init_class_id(Class_ShiftV);
   }
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual int Opcode() const = 0;
   virtual uint hash() const { return VectorNode::hash() + _is_var_shift; }
   virtual bool cmp(const Node& n) const {
@@ -954,6 +955,15 @@ class ShiftVNode : public VectorNode {
   }
   bool is_var_shift() { return _is_var_shift;}
   virtual uint size_of() const { return sizeof(ShiftVNode); }
+};
+
+// Vector unsigned widening left shift. The input element type is half the
+// width of the output element type.
+class VectorWideningShiftLeftNode : public VectorNode {
+ public:
+  VectorWideningShiftLeftNode(Node* in1, Node* in2, const TypeVect* vt) :
+    VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
 };
 
 // Vector left shift bytes
