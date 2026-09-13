@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
  * Create class file using ASM, slightly modified the ASMifier output
  */
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
-
 import java.lang.annotation.Annotation;
 import java.lang.annotation.AnnotationFormatError;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /*
  * @test
@@ -46,17 +48,12 @@ import java.util.stream.Stream;
  *        AnnotationWithoutAnnotationAccessModifier HolderX
  * @compile -XDignore.symbol.file ClassFileGenerator.java GoodAnnotation.java
  * @run main ClassFileGenerator
- * @run testng AnnotationVerifier
+ * @run junit AnnotationVerifier
  */
-
 public class AnnotationVerifier {
 
     //=======================================================
     // GoodAnnotation...
-
-    @GoodAnnotation
-    static class HolderA {
-    }
 
     @Test
     public void holderA_goodAnnotation() {
@@ -77,11 +74,6 @@ public class AnnotationVerifier {
         int m(int x) default -1;
     }
     */
-
-    @GoodAnnotation
-    @AnnotationWithParameter
-    static class HolderB {
-    }
 
     @Test
     public void holderB_annotationWithParameter() {
@@ -108,24 +100,22 @@ public class AnnotationVerifier {
     }
     */
 
-    @GoodAnnotation
-    @AnnotationWithVoidReturn
-    static class HolderC {
-    }
-
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderC_annotationWithVoidReturn() {
-        testGetAnnotation(HolderC.class, AnnotationWithVoidReturn.class, false);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotation(HolderC.class, AnnotationWithVoidReturn.class, false));
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderC_goodAnnotation() {
-        testGetAnnotation(HolderC.class, GoodAnnotation.class, false);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotation(HolderC.class, GoodAnnotation.class, false));
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderC_annotations() {
-        testGetAnnotations(HolderC.class);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotations(HolderC.class));
     }
 
     //=======================================================
@@ -138,24 +128,22 @@ public class AnnotationVerifier {
     }
     */
 
-    @GoodAnnotation
-    @AnnotationWithExtraInterface
-    static class HolderD {
-    }
-
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderD_annotationWithExtraInterface() {
-        testGetAnnotation(HolderD.class, AnnotationWithExtraInterface.class, false);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotation(HolderD.class, AnnotationWithExtraInterface.class, false));
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderD_goodAnnotation() {
-        testGetAnnotation(HolderD.class, GoodAnnotation.class, false);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotation(HolderD.class, GoodAnnotation.class, false));
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderD_annotations() {
-        testGetAnnotations(HolderD.class);
+        assertThrows(AnnotationFormatError.class, () ->
+                testGetAnnotations(HolderD.class));
     }
 
     //=======================================================
@@ -167,15 +155,6 @@ public class AnnotationVerifier {
         int m() throws Exception default 1;
     }
     */
-
-    @GoodAnnotation
-    @AnnotationWithException
-    static class HolderE {
-    }
-
-    @AnnotationWithException
-    static class HolderE2 {
-    }
 
     @Test
     public void holderE_annotationWithException() {
@@ -192,7 +171,7 @@ public class AnnotationVerifier {
         testGetAnnotations(HolderE.class, GoodAnnotation.class, AnnotationWithException.class);
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderE_annotationWithException_equals() {
         AnnotationWithException ann1, ann2;
         try {
@@ -201,10 +180,10 @@ public class AnnotationVerifier {
         } catch (Throwable t) {
             throw new AssertionError("Unexpected exception", t);
         }
-        Assert.assertNotNull(ann1);
-        Assert.assertNotNull(ann2);
+        assertNotNull(ann1);
+        assertNotNull(ann2);
 
-        testEquals(ann1, ann2, true); // this throws AnnotationFormatError
+        assertThrows(AnnotationFormatError.class, () -> ann1.equals(ann2));
     }
 
     //=======================================================
@@ -216,15 +195,6 @@ public class AnnotationVerifier {
         int hashCode() default 1;
     }
     */
-
-    @GoodAnnotation
-    @AnnotationWithHashCode
-    static class HolderF {
-    }
-
-    @AnnotationWithHashCode
-    static class HolderF2 {
-    }
 
     @Test
     public void holderF_annotationWithHashCode() {
@@ -241,7 +211,7 @@ public class AnnotationVerifier {
         testGetAnnotations(HolderF.class, GoodAnnotation.class, AnnotationWithHashCode.class);
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderF_annotationWithHashCode_equals() {
         AnnotationWithHashCode ann1, ann2;
         try {
@@ -250,10 +220,10 @@ public class AnnotationVerifier {
         } catch (Throwable t) {
             throw new AssertionError("Unexpected exception", t);
         }
-        Assert.assertNotNull(ann1);
-        Assert.assertNotNull(ann2);
+        assertNotNull(ann1);
+        assertNotNull(ann2);
 
-        testEquals(ann1, ann2, true); // this throws AnnotationFormatError
+        assertThrows(AnnotationFormatError.class, () -> ann1.equals(ann2));
     }
 
     //=======================================================
@@ -266,15 +236,6 @@ public class AnnotationVerifier {
         default int d() default 2 { return 2; }
     }
     */
-
-    @GoodAnnotation
-    @AnnotationWithDefaultMember
-    static class HolderG {
-    }
-
-    @AnnotationWithDefaultMember
-    static class HolderG2 {
-    }
 
     @Test
     public void holderG_annotationWithDefaultMember() {
@@ -291,7 +252,7 @@ public class AnnotationVerifier {
         testGetAnnotations(HolderG.class, GoodAnnotation.class, AnnotationWithDefaultMember.class);
     }
 
-    @Test(expectedExceptions = AnnotationFormatError.class)
+    @Test
     public void holderG_annotationWithDefaultMember_equals() {
         AnnotationWithDefaultMember ann1, ann2;
         try {
@@ -300,10 +261,10 @@ public class AnnotationVerifier {
         } catch (Throwable t) {
             throw new AssertionError("Unexpected exception", t);
         }
-        Assert.assertNotNull(ann1);
-        Assert.assertNotNull(ann2);
+        assertNotNull(ann1);
+        assertNotNull(ann2);
 
-        testEquals(ann1, ann2, true); // this throws AnnotationFormatError
+        assertThrows(AnnotationFormatError.class, () -> ann1.equals(ann2));
     }
 
     //=======================================================
@@ -400,20 +361,53 @@ public class AnnotationVerifier {
                                result);
         }
     }
-
-    private static void testEquals(Annotation ann1, Annotation ann2, boolean expectedEquals) {
-        Object result = null;
-        try {
-            try {
-                boolean gotEquals = ann1.equals(ann2);
-                Assert.assertEquals(gotEquals, expectedEquals);
-                result = gotEquals;
-            } catch (Throwable t) {
-                result = t;
-                throw t;
-            }
-        } finally {
-            System.out.println("\n" + ann1 + ".equals(" + ann2 + ") = " + result);
-        }
-    }
 }
+
+// Do not declare the holders as nested - JUnit scans their annotations and
+// results in AnnotationFormatError
+@GoodAnnotation
+class HolderA {
+}
+
+@GoodAnnotation
+@AnnotationWithParameter
+class HolderB {
+}
+
+@GoodAnnotation
+@AnnotationWithVoidReturn
+class HolderC {
+}
+
+@GoodAnnotation
+@AnnotationWithExtraInterface
+class HolderD {
+}
+
+@GoodAnnotation
+@AnnotationWithException
+class HolderE {
+}
+
+@AnnotationWithException
+class HolderE2 {
+}
+
+@GoodAnnotation
+@AnnotationWithHashCode
+class HolderF {
+}
+
+@AnnotationWithHashCode
+class HolderF2 {
+}
+
+@GoodAnnotation
+@AnnotationWithDefaultMember
+class HolderG {
+}
+
+@AnnotationWithDefaultMember
+class HolderG2 {
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8038994
  * @summary Test that getAnnotatedBounds().getType() match getBounds()
- * @run testng TypeVariableBounds
+ * @run junit TypeVariableBounds
  */
 
 import java.io.Serializable;
@@ -35,15 +35,20 @@ import java.util.concurrent.Callable;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class TypeVariableBounds {
-    @Test(dataProvider = "classData")
+    @ParameterizedTest
+    @ValueSource(classes = {
+            Case1.class,
+            Case2.class,
+            Case5.class,
+            Case6.class,
+    })
     public void testClass(Class<?> c) throws Exception {
-        assertNotEquals(c.getTypeParameters().length, 0);
+        assertNotEquals(0, c.getTypeParameters().length);
 
         TypeVariable[] tv = c.getTypeParameters();
 
@@ -52,7 +57,13 @@ public class TypeVariableBounds {
 
     }
 
-    @Test(dataProvider = "methodData")
+    @ParameterizedTest
+    @ValueSource(classes = {
+            Case3.class,
+            Case4.class,
+            Case5.class,
+            Case6.class,
+    })
     public void testMethod(Class<?>c) throws Exception {
         Method m = c.getMethod("aMethod");
         TypeVariable[] tv = m.getTypeParameters();
@@ -66,31 +77,13 @@ public class TypeVariableBounds {
         Type[] t = tv.getBounds();
         AnnotatedType[] at = tv.getAnnotatedBounds();
 
-        assertEquals(t.length, at.length, Arrays.asList(t) + " and " + Arrays.asList(at) + " should be the same length");
+        assertEquals(t.length, at.length, () -> "Bounds count t = %s; at = %s".formatted(Arrays.asList(t), Arrays.asList(at)));
 
-        for (int i = 0; i < t.length; i++)
-            assertSame(at[i].getType(), t[i], "T: " + t[i] + ", AT: " + at[i] + ", AT.getType(): " + at[i].getType() + "\n");
+        for (int i = 0; i < t.length; i++) {
+            int p = i;
+            assertSame(t[i], at[i].getType(), () -> "Underlying type for at[%d]: %s; t = %s; at = %s".formatted(p, at[p], Arrays.asList(t), Arrays.asList(at)));
+        }
     }
-
-    @DataProvider
-    public Object[][] classData() { return CLASS_TESTS; }
-
-    @DataProvider
-    public Object[][] methodData() { return METHOD_TESTS; }
-
-    public static final Object[][] CLASS_TESTS = {
-        { Case1.class, },
-        { Case2.class, },
-        { Case5.class, },
-        { Case6.class, },
-    };
-
-    public static final Object[][] METHOD_TESTS = {
-        { Case3.class, },
-        { Case4.class, },
-        { Case5.class, },
-        { Case6.class, },
-    };
 
     // Class type var
     public static class Case1<C1T1, C1T2 extends AnnotatedElement, C1T3 extends AnnotatedElement & Type & Serializable> {}
