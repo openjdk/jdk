@@ -37,23 +37,14 @@ public class CheckedListReplaceAll {
 
     public static void main(String[] args) {
         List unwrapped = Arrays.asList(new Object[]{1, 2, 3});
-        List<Object> wrapped = Collections.checkedList(unwrapped, Integer.class);
-
-        UnaryOperator evil = e -> (((int) e) % 2 != 0) ? e : "evil";
-
-        try {
-            wrapped.replaceAll(evil);
-            System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
-            throw new RuntimeException("String added to checked List<Integer>");
-        } catch (ClassCastException thwarted) {
-            thwarted.printStackTrace(System.out);
-            System.out.println("Curses! Foiled again!");
-        }
+        testReplaceAllWrongType(Collections.checkedList(unwrapped, Integer.class),
+                                 e -> (((int) e) % 2 != 0) ? e : "evil",
+                                 "String added to checked List<Integer>");
 
         unwrapped = Arrays.asList(new Object[]{});  // Empty list
-        wrapped = Collections.checkedList(unwrapped, Integer.class);
+        List<Object> wrapped = Collections.checkedList(unwrapped, Integer.class);
         try {
-            wrapped.replaceAll((UnaryOperator)null);
+            wrapped.replaceAll((UnaryOperator) null);
             System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
             throw new RuntimeException("NPE not thrown when passed a null operator");
         } catch (NullPointerException thwarted) {
@@ -67,9 +58,17 @@ public class CheckedListReplaceAll {
             throw new RuntimeException("value checkedList replaceAll failed");
 
         List raw = Collections.checkedList(new ArrayList<VClass>(Arrays.asList(new VClass(1, new int[] { 1 }))), VClass.class);
+        testReplaceAllWrongType(raw, e -> "not a Tuple", "value checkedList replaceAll accepted wrong type");
+    }
+
+    private static void testReplaceAllWrongType(List wrapped, UnaryOperator badOperator, String failMessage) {
         try {
-            raw.replaceAll(e -> "not a Tuple");
-            throw new RuntimeException("value checkedList replaceAll accepted wrong type");
-        } catch (ClassCastException expected) { }
+            wrapped.replaceAll(badOperator);
+            System.out.printf("Bwahaha! I have defeated you! %s\n", wrapped);
+            throw new RuntimeException(failMessage);
+        } catch (ClassCastException thwarted) {
+            thwarted.printStackTrace(System.out);
+            System.out.println("Curses! Foiled again!");
+        }
     }
 }

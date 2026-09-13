@@ -42,6 +42,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.IntFunction;
 
 public class ReverseOrder2 {
     static final int N = 100;
@@ -67,14 +68,9 @@ public class ReverseOrder2 {
 
         test(new ArrayList<String>());
         test(new LinkedList<String>());
-        test2(new ArrayList<Integer>());
-        test2(new LinkedList<Integer>());
-
-        List<VClass> values = new ArrayList<>(Arrays.asList(new VClass(0, new int[] { 0 }), new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 })));
-        Collections.shuffle(values);
-        Collections.sort(values, Collections.reverseOrder());
-        if (!values.equals(Arrays.asList(new VClass(2, new int[] { 2 }), new VClass(1, new int[] { 1 }), new VClass(0, new int[] { 0 }))))
-            throw new RuntimeException("value reverseOrder2 failed");
+        test2(new ArrayList<Integer>(), Integer::valueOf, N);
+        test2(new LinkedList<Integer>(), Integer::valueOf, N);
+        test2(new ArrayList<VClass>(), i -> new VClass(i, new int[] { i }), 3);
     }
 
     static void test(List<String> list) {
@@ -99,18 +95,15 @@ public class ReverseOrder2 {
             golden.add(String.valueOf(i));
     }
 
-    static void test2(List<Integer> list) {
-        for (int i = 0; i < N; i++)
-            list.add(i);
+    static <T> void test2(List<T> list, IntFunction<T> factory, int n) {
+        for (int i = 0; i < n; i++)
+            list.add(factory.apply(i));
         Collections.shuffle(list);
         Collections.sort(list, Collections.reverseOrder(null));
-        equal(list, golden2);
-    }
-
-    private static final List<Integer> golden2 = new ArrayList<>(N);
-    static {
-        for (int i = N-1; i >= 0; i--)
-            golden2.add(i);
+        List<T> golden = new ArrayList<>(n);
+        for (int i = n - 1; i >= 0; i--)
+            golden.add(factory.apply(i));
+        equal(list, golden);
     }
 
     //--------------------- Infrastructure ---------------------------

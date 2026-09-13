@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,28 +30,26 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 import java.util.stream.LongStream;
+import jdk.test.lib.valueclass.VClass;
 
 /*
  * @test
  * @bug 8336669
  * @summary HashMap.toArray() behavior tests
  * @author tvaleev
+ * @library /test/lib
  */
 public class ToArray {
-    // An interned identity class holding an int (like non-Preview Integer)
-    record Int(int intValue) implements Comparable<Int> {
-        @Override
-        public int compareTo(Int o) {
-            return Integer.compare(intValue, o.intValue);
-        }
-    }
 
     public static void main(String[] args) {
         checkMap(false);
         checkMap(true);
         checkSet(false);
         checkSet(true);
+        checkVClassMap(false);
+        checkVClassMap(true);
     }
 
     private static <T extends Comparable<T>> void checkToArray(String message, T[] expected, Collection<T> collection,
@@ -122,22 +120,32 @@ public class ToArray {
     }
 
     private static void checkMap(boolean ordered) {
-        Map<String, String> map = ordered ? new LinkedHashMap<>() : new HashMap<>();
-        checkToArray("Empty-keys", new String[0], map.keySet(), !ordered);
-        checkToArray("Empty-values", new String[0], map.values(), !ordered);
+        checkMapImpl(ordered, String::valueOf, new String[0]);
+    }
 
-        List<String> keys = new ArrayList<>();
-        List<String> values = new ArrayList<>();
+    private static void checkVClassMap(boolean ordered) {
+        checkMapImpl(ordered, i -> new VClass(i, new int[] { i }), new VClass[0]);
+    }
+
+    private static <T extends Comparable<T>> void checkMapImpl(boolean ordered, IntFunction<T> factory, T[] emptyArray) {
+        Map<T, T> map = ordered ? new LinkedHashMap<>() : new HashMap<>();
+        checkToArray("Empty-keys", emptyArray, map.keySet(), !ordered);
+        checkToArray("Empty-values", emptyArray, map.values(), !ordered);
+
+        List<T> keys = new ArrayList<>();
+        List<T> values = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            keys.add(String.valueOf(i));
-            values.add(String.valueOf(i * 2));
-            map.put(String.valueOf(i), String.valueOf(i * 2));
-            checkToArray(i + "-keys", keys.toArray(new String[0]), map.keySet(), !ordered);
-            checkToArray(i + "-values", values.toArray(new String[0]), map.values(), !ordered);
+            T key = factory.apply(i);
+            T value = factory.apply(i * 2);
+            keys.add(key);
+            values.add(value);
+            map.put(key, value);
+            checkToArray(i + "-keys", keys.toArray(emptyArray), map.keySet(), !ordered);
+            checkToArray(i + "-values", values.toArray(emptyArray), map.values(), !ordered);
         }
         map.clear();
-        checkToArray("Empty-keys", new String[0], map.keySet(), !ordered);
-        checkToArray("Empty-values", new String[0], map.values(), !ordered);
+        checkToArray("Empty-keys", emptyArray, map.keySet(), !ordered);
+        checkToArray("Empty-values", emptyArray, map.values(), !ordered);
     }
 
     private static void checkSet(boolean ordered) {
