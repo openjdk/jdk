@@ -324,6 +324,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
   PSAdaptiveSizePolicy* size_policy = heap->size_policy();
 
   assert(young_gen->to_space()->is_empty(), "precondition");
+  assert(young_gen->reserved_size() != 0, "precondition");
 
   heap->increment_total_collections();
 
@@ -415,9 +416,9 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
     size_policy->minor_collection_end(young_gen->eden_space()->capacity_in_bytes());
 
     if (!promotion_failure_occurred) {
-      // Swap the survivor spaces.
-      young_gen->eden_space()->clear(SpaceDecorator::Mangle);
-      young_gen->from_space()->clear(SpaceDecorator::Mangle);
+      // Clear now empty eden/from spaces. Don't mangle yet since we can potentially resize later on.
+      young_gen->eden_space()->clear(SpaceDecorator::DontMangle);
+      young_gen->from_space()->clear(SpaceDecorator::DontMangle);
       young_gen->swap_spaces();
 
       size_t survived = young_gen->from_space()->used_in_bytes();
@@ -428,6 +429,7 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
 
       if (UseAdaptiveSizePolicy) {
         if (young_gen->is_from_to_layout()) {
+          GCTraceTime(Debug, gc, phases) tm_info("Adaptive: Resizing after young-gc", &_gc_timer);
           size_policy->print_stats(_survivor_overflow);
           heap->resize_after_young_gc(_survivor_overflow);
           _tenuring_threshold = size_policy->compute_tenuring_threshold(young_gen->sizing_state(),
@@ -446,6 +448,16 @@ bool PSScavenge::invoke(bool clear_soft_refs) {
                                  ? heap->total_collections() - heap->total_full_collections()
                                  : 1;
           size_policy->decay_supplemental_growth(num_minor_gcs);
+        }
+      }
+
+      // Resizing completed. After young-gc, all live-objs, if any, are in from-space for young-gen.
+      {
+        if (ZapUnusedHeapArea) {
+          if (!UseNUMA) {
+            young_gen->eden_space()->mangle_unused_area();
+          }
+          young_gen->to_space()->mangle_unused_area();
         }
       }
 
@@ -500,11 +512,18 @@ void PSScavenge::clean_up_failed_promotion() {
   NOT_PRODUCT(ParallelScavengeHeap::heap()->reset_promotion_should_fail();)
 }
 
-// Adaptive size policy support.
 void PSScavenge::set_young_generation_boundary(HeapWord* v) {
   _young_generation_boundary = v;
   if (UseCompressedOops) {
-    _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode(cast_to_oop(v));
+    ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
+    bool is_gen_boundary_at_heap_end = (v == heap->reserved_region().end());
+    if (!is_gen_boundary_at_heap_end) {
+      _young_generation_boundary_compressed = (uintptr_t)CompressedOops::encode_not_null(cast_to_oop(v));
+    } else {
+      // To work around asserts inside encode_not_null;
+      // just use the max value + 1, so all coops are below this threshold.
+      _young_generation_boundary_compressed = (uintptr_t)std::numeric_limits<uint32_t>::max() + 1;
+    }
   }
 }
 
@@ -528,10 +547,8 @@ void PSScavenge::initialize() {
   // Set boundary between young_gen and old_gen
   assert(old_gen->reserved().end() == young_gen->reserved().start(),
          "old above young");
-  set_young_generation_boundary(young_gen->reserved().start());
+  reset_young_gen_reserved(young_gen->reserved());
 
-  // Initialize ref handling object for scavenging.
-  _span_based_discoverer.set_span(young_gen->reserved());
   _ref_processor =
     new ReferenceProcessor(&_span_based_discoverer,
                            ParallelGCThreads,          // mt processing degree

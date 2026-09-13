@@ -33,6 +33,7 @@
 class  AllocateNode;
 class  AllocateArrayNode;
 class  CallNode;
+class  Int128TBinaryNode;
 class  SubTypeCheckNode;
 class  Node;
 class  PhaseIterGVN;
@@ -115,13 +116,13 @@ private:
   Node* value_from_alloc(BasicType ft, const TypeOopPtr* adr_t, AllocateNode* alloc);
   Node* value_from_mem(Node* start, Node* ctl, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc);
   Node* value_from_mem_phi(Node* mem, BasicType ft, const Type* ftype, const TypeOopPtr* adr_t, AllocateNode* alloc, Node_Stack* value_phis, int level);
-  Node* inline_type_from_mem(ciInlineKlass* vk, const TypeAryPtr* elem_adr_type, int elem_idx, int offset_in_element, bool null_free, AllocateNode* alloc, SafePointNode* sfpt);
+  Node* value_type_from_mem(ciValueKlass* vk, const TypeAryPtr* elem_adr_type, int elem_idx, int offset_in_element, bool null_free, AllocateNode* alloc, SafePointNode* sfpt);
 
   bool eliminate_boxing_node(CallStaticJavaNode* call);
   bool eliminate_allocate_node(AllocateNode *alloc);
   void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
   bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
-  void process_users_of_allocation(CallNode *alloc, bool inline_alloc = false);
+  void process_users_of_allocation(CallNode *alloc, bool value_type_alloc = false);
 
   void eliminate_gc_barrier(Node *p2x);
   void mark_eliminated_box(Node* box, Node* obj);
@@ -219,6 +220,8 @@ private:
   void expand_subtypecheck_node(SubTypeCheckNode *check);
 
   void expand_flatarraycheck_node(FlatArrayCheckNode* check);
+
+  void expand_add_sub_i128t_node(Int128TBinaryNode* addsub);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);

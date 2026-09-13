@@ -48,7 +48,7 @@
 // crash time.  This is a very generic interface that is mainly here
 // for completeness.  Normally the templated EventLogBase would be
 // subclassed to provide different log types.
-class EventLog : public CHeapObj<mtInternal> {
+class EventLog : public CHeapObj<mtLogging> {
   friend class Events;
 
  private:
@@ -79,7 +79,7 @@ class EventLog : public CHeapObj<mtInternal> {
 // semantics aren't appropriate.  The name is used as the label of the
 // log when it is dumped during a crash.
 template <class T> class EventLogBase : public EventLog {
-  template <class X> class EventRecord : public CHeapObj<mtInternal> {
+  template <class X> class EventRecord : public CHeapObj<mtLogging> {
    public:
     double  timestamp;
     Thread* thread;

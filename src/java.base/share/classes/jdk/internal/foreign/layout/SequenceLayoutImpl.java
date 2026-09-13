@@ -30,6 +30,7 @@ import jdk.internal.foreign.Utils;
 
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.SequenceLayout;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -115,7 +116,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         if (elementCounts.length == 0) {
             throw new IllegalArgumentException();
         }
-        SequenceLayout flat = flatten();
+        SequenceLayout flat = flatten(); // May throw UnsupportedOperationException
         long expectedCount = flat.elementCount();
 
         long actualCount = 1;
@@ -130,7 +131,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
             } else if (elementCounts[i] <= 0) {
                 throw new IllegalArgumentException("Invalid element count: " + elementCounts[i]);
             } else {
-                actualCount = elementCounts[i] * actualCount;
+                actualCount = multiplyExactOrIae(elementCounts[i], actualCount, elementCounts);
             }
         }
 
@@ -138,7 +139,7 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
         if (inferPosition != -1) {
             long inferredCount = expectedCount / actualCount;
             elementCounts[inferPosition] = inferredCount;
-            actualCount = actualCount * inferredCount;
+            actualCount = multiplyExactOrIae(actualCount, inferredCount, elementCounts);
         }
 
         if (actualCount != expectedCount) {
@@ -170,10 +171,27 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
      * element count), whose element layout is not a sequence layout.
      */
     public SequenceLayout flatten() {
-        long count = elementCount();
         MemoryLayout elemLayout = elementLayout();
+        boolean hasZeroCount = elementCount() == 0;
+        // Do an intitial pass and check if any of the element counts are zero
+        // to prevent throwing an overflow in that case.
         while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
-            count = count * elemSeq.elementCount();
+            long elemCount = elemSeq.elementCount();
+            hasZeroCount |= elemCount == 0;
+            elemLayout = elemSeq.elementLayout();
+        }
+        if (hasZeroCount) {
+            return MemoryLayout.sequenceLayout(0, elemLayout);
+        }
+
+        long count = elementCount();
+        elemLayout = elementLayout();
+        while (elemLayout instanceof SequenceLayoutImpl elemSeq) {
+            try {
+                count = Math.multiplyExact(count, elemSeq.elementCount());
+            } catch (ArithmeticException e) {
+                throw new UnsupportedOperationException("Flattening of elements gave a count that is out of range.", e);
+            }
             elemLayout = elemSeq.elementLayout();
         }
         return MemoryLayout.sequenceLayout(count, elemLayout);
@@ -220,6 +238,14 @@ public final class SequenceLayoutImpl extends AbstractLayout<SequenceLayoutImpl>
 
     public static SequenceLayout of(long elementCount, MemoryLayout elementLayout) {
         return new SequenceLayoutImpl(elementCount, elementLayout);
+    }
+
+    private static long multiplyExactOrIae(long a, long b, long[] elementCounts) {
+        try {
+            return Math.multiplyExact(a, b);
+        } catch (ArithmeticException e) {
+            throw new IllegalArgumentException("Counts overflow: " + Arrays.toString(elementCounts));
+        }
     }
 
 }

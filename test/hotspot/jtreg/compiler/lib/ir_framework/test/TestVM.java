@@ -95,8 +95,8 @@ public class TestVM {
     private static final boolean PRINT_TIMES = Boolean.getBoolean("PrintTimes") || VERBOSE;
     public static final boolean USE_COMPILER = WHITE_BOX.getBooleanVMFlag("UseCompiler");
     static final boolean EXCLUDE_RANDOM = Boolean.getBoolean("ExcludeRandom");
-    private static final String TESTLIST = SystemProperty.getTestList();
-    private static final String EXCLUDELIST = SystemProperty.getExcludeList();
+    private static final String TEST_LIST = SystemProperty.getTestList();
+    private static final String EXCLUDE_LIST = SystemProperty.getExcludeList();
     private static final boolean DUMP_REPLAY = Boolean.getBoolean("DumpReplay");
     private static final boolean GC_AFTER = Boolean.getBoolean("GCAfter");
     private static final boolean SHUFFLE_TESTS = Boolean.parseBoolean(System.getProperty("ShuffleTests", "true"));
@@ -122,8 +122,8 @@ public class TestVM {
     private TestVM(Class<?> testClass) {
         TestRun.check(testClass != null, "Test class cannot be null");
         this.testClass = testClass;
-        this.testList = createTestFilterList(TESTLIST, testClass);
-        this.excludeList = createTestFilterList(EXCLUDELIST, testClass);
+        this.testList = createTestFilterList(TEST_LIST, testClass);
+        this.excludeList = createTestFilterList(EXCLUDE_LIST, testClass);
 
         if (PRINT_VALID_IR_RULES) {
             irMatchRulePrinter = new ApplicableIRRulesPrinter();
@@ -136,19 +136,20 @@ public class TestVM {
      * Parse "test1,test2,test3" into a list.
      */
     private static List<String> createTestFilterList(String list, Class<?> testClass) {
-        List<String> filterList = null;
-        if (!list.isEmpty()) {
-            String classPrefix = testClass.getSimpleName() + ".";
-            filterList = new ArrayList<>(Arrays.asList(list.split(",")));
-            for (int i = filterList.size() - 1; i >= 0; i--) {
-                String test = filterList.get(i);
-                if (test.indexOf(".") > 0) {
-                    if (test.startsWith(classPrefix)) {
-                        test = test.substring(classPrefix.length());
-                        filterList.set(i, test);
-                    } else {
-                        filterList.remove(i);
-                    }
+        if (list.isEmpty()) {
+            return new ArrayList<>();
+        }
+
+        String classPrefix = testClass.getSimpleName() + ".";
+        List<String> filterList = new ArrayList<>(Arrays.asList(list.split(",")));
+        for (int i = filterList.size() - 1; i >= 0; i--) {
+            String test = filterList.get(i);
+            if (test.indexOf(".") > 0) {
+                if (test.startsWith(classPrefix)) {
+                    test = test.substring(classPrefix.length());
+                    filterList.set(i, test);
+                } else {
+                    filterList.remove(i);
                 }
             }
         }
@@ -295,7 +296,7 @@ public class TestVM {
                 try {
                     Arguments argumentsAnno = getAnnotation(m, Arguments.class);
                     TestFormat.check(argumentsAnno != null || m.getParameterCount() == 0, "Missing @Arguments annotation to define arguments of " + m);
-                    BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m.getName()));
+                    BaseTest baseTest = new BaseTest(test, shouldExcludeTest(m));
                     allTests.add(baseTest);
                     if (PRINT_VALID_IR_RULES) {
                         irMatchRulePrinter.emitApplicableIRRules(m, baseTest.isSkipped());
@@ -308,17 +309,22 @@ public class TestVM {
     }
 
     /**
-     * Check if user wants to exclude this test by checking the -DTest and -DExclude lists.
+     * A test is excluded from execution if:
+     * - -DTest does not list the method
+     * - -DExclude lists the method
      */
-    private boolean shouldExcludeTest(String testName) {
-        boolean hasTestList = testList != null;
-        boolean hasExcludeList = excludeList != null;
-        if (hasTestList) {
-            return !testList.contains(testName) || (hasExcludeList && excludeList.contains(testName));
-        } else if (hasExcludeList) {
-            return excludeList.contains(testName);
-        }
-        return false;
+    private boolean shouldExcludeTest(Method testMethod) {
+        String testName = testMethod.getName();
+        return isNotOnTestList(testName) ||
+               isOnExcludeList(testName);
+    }
+
+    private boolean isNotOnTestList(String testName) {
+        return !testList.isEmpty() && !testList.contains(testName);
+    }
+
+    private boolean isOnExcludeList(String testName) {
+        return excludeList.contains(testName);
     }
 
     /**
@@ -541,7 +547,7 @@ public class TestVM {
     }
 
     /**
-     * Setup @Test annotated method an add them to the declaredTests map to have a convenient way of accessing them
+     * Setup @Test annotated method and add them to the declaredTests map to have a convenient way of accessing them
      * once setting up a framework test (base  checked, or custom run test).
      */
     private void setupDeclaredTests() {
@@ -693,7 +699,7 @@ public class TestVM {
                          + "checked test " + m);
         CheckedTest.Parameter parameter = getCheckedTestParameter(m, testMethod);
         dontCompileAndDontInlineMethod(m);
-        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod.getName()));
+        CheckedTest checkedTest = new CheckedTest(test, m, checkAnno, parameter, shouldExcludeTest(testMethod));
         allTests.add(checkedTest);
         if (PRINT_VALID_IR_RULES) {
             // Only need to emit IR verification information if IR verification is actually performed.
@@ -752,8 +758,8 @@ public class TestVM {
                 checkCustomRunTest(m, testName, testMethod, test, runAnno.mode());
                 test.setAttachedMethod(m);
                 tests.add(test);
-                // Only exclude custom run test if all test methods excluded
-                shouldExcludeTest &= shouldExcludeTest(testMethod.getName());
+                // Only exclude custom run test if all its associated test methods are excluded
+                shouldExcludeTest &= shouldExcludeTest(testMethod);
             } catch (TestFormatException e) {
                 // Logged, continue.
             }
@@ -864,11 +870,12 @@ public class TestVM {
         // Execute all tests and keep track of each exception that is thrown. These are then reported once all tests
         // are executing. This prevents a premature exit without running all tests.
         for (AbstractTest test : testList) {
+            String testName = test.getName();
             if (VERBOSE) {
-                System.out.println("Run " + test.toString());
+                System.out.println("Run \"" + testName + "\"");
             }
             if (testFilterPresent) {
-                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, "Run " + test.toString());
+                TestVmSocket.sendWithTag(MessageTag.TEST_LIST, test.toString());
             }
             try {
                 test.run();
@@ -876,18 +883,18 @@ public class TestVM {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);
                 e.printStackTrace(pw);
-                builder.append(test).append(":").append(System.lineSeparator()).append(sw)
+                builder.append("Failed test: ").append(test).append(":").append(System.lineSeparator()).append(sw)
                        .append(System.lineSeparator()).append(System.lineSeparator());
                 failures++;
             }
             if (PRINT_TIMES) {
                 long endTime = System.nanoTime();
-                long duration = (endTime - startTime);
+                long durationMs = (endTime - startTime) / 1_000_000;
                 if (VERBOSE) {
-                    System.out.println("Done " + test.getName() + ": " + duration + " ns = " + (duration / 1_000_000) + " ms");
+                    System.out.println("Done " + testName + ": " + durationMs + " ms");
                 }
                 // Will be correctly formatted later.
-                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test.getName() + "," + duration);
+                TestVmSocket.sendWithTag(MessageTag.PRINT_TIMES, test + "," + durationMs);
             }
             if (GC_AFTER) {
                 System.out.println("doing GC");
@@ -904,7 +911,7 @@ public class TestVM {
     }
 
     private boolean testFilterPresent() {
-        return testList != null || excludeList != null;
+        return !testList.isEmpty() || !excludeList.isEmpty();
     }
 
     enum TriState {

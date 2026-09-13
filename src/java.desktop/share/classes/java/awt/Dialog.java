@@ -908,7 +908,7 @@ public class Dialog extends Window {
                 }
 
                 // This call is required as the show() method of the Dialog class
-                // does not invoke the super.show(). So wried... :(
+                // does not invoke the super.show(). So weird... :(
                 mixOnShowing();
 
                 peer.setVisible(true); // now guaranteed never to block

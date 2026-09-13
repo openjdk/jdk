@@ -41,9 +41,9 @@
 #include "oops/methodCounters.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/resolvedIndyEntry.hpp"
 #include "oops/resolvedMethodEntry.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -469,8 +469,8 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   // and null it as marker that esp is now tos until next java call
   __ str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
 
-  if (state == atos && InlineTypeReturnedAsFields) {
-    __ store_inline_type_fields_to_buf(nullptr, true);
+  if (state == atos && ValueTypeReturnedAsFields) {
+    __ store_value_type_fields_to_buf(nullptr, true);
   }
 
   __ restore_bcp();
@@ -1422,7 +1422,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ verify_sve_vector_length();
 
   // change thread state
-  __ mov(rscratch1, _thread_in_native_trans);
+  __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
 
@@ -1447,17 +1447,12 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mov(c_rarg0, rthread);
-    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ lea(rscratch2, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans)));
     __ blr(rscratch2);
     __ get_method(rmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  __ mov(rscratch1, _thread_in_Java);
-  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-  __ stlrw(rscratch1, rscratch2);
 
   // Check preemption for Object.wait()
   Label not_preempted;
