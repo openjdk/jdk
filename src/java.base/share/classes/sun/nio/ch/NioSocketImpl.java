@@ -919,6 +919,9 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             options.add(StandardSocketOptions.SO_RCVBUF);
             options.add(StandardSocketOptions.SO_REUSEADDR);
             if (server) {
+                if (Net.isServerSocketIPTosEnabled()) {
+                    options.add(StandardSocketOptions.IP_TOS);
+                }
                 options.addAll(ExtendedSocketOptions.serverSocketOptions());
             } else {
                 options.add(StandardSocketOptions.IP_TOS);

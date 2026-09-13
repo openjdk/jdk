@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,7 @@ import java.util.Objects;
 import java.lang.LazyConstant;
 import java.util.function.Supplier;
 
+import jdk.internal.misc.VM;
 import sun.net.ext.ExtendedSocketOptions;
 import sun.net.util.IPAddressUtil;
 
@@ -87,6 +88,14 @@ public class Net {
      */
     static boolean isReusePortAvailable() {
         return SO_REUSEPORT_AVAILABLE;
+    }
+
+    /**
+     * Returns whether IP_TOS support is enabled for the default ServerSocket
+     * implementation by the startup property.
+     */
+    public static boolean isServerSocketIPTosEnabled() {
+        return Boolean.parseBoolean(VM.getSavedProperty("jdk.net.ServerSocket.IP_TOS"));
     }
 
     /**

@@ -23,10 +23,14 @@
 
 /*
  * @test
- * @bug 8062744 8210362
- * @summary Check that IP_TOS is not supported by ServerSocket
+ * @bug 8062744 8392151
+ * @summary Check opt-in IP_TOS support on ServerSocket
  * @modules jdk.net
- * @run junit ${test.main.class}
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=false ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djdk.net.ServerSocket.IP_TOS=TrUe ${test.main.class}
  */
 
 import java.net.*;
@@ -34,7 +38,7 @@ import jdk.net.*;
 
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SupportedOptions {
@@ -42,18 +46,34 @@ class SupportedOptions {
     @Test
     void serverSocketOptions() throws Exception {
         var option = StandardSocketOptions.IP_TOS;
+        var property = "jdk.net.ServerSocket.IP_TOS";
+        boolean enabled = Boolean.getBoolean(property);
 
-        assertFalse(Sockets.supportedOptions(ServerSocket.class).contains(option),
-                "ServerSocket class options unexpectedly include IP_TOS");
+        // The startup value determines support, even before either option set is initialized.
+        System.setProperty(property, Boolean.toString(!enabled));
+
+        assertEquals(enabled, Sockets.supportedOptions(ServerSocket.class).contains(option),
+                "Unexpected IP_TOS support in ServerSocket class options");
 
         try (var ss = new ServerSocket()) {
-            assertFalse(ss.supportedOptions().contains(option),
-                    "ServerSocket options unexpectedly include IP_TOS");
+            assertEquals(enabled, ss.supportedOptions().contains(option),
+                    "Unexpected IP_TOS support in ServerSocket options");
 
-            assertThrows(UnsupportedOperationException.class,
-                    () -> Sockets.setOption(ss, option, 128));
-            assertThrows(UnsupportedOperationException.class,
-                    () -> Sockets.getOption(ss, option));
+            if (enabled) {
+                ss.setOption(option, 128);
+                ss.getOption(option);
+                Sockets.setOption(ss, option, 128);
+                Sockets.getOption(ss, option);
+            } else {
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.setOption(option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.getOption(option));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.setOption(ss, option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.getOption(ss, option));
+            }
         }
     }
 }

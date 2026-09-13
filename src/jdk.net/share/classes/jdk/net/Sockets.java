@@ -40,6 +40,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import sun.nio.ch.Net;
+
 /**
  * Defines static methods to set and get socket options defined by the
  * {@link java.net.SocketOption} interface. All of the standard options defined
@@ -327,6 +329,9 @@ public class Sockets {
             set.addAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
                     ExtendedSocketOptions.TCP_KEEPIDLE,
                     ExtendedSocketOptions.TCP_KEEPINTERVAL));
+        }
+        if (Net.isServerSocketIPTosEnabled()) {
+            set.add(StandardSocketOptions.IP_TOS);
         }
         if (incomingNapiIdsupported) {
             set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);

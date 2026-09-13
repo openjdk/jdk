@@ -1,6 +1,6 @@
 <!DOCTYPE HTML>
 <!--
- Copyright (c) 1998, 2025, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,21 @@ If there is no special note, a property value is checked every time it is used.<
     returned by the system-wide {@linkplain java.net.spi.InetAddressResolver resolver}.</P>
 </UL>
 <P>Both of these properties are checked only once, at startup.</P>
+<a id="ServerSocket"></a>
+<H2>Server sockets</H2>
+<UL>
+    <LI><P><B>{@systemProperty jdk.net.ServerSocket.IP_TOS}</B> (default: false)<BR>
+    When set to {@code true}, ignoring case, this property allows applications to set
+    and query {@link java.net.StandardSocketOptions#IP_TOS IP_TOS} on a server socket
+    using the JDK's default {@link java.net.ServerSocket ServerSocket} implementation,
+    including before a connection is accepted. Otherwise, the option is not supported.
+    This property also controls whether {@code IP_TOS} is included in the option
+    set returned by {@code jdk.net.Sockets.supportedOptions(ServerSocket.class)}.
+    The option's effects, including inheritance by accepted sockets, are
+    platform dependent. Support on {@code Socket} and
+    {@code DatagramSocket} is not affected.</P>
+</UL>
+<P>This property is checked only once, at startup.</P>
 <a id="Proxies"></a>
 <H2>Proxies</H2>
 <P>A proxy server allows indirect connection to network services and
