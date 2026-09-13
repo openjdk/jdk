@@ -3050,13 +3050,13 @@ void C2_MacroAssembler::reduce_mul_fp_v(FloatRegister dst, FloatRegister src1, V
   vsetvli_helper(bt, vector_length);
 
   vector_length /= 2;
-  vslidedown_vi(vtmp1, src2, vector_length);
+  slidedown_v(vtmp1, src2, vector_length);
   vsetvli_helper(bt, vector_length);
   vfmul_vv(vtmp1, vtmp1, src2);
 
   while (vector_length > 1) {
     vector_length /= 2;
-    vslidedown_vi(vtmp2, vtmp1, vector_length);
+    slidedown_v(vtmp2, vtmp1, vector_length);
     vsetvli_helper(bt, vector_length);
     vfmul_vv(vtmp1, vtmp1, vtmp2);
   }
