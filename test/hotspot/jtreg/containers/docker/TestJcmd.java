@@ -153,6 +153,7 @@ public class TestJcmd {
             String groupName = getId("-gn");
             // Only needed when run as regular user. UID == 0 should already exist
             if (!ROOT_UID.equals(uid)) {
+                sb.append(String.format("RUN groupmod -g 9999 $(getent group %s | cut -d: -f1) || true \n", gid));
                 sb.append(String.format("RUN groupadd --gid %s %s \n", gid, groupName));
                 sb.append(String.format("RUN useradd  --uid %s --gid %s %s \n", uid, gid, userName));
                 sb.append(String.format("USER %s \n", userName));
