@@ -146,6 +146,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=128"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorCeil() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -157,6 +161,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=128"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorFloor() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -167,6 +175,10 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
+    @IR(applyIfPlatform = {"riscv64", "true"},
+        applyIfCPUFeature = {"rvv", "true"},
+        applyIf = {"MaxVectorSize", ">=128"},
         counts = {IRNode.ROUND_DOUBLE_MODE_V, ">0"})
     public double[] vectorRint() {
         double[] res = new double[SIZE];
