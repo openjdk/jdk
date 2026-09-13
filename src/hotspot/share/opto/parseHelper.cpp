@@ -173,13 +173,13 @@ Node* Parse::array_store_check(const Type*& elemtype) {
     Deoptimization::DeoptReason reason = Deoptimization::Reason_none;
     // Try to cast the array to an exact type from profile data. First
     // check the speculative type.
-    if (ary_spec != nullptr && !too_many_traps(Deoptimization::Reason_speculate_class_check)) {
+    if (ary_spec != nullptr && !too_many_traps_or_recompiles(Deoptimization::Reason_speculate_class_check)) {
       extak = TypeKlassPtr::make(ary_spec)->is_aryklassptr();
       reason = Deoptimization::Reason_speculate_class_check;
     } else if (UseArrayLoadStoreProfile) {
       // No speculative type: check profile data at this bci.
       reason = Deoptimization::Reason_class_check;
-      if (!too_many_traps(reason)) {
+      if (!too_many_traps_or_recompiles(reason)) {
         ciKlass* array_type = nullptr;
         ciKlass* element_type = nullptr;
         ProfilePtrKind element_ptr = ProfileMaybeNull;
@@ -190,7 +190,7 @@ Node* Parse::array_store_check(const Type*& elemtype) {
           extak = TypeKlassPtr::make(array_type)->is_aryklassptr();
         }
       }
-    } else if (!too_many_traps(Deoptimization::Reason_array_check) && tak->isa_aryklassptr()) {
+    } else if (!too_many_traps_or_recompiles(Deoptimization::Reason_array_check) && tak->isa_aryklassptr()) {
       // If the compiler has determined that the type of array 'ary' (represented
       // by 'array_klass') is java/lang/Object, the compiler must not assume that
       // the array 'ary' is monomorphic.
