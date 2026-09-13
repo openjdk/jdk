@@ -2424,6 +2424,8 @@ private:
   void evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexRoundPrefix rmode);
   void vdivss(XMMRegister dst, XMMRegister nds, Address src);
   void vdivss(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminsd(XMMRegister dst, XMMRegister nds, XMMRegister src);
+  void vminss(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vfmadd231sd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void vfnmadd213sd(XMMRegister dst, XMMRegister nds, XMMRegister src);
   void evfnmadd213sd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexRoundPrefix rmode);
@@ -2530,6 +2532,8 @@ private:
 
   // Bitwise Logical OR of Packed Floating-Point Values
   void orpd(XMMRegister dst, XMMRegister src);
+  void vorpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vorps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
 
   void unpckhpd(XMMRegister dst, XMMRegister src);
   void unpcklpd(XMMRegister dst, XMMRegister src);
