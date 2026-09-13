@@ -112,7 +112,9 @@ public:
   f(UseNullFreeAtomicValueFlattening) \
   f(UseNullableAtomicValueFlattening) \
   f(UseNullableNonAtomicValueFlattening) \
-  f(FlatteningBudget)
+  f(FlatteningBudget) \
+  f(RestrictReservedStack) \
+  f(DiagnoseSyncOnValueBasedClasses)
 
 
 class CDSMustMatchFlags {
@@ -125,6 +127,7 @@ private:
 
   inline static void do_print(outputStream* st, bool v);
   LP64_ONLY(inline static void do_print(outputStream* st, uint v);)
+  LP64_ONLY(inline static void do_print(outputStream* st, int v);)
   inline static void do_print(outputStream* st, intx v);
   inline static void do_print(outputStream* st, uintx v);
   inline static void do_print(outputStream* st, double v);

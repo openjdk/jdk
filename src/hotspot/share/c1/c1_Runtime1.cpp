@@ -295,9 +295,10 @@ bool Runtime1::initialize(BufferBlob* blob) {
   }
   BarrierSetC1* bs = BarrierSet::barrier_set()->barrier_set_c1();
   bool success = bs->generate_c1_runtime_stubs(blob);
-
-  // disallow any further c1 stub generation
-  AOTCodeCache::set_c1_stubs_complete();
+  if (success) {
+    // disallow any further c1 AOT stub generation
+    AOTCodeCache::set_c1_stubs_complete();
+  }
   // printing
 #ifndef PRODUCT
   if (PrintSimpleStubs) {

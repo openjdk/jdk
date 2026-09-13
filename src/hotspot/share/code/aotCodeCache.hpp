@@ -95,9 +95,10 @@ private:
   // Next field is exposed to external profilers - keep it as boolean.
   bool    _for_preload;           // Code can be used for preload (before classes initialized)
   bool    _not_entrant;           // Deoptimized
-
+  bool    _verified;              // VerifyAOTCode
   uint8_t _has_clinit_barriers:1, // Generated code has class init checks (only in for_preload code)
           _has_oop_maps:1,
+          _has_vectors:1,         // nmethod uses Vector API
           _loaded:1,              // Code was loaded for use
           _load_fail:1;           // Failed to load due to some klass state
 
@@ -126,9 +127,11 @@ public:
     _for_preload  = for_preload;
     _has_clinit_barriers = has_clinit_barriers;
     _has_oop_maps = has_oop_maps;
+    _has_vectors  = false; // will be set later
     _loaded       = false;
     _load_fail    = false;
     _not_entrant  = false;
+    _verified     = false;
 
     _id           = id;
     _offset       = offset;
@@ -161,6 +164,10 @@ public:
   uint code_offset()  const { return _code_offset; }
 
   bool has_oop_maps() const { return _has_oop_maps; }
+
+  bool has_vectors()  const { return _has_vectors; }
+  void set_has_vectors(bool val) { _has_vectors = val; }
+
   uint num_inlined_bytecodes() const { return _num_inlined_bytecodes; }
   void set_inlined_bytecodes(int bytes) { _num_inlined_bytecodes = bytes; }
 
@@ -174,6 +181,9 @@ public:
   bool for_preload()  const { return _for_preload; }
   bool is_loaded()    const { return _loaded; }
   void set_loaded()         { _loaded = true; }
+
+  bool is_verified()  const;
+  void set_verified();
 
   // Use atomic access to _not_entrant field.
   bool not_entrant() const;
@@ -211,6 +221,8 @@ private:
   address* _extrs_addr;
   address* _stubs_addr;
   uint     _extrs_length;
+  uint     _extrs2_length;      // recorded in init_extrs2()
+  uint     _final_extrs_length; // expected final count
 
   bool _extrs_complete;
   bool _shared_stubs_complete;
@@ -225,6 +237,8 @@ public:
     _extrs_addr(nullptr),
     _stubs_addr(nullptr),
     _extrs_length(0),
+    _extrs2_length(0),
+    _final_extrs_length(0),
     _extrs_complete(false),
     _shared_stubs_complete(false),
     _c1_stubs_complete(false),
@@ -233,8 +247,12 @@ public:
   { }
   void init_extrs();
   void init_extrs2();
+  uint extrs_length() const { return _extrs_length; }
+  uint extrs2_length() const { return _extrs2_length; }
+  uint final_extrs_length() const { return _final_extrs_length;}
   void add_stub_entry(EntryId entry_id, address entry);
   void add_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
+  uint add_c1_extrs_blobs(bool count_only);
   void set_shared_stubs_complete();
   void set_c1_stubs_complete();
   void set_c2_stubs_complete();
@@ -349,15 +367,20 @@ public:
   do_var(int,   AllocatePrefetchLines)                  /* stubs and nmethods */ \
   do_var(int,   AllocatePrefetchStepSize)               /* stubs and nmethods */ \
   do_var(uint,  CodeEntryAlignment)                     /* array copy stubs and nmethods */ \
-  do_var(bool,  UseCompressedOops)                      /* stubs and nmethods */ \
   do_var(bool,  EnableContended)                        /* nmethods */ \
   do_var(intx,  OptoLoopAlignment)                      /* array copy stubs and nmethods */ \
   do_var(bool,  RestrictContended)                      /* nmethods */ \
   do_var(int,   ContendedPaddingWidth) \
-  do_var(int,   ObjectAlignmentInBytes) \
   do_var(uint,  GCCardSizeInBytes) \
+  do_var(bool,  AlwaysSafeConstructors) \
+  do_var(bool,  UseCondCardMark) \
+  do_var(bool,  DoJVMTIVirtualThreadTransitions) \
   do_var(bool,  PreserveFramePointer) \
+  do_var(intx,  StackReservedPages) \
+  do_var(intx,  StackShadowPages) \
   do_var(bool,  UseTLAB) \
+  do_var(bool,  ZeroTLAB) \
+  do_var(bool,  UseAdler32Intrinsics) \
   do_var(bool,  UseAESCTRIntrinsics) \
   do_var(bool,  UseAESIntrinsics) \
   do_var(bool,  UseBASE64Intrinsics) \
@@ -376,16 +399,41 @@ public:
   do_var(bool,  UseSHA3Intrinsics) \
   do_var(bool,  UseSHA512Intrinsics) \
   do_var(bool,  UseIntPolyIntrinsics) \
+  do_var(bool,  UseVectorizedHashCodeIntrinsic) \
   do_var(bool,  UseVectorizedMismatchIntrinsic) \
-  do_var(bool,  ValueTypeReturnedAsFields) \
   do_var(bool,  VMContinuations) \
   do_var(bool,  VerifyOops) \
   do_var(bool,  CountCompiledCalls) \
+  do_var(bool,  DTraceMethodProbes) \
+  do_var(bool,  DTraceAllocProbes) \
   do_fun(int,   CompressedKlassPointers_shift,          CompressedKlassPointers::shift()) \
   do_fun(bool,  JavaAssertions_systemClassDefault,      JavaAssertions::systemClassDefault()) \
   do_fun(bool,  JavaAssertions_userClassDefault,        JavaAssertions::userClassDefault()) \
+  do_fun(bool,  COOP_use_implicit_null_checks,          CompressedOops::use_implicit_null_checks()) \
+  do_fun(size_t, os_vm_page_size,                       os::vm_page_size()) \
   do_fun(CollectedHeap::Name, Universe_heap_kind,       Universe::heap()->kind()) \
   // END
+
+#if INCLUDE_ZGC
+#define AOTCODECACHE_CONFIGS_ZGC_DO(do_var, do_fun) \
+  do_fun(uintptr_t, ZAddressHeapBaseShift_for_VerifyOops, (UseZGC && VerifyOops) ? ZAddressHeapBaseShift : 0) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_ZGC_DO(do_var, do_fun)
+#endif
+
+#if INCLUDE_SHENANDOAHGC
+#define AOTCODECACHE_CONFIGS_SHENANDOAHGC_DO(do_var, do_fun) \
+  do_var(bool,  ExplicitGCInvokesConcurrent) \
+  do_var(bool,  ShenandoahImplicitGCInvokesConcurrent) \
+  do_var(bool,  ShenandoahLoadRefBarrier) \
+  do_var(bool,  ShenandoahSATBBarrier) \
+  do_var(bool,  ShenandoahCloneBarrier) \
+  do_var(bool,  ShenandoahCardBarrier) \
+  // END
+#else
+#define AOTCODECACHE_CONFIGS_SHENANDOAHGC_DO(do_var, do_fun)
+#endif
 
 #ifdef COMPILER2
 #define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
@@ -396,6 +444,8 @@ public:
   do_var(bool,  UseMulAddIntrinsic) \
   do_var(bool,  UseMultiplyToLenIntrinsic) \
   do_var(bool,  UseSquareToLenIntrinsic) \
+  do_var(bool,  StackTraceInThrowable) \
+  do_var(bool,  OmitStackTraceInFastThrow) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun)
@@ -407,12 +457,16 @@ public:
   do_var(intx,  PrefetchCopyIntervalInBytes)            /* array copy stubs */ \
   do_var(int,   SoftwarePrefetchHintDistance)           /* array fill stubs */ \
   do_var(bool,  UseBlockZeroing) \
+  do_var(bool,  UseCryptoPmullForCRC32) \
   do_var(bool,  UseSecondarySupersCache) \
   do_var(bool,  UseSIMDForArrayEquals)                  /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForBigIntegerShiftIntrinsics) \
   do_var(bool,  UseSIMDForMemoryOps)                    /* array copy stubs and nmethods */ \
   do_var(bool,  UseSIMDForSHA3Intrinsic)                /* SHA3 stubs */  \
   do_var(bool,  UseSimpleArrayEquals) \
+  do_fun(int,   VM_zva_length, UseBlockZeroing ? VM_Version::zva_length() : 0) \
+  do_fun(int,   VM_dcache_line_size, VM_Version::dcache_line_size()) \
+  do_fun(bool,  VM_use_rop_protection, VM_Version::use_rop_protection()) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun)
@@ -421,8 +475,12 @@ public:
 #if defined(X86) && !defined(ZERO)
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
   do_var(int,   AVX3Threshold)                          /* array copy stubs and nmethods */ \
+  do_var(int,   CopyAVX3Threshold) \
   do_var(bool,  EnableX86ECoreOpts)                     /* nmethods */ \
+  do_var(bool,  UseCountTrailingZerosInstruction) \
   do_var(bool,  UseLibmIntrinsic) \
+  do_var(bool,  UseSSE42Intrinsics) \
+  do_var(bool,  CheckJNICalls) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun)
@@ -436,7 +494,8 @@ public:
   do_var(bool,  UseCtxFencei)                           /* method entry barrier stub */ \
   do_var(bool,  UseSecondarySupersCache)                /* secondary supers cache in nmethods */ \
   do_var(bool,  UseZabha)                               /* narrow cmpxchg selection in nmethods */ \
-  do_fun(int,   RVZicbozBlockSize,                      (int)VM_Version::zicboz_block_size.value()) \
+  do_var(bool,  UsePopCountInstruction)                 /* other platforms record it in CPU features */ \
+  do_fun(int,   RVZicbozBlockSize, (int)VM_Version::zicboz_block_size.value()) \
   // END
 #else
 #define AOTCODECACHE_CONFIGS_RISCV_DO(do_var, do_fun)
@@ -444,6 +503,8 @@ public:
 
 #define AOTCODECACHE_CONFIGS_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_GENERIC_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_ZGC_DO(do_var, do_fun) \
+  AOTCODECACHE_CONFIGS_SHENANDOAHGC_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_COMPILER2_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_AARCH64_DO(do_var, do_fun) \
   AOTCODECACHE_CONFIGS_X86_DO(do_var, do_fun) \
@@ -490,9 +551,22 @@ protected:
     bool _avoidUnalignedAccesses;
 #endif
 
+#ifdef COMPILER2
+    bool _reduceInitialCardMarks;
+    uint _c2_ea_state;
+#endif
+
+    uint _jvmti_state;
+
   public:
     void record();
     bool verify(AOTCodeCache* cache) const;
+
+#ifdef COMPILER2
+    bool reduce_initial_cm() const { return _reduceInitialCardMarks; }
+    uint c2_ea_state() const { return _c2_ea_state; }
+#endif
+    uint jvmti_state() const { return _jvmti_state; }
   };
 
   class Header : public CHeapObj<mtCode> {
@@ -517,6 +591,9 @@ protected:
     uint   _stubgen_blobs_count;
     uint   _C1_blobs_count;
     uint   _C2_blobs_count;
+    uint   _extrs2_length;      // recorded in init_extrs2()
+    uint   _final_extrs_length; // final external addresses count
+
     Config _config; // must be the last element as there is trailing data stored immediately after Config
 
     bool contains(uint offset, uint size) const {
@@ -531,24 +608,28 @@ protected:
               uint search_table_offset,
               uint strings_count,         uint strings_offset,
               uint adapters_count,        uint shared_blobs_count,
-              uint stubgen_blobs_count,   uint C1_blobs_count,
-              uint C2_blobs_count) {
-      _version        = AOT_CODE_VERSION;
-      _cache_size     = cache_size;
-      _cpu_features_size   = cpu_features_size;
-      _cpu_features_offset = cpu_features_offset;
+              uint stubgen_blobs_count,
+              uint C1_blobs_count,        uint C2_blobs_count,
+              uint extrs2_length,         uint final_extrs_length) {
+      _version                = AOT_CODE_VERSION;
+      _cache_size             = cache_size;
+      _cpu_features_size      = cpu_features_size;
+      _cpu_features_offset    = cpu_features_offset;
       _preload_entries_count  = preload_entries_count;
       _preload_entries_offset = preload_entries_offset;
-      _entries_count  = entries_count;
-      _entries_offset = entries_offset;
-      _search_table_offset = search_table_offset;
-      _strings_count  = strings_count;
-      _strings_offset = strings_offset;
-      _adapters_count = adapters_count;
-      _shared_blobs_count  = shared_blobs_count;
-      _stubgen_blobs_count = stubgen_blobs_count;
-      _C1_blobs_count = C1_blobs_count;
-      _C2_blobs_count = C2_blobs_count;
+      _entries_count          = entries_count;
+      _entries_offset         = entries_offset;
+      _search_table_offset    = search_table_offset;
+      _strings_count          = strings_count;
+      _strings_offset         = strings_offset;
+      _adapters_count         = adapters_count;
+      _shared_blobs_count     = shared_blobs_count;
+      _stubgen_blobs_count    = stubgen_blobs_count;
+      _C1_blobs_count         = C1_blobs_count;
+      _C2_blobs_count         = C2_blobs_count;
+      _extrs2_length          = extrs2_length;
+      _final_extrs_length     = final_extrs_length;
+
       _config.record();
     }
 
@@ -567,6 +648,8 @@ protected:
     uint shared_blobs_count()    const { return _shared_blobs_count; }
     uint C1_blobs_count() const { return _C1_blobs_count; }
     uint C2_blobs_count() const { return _C2_blobs_count; }
+    uint extrs2_length()  const { return _extrs2_length; }
+    uint final_extrs_length() const { return _final_extrs_length; }
     uint nmethods_count() const { return _preload_entries_count
                                          + _entries_count
                                          - _stubgen_blobs_count
@@ -574,8 +657,12 @@ protected:
                                          - _C1_blobs_count
                                          - _C2_blobs_count
                                          - _adapters_count; }
-    bool verify(const char* load_buffer, uint load_size)  const;
+#ifdef COMPILER2
+    bool verify_c2_state() const;
+#endif
+    bool verify_jvmti_state(ciEnv* env) const;
     bool verify_cpu_features(AOTCodeCache* cache) const;
+    bool verify(const char* load_buffer, uint load_size)  const;
     size_t verify_section(uint offset,
                           uint count,
                           size_t unit_size,
@@ -636,6 +723,7 @@ private:
   bool write_kind(DataKind kind) {
     return write_int(static_cast<int>(kind));
   }
+  Header* load_header() const { return _load_header; }
   const char* addr(uint offset) const { return _load_buffer + offset; }
   static AOTCodeAddressTable* addr_table() {
     return is_on() && (cache()->_table != nullptr) ? cache()->_table : nullptr;
@@ -653,8 +741,10 @@ public:
   AOTCodeCache(bool is_dumping, bool is_using);
 
   const char* cache_buffer() const { return _load_buffer; }
-  bool failed() const { return _failed; }
-  void set_failed()   { _failed = true; }
+
+  // Use atomic access to _failed field.
+  bool failed() const;
+  void set_failed();
 
   static bool is_address_in_aot_cache(address p) NOT_CDS_RETURN_(false);
   static uint max_aot_code_size();
@@ -676,8 +766,8 @@ public:
   address address_for_C_string(int idx) const { return _table->address_for_C_string(idx); }
   address address_for_id(int id) const { return _table->address_for_id(id); }
 
-  bool for_use()  const { return _for_use  && !_failed; }
-  bool for_dump() const { return _for_dump && !_failed; }
+  bool for_use()  const { return _for_use  && !failed(); }
+  bool for_dump() const { return _for_dump && !failed(); }
 
   AOTCodeEntry* add_entry() {
     _store_entries_cnt++;
@@ -693,6 +783,7 @@ public:
   void invalidate_entry(AOTCodeEntry* entry);
 
   char* store_cpu_features(char* buffer, uint buffer_size);
+  static uint get_jvmti_state();
 
   bool finish_write();
 
@@ -809,6 +900,7 @@ public:
   static void enable_caching() NOT_CDS_RETURN;
   static void disable_caching() NOT_CDS_RETURN;
   static bool is_caching_enabled() NOT_CDS_RETURN_(false);
+  static bool verify_jvmti_state(ciEnv* env) NOT_CDS_RETURN_(true);
 
   //Helper for logging
   static const char *get_kind_name(AOTCodeEntry::Kind kind);

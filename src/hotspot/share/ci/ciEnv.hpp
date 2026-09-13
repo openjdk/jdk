@@ -374,6 +374,8 @@ public:
   bool  should_retain_local_variables() const {
     return _jvmti_can_access_local_variables || _jvmti_can_pop_frame;
   }
+  bool  jvmti_can_access_local_variables()     const { return _jvmti_can_access_local_variables; }
+  bool  jvmti_can_pop_frame()                  const { return _jvmti_can_pop_frame; }
   bool  jvmti_can_hotswap_or_post_breakpoint() const { return _jvmti_can_hotswap_or_post_breakpoint; }
   bool  jvmti_can_post_on_exceptions()         const { return _jvmti_can_post_on_exceptions; }
   bool  jvmti_can_get_owned_monitor_info()     const { return _jvmti_can_get_owned_monitor_info; }

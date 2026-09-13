@@ -129,16 +129,19 @@ AbstractCompiler* CompileBroker::_compilers[2];
 // The maximum numbers of compiler threads to be determined during startup.
 int CompileBroker::_c1_count = 0;
 int CompileBroker::_c2_count = 0;
-int CompileBroker::_ac_count = 0;
+int CompileBroker::_ac1_count = 0;
+int CompileBroker::_ac2_count = 0;
 
 // An array of compiler names as Java String objects
 jobject* CompileBroker::_compiler1_objects = nullptr;
 jobject* CompileBroker::_compiler2_objects = nullptr;
-jobject* CompileBroker::_ac_objects = nullptr;
+jobject* CompileBroker::_ac1_objects = nullptr;
+jobject* CompileBroker::_ac2_objects = nullptr;
 
 CompileLog** CompileBroker::_compiler1_logs = nullptr;
 CompileLog** CompileBroker::_compiler2_logs = nullptr;
-CompileLog** CompileBroker::_ac_logs = nullptr;
+CompileLog** CompileBroker::_ac1_logs = nullptr;
+CompileLog** CompileBroker::_ac2_logs = nullptr;
 
 // These counters are used to assign an unique ID to each compilation.
 volatile jint CompileBroker::_compilation_id     = 0;
@@ -350,35 +353,34 @@ void CompileQueue::add(CompileTask* task) {
  * compilation is disabled.
  */
 void CompileQueue::delete_all() {
-  MutexLocker mu(MethodCompileQueue_lock);
-  CompileTask* current = _first;
-
+  CompileTask* current;
+  {
+    MonitorLocker ml(MethodCompileQueue_lock);
+    current = _first;
+    // Detach queue
+    _first = nullptr;
+    _last = nullptr;
+    ml.notify_all();
+  }
   // Iterate over all tasks in the compile queue
   while (current != nullptr) {
     CompileTask* next = current->next();
+    current->set_prev(nullptr);
+    current->set_next(nullptr);
     if (!current->is_blocking()) {
       // Non-blocking task. No one is waiting for it, delete it now.
       delete current;
     } else {
       // Blocking task. By convention, it is the waiters responsibility
       // to delete the task. We cannot delete it here, because we do not
-      // coordinate with waiters. We will notify the waiters later.
+      // coordinate with waiters. Complete it and notify the waiters.
+      MonitorLocker ml(CompileTaskWait_lock);
+      current->set_failure_reason("Compilation is disabled.");
+      current->mark_complete();
+      ml.notify_all();
     }
     current = next;
   }
-  _first = nullptr;
-  _last = nullptr;
-
-  // Wake up all blocking task waiters to deal with remaining blocking
-  // tasks. This is not a performance sensitive path, so we do this
-  // unconditionally to simplify coding/testing.
-  {
-    MonitorLocker ml(Thread::current(), CompileTaskWait_lock);
-    ml.notify_all();
-  }
-
-  // Wake up all threads that block on the queue.
-  MethodCompileQueue_lock->notify_all();
 }
 
 /**
@@ -507,8 +509,8 @@ void CompileQueue::mark_on_stack() {
 
 
 CompileQueue* CompileBroker::compile_queue(int comp_level, bool is_aot) {
-  if (is_c2_compile(comp_level)) return ((is_aot && (_ac_count > 0)) ? _ac2_compile_queue : _c2_compile_queue);
-  if (is_c1_compile(comp_level)) return ((is_aot && (_ac_count > 0)) ? _ac1_compile_queue : _c1_compile_queue);
+  if (is_c2_compile(comp_level)) return ((is_aot && (_ac2_count > 0)) ? _ac2_compile_queue : _c2_compile_queue);
+  if (is_c1_compile(comp_level)) return ((is_aot && (_ac1_count > 0)) ? _ac1_compile_queue : _c1_compile_queue);
   return nullptr;
 }
 
@@ -600,16 +602,17 @@ void CompileBroker::compilation_init(JavaThread* THREAD) {
   // Set the interface to the current compiler(s).
   _c1_count = CompilationPolicy::c1_count();
   _c2_count = CompilationPolicy::c2_count();
-  _ac_count = CompilationPolicy::ac_count();
+  _ac1_count = AOTCodeCache::is_using_code() ? CompilationPolicy::ac1_count() : 0;
+  _ac2_count = AOTCodeCache::is_using_code() ? CompilationPolicy::ac2_count() : 0;
 
 #ifdef COMPILER1
-  if (_c1_count > 0) {
+  if (_c1_count > 0 || _ac1_count > 0) {
     _compilers[0] = new Compiler();
   }
 #endif // COMPILER1
 
 #ifdef COMPILER2
-  if (_c2_count > 0) {
+  if (_c2_count > 0 || _ac2_count > 0) {
     _compilers[1] = new C2Compiler();
     // Register c2 as c2 CompilerPhaseType idToPhase mapping is explicit.
     // idToPhase mapping for c2 is in opto/phasetype.hpp
@@ -852,11 +855,23 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
     }
     os::set_native_priority(new_thread, native_prio);
 
+    // Count AOT compiler thread
+    bool is_aot_thread = (type == compiler_t) && (queue != nullptr) &&
+                         (queue == _ac1_compile_queue || queue == _ac2_compile_queue);
+    if (is_aot_thread) {
+      int num = comp->num_aot_compiler_threads() + 1;
+      comp->set_num_aot_compiler_threads(num);
+    }
     // Note that this only sets the JavaThread _priority field, which by
     // definition is limited to Java priorities and not OS priorities.
     JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
 
   } else { // osthread initialization failure
+    if (type == compiler_t && (queue == _ac1_compile_queue || queue == _ac2_compile_queue)) {
+      // Failure to create AOT compilation threads
+      vm_exit_during_initialization("java.lang.OutOfMemoryError",
+                                    os::native_thread_creation_failed_msg());
+    }
     if (UseDynamicNumberOfCompilerThreads && type == compiler_t
         && comp->num_compiler_threads() > 0) {
       // The new thread is not known to Thread-SMR yet so we can just delete.
@@ -911,7 +926,7 @@ void CompileBroker::init_compiler_threads() {
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
 #if !defined(ZERO)
-  assert(_c2_count > 0 || _c1_count > 0, "No compilers?");
+  assert(_c2_count > 0 || _c1_count > 0 || _ac2_count > 0 || _ac1_count > 0, "No compilers?");
 #endif // !ZERO
   // Initialize the compilation queue
   if (_c2_count > 0) {
@@ -926,15 +941,15 @@ void CompileBroker::init_compiler_threads() {
     _compiler1_logs = NEW_C_HEAP_ARRAY(CompileLog*, _c1_count, mtCompiler);
   }
 
-  if (_ac_count > 0) {
-    if (_c1_count > 0) { // C1 is present
-      _ac1_compile_queue  = new CompileQueue("C1 AOT code compile queue");
-    }
-    if (_c2_count > 0) { // C2 is present
-      _ac2_compile_queue  = new CompileQueue("C2 AOT code compile queue");
-    }
-    _ac_objects = NEW_C_HEAP_ARRAY(jobject, _ac_count, mtCompiler);
-    _ac_logs = NEW_C_HEAP_ARRAY(CompileLog*, _ac_count, mtCompiler);
+  if (_ac1_count > 0) { // AOT C1 is present
+    _ac1_compile_queue  = new CompileQueue("C1 AOT code compile queue");
+    _ac1_objects = NEW_C_HEAP_ARRAY(jobject, _ac1_count, mtCompiler);
+    _ac1_logs = NEW_C_HEAP_ARRAY(CompileLog*, _ac1_count, mtCompiler);
+  }
+  if (_ac2_count > 0) { // AOT C2 is present
+    _ac2_compile_queue  = new CompileQueue("C2 AOT code compile queue");
+    _ac2_objects = NEW_C_HEAP_ARRAY(jobject, _ac2_count, mtCompiler);
+    _ac2_logs = NEW_C_HEAP_ARRAY(CompileLog*, _ac2_count, mtCompiler);
   }
   char name_buffer[256];
 
@@ -966,34 +981,32 @@ void CompileBroker::init_compiler_threads() {
     }
   }
 
-  if (_ac_count > 0) {
-    int i = 0;
-    if (_c1_count > 0) { // C1 is present
-      os::snprintf_checked(name_buffer, sizeof(name_buffer), "C%d AOT code caching CompilerThread", 1);
-      Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-      jobject thread_handle = JNIHandles::make_global(thread_oop);
-      _ac_objects[i] = thread_handle;
-      _ac_logs[i] = nullptr;
-      i++;
+  if (_ac2_count > 0) { // AOT C2 is present
+    assert(_ac2_count == 1, "update this code if more AOT threads are needed");
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C2 AOT code caching CompilerThread");
+    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
+    jobject thread_handle = JNIHandles::make_global(thread_oop);
+    _ac2_objects[0] = thread_handle;
+    _ac2_logs[0] = nullptr;
 
-      JavaThread *ct = make_thread(compiler_t, thread_handle, _ac1_compile_queue, _compilers[0], THREAD);
-      assert(ct != nullptr, "should have been handled for initial thread");
-      print_compiler_thread(ct);
-    }
-    if (_c2_count > 0) { // C2 is present
-      os::snprintf_checked(name_buffer, sizeof(name_buffer), "C%d AOT code caching CompilerThread", 2);
-      Handle thread_oop = create_thread_oop(name_buffer, CHECK);
-      jobject thread_handle = JNIHandles::make_global(thread_oop);
-      _ac_objects[i] = thread_handle;
-      _ac_logs[i] = nullptr;
+    JavaThread *ct = make_thread(compiler_t, thread_handle, _ac2_compile_queue, _compilers[1], THREAD);
+    assert(ct != nullptr, "should have been handled for initial thread");
+    print_compiler_thread(ct);
+  }
+  if (_ac1_count > 0) { // AOT C1 is present
+    assert(_ac1_count == 1, "update this code if more AOT threads are needed");
+    os::snprintf_checked(name_buffer, sizeof(name_buffer), "C1 AOT code caching CompilerThread");
+    Handle thread_oop = create_thread_oop(name_buffer, CHECK);
+    jobject thread_handle = JNIHandles::make_global(thread_oop);
+    _ac1_objects[0] = thread_handle;
+    _ac1_logs[0] = nullptr;
 
-      JavaThread *ct = make_thread(compiler_t, thread_handle, _ac2_compile_queue, _compilers[1], THREAD);
-      assert(ct != nullptr, "should have been handled for initial thread");
-      print_compiler_thread(ct);
-    }
+    JavaThread *ct = make_thread(compiler_t, thread_handle, _ac1_compile_queue, _compilers[0], THREAD);
+    assert(ct != nullptr, "should have been handled for initial thread");
+    print_compiler_thread(ct);
   }
 
-  if (UsePerfData) {
+  if (UsePerfData && (_c1_count + _c2_count) > 0) {
     PerfDataManager::create_constant(SUN_CI, "threads", PerfData::U_Bytes, _c1_count + _c2_count, CHECK);
   }
 
@@ -1013,7 +1026,8 @@ void CompileBroker::init_compiler_threads() {
 void CompileBroker::init_training_replay() {
   // Ensure any exceptions lead to vm_exit_during_initialization.
   EXCEPTION_MARK;
-  if (TrainingData::have_data()) {
+  // No need to replay training during assembly phase. Only training data is used.
+  if (TrainingData::have_data() && !CDSConfig::is_dumping_final_static_archive()) {
     Handle thread_oop = JavaThread::create_system_thread_object("Training replay thread", CHECK);
     jobject thread_handle = JNIHandles::make_local(THREAD, thread_oop());
     make_thread(training_replay_t, thread_handle, nullptr, nullptr, THREAD);
@@ -1658,40 +1672,13 @@ void CompileBroker::wait_for_completion(CompileTask* task) {
   JavaThread* thread = JavaThread::current();
 
   methodHandle method(thread, task->method());
-  bool free_task = true;
   {
-    // Wait until the task is complete or compilation is shut down.
     MonitorLocker ml(thread, CompileTaskWait_lock);
-    while (!task->is_complete() && !is_compilation_disabled_forever()) {
+    while (!task->is_complete()) {
       ml.wait();
     }
   }
-
-  // It is harmless to check this status without the lock, because
-  // completion is a stable property.
-  if (!task->is_complete()) {
-    // Task is not complete, likely because we are exiting for compilation
-    // shutdown. The task can still be reached through the queue, or executed
-    // by some compiler thread. There is no coordination with either MCQ lock
-    // holders or compilers, therefore we cannot delete the task.
-    //
-    // This will leave task allocated, which leaks it. At this (degraded) point,
-    // it is less risky to abandon the task, rather than attempting a more
-    // complicated deletion protocol.
-    free_task = false;
-  }
-
-  if (free_task) {
-    assert(task->is_complete(), "Compilation should have completed");
-    assert(task->next() == nullptr && task->prev() == nullptr,
-           "Completed task should not be in the queue");
-
-    // By convention, the waiter is responsible for deleting a
-    // blocking CompileTask. Since there is only one waiter ever
-    // waiting on a CompileTask, we know that no one else will
-    // be using this CompileTask; we can delete it.
-    delete task;
-  }
+  delete task;
 }
 
 void CompileBroker::wait_for_no_active_tasks() {
@@ -1703,12 +1690,11 @@ void CompileBroker::wait_for_no_active_tasks() {
  * of this function is that the compiler runtimes are initialized and that
  * compiler threads can start compiling.
  */
-bool CompileBroker::init_compiler_runtime() {
+bool CompileBroker::init_compiler_runtime(bool is_aot_comp_thread) {
   CompilerThread* thread = CompilerThread::current();
   AbstractCompiler* comp = thread->compiler();
   // Final sanity check - the compiler object must exist
   guarantee(comp != nullptr, "Compiler object must exist");
-
   {
     // Must switch to native to allocate ci_env
     ThreadToNativeFromVM ttn(thread);
@@ -1722,19 +1708,19 @@ bool CompileBroker::init_compiler_runtime() {
     ThreadInVMfromNative tv(thread);
 
     // Perform per-thread and global initializations
-    comp->initialize();
+    comp->initialize(is_aot_comp_thread);
   }
 
   if (comp->is_failed()) {
     disable_compilation_forever();
     // If compiler initialization failed, no compiler thread that is specific to a
     // particular compiler runtime will ever start to compile methods.
-    shutdown_compiler_runtime(comp, thread);
+    shutdown_compiler_runtime(comp, thread, is_aot_comp_thread);
     return false;
   }
 
-  // C1 specific check
-  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr)) {
+  // C1 specific check. AOT C1 thread does not use buffer to load AOT code.
+  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr) && !is_aot_comp_thread) {
     warning("Initialization of %s thread failed (no space to run compilers)", thread->name());
     return false;
   }
@@ -1756,12 +1742,10 @@ void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
  * We do this to keep things simple. This can be changed if it ever turns
  * out to be a problem.
  */
-void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
+void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread, bool is_aot_comp_thread) {
   free_buffer_blob_if_allocated(thread);
 
-  log_info(compilation)("shutdown_compiler_runtime: " INTPTR_FORMAT, p2i(thread));
-
-  if (comp->should_perform_shutdown()) {
+  if (comp->should_perform_shutdown(is_aot_comp_thread)) {
     // There are two reasons for shutting down the compiler
     // 1) compiler runtime initialization failed
     // 2) The code cache is full and the following flag is set: -XX:-UseCodeCacheFlushing
@@ -1805,17 +1789,24 @@ CompileLog* CompileBroker::get_log(CompilerThread* ct) {
   if (!LogCompilation) return nullptr;
 
   AbstractCompiler *compiler = ct->compiler();
-  bool c1 = compiler->is_c1();
-  jobject* compiler_objects = c1 ? _compiler1_objects : _compiler2_objects;
-  assert(compiler_objects != nullptr, "must be initialized at this point");
-  CompileLog** logs = c1 ? _compiler1_logs : _compiler2_logs;
-  assert(logs != nullptr, "must be initialized at this point");
-  int count = c1 ? _c1_count : _c2_count;
-
-  if (ct->queue() == _ac1_compile_queue || ct->queue() == _ac2_compile_queue) {
-    compiler_objects = _ac_objects;
-    logs  = _ac_logs;
-    count = _ac_count;
+  jobject* compiler_objects = nullptr;
+  CompileLog** logs = nullptr;
+  int count = 0;
+  if (ct->queue() == _ac1_compile_queue) {
+    compiler_objects = _ac1_objects;
+    logs  = _ac1_logs;
+    count = _ac1_count;
+  } else if (ct->queue() == _ac2_compile_queue) {
+    compiler_objects = _ac2_objects;
+    logs  = _ac2_logs;
+    count = _ac2_count;
+  } else if (_c1_count + _c2_count > 0) {
+    bool c1 = compiler->is_c1();
+    compiler_objects = c1 ? _compiler1_objects : _compiler2_objects;
+    assert(compiler_objects != nullptr, "must be initialized at this point");
+    logs = c1 ? _compiler1_logs : _compiler2_logs;
+    assert(logs != nullptr, "must be initialized at this point");
+    count = c1 ? _c1_count : _c2_count;
   }
   // Find Compiler number by its threadObj.
   oop compiler_obj = ct->threadObj();
@@ -1853,6 +1844,9 @@ CompileLog* CompileBroker::get_log(CompilerThread* ct) {
 void CompileBroker::compiler_thread_loop() {
   CompilerThread* thread = CompilerThread::current();
   CompileQueue* queue = thread->queue();
+  precond(queue != nullptr);
+  bool is_aot_comp_thread = (queue == _ac1_compile_queue || queue == _ac2_compile_queue);
+
   // For the thread that initializes the ciObjectFactory
   // this resource mark holds all the shared objects
   ResourceMark rm;
@@ -1883,7 +1877,7 @@ void CompileBroker::compiler_thread_loop() {
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
-  if (!init_compiler_runtime()) {
+  if (!init_compiler_runtime(is_aot_comp_thread)) {
     return;
   }
 
@@ -1949,7 +1943,7 @@ void CompileBroker::compiler_thread_loop() {
   }
 
   // Shut down compiler runtime
-  shutdown_compiler_runtime(thread->compiler(), thread);
+  shutdown_compiler_runtime(thread->compiler(), thread, is_aot_comp_thread);
 }
 
 // ------------------------------------------------------------------
@@ -2223,7 +2217,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
         whitebox_lock_compilation();
       }
-      comp->compile_method(&ci_env, target, osr_bci, true, directive);
+      comp->compile_method(&ci_env, target, osr_bci, true /* install */, directive);
 
       /* Repeat compilation without installing code for profiling purposes */
       int repeat_compilation_count = task->is_aot_load() ? 0 : directive->RepeatCompilationOption;
@@ -2235,7 +2229,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           task->print_ul("NO CODE INSTALLED");
           thread->timeout()->reset();
           ci_env._failure_reason.clear();
-          comp->compile_method(&ci_env, target, osr_bci, false, directive);
+          comp->compile_method(&ci_env, target, osr_bci, false /* install */, directive);
           repeat_compilation_count--;
         }
         ci_env._failure_reason.set(failure_reason.get());
@@ -2658,11 +2652,12 @@ static void print_tier_helper(outputStream* st, const char* prefix, int tier, Co
 
 static void print_queue_info(outputStream* st, CompileQueue* queue) {
   if (queue != nullptr) {
+    ThreadsListHandle tlh;
     MutexLocker ml(MethodCompileQueue_lock);
 
     uint  total_cnt = 0;
     uint active_cnt = 0;
-    for (JavaThread* jt : *ThreadsSMRSupport::get_java_thread_list()) {
+    for (JavaThread* jt : tlh) {
       guarantee(jt != nullptr, "");
       if (jt->is_Compiler_thread()) {
         CompilerThread* ct = (CompilerThread*)jt;

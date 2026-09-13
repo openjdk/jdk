@@ -68,6 +68,8 @@ const char* CDSConfig::_input_static_archive_path = nullptr;
 const char* CDSConfig::_input_dynamic_archive_path = nullptr;
 const char* CDSConfig::_output_archive_path = nullptr;
 
+double CDSConfig::_aot_compile_threshold_scaling = 1.0;
+
 JavaThread* CDSConfig::_dumper_thread = nullptr;
 
 int CDSConfig::get_status() {
@@ -687,6 +689,7 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase, bool mode_fla
         // with AOT and -Xcomp.
         Arguments::set_mode_flags(Arguments::_mixed);
       }
+      _aot_compile_threshold_scaling = CompileThresholdScaling; // Preserve for A2 compilation
       if (CompileThresholdScaling < 1.0) {
         // Set flag to default value to avoid excessive normal JIT
         // compilations during assembly phase.

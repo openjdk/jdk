@@ -361,7 +361,7 @@ class Dependencies: public ResourceObj {
   }
 
   void set_content(address content_bytes, int size_in_bytes) {
-    assert(_content_bytes == nullptr, "not intialized expected");
+    assert(_content_bytes == nullptr, "not initialized expected");
     _content_bytes = content_bytes;
     _size_in_bytes = size_in_bytes;
   }

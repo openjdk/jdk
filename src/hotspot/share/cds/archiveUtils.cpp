@@ -84,7 +84,7 @@ void ArchivePtrMarker::initialize_rw_ro_ac_maps(CHeapBitMap* rw_ptrmap, CHeapBit
   address* ro_bottom   = (address*)ArchiveBuilder::current()->ro_region()->base();
   address* ac_bottom   = (address*)ArchiveBuilder::current()->ac_region()->base();
 
-  // The bit in _ptrmap that cover the very first word in the rw/ro/ac regions.
+  // The bit in _ptrmap that covers the very first word in the rw/ro/ac regions.
   size_t rw_start = rw_bottom - buff_bottom;
   size_t ro_start = ro_bottom - buff_bottom;
   size_t ac_start = ac_bottom - buff_bottom;

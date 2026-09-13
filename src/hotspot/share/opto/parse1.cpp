@@ -1322,10 +1322,10 @@ void Parse::count_aot_code_calls() {
     const TypePtr* mc_type = TypeMetadataPtr::make(TypePtr::Constant, mcp, Type::Offset(0));
     Node* mc = makecon(mc_type);
 
-    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compialtion");
+    assert(MethodTrainingData::have_data(), "TrainingData should be present for AOT compilation");
     methodHandle mh(Thread::current(), method()->get_Method());
     MethodTrainingData* mtd = MethodTrainingData::find_fast(mh);
-    assert(mtd != nullptr, "AOT compilated method should have MethodTrainingData");
+    assert(mtd != nullptr, "AOT compiled method should have MethodTrainingData");
     int64_t limit = mtd->invocation_count();
     int step = InvocationCounter::count_increment;
     int scaled_limit = step * scale_limit(limit);

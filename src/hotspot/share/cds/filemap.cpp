@@ -95,6 +95,10 @@ inline void CDSMustMatchFlags::do_print(outputStream* st, bool v) {
 inline void CDSMustMatchFlags::do_print(outputStream* st, uint v) {
   st->print("%u", v);
 }
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, int v) {
+  st->print("%d", v);
+}
 #endif
 
 inline void CDSMustMatchFlags::do_print(outputStream* st, intx v) {

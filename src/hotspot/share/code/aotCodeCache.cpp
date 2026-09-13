@@ -46,7 +46,9 @@
 #include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/nativeInst.hpp"
 #include "code/oopRecorder.inline.hpp"
+#include "code/relocInfo.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
@@ -243,9 +245,25 @@ bool AOTCodeCache::maybe_dumping_code() {
 // Initially they are called during AOT flags parsing and finalized
 // in AOTCodeCache::initialize().
 void AOTCodeCache::enable_caching() {
+#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
+  load_info_log().print_cr("AOT Code Cache is not supported on this platform");
+  disable_caching();
+#else
+  if (Arguments::is_valhalla_enabled()) {
+    // Disable AOT code caching when Valhalla is enabled.
+    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
+    disable_caching();
+    return;
+  }
+#if defined(RISCV64)
+  // RISC-V does not support code caching yet.
+  FLAG_SET_ERGO(AOTCodeCaching, false);
+#else
   FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
+#endif
   FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
+#endif
 }
 
 void AOTCodeCache::disable_caching() {
@@ -298,19 +316,7 @@ void AOTCodeCache::initialize() {
     load_info_log().print_cr("AOT Code Cache is not used: disabled");
     return;
   }
-#if defined(ZERO) || !(defined(AMD64) || defined(AARCH64) || defined(RISCV64))
-  load_info_log().print_cr("AOT Code Cache is not supported on this platform");
-  disable_caching();
-  return;
-#else
   assert(!FLAG_IS_DEFAULT(AOTCache), "AOTCache should be specified");
-
-  if (Arguments::is_valhalla_enabled()) {
-    // Disable AOT code caching when Valhalla is enabled.
-    load_info_log().print_cr("AOT Code Caching is not supported with Valhalla");
-    disable_caching();
-    return;
-  }
 
   if (VerifyOops && ValueTypePassFieldsAsArgs) {
     load_info_log().print_cr("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
@@ -356,7 +362,6 @@ void AOTCodeCache::initialize() {
     FLAG_SET_DEFAULT(ForceUnreachable, true);
   }
   FLAG_SET_DEFAULT(DelayCompilerStubsGeneration, false);
-#endif // defined(AMD64) || defined(AARCH64) || defined(RISCV64)
 }
 
 static AOTCodeCache*  opened_cache = nullptr; // Use this until we verify the cache
@@ -452,10 +457,27 @@ void AOTCodeCache::init3() {
   AOTCodeAddressTable* table = opened_cache->_table;
   assert(table != nullptr, "should be initialized already");
   table->init_extrs2();
+
+  // Verify extrs lengths in production run
+  Header* header = opened_cache->load_header();
+  if (header != nullptr) {
+    uint cached_extrs2_length = header->extrs2_length();
+    uint extrs2_len = table->extrs2_length();
+    if (cached_extrs2_length != extrs2_len) {
+      load_failure_log().print_cr("AOT Code Cache disabled: different extrs2_length %u vs current %u",
+                                  cached_extrs2_length, extrs2_len);
+      opened_cache->set_failed();
+      report_load_failure();
+      return;
+    }
+  }
 }
+
+static uint _dump_jvmti_state = 0;
 
 void AOTCodeCache::dump() {
   if (is_on_for_dump()) { // It will also return false if there was failure
+    _dump_jvmti_state = get_jvmti_state(); // call before Compile_lock
     MutexLocker ml(Compile_lock);
     _cache->finish_write();
   }
@@ -544,7 +566,7 @@ AOTCodeCache::AOTCodeCache(bool is_dumping, bool is_using) :
     assert(load_size >= header_size, "aot code region is too small: %zu < %zu", load_size, header_size);
     ReservedSpace rs = MemoryReserver::reserve(load_size, mtCode);
     if (!rs.is_reserved()) {
-      log_warning(aot, codecache, init)("Failed to reserved %u bytes of memory for mapping AOT code region from AOT Cache", (uint)load_size);
+      log_warning(aot, codecache, init)("Failed to reserve %u bytes of memory for mapping AOT code region from AOT Cache", (uint)load_size);
       set_failed();
       return;
     }
@@ -645,8 +667,38 @@ void AOTCodeCache::set_shared_stubs_complete() {
 
 void AOTCodeCache::set_c1_stubs_complete() {
   AOTCodeAddressTable* table = addr_table();
+  bool success = true;
   if (table != nullptr) {
+    // Called by C1 compiler thread set_c1_stubs_complete() concurrently
+    // modifies external address table while other threads read it.
+    bool for_dump = opened_cache->_for_dump;
+    bool for_use  = opened_cache->_for_use;
+    ConditionalMutexLocker mld(Compile_lock, for_dump,   // Used during assembly phase
+                               Mutex::_safepoint_check_flag);
+    ConditionalMutexLocker mlu(CodeCache_lock, for_use,  // Used during production run
+                               Mutex::_no_safepoint_check_flag);
+    if (opened_cache->failed()) {
+      return;
+    }
     table->set_c1_stubs_complete();
+    Header* header = opened_cache->_load_header;
+    if (header != nullptr) { // Production run
+      uint cached_extrs2_length = header->extrs2_length();
+      uint cached_final_extrs_length = header->final_extrs_length();
+      // During assembly phase C1 may not be used, in such case
+      // extrs2 and final_extrs lengths will be equal.
+      // Do not discard AOT code cache if C1 was enabled only in production run.
+      if ((cached_final_extrs_length != cached_extrs2_length) &&
+          (cached_final_extrs_length != table->extrs_length())) {
+        load_failure_log().print_cr("AOT Code Cache disabled: different final_extrs_length %u vs current %u",
+                                    cached_final_extrs_length, table->extrs_length());
+        opened_cache->set_failed();
+        success = false;
+      }
+    }
+  }
+  if (!success) {
+    report_load_failure();
   }
 }
 
@@ -663,6 +715,33 @@ void AOTCodeCache::set_stubgen_stubs_complete() {
     table->set_stubgen_stubs_complete();
   }
 }
+
+uint AOTCodeCache::get_jvmti_state() {
+  // Get Jvmti capabilities under lock to get consistent values.
+  MutexLocker mu(JvmtiThreadState_lock);
+  uint state = JvmtiExport::can_hotswap_or_post_breakpoint() ? 1 << 0 : 0;
+  state += JvmtiExport::can_access_local_variables()         ? 1 << 1 : 0;
+  state += JvmtiExport::can_post_on_exceptions()             ? 1 << 2 : 0;
+  state += JvmtiExport::can_pop_frame()                      ? 1 << 3 : 0;
+  state += JvmtiExport::can_get_owned_monitor_info()         ? 1 << 4 : 0;
+  state += JvmtiExport::can_walk_any_space()                 ? 1 << 5 : 0;
+  return state;
+}
+
+#ifdef COMPILER2
+static uint get_c2_ea_state() {
+  uint state = 0;
+  bool eliminate_alloc = (DoEscapeAnalysis && EliminateAllocations)
+                          || EliminateAutoBox
+                          || EnableVectorAggressiveReboxing;
+  bool eliminate_lock  = (DoEscapeAnalysis || EliminateNestedLocks)
+                          && EliminateLocks;
+  state += DoEscapeAnalysis ? 1 : 0;
+  state += eliminate_alloc  ? 2 : 0;
+  state += eliminate_lock   ? 4 : 0;
+  return state;
+}
+#endif
 
 void AOTCodeCache::Config::record() {
 
@@ -684,7 +763,51 @@ void AOTCodeCache::Config::record() {
 #if (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
   _avoidUnalignedAccesses = AvoidUnalignedAccesses;
 #endif
+
+#ifdef COMPILER2
+  _reduceInitialCardMarks = ReduceInitialCardMarks;
+  _c2_ea_state = get_c2_ea_state();
+#endif
+
+  _jvmti_state = _dump_jvmti_state;
 }
+
+bool AOTCodeCache::Header::verify_jvmti_state(ciEnv* env) const {
+  uint cached_state = _config.jvmti_state();
+  // Conservatively require exact match.
+  uint current_state = env->jvmti_can_hotswap_or_post_breakpoint() ? 1 << 0 : 0;
+  current_state += env->jvmti_can_access_local_variables()         ? 1 << 1 : 0;
+  current_state += env->jvmti_can_post_on_exceptions()             ? 1 << 2 : 0;
+  current_state += env->jvmti_can_pop_frame()                      ? 1 << 3 : 0;
+  current_state += env->jvmti_can_get_owned_monitor_info()         ? 1 << 4 : 0;
+  current_state += env->jvmti_can_walk_any_space()                 ? 1 << 5 : 0;
+  return cached_state == current_state;
+}
+
+bool AOTCodeCache::verify_jvmti_state(ciEnv* env) {
+  AOTCodeCache* cache = open_for_use();
+  if (cache == nullptr) {
+    return false;
+  }
+  return cache->_load_header->verify_jvmti_state(env);
+}
+
+#ifdef COMPILER2
+bool AOTCodeCache::Header::verify_c2_state() const {
+  uint current_c2_ea_state = get_c2_ea_state();
+  uint cached_c2_ea_state  = _config.c2_ea_state();
+  if ((cached_c2_ea_state & ~current_c2_ea_state) != 0) {
+    log_trace(aot, codecache, nmethod)("AOT Tier4 code skipped: incompatible C2 EA state: %u vs current %u",  cached_c2_ea_state, current_c2_ea_state);
+    return false;
+  }
+  bool cached_reduce_initial_cm = _config.reduce_initial_cm();
+  if (cached_reduce_initial_cm && !ReduceInitialCardMarks) {
+    log_trace(aot, codecache, nmethod)("AOT Tier4 code skipped: incompatible ReduceInitialCardMarks: %u vs current %u", cached_reduce_initial_cm, ReduceInitialCardMarks);
+    return false;
+  }
+  return true;
+}
+#endif // COMPILER2
 
 bool AOTCodeCache::Header::verify_cpu_features(AOTCodeCache* cache) const {
   LogStreamHandle(Debug, aot, codecache, init) log;
@@ -830,6 +953,12 @@ bool AOTCodeCache::Config::verify(AOTCodeCache* cache) const {
   }
 #endif // (defined(AARCH64) || defined(RISCV64)) && !defined(ZERO)
 
+  uint current_jvmti_state = AOTCodeCache::get_jvmti_state();
+  if (AOTCodeCaching &&_jvmti_state != current_jvmti_state) {
+    load_failure_log().print_cr("AOT nmethod loading disabled: incompatible JVMTI state: %u vs current %u", _jvmti_state, current_jvmti_state);
+    FLAG_SET_ERGO(AOTCodeCaching, false);
+  }
+
   return true;
 }
 
@@ -942,6 +1071,14 @@ bool AOTCodeCache::Header::verify(const char* load_buffer, uint load_size) const
   return true;
 }
 
+bool AOTCodeCache::failed() const {
+  return AtomicAccess::load(&_failed);
+}
+
+void AOTCodeCache::set_failed() {
+  return AtomicAccess::store(&_failed, true);
+}
+
 AOTCodeCache* AOTCodeCache::open_for_use() {
   if (AOTCodeCache::is_on_for_use()) {
     return AOTCodeCache::cache();
@@ -959,8 +1096,13 @@ AOTCodeCache* AOTCodeCache::open_for_dump() {
 }
 
 bool AOTCodeCache::is_address_in_aot_cache(address p) {
-  AOTCodeCache* cache = open_for_use();
-  if (cache == nullptr) {
+  // AOT code cache may be not opened yet.
+  // There could be a failure reading from AOT code cache
+  // at some point and we can't use open_for_use() after that.
+  // cache_buffer() should not be null when cache is used
+  // unless there was failure loading AOT code cache.
+  AOTCodeCache* cache = _cache;
+  if (cache == nullptr || cache->cache_buffer() == nullptr) {
     return false;
   }
   if ((p >= (address)cache->cache_buffer()) &&
@@ -1203,6 +1345,13 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
   if (skip_aot_code(comp_level)) {
     return nullptr;
   }
+
+#ifdef COMPILER2
+  if (comp_level == CompLevel_full_optimization && !_cache->_load_header->verify_c2_state()) {
+    return nullptr; // Mismatched C2 flags
+  }
+#endif
+
   TraceTime t1("Total time to find AOT code", &_t_totalFind, enable_timers(), false);
   if (is_on() && _cache->cache_buffer() != nullptr) {
     uint id = (uint)cast_to_u4(AOTCacheAccess::method_to_narrow_ptr(method()));
@@ -1219,10 +1368,17 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
       assert(!entry->has_clinit_barriers(), "only preload code should have clinit barriers");
       ResourceMark rm;
       assert(method() == entry->method(), "AOTCodeCache: saved nmethod's method %p (name: %s id: " UINT32_FORMAT_X_0
-             ") is different from the method %p (name: %s, id: " UINT32_FORMAT_X_0 " being looked up" ,
+             ") is different from the method %p (name: %s, id: " UINT32_FORMAT_X_0 ") being looked up" ,
              entry->method(), entry->method()->name_and_sig_as_C_string(), entry->id(), method(), method()->name_and_sig_as_C_string(), id);
 #endif
     }
+
+#ifdef COMPILER2
+    if (entry != nullptr && entry->has_vectors() && !EnableVectorSupport) {
+      log_debug(aot, codecache, nmethod)("AOT Tier4 code skipped: incompatible EnableVectorSupport: true vs current %u", EnableVectorSupport);
+      return nullptr;
+    }
+#endif
 
     CompilerDirectiveMatcher matcher(method, comp_level);
     DirectiveSet* directives = matcher.directive_set();
@@ -1256,6 +1412,14 @@ bool AOTCodeEntry::not_entrant() const {
 
 void AOTCodeEntry::set_not_entrant() {
   return AtomicAccess::store(&_not_entrant, true);
+}
+
+bool AOTCodeEntry::is_verified() const {
+  return AtomicAccess::load(&_verified);
+}
+
+void AOTCodeEntry::set_verified() {
+  return AtomicAccess::store(&_verified, true);
 }
 
 bool AOTCodeEntry::try_set_not_entrant() {
@@ -1349,12 +1513,12 @@ AOTCodeEntry* AOTCodeCache::find_entry(AOTCodeEntry::Kind kind, uint id, uint co
           name_off < (sizeof(CodeBlob) + sizeof(int)) ||
           name_sz > (entry_size - name_off) ||
           *addr(entry_offset + name_off + name_sz - 1) != '\0') {
-        log_warning(aot, codecache, stubs)("Damaged method's name in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], name [%u + %u] ", id, p2i(entry), entry_offset, entry_size, name_off, name_sz);
+        log_warning(aot, codecache, stubs)("Damaged code blob name in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], name [%u + %u] ", id, p2i(entry), entry_offset, entry_size, name_off, name_sz);
         return nullptr;
       }
       CodeBlob* archived_blob = (CodeBlob*)addr(entry_offset); // + code_off (0)
       if ((kind == AOTCodeEntry::Adapter) && !archived_blob->is_adapter_blob()) {
-        log_warning(aot, codecache, stubs)("Damaged code kind in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], code [%u] ", id, p2i(entry), entry_offset, entry_size, code_off);
+        log_warning(aot, codecache, stubs)("Damaged code blob kind in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], code [%u] ", id, p2i(entry), entry_offset, entry_size, code_off);
         return nullptr;
       }
       int blob_size = archived_blob->size();
@@ -1362,7 +1526,7 @@ AOTCodeEntry* AOTCodeCache::find_entry(AOTCodeEntry::Kind kind, uint id, uint co
       // sizeof(int) for the following _reloc_count
       if (blob_size < (int)sizeof(CodeBlob) || (uint)blob_size > (code_to_name_dist - sizeof(int)) ||
           !is_aligned(blob_size, oopSize)) {
-        log_warning(aot, codecache, stubs)("Damaged code blob size in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], nmethod [%u + %d] ", id, p2i(entry), entry_offset, entry_size, code_off, blob_size);
+        log_warning(aot, codecache, stubs)("Damaged code blob size in AOT code blob entry %u " INTPTR_FORMAT " [%u + %u], code [%u + %d] ", id, p2i(entry), entry_offset, entry_size, code_off, blob_size);
         return nullptr;
       }
     }
@@ -1402,7 +1566,7 @@ AOTCodeEntry* AOTCodeCache::search_entry(AOTCodeEntry::Kind kind, uint id, uint 
       if (check_entry(kind, id, comp_level, entry)) {
         return entry; // Found
       }
-      // Leaner search around
+      // Linear search around
       for (int i = mid - 1; i >= l; i--) { // search back
         ix = i * 2;
         is = _search_entries[ix];
@@ -1681,12 +1845,14 @@ bool AOTCodeCache::finish_write() {
 
     current = align_up(current, DATA_ALIGNMENT);
     uint search_table_offset = current - start;
-    // Sort and store search table
-    qsort(search, entries_count, 2*sizeof(uint), uint_cmp);
-    search_size = 2 * entries_count * sizeof(uint);
-    copy_bytes((const char*)search, (address)current, search_size);
+    if (entries_count > 0) {
+      // Sort and store search table
+      qsort(search, entries_count, 2*sizeof(uint), uint_cmp);
+      search_size = 2 * entries_count * sizeof(uint);
+      copy_bytes((const char*)search, (address)current, search_size);
+      current += search_size;
+    }
     FREE_C_HEAP_ARRAY(search);
-    current += search_size;
 
     // Write strings
     if (strings_count > 0) {
@@ -1702,6 +1868,11 @@ bool AOTCodeCache::finish_write() {
     uint size = (current - start);
     assert(size <= total_size, "%d > %d", size , total_size);
 
+    uint extrs_len  = _table->extrs_length();
+    uint extrs2_len = _table->extrs2_length();
+    assert(_table->final_extrs_length() == extrs_len, "%u != %u",
+           _table->final_extrs_length(), extrs_len);
+
     // Finalize header
     AOTCodeCache::Header* header = (AOTCodeCache::Header*)start;
     header->init(size,
@@ -1711,7 +1882,8 @@ bool AOTCodeCache::finish_write() {
                  (uint)strings_count, strings_offset,
                  stats.entry_count(AOTCodeEntry::Adapter), stats.entry_count(AOTCodeEntry::SharedBlob),
                  stats.entry_count(AOTCodeEntry::StubGenBlob), stats.entry_count(AOTCodeEntry::C1Blob),
-                 stats.entry_count(AOTCodeEntry::C2Blob));
+                 stats.entry_count(AOTCodeEntry::C2Blob),
+                 extrs2_len, extrs_len);
 
     _aot_code_directory->set_aot_code_data(size, start);
 
@@ -1870,7 +2042,7 @@ bool AOTCodeCache::store_code_blob(CodeBlob& blob, AOTCodeEntry::Kind entry_kind
   }
 
   // All addresses referenced by the blob have now been added to the address
-  // tabel, so their IDs can be recorded in the relocation data.
+  // table, so their IDs can be recorded in the relocation data.
 
   // Don't skip assert for unknown external address in adapter and stub code.
   bool assert_for_unknown_address = true;
@@ -2127,9 +2299,9 @@ CodeBlob* AOTCodeReader::compile_code_blob(const char* name, AOTCodeEntry::Kind 
   }
   int blob_reloc_count = (int)(archived_blob->relocation_size() / sizeof(relocInfo));
   if (!is_multi_stub &&_reloc_count != blob_reloc_count) {
-    log_warning(aot, codecache, stubs)("Saved blob '%s' has different relocations count %d vs cached %d ",
+    log_warning(aot, codecache, stubs)("Saved blob '%s' has different relocation count %d vs cached %d ",
                                        name, blob_reloc_count, _reloc_count);
-    set_lookup_failed("Saved blob's relocation size is different"); // Skip this blob
+    set_lookup_failed("Saved blob's relocation count is different"); // Skip this blob
     return nullptr;
   }
   bool load_relocations = (_reloc_count > 0);
@@ -2531,7 +2703,7 @@ AOTCodeEntry* AOTCodeCache::write_nmethod(nmethod* nm, bool for_preload) {
       log.print_cr("%s", ss.freeze());
     }
     name_offset = _write_position  - entry_position;
-    name_size   = (uint)strlen(name) + 1; // Includes '/0'
+    name_size   = (uint)strlen(name) + 1; // Includes '\0'
     if (!write_bytes(name, name_size)) {
       return nullptr;
     }
@@ -2644,6 +2816,9 @@ bool AOTCodeCache::load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, Abs
   task->mark_aot_load_start(os::elapsed_counter());
 
   AOTCodeCache* cache = open_for_use();
+  if (cache == nullptr) {
+    return false;
+  }
   AOTCodeReader reader(cache, entry, task);
   bool success = reader.compile_nmethod(env, target, compiler);
   if (reader.lookup_failed()) {
@@ -2821,6 +2996,7 @@ bool AOTCodeReader::compile_nmethod(ciEnv* env, ciMethod* target, AbstractCompil
   if (VerifyAOTCode && !env->failing()) {
     // AOT code is not installed in CodeCache with VerifyAOTCode.
     // Report AOT code sizes as the task result.
+    _entry->set_verified();
     task->mark_success();
     task->set_nm_content_size(archived_nm->content_size());
     task->set_nm_insts_size(archived_nm->insts_size());
@@ -2878,15 +3054,24 @@ void AOTCodeCache::preload_code(JavaThread* thread) {
   if (skip_aot_code(CompLevel_full_optimization + 1)) {
     return; // no preloaded code (level 5);
   }
-  _cache->preload_aot_code(thread);
-}
 
-void AOTCodeCache::preload_aot_code(TRAPS) {
   if (CompilationPolicy::compiler_count(CompLevel_full_optimization) == 0) {
     // Since we reuse the CompilerBroker API to install AOT code, we're required to have a JIT compiler for the
     // level we want (that is CompLevel_full_optimization).
     return;
   }
+
+#ifdef COMPILER2
+  // Check C2 flags
+  if (!_cache->_load_header->verify_c2_state()) {
+    return;
+  }
+#endif
+
+  _cache->preload_aot_code(thread);
+}
+
+void AOTCodeCache::preload_aot_code(TRAPS) {
   TraceTime t1("Total time to preload AOT code", &_t_totalPreload, enable_timers(), false);
   assert(_for_use, "sanity");
   uint preload_entries_count = _load_header->preload_entries_count();
@@ -2931,6 +3116,12 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
                                         mh->name_and_sig_as_C_string());
         continue; // skip
       }
+#ifdef COMPILER2
+      if (entry->has_vectors() && !EnableVectorSupport) {
+        log_debug(aot, codecache, init)("AOT preload code skipped: incompatible EnableVectorSupport: true vs current %u", EnableVectorSupport);
+        continue;
+      }
+#endif
       CompileBroker::preload_aot_method(mh, entry, CHECK);
     }
   }
@@ -2939,8 +3130,9 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
 // ------------ process code and data --------------
 
 // Do nothing for relocation when:
-//  - call's destination is address of the call instruction itself
-//  - call's destination is (address)-1
+//  - call's destination is trampoline in nmethod
+//  - jump's destination is address of the instruction itself
+//  - jump's destination is (address)-1
 // See NativeJump::jump_destination() for example.
 
 #define NO_RELOCATION_ID -1
@@ -2994,10 +3186,25 @@ bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& 
         address dest = r->destination();
         int id;
         if (dest == r->addr() || dest == (address)-1) {
-          // Possible call via trampoline on Aarch64,
-          // do nothing in this case when loading this relocation
+          // Unresolved jumps, see NativeJump::jump_destination() for example.
+          // Do nothing in this case when loading this relocation
           id = NO_RELOCATION_ID;
         } else {
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+          if (code_blob.is_nmethod()) {
+            address tr = trampoline_stub_Relocation::get_trampoline_for(r->addr(), code_blob.as_nmethod());
+            // During assembly phase call's target should be trampoline.
+            // See trampoline_stub_Relocation::pd_fix_owner_after_move().
+            if (tr != nullptr) {
+              if (nativeCall_at(r->addr())->raw_destination() != tr) {
+                return false; // Skip this entry
+              }
+              id = NO_RELOCATION_ID;
+              reloc_data.at_put(idx, id);
+              break;
+            }
+          }
+#endif
           id = _table->id_for_address(dest, iter, &code_blob, true /* assert_for_unknown_address */);
           if (id == BAD_ADDRESS_ID) {
             return false;
@@ -3043,6 +3250,15 @@ bool AOTCodeCache::write_id_for_relocations(CodeBlob& code_blob, RelocIterator& 
         assert(CodeCache::contains((void *)target), "Wrong section_word_type relocation");
         uint delta = (uint)(target - code_blob.content_begin());
         reloc_data.at_put(idx, delta);
+        break;
+      }
+      case relocInfo::barrier_type: {
+        // Patched by GC during nmethod registration
+        assert(code_blob.is_nmethod(), "Only nmethod has barrier relocation");
+        if (!code_blob.is_nmethod()) {
+          log_debug(aot, codecache, reloc)("barrier relocation is used only for nmethods");
+          return false;
+        }
         break;
       }
       case relocInfo::poll_type:
@@ -3161,10 +3377,17 @@ void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter
         break;
       case relocInfo::trampoline_stub_type: {
         int id = reloc_data[j];
-        if (id != NO_RELOCATION_ID) { // Skip relocation with such ID
-          address dest = _cache->address_for_id(id);
-          ((trampoline_stub_Relocation*)iter.reloc())->set_destination(dest);
+        address dest = _cache->address_for_id(id);
+        trampoline_stub_Relocation* r = (trampoline_stub_Relocation*)iter.reloc();
+        r->set_destination(dest);
+#ifdef USE_TRAMPOLINE_STUB_FIX_OWNER
+        if (code_blob->is_nmethod()) {
+          assert(nativeCall_at(r->owner())->raw_destination() == r->addr(),
+                 "Unpatched call's target should be trampoline");
+          // Change call's destination to direct target if distance allows.
+          r->fix_owner_after_move();
         }
+#endif // USE_TRAMPOLINE_STUB_FIX_OWNER
         break;
       }
       case relocInfo::static_stub_type:
@@ -3190,6 +3413,11 @@ void AOTCodeReader::restore_relocations(CodeBlob *code_blob, RelocIterator& iter
         uint delta = reloc_data[j];
         section_word_Relocation* r = (section_word_Relocation*)iter.reloc();
         r->fix_relocation_after_aot_load(code_blob->content_begin(), delta);
+        break;
+      }
+      case relocInfo::barrier_type: {
+        // Patched by GC during nmethod registration
+        assert(code_blob->is_nmethod(), "Only nmethod has barrier relocation");
         break;
       }
       case relocInfo::poll_type:
@@ -3418,7 +3646,7 @@ bool AOTCodeCache::write_klass(Klass* klass) {
     if (!write_kind(kind)) {
       return false;
     }
-    // Record state of instance klass initialization and array dimentions.
+    // Record state of instance klass initialization and array dimensions.
     if (!write_int(state)) {
       return false;
     }
@@ -3564,7 +3792,10 @@ bool AOTCodeCache::write_oop(oop obj) {
               compile_id(), comp_level(), p2i(obj), string);
     return false;
   } else if (java_lang_Module::is_instance(obj)) {
-    fatal("Module object unimplemented");
+    set_lookup_failed();
+    log_debug(aot, codecache, oops)("%d (A%d): Module object is not supported: " PTR_FORMAT " : %s",
+              compile_id(), comp_level(), p2i(obj), obj->klass()->external_name());
+    return false;
   } else if (java_lang_ClassLoader::is_instance(obj)) {
     if (obj == SystemDictionary::java_system_loader()) {
       kind = DataKind::SysLoader;
@@ -3743,7 +3974,7 @@ bool AOTCodeReader::read_oop_metadata_list(JavaThread* current, GrowableArray<Ha
       if (m == (Metadata*)Universe::non_oop_word()) {
         ss.print("non-metadata word");
       } else if (m == nullptr) {
-        ss.print("nullptr-oop");
+        ss.print("nullptr-metadata");
       } else {
         Metadata::print_value_on_maybe_null(&ss, m);
       }
@@ -4374,9 +4605,13 @@ void AOTCodeAddressTable::init_extrs2() {
     ADD_EXTERNAL_ADDRESS(ContinuationEntry::thaw_call_pc_address()); // used by cont_preempt_stub
     ADD_EXTERNAL_ADDRESS(Continuation::freeze_entry()); // used by gen_continuation_yield
   }
+  _extrs2_length = _extrs_length;
+  _final_extrs_length = _extrs_length + add_c1_extrs_blobs(true /* count_only*/);
+  // C1 GC blobs have to be recorded later but we need to mark current
+  // extrs table as complete for stubs loading.
   _extrs_complete = true;
   initializing_extrs = false;
-  log_info(aot, codecache, init)("External addresses %d recorded and closed", _extrs_length);
+  log_info(aot, codecache, init)("External addresses %d recorded", _extrs_length);
 }
 
 void AOTCodeAddressTable::add_external_addresses(GrowableArray<address>& addresses) {
@@ -4408,43 +4643,70 @@ void AOTCodeAddressTable::set_shared_stubs_complete() {
   log_info(aot, codecache, init)("Shared stubs recorded and closed");
 }
 
-void AOTCodeAddressTable::set_c1_stubs_complete() {
-  assert(!_c1_stubs_complete, "repeated close for c1 stubs!");
-  uint old_extrs_length = _extrs_length;
+uint AOTCodeAddressTable::add_c1_extrs_blobs(bool count_only) {
+  if (CompilationPolicy::c1_count() == 0 && CompilationPolicy::ac1_count() == 0) {
+    assert(count_only, "should be called only from init_extrs2 when C1 is disabled");
+    return 0;
+  }
+  uint count = 0;
+  // Use the same conditions as in set_c1_stubs_complete()
 #ifdef COMPILER1
 #if INCLUDE_G1GC
   if (UseG1GC) {
-    G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
-    ADD_EXTERNAL_ADDRESS(bs->pre_barrier_c1_runtime_code_blob()->code_begin());
+    if (!count_only) {
+      G1BarrierSetC1* bs = (G1BarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+      ADD_EXTERNAL_ADDRESS(bs->pre_barrier_c1_runtime_code_blob()->code_begin());
+    }
+    count += 1;
   }
 #endif // INCLUDE_G1GC
 #if INCLUDE_ZGC
   if (UseZGC) {
-    ZBarrierSetC1* bs = (ZBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
-    ADD_EXTERNAL_ADDRESS(bs->_load_barrier_on_oop_field_preloaded_runtime_stub);
-    ADD_EXTERNAL_ADDRESS(bs->_load_barrier_on_weak_oop_field_preloaded_runtime_stub);
-    ADD_EXTERNAL_ADDRESS(bs->_store_barrier_on_oop_field_with_healing);
-    ADD_EXTERNAL_ADDRESS(bs->_store_barrier_on_oop_field_without_healing);
+    if (!count_only) {
+      ZBarrierSetC1* bs = (ZBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
+      ADD_EXTERNAL_ADDRESS(bs->_load_barrier_on_oop_field_preloaded_runtime_stub);
+      ADD_EXTERNAL_ADDRESS(bs->_load_barrier_on_weak_oop_field_preloaded_runtime_stub);
+      ADD_EXTERNAL_ADDRESS(bs->_store_barrier_on_oop_field_with_healing);
+      ADD_EXTERNAL_ADDRESS(bs->_store_barrier_on_oop_field_without_healing);
+    }
+    count += 4;
   }
 #endif // INCLUDE_ZGC
 #if INCLUDE_SHENANDOAHGC
   if (UseShenandoahGC) {
     ShenandoahBarrierSetC1* bs = (ShenandoahBarrierSetC1*)BarrierSet::barrier_set()->barrier_set_c1();
     if (ShenandoahSATBBarrier) {
-      ADD_EXTERNAL_ADDRESS(bs->keepalive_barrier_c1_runtime_code_blob()->code_begin());
+      if (!count_only) {
+        ADD_EXTERNAL_ADDRESS(bs->keepalive_barrier_c1_runtime_code_blob()->code_begin());
+      }
+      count += 1;
     }
     if (ShenandoahLoadRefBarrier) {
-      ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_rt_code_blob()->code_begin());
-      ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin());
-      ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_weak_rt_code_blob()->code_begin());
-      ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_phantom_rt_code_blob()->code_begin());
+      if (!count_only) {
+        ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_rt_code_blob()->code_begin());
+        ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_strong_native_rt_code_blob()->code_begin());
+        ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_weak_rt_code_blob()->code_begin());
+        ADD_EXTERNAL_ADDRESS(bs->load_reference_barrier_phantom_rt_code_blob()->code_begin());
+      }
+      count += 4;
     }
   }
 #endif // INCLUDE_SHENANDOAHGC
 #endif // COMPILER1
+  return count;
+}
+
+void AOTCodeAddressTable::set_c1_stubs_complete() {
+  assert(!_c1_stubs_complete, "repeated close for c1 stubs!");
+  assert(_extrs_length == _extrs2_length, "%u != %u", _extrs_length, _extrs2_length);
+
+  uint count = add_c1_extrs_blobs(false /* count_only*/);
+  assert(_extrs2_length == _extrs_length - count, "%u != %u", _extrs2_length, (_extrs_length - count));
+  assert(_extrs_length  == _final_extrs_length, "%u != %u", _extrs_length, _final_extrs_length);
+
   _c1_stubs_complete = true;
   log_info(aot, codecache, init)("C1 stubs recorded and closed");
-  log_info(aot, codecache, init)("External C1 addresses %d recorded", (_extrs_length - old_extrs_length));
+  log_info(aot, codecache, init)("External C1 addresses %u recorded", count);
 }
 
 void AOTCodeAddressTable::set_c2_stubs_complete() {
@@ -4688,8 +4950,11 @@ int AOTCodeAddressTable::id_for_address(address addr, RelocIterator reloc, CodeB
 #endif
     }
   } else {
-    // Search in runtime functions
-    id = search_address(addr, _extrs_addr, _extrs_length);
+    // Search in runtime functions.
+    // Until C1 runtime finish initialization search only addresses
+    // recorded before it.
+    uint len = _c1_stubs_complete ? _extrs_length : _extrs2_length;
+    id = search_address(addr, _extrs_addr, len);
     if (id != BAD_ADDRESS_ID) {
       return _extrs_base + id;
     } else if (assert_for_unknown_address) {

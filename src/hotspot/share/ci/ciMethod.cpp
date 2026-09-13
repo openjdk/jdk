@@ -1317,7 +1317,7 @@ bool ciMethod::was_executed_more_than(int times) {
   if (CURRENT_ENV->is_aot_compile()) { // Look only on training data
     // Invocation counter is reset when the Method* is compiled.
     // If the method has compiled code we therefore assume it has
-    // be executed more than n times.
+    // been executed more than n times.
     if (is_accessor() || is_empty() || has_compiled_code()) {
       // interpreter doesn't bump invocation counter of trivial methods
       // compiler does not bump invocation counter of compiled methods

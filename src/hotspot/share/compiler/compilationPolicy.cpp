@@ -53,7 +53,8 @@
 int64_t CompilationPolicy::_start_time = 0;
 int CompilationPolicy::_c1_count = 0;
 int CompilationPolicy::_c2_count = 0;
-int CompilationPolicy::_ac_count = 0;
+int CompilationPolicy::_ac1_count = 0;
+int CompilationPolicy::_ac2_count = 0;
 double CompilationPolicy::_increase_threshold_at_ratio = 0;
 
 CompilationPolicy::TrainingReplayQueue CompilationPolicy::_training_replay_queue;
@@ -91,7 +92,11 @@ AOTCodeEntry* find_aot_code_entry(const methodHandle& method, int comp_level,
           compile_reason == CompileTask::Reason_MustBeCompiled);
   if (AOTCodeCache::is_using_code()) {
     AOTCodeEntry* aot_code_entry = AOTCodeCache::find_code_entry(method, comp_level);
-    if (aot_code_entry != nullptr && !aot_code_entry->is_loaded() && !aot_code_entry->not_entrant()) {
+    // There is no concurrency in reading AOTCodeEntry::_loaded field here.
+    // It is updated when compilation_is_in_queue(method) is true and
+    // find_aot_code_entry() is only called when the method is not in queue.
+    if (aot_code_entry != nullptr && !aot_code_entry->is_loaded() &&
+        !aot_code_entry->not_entrant() && !aot_code_entry->is_verified()) {
       return aot_code_entry;
     }
   }
@@ -114,7 +119,7 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
     // We are here because some of CTD have all init dependencies satisfied.
     CompileTrainingData* ctd = mtd->compile_data_for_aot_code(next_level);
     if (ctd == nullptr || (ctd->init_deps_left_acquire() > 0)) {
-      // Skip compilation beacuse CTD is absent or not all dependencies are ready
+      // Skip compilation because CTD is absent or not all dependencies are ready
       return;
     }
     CompileTask::CompileReason reason = CompileTask::Reason_AOTLoad;
@@ -160,11 +165,11 @@ void CompilationPolicy::compile_if_required(const methodHandle& m, TRAPS) {
     if (TrainingData::have_data()) {
       MethodTrainingData* mtd = MethodTrainingData::find_fast(m);
       if (mtd != nullptr) {
-        CompileTrainingData* ctd = mtd->last_toplevel_compile(level);
+        CompileTrainingData* ctd = mtd->compile_data_for_aot_code(level);
         if (ctd != nullptr && (ctd->init_deps_left_acquire() == 0)) {
           AOTCodeEntry* aot_code_entry = find_aot_code_entry(m, level, reason);
           if (aot_code_entry != nullptr) {
-            // This is blocked compilaion - return here after it is finished
+            // This is blocked compilation - return here after it is finished
             CompileBroker::compile_method(m, InvocationEntryBci, level, 0, aot_code_entry, reason, THREAD);
           } // Request normal JIT compilation too for -Xcomp
         }
@@ -208,7 +213,8 @@ void CompilationPolicy::replay_training_at_init_impl(InstanceKlass* klass, JavaT
 
 void CompilationPolicy::replay_training_at_init(InstanceKlass* klass, JavaThread* current) {
   assert(klass->is_initialized(), "");
-  if (TrainingData::have_data() && klass->in_aot_cache()) {
+  if (TrainingData::have_data() && klass->in_aot_cache() &&
+      !CDSConfig::is_dumping_final_static_archive()) { // No need during assembly phase
     _training_replay_queue.push(klass, TrainingReplayQueue_lock, current);
   }
 }
@@ -634,7 +640,13 @@ void CompilationPolicy::initialize() {
       set_c2_count(MAX2(count - c1_count(), 1));
     }
     if (AOTCodeCache::is_code_load_thread_on()) {
-      set_ac_count((c1_only || c2_only) ? 1 : 2); // At minimum we need 2 threads to load C1 and C2 AOT code in parallel
+      // At minimum we need 2 threads to load C1 and C2 AOT code in parallel
+      if (!c2_only) {
+        set_ac1_count(1);
+      }
+      if (!c1_only) {
+        set_ac2_count(1);
+      }
     }
     assert(count == c1_count() + c2_count(), "inconsistent compiler thread count");
     set_increase_threshold_at_ratio();

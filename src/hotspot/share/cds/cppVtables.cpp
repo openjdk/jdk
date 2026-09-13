@@ -354,7 +354,7 @@ void CppVtables::zero_archived_vtables() {
 bool CppVtables::is_valid_shared_method(const Method* m) {
   assert(AOTMetaspace::in_aot_cache(m), "must be");
   const intptr_t* vt = vtable_of(m);
-  // _archived_cpp_vtptrs[kind] is not null only during AOT assmbly phase
+  // _archived_cpp_vtptrs[kind] is not null only during AOT assembly phase
   const intptr_t* archived_vt = _archived_cpp_vtptrs[Method_Kind];
   return vt == _index[Method_Kind]->cloned_vtable() ||
          (archived_vt != nullptr && vt == archived_vt);

@@ -913,6 +913,7 @@ void PhaseOutput::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     } else if (t->base() == Type::VectorA || t->base() == Type::VectorS ||
                t->base() == Type::VectorD || t->base() == Type::VectorX ||
                t->base() == Type::VectorY || t->base() == Type::VectorZ) {
+      C->debug_info()->set_has_vectors();
       array->append(new_loc_value( C->regalloc(), regnum, Location::vector ));
     } else if (C->regalloc()->is_oop(local)) {
       assert(t->base() == Type::OopPtr || t->base() == Type::InstPtr ||

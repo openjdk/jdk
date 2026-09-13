@@ -996,6 +996,10 @@ bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool inst
     record_failure("Jvmti state change invalidated dependencies");
   }
 
+  if (!failing() && is_loading_aot_code && !AOTCodeCache::verify_jvmti_state(this)) {
+    record_failure("Jvmti state change invalidated dependencies for AOT code or other AOT code cache failure");
+  }
+
   // Change in DTrace flags may invalidate compilation.
   if (!failing() &&
       ( (!dtrace_method_probes() && DTraceMethodProbes) ||
@@ -1046,7 +1050,12 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload,
   methodHandle method(thread, target->get_Method());
 
   if (entry_bci == InvocationEntryBci) {
-    if (TieredCompilation || is_aot_compile()) {
+    // With TieredCompilation OFF we still have two versions
+    // of AOT code and also JIT compilation.
+    // During assembly phase we need to replace previous
+    // AOT preload code with normal AOT code to check
+    // success of compilation in AOTCompileIterator.
+    if (TieredCompilation || AOTCodeCache::is_using_code() || is_aot_compile()) {
       // If there is an old version we're done with it
       nmethod* old = method->code();
       if (TraceMethodReplacement && old != nullptr) {
@@ -1276,6 +1285,7 @@ void ciEnv::register_method(ciMethod* target,
 #endif
         AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_preload);
         if (aot_code_entry != nullptr) {
+          aot_code_entry->set_has_vectors(debug_info()->has_vectors());
           nm->set_aot_code_entry(aot_code_entry);
           aot_code_entry->set_inlined_bytecodes(num_inlined_bytecodes());
           // Inline size was recorded during training.
@@ -1897,7 +1907,7 @@ bool ciEnv::is_aot_compile() {
 InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlass* ik) {
   ASSERT_IN_VM;
   ResourceMark rm;
-  assert(is_aot_compile(), "should be called only for AOT compialtion in assembly phase");
+  assert(is_aot_compile(), "should be called only for AOT compilation in assembly phase");
   assert(!ik->is_in_error_state(), "comp_id: %d, klass %s", task()->compile_id(), ik->external_name());
 
   if (!AOTCacheAccess::can_generate_aot_code_for(ik)) {

@@ -409,6 +409,21 @@
   product(uint, AOTCodePreloadStop, max_jint, DIAGNOSTIC,                   \
           "The id of the last AOT code to preload")                         \
                                                                             \
+  product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
+          "Preload code is processed with blocking. Startup would not "     \
+          "proceed until all preloaded code is done loading.")              \
+                                                                            \
+  product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
+          "Load AOT code but not install into CodeCache")                   \
+                                                                            \
+  develop(bool, AOTAssertOnUnknownExternalAddress, false,                   \
+          "Assert when external address is missing from the AOT Code "      \
+          "external address table. By default (false) AOT compilation "     \
+          "will be skipped for method which references such address.")      \
+                                                                            \
+  /* Next three AOT code flags are used only during assembly phase */       \
+  /* for tier4 AOT compilation and they are ignored in other phases */      \
+                                                                            \
   product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
           "AOT code invocation base limit")                                 \
           range(1.0, 10000.0)                                               \
@@ -419,18 +434,6 @@
                                                                             \
   product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
           "Use AOT code counter to trigger JIT compilation")                \
-                                                                            \
-  product(bool, VerifyAOTCode, false, DIAGNOSTIC,                           \
-          "Load AOT code but not install into CodeCache")                   \
-                                                                            \
-  product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
-          "Preload code is processed with blocking. Startup would not "     \
-          "proceed until all preloaded code is done loading.")              \
-                                                                            \
-  develop(bool, AOTAssertOnUnknownExternalAddress, false,                   \
-          "Assert when external address is missing from the AOT Code "      \
-          "external address table. By default (false) AOT compilation "     \
-          "will be skipped for method which references such address.")      \
                                                                             \
 
 // end of COMPILER_FLAGS

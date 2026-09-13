@@ -107,7 +107,7 @@ bool C2Compiler::init_c2_runtime() {
   return OptoRuntime::generate(thread->env());
 }
 
-void C2Compiler::initialize() {
+void C2Compiler::initialize(bool is_aot_comp_thread) {
   assert(!CompilerConfig::is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.
@@ -127,7 +127,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   assert(is_initialized(), "Compiler thread must be initialized");
   CompilationMemoryStatisticMark cmsm(directive);
   CompileTask* task = env->task();
-  if (install_code && task->is_aot_load()) {
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
     AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.

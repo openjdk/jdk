@@ -2535,7 +2535,7 @@ void nmethod::post_compiled_method(CompileTask* task) {
   // task->is_aot_load() is true only for loaded AOT code.
   // nmethod::_aot_code_entry is set for loaded and stored AOT code
   // to invalidate the entry when nmethod is deoptimized.
-  // VerifyAOTCode is option to not store in archive AOT code.
+  // VerifyAOTCode is option to verify AOT code without installing.
   guarantee((_aot_code_entry != nullptr) || !task->is_aot_load() || VerifyAOTCode, "sanity");
 
   // JVMTI -- compiled method notification (must be done outside lock)
@@ -3296,7 +3296,7 @@ void nmethod::verify() {
     fatal("find_nmethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
   }
 
-  // Verification can triggered during shutdown after AOTCodeCache is closed.
+  // Verification can be triggered during shutdown after AOTCodeCache is closed.
   // If the Scopes data is in the AOT code cache, then we should avoid verification during shutdown.
   if (!is_aot() || AOTCodeCache::is_on()) {
     for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {

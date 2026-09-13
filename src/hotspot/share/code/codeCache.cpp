@@ -234,8 +234,12 @@ void CodeCache::initialize_heaps() {
   assert(heap_available(CodeBlobType::MethodNonProfiled), "MethodNonProfiled heap is always available for segmented code heap");
 
   uint64_t compiler_buffer_size_uint64 = 0;
-  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c1_count() * Compiler::code_buffer_size());
-  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)CompilationPolicy::c2_count() * C2Compiler::initial_code_buffer_size());
+  // Take into account AOT C1 threads in case C1 JIT compilation is disabled,
+  // the space is needed for, at least, one buffer to initialize C1 runtime.
+  int c1_count = MAX2(CompilationPolicy::c1_count(), (CompilationPolicy::ac1_count() > 0 ? 1 : 0));
+  int c2_count = CompilationPolicy::c2_count();
+  COMPILER1_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c1_count * Compiler::code_buffer_size());
+  COMPILER2_PRESENT(compiler_buffer_size_uint64 += (uint64_t)c2_count * C2Compiler::initial_code_buffer_size());
   if (compiler_buffer_size_uint64 > (uint64_t)CODE_CACHE_SIZE_LIMIT) {
     err_msg msg("CICompilerCount is too large (%" PRIdPTR "): compiler buffer size exceeds the CodeCache size limit", CICompilerCount);
     vm_exit_during_initialization(msg);

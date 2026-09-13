@@ -778,7 +778,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
     // Load recorded MDO from training run when AOT code
-    // is used - MDO may not created yet in such case.
+    // is used - MDO may not be created yet in such case.
     // No need for AOT compilation - it is not
     // executed during assembly phase.
     method()->ensure_method_data();
