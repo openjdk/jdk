@@ -1328,16 +1328,21 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
   };
 
   Node* expression = nullptr;
+  BasicType bt = MemPointer::TYPE;
+
   mem_pointer().for_each_raw_summand_of_int_group(0, [&] (const MemPointerRawSummand& s) {
     Node* node = nullptr;
+#ifndef _LP64
+    assert (s.scaleL().is_one(), "must be int");
+#else
+    assert (s.scaleI().is_one(), "must be long");
+#endif
     if (s.is_con()) {
-      // Long constant.
+      // Constant.
       NoOverflowInt con = s.scaleI() * s.scaleL();
-      node = igvn.longcon(con.value());
+      node = igvn.integercon(con.value(), bt);
     } else {
-      // Long variable.
-      assert(s.scaleI().is_one(), "must be long variable");
-      Node* scaleL = igvn.longcon(s.scaleL().value());
+      Node* scale = igvn.integercon(s.scaleL().value() * s.scaleI().value(), bt);
       Node* variable = (s.variable() == iv) ? iv_value : s.variable();
       if (variable->bottom_type()->isa_ptr() != nullptr) {
         // Use a ctrl that is late enough, so that we do not
@@ -1345,10 +1350,10 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
         variable = new CastP2XNode(ctrl, variable);
         phase->register_new_node(variable, ctrl);
       }
-      node = new MulLNode(scaleL, variable);
+      node = MulNode::make(scale, variable, bt);
       phase->register_new_node(node, ctrl);
     }
-    expression = maybe_add(expression, node, T_LONG);
+    expression = maybe_add(expression, node, bt);
   });
 
   int max_int_group = mem_pointer().max_int_group();
@@ -1377,6 +1382,10 @@ Node* VPointer::make_pointer_expression(Node* iv_value, Node* ctrl) const {
     expression = maybe_add(expression, int_expression, T_LONG);
   }
 
+#ifndef _LP64
+  expression = new ConvI2LNode(expression);
+  phase->register_new_node(expression, ctrl);
+#endif
   return expression;
 }
 
