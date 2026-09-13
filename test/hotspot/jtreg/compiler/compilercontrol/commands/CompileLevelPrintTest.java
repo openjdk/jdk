@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8313713
+ * @bug 8313713 8380669
  * @summary Test -XX:CompileCommand=exclude and compileonly with different compilation levels,
  *          monitoring compilation events in VM -XX:+PrintCompilation output
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
@@ -221,10 +221,10 @@ public class CompileLevelPrintTest {
                             "Testee exited before signaling readiness");
 
                     Asserts.assertTrue(testeeState.compileCommandsReported.contains(
-                            compileCmd + " " + TEST_METHOD_NAME_DOT + " intx " + compileCmd + " = " + cmdCompLevel),
+                            compileCmd + " " + TEST_METHOD_NAME_DOT + " uint " + compileCmd + " = " + cmdCompLevel),
                             "'CompileCommand: " + compileCmd + "...' was not printed");
                     Asserts.assertTrue(testeeState.compileCommandsReported.contains(
-                            "print " + TEST_METHOD_NAME_DOT + " intx print = " + printCmdCompLevel),
+                            "print " + TEST_METHOD_NAME_DOT + " uint print = " + printCmdCompLevel),
                             "'CompileCommand: print ...' was not printed");
 
                     IO.println("##> Order testee to start");

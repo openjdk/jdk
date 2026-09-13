@@ -24,7 +24,7 @@
 
 /*
  * @test id=exclude-all-levels
- * @bug 8313713
+ * @bug 8313713 8380669
  * @summary Test -XX:CompileCommand=exclude with different compilation levels
  * @requires vm.compMode != "Xint" & vm.flavor == "server"
  *         & (vm.opt.TieredStopAtLevel == 4 | vm.opt.TieredStopAtLevel == null)
