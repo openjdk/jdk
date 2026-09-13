@@ -117,5 +117,8 @@ void poll_Relocation::fix_relocation_after_move(const CodeBuffer* src, CodeBuffe
   }
 }
 
+// Currently a no-op: no immediate patching is performed.
+// If this changes, update MacroAssembler::set_narrow_klass accordingly
+// (its conditional zext relies on the narrow klass value being immutable).
 void metadata_Relocation::pd_fix_value(address x) {
 }
