@@ -2316,6 +2316,32 @@ void C2_MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, 
   bind(done);
 }
 
+// Use zfa instruction to round double value.
+void C2_MacroAssembler::round_double_mode_zfa(FloatRegister dst, FloatRegister src, int round_mode) {
+  assert_different_registers(dst, src);
+
+  // Set rounding mode for conversions
+  // Here we use similar modes to double->long and long->double conversions
+  // Different mode for long->double conversion matter only if long value was not representable as double,
+  // we got long value as a result of double->long conversion so, it is definitely representable
+  RoundingMode rm;
+  switch (round_mode) {
+    case RoundDoubleModeNode::rmode_ceil:
+    rm = RoundingMode::rup;
+    break;
+    case RoundDoubleModeNode::rmode_floor:
+    rm = RoundingMode::rdn;
+    break;
+    case RoundDoubleModeNode::rmode_rint:
+    rm = RoundingMode::rne;
+    break;
+    default:
+    ShouldNotReachHere();
+  }
+  // fround.d
+  fround_d(dst, src, rm);
+}
+
 // According to Java SE specification, for floating-point signum operations, if
 // on input we have NaN or +/-0.0 value we should return it,
 // otherwise return +/- 1.0 using sign of input.
