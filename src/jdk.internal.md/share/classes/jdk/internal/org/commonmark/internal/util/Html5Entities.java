@@ -86,7 +86,7 @@ public class Html5Entities {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(stream, charset))) {
             String line;
             while ((line = bufferedReader.readLine()) != null) {
-                if (line.length() == 0) {
+                if (line.isEmpty()) {
                     continue;
                 }
                 int equal = line.indexOf("=");

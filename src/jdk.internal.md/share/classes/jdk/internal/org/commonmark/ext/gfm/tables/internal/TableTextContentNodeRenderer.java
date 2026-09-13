@@ -54,49 +54,46 @@ public class TableTextContentNodeRenderer extends TableNodeRenderer {
         this.context = context;
     }
 
+    @Override
     protected void renderBlock(TableBlock tableBlock) {
+        // Render rows tight
+        textContentWriter.pushTight(true);
         renderChildren(tableBlock);
-        if (tableBlock.getNext() != null) {
-            textContentWriter.write("\n");
-        }
+        textContentWriter.popTight();
+        textContentWriter.block();
     }
 
+    @Override
     protected void renderHead(TableHead tableHead) {
         renderChildren(tableHead);
     }
 
+    @Override
     protected void renderBody(TableBody tableBody) {
         renderChildren(tableBody);
     }
 
+    @Override
     protected void renderRow(TableRow tableRow) {
-        textContentWriter.line();
         renderChildren(tableRow);
-        textContentWriter.line();
+        textContentWriter.block();
     }
 
+    @Override
     protected void renderCell(TableCell tableCell) {
         renderChildren(tableCell);
-        textContentWriter.write('|');
-        textContentWriter.whitespace();
-    }
-
-    private void renderLastCell(TableCell tableCell) {
-        renderChildren(tableCell);
+        // For the last cell in row, don't render the delimiter
+        if (tableCell.getNext() != null) {
+            textContentWriter.write('|');
+            textContentWriter.whitespace();
+        }
     }
 
     private void renderChildren(Node parent) {
         Node node = parent.getFirstChild();
         while (node != null) {
             Node next = node.getNext();
-
-            // For last cell in row, we dont render the delimiter.
-            if (node instanceof TableCell && next == null) {
-                renderLastCell((TableCell) node);
-            } else {
-                context.render(node);
-            }
-
+            context.render(node);
             node = next;
         }
     }

@@ -30,34 +30,43 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.node;
+package jdk.internal.org.commonmark.parser.beta;
+
+import jdk.internal.org.commonmark.parser.InlineParserContext;
 
 /**
- * An indented code block, e.g.:
- * <pre><code>
- * Code follows:
- *
- *     foo
- *     bar
- * </code></pre>
+ * An interface to decide how links/images are handled.
  * <p>
- *
- * @see <a href="https://spec.commonmark.org/0.31.2/#indented-code-blocks">CommonMark Spec</a>
+ * Implementations need to be registered with a parser via {@link org.commonmark.parser.Parser.Builder#linkProcessor}.
+ * Then, when inline parsing is run, each parsed link/image is passed to the processor. This includes links like these:
+ * <p>
+ * <pre><code>
+ * [text](destination)
+ * [text]
+ * [text][]
+ * [text][label]
+ * </code></pre>
+ * And images:
+ * <pre><code>
+ * ![text](destination)
+ * ![text]
+ * ![text][]
+ * ![text][label]
+ * </code></pre>
+ * See {@link LinkInfo} for accessing various parts of the parsed link/image.
+ * <p>
+ * The processor can then inspect the link/image and decide what to do with it by returning the appropriate
+ * {@link LinkResult}. If it returns {@link LinkResult#none()}, the next registered processor is tried. If none of them
+ * apply, the link is handled as it normally would.
  */
-public class IndentedCodeBlock extends Block {
+public interface LinkProcessor {
 
-    private String literal;
-
-    @Override
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
-    }
-
-    public String getLiteral() {
-        return literal;
-    }
-
-    public void setLiteral(String literal) {
-        this.literal = literal;
-    }
+    /**
+     * @param linkInfo information about the parsed link/image
+     * @param scanner  the scanner at the current position after the parsed link/image
+     * @param context  context for inline parsing
+     * @return what to do with the link/image, e.g. do nothing (try the next processor), wrap the text in a node, or
+     * replace the link/image with a node
+     */
+    LinkResult process(LinkInfo linkInfo, Scanner scanner, InlineParserContext context);
 }

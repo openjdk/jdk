@@ -37,9 +37,16 @@ import jdk.internal.org.commonmark.node.Node;
 public interface TextContentNodeRendererContext {
 
     /**
+     * Controls how line breaks should be rendered, see {@link LineBreakRendering}.
+     */
+    LineBreakRendering lineBreakRendering();
+
+    /**
      * @return true for stripping new lines and render text as "single line",
      * false for keeping all line breaks.
+     * @deprecated Use {@link #lineBreakRendering()} instead
      */
+    @Deprecated
     boolean stripNewlines();
 
     /**

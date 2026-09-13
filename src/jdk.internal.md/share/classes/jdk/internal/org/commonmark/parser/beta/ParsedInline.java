@@ -30,29 +30,27 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+package jdk.internal.org.commonmark.parser.beta;
 
-import jdk.internal.org.commonmark.node.OrderedList;
+import jdk.internal.org.commonmark.internal.inline.ParsedInlineImpl;
+import jdk.internal.org.commonmark.node.Node;
 
-public class OrderedListHolder extends ListHolder {
-    private final String delimiter;
-    private int counter;
+import java.util.Objects;
 
-    public OrderedListHolder(ListHolder parent, OrderedList list) {
-        super(parent);
-        delimiter = list.getMarkerDelimiter() != null ? list.getMarkerDelimiter() : ".";
-        counter = list.getMarkerStartNumber() != null ? list.getMarkerStartNumber() : 1;
+/**
+ * The result of a single inline parser. Use the static methods to create instances.
+ * <p>
+ * <em>This interface is not intended to be implemented by clients.</em>
+ */
+public interface ParsedInline {
+
+    static ParsedInline none() {
+        return null;
     }
 
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    public int getCounter() {
-        return counter;
-    }
-
-    public void increaseCounter() {
-        counter++;
+    static ParsedInline of(Node node, Position position) {
+        Objects.requireNonNull(node, "node must not be null");
+        Objects.requireNonNull(position, "position must not be null");
+        return new ParsedInlineImpl(node, position);
     }
 }

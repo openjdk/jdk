@@ -32,29 +32,23 @@
 
 package jdk.internal.org.commonmark.ext.gfm.tables.internal;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-
-import jdk.internal.org.commonmark.ext.gfm.tables.TableBlock;
-import jdk.internal.org.commonmark.ext.gfm.tables.TableBody;
-import jdk.internal.org.commonmark.ext.gfm.tables.TableCell;
-import jdk.internal.org.commonmark.ext.gfm.tables.TableHead;
-import jdk.internal.org.commonmark.ext.gfm.tables.TableRow;
+import jdk.internal.org.commonmark.ext.gfm.tables.*;
 import jdk.internal.org.commonmark.node.Node;
 import jdk.internal.org.commonmark.renderer.NodeRenderer;
+
+import java.util.Set;
 
 abstract class TableNodeRenderer implements NodeRenderer {
 
     @Override
     public Set<Class<? extends Node>> getNodeTypes() {
-        return new HashSet<>(Arrays.asList(
+        return Set.of(
                 TableBlock.class,
                 TableHead.class,
                 TableBody.class,
                 TableRow.class,
                 TableCell.class
-        ));
+        );
     }
 
     @Override
