@@ -65,7 +65,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalCounter.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/linkedlist.hpp"
 #include "utilities/preserveException.hpp"
 
 class ObjectMonitorDeflationLogging;
