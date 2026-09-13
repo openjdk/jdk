@@ -179,8 +179,7 @@ void ExplicitHugePageSupport::scan_os() {
     }
   }
   _initialized = true;
-  LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, pagesize) lt; lt.is_enabled()) {
     LogStream ls(lt);
     print_on(&ls);
   }
@@ -226,8 +225,7 @@ void THPSupport::scan_os() {
   }
   _initialized = true;
 
-  LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, pagesize) lt; lt.is_enabled()) {
     LogStream ls(lt);
     print_on(&ls);
   }
@@ -294,8 +292,7 @@ void ShmemTHPSupport::scan_os() {
 
   _initialized = true;
 
-  LogTarget(Info, pagesize) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, pagesize) lt; lt.is_enabled()) {
     LogStream ls(lt);
     print_on(&ls);
   }

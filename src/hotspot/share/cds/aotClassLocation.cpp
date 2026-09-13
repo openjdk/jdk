@@ -773,8 +773,7 @@ bool AOTClassLocationConfig::check_classpaths(bool is_boot_classpath, bool has_a
 
   ResourceMark rm;
   const char* which = is_boot_classpath ? "boot" : "app";
-  LogTarget(Info, class, path) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, class, path) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print("Checking %s classpath from index [%d]", which, index_start);
     ls.print_cr("%s", use_lcp_match ? " (with longest common prefix substitution)" : "");
@@ -854,8 +853,7 @@ bool AOTClassLocationConfig::check_module_paths(bool has_aot_linked_classes, boo
   const int index_end = module_path_end_index();
   ResourceMark rm;
 
-  LogTarget(Info, class, path) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, class, path) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("Checking module paths from index [%d]", index_start);
     ls.print("- expected : '");

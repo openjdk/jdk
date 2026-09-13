@@ -867,8 +867,7 @@ static void print_compiler_threads(stringStream& msg) {
   if (TraceCompilerThreads) {
     tty->print_cr("%7d %s", (int)tty->time_stamp().milliseconds(), msg.as_string());
   }
-  LogTarget(Debug, jit, thread) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, jit, thread) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print_cr("%s", msg.as_string());
   }

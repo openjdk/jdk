@@ -213,8 +213,7 @@ ShenandoahGenerationalControlThread::GCMode ShenandoahGenerationalControlThread:
 }
 
 void ShenandoahGenerationalControlThread::maybe_print_young_region_ages() const {
-  LogTarget(Debug, gc, age) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, gc, age) lt; lt.is_enabled()) {
     LogStream ls(lt);
     AgeTable young_region_ages(false);
     for (uint i = 0; i < _heap->num_regions(); ++i) {

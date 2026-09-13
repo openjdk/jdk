@@ -86,8 +86,7 @@ void ShenandoahHeapRegionCounters::write_snapshot(PerfLongVariable** regions,
                                              PerfLongVariable* status,
                                              size_t num_regions,
                                              size_t region_size, size_t protocol_version) {
-  LogTarget(Trace, gc, region) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, gc, region) lt; lt.is_enabled()) {
     ResourceMark rm;
     LogStream ls(lt);
 

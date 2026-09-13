@@ -193,8 +193,7 @@ void WeakProcessorTimes::log_summary(OopStorageSet::WeakId id, uint indent) cons
 
 template <typename T>
 void WeakProcessorTimes::log_details(WorkerDataArray<T>* data, uint indent) const {
-  LogTarget(Trace, gc, phases) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, gc, phases) lt; lt.is_enabled()) {
     LogStream ls(lt);
     ls.print("%s", indents[indent]);
     data->print_details_on(&ls);
