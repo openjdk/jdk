@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +56,7 @@ import java.util.stream.Stream;
  * @summary a new process should not inherit open file descriptors
  * @comment On Aix lsof requires root privileges.
  * @requires os.family != "aix"
+ * @requires vm.flagless
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.management
@@ -77,8 +81,6 @@ import java.util.stream.Stream;
  * waits for the third VM to exit and checks that the string was printed by
  * the third VM.
  */
-
-import jdk.test.lib.Utils;
 
 public class TestInheritFD {
 
@@ -344,6 +346,45 @@ public class TestInheritFD {
         }
     }
 
+    static Collection<String> linuxOpenPathsUnderUserDir() {
+        long pid = ProcessHandle.current().pid();
+        final Path userDirReal;
+        try {
+            userDirReal = Path.of(USER_DIR).toRealPath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Path fdDir = Path.of("/proc", Long.toString(pid), "fd");
+        if (!Files.isDirectory(fdDir)) {
+            return java.util.List.of();
+        }
+        try (java.util.stream.Stream<Path> entries = Files.list(fdDir)) {
+            return entries
+                .map(fd -> {
+                    try {
+                        Path target = Files.readSymbolicLink(fd).normalize();
+                        if (!target.isAbsolute()) {
+                            return null;
+                        }
+                        Path real;
+                        try {
+                            real = target.toRealPath();
+                        } catch (IOException e) {
+                            String s = target.toString();
+                            return s.contains(LOG_SUFFIX) ? s : null;
+                        }
+                        return real.startsWith(userDirReal) ? real.toString() : null;
+                    } catch (IOException e) {
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(toList());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     static Optional<String[]> lsofCommandCache = stream(new String[][]{
             {"/usr/bin/lsof", "-p"},
             {"/usr/sbin/lsof", "-p"},
@@ -359,6 +400,12 @@ public class TestInheritFD {
 
     static Collection<String> outputContainingFilenames(String whichVM) {
         long pid = ProcessHandle.current().pid();
+        if (Platform.isLinux()) {
+            // Avoid lsof: with a very large RLIMIT_NOFILE, lsof may scan an enormous fd
+            // range and not finish within test timeouts.  Use /proc instead.
+            System.out.println("using /proc/" + pid + "/fd to list open paths under " + USER_DIR);
+            return linuxOpenPathsUnderUserDir();
+        }
         String[] command = lsofCommand().orElseThrow(() -> new RuntimeException("lsof like command not found"));
         // Only search the directory in which the VM is running (user.dir property).
         System.out.println("using command: " + command[0] + " -a +d " + USER_DIR + " " + command[1] + " " + pid);
