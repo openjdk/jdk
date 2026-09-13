@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
 import jdk.javadoc.internal.html.HtmlTree;
 import jdk.javadoc.internal.html.Text;
+import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
 
 /**
  * Content for the {@code <body>} element.
@@ -101,7 +102,7 @@ public class BodyContents extends Content {
                 .add(header)
                 .add(HtmlTree.DIV(HtmlStyles.mainGrid)
                         .add(side == null ? Text.EMPTY : side)
-                        .add(HtmlTree.MAIN()
+                        .add(HtmlTree.MAIN().setId(HtmlIds.SKIP_NAVBAR_TOP)
                                 .add(mainContents)
                                 .add(footer == null ? Text.EMPTY : footer)));
     }
