@@ -38,7 +38,7 @@ public class OrLNodeIdealizationTests {
         TestFramework.run();
     }
 
-    @Run(test = { "test1", "test2", "test3", "test4", "test5" })
+    @Run(test = { "test1", "test2", "test3", "test4", "test5", "test6", "test7" })
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
         long b = RunInfo.getRandom().nextLong();
@@ -57,8 +57,10 @@ public class OrLNodeIdealizationTests {
         Asserts.assertEQ((~a) | (~b), test1(a, b));
         Asserts.assertEQ((a | 3) | 6, test2(a));
         Asserts.assertEQ((a | 3) | a, test3(a));
-        Asserts.assertEQ(a | b, test4(a, b));
-        Asserts.assertEQ(a | b, test5(a, b));
+        Asserts.assertEQ(a | (b | a), test4(a, b));
+        Asserts.assertEQ((a | b) | a, test5(a, b));
+        Asserts.assertEQ((a | 0L) | a, test6(a));
+        Asserts.assertEQ(a | (a | 0L), test7(a));
     }
 
     // Checks (~a) | (~b) => ~(a & b)
@@ -97,5 +99,19 @@ public class OrLNodeIdealizationTests {
     @IR(counts = { IRNode.OR, "1" })
     public long test5(long a, long b) {
         return (a | b) | a;
+    }
+
+    // Checks (a | 0) | a => a | a => a
+    @Test
+    @IR(failOn = { IRNode.OR })
+    public long test6(long a) {
+        return (a | 0L) | a;
+    }
+
+    // Checks a | (a | 0) => a | a => a
+    @Test
+    @IR(failOn = { IRNode.OR })
+    public long test7(long a) {
+        return a | (a | 0L);
     }
 }
