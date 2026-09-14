@@ -6222,7 +6222,7 @@ instruct encodeP_shift(iRegNdst dst, iRegNsrc src) %{
   format %{ "SRDI    $dst, $src, 3 \t// encode" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6306,7 +6306,7 @@ instruct encodeP_not_null(iRegNdst dst, iRegPsrc src) %{
   format %{ "EncodeP $dst, $src\t// $src != Null" %}
   ins_encode %{
     __ sub_const_optimized($dst$$Register, $src$$Register, CompressedOops::base(), R0);
-    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $dst$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
@@ -6321,7 +6321,7 @@ instruct encodeP_not_null_base_null(iRegNdst dst, iRegPsrc src) %{
   format %{ "SRDI    $dst, $src, #3 \t// encodeP, $src != nullptr" %}
   size(4);
   ins_encode %{
-    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift() & 0x3f);
+    __ srdi($dst$$Register, $src$$Register, CompressedOops::shift());
   %}
   ins_pipe(pipe_class_default);
 %}
