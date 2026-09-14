@@ -2324,7 +2324,7 @@ abstract class MethodHandleImpl {
             names[UNBOXED_RESULT] = new Name(invokeBasic, unboxArgs);
         }
 
-        lform = LambdaForm.create(basicType.parameterCount() + 1, names, Kind.SYNCHRONIZE);
+        lform = LambdaForm.create(ARG_LIMIT, names, Kind.SYNCHRONIZE);
         return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_SYNCHRONIZE, lform);
     }
 
