@@ -38,7 +38,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-#include <sys/types.h>
 
 class LogStream;
 class outputStream;

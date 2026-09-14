@@ -41,7 +41,6 @@
 #include "oops/accessBackend.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/method.hpp"
-#include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomic.hpp"

@@ -30,7 +30,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/integerCast.hpp"
 
-#include <sys/types.h>
 
 // TODO: Merge the enhanced capabilities of ShenandoahSimpleBitMap into src/hotspot/share/utilities/bitMap.hpp
 //       and deprecate ShenandoahSimpleBitMap.  The key enhanced capabilities to be integrated include:

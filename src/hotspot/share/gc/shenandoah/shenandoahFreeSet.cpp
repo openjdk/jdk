@@ -46,6 +46,7 @@
 #include "memory/resourceArea.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
 static const char* partition_name(ShenandoahFreeSetPartitionId t) {

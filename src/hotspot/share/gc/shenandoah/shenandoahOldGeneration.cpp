@@ -71,6 +71,7 @@
 #include "runtime/threads.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeuristics;
 

@@ -49,7 +49,6 @@
 #include "oops/accessBackend.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/klass.hpp"
-#include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"

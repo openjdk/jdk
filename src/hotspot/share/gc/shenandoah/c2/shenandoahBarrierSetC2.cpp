@@ -33,7 +33,6 @@
 #include "gc/shenandoah/c2/shenandoahBarrierSetC2.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahRuntime.hpp"
-#include "jni.h"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/accessDecorators.hpp"

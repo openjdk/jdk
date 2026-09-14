@@ -40,7 +40,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
-#include <sys/types.h>
 
 bool ShenandoahEvacuationBudget::try_reserve(size_t bytes) {
   size_t new_consumption = _consumed + bytes;

@@ -49,8 +49,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
 
-#include <sys/types.h>
-
 static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
   if (a._live_data < b._live_data)
     return -1;

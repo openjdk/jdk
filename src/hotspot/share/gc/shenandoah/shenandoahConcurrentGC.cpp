@@ -76,7 +76,6 @@
 #include "oops/access.hpp"
 #include "oops/accessBackend.hpp"
 #include "oops/compressedOops.hpp"
-#include "oops/oop.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "prims/jvmtiTagMap.hpp"
 #include "runtime/handshake.hpp"

@@ -25,7 +25,6 @@
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
 #include "oops/accessDecorators.hpp"
-#include "oops/stackChunkOop.hpp"
 
 class OopIterator;
 

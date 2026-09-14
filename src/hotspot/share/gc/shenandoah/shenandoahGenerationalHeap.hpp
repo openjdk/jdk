@@ -36,6 +36,7 @@
 #include "utilities/growableArray.hpp"
 
 class CollectedHeap;
+class MemoryPool;
 class ShenandoahAgeCensus;
 class ShenandoahCollectorPolicy;
 class ShenandoahGeneration;
@@ -44,7 +45,6 @@ class ShenandoahMarkingContext;
 class ShenandoahRegulatorThread;
 class Thread;
 class ThreadClosure;
-class MemoryPool;
 
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
   void stop() override;

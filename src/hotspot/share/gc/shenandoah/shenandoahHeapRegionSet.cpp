@@ -27,7 +27,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "jni.h"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
 #include "runtime/thread.hpp"

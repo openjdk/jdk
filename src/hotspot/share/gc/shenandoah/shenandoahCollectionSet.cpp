@@ -26,7 +26,6 @@
 
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"

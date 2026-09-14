@@ -37,8 +37,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/quickSort.hpp"
 
-#include <sys/types.h>
-
 uint ShenandoahOldHeuristics::NOT_FOUND = -1U;
 
 // sort by increasing live (so least live comes first)

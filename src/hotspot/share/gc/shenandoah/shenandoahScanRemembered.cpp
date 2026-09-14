@@ -59,8 +59,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-#include <sys/types.h>
-
 class HeapWordImpl;
 class Thread;
 

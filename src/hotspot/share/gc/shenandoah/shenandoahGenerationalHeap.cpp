@@ -74,12 +74,9 @@
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
 #include "services/memoryManager.hpp"
-#include "services/memoryPool.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
-
-#include <sys/types.h>
 
 class ShenandoahConcUpdateRefsClosure;
 class ShenandoahNonConcUpdateRefsClosure;

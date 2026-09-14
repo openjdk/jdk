@@ -40,7 +40,6 @@
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "jni.h"
 #include "logging/log.hpp"
 #include "memory/universe.hpp"
 #include "oops/access.hpp"
