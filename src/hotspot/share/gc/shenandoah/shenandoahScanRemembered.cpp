@@ -851,48 +851,19 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 }
 
 size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
-  // The group size is calculated from the number of regions.  Suppose the heap has N regions.  The first group processes
-  // N/2 regions.  The second group processes N/4 regions, the third group N/8 regions and so on.
-  // Note that infinite series N/2 + N/4 + N/8 + N/16 + ...  sums to N.
-  //
-  // The normal group size is the number of regions / 2.
-  //
-  // In the case that the region_size_words is greater than _maximum_chunk_size_words, the first group_size is
-  // larger than the normal group size because each chunk in the group will be smaller than the region size.
-  //
-  // The last group also has more than the normal entries because it finishes the total scanning effort.  The chunk sizes are
-  // different for each group.  The intention is that the first group processes roughly half of the heap, the second processes
-  // half of the remaining heap, the third processes half of what remains and so on.  The smallest chunk size
-  // is represented by _smallest_chunk_size_words.  We do not divide work any smaller than this.
-  //
-  size_t group_size = _heap->num_regions() / 2;
-  return group_size;
+  return _heap->num_regions() / 2;
 }
 
 size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
-  size_t region_size_words = ShenandoahHeapRegion::region_size_words();
-  size_t num_chunks = (_heap->num_regions() * region_size_words) / chunk_size_words();
-  return num_chunks;
-}
-
-ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(size_t worker_count) :
-    ShenandoahRegionChunkIterator(ShenandoahHeap::heap(), worker_count)
-{
+  return (_heap->num_regions() * ShenandoahHeapRegion::region_size_words()) / chunk_size_words();
 }
 
 // Configure with a single group that spans the entire heap with equal-sized chunks of work.
-ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap, size_t worker_count) :
+ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap) :
     _heap(heap),
     _group_size(calc_regular_group_size()),
-    _num_groups(1),
     _total_chunks(calc_total_chunks()),
-    _index(0)
-{
-  _region_index[0] = 0;
-  _group_offset[0] = 0;
-  _group_entries[0] = _total_chunks;
-  _group_chunk_size[0] = chunk_size_words();
-}
+    _index(0) {}
 
 void ShenandoahRegionChunkIterator::reset() {
   _index.store_relaxed(0);

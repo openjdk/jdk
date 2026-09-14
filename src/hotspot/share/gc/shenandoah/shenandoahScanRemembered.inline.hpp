@@ -394,53 +394,41 @@ inline bool ShenandoahRegionChunkIterator::has_next() const {
 }
 
 inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
-  if (_index.load_relaxed() >= _total_chunks) {
-    return false;
-  }
-  size_t new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
-  if (new_index > _total_chunks) {
-    // First worker that hits new_index == _total_chunks continues, other contending workers return false.
-    return false;
-  }
-  // convert to zero-based indexing
-  new_index--;
-  assert(new_index < _total_chunks, "Error");
-  size_t region_size_words = ShenandoahHeapRegion::region_size_words();
-  size_t group_region_index = _region_index[0];
-  size_t group_region_offset = _group_offset[0];
-  size_t group_chunk_size = _group_chunk_size[0];
-  size_t chunks_per_region = region_size_words / group_chunk_size;
+  size_t chunk_size = chunk_size_words();
+  size_t chunk_shift = log2i_exact(chunk_size);
+
   while (true) {
-    size_t index_within_group = new_index;
-    size_t offset_of_this_chunk = group_region_offset + index_within_group * group_chunk_size;
-    size_t regions_spanned_by_chunk_offset = offset_of_this_chunk / region_size_words;
-    size_t region_index = group_region_index + regions_spanned_by_chunk_offset;
-    ShenandoahHeapRegion* r = _heap->get_region(region_index);
-    size_t offset_within_region = offset_of_this_chunk % region_size_words;
-    if (!r->is_old()) {
-      // skip to the next region
-      size_t index_within_region = offset_within_region / group_chunk_size;
-      size_t skip_count = chunks_per_region - index_within_region;
-      size_t proposed_new_index = new_index + skip_count + 1;
-      if (_index.compare_set(new_index + 1, proposed_new_index, memory_order_relaxed)) {
-        new_index = proposed_new_index;
-      } else {
-        // Some other thread advanced beyond the current young region. See if following region is also young.
-        new_index = _index.add_then_fetch((size_t) 1, memory_order_relaxed);
+    size_t cur_index = _index.load_relaxed();
+    if (cur_index >= _total_chunks) {
+      break;
+    }
+
+    size_t global_offset = cur_index << chunk_shift;
+    size_t region_offset = global_offset &  ShenandoahHeapRegion::region_size_words_mask();
+    size_t region_index  = global_offset >> ShenandoahHeapRegion::region_size_words_shift();
+
+    if (_heap->region_affiliation(region_index) == OLD_GENERATION) {
+      // Passable candidate, try to claim it.
+      if (_index.compare_set(cur_index, cur_index + 1)) {
+        assignment->_r = _heap->get_region(region_index);
+        assignment->_chunk_offset = region_offset;
+        assignment->_chunk_size = chunk_size;
+        return true;
       }
-      if (new_index > _total_chunks) {
-        // First worker that hits new_index == _total_chunks continues, other contending workers return false.
-        return false;
-      }
-      // convert to zero-based indexing
-      new_index--;
     } else {
-      assignment->_r = r;
-      assignment->_chunk_offset = offset_within_region;
-      assignment->_chunk_size = group_chunk_size;
-      return true;
+      // Misfit. Try to advance cursor to next OLD region.
+      while (region_index < _heap->num_regions() &&
+             _heap->region_affiliation(region_index) != OLD_GENERATION) {
+        region_index++;
+      }
+      size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> chunk_shift;
+      // Multiple worker threads may be running this same loop. If some other thread overwrites _index before I do,
+      // compare_set() will fail, but I don't care as long as the value of _index is updated by someone.
+      _index.compare_set(cur_index, skip_index, memory_order_relaxed);
     }
   }
+  // We break if cur_index is greater than _total_chunks.  All scanning is done.
+  return false;
 }
 
 #endif   // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBEREDINLINE_HPP
