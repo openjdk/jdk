@@ -1298,9 +1298,10 @@ void FieldLayoutBuilder::compute_value_class_layout() {
     // operation.
 
     layouts().set_size_in_bytes_of(LayoutKind::BUFFERED,
-                                   largest_layout_of(LayoutKind::NULLABLE_ATOMIC_FLAT,
-                                                               LayoutKind::NULLABLE_NON_ATOMIC_FLAT,
-                                                               LayoutKind::NULL_FREE_ATOMIC_FLAT));
+                                   largest_layout_of(LayoutKind::BUFFERED,
+                                                     LayoutKind::NULLABLE_ATOMIC_FLAT,
+                                                     LayoutKind::NULLABLE_NON_ATOMIC_FLAT,
+                                                     LayoutKind::NULL_FREE_ATOMIC_FLAT));
   }
   // Warning:: InstanceMirrorKlass expects static oops to be allocated first
   _static_layout->add_contiguously(_static_fields->oop_fields());
