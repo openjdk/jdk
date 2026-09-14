@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ public abstract class ImageInputStreamSpi extends IIOServiceProvider {
      * Returns {@code true} if the {@code ImageInputStream}
      * implementation associated with this service provider can
      * optionally make use of a cache file for improved performance
-     * and/or memory footrprint.  If {@code false}, the value of
+     * and/or memory footprint.  If {@code false}, the value of
      * the {@code useCache} argument to
      * {@code createInputStreamInstance} will be ignored.
      *

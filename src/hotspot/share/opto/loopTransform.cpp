@@ -615,7 +615,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop *phase) {
     if (loop_head->_stress_peeling_attempts < max_peeling_opportunities) {
       loop_head->_stress_peeling_attempts++;
       // In case of stress, let's just pick randomly...
-      return ((phase->C->random() % 2) == 0) ? estimate : 0;
+      return ((phase->C->stress().random() % 2) == 0) ? estimate : 0;
     }
     return 0;
   }
@@ -4076,11 +4076,6 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   }
   Node* from = AddPNode::make_with_base(base, index);
   _igvn.register_new_node_with_optimizer(from);
-  // For normal array fills, C2 uses two AddP nodes for array element
-  // addressing. But for array fills with Unsafe call, there's only one
-  // AddP node adding an absolute offset, so we do a null check here.
-  assert(offset != nullptr || C->has_unsafe_access(),
-         "Only array fills with unsafe have no extra offset");
   if (offset != nullptr) {
     from = AddPNode::make_with_base(base, from, offset);
     _igvn.register_new_node_with_optimizer(from);

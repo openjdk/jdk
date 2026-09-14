@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
- * @run testng/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
+ * @run junit/othervm/timeout=600 --enable-native-access=ALL-UNNAMED TestByteBuffer
  */
 
 import java.lang.foreign.*;
@@ -53,9 +53,7 @@ import java.nio.LongBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -69,13 +67,19 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.testng.SkipException;
-import org.testng.annotations.*;
 import sun.nio.ch.DirectBuffer;
 
 import static java.lang.foreign.ValueLayout.*;
-import static org.testng.Assert.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestByteBuffer {
 
     static final Path tempPath;
@@ -127,9 +131,9 @@ public class TestByteBuffer {
         for (long i = 0; i < count ; i++) {
             int index;
             float value;
-            assertEquals(index = bb.getInt(), (int)indexHandle.get(base, 0L, i));
-            assertEquals(value = bb.getFloat(), (float)valueHandle.get(base, 0L, i));
-            assertEquals(value, index / 500f);
+            assertEquals((int)indexHandle.get(base, 0L, i), index = bb.getInt());
+            assertEquals((float)valueHandle.get(base, 0L, i), value = bb.getFloat());
+            assertEquals(index / 500f, value);
         }
     }
 
@@ -156,13 +160,13 @@ public class TestByteBuffer {
                 Object bufferValue = bufferExtractor.apply(z);
                 Object handleViewValue = handleExtractor.apply(segmentBufferView, j - i);
                 if (handleValue instanceof Number) {
-                    assertEquals(((Number)handleValue).longValue(), j);
-                    assertEquals(((Number)bufferValue).longValue(), j);
-                    assertEquals(((Number)handleViewValue).longValue(), j);
+                    assertEquals(j, ((Number)handleValue).longValue());
+                    assertEquals(j, ((Number)bufferValue).longValue());
+                    assertEquals(j, ((Number)handleViewValue).longValue());
                 } else {
-                    assertEquals((long)(char)handleValue, j);
-                    assertEquals((long)(char)bufferValue, j);
-                    assertEquals((long)(char)handleViewValue, j);
+                    assertEquals(j, (long)(char)handleValue);
+                    assertEquals(j, (long)(char)bufferValue);
+                    assertEquals(j, (long)(char)handleViewValue);
                 }
             }
         }
@@ -250,19 +254,21 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider = "mappedOps", expectedExceptions = IllegalStateException.class)
+    @ParameterizedTest
+    @MethodSource("mappedOps")
     public void testMappedSegmentOperations(MappedSegmentOp mappedBufferOp) throws Throwable {
         File f = new File("test3.out");
         f.createNewFile();
         f.deleteOnExit();
-
         Arena arena = Arena.ofConfined();
         try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 8L, arena);
             assertTrue(segment.isMapped());
             assertTrue(segment.toString().contains("mapped"));
             arena.close();
-            mappedBufferOp.apply(segment);
+            assertThrows(IllegalStateException.class, () -> {
+                mappedBufferOp.apply(segment);
+            });
         }
     }
 
@@ -296,7 +302,8 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider = "fromArrays")
+    @ParameterizedTest
+    @MethodSource("fromArrays")
     public void testAsByteBufferFromNonByteArray(MemorySegment segment) {
         if (!segment.heapBase().map(a -> a instanceof byte[]).get()) {
             // This should not work as the segment is not backed by a byte array
@@ -320,12 +327,12 @@ public class TestByteBuffer {
                     segment.isLoaded();
                     segment.unload();
                     ByteBuffer byteBuffer = segment.asByteBuffer();
-                    assertEquals(byteBuffer.capacity(), segment.byteSize());
-                    assertEquals(byteBuffer.isReadOnly(), segment.isReadOnly());
+                    assertEquals(segment.byteSize(), byteBuffer.capacity());
+                    assertEquals(segment.isReadOnly(), byteBuffer.isReadOnly());
                     assertTrue(byteBuffer.isDirect());
                 } catch (IOException e) {
-                    if (e.getMessage().equals("Function not implemented"))
-                        throw new SkipException(e.getMessage(), e);
+                    assumeFalse(e.getMessage().equals("Function not implemented"),
+                            e.getMessage());
                 } finally {
                     if (arena.scope() != Arena.global().scope()) {
                         arena.close();
@@ -339,9 +346,7 @@ public class TestByteBuffer {
 
     @Test
     public void testLargeMappedSegment() throws Throwable {
-        if (System.getProperty("sun.arch.data.model").equals("32")) {
-            throw new SkipException("large mapped files not supported on 32-bit systems");
-        }
+        assumeFalse(System.getProperty("sun.arch.data.model").equals("32"), "large mapped files not supported on 32-bit systems");
 
         File f = new File("testLargeMappedSegment.out");
         f.createNewFile();
@@ -358,8 +363,8 @@ public class TestByteBuffer {
             segment.unload();
             segment.isLoaded();
         } catch(IOException e) {
-            if (e.getMessage().equals("Function not implemented"))
-                throw new SkipException(e.getMessage(), e);
+            assumeFalse(e.getMessage().equals("Function not implemented"),
+                    e.getMessage());
         }
     }
 
@@ -376,14 +381,13 @@ public class TestByteBuffer {
     }
 
     static void checkByteArrayAlignment(MemoryLayout layout) {
-        if (layout.byteSize() > 4
-                && System.getProperty("sun.arch.data.model").equals("32")) {
-            throw new SkipException("avoid unaligned access on 32-bit system");
-        }
+        assumeFalse(layout.byteSize() > 4
+                && System.getProperty("sun.arch.data.model").equals("32"), "avoid unaligned access on 32-bit system");
     }
 
-    @Test(dataProvider = "bufferOps")
-    public void testScopedBuffer(Function<ByteBuffer, Buffer> bufferFactory, @NoInjection Method method, Object[] args) {
+    @ParameterizedTest
+    @MethodSource("bufferOps")
+    public void testScopedBuffer(Function<ByteBuffer, Buffer> bufferFactory, Method method, Object[] args) {
         Buffer bb;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(bytes);
@@ -408,7 +412,8 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider = "bufferHandleOps")
+    @ParameterizedTest
+    @MethodSource("bufferHandleOps")
     public void testScopedBufferAndVarHandle(VarHandle bufferHandle) {
         ByteBuffer bb;
         try (Arena arena = Arena.ofConfined()) {
@@ -443,20 +448,22 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider = "bufferOps")
-    public void testDirectBuffer(Function<ByteBuffer, Buffer> bufferFactory, @NoInjection Method method, Object[] args) {
+    @ParameterizedTest
+    @MethodSource("bufferOps")
+    public void testDirectBuffer(Function<ByteBuffer, Buffer> bufferFactory, Method method, Object[] args) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(bytes);
             Buffer bb = bufferFactory.apply(segment.asByteBuffer());
             assertTrue(bb.isDirect());
             DirectBuffer directBuffer = ((DirectBuffer)bb);
-            assertEquals(directBuffer.address(), segment.address());
+            assertEquals(segment.address(), directBuffer.address());
             assertTrue((directBuffer.attachment() == null) == (bb instanceof ByteBuffer));
             assertTrue(directBuffer.cleaner() == null);
         }
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testResizeOffheap(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(seq);
@@ -465,7 +472,8 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testResizeHeap(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
@@ -474,7 +482,8 @@ public class TestByteBuffer {
         checker.accept(base);
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testResizeBuffer(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
@@ -483,7 +492,8 @@ public class TestByteBuffer {
         checker.accept(base);
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testResizeRoundtripHeap(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
         int capacity = (int)seq.byteSize();
@@ -494,7 +504,8 @@ public class TestByteBuffer {
         checker.accept(second);
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testResizeRoundtripNative(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(seq);
@@ -504,39 +515,47 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testBufferOnClosedSession() {
         MemorySegment leaked;
         try (Arena arena = Arena.ofConfined()) {
             leaked = arena.allocate(bytes);
         }
         ByteBuffer byteBuffer = leaked.asByteBuffer(); // ok
-        byteBuffer.get(); // should throw
+        assertThrows(IllegalStateException.class, () -> {
+            byteBuffer.get();
+        });
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testTooBigForByteBuffer() {
         MemorySegment segment = MemorySegment.NULL.reinterpret(Integer.MAX_VALUE + 10L);
-        segment.asByteBuffer();
+        assertThrows(IllegalStateException.class, () -> {
+            segment.asByteBuffer();
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadMapNegativeSize() throws IOException {
         File f = new File("testNeg1.out");
         f.createNewFile();
         f.deleteOnExit();
         try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, -1L, Arena.ofAuto());
+            assertThrows(IllegalArgumentException.class, () -> {
+                fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, -1L, Arena.ofAuto());
+            });
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testBadMapNegativeOffset() throws IOException {
         File f = new File("testNeg2.out");
         f.createNewFile();
         f.deleteOnExit();
         try (FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, -1L, 1L, Arena.ofAuto());
+            assertThrows(IllegalArgumentException.class, () -> {
+                fileChannel.map(FileChannel.MapMode.READ_WRITE, -1L, 1L, Arena.ofAuto());
+            });
         }
     }
 
@@ -561,7 +580,7 @@ public class TestByteBuffer {
             try (Arena arena = Arena.ofConfined();
                  FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ)) {
                 MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_ONLY, offset, SIZE - offset, arena);
-                assertEquals(segment.get(JAVA_BYTE, 0), offset);
+                assertEquals(offset, segment.get(JAVA_BYTE, 0));
             }
         }
     }
@@ -575,43 +594,57 @@ public class TestByteBuffer {
         try (Arena arena = Arena.ofConfined();
              FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 0L, arena);
-            assertEquals(segment.byteSize(), 0);
-            assertEquals(segment.isMapped(), true);
+            assertEquals(0, segment.byteSize());
+            assertEquals(true, segment.isMapped());
             assertFalse(segment.isReadOnly());
             segment.force();
             segment.load();
             segment.isLoaded();
             segment.unload();
             ByteBuffer byteBuffer = segment.asByteBuffer();
-            assertEquals(byteBuffer.capacity(), 0);
+            assertEquals(0, byteBuffer.capacity());
             assertFalse(byteBuffer.isReadOnly());
         }
         //RO
         try (Arena arena = Arena.ofConfined();
              FileChannel fileChannel = FileChannel.open(f.toPath(), StandardOpenOption.READ)) {
             MemorySegment segment = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0L, 0L, arena);
-            assertEquals(segment.byteSize(), 0);
-            assertEquals(segment.isMapped(), true);
+            assertEquals(0, segment.byteSize());
+            assertEquals(true, segment.isMapped());
             assertTrue(segment.isReadOnly());
             segment.force();
             segment.load();
             segment.isLoaded();
             segment.unload();
             ByteBuffer byteBuffer = segment.asByteBuffer();
-            assertEquals(byteBuffer.capacity(), 0);
+            assertEquals(0, byteBuffer.capacity());
             assertTrue(byteBuffer.isReadOnly());
         }
     }
 
-    @Test(expectedExceptions = UnsupportedOperationException.class)
+    @Test
     public void testMapCustomPath() throws IOException {
-        Path path = Path.of(URI.create("jrt:/"));
-        try (FileChannel fileChannel = FileChannel.open(path, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 0L, Arena.ofAuto());
+        // Zip file systems do support creating file channels
+        // but do not support memory mapping those files
+        Path scratch = Path.of("testMapCustomPath");
+        Files.createDirectories(scratch);
+        Path zipFile = scratch.resolve("test.zip");
+
+        try (FileSystem zipFs = FileSystems.newFileSystem(zipFile, Map.of("create", true))) {
+            // create test file
+            Path testFile = zipFs.getPath("/test_file.txt");
+            Files.writeString(testFile, "testing", StandardOpenOption.CREATE_NEW);
+
+            // now try to map it
+            try (FileChannel fileChannel = FileChannel.open(testFile, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
+                assertThrows(UnsupportedOperationException.class,
+                        () -> fileChannel.map(FileChannel.MapMode.READ_WRITE, 0L, 0L, Arena.ofAuto()));
+            }
         }
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testCopyHeapToNative(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
@@ -624,7 +657,8 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider="resizeOps")
+    @ParameterizedTest
+    @MethodSource("resizeOps")
     public void testCopyNativeToHeap(Consumer<MemorySegment> checker, Consumer<MemorySegment> initializer, SequenceLayout seq) {
         checkByteArrayAlignment(seq.elementLayout());
         int bytes = (int)seq.byteSize();
@@ -674,28 +708,30 @@ public class TestByteBuffer {
         }
     }
 
-    @Test(dataProvider="bufferSources")
+    @ParameterizedTest
+    @MethodSource("bufferSources")
     public void testBufferToSegment(ByteBuffer bb, Predicate<MemorySegment> segmentChecker) {
         MemorySegment segment = MemorySegment.ofBuffer(bb);
-        assertEquals(segment.isReadOnly(), bb.isReadOnly());
+        assertEquals(bb.isReadOnly(), segment.isReadOnly());
         assertTrue(segmentChecker.test(segment));
         assertTrue(segmentChecker.test(segment.asSlice(0, segment.byteSize())));
-        assertEquals(bb.capacity(), segment.byteSize());
+        assertEquals(segment.byteSize(), bb.capacity());
         //another round trip
         segment = MemorySegment.ofBuffer(segment.asByteBuffer());
-        assertEquals(segment.isReadOnly(), bb.isReadOnly());
+        assertEquals(bb.isReadOnly(), segment.isReadOnly());
         assertTrue(segmentChecker.test(segment));
         assertTrue(segmentChecker.test(segment.asSlice(0, segment.byteSize())));
-        assertEquals(bb.capacity(), segment.byteSize());
+        assertEquals(segment.byteSize(), bb.capacity());
     }
 
-    @Test(dataProvider="bufferSources")
+    @ParameterizedTest
+    @MethodSource("bufferSources")
     public void bufferProperties(ByteBuffer bb, Predicate<MemorySegment> _unused) {
         MemorySegment segment = MemorySegment.ofBuffer(bb);
         ByteBuffer buffer = segment.asByteBuffer();
-        assertEquals(buffer.position(), 0);
-        assertEquals(buffer.capacity(), segment.byteSize());
-        assertEquals(buffer.limit(), segment.byteSize());
+        assertEquals(0, buffer.position());
+        assertEquals(segment.byteSize(), buffer.capacity());
+        assertEquals(segment.byteSize(), buffer.limit());
     }
 
     @Test
@@ -704,27 +740,28 @@ public class TestByteBuffer {
             MemorySegment ms = arena.allocate(4, 1);
             MemorySegment msNoAccess = ms.asReadOnly();
             MemorySegment msRoundTrip = MemorySegment.ofBuffer(msNoAccess.asByteBuffer());
-            assertEquals(msRoundTrip.scope(), ms.scope());
-            assertEquals(msNoAccess.isReadOnly(), msRoundTrip.isReadOnly());
+            assertEquals(ms.scope(), msRoundTrip.scope());
+            assertEquals(msRoundTrip.isReadOnly(), msNoAccess.isReadOnly());
         }
     }
 
-    @Test(dataProvider = "bufferFactories")
+    @ParameterizedTest
+    @MethodSource("bufferFactories")
     public void testDerivedBufferScopes(Supplier<Buffer> bufferFactory) {
         MemorySegment segment = MemorySegment.ofBuffer(bufferFactory.get());
         assertEquals(segment.scope(), segment.scope());
         // one level
-        assertEquals(segment.asSlice(0).scope(), segment.scope());
-        assertEquals(segment.asReadOnly().scope(), segment.scope());
+        assertEquals(segment.scope(), segment.asSlice(0).scope());
+        assertEquals(segment.scope(), segment.asReadOnly().scope());
         // two levels
-        assertEquals(segment.asSlice(0).asReadOnly().scope(), segment.scope());
-        assertEquals(segment.asReadOnly().asSlice(0).scope(), segment.scope());
+        assertEquals(segment.scope(), segment.asSlice(0).asReadOnly().scope());
+        assertEquals(segment.scope(), segment.asReadOnly().asSlice(0).scope());
         // check fresh every time
         MemorySegment another = MemorySegment.ofBuffer(bufferFactory.get());
-        assertNotEquals(segment.scope(), another.scope());
+        assertNotEquals(another.scope(), segment.scope());
     }
 
-    @Test(expectedExceptions = IllegalStateException.class)
+    @Test
     public void testDeadAccessOnClosedBufferSegment() {
         Arena arena = Arena.ofConfined();
         MemorySegment s1 = arena.allocate(JAVA_INT);
@@ -732,11 +769,13 @@ public class TestByteBuffer {
 
         // memory freed
         arena.close();
-
-        s2.set(JAVA_INT, 0, 10); // Dead access!
+        assertThrows(IllegalStateException.class, () -> {
+            s2.set(JAVA_INT, 0, 10); // Dead access!
+        });
     }
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void closeableArenas(Supplier<Arena> arenaSupplier) throws IOException {
         File tmp = File.createTempFile("tmp", "txt");
         tmp.deleteOnExit();
@@ -747,17 +786,18 @@ public class TestByteBuffer {
                 segment.set(JAVA_BYTE, i, (byte) i);
             }
             ByteBuffer bb = segment.asByteBuffer();
-            assertEquals(channel.write(bb), 10);
+            assertEquals(10, channel.write(bb));
             segment.fill((byte)0x00);
-            assertEquals(bb.clear(), ByteBuffer.wrap(new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}));
-            assertEquals(channel.position(0).read(bb.clear()), 10);
-            assertEquals(bb.flip(), ByteBuffer.wrap(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+            assertEquals(ByteBuffer.wrap(new byte[] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0}), bb.clear());
+            assertEquals(10, channel.position(0).read(bb.clear()));
+            assertEquals(ByteBuffer.wrap(new byte[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), bb.flip());
         }
     }
 
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
-    @Test(dataProvider = "closeableArenas")
+    @ParameterizedTest
+    @MethodSource("closeableArenas")
     public void testIOOnClosedSegmentBuffer(Supplier<Arena> arenaSupplier) throws IOException {
         File tmp = File.createTempFile("tmp", "txt");
         tmp.deleteOnExit();
@@ -786,13 +826,13 @@ public class TestByteBuffer {
             var slice = segment.asSlice(4, newSize);
 
             var bytes = slice.toArray(JAVA_BYTE);
-            assertEquals(newSize, bytes.length);
+            assertEquals(bytes.length, newSize);
 
             var buffer = slice.asByteBuffer();
             // Fails for heap segments, but passes for native segments:
             assertEquals(0, buffer.position());
-            assertEquals(newSize, buffer.limit());
-            assertEquals(newSize, buffer.capacity());
+            assertEquals(buffer.limit(), newSize);
+            assertEquals(buffer.capacity(), newSize);
         }
     }
 
@@ -806,7 +846,6 @@ public class TestByteBuffer {
         }
     }
 
-    @DataProvider(name = "segments")
     public static Object[][] segments() throws Throwable {
         return new Object[][] {
                 { (Supplier<MemorySegment>) () -> Arena.ofAuto().allocate(16, 1)},
@@ -815,7 +854,6 @@ public class TestByteBuffer {
         };
     }
 
-    @DataProvider(name = "closeableArenas")
     public static Object[][] closeableArenas() {
         return new Object[][] {
                 { (Supplier<Arena>) Arena::ofConfined},
@@ -823,7 +861,6 @@ public class TestByteBuffer {
         };
     }
 
-    @DataProvider(name = "bufferOps")
     public static Object[][] bufferOps() throws Throwable {
         List<Object[]> args = new ArrayList<>();
         bufferOpsArgs(args, bb -> bb, ByteBuffer.class);
@@ -850,7 +887,6 @@ public class TestByteBuffer {
         }
     }
 
-    @DataProvider(name = "bufferHandleOps")
     public static Object[][] bufferHandleOps() throws Throwable {
         return new Object[][]{
                 { MethodHandles.byteBufferViewVarHandle(char[].class, ByteOrder.nativeOrder()) },
@@ -878,7 +914,6 @@ public class TestByteBuffer {
         return members;
     }
 
-    @DataProvider(name = "resizeOps")
     public Object[][] resizeOps() {
         Consumer<MemorySegment> byteInitializer =
                 (base) -> initBytes(base, bytes, (addr, pos) -> addr.set(JAVA_BYTE, pos, (byte)(long)pos));
@@ -983,7 +1018,6 @@ public class TestByteBuffer {
         }
     }
 
-    @DataProvider(name = "bufferSources")
     public static Object[][] bufferSources() {
         Predicate<MemorySegment> heapTest = segment -> !segment.isNative() && !segment.isMapped();
         Predicate<MemorySegment> nativeTest = segment -> segment.isNative() && !segment.isMapped();
@@ -1027,14 +1061,12 @@ public class TestByteBuffer {
         }
     }
 
-    @DataProvider(name = "mappedOps")
     public static Object[][] mappedOps() {
         return Stream.of(MappedSegmentOp.values())
                 .map(op -> new Object[] { op })
                 .toArray(Object[][]::new);
     }
 
-    @DataProvider(name = "bufferFactories")
     public static Object[][] bufferFactories() {
         List<Supplier<Buffer>> l = List.of(
                 () -> ByteBuffer.allocate(10),
@@ -1055,7 +1087,6 @@ public class TestByteBuffer {
         return l.stream().map(s -> new Object[] { s }).toArray(Object[][]::new);
 
     }
-    @DataProvider(name = "fromArrays")
     public static Object[][] fromArrays() {
         int len = 16;
         return Stream.of(

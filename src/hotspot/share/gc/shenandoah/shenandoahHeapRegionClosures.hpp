@@ -77,7 +77,9 @@ public:
   }
 };
 
-// Makes regions pinned or unpinned according to the region's pin count
+// Makes regions pinned or unpinned according to the region's pin count.
+// On construction, it will flush all Java threads' pin caches into their
+// cached regions' pin counters.
 class ShenandoahSynchronizePinnedRegionStates : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahHeapLock* const _lock;
@@ -92,14 +94,17 @@ public:
 };
 
 class ShenandoahMarkingContext;
+class ShenandoahGeneration;
 
-// Synchronizes region pinned status, sets update watermark and adjust live data tally for regions
+// Synchronizes region pinned status, sets update watermark and adjusts live data tally for regions.
+// Live data tally is only adjusted for regions in the given generation.
 class ShenandoahFinalMarkUpdateRegionStateClosure : public ShenandoahHeapRegionClosure {
 private:
   ShenandoahMarkingContext* const _ctx;
+  ShenandoahGeneration* const _generation;
   ShenandoahSynchronizePinnedRegionStates _pins;
 public:
-  explicit ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx);
+  explicit ShenandoahFinalMarkUpdateRegionStateClosure(ShenandoahMarkingContext* ctx, ShenandoahGeneration* generation);
 
   void heap_region_do(ShenandoahHeapRegion* r) override;
   bool is_thread_safe() override { return true; }
