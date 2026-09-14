@@ -99,6 +99,48 @@ oop fieldDescriptor::string_initial_value(TRAPS) const {
   return constants()->uncached_string_at(initial_value_index(), THREAD);
 }
 
+ValueKlass* fieldDescriptor::flat_field_klass() {
+  precond(is_flat());
+  return field_holder()->get_value_type_field_klass(index());
+}
+
+bool fieldDescriptor::is_flat_field_marked_as_null(address obj, const ValuePayloadContext* vpc) {
+  precond(is_flat());
+  if (is_null_free_value_type()) {
+    return false; // Cannot be marked as null.
+  } else {
+    return flat_field_klass()->is_payload_marked_as_null(obj + field_offset_in_obj(vpc));
+  }
+}
+
+int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
+  if (vpc == nullptr) {
+    return offset();
+  } else {
+    // vpc->klass() is not necessarily the same as this->field_holder(), as this field could be
+    // declared in a superclass of vpc->klass().
+    precond(vpc->klass()->is_subclass_of(this->field_holder()));
+
+    // Compute the offset of the field represented by this fieldDescriptor from
+    // the beginning of an heap oop.
+    //
+    // Using the example Point class from the comments above the declaration of
+    // ValuePayloadContext, if we are looking at Point::y::value,
+    //
+    //     this->field_holder()    : InstanceKlass java/lang/Integer
+    //     vpc->klass()            : ValueKlass java/lang/Integer (we are looking at a field in a flattened Integer)
+    //     vpc->_offset_in_obj     : 12 (this flattened Integer starts at offset 12 of obj)
+    //     this->name()            : "value" (the field that we are looking at. Note: it's NOT "y")
+    //     this->field_type()      : T_INT
+    //     this->offset()          : 8 (the offset of the "value" field in a regular Integer heap oop)
+    //     vpc->klass()->payload_offset() : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
+    //   =>
+    //     field_offset_in_obj() : 12 + (8 - 8) == 12 (offset inside a Point object)
+    int offset_in_value_payload = this->offset() - vpc->klass()->payload_offset();
+    return vpc->offset_in_obj() + offset_in_value_payload;
+  }
+}
+
 void fieldDescriptor::reinitialize(const InstanceKlass* ik, const FieldInfo& fieldinfo) {
   if (_cp.is_null() || field_holder() != ik) {
     _cp = constantPoolHandle(Thread::current(), ik->constants());
@@ -128,7 +170,8 @@ void fieldDescriptor::print_access_flags(outputStream* st) const {
   }
 }
 
-void fieldDescriptor::print_on(outputStream* st, int base_offset) const {
+// Print information (such as type, name, offset) of this field.
+void fieldDescriptor::print_on(outputStream* st, const ValuePayloadContext* vpc) const {
   print_access_flags(st);
   if (field_flags().is_injected()) st->print("injected ");
   bool flat = field_flags().is_flat();
@@ -136,7 +179,7 @@ void fieldDescriptor::print_on(outputStream* st, int base_offset) const {
   name()->print_value_on(st);
   st->print(" (fields 0x%08x) ", field_flags().as_uint());
   signature()->print_value_on(st);
-  st->print(" @%d ", offset() + base_offset);
+  st->print(" @%d ", (vpc == nullptr) ? offset() : field_offset_in_obj(vpc));
   if (WizardMode && has_initial_value()) {
     st->print("(initval ");
     constantTag t = initial_value_tag();
@@ -156,80 +199,77 @@ void fieldDescriptor::print_on(outputStream* st, int base_offset) const {
 
 void fieldDescriptor::print() const { print_on(tty); }
 
-void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int base_offset) {
+void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) {
   BasicType ft = field_type();
-  print_on(st, base_offset);
+  int field_offset_in_obj = this->field_offset_in_obj(vpc);
+  print_on(st, vpc);
   st->print(" ");
   jint as_int = 0;
   switch (ft) {
     case T_BYTE:
-      st->print("%d", obj->byte_field(offset()));
+      st->print("%d", obj->byte_field(field_offset_in_obj));
       break;
     case T_CHAR:
       {
-        jchar c = obj->char_field(offset());
+        jchar c = obj->char_field(field_offset_in_obj);
         st->print("%c %d", isprint(c) ? c : ' ', c);
       }
       break;
     case T_DOUBLE:
-      st->print("%lf", obj->double_field(offset()));
+      st->print("%lf", obj->double_field(field_offset_in_obj));
       break;
     case T_FLOAT:
-      st->print("%f", obj->float_field(offset()));
+      st->print("%f", obj->float_field(field_offset_in_obj));
       break;
     case T_INT:
-      st->print("%d", obj->int_field(offset()));
+      st->print("%d", obj->int_field(field_offset_in_obj));
       break;
     case T_LONG:
-      st->print_jlong(obj->long_field(offset()));
+      st->print_jlong(obj->long_field(field_offset_in_obj));
       break;
     case T_SHORT:
-      st->print("%d", obj->short_field(offset()));
+      st->print("%d", obj->short_field(field_offset_in_obj));
       break;
     case T_BOOLEAN:
-      st->print("%s", obj->bool_field(offset()) ? "true" : "false");
+      st->print("%s", obj->bool_field(field_offset_in_obj) ? "true" : "false");
       break;
     case T_ARRAY:
     case T_OBJECT:
-      if (is_flat()) { // only some value types can be flat
-        bool is_null = false;
-        ValueKlass* vk = ValueKlass::cast(field_holder()->get_value_type_field_klass(index()));
-        int field_offset = offset() - vk->payload_offset();
-        int nm_offset = 0;
+      if (is_flat()) {
+        ValueKlass* vk = flat_field_klass();
+        bool is_null = is_flat_field_marked_as_null(obj, vpc);
 
         if (!is_null_free_value_type()) {
           assert(has_null_marker(), "should have null marker");
-          ValueFieldLayoutInfo* li = field_holder()->value_field_layout_info_adr(index());
-          nm_offset = li->null_marker_offset();
           st->print("Flat value type field '%s':", vk->name()->as_C_string());
-          if (obj->byte_field_acquire(nm_offset) == 0) {
+          precond(is_null == vk->is_payload_marked_as_null(obj, field_offset_in_obj));
+          if (is_null) {
             st->print(" null");
-            is_null = true;
           }
           st->cr();
         } else {
+          precond(!is_null);
           st->print_cr("Flat value null-free type field '%s':", vk->name()->as_C_string());
         }
 
-        // Print fields of flat field (recursively) is not null
         if (!is_null) {
-          obj = cast_to_oop(cast_from_oop<address>(obj) + field_offset);
-          FieldPrinter print_field(st, obj, indent + 1, base_offset + field_offset);
+          // Print fields declared inside this flat field (which is a type of vk)
+          ValuePayloadContext field_vpc{vk, field_offset_in_obj};
+          FieldPrinter print_field(st, obj, indent + 1, &field_vpc);
           vk->do_nonstatic_fields(&print_field);
         }
 
-        if (this->field_flags().has_null_marker()) {
+        if (field_flags().has_null_marker()) {
           for (int i = 0; i < indent + 1; i++) st->print("  ");
-          assert(nm_offset > 0, "must be");
           st->print_cr(" - [null_marker] @%d %s",
-                    base_offset + nm_offset,
+                    field_offset_in_obj + vk->null_marker_offset_in_payload(),
                     is_null ? "Field marked as null" : "Field marked as non-null");
         }
-        return; // Do not print underlying representation
+        return; // No need to print underlying representation again (already printed by FieldPrinter above)
       }
       // Not flat value type field, fall through
-      if (obj->obj_field(offset()) != nullptr) {
-        obj->obj_field(offset())->print_value_on(st);
+      if (obj->obj_field(field_offset_in_obj) != nullptr) {
+        obj->obj_field(field_offset_in_obj)->print_value_on(st);
       } else {
         st->print("null");
       }
@@ -243,26 +283,50 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, int ba
   if (is_reference_type(ft)) {
 #ifdef _LP64
     if (UseCompressedOops) {
-      st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
+      st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));
     } else {
-      st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset()));
+      st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(field_offset_in_obj));
     }
 #else
-    st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));
+    st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));
 #endif
   } else { // Primitives
     switch (ft) {
-      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
-      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(offset())); break;
-      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(offset()));          break;
-      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(offset()));          break;
-      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
-      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(offset()));           break;
-      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(offset()));         break;
-      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(offset()));          break;
+      case T_LONG:    st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(field_offset_in_obj)); break;
+      case T_DOUBLE:  st->print(" (" INT64_FORMAT_X_0 ")", (int64_t)obj->long_field(field_offset_in_obj)); break;
+      case T_BYTE:    st->print(" (" INT8_FORMAT_X_0  ")", obj->byte_field(field_offset_in_obj));          break;
+      case T_CHAR:    st->print(" (" INT16_FORMAT_X_0 ")", obj->char_field(field_offset_in_obj));          break;
+      case T_FLOAT:   st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));           break;
+      case T_INT:     st->print(" (" INT32_FORMAT_X_0 ")", obj->int_field(field_offset_in_obj));           break;
+      case T_SHORT:   st->print(" (" INT16_FORMAT_X_0 ")", obj->short_field(field_offset_in_obj));         break;
+      case T_BOOLEAN: st->print(" (" INT8_FORMAT_X_0  ")", obj->bool_field(field_offset_in_obj));          break;
     default:
       ShouldNotReachHere();
       break;
     }
+  }
+}
+
+FieldPrinter::FieldPrinter(outputStream* st, oop obj, int indent, const ValuePayloadContext* vpc) :
+  FieldClosure(), _obj(obj), _st(st), _indent(indent), _vpc(vpc) {
+  if (obj == nullptr) {
+    assert(vpc == nullptr, "flattening not supported for static fields");
+  } else {
+    if (vpc != nullptr) {
+      assert(obj->klass() != vpc->klass(), "a value object cannot be flattened into itself");
+    }
+  }
+}
+
+void FieldPrinter::do_field(fieldDescriptor* fd) {
+  for (int i = 0; i < _indent; i++) _st->print("  ");
+  _st->print(" - ");
+  if (_obj == nullptr) {
+    precond(_vpc == nullptr);
+    fd->print_on(_st);
+    _st->cr();
+  } else {
+    fd->print_on_for(_st, _obj, _indent, _vpc);
+    if (!fd->field_flags().is_flat()) _st->cr();
   }
 }

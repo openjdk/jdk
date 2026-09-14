@@ -181,6 +181,19 @@ WB_ENTRY(jlong, WB_GetVMLargePageSize(JNIEnv* env, jobject o))
   return os::large_page_size();
 WB_END
 
+WB_ENTRY(jstring, WB_PrintObject(JNIEnv* env, jobject wb, jobject o))
+  ResourceMark rm(THREAD);
+  stringStream sb;
+  oop obj = JNIHandles::resolve(o);
+  if (obj == nullptr) {
+    sb.print("null");
+  } else {
+    obj->print_on(&sb);
+  }
+  oop result = java_lang_String::create_oop_from_str(sb.as_string(), THREAD);
+  return (jstring) JNIHandles::make_local(THREAD, result);
+WB_END
+
 WB_ENTRY(jstring, WB_PrintString(JNIEnv* env, jobject wb, jstring str, jint max_length))
   ResourceMark rm(THREAD);
   stringStream sb;
@@ -3212,6 +3225,7 @@ static JNINativeMethod methods[] = {
   {CC"preTouchMemory",  CC"(JJ)V",                    (void*)&WB_PreTouchMemory},
   {CC"cleanMetaspaces", CC"()V",                      (void*)&WB_CleanMetaspaces},
   {CC"rss", CC"()J",                                  (void*)&WB_Rss},
+  {CC"printObject", CC"(Ljava/lang/Object;)Ljava/lang/String;", (void*)&WB_PrintObject},
   {CC"printString", CC"(Ljava/lang/String;I)Ljava/lang/String;", (void*)&WB_PrintString},
   {CC"lockAndStuckInSafepoint", CC"()V",              (void*)&WB_TakeLockAndHangInSafepoint},
   {CC"getMinimumJavaStackSize", CC"()J",              (void*)&WB_GetMinimumJavaStackSize},
