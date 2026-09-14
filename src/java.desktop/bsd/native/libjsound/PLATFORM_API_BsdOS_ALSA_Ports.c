@@ -532,7 +532,6 @@ INT32 PORT_GetIntValue(void* controlIDV) {
 
 void PORT_SetIntValue(void* controlIDV, INT32 value) {
     PortControl* portControl = (PortControl*) controlIDV;
-    snd_mixer_selem_channel_id_t channel;
 
     if (portControl != NULL) {
         if (portControl->controlType == CONTROL_TYPE_MUTE) {

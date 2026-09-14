@@ -120,8 +120,6 @@ INT32 MIDI_OUT_SendShortMessage(MidiDeviceHandle* handle, UINT32 packedMsg,
                                 UINT32 timestamp) {
     int err;
     int status;
-    int data1;
-    int data2;
     char buffer[3];
 
     TRACE2("> MIDI_OUT_SendShortMessage() %x, time: %u\n", packedMsg, (unsigned int) timestamp);

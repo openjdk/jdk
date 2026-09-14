@@ -416,13 +416,14 @@ int setSWParams(AlsaPcmInfo* info) {
     return TRUE;
 }
 
+#ifdef USE_TRACE
 static snd_output_t* ALSA_OUTPUT = NULL;
+#endif
 
 void* DAUDIO_Open(INT32 mixerIndex, INT32 deviceID, int isSource,
                   int encoding, float sampleRate, int sampleSizeInBits,
                   int frameSize, int channels,
                   int isSigned, int isBigEndian, int bufferSizeInBytes) {
-    snd_pcm_format_mask_t* formatMask;
     snd_pcm_format_t format;
     int dir;
     int ret = 0;
@@ -892,7 +893,6 @@ INT64 DAUDIO_GetBytePosition(void* id, int isSource, INT64 javaBytePos) {
 
     if (!info->isFlushed && state != SND_PCM_STATE_XRUN) {
 #ifdef GET_POSITION_METHOD2
-        snd_timestamp_t* ts;
         snd_pcm_uframes_t framesAvail;
 
         // note: slight race condition if this is called simultaneously from 2 threads
