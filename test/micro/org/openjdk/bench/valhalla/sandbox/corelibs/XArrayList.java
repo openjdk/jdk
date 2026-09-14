@@ -23,7 +23,7 @@
  * questions.
  */
 
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs;
+package org.openjdk.bench.valhalla.sandbox.corelibs;
 
 import java.util.AbstractList;
 import java.util.Arrays;

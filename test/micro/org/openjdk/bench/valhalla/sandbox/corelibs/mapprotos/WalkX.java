@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.valhalla.sandbox.corelibs.corelibs.mapprotos;
+package org.openjdk.bench.valhalla.sandbox.corelibs.mapprotos;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.CompilerControl;
