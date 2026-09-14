@@ -791,11 +791,11 @@ void LIR_Assembler::stack2stack(LIR_Opr src, LIR_Opr dest, BasicType type) {
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code, CodeEmitInfo* info, bool wide) {
-  mem2reg(src, dest, type, patch_code, info, wide, false);
+  mem2reg(src, dest, type, patch_code, info, wide, /* is_volatile */ false);
 }
 
 void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
-                          CodeEmitInfo* info, bool wide, bool is_volatile) {
+                            CodeEmitInfo* info, bool wide, bool is_volatile) {
   assert(src->is_address(), "should not call otherwise");
   assert(dest->is_register(), "should not call otherwise");
 
@@ -812,6 +812,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   }
 
   if (is_volatile) {
+    assert(!wide, "wide volatile loads are unsupported");
     load_volatile(from_addr, dest, type, info);
   } else {
     load_unordered(from_addr, dest, type, wide, info);
@@ -1977,7 +1978,7 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 
 void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   if (!UseZalasr) {
-    load_unordered(from_addr, dest, type, false, info);
+    load_unordered(from_addr, dest, type, /* wide */ false, info);
     membar_acquire();
     return;
   }

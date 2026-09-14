@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, NTT DATA
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +22,36 @@
  * questions.
  *
  */
-
 package sun.jvm.hotspot.oops;
 
-import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.runtime.VM;
+import sun.jvm.hotspot.runtime.VMObject;
+import sun.jvm.hotspot.types.Type;
+import sun.jvm.hotspot.types.TypeDataBase;
+import sun.jvm.hotspot.types.WrongTypeException;
 
-// The class for an oop field simply provides access to the value.
-public class NarrowOopField extends OopField {
-  public NarrowOopField(FieldIdentifier id, long offset, boolean isVMField) {
-    super(id, offset, isVMField);
-  }
 
-  public NarrowOopField(sun.jvm.hotspot.types.OopField vmField, long startOffset) {
-    super(new NamedFieldIdentifier(vmField.getName()), vmField.getOffset() + startOffset, true);
-  }
+public class ValueFieldLayoutInfo extends VMObject {
 
-  public NarrowOopField(InstanceKlass holder, int fieldArrayIndex) {
-    super(holder, fieldArrayIndex);
-  }
+    private static MetadataField klassField;
 
-  /** Debugging support */
-  public OopHandle getValueAsOopHandle(Oop obj) {
-    return obj.getHandle().getCompOopHandleAt(getOffset());
-  }
+    static {
+        VM.registerVMInitializedObserver((_, _) -> initialize(VM.getVM().getTypeDataBase()));
+    }
 
-  public void setValue(Oop obj) throws MutationException {
-    // Fix this: setOopAt is missing in Address
-  }
+    private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
+        Type type = db.lookupType("ValueFieldLayoutInfo");
+
+        klassField = new MetadataField(type.getAddressField("_klass"), 0);
+    }
+
+    public ValueFieldLayoutInfo(Address addr) {
+        super(addr);
+    }
+
+    public ValueKlass getKlass() {
+        return (ValueKlass)klassField.getValue(this);
+    }
+
 }
