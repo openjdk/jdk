@@ -198,6 +198,7 @@ struct LayoutDescriptions {
   bool has_payload_alignment() const { return _payload_alignment != NoValue; }
   void set_payload_alignment(int alignment) { _payload_alignment = alignment; }
 
+  bool has_non_atomic_alignment() const { return _non_atomic_alignment != LayoutDescriptions::NoValue; }
   int non_atomic_alignment() const {
     assert(_non_atomic_alignment != LayoutDescriptions::NoValue, "Uninitialized");
     return _non_atomic_alignment;

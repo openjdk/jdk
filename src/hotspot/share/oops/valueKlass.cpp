@@ -566,7 +566,7 @@ void ValueKlass::Members::print_on(outputStream* st) const {
   st->print_cr(BULLET"payload size (bytes):              %d", layouts().size_in_bytes_of(LayoutKind::BUFFERED));
   st->print_cr(BULLET"payload alignment:                 %d", layouts().payload_alignment());
   st->print_cr(BULLET"null-free non-atomic size (bytes): %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT));
-  st->print_cr(BULLET"null-free non-atomic alignment:    %d", layouts().non_atomic_alignment());
+  st->print_cr(BULLET"null-free non-atomic alignment:    %d", layouts().has_non_atomic_alignment() ? layouts().non_atomic_alignment() : -1);
   st->print_cr(BULLET"null-free atomic size (bytes):     %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT));
   st->print_cr(BULLET"nullable atomic size (bytes):      %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT));
   st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT));
