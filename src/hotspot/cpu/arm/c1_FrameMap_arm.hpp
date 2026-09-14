@@ -96,7 +96,7 @@
   }
 
   static int adjust_reg_range(int range) {
-    int result = range - (ProfileCaptureRatio > 1);
+    int result = range - (ProfileCaptureRatio > 0);
     return align_down(result, 2);  // ouch
     // This is painful because on 32-bit systems, C1 groups registers
     // in pairs. We're already very short of registers, so to lose two

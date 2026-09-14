@@ -2481,7 +2481,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
   assert(threshold > 0, "must be");
 
   ProfileStub *counter_stub
-    = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
+    = ProfileCaptureRatio > 0 ? new ProfileStub() : nullptr;
 
   Register dest = dest_opr->as_register();
 
@@ -2521,11 +2521,11 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr,
     }
     if (step->is_register()) {
       Register inc = step->as_register();
-      if (ProfileCaptureRatio > 1) {
+      if (ProfileCaptureRatio > 0) {
         __ mov(inc, AsmOperand(inc, lsl, ratio_shift));
       }
       __ increment_mdp_data_at(counter_address, dest, inc);
-      if (ProfileCaptureRatio > 1) {
+      if (ProfileCaptureRatio > 0) {
         __ mov(inc, AsmOperand(inc, lsr, ratio_shift));
       }
     } else {
