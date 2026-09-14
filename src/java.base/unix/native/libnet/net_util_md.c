@@ -94,14 +94,6 @@ jint  IPv4_supported()
     return JNI_TRUE;
 }
 
-#if defined(DONT_ENABLE_IPV6)
-jint  IPv6_supported()
-{
-    return JNI_FALSE;
-}
-
-#else /* !DONT_ENABLE_IPV6 */
-
 jint  IPv6_supported()
 {
     int fd;
@@ -149,7 +141,6 @@ jint  IPv6_supported()
         return JNI_TRUE;
     }
 }
-#endif /* DONT_ENABLE_IPV6 */
 
 jint reuseport_supported(int ipv6_available)
 {
