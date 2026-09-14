@@ -9104,6 +9104,11 @@ bool LibraryCallKit::inline_dilithiumAlmostInverseNtt() {
 }
 
 //------------------------------inline_dilithiumNttMult
+//
+// int sun.security.provider.ML_DSA.implDilithiumNttMult(int[] product,
+//                                                       int[] coeffs1,
+//                                                       int[] coeffs2)
+//
 bool LibraryCallKit::inline_dilithiumNttMult() {
   address stubAddr;
   const char *stubName;
