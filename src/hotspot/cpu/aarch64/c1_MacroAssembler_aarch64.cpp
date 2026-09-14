@@ -422,6 +422,7 @@ void C1_MacroAssembler::adjust_mdo_address(Address* a, BasicType t) {
     int64_t offset = a->offset();
     int64_t offset_lo = offset & right_n_bits(12);
     int64_t offset_hi = offset - offset_lo;
+    block_comment(__FUNCTION__);
     lea(a->base(), Address(a->base(), offset_hi));
     *a = Address(a->base(), offset_lo);
     assert(!legitimize_address_requires_lea(*a, size), "must not");
