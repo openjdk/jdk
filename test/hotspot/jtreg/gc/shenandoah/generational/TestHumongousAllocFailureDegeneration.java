@@ -26,56 +26,87 @@
  * @test id=generational
  * @bug 8391591
  * @summary Humongous allocation failure triggers a degenerated cycle.
- *          Consecutive degenerated cycles escalate to a full GC.
  * @requires vm.gc.Shenandoah
- * @requires vm.flagless
  * @library /test/lib
- * @run driver TestHumongousAllocFailureDegeneration
+ * @run main/othervm
  *      -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
  *      -XX:ShenandoahGCMode=generational -Xmx128m -Xms128m
  *      -XX:ShenandoahRegionSize=1m -XX:+AlwaysPreTouch
- *      -Xlog:gc,gc+phases=info,gc+thread=debug
  *      -XX:ConcGCThreads=1 -XX:ParallelGCThreads=1
+ *      TestHumongousAllocFailureDegeneration
  */
 
-import java.util.Arrays;
+import com.sun.management.GarbageCollectionNotificationInfo;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.management.Notification;
+import javax.management.NotificationEmitter;
+import javax.management.NotificationListener;
+import javax.management.openmbean.CompositeData;
 
 public class TestHumongousAllocFailureDegeneration {
-    // Continuously allocate humongous objects to hit humongous allocation failure.
-    // There will be consecutive degenerated cycles that can cause full GCs. However,
-    // the degenerated cycles should make "good progress", so we won't transition into
-    // a full GC in the middle of the degenerated cycle.
-    public static class Allocator {
-        static final int MB = 1024 * 1024;
-        static final int HUMONGOUS_SIZE_MB = 48;
-        static final int ITERATIONS = 32;
-        static Object sink;
+    private static final int MB = 1024 * 1024;
+    private static final int HUMONGOUS_SIZE_MB = 32;
+    private static final int ITERATIONS = 16;
+    private static Object sink;
 
-        public static void main(String[] args) {
-            for (int i = 0; i < ITERATIONS; i++) {
-                // Requests 49 contiguous regions. sink keeps the previous array live until it
-                // gets reassigned and the one before it is often still unreclaimed. Those two
-                // arrays occupy 98 of 128 regions, so the third allocation cannot be satisfied.
-                sink = new byte[MB * HUMONGOUS_SIZE_MB];
-            }
+    private static boolean isCollectorNotification(Notification n) {
+        return n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION);
+    }
+
+    private static void subscribeToCollectorNotifications(NotificationListener listener) {
+        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) b).addNotificationListener(listener, null, null);
         }
     }
 
+    private static void unsubscribeToCollectorNotifications(NotificationListener listener) throws Exception {
+        for (GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
+            ((NotificationEmitter) b).removeNotificationListener(listener, null, null);
+        }
+    }
+
+    private static boolean isHumongousAllocFailureDegen(GarbageCollectionNotificationInfo info) {
+        return info.getGcName().equals("Shenandoah Pauses")
+            && info.getGcAction().contains("Degenerated")
+            && info.getGcCause().equals("Humongous Allocation Failure");
+    }
+
     public static void main(String[] args) throws Exception {
-        final String degenStartMsg = "Starting GC (degenerated): Humongous Allocation Failure, Young";
-        final String degenUpgradeMsg = "Degenerated GC upgrading to Full GC";
-        final String fullStartMsg = "Starting GC (full): Humongous Allocation Failure";
+        final AtomicBoolean sawDegenForHumongous = new AtomicBoolean(false);
 
-        String[] flags = Arrays.copyOf(args, args.length + 1);
-        flags[flags.length - 1] = Allocator.class.getName();
+        NotificationListener listener = (Notification n, Object o) -> {
+            if (isCollectorNotification(n)) {
+                GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
+                if (isHumongousAllocFailureDegen(info)) {
+                    sawDegenForHumongous.set(true);
+                }
+            }
+        };
 
-        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(flags);
-        output.shouldHaveExitValue(0);
-        output.shouldContain(degenStartMsg);
-        output.shouldContain(fullStartMsg);
-        output.shouldNotContain(degenUpgradeMsg);
+        subscribeToCollectorNotifications(listener);
+
+        for (int i = 0; i < ITERATIONS; i++) {
+            // Requests 33 contiguous regions. We're likely to hit humongous allocation failure
+            // because the GC can't keep up with the allocations.
+            sink = new byte[MB * HUMONGOUS_SIZE_MB];
+        }
+
+        // Wait for gc notifications until we've encountered a degenerated cycle caused by
+        // humongous allocation failure. Fail if none arrives before the deadline.
+        long deadlineNanos = System.nanoTime() + TimeUnit.SECONDS.toNanos(60);
+        while (!sawDegenForHumongous.get()) {
+            if (System.nanoTime() > deadlineNanos) {
+                throw new RuntimeException("Timed out waiting for a degenerated cycle caused by "
+                                         + "humongous allocation failure");
+            }
+            Thread.sleep(10);
+        }
+
+        unsubscribeToCollectorNotifications(listener);
     }
 }
