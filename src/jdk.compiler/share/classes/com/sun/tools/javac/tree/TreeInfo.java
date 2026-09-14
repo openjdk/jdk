@@ -490,12 +490,12 @@ public class TreeInfo {
                         checkStaticSym.test(base);
             case SELECT:
                 return checkStaticSym.test(base) &&
-                    isStaticSelector(((JCFieldAccess)base).selected, names);
+                    isTypeSelector(((JCFieldAccess)base).selected, names, checkStaticSym);
             case TYPEAPPLY:
             case TYPEARRAY:
                 return true;
             case ANNOTATED_TYPE:
-                return isStaticSelector(((JCAnnotatedType)base).underlyingType, names);
+                return isTypeSelector(((JCAnnotatedType)base).underlyingType, names, checkStaticSym);
             default:
                 return false;
         }
