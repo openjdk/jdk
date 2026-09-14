@@ -5676,7 +5676,7 @@ instruct loadBase(iRegLdst dst) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct loadConN_Ex(iRegNdst dst, immN src) %{
+instruct loadConN(iRegNdst dst, immN src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*3);
 
@@ -5692,7 +5692,7 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct loadConNKlass_Ex(iRegNdst dst, immNKlass_no_mask src) %{
+instruct loadConNKlass(iRegNdst dst, immNKlass_no_mask src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
 
@@ -5708,7 +5708,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass_no_mask src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct loadConNKlass_mask_Ex(iRegNdst dst, immNKlass_mask src) %{
+instruct loadConNKlass_mask(iRegNdst dst, immNKlass_mask src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*3);
 
@@ -5719,6 +5719,7 @@ instruct loadConNKlass_mask_Ex(iRegNdst dst, immNKlass_mask src) %{
     AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
     intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
     __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
+    // The high half is sign extended by lis. Clear it for constants >= 2^31.
     __ clrldi($dst$$Register, $dst$$Register, 0x20);
     __ ori($dst$$Register, $dst$$Register, Csrc & 0xffff);
   %}
