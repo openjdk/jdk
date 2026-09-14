@@ -201,6 +201,9 @@ define_pd_global(bool, ValueTypeReturnedAsFields, true);
              "hardware does not support it.")                               \
              range(-1, 5)                                                   \
                                                                             \
+  product(bool, UseParallelBitInstructions, false,                          \
+          "Use PDEP/PEXT instructions")                                     \
+                                                                            \
 // end of ARCH_FLAGS
 
 #endif // CPU_X86_GLOBALS_X86_HPP

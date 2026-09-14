@@ -28,7 +28,7 @@
  * @summary To test various transforms added for bit COMPRESS_BITS and EXPAND_BITS operations
  * @requires vm.compiler2.enabled
  * @requires (((os.arch=="x86" | os.arch=="amd64" | os.arch=="x86_64") &
- *            (vm.cpu.features ~= ".*fast_bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
+ *            (vm.cpu.features ~= ".*bmi2.*" & vm.cpu.features ~= ".*bmi1.*" &
  *             vm.cpu.features ~= ".*sse2.*")) |
  *            (os.arch=="aarch64" & vm.cpu.features ~= ".*svebitperm.*"))
  * @library /test/lib /
@@ -499,6 +499,7 @@ public class TestBitShuffleOpers {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:CompileThresholdScaling=0.3");
+                                   "-XX:CompileThresholdScaling=0.3",
+                                   "-XX:+UseParallelBitInstructions");
     }
 }
