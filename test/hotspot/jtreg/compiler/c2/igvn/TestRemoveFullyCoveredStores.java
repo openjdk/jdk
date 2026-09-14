@@ -50,13 +50,21 @@ import java.util.stream.IntStream;
 public class TestRemoveFullyCoveredStores {
     private static final Random RANDOM = Utils.getRandomInstance();
     private static final String PACKAGE = "compiler.c2.igvn.generated";
-    private static final String CLASS_NAME = "TestRemoveFullyCoveredStoresGenerated";
+    private static final String CLASS_NAME1 = "TestRemoveFullyCoveredStoresGenerated1";
+    private static final String CLASS_NAME2 = "TestRemoveFullyCoveredStoresGenerated2";
     private static final int RANDOM_MIXED_ARRAY_SIZE = 128;
 
     public static void main(String[] args) {
         final CompileFramework comp = new CompileFramework();
 
-        comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME, generate(comp));
+        // Split the test into two tests because memorySegmentCase() can affect
+        // profiling of the shared MemorySegment accessors(e.g., VarHandleSegmentAsShorts)
+        // used by the random mixed-store tests. This can occasionally cause the
+        // MemorySegment access and its backing array access to be assigned different
+        // alias indices and then GCM may reorder the accesses and produce an incorrect
+        // result, as in JDK-8331133.
+        comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME1, generate1(comp));
+        comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME2, generate2(comp));
         comp.compile("--add-modules=jdk.incubator.vector",
                      "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
 
@@ -69,10 +77,27 @@ public class TestRemoveFullyCoveredStores {
         vmArgs.addAll(Arrays.asList(args));
 
         String[] vmArgsArray = vmArgs.toArray(new String[0]);
-        comp.invoke(PACKAGE + "." + CLASS_NAME, "main", new Object[] {vmArgsArray});
+        comp.invoke(PACKAGE + "." + CLASS_NAME1, "main", new Object[] {vmArgsArray});
+        comp.invoke(PACKAGE + "." + CLASS_NAME2, "main", new Object[] {vmArgsArray});
     }
 
-    private static String generate(CompileFramework comp) {
+    private static String generate1(CompileFramework comp) {
+        List<TestCase> cases = new ArrayList<>();
+        cases.add(unsafeCase(CaseType.POSITIVE));
+        cases.add(unsafeCase(CaseType.NEGATIVE));
+        cases.add(memorySegmentCase());
+        return generate(comp, cases, CLASS_NAME1);
+    }
+
+    private static String generate2(CompileFramework comp) {
+        List<TestCase> cases = new ArrayList<>();
+        cases.addAll(vectorCases(CaseType.POSITIVE));
+        cases.addAll(vectorCases(CaseType.NEGATIVE));
+        return generate(comp, cases, CLASS_NAME2);
+    }
+
+    private static String generate(CompileFramework comp, List<TestCase> cases,
+                                   String className) {
         final Set<String> imports = Set.of(
             "java.lang.foreign.MemorySegment",
             "java.lang.foreign.ValueLayout",
@@ -81,22 +106,13 @@ public class TestRemoveFullyCoveredStores {
             "jdk.internal.misc.Unsafe"
         );
 
-        List<TestCase> cases = new ArrayList<>();
-        cases.add(unsafeCase(CaseType.POSITIVE));
-        cases.add(unsafeCase(CaseType.NEGATIVE));
-
-        cases.add(memorySegmentCase());
-
-        cases.addAll(vectorCases(CaseType.POSITIVE));
-        cases.addAll(vectorCases(CaseType.NEGATIVE));
-
         List<TemplateToken> tests = new ArrayList<>();
         tests.add(sharedGeneratedCode());
         tests.add(createTestInstances(cases));
 
         return TestFrameworkClass.render(
             PACKAGE,
-            CLASS_NAME,
+            className,
             imports,
             comp.getEscapedClassPathOfCompiledClasses(),
             tests
