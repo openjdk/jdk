@@ -61,8 +61,8 @@ public class TestRemoveFullyCoveredStores {
         // profiling of the shared MemorySegment accessors(e.g., VarHandleSegmentAsShorts)
         // used by the random mixed-store tests. This can occasionally cause the
         // MemorySegment access and its backing array access to be assigned different
-        // alias indices and then GCM may reorder the accesses and produce an incorrect
-        // result, as in JDK-8331133.
+        // alias indices, allowing them to be reordered and produce a wrong result,
+        // as in JDK-8331133.
         comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME1, generate1(comp));
         comp.addJavaSourceCode(PACKAGE + "." + CLASS_NAME2, generate2(comp));
         comp.compile("--add-modules=jdk.incubator.vector",
