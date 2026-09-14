@@ -207,18 +207,106 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
   return compare_value;
 }
 
+// Zalasr load-acquire and store-release.
+//
+// With UseZalasr the JIT compiles a Java volatile store to a bare
+// s{b|h|w|d}.rl and elides the trailing StoreLoad fence, relying on RVWMO
+// preserved program order rule 7 ("a and b both have RCsc annotations") to
+// order that store before a later load. A plain load carries no RCsc
+// annotation and no preserved-program-order rule applies to it, so the ordered
+// accesses below have to be RCsc as well to interoperate. The template
+// interpreter solves the same problem with a leading fence instead, see
+// needs_volatile_load_leading_fence() in templateTable_riscv.cpp.
+//
+// This matters for HeapAccess<MO_SEQ_CST>, which implements a Java volatile
+// access whenever it is not compiled: interpreted Unsafe.getXVolatile() (and
+// hence reflection on a volatile field), and Thread.interrupted.
+//
+// The accesses are emitted with .insn rather than the l{b|h|w|d}.aq and
+// s{b|h|w|d}.rl mnemonics, which need an assembler that knows the Zalasr
+// extension. That is not implied by the toolchain check gating UseZalasr: the
+// check is about how the compiler lowers __atomic_*, not about what the
+// assembler accepts. Since this code is compiled unconditionally, using the
+// mnemonics would raise the minimum binutils for every RISC-V build, whether or
+// not Zalasr is ever enabled at run time. Encodings mirror
+// Assembler::zalasr_base() in assembler_riscv.hpp and must be kept in sync
+// with it:
+//
+//   opcode        = 0b0101111 (OP_AMO_MAJOR)                          = 0x2f
+//   funct3        = width, 0b000 / 0b001 / 0b010 / 0b011 for 1/2/4/8 bytes
+//   load-acquire  = funct5 0b00110, aq 0b10 -> funct7 0b0011010 = 0x1a, rs2 = x0
+//   store-release = funct5 0b00111, rl 0b01 -> funct7 0b0011101 = 0x1d, rd  = x0
+//
+// Like everything in the AMO opcode space these require the address to be
+// naturally aligned, which is already assumed for the LR/SC and AMO sequences
+// used elsewhere in this file.
+
+template<size_t byte_size> inline uint64_t zalasr_load_acquire(const void* p);
+template<size_t byte_size> inline void zalasr_store_release(void* p, uint64_t v);
+
+#define DEFINE_ZALASR_ACCESS(BYTE_SIZE, WIDTH)                                        \
+  template<> inline uint64_t zalasr_load_acquire<BYTE_SIZE>(const void* p) {          \
+    uint64_t data;                                                                    \
+    __asm__ __volatile__ (".insn r 0x2f, " #WIDTH ", 0x1a, %0, %1, zero"              \
+                          : "=r" (data)                                               \
+                          : "r" (p)                                                   \
+                          : "memory");                                                \
+    return data;                                                                      \
+  }                                                                                   \
+  template<> inline void zalasr_store_release<BYTE_SIZE>(void* p, uint64_t v) {       \
+    __asm__ __volatile__ (".insn r 0x2f, " #WIDTH ", 0x1d, zero, %0, %1"              \
+                          : /* no output */                                           \
+                          : "r" (p), "r" (v)                                          \
+                          : "memory");                                                \
+  }
+
+// One load-acquire and one store-release per access width. The second argument
+// is the funct3 width encoding, which is log2 of the access size in bytes; it
+// matches Assembler::ZalasrWidthFunct3 in assembler_riscv.hpp. Only these four
+// widths are defined; PlatformOrderedLoad and PlatformOrderedStore below assert
+// that nothing else reaches here.
+DEFINE_ZALASR_ACCESS(1, 0) // lb.aq / sb.rl
+DEFINE_ZALASR_ACCESS(2, 1) // lh.aq / sh.rl
+DEFINE_ZALASR_ACCESS(4, 2) // lw.aq / sw.rl
+DEFINE_ZALASR_ACCESS(8, 3) // ld.aq / sd.rl
+
+#undef DEFINE_ZALASR_ACCESS
+
 template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
-  T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
+  T operator()(const volatile T* p) const {
+    STATIC_ASSERT(byte_size == sizeof(T));
+    STATIC_ASSERT(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
+    if (UseZalasr) {
+      // Zalasr has no zero-extending form; l{b|h|w}.aq sign-extend. Narrowing
+      // the result back to T discards the extra bits, so both signed and
+      // unsigned T end up with the value the caller expects.
+      return (T)zalasr_load_acquire<byte_size>((const void*)p);
+    } else {
+      T data;
+      __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE);
+      return data;
+    }
+  }
 };
 
 template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
-  void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
+  void operator()(volatile T* p, T v) const {
+    STATIC_ASSERT(byte_size == sizeof(T));
+    STATIC_ASSERT(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
+    if (UseZalasr) {
+      // s{b|h|w|d}.rl stores the low byte_size bytes of the register, so
+      // widening v here is value-preserving for both signed and unsigned T.
+      zalasr_store_release<byte_size>((void*)p, (uint64_t)v);
+    } else {
+      __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE);
+    }
+  }
 };
 
 template<size_t byte_size>

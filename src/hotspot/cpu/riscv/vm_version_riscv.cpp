@@ -164,23 +164,18 @@ void VM_Version::common_initialize() {
     }
   }
 
-  if (UseZalasr) {
-    if (!ext_Zalasr.enabled()) {
-      warning("Zalasr is not supported on this CPU");
-      FLAG_SET_DEFAULT(UseZalasr, false);
-    } else if (!JVM_TOOLCHAIN_USES_PSABI_ATOMICS) {
-      // A JVM built by a pre-psABI toolchain contains C++ atomics whose
-      // mapping is incompatible with the Zalasr sequences the JIT would
-      // emit; mixing them can break Java volatile semantics. Only warn when
-      // Zalasr was asked for explicitly: it is enabled by default whenever
-      // the CPU supports it, and a plain start-up should stay quiet.
-      if (!FLAG_IS_DEFAULT(UseZalasr)) {
-        warning("UseZalasr requires a JVM built with a toolchain using the "
-                "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
-                "disabling Zalasr");
-      }
-      FLAG_SET_DEFAULT(UseZalasr, false);
+  if (UseZalasr && !JVM_TOOLCHAIN_USES_PSABI_ATOMICS) {
+    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
+    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
+    // can break Java volatile semantics. Only warn when Zalasr was asked for
+    // explicitly: where the extension is detected it is enabled by default, and
+    // a plain start-up should stay quiet.
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr requires a JVM built with a toolchain using the "
+              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+              "disabling Zalasr");
     }
+    FLAG_SET_DEFAULT(UseZalasr, false);
   }
 #undef JVM_TOOLCHAIN_USES_PSABI_ATOMICS
 
@@ -212,10 +207,14 @@ void VM_Version::common_initialize() {
   }
 #endif
 
-  // Under Ztso the fences that Zalasr would elide are already free, so the
-  // load-acquire/store-release forms bring no benefit. Keep Zalasr off by
-  // default there; an explicit -XX:+UseZalasr is still honored.
-  if (UseZtso && FLAG_IS_DEFAULT(UseZalasr)) {
+  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
+  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
+  // eliding the trailing StoreLoad fence of a volatile store, which is a separate 
+  // optimization. Ztso takes precedence for now, so Zalasr is turned off
+  if (UseZtso && UseZalasr) {
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
+    }
     FLAG_SET_DEFAULT(UseZalasr, false);
   }
 
