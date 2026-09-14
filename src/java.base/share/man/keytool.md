@@ -1325,9 +1325,9 @@ which is equivalent to
 because `-keyalg` is a single-valued option and the `ec` value specified
 on the command line overrides the preconfigured options file.
 
-## Examples of Option Values
+## Defaults of Option Values
 
-The following examples show the defaults for various option values:
+These are the defaults for various option values:
 
 ```
 -alias "mykey"
@@ -1393,9 +1393,7 @@ algorithm as its hash and MGF1 algorithms.
 the security provider will choose a default setting.
 
 * Modern digital signature algorithms such as EdDSA and ML-DSA use the same
-algorithm as the key, and there is no separately selectable signature algorithm
-such as `SHA256withRSA`. Therefore, when using such a key, specifying `-sigalg`
-explicitly is unnecessary.
+algorithm as the key. When using such a key, specifying `-sigalg` is unnecessary.
 
 **Note:**
 

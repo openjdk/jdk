@@ -269,9 +269,7 @@ For example, an 3072-bit RSASSA-PSS key will use RSASSA-PSS as the signature
 algorithm and SHA-384 as the hash and MGF1 algorithms.
 
 2. Modern digital signature algorithms such as EdDSA and ML-DSA use the same
-algorithm as the key, and there is no separately selectable signature algorithm
-such as `SHA256withRSA`. Therefore, when using such a key, specifying `-sigalg`
-explicitly is unnecessary.
+algorithm as the key. When using such a key, specifying `-sigalg` is unnecessary.
 
 If a key algorithm is not listed in this table, the `.DSA` block file extension
 is always used.
