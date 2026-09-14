@@ -699,7 +699,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jbyteArray group, jint index, jbyteArray source)
 {
     struct ipv6_mreq mreq6;
-#ifdef MCAST_JOIN_SOURCE_GROUP
+#if !defined(__APPLE__) && defined(MCAST_JOIN_SOURCE_GROUP)
     struct group_source_req req;
 #endif
     int opt, n, optlen;
