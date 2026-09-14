@@ -812,7 +812,8 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
   }
 
   if (is_volatile) {
-    load_volatile(from_addr, dest, type, wide, info);
+    assert(!wide, "wide volatile loads are unsupported");
+    load_volatile(from_addr, dest, type, info);
   } else {
     load_unordered(from_addr, dest, type, wide, info);
   }
@@ -880,8 +881,8 @@ void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicTy
   }
 }
 
-void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info) {
-  load_unordered(from_addr, dest, type, wide, info);
+void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+  load_unordered(from_addr, dest, type, false, info);
   membar_acquire();
 }
 
