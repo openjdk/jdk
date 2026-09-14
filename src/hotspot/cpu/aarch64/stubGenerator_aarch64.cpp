@@ -5105,7 +5105,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register a[25] = {
         r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
         r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = r0, tmp1 = r1, tmp2 = r2, tmp3 = r30;
+    Register tmp0 = r0, tmp1 = r1, tmp2 = r2, tmp3 = lr;
 
     Label rounds24_loop_0, rounds24_loop_1;
 
@@ -9074,7 +9074,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register a[25] = {
         r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
         r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = r30;
+    Register tmp0 = block_size, tmp1 = buf, tmp2 = state, tmp3 = lr;
 
     Label sha3_loop, rounds24_preloop, loop_body;
     Label sha3_512_or_sha3_384, shake128;
