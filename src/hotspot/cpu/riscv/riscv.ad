@@ -1285,7 +1285,9 @@ bool unnecessary_acquire(const Node *barrier)
 // predicates controlling emit of l{b|h|w|d}.{aq,aqrl} and associated membars
 
 bool needs_acquiring_load(const Node *n) {
-  if (!UseZalasr) return false;
+  if (!UseZalasr) {
+    return false;
+  }
   assert(n->is_Load(), "expecting a load");
   return n->as_Load()->is_acquire();
 }
@@ -1344,7 +1346,9 @@ bool unnecessary_volatile(const Node *n)
 // predicates controlling emit of s{b|h|w|d}.{rl,aqrl} and associated membars
 
 bool needs_releasing_store(const Node *n) {
-  if (!UseZalasr) return false;
+  if (!UseZalasr) {
+    return false;
+  }
   assert(n->is_Store(), "expecting a store");
   return n->as_Store()->trailing_membar() != nullptr;
 }

@@ -1186,22 +1186,22 @@ protected:
   void zalasr_base(Register Rd, Register Rs1, uint8_t Rs2, Aqrl memory_order) {
     assert_cond(UseZalasr);
 
-    if (funct5 == ZALASR_LOAD_ACQUIRE) {
+    if constexpr (funct5 == ZALASR_LOAD_ACQUIRE) {
       assert(Rs2 == 0, "Zalasr load-acquire requires rs2 = x0");
       assert(memory_order == aq || memory_order == aqrl,
              "Zalasr load-acquire requires aq or aqrl encoding");
       // aq is mandatory for load-acquire; rl is optional (aqrl).
       // In product builds, this also prevents emitting RESERVED encodings.
       memory_order = (memory_order == aqrl) ? aqrl : aq;
-    } else if (funct5 == ZALASR_STORE_RELEASE) {
+    } else {
+      static_assert(funct5 == ZALASR_STORE_RELEASE,
+                    "unsupported Zalasr operation");
       assert(Rd == zr, "Zalasr store-release requires rd = x0");
       assert(memory_order == rl || memory_order == aqrl,
              "Zalasr store-release requires rl or aqrl encoding");
       // rl is mandatory for store-release; aq is optional (aqrl).
       // In product builds, this also prevents emitting RESERVED encodings.
       memory_order = (memory_order == aqrl) ? aqrl : rl;
-    } else {
-      ShouldNotReachHere();
     }
 
     unsigned insn = 0;

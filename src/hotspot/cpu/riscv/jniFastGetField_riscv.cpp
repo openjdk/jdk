@@ -131,21 +131,13 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   } else {
     switch (type) {
       case T_BOOLEAN: __ lbu(result, Address(roffset, 0)); break;
-      case T_BYTE:    __ lb(result, Address(roffset, 0)); break;
+      case T_BYTE:    __ lb(result, Address(roffset, 0));  break;
       case T_CHAR:    __ lhu(result, Address(roffset, 0)); break;
-      case T_SHORT:   __ lh(result, Address(roffset, 0)); break;
-      case T_INT:     __ lw(result, Address(roffset, 0)); break;
-      case T_LONG:    __ ld(result, Address(roffset, 0)); break;
-      case T_FLOAT: {
-        __ flw(f28, Address(roffset, 0)); // f28 as temporaries
-        __ fmv_x_w(result, f28); // f{31--0}-->x
-        break;
-      }
-      case T_DOUBLE: {
-        __ fld(f28, Address(roffset, 0)); // f28 as temporaries
-        __ fmv_x_d(result, f28); // d{63--0}-->x
-        break;
-      }
+      case T_SHORT:   __ lh(result, Address(roffset, 0));  break;
+      case T_FLOAT:   // fall through
+      case T_INT:     __ lw(result, Address(roffset, 0));  break;
+      case T_DOUBLE:  // fall through
+      case T_LONG:    __ ld(result, Address(roffset, 0));  break;
       default:        ShouldNotReachHere();
     }
 

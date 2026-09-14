@@ -209,7 +209,7 @@ void VM_Version::common_initialize() {
 
   // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
   // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
-  // eliding the trailing StoreLoad fence of a volatile store, which is a separate 
+  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
   // optimization. Ztso takes precedence for now, so Zalasr is turned off
   if (UseZtso && UseZalasr) {
     if (!FLAG_IS_DEFAULT(UseZalasr)) {

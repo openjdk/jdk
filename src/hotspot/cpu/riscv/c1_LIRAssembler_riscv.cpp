@@ -1977,12 +1977,15 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
 }
 
 void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  if (!UseZalasr) {
+  if (UseZalasr) {
+    load_acquire(from_addr, dest, type, info);
+  } else {
     load_unordered(from_addr, dest, type, /* wide */ false, info);
     membar_acquire();
-    return;
   }
+}
 
+void LIR_Assembler::load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
   // RCsc loads preserve StoreLoad ordering with C2's RCsc stores across compilation tiers.
   // Zalasr accesses only support the 0(base) addressing mode, so materialize
   // the effective address first. as_Address() may clobber t0, hence the
