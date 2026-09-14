@@ -7003,8 +7003,13 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize))
+  // If sp_inc > 0, the stack has already been extended for the extra
+  // arg space. We can't do this stack bang because we won't be able
+  // to walk the stack if we hit the guard zone. The stack bang was
+  // already done before extending the frame (see MachVEPNode::emit).
+  if (C->output()->need_stack_bang(bangsize) && sp_inc == 0) {
     generate_stack_overflow_check(bangsize);
+  }
 
   // n.b. frame size includes space for return pc and rfp
   const long framesize = C->output()->frame_size_in_bytes();
