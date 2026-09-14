@@ -339,6 +339,7 @@ class ValidatorTest {
     }
 
     static Stream<Arguments> superTypeApiCompatCases() {
+        // JAR file spec requires an exact API match
         return Stream.of(
             arguments(
                 """
@@ -360,6 +361,22 @@ class ValidatorTest {
                 """,
                 """
                 interface Foo<E> extends java.util.SequencedCollection<E> {}
+                """),
+            arguments(
+                """
+                interface Foo<E> extends java.util.Collection<E> {}
+                """,
+                // additional interfaces should be disallowed
+                """
+                interface Foo<E> extends java.util.Collection<E>, java.util.SequencedCollection<E> {}
+                """),
+            arguments(
+                """
+                interface Foo<E> extends java.util.Collection<E> {}
+                """,
+                // missing interfaces should be disallowed
+                """
+                interface Foo<E> {}
                 """));
     }
 
