@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,13 +145,25 @@ public class ObjectReferenceImpl extends ValueImpl
         }
     }
 
+    /* No longer needed, but kept for future reference
+    boolean isValueObject() {
+        if (referenceType() instanceof ClassTypeImpl classType) {
+            return classType.isValueClass();
+        }
+        return false;
+    }
+    */
+
     public boolean equals(Object obj) {
         if (obj instanceof ObjectReferenceImpl other) {
-            return (ref() == other.ref()) &&
-                   super.equals(obj);
-        } else {
-            return false;
+            if (!super.equals(obj)) { // checks if the references belong to the same VM
+                return false;
+            }
+            if (ref() == other.ref()) {
+                return true;
+            }
         }
+        return false;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,7 +116,7 @@ public final class WebSocketImpl implements WebSocket {
     private final AtomicBoolean pendingPingOrPong = new AtomicBoolean();
     private final Transport transport;
     private final SequentialScheduler receiveScheduler
-            = new SequentialScheduler(new ReceiveTask());
+            = SequentialScheduler.lockingScheduler(new ReceiveTask());
     private final Demand demand = new Demand();
     private final Executor clientExecutor;
 
@@ -416,7 +416,7 @@ public final class WebSocketImpl implements WebSocket {
      *     - after the state has been observed as CLOSE/ERROR, the scheduler
      *       is stopped
      */
-    private class ReceiveTask extends SequentialScheduler.CompleteRestartableTask {
+    private class ReceiveTask implements Runnable {
 
         // Transport only asked here and nowhere else because we must make sure
         // onOpen is invoked first and no messages become pending before onOpen

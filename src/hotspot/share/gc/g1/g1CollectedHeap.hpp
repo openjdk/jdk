@@ -32,7 +32,6 @@
 #include "gc/g1/g1CollectionSet.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentMark.hpp"
-#include "gc/g1/g1EdenRegions.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1HeapRegionManager.hpp"
@@ -43,8 +42,8 @@
 #include "gc/g1/g1MonotonicArenaFreeMemoryTask.hpp"
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
-#include "gc/g1/g1SurvivorRegions.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
+#include "gc/g1/g1YoungRegions.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -110,13 +109,6 @@ class G1STWSubjectToDiscoveryClosure : public BoolObjectClosure {
 public:
   G1STWSubjectToDiscoveryClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
   bool do_object_b(oop p) override;
-};
-
-class G1RegionMappingChangedListener : public G1MappingChangedListener {
- private:
-  void reset_from_card_cache(uint start_idx, size_t num_regions);
- public:
-  void on_commit(uint start_idx, size_t num_regions, bool zero_filled) override;
 };
 
 // Helper to claim contiguous sets of JavaThread for processing by multiple threads.
@@ -223,9 +215,6 @@ private:
   // humongous set which was not torn down in the first place. If
   // free_list_only is true, it will only rebuild the free list.
   void rebuild_region_sets(bool free_list_only);
-
-  // Callback for region mapping changed events.
-  G1RegionMappingChangedListener _listener;
 
   // Handle G1 NUMA support.
   G1NUMA* _numa;
@@ -480,7 +469,8 @@ private:
   // at the end of a successful GC). expect_null_mutator_alloc_region
   // specifies whether the mutator alloc region is expected to be null
   // or not.
-  HeapWord* attempt_allocation_at_safepoint(size_t word_size,
+  HeapWord* attempt_allocation_at_safepoint(uint node_index,
+                                            size_t word_size,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -519,7 +509,7 @@ private:
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(size_t word_size);
+  HeapWord* satisfy_failed_allocation(uint node_index, size_t word_size);
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -531,7 +521,8 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
-  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+  HeapWord* satisfy_failed_allocation_helper(uint node_index,
+                                             size_t word_size,
                                              bool do_gc,
                                              bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region);
@@ -540,7 +531,7 @@ private:
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else null.
-  HeapWord* expand_and_allocate(size_t word_size);
+  HeapWord* expand_and_allocate(uint node_index, size_t word_size);
 
   void verify_numa_regions(const char* desc);
 
@@ -622,6 +613,11 @@ public:
   void gc_prologue(bool full);
   void gc_epilogue(bool full);
 
+  // Can concurrent mark process this object immediately, i.e. mark as live without the need
+  // of pushing it on the mark stack (to process references)?
+  // Used to keep objects that are potentially eagerly reclaimed out of the mark stack.
+  // Its klass may still need to be handled.
+  inline bool can_be_marked_through_immediately(oop obj) const;
   // Does the given region fulfill remembered set based eager reclaim candidate requirements?
   bool is_potential_eager_reclaim_candidate(G1HeapRegion* r) const;
 
@@ -759,7 +755,8 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(size_t word_size,
+  HeapWord* do_collection_pause(uint node_index,
+                                size_t word_size,
                                 uint gc_count_before,
                                 bool* succeeded,
                                 GCCause::Cause gc_cause);
@@ -796,13 +793,13 @@ private:
 
   G1MonotonicArenaFreePool _card_set_freelist_pool;
 
-  // Group cardsets
-  G1CSetCandidateGroup _young_regions_cset_group;
+  // Young-region card set group
+  G1CardSetGroup _young_regions_card_set_group;
 
 public:
   G1CardSetConfiguration* card_set_config() { return &_card_set_config; }
 
-  G1CSetCandidateGroup* young_regions_cset_group() { return &_young_regions_cset_group; }
+  G1CardSetGroup* young_regions_card_set_group() { return &_young_regions_card_set_group; }
 
   // After a collection pause, reset eden and the collection set.
   void clear_eden();
@@ -1040,8 +1037,8 @@ public:
 
   bool last_gc_was_periodic() { return _gc_lastcause == GCCause::_g1_periodic_collection; }
 
-  void remove_from_old_gen_sets(const uint old_regions_removed,
-                                const uint humongous_regions_removed);
+  void remove_from_old_gen_sets(const uint num_old_regions_removed,
+                                const uint num_humongous_regions_removed);
   void prepend_to_freelist(G1FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
@@ -1236,15 +1233,15 @@ public:
   G1SurvivorRegions* survivor() { return &_survivor; }
 
   inline uint target_num_eden_regions() const;
-  uint eden_regions_count() const { return _eden.length(); }
-  uint eden_regions_count(uint node_index) const { return _eden.regions_on_node(node_index); }
-  uint survivor_regions_count() const { return _survivor.length(); }
-  uint survivor_regions_count(uint node_index) const { return _survivor.regions_on_node(node_index); }
+  uint num_eden_regions() const { return _eden.num_regions(); }
+  uint num_eden_regions(uint node_index) const { return _eden.num_regions_on_node(node_index); }
+  uint num_survivor_regions() const { return _survivor.num_regions(); }
+  uint num_survivor_regions(uint node_index) const { return _survivor.num_regions_on_node(node_index); }
   size_t eden_regions_used_bytes() const { return _eden.used_bytes(); }
   size_t survivor_regions_used_bytes() const { return _survivor.used_bytes(); }
-  uint young_regions_count() const { return _eden.length() + _survivor.length(); }
-  uint old_regions_count() const { return _old_set.length(); }
-  uint humongous_regions_count() const { return _humongous_set.length(); }
+  uint num_young_regions() const { return _eden.num_regions() + _survivor.num_regions(); }
+  uint num_old_regions() const { return _old_set.num_regions(); }
+  uint num_humongous_regions() const { return _humongous_set.num_regions(); }
 
 #ifdef ASSERT
   bool check_no_young_regions();

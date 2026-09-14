@@ -612,17 +612,13 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
-  case _thread_new_trans:
     // We found the thread on the threads list above, but it is too
     // young to be useful so return that there are no Java frames.
     trace->num_frames = 0;
     break;
   case _thread_in_native:
-  case _thread_in_native_trans:
   case _thread_blocked:
-  case _thread_blocked_trans:
   case _thread_in_vm:
-  case _thread_in_vm_trans:
     {
       frame fr;
 
@@ -648,7 +644,6 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
     }
     break;
   case _thread_in_Java:
-  case _thread_in_Java_trans:
     {
       frame fr;
 

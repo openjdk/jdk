@@ -93,6 +93,12 @@ private:
   Atomic<HeapWord*> _invisible_root;
   Atomic<size_t> _invisible_root_word_size;
 
+  // Thread-local pin cache used to increment/decrement the pin count for
+  // a region and flush the accumulated count to the shared pin counter.
+  // This avoids contended atomic updates of the shared pin counter.
+  size_t _pin_region_idx;
+  size_t _pin_count;
+
   ShenandoahThreadLocalData();
   ~ShenandoahThreadLocalData();
 
@@ -241,6 +247,22 @@ public:
 
   static size_t get_invisible_root_word_size(Thread* thread) {
     return data(thread)->_invisible_root_word_size.load_relaxed();
+  }
+
+  static size_t pin_cache_region(Thread* thread) {
+    return data(thread)->_pin_region_idx;
+  }
+
+  static size_t pin_cache_count(Thread* thread) {
+    return data(thread)->_pin_count;
+  }
+
+  static void pin_cache_set_region(Thread* thread, size_t region_idx) {
+    data(thread)->_pin_region_idx = region_idx;
+  }
+
+  static void pin_cache_set_count(Thread* thread, size_t new_count) {
+    data(thread)->_pin_count = new_count;
   }
 };
 

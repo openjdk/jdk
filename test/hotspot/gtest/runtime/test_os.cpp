@@ -1200,7 +1200,7 @@ TEST_VM(os, map_unmap_memory) {
   ::close(fd);
 
   fd = os::open(path, O_RDONLY, 0666);
-  char* result = os::map_memory(fd, path, 0, nullptr, size, mtTest, true, false);
+  char* result = os::map_memory(fd, path, 0, nullptr, size, true /* read_only */, mtTest, false /* allow_exec */);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
   os::unmap_memory(result, size);

@@ -105,7 +105,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     private ButtonHandler buttonHandler;
 
     /**
-     * Handler for repainting combo when editor component gains/looses focus
+     * Handler for repainting combo when editor component gains/loses focus
      */
     private EditorFocusHandler editorFocusHandler;
 
@@ -766,7 +766,7 @@ public class SynthComboBoxUI extends BasicComboBoxUI implements
     }
 
     /**
-     * Handler for repainting combo when editor component gains/looses focus
+     * Handler for repainting combo when editor component gains/loses focus
      */
     private static class EditorFocusHandler implements FocusListener,
             PropertyChangeListener {

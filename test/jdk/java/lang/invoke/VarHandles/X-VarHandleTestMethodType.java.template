@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,16 @@
  * questions.
  */
 
+#warn
+
 /*
  * @test
  * @bug 8156486
+#if[Value]
+ * @enablePreview
+ * @modules java.base/jdk.internal.vm.annotation
+ *          java.base/jdk.internal.value
+#end[Value]
  * @run junit/othervm VarHandleTestMethodType$Type$
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true VarHandleTestMethodType$Type$
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false VarHandleTestMethodType$Type$
@@ -38,6 +45,11 @@ import java.util.List;
 
 import static java.lang.invoke.MethodType.*;
 
+#if[NullRestricted]
+import jdk.internal.value.ValueClass;
+import jdk.internal.vm.annotation.NullRestricted;
+
+#end[NullRestricted]
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -45,13 +57,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
-    static final $type$ static_final_v = $value1$;
+    static final {#if[NullRestricted]?@NullRestricted }$type$ static_final_v = $value1$;
 
-    static $type$ static_v = $value1$;
+    static {#if[NullRestricted]?@NullRestricted }$type$ static_v = $value1$;
 
-    final $type$ final_v = $value1$;
+    final {#if[NullRestricted]?@NullRestricted }$type$ final_v;
 
-    $type$ v = $value1$;
+    {#if[NullRestricted]?@NullRestricted }$type$ v;
 
     VarHandle vhFinalField;
 
@@ -62,6 +74,12 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodType$Type$() {
+        final_v = $value1$;
+        v = $value1$;
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -137,7 +155,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.get(0);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.get(recv);
         });
         checkWMTE(() -> { // primitive class
@@ -160,7 +178,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             vh.set(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.set(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -187,7 +205,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getVolatile(0);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getVolatile(recv);
         });
         checkWMTE(() -> { // primitive class
@@ -210,7 +228,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             vh.setVolatile(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setVolatile(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -237,7 +255,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getOpaque(0);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getOpaque(recv);
         });
         checkWMTE(() -> { // primitive class
@@ -260,7 +278,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             vh.setOpaque(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setOpaque(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -287,7 +305,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAcquire(0);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getAcquire(recv);
         });
         checkWMTE(() -> { // primitive class
@@ -310,7 +328,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             vh.setRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setRelease(recv, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -334,10 +352,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.compareAndSet(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.compareAndSet(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.compareAndSet(recv, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -360,10 +378,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetPlain(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetPlain(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetPlain(recv, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -386,10 +404,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSet(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSet(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSet(recv, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -412,10 +430,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetAcquire(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetAcquire(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetAcquire(recv, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -438,10 +456,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetRelease(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetRelease(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetRelease(recv, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -464,17 +482,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.compareAndExchange(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchange(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchange(recv, $value1$, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.compareAndExchange(0, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchange(recv, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -497,17 +515,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(recv, $value1$, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(0, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeAcquire(recv, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -530,17 +548,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(Void.class, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(recv, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(recv, $value1$, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.compareAndExchangeRelease(0, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeRelease(recv, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -563,14 +581,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndSet(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSet(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndSet(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSet(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -592,14 +610,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndSetAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndSetAcquire(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetAcquire(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -621,14 +639,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndSetRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndSetRelease(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetRelease(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -652,14 +670,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndAdd(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAdd(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndAdd(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAdd(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -681,14 +699,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndAddAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndAddAcquire(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddAcquire(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -710,14 +728,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndAddRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndAddRelease(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddRelease(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -741,14 +759,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseOr(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOr(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseOr(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOr(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -771,14 +789,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOrAcquire(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -799,27 +817,27 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseOrRelease(null, $value1$);
         });
         checkCCE(() -> { // receiver reference class
-            $type$ x = ($type$) vh.getAndBitwiseOr(Void.class, $value1$);
+            $type$ x = ($type$) vh.getAndBitwiseOrRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.getAndBitwiseOr(recv, Void.class);
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
+            $type$ x = ($type$) vh.getAndBitwiseOrRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            $type$ x = ($type$) vh.getAndBitwiseOr(0, $value1$);
+        checkWMTE(() -> { // receiver primitive class
+            $type$ x = ($type$) vh.getAndBitwiseOrRelease(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseOr(recv, $value1$);
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
+            Void r = (Void) vh.getAndBitwiseOrRelease(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseOr(recv, $value1$);
+            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseOrRelease(recv, $value1$);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.getAndBitwiseOr();
+            $type$ x = ($type$) vh.getAndBitwiseOrRelease();
         });
         checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.getAndBitwiseOr(recv, $value1$, Void.class);
+            $type$ x = ($type$) vh.getAndBitwiseOrRelease(recv, $value1$, Void.class);
         });
 
 
@@ -831,14 +849,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseAnd(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAnd(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseAnd(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAnd(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -861,14 +879,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAndAcquire(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -889,27 +907,27 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseAndRelease(null, $value1$);
         });
         checkCCE(() -> { // receiver reference class
-            $type$ x = ($type$) vh.getAndBitwiseAnd(Void.class, $value1$);
+            $type$ x = ($type$) vh.getAndBitwiseAndRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.getAndBitwiseAnd(recv, Void.class);
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
+            $type$ x = ($type$) vh.getAndBitwiseAndRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            $type$ x = ($type$) vh.getAndBitwiseAnd(0, $value1$);
+        checkWMTE(() -> { // receiver primitive class
+            $type$ x = ($type$) vh.getAndBitwiseAndRelease(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseAnd(recv, $value1$);
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
+            Void r = (Void) vh.getAndBitwiseAndRelease(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseAnd(recv, $value1$);
+            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseAndRelease(recv, $value1$);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.getAndBitwiseAnd();
+            $type$ x = ($type$) vh.getAndBitwiseAndRelease();
         });
         checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.getAndBitwiseAnd(recv, $value1$, Void.class);
+            $type$ x = ($type$) vh.getAndBitwiseAndRelease(recv, $value1$, Void.class);
         });
 
 
@@ -921,14 +939,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseXor(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXor(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseXor(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXor(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -951,14 +969,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXorAcquire(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -979,27 +997,27 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseXorRelease(null, $value1$);
         });
         checkCCE(() -> { // receiver reference class
-            $type$ x = ($type$) vh.getAndBitwiseXor(Void.class, $value1$);
+            $type$ x = ($type$) vh.getAndBitwiseXorRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
-            $type$ x = ($type$) vh.getAndBitwiseXor(recv, Void.class);
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
+            $type$ x = ($type$) vh.getAndBitwiseXorRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
-            $type$ x = ($type$) vh.getAndBitwiseXor(0, $value1$);
+        checkWMTE(() -> { // receiver primitive class
+            $type$ x = ($type$) vh.getAndBitwiseXorRelease(0, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
-            Void r = (Void) vh.getAndBitwiseXor(recv, $value1$);
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
+            Void r = (Void) vh.getAndBitwiseXorRelease(recv, $value1$);
         });
         checkWMTE(() -> { // primitive class
-            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseXor(recv, $value1$);
+            $wrong_primitive_type$ x = ($wrong_primitive_type$) vh.getAndBitwiseXorRelease(recv, $value1$);
         });
         // Incorrect arity
         checkWMTE(() -> { // 0
-            $type$ x = ($type$) vh.getAndBitwiseXor();
+            $type$ x = ($type$) vh.getAndBitwiseXorRelease();
         });
         checkWMTE(() -> { // >
-            $type$ x = ($type$) vh.getAndBitwiseXor(recv, $value1$, Void.class);
+            $type$ x = ($type$) vh.getAndBitwiseXorRelease(recv, $value1$, Void.class);
         });
 #end[Bitwise]
     }
@@ -1020,7 +1038,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(0);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodType$Type$.class)).
                     invokeExact(recv);
             });
@@ -1049,7 +1067,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 hs.get(am, methodType(void.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 hs.get(am, methodType(void.class, VarHandleTestMethodType$Type$.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
@@ -1079,11 +1097,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, $type$.class, $type$.class)).
                     invokeExact(Void.class, $value1$, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodType$Type$.class, Class.class, $type$.class)).
                     invokeExact(recv, Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, VarHandleTestMethodType$Type$.class, $type$.class, Class.class)).
                     invokeExact(recv, $value1$, Void.class);
             });
@@ -1111,20 +1129,20 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, $type$.class, $type$.class)).
                     invokeExact(Void.class, $value1$, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, VarHandleTestMethodType$Type$.class, Class.class, $type$.class)).
                     invokeExact(recv, Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, VarHandleTestMethodType$Type$.class, $type$.class, Class.class)).
                     invokeExact(recv, $value1$, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, int.class , $type$.class, $type$.class)).
                     invokeExact(0, $value1$, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodType$Type$.class , $type$.class, $type$.class)).
                     invokeExact(recv, $value1$, $value1$);
             });
@@ -1152,16 +1170,16 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, VarHandleTestMethodType$Type$.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, int.class, $type$.class)).
                     invokeExact(0, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodType$Type$.class, $type$.class)).
                     invokeExact(recv, $value1$);
             });
@@ -1191,16 +1209,16 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, VarHandleTestMethodType$Type$.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, int.class, $type$.class)).
                     invokeExact(0, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodType$Type$.class, $type$.class)).
                     invokeExact(recv, $value1$);
             });
@@ -1230,16 +1248,16 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, VarHandleTestMethodType$Type$.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, int.class, $type$.class)).
                     invokeExact(0, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, VarHandleTestMethodType$Type$.class, $type$.class)).
                     invokeExact(recv, $value1$);
             });
@@ -1264,7 +1282,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
     static void testStaticFieldWrongMethodType(VarHandle vh) throws Throwable {
         // Get
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.get();
         });
         checkWMTE(() -> { // primitive class
@@ -1278,7 +1296,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // Set
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.set(Void.class);
         });
         // Incorrect arity
@@ -1292,7 +1310,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetVolatile
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getVolatile();
         });
         checkWMTE(() -> { // primitive class
@@ -1305,7 +1323,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // SetVolatile
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setVolatile(Void.class);
         });
         // Incorrect arity
@@ -1319,7 +1337,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetOpaque
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getOpaque();
         });
         checkWMTE(() -> { // primitive class
@@ -1332,7 +1350,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // SetOpaque
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setOpaque(Void.class);
         });
         // Incorrect arity
@@ -1346,7 +1364,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAcquire
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getAcquire();
         });
         checkWMTE(() -> { // primitive class
@@ -1359,7 +1377,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // SetRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setRelease(Void.class);
         });
         // Incorrect arity
@@ -1374,10 +1392,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[CAS]
         // CompareAndSet
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.compareAndSet(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.compareAndSet($value1$, Void.class);
         });
         // Incorrect arity
@@ -1391,10 +1409,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // WeakCompareAndSet
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetPlain(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetPlain($value1$, Void.class);
         });
         // Incorrect arity
@@ -1408,10 +1426,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // WeakCompareAndSetVolatile
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSet(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSet($value1$, Void.class);
         });
         // Incorrect arity
@@ -1425,10 +1443,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // WeakCompareAndSetAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetAcquire($value1$, Void.class);
         });
         // Incorrect arity
@@ -1442,10 +1460,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // WeakCompareAndSetRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetRelease($value1$, Void.class);
         });
         // Incorrect arity
@@ -1459,14 +1477,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // CompareAndExchange
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchange(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchange($value1$, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchange($value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1483,14 +1501,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // CompareAndExchangeAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire($value1$, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeAcquire($value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1507,14 +1525,14 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // CompareAndExchangeRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease($value1$, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeRelease($value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1531,11 +1549,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndSet
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSet(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSet($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1552,11 +1570,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndSetAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetAcquire(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetAcquire($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1573,11 +1591,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndSetRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetRelease(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetRelease($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1595,11 +1613,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[AtomicAdd]
         // GetAndAdd
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAdd(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAdd($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1616,11 +1634,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndAddAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddAcquire(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddAcquire($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1637,11 +1655,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndAddRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddRelease(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddRelease($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1659,11 +1677,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[Bitwise]
         // GetAndBitwiseOr
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOr(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOr($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1680,11 +1698,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndBitwiseOrAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOrAcquire($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1699,13 +1717,13 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseOrReleaseRelease
+        // GetAndBitwiseOrRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOrRelease(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOrRelease($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1722,11 +1740,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndBitwiseAnd
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAnd(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAnd($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1743,11 +1761,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndBitwiseAndAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAndAcquire($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1762,13 +1780,13 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseAndReleaseRelease
+        // GetAndBitwiseAndRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAndRelease(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAndRelease($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1785,11 +1803,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndBitwiseXor
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXor(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXor($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1806,11 +1824,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         // GetAndBitwiseXorAcquire
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXorAcquire($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1825,13 +1843,13 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         });
 
 
-        // GetAndBitwiseXorReleaseRelease
+        // GetAndBitwiseXorRelease
         // Incorrect argument types
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXorRelease(Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXorRelease($value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -1852,7 +1870,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class)).
                     invokeExact();
             });
@@ -1868,7 +1886,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         }
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.SET)) {
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 hs.get(am, methodType(void.class, Class.class)).
                     invokeExact(Void.class);
             });
@@ -1885,11 +1903,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[CAS]
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_SET)) {
             // Incorrect argument types
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, $type$.class, Class.class)).
                     invokeExact($value1$, Void.class);
             });
@@ -1906,16 +1924,16 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.COMPARE_AND_EXCHANGE)) {
             // Incorrect argument types
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, $type$.class)).
                     invokeExact(Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$.class, Class.class)).
                     invokeExact($value1$, Void.class);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$.class, $type$.class)).
                     invokeExact($value1$, $value1$);
             });
@@ -1936,12 +1954,12 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_SET)) {
             // Incorrect argument types
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class)).
                     invokeExact(Void.class);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$.class)).
                     invokeExact($value1$);
             });
@@ -1964,12 +1982,12 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[AtomicAdd]
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_ADD)) {
             // Incorrect argument types
-            check{#if[String]?CCE:WMTE}(() -> { // value reference class
+            check{#if[Object]?CCE:WMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class)).
                     invokeExact(Void.class);
             });
             // Incorrect return type
-            check{#if[String]?CCE:WMTE}(() -> { // reference class
+            check{#if[Object]?CCE:WMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$.class)).
                     invokeExact($value1$);
             });
@@ -1992,12 +2010,12 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 #if[Bitwise]
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET_AND_BITWISE)) {
             // Incorrect argument types
-            check{#if[String]?CCE:WMTE}(() -> { // value reference class
+            check{#if[Object]?CCE:WMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class)).
                     invokeExact(Void.class);
             });
             // Incorrect return type
-            check{#if[String]?CCE:WMTE}(() -> { // reference class
+            check{#if[Object]?CCE:WMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$.class)).
                     invokeExact($value1$);
             });
@@ -2020,7 +2038,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
 
 
     static void testArrayWrongMethodType(VarHandle vh) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
         Arrays.fill(array, $value1$);
 
         // Get
@@ -2038,7 +2056,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.get(array, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.get(array, 0);
         });
         checkWMTE(() -> { // primitive class
@@ -2061,7 +2079,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             vh.set(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.set(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2094,7 +2112,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getVolatile(array, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getVolatile(array, 0);
         });
         checkWMTE(() -> { // primitive class
@@ -2117,7 +2135,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             vh.setVolatile(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setVolatile(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2150,7 +2168,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getOpaque(array, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getOpaque(array, 0);
         });
         checkWMTE(() -> { // primitive class
@@ -2173,7 +2191,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             vh.setOpaque(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setOpaque(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2206,7 +2224,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAcquire(array, Void.class);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void x = (Void) vh.getAcquire(array, 0);
         });
         checkWMTE(() -> { // primitive class
@@ -2229,7 +2247,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             vh.setRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             vh.setRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2256,10 +2274,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.compareAndSet(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.compareAndSet(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.compareAndSet(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2285,10 +2303,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetPlain(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetPlain(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetPlain(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2314,10 +2332,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSet(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSet(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSet(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2343,10 +2361,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetAcquire(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetAcquire(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetAcquire(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2372,10 +2390,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // receiver reference class
             boolean r = vh.weakCompareAndSetRelease(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             boolean r = vh.weakCompareAndSetRelease(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             boolean r = vh.weakCompareAndSetRelease(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // receiver primitive class
@@ -2401,10 +2419,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.compareAndExchange(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchange(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchange(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2414,7 +2432,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.compareAndExchange(array, Void.class, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchange(array, 0, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2437,10 +2455,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeAcquire(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2450,7 +2468,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.compareAndExchangeAcquire(array, Void.class, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeAcquire(array, 0, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2473,10 +2491,10 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(Void.class, 0, $value1$, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // expected reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // expected reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(array, 0, Void.class, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // actual reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // actual reference class
             $type$ x = ($type$) vh.compareAndExchangeRelease(array, 0, $value1$, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2486,7 +2504,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.compareAndExchangeRelease(array, Void.class, $value1$, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.compareAndExchangeRelease(array, 0, $value1$, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2509,17 +2527,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndSet(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSet(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             $type$ x = ($type$) vh.getAndSet(0, 0, $value1$);
         });
         checkWMTE(() -> { // index reference class
             $type$ x = ($type$) vh.getAndSet(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSet(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2542,17 +2560,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndSetAcquire(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetAcquire(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             $type$ x = ($type$) vh.getAndSetAcquire(0, 0, $value1$);
         });
         checkWMTE(() -> { // index reference class
             $type$ x = ($type$) vh.getAndSetAcquire(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetAcquire(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2575,17 +2593,17 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndSetRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndSetRelease(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             $type$ x = ($type$) vh.getAndSetRelease(0, 0, $value1$);
         });
         checkWMTE(() -> { // index reference class
             $type$ x = ($type$) vh.getAndSetRelease(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndSetRelease(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2609,7 +2627,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndAdd(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAdd(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2619,7 +2637,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndAdd(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAdd(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2642,7 +2660,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndAddAcquire(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddAcquire(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2652,7 +2670,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndAddAcquire(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddAcquire(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2675,7 +2693,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndAddRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndAddRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2685,7 +2703,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndAddRelease(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndAddRelease(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2709,7 +2727,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseOr(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOr(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2719,7 +2737,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseOr(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOr(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2742,7 +2760,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2752,7 +2770,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseOrAcquire(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOrAcquire(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2775,7 +2793,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseOrRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseOrRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2785,7 +2803,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseOrRelease(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseOrRelease(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2808,7 +2826,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseAnd(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAnd(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2818,7 +2836,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseAnd(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAnd(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2841,7 +2859,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2851,7 +2869,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseAndAcquire(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAndAcquire(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2874,7 +2892,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseAndRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseAndRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2884,7 +2902,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseAndRelease(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseAndRelease(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2907,7 +2925,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseXor(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXor(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2917,7 +2935,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseXor(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXor(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2940,7 +2958,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2950,7 +2968,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseXorAcquire(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXorAcquire(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -2973,7 +2991,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
         checkCCE(() -> { // array reference class
             $type$ x = ($type$) vh.getAndBitwiseXorRelease(Void.class, 0, $value1$);
         });
-        check{#if[String]?CCE:WMTE}(() -> { // value reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // value reference class
             $type$ x = ($type$) vh.getAndBitwiseXorRelease(array, 0, Void.class);
         });
         checkWMTE(() -> { // array primitive class
@@ -2983,7 +3001,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
             $type$ x = ($type$) vh.getAndBitwiseXorRelease(array, Void.class, $value1$);
         });
         // Incorrect return type
-        check{#if[String]?CCE:WMTE}(() -> { // reference class
+        check{#if[Object]?CCE:WMTE}(() -> { // reference class
             Void r = (Void) vh.getAndBitwiseXorRelease(array, 0, $value1$);
         });
         checkWMTE(() -> { // primitive class
@@ -3000,7 +3018,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
     }
 
     static void testArrayWrongMethodType(Handles hs) throws Throwable {
-        $type$[] array = new $type$[10];
+        $type$[] array = {#if[NullRestricted]?($type$[]) ValueClass.newNullRestrictedAtomicArray($type$.class, 10, $value1$):new $type$[10]};
         Arrays.fill(array, $value1$);
 
         for (TestAccessMode am : testAccessModesOfType(TestAccessType.GET)) {
@@ -3022,7 +3040,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(array, Void.class);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void x = (Void) hs.get(am, methodType(Void.class, $type$[].class, int.class)).
                     invokeExact(array, 0);
             });
@@ -3051,7 +3069,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 hs.get(am, methodType(void.class, Class.class, int.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 hs.get(am, methodType(void.class, $type$[].class, int.class, Class.class)).
                     invokeExact(array, 0, Void.class);
             });
@@ -3084,11 +3102,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, Class.class, int.class, $type$.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, $type$[].class, int.class, Class.class, $type$.class)).
                     invokeExact(array, 0, Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 boolean r = (boolean) hs.get(am, methodType(boolean.class, $type$[].class, int.class, $type$.class, Class.class)).
                     invokeExact(array, 0, $value1$, Void.class);
             });
@@ -3121,11 +3139,11 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, int.class, $type$.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // expected reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$[].class, int.class, Class.class, $type$.class)).
                     invokeExact(array, 0, Void.class, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // actual reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$[].class, int.class, $type$.class, Class.class)).
                     invokeExact(array, 0, $value1$, Void.class);
             });
@@ -3138,7 +3156,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(array, Void.class, $value1$, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$[].class, int.class, $type$.class, $type$.class)).
                     invokeExact(array, 0, $value1$, $value1$);
             });
@@ -3167,7 +3185,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, int.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$[].class, int.class, Class.class)).
                     invokeExact(array, 0, Void.class);
             });
@@ -3180,7 +3198,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(array, Void.class, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$[].class, int.class, $type$.class)).
                     invokeExact(array, 0, $value1$);
             });
@@ -3211,7 +3229,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, int.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$[].class, int.class, Class.class)).
                     invokeExact(array, 0, Void.class);
             });
@@ -3224,7 +3242,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(array, Void.class, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$[].class, int.class, $type$.class)).
                     invokeExact(array, 0, $value1$);
             });
@@ -3255,7 +3273,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, Class.class, int.class, $type$.class)).
                     invokeExact(Void.class, 0, $value1$);
             });
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // value reference class
                 $type$ x = ($type$) hs.get(am, methodType($type$.class, $type$[].class, int.class, Class.class)).
                     invokeExact(array, 0, Void.class);
             });
@@ -3268,7 +3286,7 @@ public class VarHandleTestMethodType$Type$ extends VarHandleBaseTest {
                     invokeExact(array, Void.class, $value1$);
             });
             // Incorrect return type
-            {#if[String]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
+            {#if[Object]?hs.checkWMTEOrCCE:checkWMTE}(() -> { // reference class
                 Void r = (Void) hs.get(am, methodType(Void.class, $type$[].class, int.class, $type$.class)).
                     invokeExact(array, 0, $value1$);
             });

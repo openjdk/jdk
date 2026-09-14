@@ -24,6 +24,7 @@
 
 #include "ci/ciMetadata.hpp"
 #include "ci/ciMethodData.hpp"
+#include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciReplay.hpp"
 #include "ci/ciUtilities.inline.hpp"
 #include "compiler/compiler_globals.hpp"
@@ -337,12 +338,12 @@ void ciTypeStackSlotEntries::translate_type_data_from(const TypeStackSlotEntries
   }
 }
 
-void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
+void ciSingleTypeEntry::translate_type_data_from(const SingleTypeEntry* ret) {
   intptr_t k = ret->type();
   Klass* klass = (Klass*)klass_part(k);
   if (klass == nullptr || !klass->is_loader_present_and_alive() || !is_klass_loaded(klass)) {
     // With concurrent class unloading, the MDO could have stale metadata; override it
-    set_type(ReturnTypeEntry::with_status((Klass*)nullptr, k));
+    set_type(SingleTypeEntry::with_status((Klass*)nullptr, k));
   } else {
     set_type(translate_klass(k));
   }
@@ -393,6 +394,12 @@ ciProfileData* ciMethodData::data_from(DataLayout* data_layout) {
     return new ciVirtualCallTypeData(data_layout);
   case DataLayout::parameters_type_data_tag:
     return new ciParametersTypeData(data_layout);
+  case DataLayout::array_store_data_tag:
+    return new ciArrayStoreData(data_layout);
+  case DataLayout::array_load_data_tag:
+    return new ciArrayLoadData(data_layout);
+  case DataLayout::acmp_data_tag:
+    return new ciACmpData(data_layout);
   };
 }
 
@@ -715,8 +722,15 @@ void ciMethodData::dump_replay_data_type_helper(outputStream* out, int round, in
     if (round == 0) {
       count++;
     } else {
-      out->print(" %d %s", (int)(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
-                           CURRENT_ENV->replay_name(k));
+      if (k->is_obj_array_klass()) {
+        // We also record the array property to load the correct array class during replay compilation.
+        const ArrayProperties array_properties = k->as_obj_array_klass()->properties();
+        out->print(" %d %s %d", static_cast<int>(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                                      CURRENT_ENV->replay_name(k), array_properties.value());
+      } else {
+        out->print(" %d %s", static_cast<int>(dp_to_di(pdata->dp() + in_bytes(offset)) / sizeof(intptr_t)),
+                             CURRENT_ENV->replay_name(k));
+      }
     }
   }
 }
@@ -810,12 +824,29 @@ void ciMethodData::dump_replay_data(outputStream* out) {
           ciVirtualCallTypeData* call_type_data = (ciVirtualCallTypeData*)pdata;
           dump_replay_data_call_type_helper<ciVirtualCallTypeData>(out, round, count, call_type_data);
         }
+      } else if (pdata->is_CallTypeData()) {
+        ciCallTypeData* call_type_data = (ciCallTypeData*)pdata;
+        dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
+      } else if (pdata->is_ArrayStoreData()) {
+        ciArrayStoreData* array_store_data = (ciArrayStoreData*)pdata;
+        dump_replay_data_type_helper(out, round, count, array_store_data, ciArrayStoreData::array_offset(),
+                                     array_store_data->array()->valid_type());
+        dump_replay_data_receiver_type_helper<ciArrayStoreData>(out, round, count, array_store_data);
+      } else if (pdata->is_ArrayLoadData()) {
+        ciArrayLoadData* array_load_data = (ciArrayLoadData*)pdata;
+        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::array_offset(),
+                                     array_load_data->array()->valid_type());
+        dump_replay_data_type_helper(out, round, count, array_load_data, ciArrayLoadData::element_offset(),
+                                     array_load_data->element()->valid_type());
+      } else if (pdata->is_ACmpData()) {
+        ciACmpData* acmp_data = (ciACmpData*)pdata;
+        dump_replay_data_type_helper(out, round, count, acmp_data, ciACmpData::left_offset(),
+                                     acmp_data->left()->valid_type());
+        dump_replay_data_type_helper(out, round, count, acmp_data, ciACmpData::right_offset(),
+                                     acmp_data->right()->valid_type());
       } else if (pdata->is_ReceiverTypeData()) {
         ciReceiverTypeData* vdata = (ciReceiverTypeData*)pdata;
         dump_replay_data_receiver_type_helper<ciReceiverTypeData>(out, round, count, vdata);
-      } else if (pdata->is_CallTypeData()) {
-          ciCallTypeData* call_type_data = (ciCallTypeData*)pdata;
-          dump_replay_data_call_type_helper<ciCallTypeData>(out, round, count, call_type_data);
       }
     }
     if (parameters != nullptr) {
@@ -898,7 +929,7 @@ void ciTypeStackSlotEntries::print_data_on(outputStream* st) const {
   }
 }
 
-void ciReturnTypeEntry::print_data_on(outputStream* st) const {
+void ciSingleTypeEntry::print_data_on(outputStream* st) const {
   _pd->tab(st);
   st->print("ret ");
   print_ciklass(st, type());
@@ -970,5 +1001,38 @@ void ciSpeculativeTrapData::print_data_on(outputStream* st, const char* extra) c
   tab(st);
   method()->print_short_name(st);
   st->cr();
+}
+
+void ciArrayStoreData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciArrayStoreData", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  array()->print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  rtd_super()->print_receiver_data_on(st);
+}
+
+void ciArrayLoadData::print_data_on(outputStream* st, const char* extra) const {
+  print_shared(st, "ciArrayLoadData", extra);
+  st->cr();
+  tab(st, true);
+  st->print("array");
+  array()->print_data_on(st);
+  tab(st, true);
+  st->print("element");
+  element()->print_data_on(st);
+}
+
+void ciACmpData::print_data_on(outputStream* st, const char* extra) const {
+  BranchData::print_data_on(st, extra);
+  st->cr();
+  tab(st, true);
+  st->print("left");
+  left()->print_data_on(st);
+  tab(st, true);
+  st->print("right");
+  right()->print_data_on(st);
 }
 #endif
