@@ -451,7 +451,7 @@ void LoaderConstraintTable::check_failed_loaded_klass(InstanceKlass* klass,
   MutexLocker ml(SystemDictionary_lock);
   Symbol* name = klass->name();
   LoaderConstraint* p = find_loader_constraint(name, loader);
-  assert (p == nullptr || p->klass() == klass, "pointer to class that failed to load");
+  assert (p == nullptr || p->klass() != klass, "pointer to class that failed to load");
 #endif
 }
 

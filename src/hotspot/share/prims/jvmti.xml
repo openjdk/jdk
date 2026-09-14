@@ -4290,7 +4290,7 @@ class C2 extends C1 implements I2 {
       <description>
         Agent supplied callback function.
         Describes a reference from an object or the VM (the referrer) to another object
-        (the referree) or a heap root.
+        (the referree) or a heap root to a referree.
         <p/>
         This function should return a bit vector of the desired
         <datalink id="jvmtiHeapVisitControl">visit control flags</datalink>.

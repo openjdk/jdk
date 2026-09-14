@@ -37,17 +37,11 @@ JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) 
     fflush(nullptr);
     return JNI_ERR;
   }
-
   jvmtiCapabilities caps;
   memset(&caps, 0, sizeof(caps));
   caps.can_tag_objects = 1;
   jvmtiError err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    printf("AddCapabilities failed: %s (%d)\n", TranslateError(err), err);
-    fflush(nullptr);
-    return JNI_ERR;
-  }
-
+  check_jvmti_error(err, "AddCapabilities");
   return JNI_OK;
 }
 
@@ -68,7 +62,7 @@ static jint JNICALL reference_callback(
     if (*tag_ptr == TARGET_TAG) {
         target_seen = true;
         target_kind = kind;
-        printf("Reached tagged Test.class, reference kind: %d\n", kind);
+        LOG("Reached tagged Test.class, reference kind: %d\n", kind);
     }
     return JVMTI_VISIT_OBJECTS;
 }

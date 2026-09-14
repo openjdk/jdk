@@ -25,6 +25,7 @@
  * @test
  * @bug 8391308
  * @library /test/lib
+ * @requires vm.jvmti
  * @summary The test verifies heap walking API (FollowReferences) reports classes
  *          when starting from the class loader.
  * @run main/othervm/native -agentlib:ClassLoaderTest ClassLoaderTest
@@ -75,9 +76,10 @@ public class ClassLoaderTest {
         }
 
         Asserts.assertTrue(targetReachedFrom(ldr, test),
-                           "FollowReferences starting at MyLoader reached Test.class");
+                           "FollowReferences starting at MyLoader should have reached Test.class");
 
-        Asserts.assertTrue(targetKindIsOther(), "FollowReferences reports Test.class as target kind OTHER");
+        Asserts.assertTrue(targetKindIsOther(),
+                           "FollowReferences should have reported Test.class as target kind OTHER");
 
         Reference.reachabilityFence(ldr);
         Reference.reachabilityFence(test);

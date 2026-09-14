@@ -45,7 +45,7 @@ import static java.lang.constant.ConstantDescs.*;
 /*
  * @test
  * @bug 8391308
- * @summary Verifies heap dump contains java.lang.Class instance in ClassLoader
+ * @summary Verifies heap dump contains a reference to a java.lang.Class instance from its ClassLoader
  * @library /test/lib
  * @run driver ClassLoaderFieldsTest
  */
@@ -105,6 +105,7 @@ public class ClassLoaderFieldsTest {
                     .createUsingTestJDK("jcmd")
                     .addToolArg(Long.toString(theApp.getPid()))
                     .addToolArg("GC.heap_dump")
+                    .addToolArg("-overwrite")
                     .addToolArg(dumpFile.getAbsolutePath());
             Process p = ProcessTools.startProcess("jcmd", new ProcessBuilder(launcher.getCommand()));
             // If something goes wrong with heap dumping most likely we'll get crash of the target VM.
