@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  *          reliably.
  *
  * @comment Why do we only test on Linux and macOS? These platforms are known to
- *          have selector implementations that do *NOT* pin the carrier thread in 
+ *          have selector implementations that do *NOT* pin the carrier thread in
  *          select() when selectors are called using VTs (via `useVirtualThreads=always`).
  *          This test sets `jdk.virtualThreadScheduler.{parallelism,maxPoolSize}` to 1,
  *          which prevents the selector implementation from compensating the pinning by
