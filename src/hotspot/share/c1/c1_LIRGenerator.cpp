@@ -658,15 +658,15 @@ void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
 }
 #endif
 
-void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  if (allow_inline) {
+void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_value, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
+  if (allow_value) {
     assert(!is_unresolved && klass->is_loaded(), "value type klass should be resolved");
     __ metadata2reg(klass->constant_encoding(), klass_reg);
   } else {
     klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
   }
   // If klass is not loaded we do not know if the klass has finalizers or is an unexpected value klass
-  if (UseFastNewInstance && klass->is_loaded() && (allow_inline || !klass->is_value_klass())
+  if (UseFastNewInstance && klass->is_loaded() && (allow_value || !klass->is_value_klass())
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
     bool known_initialized = klass->is_initialized() && !compilation()->env()->is_aot_compile();
@@ -1560,7 +1560,12 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
 // Returns an int/long value with the null marker bit set.
 static LIR_Opr null_marker_mask(BasicType bt, int nm_offset) {
   assert(nm_offset >= 0, "field does not have null marker");
-  jlong null_marker = 1ULL << (nm_offset << LogBitsPerByte);
+#ifdef VM_LITTLE_ENDIAN
+  int bit_pos = nm_offset << LogBitsPerByte;
+#else
+  int bit_pos = (type2aelembytes(bt) - nm_offset - 1) << LogBitsPerByte;
+#endif
+  jlong null_marker = 1ULL << bit_pos;
   return (bt == T_LONG) ? LIR_OprFact::longConst(null_marker) : LIR_OprFact::intConst(null_marker);
 }
 
@@ -2741,7 +2746,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -2799,7 +2804,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   LIR_Opr value = tag.result();
   int len = x->length();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
