@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng TestArrayCopy
+ * @run junit TestArrayCopy
  */
 
 import java.lang.foreign.MemorySegment;
@@ -33,13 +33,15 @@ import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * These tests exercise the MemoryCopy copyFromArray(...) and copyToArray(...).
@@ -51,6 +53,7 @@ import static org.testng.Assert.fail;
  * the copy of the overlapping region is performed as if the data in the overlapping region
  * were first copied into a temporary segment before being copied to the destination.</p>
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestArrayCopy {
     private static final ByteOrder NATIVE_ORDER = ByteOrder.nativeOrder();
     private static final ByteOrder NON_NATIVE_ORDER = NATIVE_ORDER == ByteOrder.LITTLE_ENDIAN
@@ -59,7 +62,8 @@ public class TestArrayCopy {
     private static final int SEG_LENGTH_BYTES = 32;
     private static final int SEG_OFFSET_BYTES = 8;
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testSelfCopy(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         int indexShifts = SEG_OFFSET_BYTES / bytesPerElement;
@@ -73,7 +77,7 @@ public class TestArrayCopy {
         MemorySegment dstSeg = helper.fromArray(srcArr);
         long dstOffsetBytes = mode.direction ? SEG_OFFSET_BYTES : 0;
         helper.copyFromArray(srcArr, srcIndex, srcCopyLen, dstSeg, dstOffsetBytes, bo);
-        assertEquals(truth.mismatch(dstSeg), -1);
+        assertEquals(-1, truth.mismatch(dstSeg));
         //CopyTo
         long srcOffsetBytes = mode.direction ? 0 : SEG_OFFSET_BYTES;
         Object dstArr = helper.toArray(base);
@@ -82,10 +86,11 @@ public class TestArrayCopy {
         int dstCopyLen = helper.length(dstArr) - indexShifts;
         helper.copyToArray(srcSeg, srcOffsetBytes, dstArr, dstIndex, dstCopyLen, bo);
         MemorySegment result = helper.fromArray(dstArr);
-        assertEquals(truth.mismatch(result), -1);
+        assertEquals(-1, truth.mismatch(result));
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testUnalignedCopy(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         int indexShifts = SEG_OFFSET_BYTES / bytesPerElement;
@@ -107,7 +112,8 @@ public class TestArrayCopy {
         helper.copyToArray(srcSeg, srcOffsetBytes, dstArr, dstIndex, dstCopyLen, bo);
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyOobLength(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -131,7 +137,8 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyNegativeIndices(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -155,7 +162,8 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyNegativeOffsets(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -179,7 +187,8 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyOobIndices(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -203,7 +212,8 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyOobOffsets(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -227,7 +237,8 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(dataProvider = "copyModesAndHelpers")
+    @ParameterizedTest
+    @MethodSource("copyModesAndHelpers")
     public void testCopyReadOnlyDest(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
         int bytesPerElement = (int)helper.elementLayout.byteSize();
         MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
@@ -242,40 +253,52 @@ public class TestArrayCopy {
         }
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNotAnArraySrc() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE, 0, new String[] { "hello" }, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(segment, JAVA_BYTE, 0, new String[] { "hello" }, 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testNotAnArrayDst() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
-        MemorySegment.copy(new String[] { "hello" }, 0, segment, JAVA_BYTE, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(new String[] { "hello" }, 0, segment, JAVA_BYTE, 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testCarrierMismatchSrc() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_INT, 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(segment, JAVA_INT, 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testCarrierMismatchDst() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
-        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_INT, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_INT, 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testHyperAlignedSrc() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void testHyperAlignedDst() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        });
     }
 
     /***** Utilities *****/
@@ -555,7 +578,6 @@ public class TestArrayCopy {
         };
     }
 
-    @DataProvider
     Object[][] copyModesAndHelpers() {
         CopyHelper<?, ?>[] helpers = { CopyHelper.BYTE, CopyHelper.CHAR, CopyHelper.SHORT, CopyHelper.INT,
                                     CopyHelper.FLOAT, CopyHelper.LONG, CopyHelper.DOUBLE };

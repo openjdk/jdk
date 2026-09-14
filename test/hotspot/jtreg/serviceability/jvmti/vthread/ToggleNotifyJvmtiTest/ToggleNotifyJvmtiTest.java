@@ -26,7 +26,6 @@
  * @summary Verifies JVMTI works for agents loaded into running VM
  * @requires vm.jvmti
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib /test/hotspot/jtreg
  * @build jdk.test.whitebox.WhiteBox
  *

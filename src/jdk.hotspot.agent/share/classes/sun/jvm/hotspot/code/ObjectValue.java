@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ public class ObjectValue extends ScopeValue {
   protected final int      id;
   private boolean          isRoot;
   private ScopeValue       klass;
+  private ScopeValue       properties;
   private List<ScopeValue> fieldsValue;
 
   // Field "boolean visited" is not implemented here since
@@ -44,12 +45,14 @@ public class ObjectValue extends ScopeValue {
   public ObjectValue(int id) {
     this.id = id;
     klass   = null;
+    properties = null;
     fieldsValue = new ArrayList<>();
   }
 
   public boolean isObject() { return true; }
   public int id() { return id; }
   public ScopeValue getKlass() { return klass; }
+  public ScopeValue getProperties() { return properties; }
   public List<ScopeValue> getFieldsValue() { return fieldsValue; }
   public ScopeValue getFieldAt(int i) { return fieldsValue.get(i); }
   public int fieldsSize() { return fieldsValue.size(); }
@@ -65,6 +68,7 @@ public class ObjectValue extends ScopeValue {
     isRoot = stream.readBoolean();
     klass = readFrom(stream);
     Assert.that(klass.isConstantOop(), "should be constant klass oop: " + klass);
+    properties = readFrom(stream);
     int length = stream.readInt();
     for (int i = 0; i < length; i++) {
       ScopeValue val = readFrom(stream);

@@ -748,3 +748,22 @@ intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   return &interpreter_frame_tos_address()[offset];
 }
 
+intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
+  Unimplemented();
+  return nullptr;
+}
+
+intptr_t* frame::repair_sender_sp(nmethod* nm, intptr_t* sp, intptr_t** saved_fp_addr) {
+  assert(nm != nullptr && nm->needs_stack_repair(), "");
+  Unimplemented();
+  return nullptr;
+}
+
+bool frame::was_augmented_on_entry(int& real_size) const {
+  assert(_cb != nullptr && _cb->is_nmethod(), "");
+  if (_cb->as_nmethod()->needs_stack_repair()) {
+    Unimplemented();
+  }
+  real_size = _cb->frame_size();
+  return false;
+}
