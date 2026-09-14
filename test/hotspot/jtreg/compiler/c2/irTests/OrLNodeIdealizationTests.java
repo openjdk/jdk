@@ -61,11 +61,8 @@ public class OrLNodeIdealizationTests {
         Asserts.assertEQ((a | b) | a, test5(a, b));
         Asserts.assertEQ((a | 0L) | a, test6(a));
         Asserts.assertEQ(a | (a | 0L), test7(a));
-        long i;
-        for (i = -10; i < 1; i++) {
-        }
-        Asserts.assertEQ(a | (b | (a * i)), test8(a, b));
-        Asserts.assertEQ(((a * i) | b) | a, test9(a, b));
+        Asserts.assertEQ(a | b, test8(a, b));
+        Asserts.assertEQ(a | b, test9(a, b));
     }
 
     // Checks (~a) | (~b) => ~(a & b)
