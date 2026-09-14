@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @library ../
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=true
@@ -38,15 +38,13 @@
  * @library ../
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=false
  *   -Djdk.internal.foreign.UpcallLinker.USE_SPEC=false
  *   TestArrayStructs
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -64,13 +62,19 @@ import java.util.stream.Stream;
 import static java.lang.foreign.MemoryLayout.sequenceLayout;
 import static java.lang.foreign.MemoryLayout.structLayout;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestArrayStructs extends NativeTestHelper {
     static {
         System.loadLibrary("ArrayStructs");
     }
 
     // Test if structs of various different sizes, including non-powers of two, work correctly
-    @Test(dataProvider = "arrayStructs")
+    @ParameterizedTest
+    @MethodSource("arrayStructs")
     public void testArrayStruct(String functionName, FunctionDescriptor baseDesc, int numPrefixArgs, int numElements) throws Throwable {
         FunctionDescriptor downcallDesc = baseDesc.insertArgumentLayouts(0, C_POINTER); // CB
         MemoryLayout[] elementLayouts = Collections.nCopies(numElements, C_CHAR).toArray(MemoryLayout[]::new);
@@ -109,7 +113,6 @@ public class TestArrayStructs extends NativeTestHelper {
         }
     }
 
-    @DataProvider
     public static Object[][] arrayStructs() {
         List<Object[]> cases = new ArrayList<>();
         for (int i = 0; i < layouts.size(); i++) {

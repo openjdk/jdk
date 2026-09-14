@@ -125,8 +125,7 @@ public class BMITestRunner {
         // Hide timestamps from warnings (e.g. due to potential AOT
         // saved/runtime state mismatch), to avoid false positives when
         // comparing output across runs.
-        vmOpts.add("-Xlog:all=warning:stdout:level,tags");
-        vmOpts.add("-Xlog:aot=off");
+        vmOpts.add("-Xlog:all=warning,aot=off:stdout:level,tags");
 
         //setup mode-specific options
         switch (testVMMode) {

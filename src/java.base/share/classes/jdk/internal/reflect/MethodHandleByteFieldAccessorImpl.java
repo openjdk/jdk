@@ -66,7 +66,7 @@ class MethodHandleByteFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 return (byte) getter.invokeExact(obj);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             throw newGetIllegalArgumentException(obj);
@@ -137,7 +137,7 @@ class MethodHandleByteFieldAccessorImpl extends MethodHandleFieldAccessorImpl {
             } else {
                 setter.invokeExact(obj, b);
             }
-        } catch (IllegalArgumentException|NullPointerException e) {
+        } catch (IllegalArgumentException|IllegalStateException|NullPointerException e) {
             throw e;
         } catch (ClassCastException e) {
             // receiver is of invalid type

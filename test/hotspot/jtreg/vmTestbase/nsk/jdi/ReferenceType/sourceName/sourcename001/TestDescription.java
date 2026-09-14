@@ -48,7 +48,6 @@
  *        nsk.jdi.ReferenceType.sourceName.sourcename001a
  * @run driver
  *      nsk.jdi.ReferenceType.sourceName.sourcename001
- *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
  *      -waittime=5
  *      -debugee.vmkind=java
