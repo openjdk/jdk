@@ -294,7 +294,7 @@ public class VersionedLocationsTest {
             for (var location : AccessFlag.Location.values()) {
                 if (location.flags().contains(flag) != flag.locations().contains(location)) {
                     throw new RuntimeException(String.format("AccessFlag and Location inconsistency:" +
-                            "flag %s and location %s are inconsistent for the latest version"));
+                            "flag %s and location %s are inconsistent for the latest version", flag, location));
                 }
             }
         }
@@ -303,7 +303,7 @@ public class VersionedLocationsTest {
                 for (var location : AccessFlag.Location.values()) {
                     if (location.flags(cffv).contains(flag) != flag.locations(cffv).contains(location)) {
                         throw new RuntimeException(String.format("AccessFlag and Location inconsistency:" +
-                                "flag %s and location %s are inconsistent for class file version %s"));
+                                "flag %s and location %s are inconsistent for class file version %s", flag, location, cffv));
                     }
                 }
             }

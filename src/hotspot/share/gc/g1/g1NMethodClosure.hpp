@@ -38,7 +38,7 @@ class G1NMethodClosure : public NMethodClosure {
   class HeapRegionGatheringOopClosure : public OopClosure {
     G1CollectedHeap* _g1h;
     OopClosure* _work;
-    G1ParScanThreadState* _pss;
+    G1ParScanThreadState* _par_scan_state;
 
     nmethod* _nm;
     GrowableArrayCHeap<G1HeapRegion*, mtGC> _affected_regions;
@@ -47,7 +47,7 @@ class G1NMethodClosure : public NMethodClosure {
     void do_oop_work(T* p);
 
   public:
-    HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* pss);
+    HeapRegionGatheringOopClosure(OopClosure* oc, G1ParScanThreadState* par_scan_state);
     ~HeapRegionGatheringOopClosure() = default;
 
     void do_oop(oop* o);
@@ -81,8 +81,7 @@ class G1NMethodClosure : public NMethodClosure {
 
   bool _strong;
 public:
-  G1NMethodClosure(uint worker_id, OopClosure* oc, bool strong, G1ParScanThreadState* pss) :
-    _oc(oc, pss), _marking_oc(worker_id), _strong(strong) { }
+  G1NMethodClosure(OopClosure* oc, bool strong, G1ParScanThreadState* par_scan_state);
 
   void do_evacuation_and_fixup(nmethod* nm);
   void do_marking(nmethod* nm);

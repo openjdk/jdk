@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -939,8 +939,32 @@ address TemplateInterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractI
  * CRC32C also uses an "end" variable instead of the length variable CRC32 uses
  */
 address TemplateInterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  // TODO: Unimplemented generate_CRC32C_updateBytes_entry
-  return nullptr;
+  assert(UseCRC32CIntrinsics, "this intrinsic is not supported");
+  address entry = __ pc();
+
+  const Register crc = c_rarg0; // initial crc
+  const Register buf = c_rarg1; // source java byte array address
+  const Register len = c_rarg2; // len argument to the kernel
+  const Register off = c_rarg3; // offset
+
+  // Arguments are reversed on the Java expression stack.
+  __ lwu(len, Address(esp));                 // end
+  __ lwu(off, Address(esp, wordSize));       // offset
+  __ sub(len, len, off);                     // end - offset
+  __ ld(buf, Address(esp, 2 * wordSize));    // byte[] | direct buffer address
+  __ add(buf, buf, off);
+
+  if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+    __ lwu(crc, Address(esp, 4 * wordSize));
+  } else {
+    __ addi(buf, buf, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+    __ lwu(crc, Address(esp, 3 * wordSize));
+  }
+
+  __ andi(sp, x19_sender_sp, -16);  // Restore caller's SP.
+  __ far_jump(RuntimeAddress(StubRoutines::updateBytesCRC32C()));
+
+  return entry;
 }
 
 // Not supported
@@ -1180,10 +1204,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 #endif
 
   // Change state to native
-  __ la(t1, Address(xthread, JavaThread::thread_state_offset()));
-  __ mv(t0, _thread_in_native);
+  __ mv(t1, _thread_in_native);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-  __ sw(t0, Address(t1));
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   __ push_cont_fastpath();
 
@@ -1210,11 +1233,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ push(ltos);
 
   // change thread state
-  // Force all preceding writes to be observed prior to thread state change
+  __ mv(t1, _thread_in_Java);
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_native_trans);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
+  __ sw(t1, Address(xthread, JavaThread::thread_state_offset()));
 
   // Force this write out before the read below
   if (!UseSystemMemoryBarrier) {
@@ -1236,18 +1257,11 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
   }
-
-  // change thread state
-  // Force all preceding writes to be observed prior to thread state change
-  __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
-
-  __ mv(t0, _thread_in_Java);
-  __ sw(t0, Address(xthread, JavaThread::thread_state_offset()));
 
   // Check preemption for Object.wait()
   Label not_preempted;
@@ -1423,7 +1437,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 //
 // Generic interpreted method entry to (asm) interpreter
 //
-address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
+address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, bool object_init) {
 
   // determine code generation flags
   const bool inc_counter  = UseCompiler || CountCompiledCalls;
@@ -1534,6 +1548,12 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ load_unsigned_short(x10, access_flags);
     __ verify_access_flags(x10, JVM_ACC_SYNCHRONIZED, "method needs synchronization");
 #endif
+  }
+
+  // Issue a StoreStore barrier on entry to Object_init if the
+  // class has strict field fields.  Be lazy, always do it.
+  if (object_init) {
+    __ membar(MacroAssembler::StoreStore);
   }
 
   // start execution

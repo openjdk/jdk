@@ -3203,9 +3203,7 @@ LRESULT CALLBACK PageDialogWndProc(HWND hWnd, UINT message,
             break;
         }
     }
-
-    WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hWnd, NativeDialogWndProcProp));
-    return ComCtl32Util::GetInstance().DefWindowProc(lpfnWndProc, hWnd, message, wParam, lParam);
+    return ComCtl32Util::GetInstance().DefWindowProc(hWnd, message, wParam, lParam);
 }
 
 /**
@@ -3239,19 +3237,12 @@ static UINT CALLBACK pageDlgHook(HWND hDlg, UINT msg,
             }
 
             // subclass dialog's parent to receive additional messages
-            WNDPROC lpfnWndProc = ComCtl32Util::GetInstance().SubclassHWND(hDlg,
-                                                                           PageDialogWndProc);
-            ::SetProp(hDlg, NativeDialogWndProcProp, reinterpret_cast<HANDLE>(lpfnWndProc));
-
+            ComCtl32Util::GetInstance().SubclassHWND(hDlg, PageDialogWndProc);
             break;
         }
         case WM_DESTROY: {
-            WNDPROC lpfnWndProc = (WNDPROC)(::GetProp(hDlg, NativeDialogWndProcProp));
-            ComCtl32Util::GetInstance().UnsubclassHWND(hDlg,
-                                                       PageDialogWndProc,
-                                                       lpfnWndProc);
+            ComCtl32Util::GetInstance().UnsubclassHWND(hDlg, PageDialogWndProc);
             ::RemoveProp(hDlg, ModalDialogPeerProp);
-            ::RemoveProp(hDlg, NativeDialogWndProcProp);
             break;
         }
     }
@@ -4268,7 +4259,19 @@ static BOOL SetPrinterDevice(LPTSTR pszDeviceName, HGLOBAL* p_hDevMode,
 
   // Allocate a global handle big enough to hold DEVNAMES.
   HGLOBAL   hDevNames = ::GlobalAlloc(GHND, devNameSize);
+  if (hDevNames == NULL) {
+    ::GlobalFree(hDevMode);
+    ::GlobalFree(p2);
+    return FALSE;
+  }
+
   DEVNAMES* pDevNames = (DEVNAMES*)::GlobalLock(hDevNames);
+  if (pDevNames == NULL) {
+    ::GlobalFree(hDevNames);
+    ::GlobalFree(hDevMode);
+    ::GlobalFree(p2);
+    return FALSE;
+  }
 
   // Copy the DEVNAMES information from PRINTER_INFO_2 structure.
   pDevNames->wDriverOffset = sizeof(DEVNAMES)/sizeof(TCHAR);
