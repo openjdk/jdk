@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextFieldUI;
 import javax.swing.text.*;
 
+import sun.swing.SwingAccessor;
 import com.apple.laf.AquaUtils.JComponentPainter;
 
 public class AquaTextFieldUI extends BasicTextFieldUI {
@@ -68,24 +69,25 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
         super.uninstallListeners();
     }
 
-    boolean oldDragState = false;
-    @Override
-    protected void installDefaults() {
-        if (!GraphicsEnvironment.isHeadless()) {
-            oldDragState = getComponent().getDragEnabled();
-            getComponent().setDragEnabled(true);
-        }
+    private boolean oldDragState;
 
+    @Override
+    protected void installDefaults(){
+        oldDragState = getComponent().getDragEnabled();
         super.installDefaults();
+        if (!GraphicsEnvironment.isHeadless()) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled", true);
+        }
     }
 
     @Override
     protected void uninstallDefaults() {
-        super.uninstallDefaults();
-
-        if (!GraphicsEnvironment.isHeadless()) {
-            getComponent().setDragEnabled(oldDragState);
+        if (!SwingAccessor.getJTextComponentAccessor()
+                          .isDragEnabledSet(getComponent())) {
+            LookAndFeel.installProperty(getComponent(), "dragEnabled",
+                                        oldDragState);
         }
+        super.uninstallDefaults();
     }
 
     // Install a default keypress action which handles Cmd and Option keys

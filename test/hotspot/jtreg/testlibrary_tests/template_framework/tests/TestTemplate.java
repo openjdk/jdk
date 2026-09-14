@@ -34,9 +34,7 @@
 
 package template_framework.tests;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.HashSet;
 
 import compiler.lib.template_framework.Template;
 import compiler.lib.template_framework.DataName;
@@ -44,22 +42,11 @@ import compiler.lib.template_framework.StructuralName;
 import compiler.lib.template_framework.Hook;
 import compiler.lib.template_framework.TemplateBinding;
 import compiler.lib.template_framework.RendererException;
-import static compiler.lib.template_framework.Template.scope;
-import static compiler.lib.template_framework.Template.transparentScope;
-import static compiler.lib.template_framework.Template.nameScope;
-import static compiler.lib.template_framework.Template.hashtagScope;
-import static compiler.lib.template_framework.Template.setFuelCostScope;
-import static compiler.lib.template_framework.Template.$;
-import static compiler.lib.template_framework.Template.let;
-import static compiler.lib.template_framework.Template.fuel;
-import static compiler.lib.template_framework.Template.setFuelCost;
-import static compiler.lib.template_framework.Template.addDataName;
-import static compiler.lib.template_framework.Template.dataNames;
-import static compiler.lib.template_framework.Template.addStructuralName;
-import static compiler.lib.template_framework.Template.structuralNames;
+
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.IMMUTABLE;
 import static compiler.lib.template_framework.DataName.Mutability.MUTABLE_OR_IMMUTABLE;
+import static compiler.lib.template_framework.Template.*;
 
 /**
  * The tests in this file are mostly there to ensure that the Template Rendering
@@ -171,6 +158,14 @@ public class TestTemplate {
         testHookAndScopes1();
         testHookAndScopes2();
         testHookAndScopes3();
+        testRepeat();
+        testRepeatIndexed();
+        testRepeatAndJoin();
+        testRepeatAndJoinIndexed();
+        testMap();
+        testMapIndexed();
+        testMapAndJoin();
+        testMapAndJoinIndexed();
 
         // The following tests should all fail, with an expected exception and message.
         expectRendererException(() -> testFailingNestedRendering(), "Nested render not allowed.");
@@ -3372,6 +3367,128 @@ public class TestTemplate {
             """;
         checkEQ(code, expected);
     }
+
+    static void testRepeat() {
+        var templateString = Template.make(() -> scope(
+            repeat(3, scope("repeat\n"))
+        )).render();
+
+        String expected =
+                """
+                repeat
+                repeat
+                repeat
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testRepeatIndexed() {
+        var templateString = Template.make(() -> scope(
+                repeat(2, index -> scope("1: scope for index " + index +"\n")),
+                repeat(3, index -> scope("2: scope for index " + index +"\n"))
+        )).render();
+
+        String expected =
+                """
+                1: scope for index 0
+                1: scope for index 1
+                2: scope for index 0
+                2: scope for index 1
+                2: scope for index 2
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testRepeatAndJoin() {
+        var templateString = Template.make(() -> scope(
+                repeatAndJoin(2, ",\n", scope("1: scope")),
+                "\n\n",
+                repeatAndJoin(3, ",\n", scope("2: scope")),
+                "\n"
+                )).render();
+
+        String expected =
+                """
+                1: scope,
+                1: scope
+
+                2: scope,
+                2: scope,
+                2: scope
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testRepeatAndJoinIndexed() {
+        var templateString = Template.make(() -> scope(
+                repeatAndJoin(2, ",\n", index -> scope("1: scope for index " + index)),
+                "\n\n",
+                repeatAndJoin(3, ",\n", index -> scope("2: scope for index " + index)),
+                "\n"
+        )).render();
+
+        String expected =
+                """
+                1: scope for index 0,
+                1: scope for index 1
+
+                2: scope for index 0,
+                2: scope for index 1,
+                2: scope for index 2
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testMap() {
+        var templateString = Template.make(() -> scope(
+                map(List.of(1, 2, 3), element -> scope("Element " + element +"\n"))
+        )).render();
+
+        String expected =
+                """
+                Element 1
+                Element 2
+                Element 3
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testMapIndexed() {
+        var templateString = Template.make(() -> scope(
+                map(List.of(1, 2, 3), (element, index) -> scope("Element " + element + " at index " + index + "\n"))
+        )).render();
+
+        String expected =
+                """
+                Element 1 at index 0
+                Element 2 at index 1
+                Element 3 at index 2
+                """;
+        checkEQ(templateString, expected);
+    }
+
+    static void testMapAndJoin() {
+        var templateString = Template.make(() -> scope(
+                mapAndJoin(List.of(1, 2, 3), ", ", (element) -> scope("Element " + element))
+        )).render();
+
+        String expected = "Element 1, Element 2, Element 3";
+        checkEQ(templateString, expected);
+    }
+
+    static void testMapAndJoinIndexed() {
+        var templateString = Template.make(() -> scope(
+                mapAndJoin(List.of(1, 2, 3), ", ",
+                            (element, index) -> scope("Element " + element + " at index " + index))
+        )).render();
+
+        String expected = "Element 1 at index 0, Element 2 at index 1, Element 3 at index 2";
+        checkEQ(templateString, expected);
+    }
+
+    /*
+     * Failing tests start here
+     */
 
     public static void testFailingNestedRendering() {
         var template1 = Template.make(() -> scope(

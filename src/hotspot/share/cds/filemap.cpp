@@ -87,6 +87,77 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
+inline void CDSMustMatchFlags::do_print(outputStream* st, bool v) {
+  st->print("%s", v ? "true" : "false");
+}
+
+#ifdef _LP64
+inline void CDSMustMatchFlags::do_print(outputStream* st, uint v) {
+  st->print("%u", v);
+}
+#endif
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, intx v) {
+  st->print("%zd", v);
+}
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, uintx v) {
+  st->print("%zu", v);
+}
+
+inline void CDSMustMatchFlags::do_print(outputStream* st, double v) {
+  st->print("%f", v);
+}
+
+void CDSMustMatchFlags::init() {
+  assert(CDSConfig::is_dumping_archive(), "sanity");
+  _max_name_width = 0;
+
+#define INIT_CDS_MUST_MATCH_FLAG(n) \
+  _v_##n = n; \
+  _max_name_width = MAX2(_max_name_width,strlen(#n));
+  CDS_MUST_MATCH_FLAGS_DO(INIT_CDS_MUST_MATCH_FLAG);
+#undef INIT_CDS_MUST_MATCH_FLAG
+}
+
+bool CDSMustMatchFlags::runtime_check() const {
+#define CHECK_CDS_MUST_MATCH_FLAG(n) \
+  if (_v_##n != n) { \
+    ResourceMark rm; \
+    stringStream ss; \
+    ss.print("VM option %s is different between dumptime (", #n);  \
+    do_print(&ss, _v_ ## n); \
+    ss.print(") and runtime ("); \
+    do_print(&ss, n); \
+    ss.print(")"); \
+    log_info(cds)("%s", ss.as_string()); \
+    return false; \
+  }
+  CDS_MUST_MATCH_FLAGS_DO(CHECK_CDS_MUST_MATCH_FLAG);
+#undef CHECK_CDS_MUST_MATCH_FLAG
+
+  return true;
+}
+
+void CDSMustMatchFlags::print_info() const {
+  LogTarget(Info, cds) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("Recorded VM flags during dumptime:");
+    print(&ls);
+  }
+}
+
+void CDSMustMatchFlags::print(outputStream* st) const {
+#define PRINT_CDS_MUST_MATCH_FLAG(n) \
+  st->print("- %-s ", #n);                   \
+  st->sp(int(_max_name_width - strlen(#n))); \
+  do_print(st, _v_##n);                      \
+  st->cr();
+  CDS_MUST_MATCH_FLAGS_DO(PRINT_CDS_MUST_MATCH_FLAG);
+#undef PRINT_CDS_MUST_MATCH_FLAG
+}
+
 // Fill in the fileMapInfo structure with data about this VM instance.
 
 // This method copies the vm version info into header_version.  If the version is too
@@ -236,12 +307,14 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _type_profile_width = TypeProfileWidth;
   _bci_profile_width = BciProfileWidth;
   _profile_traps = ProfileTraps;
+  _profile_exception_handlers = ProfileExceptionHandlers;
   _type_profile_casts = TypeProfileCasts;
   _spec_trap_limit_extra_entries = SpecTrapLimitExtraEntries;
   _max_heap_size = MaxHeapSize;
-  _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
+  _aot_class_linking_value = AOTClassLinking;
   _has_aot_linked_classes = CDSConfig::is_dumping_aot_linked_classes();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
+  _has_valhalla_patched_classes = Arguments::is_valhalla_enabled();
 
   // The following fields are for sanity checks for whether this archive
   // will function correctly with this JVM and the bootclasspath it's
@@ -255,6 +328,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _has_platform_or_app_classes = AOTClassLocationConfig::dumptime()->has_platform_or_app_classes();
   _requested_base_address = (char*)SharedBaseAddress;
   _mapped_base_address = (char*)SharedBaseAddress;
+  _must_match.init();
 }
 
 void FileMapHeader::copy_base_archive_name(const char* archive) {
@@ -321,8 +395,9 @@ void FileMapHeader::print(outputStream* st) {
 
   st->print_cr("- _rw_ptrmap_start_pos:                     %zu", _rw_ptrmap_start_pos);
   st->print_cr("- _ro_ptrmap_start_pos:                     %zu", _ro_ptrmap_start_pos);
-  st->print_cr("- use_optimized_module_handling:            %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph                     %d", _has_full_module_graph);
+  st->print_cr("- has_valhalla_patched_classes              %d", _has_valhalla_patched_classes);
+  _must_match.print(st);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
 }
 
@@ -330,37 +405,13 @@ bool FileMapInfo::validate_class_location() {
   assert(CDSConfig::is_using_archive(), "runtime only");
 
   AOTClassLocationConfig* config = header()->class_location_config();
-  bool has_extra_module_paths = false;
-  if (!config->validate(full_path(), header()->has_aot_linked_classes(), &has_extra_module_paths)) {
+
+  if (!config->validate(full_path(), header()->has_aot_linked_classes(), header()->has_full_module_graph())) {
     if (PrintSharedArchiveAndExit) {
       AOTMetaspace::set_archive_loading_failed();
       return true;
     } else {
       return false;
-    }
-  }
-
-  if (header()->has_full_module_graph() && has_extra_module_paths) {
-    CDSConfig::stop_using_optimized_module_handling();
-    AOTMetaspace::report_loading_error("optimized module handling: disabled because extra module path(s) are specified");
-  }
-
-  if (CDSConfig::is_dumping_dynamic_archive()) {
-    // Only support dynamic dumping with the usage of the default CDS archive
-    // or a simple base archive.
-    // If the base layer archive contains additional path component besides
-    // the runtime image and the -cp, dynamic dumping is disabled.
-    if (config->num_boot_classpaths() > 0) {
-      CDSConfig::disable_dumping_dynamic_archive();
-      aot_log_warning(aot)(
-        "Dynamic archiving is disabled because base layer archive has appended boot classpath");
-    }
-    if (config->num_module_paths() > 0) {
-      if (has_extra_module_paths) {
-        CDSConfig::disable_dumping_dynamic_archive();
-        aot_log_warning(aot)(
-          "Dynamic archiving is disabled because base layer archive has a different module path");
-      }
     }
   }
 
@@ -481,12 +532,17 @@ public:
     return true;
   }
 
-  GenericCDSFileMapHeader* get_generic_file_header() {
+  GenericCDSFileMapHeader* get_generic_file_header() const {
     assert(_header != nullptr && _is_valid, "must be a valid archive file");
     return _header;
   }
 
-  const char* base_archive_name() {
+  FileMapHeader* get_validated_file_header() const {
+    assert(_header != nullptr && _is_valid, "must have been validated");
+    return (FileMapHeader*)_header;
+  }
+
+  const char* base_archive_name() const {
     assert(_header != nullptr && _is_valid, "must be a valid archive file");
     return _base_archive_name;
   }
@@ -501,6 +557,10 @@ public:
 
   bool is_preimage_static_archive() const {
     return _header->_magic == CDS_PREIMAGE_ARCHIVE_MAGIC;
+  }
+
+  bool aot_class_linking_value() const {
+    return get_validated_file_header()->aot_class_linking_value();
   }
 
  private:
@@ -610,12 +670,20 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   return true;
 }
 
-bool FileMapInfo::is_preimage_static_archive(const char* file) {
+void FileMapInfo::check_preimage_static_archive(const char* file) {
   FileHeaderHelper file_helper(file, false);
-  if (!file_helper.initialize()) {
-    return false;
+  if (!file_helper.initialize() || !file_helper.is_preimage_static_archive()) {
+    vm_exit_during_initialization("Must be a valid AOT configuration generated by the current JVM", file);
   }
-  return file_helper.is_preimage_static_archive();
+
+  bool old_value = file_helper.aot_class_linking_value();
+  if (AOTClassLinking != old_value) {
+    if (!FLAG_IS_DEFAULT(AOTClassLinking)) {
+      aot_log_warning(aot)("AOTClassLinking is updated to %s (the same as when AOT configuration file %s was created)",
+                           old_value ? "true" : "false", file);
+    }
+    FLAG_SET_ERGO(AOTClassLinking, old_value);
+  }
 }
 
 // Read the FileMapInfo information from the file.
@@ -704,6 +772,10 @@ bool FileMapInfo::init_from_file(int fd) {
       aot_log_warning(aot)("The %s has been truncated.", file_type);
       return false;
     }
+  }
+
+  if (!header()->check_must_match_flags()) {
+    return false;
   }
 
   return true;
@@ -1113,9 +1185,9 @@ void FileMapInfo::close() {
  */
 static char* map_memory(int fd, const char* file_name, size_t file_offset,
                         char* addr, size_t bytes, bool read_only,
-                        bool allow_exec, MemTag mem_tag) {
+                        MemTag mem_tag, bool allow_exec) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
-                             mem_tag, AlwaysPreTouch ? false : read_only,
+                             AlwaysPreTouch ? false : read_only, mem_tag,
                              allow_exec);
   if (mem != nullptr && AlwaysPreTouch) {
     os::pretouch_memory(mem, mem + bytes);
@@ -1130,8 +1202,8 @@ char* FileMapInfo::map_heap_region(FileMapRegion* r, char* addr, size_t bytes) {
                     addr,
                     bytes,
                     r->read_only(),
-                    r->allow_exec(),
-                    mtJavaHeap);
+                    mtJavaHeap,
+                    r->allow_exec());
 }
 
 // JVM/TI RedefineClasses() support:
@@ -1152,7 +1224,7 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
   assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
   // Replace old mapping with new one that is writable.
   char *base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              addr, size, mtNone, false /* !read_only */,
+                              addr, size, false /* !read_only */, mtNone,
                               r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
@@ -1274,7 +1346,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
     // space (Posix). See also comment in AOTMetaspace::map_archives().
     char* base = map_memory(_fd, _full_path, r->file_offset(),
                             requested_addr, size, r->read_only(),
-                            r->allow_exec(), mtClassShared);
+                            mtClassShared, r->allow_exec());
     if (base != requested_addr) {
       AOTMetaspace::report_loading_error("Unable to map %s shared space at " INTPTR_FORMAT,
                                             shared_region_name[i], p2i(requested_addr));
@@ -1310,7 +1382,7 @@ char* FileMapInfo::map_auxiliary_region(int region_index, bool read_only) {
   bool allow_exec = false;
   char* requested_addr = nullptr; // allow OS to pick any location
   char* mapped_base = map_memory(_fd, _full_path, r->file_offset(),
-                                 requested_addr, r->used_aligned(), read_only, allow_exec, mtClassShared);
+                                 requested_addr, r->used_aligned(), read_only, mtClassShared, allow_exec);
   if (mapped_base == nullptr) {
     AOTMetaspace::report_loading_error("failed to map %d region", region_index);
     return nullptr;
@@ -1359,7 +1431,7 @@ bool FileMapInfo::map_aot_code_region(ReservedSpace rs) {
     // AOT code is copied to the CodeCache for execution.
     bool read_only = false, allow_exec = false;
     mapped_base = map_memory(_fd, _full_path, r->file_offset(),
-                             requested_base, r->used_aligned(), read_only, allow_exec, mtClassShared);
+                             requested_base, r->used_aligned(), read_only, mtClassShared, allow_exec);
   }
   if (mapped_base == nullptr) {
     AOTMetaspace::report_loading_error("failed to map aot code region");
@@ -1774,6 +1846,13 @@ bool FileMapInfo::validate_aot_class_linking() {
 #endif
   }
 
+  if (CDSConfig::is_dumping_final_static_archive() && header()->aot_class_linking_value() && !CDSConfig::is_dumping_aot_linked_classes()) {
+    ResourceMark rm;
+    const char* msg = err_msg("AOT class linking was enabled in training run but has been disabled%s",
+                              (CDSConfig::is_dumping_full_module_graph() ? "" : " due to incompatible module options"));
+    AOTMetaspace::unrecoverable_writing_error(msg);
+  }
+
   return true;
 }
 
@@ -1868,6 +1947,14 @@ bool FileMapHeader::validate() {
 
       return false;
     }
+    if (_profile_exception_handlers != ProfileExceptionHandlers) {
+      AOTMetaspace::report_loading_error("The %s's ProfileExceptionHandlers setting (%s)"
+                                            " does not equal the current ProfileExceptionHandlers setting (%s).", file_type,
+                                            _profile_exception_handlers ? "enabled" : "disabled",
+                                            ProfileExceptionHandlers   ? "enabled" : "disabled");
+
+      return false;
+    }
     if (_spec_trap_limit_extra_entries != SpecTrapLimitExtraEntries) {
       AOTMetaspace::report_loading_error("The %s's SpecTrapLimitExtraEntries setting (%d)"
                                             " does not equal the current SpecTrapLimitExtraEntries setting (%d).", file_type,
@@ -1924,17 +2011,30 @@ bool FileMapHeader::validate() {
     return false;
   }
 
+  if (is_static()) {
+    const char* err = nullptr;
+    if (Arguments::is_valhalla_enabled()) {
+      if (!_has_valhalla_patched_classes) {
+        err = "not created";
+      }
+    } else {
+      if (_has_valhalla_patched_classes) {
+        err = "created";
+      }
+    }
+    if (err != nullptr) {
+      log_warning(cds)("This archive was %s with --enable-preview. It is "
+                         "incompatible with the current JVM setting", err);
+      return false;
+    }
+  }
+
   if (compact_headers() != UseCompactObjectHeaders) {
     aot_log_warning(aot)("Unable to use %s.\nThe %s's UseCompactObjectHeaders setting (%s)"
                      " does not equal the current UseCompactObjectHeaders setting (%s).", file_type, file_type,
                      _compact_headers          ? "enabled" : "disabled",
                      UseCompactObjectHeaders   ? "enabled" : "disabled");
     return false;
-  }
-
-  if (!_use_optimized_module_handling && !CDSConfig::is_dumping_final_static_archive()) {
-    CDSConfig::stop_using_optimized_module_handling();
-    aot_log_info(aot)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static()) {

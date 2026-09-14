@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ private:
 
   // counter for the agents possess can_support_virtual_threads capability
   static int _can_support_virtual_threads_count;
+
+  // counter for the agents possess can_support_value_objects capability
+  static int _can_support_value_objects_count;
 
   // lock to access the class data
   static Mutex* _capabilities_lock;

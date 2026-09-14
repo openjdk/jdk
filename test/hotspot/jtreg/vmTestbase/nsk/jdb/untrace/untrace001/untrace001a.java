@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.untrace.untrace001;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -61,7 +62,7 @@ public class untrace001a {
 
         for (i = 0; i < numThreads ; i++) {
             locks[i]  = new Object();
-            holder[i] = new MyThread(locks[i], i, MYTHREAD + "-" + i);
+            holder[i] = new MyThread(locks[i], i, MYTHREAD + "-" + i).getThread();
         }
 
         synchronized (mainThreadLock0) {
@@ -126,18 +127,26 @@ public class untrace001a {
 }
 
 
-class MyThread extends Thread {
+class MyThread extends ThreadWrapper {
     Object lock;
     int ind;
     String name;
 
     public MyThread (Object l, int i, String n) {
+        super(n);
         lock = l;
         ind = i;
         name = n;
     }
 
+    // Each tested thread calls this once at startup. The debugger sets a
+    // breakpoint here: receiving the event is what makes a virtual thread
+    // visible to jdb with the default debug agent behavior, so the test
+    // does not need the -trackallthreads option.
+    static void threadStarted() {}
+
     public void run() {
+        threadStarted();
         // Concatenate strings in advance to avoid lambda calculations later
         final String ThreadFinished = "Thread finished: " + this.name;
         final String ThreadInterrupted = "Thread was interrupted: " + this.name;

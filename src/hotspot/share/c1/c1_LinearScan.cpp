@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,9 +62,9 @@
 
 // Map BasicType to spill size in 32-bit words, matching VMReg's notion of words
 #ifdef _LP64
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 0, 2,  1, 2, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 2, 2, 2, 0, 2,  1, 2, 1, -1};
 #else
-static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, -1, 1, 1, -1};
+static int type2spill_size[T_CONFLICT+1]={ -1, 0, 0, 0, 1, 1, 1, 2, 1, 1, 1, 2, 1, 1, 1, 0, 1, -1, 1, 1, -1};
 #endif
 
 
@@ -744,7 +744,9 @@ void LinearScan::compute_global_live_sets() {
   // Perform a backward dataflow analysis to compute live_out and live_in for each block.
   // The loop is executed until a fixpoint is reached (no changes in an iteration)
   // Exception handlers must be processed because not all live values are
-  // present in the state array, e.g. because of global value numbering
+  // present in the state array, e.g. because of global value numbering.
+  // Exception handler live_in information is also used by build_intervals() to
+  // account for local liveness holes in exception-throwing blocks.
   do {
     change_occurred = false;
 
@@ -1361,6 +1363,55 @@ void LinearScan::build_intervals() {
         LIR_Opr opr = visitor.opr_at(LIR_OpVisitState::inputMode, k);
         assert(opr->is_register(), "visitor should only return register operands");
         add_use(opr, block_from, op_id, use_kind_of_input_operand(op, opr));
+      }
+
+      // If the visited operation 'op' may branch into an exception handler
+      // block 'handler', add all live-in registers of 'handler' as virtual uses
+      // of 'op'. This ensures that all such registers are live into 'op', which
+      // might otherwise not happen if 'op' is scheduled within a hole of their
+      // corresponding intervals, as in the following
+      // post-compute_global_live_sets() scenario:
+      //
+      // R
+      // |  block:
+      // |    live-in:  {.., R, ..}
+      // |    ..
+      // -    kill R
+      //      ..
+      //      op: branch [BE] .. // may branch into 'handler'
+      //      ..
+      // -    def R
+      // |    ..
+      // |    branch into 'block'
+      // |    live-out: {.., R, ..}
+      // |
+      // |  handler:
+      // |    live-in:  {.., R, ..}
+      // |    ..
+      //
+      // Normally, the debug information generation logic below will add
+      // registers such as R in the above scenario as uses of 'op', but this
+      // might not happen if the corresponding virtual register used within
+      // 'handler' is replaced by another one in an earlier optimization pass.
+      // An example of such a replacement is GraphBuilder::shift_op().
+      if (compilation()->has_exception_handlers() && op_id != -1 && has_info(op_id)) {
+        XHandlers* xhandlers = visitor.all_xhandler();
+        for (int k = 0; k < xhandlers->length(); k++) {
+          BlockBegin* handler = xhandlers->handler_at(k)->entry_block();
+          auto add_virtual_use_to_op = [&](BitMap::idx_t index) {
+            int reg = static_cast<int>(index);
+            // The T_ILLEGAL type is used by add_use() as a sentinel value
+            // indicating the type is unknown (rather than illegal) so that the
+            // type of the interval corresponding to reg is not updated. The use
+            // is extended beyond 'op' (to = op_id + 1) so that liveness is
+            // preserved across possible registers killed by 'op' (e.g.
+            // caller-saved registers if 'op' is a call).
+            TRACE_LINEAR_SCAN(2, tty->print_cr(" use [R%d] from %d to %d (%d)",
+                                               reg, block_from, op_id + 1, noUse));
+            add_use(reg, block_from, op_id + 1, noUse, T_ILLEGAL);
+          };
+          handler->live_in().iterate(add_virtual_use_to_op);
+        }
       }
 
       // Add uses of live locals from interpreter's point of view for proper
@@ -2888,7 +2939,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
     }
   }
 
-  return new IRScopeDebugInfo(cur_scope, cur_state->bci(), locals, expressions, monitors, caller_debug_info);
+  return new IRScopeDebugInfo(cur_scope, cur_state->bci(), locals, expressions, monitors, caller_debug_info, cur_state->should_reexecute());
 }
 
 

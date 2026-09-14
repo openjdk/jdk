@@ -110,10 +110,6 @@ protected:
   virtual Node* atomic_xchg_at_resolved(C2AtomicParseAccess& access, Node* new_val, const Type* val_type) const;
 
 public:
-  static ShenandoahBarrierSetC2* bsc2();
-
-  ShenandoahBarrierSetC2State* state() const;
-
   // This is the entry-point for the backend to perform accesses through the Access API.
   virtual void clone(GraphKit* kit, Node* src_base, Node* dst_base, Node* size, bool is_array) const;
   virtual void clone_at_expansion(PhaseMacroExpand* phase, ArrayCopyNode* ac) const;
@@ -123,7 +119,7 @@ public:
       bool is_clone_instance, ArrayCopyPhase phase) const;
 
   // Support for macro expanded GC barriers
-  virtual void eliminate_gc_barrier(PhaseMacroExpand* macro, Node* node) const;
+  virtual void eliminate_gc_barrier(PhaseIterGVN* macro, Node* node) const;
   virtual void eliminate_gc_barrier_data(Node* node) const;
 
   // Allow barrier sets to have shared state that is preserved across a compilation unit.
