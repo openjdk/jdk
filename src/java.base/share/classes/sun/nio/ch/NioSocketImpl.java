@@ -78,6 +78,9 @@ import static jdk.internal.util.Exceptions.formatMsg;
 public final class NioSocketImpl extends SocketImpl implements PlatformSocketImpl {
     private static final NativeDispatcher nd = new SocketDispatcher();
 
+    private static final boolean SERVER_SOCKET_IP_TOS =
+            Boolean.getBoolean("jdk.net.ServerSocket.IP_TOS");
+
     // true if this is a SocketImpl for a ServerSocket
     private final boolean server;
 
@@ -919,7 +922,7 @@ public final class NioSocketImpl extends SocketImpl implements PlatformSocketImp
             options.add(StandardSocketOptions.SO_RCVBUF);
             options.add(StandardSocketOptions.SO_REUSEADDR);
             if (server) {
-                if (Net.isServerSocketIPTosEnabled()) {
+                if (SERVER_SOCKET_IP_TOS) {
                     options.add(StandardSocketOptions.IP_TOS);
                 }
                 options.addAll(ExtendedSocketOptions.serverSocketOptions());
