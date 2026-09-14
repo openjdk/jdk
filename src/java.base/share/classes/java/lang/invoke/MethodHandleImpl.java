@@ -2255,9 +2255,9 @@ abstract class MethodHandleImpl {
 
         MethodHandle unboxResult = unboxResultHandle(body.type().returnType());
 
-        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         MethodType type = body.type().insertParameterTypes(0, Object.class);
-        LambdaForm form = makeSynchronizeForm(type.basicType(), data);
+        LambdaForm form = makeSynchronizeForm(type.basicType());
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         BoundMethodHandle mh;
         try {
             mh = (BoundMethodHandle) data.factory().invokeBasic(type, form, (Object) body, (Object) collectArgs,
@@ -2269,7 +2269,7 @@ abstract class MethodHandleImpl {
         return mh;
     }
 
-    private static LambdaForm makeSynchronizeForm(MethodType basicType, BoundMethodHandle.SpeciesData data) {
+    private static LambdaForm makeSynchronizeForm(MethodType basicType) {
         LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_SYNCHRONIZE);
         if (lform != null) {
             return lform;
@@ -2297,6 +2297,7 @@ abstract class MethodHandleImpl {
 
         Name[] names = invokeArguments(nameCursor - ARG_LIMIT, basicType);
 
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
         names[THIS_MH] = names[THIS_MH].withConstraint(data);
         names[GET_BODY_HANDLE] = new Name(data.getterFunction(FIELD_BODY_HANDLE), names[THIS_MH]);
         names[GET_COLLECT_ARGS]  = new Name(data.getterFunction(FIELD_COLLECT_ARGS), names[THIS_MH]);
