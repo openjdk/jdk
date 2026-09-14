@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package nsk.jdwp.StackFrame.PopFrames;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -40,7 +41,7 @@ public class popframes001a {
     public static final String THREAD_NAME = "testedThread";
 
     // line nunber for breakpoint
-    public static final int BREAKPOINT_LINE_NUMBER = 113;
+    public static final int BREAKPOINT_LINE_NUMBER = 114;
 
     // scaffold objects
     private static volatile ArgumentHandler argumentHandler = null;
@@ -82,7 +83,7 @@ public class popframes001a {
     }
 
     // tested thread class
-    public static class TestedThreadClass extends Thread {
+    public static class TestedThreadClass extends ThreadWrapper {
 
         // number of invokations of tested method
         public static volatile int invokations = 0;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -52,11 +53,14 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
+#include "oops/flatArrayKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
+#include "oops/refArrayOop.hpp"
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -152,9 +156,8 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   it->push(&_tags, MetaspaceClosure::_writable);
   it->push(&_cache);
   it->push(&_pool_holder);
-  it->push(&bsm_entries().offsets());
-  it->push(&bsm_entries().bootstrap_methods());
   it->push(&_resolved_klasses, MetaspaceClosure::_writable);
+  bsm_entries().metaspace_pointers_do(it);
 
   for (int i = 0; i < length(); i++) {
     // The only MSO's embedded in the CP entries are Symbols:
@@ -167,13 +170,13 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
   }
 }
 
-objArrayOop ConstantPool::resolved_references() const {
+refArrayOop ConstantPool::resolved_references() const {
   return _cache->resolved_references();
 }
 
 // Called from outside constant pool resolution where a resolved_reference array
 // may not be present.
-objArrayOop ConstantPool::resolved_references_or_null() const {
+refArrayOop ConstantPool::resolved_references_or_null() const {
   if (_cache == nullptr) {
     return nullptr;
   } else {
@@ -190,7 +193,7 @@ oop ConstantPool::resolved_reference_at(int index) const {
 // Use a CAS for multithreaded access
 oop ConstantPool::set_resolved_reference_at(int index, oop new_result) {
   assert(oopDesc::is_oop_or_null(new_result), "Must be oop");
-  return resolved_references()->replace_if_null(index, new_result);
+  return oop_cast<refArrayOop>(resolved_references())->replace_if_null(index, new_result);
 }
 
 // Create resolved_references array and mapping array for original cp indexes
@@ -221,14 +224,14 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
 
     // Create Java array for holding resolved strings, methodHandles,
     // methodTypes, invokedynamic and invokehandle appendix objects, etc.
-    objArrayOop stom = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
+    refArrayOop stom = oopFactory::new_refArray(vmClasses::Object_klass(), map_length, CHECK);
     HandleMark hm(THREAD);
     Handle refs_handle (THREAD, stom);  // must handleize.
     set_resolved_references(loader_data->add_handle(refs_handle));
 
     // Create a "scratch" copy of the resolved references array to archive
     if (CDSConfig::is_dumping_heap()) {
-      objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
+      refArrayOop scratch_references = oopFactory::new_refArray(vmClasses::Object_klass(), map_length, CHECK);
       HeapShared::add_scratch_resolved_references(this, scratch_references);
     }
   }
@@ -261,7 +264,7 @@ void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, T
     case JVM_CONSTANT_Class:
     case JVM_CONSTANT_UnresolvedClass:
     case JVM_CONSTANT_UnresolvedClassInError:
-      // All of these should have been reverted back to ClassIndex before calling
+      // All of these should have been reverted back to Unresolved before calling
       // this function.
       ShouldNotReachHere();
 #endif
@@ -325,7 +328,7 @@ void ConstantPool::iterate_archivable_resolved_references(Function function) {
 
 // Returns the _resolved_reference array after removing unarchivable items from it.
 // Returns null if this class is not supported, or _resolved_reference doesn't exist.
-objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
+refArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
   if (_cache == nullptr) {
     return nullptr; // nothing to do
   }
@@ -337,7 +340,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
     return nullptr;
   }
 
-  objArrayOop rr = resolved_references();
+  refArrayOop rr = resolved_references();
   if (rr != nullptr) {
     ResourceMark rm;
     int rr_len = rr->length();
@@ -347,7 +350,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
       keep_resolved_refs.at_put(rr_index, true);
     });
 
-    objArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
+    refArrayOop scratch_rr = HeapShared::scratch_resolved_references(this);
     Array<u2>* ref_map = reference_map();
     int ref_map_len = ref_map == nullptr ? 0 : ref_map->length();
     for (int i = 0; i < rr_len; i++) {
@@ -478,6 +481,7 @@ static const char* get_type(Klass* k) {
   if (src_k->is_objArray_klass()) {
     src_k = ObjArrayKlass::cast(src_k)->bottom_klass();
     assert(!src_k->is_objArray_klass(), "sanity");
+    assert(src_k->is_instance_klass() || src_k->is_typeArray_klass(), "Sanity check");
   }
 
   if (src_k->is_typeArray_klass()) {
@@ -676,6 +680,14 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int cp_ind
     // Do access check for klasses
     verify_constant_pool_resolve(this_cp, k, THREAD);
   }
+
+#ifdef ASSERT
+  if (!HAS_PENDING_EXCEPTION && k->is_objArray_klass()) {
+    Klass* bottom_klass = ObjArrayKlass::cast(k)->bottom_klass();
+    assert(bottom_klass != nullptr, "Should be set");
+    assert(bottom_klass->is_instance_klass() || bottom_klass->is_typeArray_klass(), "Sanity check");
+  }
+#endif
 
   // Failed to resolve class. We must record the errors so that subsequent attempts
   // to resolve this constant pool entry fail with the same error (JVMS 5.4.3).
@@ -1344,7 +1356,7 @@ oop ConstantPool::uncached_string_at(int cp_index, TRAPS) {
 
 void ConstantPool::copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
                                                     int start_arg, int end_arg,
-                                                    objArrayHandle info, int pos,
+                                                    refArrayHandle info, int pos,
                                                     bool must_resolve, Handle if_not_available,
                                                     TRAPS) {
   int limit = pos + end_arg - start_arg;
@@ -2423,4 +2435,9 @@ void BSMAttributeEntries::end_extension(InsertionIterator& iter, ClassLoaderData
   deallocate_contents(loader_data);
   _offsets = new_offsets;
   _bootstrap_methods = new_array;
+}
+
+void BSMAttributeEntries::metaspace_pointers_do(MetaspaceClosure* it) {
+  it->push(&_offsets);
+  it->push(&_bootstrap_methods);
 }

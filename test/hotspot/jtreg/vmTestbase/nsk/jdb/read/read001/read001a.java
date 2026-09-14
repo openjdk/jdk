@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jdb.read.read001;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdb.*;
@@ -87,7 +88,7 @@ class read001aTestedClass {
     char instanceFiledChar = 'x';
 }
 
-class read001aTestedThread extends Thread {
+class read001aTestedThread extends ThreadWrapper {
 
     Object startingMonitor = new Object();
     Object finishingMonitor = new Object();
@@ -96,7 +97,14 @@ class read001aTestedThread extends Thread {
         super(name);
     }
 
+    // Each tested thread calls this once at startup. The debugger sets a
+    // breakpoint here: receiving the event is what makes a virtual thread
+    // visible to jdb with the default debug agent behavior, so the test
+    // does not need the -trackallthreads option.
+    static void threadStarted() {}
+
     public void run() {
+        threadStarted();
         synchronized (startingMonitor) {
             startingMonitor.notifyAll();
         }
