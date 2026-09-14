@@ -1,5 +1,5 @@
 # GraphemeBreakProperty-18.0.0.txt
-# Date: 2026-02-03, 23:09:56 GMT
+# Date: 2026-06-29, 15:25:05 GMT
 # © 2026 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -116,7 +116,6 @@ E01F0..E0FFF  ; Control # Cn [3600] <reserved-E01F0>..<reserved-E0FFF>
 0951..0957    ; Extend # Mn   [7] DEVANAGARI STRESS SIGN UDATTA..DEVANAGARI VOWEL SIGN UUE
 0962..0963    ; Extend # Mn   [2] DEVANAGARI VOWEL SIGN VOCALIC L..DEVANAGARI VOWEL SIGN VOCALIC LL
 0981          ; Extend # Mn       BENGALI SIGN CANDRABINDU
-0984          ; Extend # Mn       BENGALI SIGN COMBINING ANUSVARA ABOVE
 09BC          ; Extend # Mn       BENGALI SIGN NUKTA
 09BE          ; Extend # Mc       BENGALI VOWEL SIGN AA
 09C1..09C4    ; Extend # Mn   [4] BENGALI VOWEL SIGN U..BENGALI VOWEL SIGN VOCALIC RR
@@ -449,6 +448,7 @@ FF9E..FF9F    ; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDT
 11D90..11D91  ; Extend # Mn   [2] GUNJALA GONDI VOWEL SIGN EE..GUNJALA GONDI VOWEL SIGN AI
 11D95         ; Extend # Mn       GUNJALA GONDI SIGN ANUSVARA
 11D97         ; Extend # Mn       GUNJALA GONDI VIRAMA
+11DF0         ; Extend # Mn       BENGALI SIGN COMBINING ANUSVARA ABOVE
 11EF3..11EF4  ; Extend # Mn   [2] MAKASAR VOWEL SIGN I..MAKASAR VOWEL SIGN U
 11F00..11F01  ; Extend # Mn   [2] KAWI SIGN CANDRABINDU..KAWI SIGN ANUSVARA
 11F36..11F3A  ; Extend # Mn   [5] KAWI VOWEL SIGN I..KAWI VOWEL SIGN VOCALIC R
@@ -462,8 +462,6 @@ FF9E..FF9F    ; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDT
 1612D..1612F  ; Extend # Mn   [3] GURUNG KHEMA SIGN ANUSVARA..GURUNG KHEMA SIGN THOLHOMA
 16AF0..16AF4  ; Extend # Mn   [5] BASSA VAH COMBINING HIGH TONE..BASSA VAH COMBINING HIGH-LOW TONE
 16B30..16B36  ; Extend # Mn   [7] PAHAWH HMONG MARK CIM TUB..PAHAWH HMONG MARK CIM TAUM
-16D98         ; Extend # Mn       CHISOI SIGN ANUSVARA
-16D9D         ; Extend # Mn       CHISOI SIGN SISO
 16F4F         ; Extend # Mn       MIAO SIGN CONSONANT MODIFIER BAR
 16F8F..16F92  ; Extend # Mn   [4] MIAO TONE RIGHT..MIAO TONE BELOW
 16FE4         ; Extend # Mn       KHITAN SMALL SCRIPT FILLER
@@ -510,7 +508,7 @@ FF9E..FF9F    ; Extend # Lm   [2] HALFWIDTH KATAKANA VOICED SOUND MARK..HALFWIDT
 E0020..E007F  ; Extend # Cf  [96] TAG SPACE..CANCEL TAG
 E0100..E01EF  ; Extend # Mn [240] VARIATION SELECTOR-17..VARIATION SELECTOR-256
 
-# Total code points: 2276
+# Total code points: 2274
 
 # ================================================
 

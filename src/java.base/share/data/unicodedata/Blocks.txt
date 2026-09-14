@@ -1,5 +1,5 @@
 # Blocks-18.0.0.txt
-# Date: 2026-02-03
+# Date: 2026-07-08
 # © 2026 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -287,6 +287,7 @@ FFF0..FFFF; Specials
 11D00..11D5F; Masaram Gondi
 11D60..11DAF; Gunjala Gondi
 11DB0..11DEF; Tolong Siki
+11DF0..11DFF; Bengali Supplement
 11EE0..11EFF; Makasar
 11F00..11F5F; Kawi
 11FB0..11FBF; Lisu Supplement
@@ -307,7 +308,6 @@ FFF0..FFFF; Specials
 16AD0..16AFF; Bassa Vah
 16B00..16B8F; Pahawh Hmong
 16D40..16D7F; Kirat Rai
-16D80..16DAF; Chisoi
 16E40..16E9F; Medefaidrin
 16EA0..16EDF; Beria Erfe
 16F00..16F9F; Miao

@@ -1,5 +1,5 @@
 # PropertyValueAliases-18.0.0.txt
-# Date: 2026-02-03, 23:10:11 GMT
+# Date: 2026-06-24, 13:39:29 GMT
 # © 2026 Unicode®, Inc.
 # Unicode and the Unicode Logo are registered trademarks of Unicode, Inc. in the U.S. and other countries.
 # For terms of use and license, see https://www.unicode.org/terms_of_use.html
@@ -182,6 +182,7 @@ blk; Bamum_Sup                        ; Bamum_Supplement
 blk; Bassa_Vah                        ; Bassa_Vah
 blk; Batak                            ; Batak
 blk; Bengali                          ; Bengali
+blk; Bengali_Sup                      ; Bengali_Supplement
 blk; Beria_Erfe                       ; Beria_Erfe
 blk; Bhaiksuki                        ; Bhaiksuki
 blk; Block_Elements                   ; Block_Elements
@@ -200,7 +201,6 @@ blk; Cham                             ; Cham
 blk; Cherokee                         ; Cherokee
 blk; Cherokee_Sup                     ; Cherokee_Supplement
 blk; Chess_Symbols                    ; Chess_Symbols
-blk; Chisoi                           ; Chisoi
 blk; Chorasmian                       ; Chorasmian
 blk; CJK                              ; CJK_Unified_Ideographs
 blk; CJK_Compat                       ; CJK_Compatibility
@@ -1360,7 +1360,6 @@ sc ; Cans                             ; Canadian_Aboriginal
 sc ; Cari                             ; Carian
 sc ; Cham                             ; Cham
 sc ; Cher                             ; Cherokee
-sc ; Chis                             ; Chisoi
 sc ; Chrs                             ; Chorasmian
 sc ; Copt                             ; Coptic                           ; Qaac
 sc ; Cpmn                             ; Cypro_Minoan

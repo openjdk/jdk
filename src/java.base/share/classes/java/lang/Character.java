@@ -799,7 +799,7 @@ public final /*value*/ class Character
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
-        private static final int NUM_ENTITIES = 819;
+        private static final int NUM_ENTITIES = 804;
         private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
@@ -3848,6 +3848,16 @@ public final /*value*/ class Character
                 "CJKUNIFIEDIDEOGRAPHSEXTENSIONJ");
 
         /**
+         * Constant for the "Bengali Supplement" Unicode
+         * character block.
+         * @since 28
+         */
+        public static final UnicodeBlock BENGALI_SUPPLEMENT =
+            new UnicodeBlock("BENGALI_SUPPLEMENT",
+                "BENGALI SUPPLEMENT",
+                "BENGALISUPPLEMENT");
+
+        /**
          * Constant for the "Archaic Cuneiform Numerals" Unicode
          * character block.
          * @since 28
@@ -3856,14 +3866,6 @@ public final /*value*/ class Character
             new UnicodeBlock("ARCHAIC_CUNEIFORM_NUMERALS",
                 "ARCHAIC CUNEIFORM NUMERALS",
                 "ARCHAICCUNEIFORMNUMERALS");
-
-        /**
-         * Constant for the "Chisoi" Unicode
-         * character block.
-         * @since 28
-         */
-        public static final UnicodeBlock CHISOI =
-            new UnicodeBlock("CHISOI");
 
         /**
          * Constant for the "Jurchen" Unicode
@@ -4183,7 +4185,8 @@ public final /*value*/ class Character
             0x11D00,  // 11D00..11D5F; Masaram Gondi
             0x11D60,  // 11D60..11DAF; Gunjala Gondi
             0x11DB0,  // 11DB0..11DEF; Tolong Siki
-            0x11DF0,  //               unassigned
+            0x11DF0,  // 11DF0..11DFF; Bengali Supplement
+            0x11E00,  //               unassigned
             0x11EE0,  // 11EE0..11EFF; Makasar
             0x11F00,  // 11F00..11F5F; Kawi
             0x11F60,  //               unassigned
@@ -4209,8 +4212,7 @@ public final /*value*/ class Character
             0x16B00,  // 16B00..16B8F; Pahawh Hmong
             0x16B90,  //               unassigned
             0x16D40,  // 16D40..16D7F; Kirat Rai
-            0x16D80,  // 16D80..16DAF; Chisoi
-            0x16DB0,  //               unassigned
+            0x16D80,  //               unassigned
             0x16E40,  // 16E40..16E9F; Medefaidrin
             0x16EA0,  // 16EA0..16EDF; Beria Erfe
             0x16EE0,  //               unassigned
@@ -4592,6 +4594,7 @@ public final /*value*/ class Character
             MASARAM_GONDI,
             GUNJALA_GONDI,
             TOLONG_SIKI,
+            BENGALI_SUPPLEMENT,
             null,
             MAKASAR,
             KAWI,
@@ -4618,7 +4621,6 @@ public final /*value*/ class Character
             PAHAWH_HMONG,
             null,
             KIRAT_RAI,
-            CHISOI,
             null,
             MEDEFAIDRIN,
             BERIA_ERFE,
@@ -5808,12 +5810,6 @@ public final /*value*/ class Character
         PROTO_CUNEIFORM,
 
         /**
-         * Unicode script "Chisoi".
-         * @since 28
-         */
-        CHISOI,
-
-        /**
          * Unicode script "Jurchen".
          * @since 28
          */
@@ -5934,7 +5930,9 @@ public final /*value*/ class Character
             0x0955,   // 0955..0963; DEVANAGARI
             0x0964,   // 0964..0965; COMMON
             0x0966,   // 0966..097F; DEVANAGARI
-            0x0980,   // 0980..098C; BENGALI
+            0x0980,   // 0980..0983; BENGALI
+            0x0984,   // 0984      ; UNKNOWN
+            0x0985,   // 0985..098C; BENGALI
             0x098D,   // 098D..098E; UNKNOWN
             0x098F,   // 098F..0990; BENGALI
             0x0991,   // 0991..0992; UNKNOWN
@@ -5958,8 +5956,8 @@ public final /*value*/ class Character
             0x09DE,   // 09DE      ; UNKNOWN
             0x09DF,   // 09DF..09E3; BENGALI
             0x09E4,   // 09E4..09E5; UNKNOWN
-            0x09E6,   // 09E6..09FF; BENGALI
-            0x0A00,   // 0A00      ; UNKNOWN
+            0x09E6,   // 09E6..09FE; BENGALI
+            0x09FF,   // 09FF..0A00; UNKNOWN
             0x0A01,   // 0A01..0A03; GURMUKHI
             0x0A04,   // 0A04      ; UNKNOWN
             0x0A05,   // 0A05..0A0A; GURMUKHI
@@ -6294,8 +6292,8 @@ public final /*value*/ class Character
             0x1805,   // 1805      ; COMMON
             0x1806,   // 1806..1819; MONGOLIAN
             0x181A,   // 181A..181F; UNKNOWN
-            0x1820,   // 1820..1879; MONGOLIAN
-            0x187A,   // 187A..187F; UNKNOWN
+            0x1820,   // 1820..1878; MONGOLIAN
+            0x1879,   // 1879..187F; UNKNOWN
             0x1880,   // 1880..18AA; MONGOLIAN
             0x18AB,   // 18AB..18AF; UNKNOWN
             0x18B0,   // 18B0..18F5; CANADIAN_ABORIGINAL
@@ -7111,7 +7109,9 @@ public final /*value*/ class Character
             0x11DB0,  // 11DB0..11DDB; TOLONG_SIKI
             0x11DDC,  // 11DDC..11DDF; UNKNOWN
             0x11DE0,  // 11DE0..11DE9; TOLONG_SIKI
-            0x11DEA,  // 11DEA..11EDF; UNKNOWN
+            0x11DEA,  // 11DEA..11DEF; UNKNOWN
+            0x11DF0,  // 11DF0..11DF1; BENGALI
+            0x11DF2,  // 11DF2..11EDF; UNKNOWN
             0x11EE0,  // 11EE0..11EF8; MAKASAR
             0x11EF9,  // 11EF9..11EFF; UNKNOWN
             0x11F00,  // 11F00..11F10; KAWI
@@ -7169,11 +7169,7 @@ public final /*value*/ class Character
             0x16B7D,  // 16B7D..16B8F; PAHAWH_HMONG
             0x16B90,  // 16B90..16D3F; UNKNOWN
             0x16D40,  // 16D40..16D79; KIRAT_RAI
-            0x16D7A,  // 16D7A..16D7F; UNKNOWN
-            0x16D80,  // 16D80..16D9D; CHISOI
-            0x16D9E,  // 16D9E..16D9F; UNKNOWN
-            0x16DA0,  // 16DA0..16DA9; CHISOI
-            0x16DAA,  // 16DAA..16E3F; UNKNOWN
+            0x16D7A,  // 16D7A..16E3F; UNKNOWN
             0x16E40,  // 16E40..16E9A; MEDEFAIDRIN
             0x16E9B,  // 16E9B..16E9F; UNKNOWN
             0x16EA0,  // 16EA0..16EB8; BERIA_ERFE
@@ -7669,7 +7665,9 @@ public final /*value*/ class Character
             DEVANAGARI,               // 0955..0963
             COMMON,                   // 0964..0965
             DEVANAGARI,               // 0966..097F
-            BENGALI,                  // 0980..098C
+            BENGALI,                  // 0980..0983
+            UNKNOWN,                  // 0984
+            BENGALI,                  // 0985..098C
             UNKNOWN,                  // 098D..098E
             BENGALI,                  // 098F..0990
             UNKNOWN,                  // 0991..0992
@@ -7693,8 +7691,8 @@ public final /*value*/ class Character
             UNKNOWN,                  // 09DE
             BENGALI,                  // 09DF..09E3
             UNKNOWN,                  // 09E4..09E5
-            BENGALI,                  // 09E6..09FF
-            UNKNOWN,                  // 0A00
+            BENGALI,                  // 09E6..09FE
+            UNKNOWN,                  // 09FF..0A00
             GURMUKHI,                 // 0A01..0A03
             UNKNOWN,                  // 0A04
             GURMUKHI,                 // 0A05..0A0A
@@ -8029,8 +8027,8 @@ public final /*value*/ class Character
             COMMON,                   // 1805
             MONGOLIAN,                // 1806..1819
             UNKNOWN,                  // 181A..181F
-            MONGOLIAN,                // 1820..1879
-            UNKNOWN,                  // 187A..187F
+            MONGOLIAN,                // 1820..1878
+            UNKNOWN,                  // 1879..187F
             MONGOLIAN,                // 1880..18AA
             UNKNOWN,                  // 18AB..18AF
             CANADIAN_ABORIGINAL,      // 18B0..18F5
@@ -8846,7 +8844,9 @@ public final /*value*/ class Character
             TOLONG_SIKI,              // 11DB0..11DDB
             UNKNOWN,                  // 11DDC..11DDF
             TOLONG_SIKI,              // 11DE0..11DE9
-            UNKNOWN,                  // 11DEA..11EDF
+            UNKNOWN,                  // 11DEA..11DEF
+            BENGALI,                  // 11DF0..11DF1
+            UNKNOWN,                  // 11DF2..11EDF
             MAKASAR,                  // 11EE0..11EF8
             UNKNOWN,                  // 11EF9..11EFF
             KAWI,                     // 11F00..11F10
@@ -8904,11 +8904,7 @@ public final /*value*/ class Character
             PAHAWH_HMONG,             // 16B7D..16B8F
             UNKNOWN,                  // 16B90..16D3F
             KIRAT_RAI,                // 16D40..16D79
-            UNKNOWN,                  // 16D7A..16D7F
-            CHISOI,                   // 16D80..16D9D
-            UNKNOWN,                  // 16D9E..16D9F
-            CHISOI,                   // 16DA0..16DA9
-            UNKNOWN,                  // 16DAA..16E3F
+            UNKNOWN,                  // 16D7A..16E3F
             MEDEFAIDRIN,              // 16E40..16E9A
             UNKNOWN,                  // 16E9B..16E9F
             BERIA_ERFE,               // 16EA0..16EB8
@@ -9327,7 +9323,6 @@ public final /*value*/ class Character
             aliases.put("CARI", CARIAN);
             aliases.put("CHAM", CHAM);
             aliases.put("CHER", CHEROKEE);
-            aliases.put("CHIS", CHISOI);
             aliases.put("CHRS", CHORASMIAN);
             aliases.put("COPT", COPTIC);
             aliases.put("CPMN", CYPRO_MINOAN);
