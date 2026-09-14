@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,13 @@
 /*
  * @test
  * @library ../
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   -XX:CompileCommand=dontinline,TestNormalize::doCall*
  *   TestNormalize
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.*;
 import java.lang.invoke.MethodHandle;
@@ -45,9 +43,14 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
-import static org.testng.Assert.assertEquals;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 // test normalization of smaller than int primitive types
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestNormalize extends NativeTestHelper {
 
     private static final Linker LINKER = Linker.nativeLinker();
@@ -98,7 +101,8 @@ public class TestNormalize extends NativeTestHelper {
     // When we do either of those, argument normalization should take place, so that the resulting value is sane (1).
     // After that we convert the value back to int again, the JVM can/will skip value normalization here.
     // We then check the high order bits of the resulting int. If argument normalization took place at (1), they should all be 0.
-    @Test(dataProvider = "cases")
+    @ParameterizedTest
+    @MethodSource("cases")
     public void testNormalize(ValueLayout layout, int testValue, int hobMask, MethodHandle toInt, MethodHandle saver) throws Throwable {
         // use actual type as parameter type to test upcall arg normalization
         FunctionDescriptor upcallDesc = FunctionDescriptor.ofVoid(layout);
@@ -125,8 +129,8 @@ public class TestNormalize extends NativeTestHelper {
     private static void doCall(MethodHandle downcallHandle, MemorySegment upcallStub,
                                int[] box, int dirtyValue, int hobMask) throws Throwable {
         int result = (int) downcallHandle.invokeExact(upcallStub, dirtyValue);
-        assertEquals(box[0] & hobMask, 0); // check normalized upcall arg
-        assertEquals(result & hobMask, 0); // check normalized downcall return value
+        assertEquals(0, box[0] & hobMask); // check normalized upcall arg
+        assertEquals(0, result & hobMask); // check normalized downcall return value
     }
 
     public static void saveBooleanAsInt(boolean b, int[] box) {
@@ -159,7 +163,6 @@ public class TestNormalize extends NativeTestHelper {
         return s;
     }
 
-    @DataProvider
     public static Object[][] cases() {
         return new Object[][] {
             { JAVA_BOOLEAN, booleanToInt(true),     BOOLEAN_HOB_MASK, BOOLEAN_TO_INT, SAVE_BOOLEAN_AS_INT },
@@ -171,7 +174,8 @@ public class TestNormalize extends NativeTestHelper {
 
     // test which int values are considered true and false
     // we currently convert any int with a non-zero first byte to true, otherwise false.
-    @Test(dataProvider = "bools")
+    @ParameterizedTest
+    @MethodSource("bools")
     public void testBool(int testValue, boolean expected) throws Throwable {
         MemorySegment addr = findNativeOrThrow("test");
         MethodHandle target = LINKER.downcallHandle(addr, FunctionDescriptor.of(JAVA_BOOLEAN, ADDRESS, JAVA_INT));
@@ -182,8 +186,8 @@ public class TestNormalize extends NativeTestHelper {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment callback = LINKER.upcallStub(upcallTarget, FunctionDescriptor.ofVoid(JAVA_BOOLEAN), arena);
             boolean result = (boolean) target.invokeExact(callback, testValue);
-            assertEquals(box[0], expected);
-            assertEquals(result, expected);
+            assertEquals(expected, box[0]);
+            assertEquals(expected, result);
         }
     }
 
@@ -191,7 +195,6 @@ public class TestNormalize extends NativeTestHelper {
         box[0] = b;
     }
 
-    @DataProvider
     public static Object[][] bools() {
         return new Object[][]{
             { 0b10,          true  }, // zero least significant bit, but non-zero first byte

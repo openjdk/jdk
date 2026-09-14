@@ -771,7 +771,7 @@ AOTMapLogger::OopDataIterator* AOTMappedHeapLoader::oop_iterator(FileMapInfo* in
 
   FileMapRegion* r = info->region_at(AOTMetaspace::hp);
   address requested_base = UseCompressedOops ? (address)info->narrow_oop_base() : heap_region_requested_address(info);
-  address requested_start = requested_base + r->mapping_offset();
+  address requested_start = ArchiveUtils::offset_from_requested_base(requested_base, r->mapping_offset());
   int requested_shift = info->narrow_oop_shift();
 
   return new MappedLoaderOopIterator(buffer_start,

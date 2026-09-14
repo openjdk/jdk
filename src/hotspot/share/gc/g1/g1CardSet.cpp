@@ -242,9 +242,9 @@ class G1CardSetHashTable : public CHeapObj<mtGCCardSet> {
   using CHTScanTask = CardSetHash::ScanTask;
 
   const static uint BucketClaimSize = 16;
-  // The claim size for group cardsets should be smaller to facilitate
-  // better work distribution. The group cardsets should be larger than
-  // the per region cardsets.
+  // The claim size for multi-region card set groups should be smaller to
+  // improve work distribution. The multi-region card set groups' card set
+  // should contain more entries than the single-region card set groups'.
   const static uint GroupBucketClaimSize = 4;
   // Did we insert at least one card in the table?
   Atomic<bool> _inserted_card;
@@ -498,7 +498,7 @@ void G1CardSet::release_and_must_free_container(ContainerPtr container) {
   free_mem_object(container);
 }
 
-class G1ReleaseCardsets : public StackObj {
+class G1ReleaseCardSets : public StackObj {
   G1CardSet* _card_set;
   using ContainerPtr = G1CardSet::ContainerPtr;
 
@@ -520,7 +520,7 @@ class G1ReleaseCardsets : public StackObj {
   }
 
 public:
-  explicit G1ReleaseCardsets(G1CardSet* card_set) : _card_set(card_set) { }
+  explicit G1ReleaseCardSets(G1CardSet* card_set) : _card_set(card_set) { }
 
   void operator ()(Atomic<ContainerPtr>* container_addr) {
     coarsen_to_full(container_addr);
@@ -650,7 +650,7 @@ bool G1CardSet::coarsen_container(Atomic<ContainerPtr>* container_addr,
     assert(!should_free, "must have had more than one reference");
     // Free containers if cur_container is ContainerHowl
     if (container_type(cur_container) == ContainerHowl) {
-      G1ReleaseCardsets rel(this);
+      G1ReleaseCardSets rel(this);
       container_ptr<G1CardSetHowl>(cur_container)->iterate(rel, _config->num_buckets_in_howl());
     }
     return true;
@@ -782,8 +782,8 @@ G1AddCardResult G1CardSet::add_card(uintptr_t card) {
   {
     uint region_idx = card_region >> config()->log2_card_regions_per_heap_region();
     G1HeapRegion* r = G1CollectedHeap::heap()->region_at(region_idx);
-    assert(!r->rem_set()->has_cset_group() ||
-           r->rem_set()->cset_group()->card_set() != this, "Should not be sharing a cardset");
+    assert(!r->rem_set()->has_card_set_group() ||
+           r->rem_set()->card_set_group()->card_set() != this, "Should not be sharing a card set");
   }
 #endif
 
@@ -967,7 +967,7 @@ public:
 
   void operator()(uint card_idx, uint length) {
     for (uint i = 0; i < length; i++) {
-      _cl.do_card(_region_idx, card_idx);
+      _cl.do_card(_region_idx, card_idx + i);
     }
   }
 };

@@ -41,7 +41,7 @@ public final class OutputAnalyzer {
     private static final String jvmwarningmsg = ".* VM warning:.*";
 
     private static final String VM_DEPRECATED_MSG = ".* VM warning:.* deprecated.*";
-    private static final String OTHER_DEPRECATED_MSG = "^WARNING: .* is deprecated.*";
+    private static final String OTHER_DEPRECATED_MSG = "(?m)^WARNING: .* is deprecated.*";
 
     private static final String FATAL_ERROR_PAT = "# A fatal error has been detected.*";
 

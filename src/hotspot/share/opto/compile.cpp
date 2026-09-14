@@ -25,8 +25,8 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "ci/ciFlatArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciReplay.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "code/aotCodeCache.hpp"
 #include "code/exceptionHandlerTable.hpp"
@@ -40,6 +40,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
+#include "compiler/stress.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -49,6 +50,7 @@
 #include "memory/resourceArea.hpp"
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
+#include "opto/c2_globals.hpp"
 #include "opto/c2compiler.hpp"
 #include "opto/callGenerator.hpp"
 #include "opto/callnode.hpp"
@@ -61,7 +63,6 @@
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
@@ -84,6 +85,7 @@
 #include "opto/runtime.hpp"
 #include "opto/stringopts.hpp"
 #include "opto/type.hpp"
+#include "opto/valuetypenode.hpp"
 #include "opto/vector.hpp"
 #include "opto/vectornode.hpp"
 #include "runtime/arguments.hpp"
@@ -415,8 +417,8 @@ void Compile::remove_useless_node(Node* dead) {
   if (dead->for_post_loop_opts_igvn()) {
     remove_from_post_loop_opts_igvn(dead);
   }
-  if (dead->is_InlineType()) {
-    remove_inline_type(dead);
+  if (dead->is_ValueType()) {
+    remove_value_type(dead);
   }
   if (dead->is_LoadFlat() || dead->is_StoreFlat()) {
     remove_flat_access(dead);
@@ -428,14 +430,13 @@ void Compile::remove_useless_node(Node* dead) {
     remove_useless_late_inlines(                &_late_inlines, dead);
     remove_useless_late_inlines(         &_string_late_inlines, dead);
     remove_useless_late_inlines(         &_boxing_late_inlines, dead);
+    remove_useless_late_inlines(         &_vector_late_inlines, dead);
     remove_useless_late_inlines(&_vector_reboxing_late_inlines, dead);
 
     if (dead->is_CallStaticJava()) {
       remove_unstable_if_trap(dead->as_CallStaticJava(), false);
     }
   }
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->unregister_potential_barrier_node(dead);
 }
 
 // Disconnect all useless nodes by disconnecting those at the boundary.
@@ -459,7 +460,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
         n->raw_del_out(j);
         --j;
         --max;
-        if (child->is_data_proj_of_pure_function(n)) {
+        if (n->should_process_when_disconnect_output(child)) {
           worklist.push(n);
         }
       }
@@ -480,7 +481,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   remove_useless_nodes(_expensive_nodes,    useful); // remove useless expensive nodes
   remove_useless_nodes(_reachability_fences, useful); // remove useless node recorded for post loop opts IGVN pass
   remove_useless_nodes(_for_post_loop_igvn, useful); // remove useless node recorded for post loop opts IGVN pass
-  remove_useless_nodes(_inline_type_nodes,  useful); // remove useless inline type nodes
+  remove_useless_nodes(_value_type_nodes,  useful);  // remove useless value type nodes
   remove_useless_nodes(_flat_access_nodes, useful);  // remove useless flat access nodes
 #ifdef ASSERT
   if (_modified_nodes != nullptr) {
@@ -496,12 +497,11 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
   }
 #endif
 
-  BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bs->eliminate_useless_gc_barriers(useful, this);
   // clean up the late inline lists
   remove_useless_late_inlines(                &_late_inlines, useful);
   remove_useless_late_inlines(         &_string_late_inlines, useful);
   remove_useless_late_inlines(         &_boxing_late_inlines, useful);
+  remove_useless_late_inlines(         &_vector_late_inlines, useful);
   remove_useless_late_inlines(&_vector_reboxing_late_inlines, useful);
   DEBUG_ONLY(verify_graph_edges(true /*check for no_dead_code*/, root_and_safepoints);)
 }
@@ -677,13 +677,12 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _strength_reduction(false),
       _do_cleanup(false),
       _has_reserved_stack_access(target->has_reserved_stack_access()),
-      _has_circular_inline_type(false),
+      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
-      _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -697,12 +696,13 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _expensive_nodes(comp_arena(), 8, 0, nullptr),
       _reachability_fences(comp_arena(), 8, 0, nullptr),
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
-      _inline_type_nodes (comp_arena(), 8, 0, nullptr),
+      _value_type_nodes (comp_arena(), 8, 0, nullptr),
       _flat_access_nodes(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _unstable_if_traps(comp_arena(), 8, 0, nullptr),
       _coarsened_locks(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
+      _stress(directive, _log, compiler_c2),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
       _unique(0),
       _dead_node_count(0),
@@ -720,6 +720,7 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
       _string_late_inlines(comp_arena(), 2, 0, nullptr),
       _boxing_late_inlines(comp_arena(), 2, 0, nullptr),
       _vector_reboxing_late_inlines(comp_arena(), 2, 0, nullptr),
+      _vector_late_inlines(comp_arena(), 2, 0, nullptr),
       _late_inlines_pos(0),
       _has_mh_late_inlines(false),
       _oom(false),
@@ -769,14 +770,6 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
     // Make sure the method being compiled gets its own MDO,
     // so we can at least track the decompile_count().
     method()->ensure_method_data();
-  }
-
-  if (StressLCM || StressGCM || StressIGVN || StressCCP ||
-      StressIncrementalInlining || StressMacroExpansion ||
-      StressMacroElimination || StressUnstableIfTraps ||
-      StressBailout || StressLoopPeeling || StressCountedLoop ||
-      StressEliminateAllocations) {
-    initialize_stress_seed(directive);
   }
 
   Init(/*do_aliasing=*/ true);
@@ -951,6 +944,12 @@ Compile::Compile(ciEnv* ci_env, ciMethod* target, int osr_bci,
 
   // Now generate code
   Code_Gen();
+
+#ifdef ASSERT
+  if (StressVerifyMeetJoin) {
+    Type::verify_meet_join();
+  }
+#endif // ASSERT
 }
 
 // C2 uses runtime stubs serialized generation to initialize its static tables
@@ -988,13 +987,12 @@ Compile::Compile(ciEnv* ci_env,
       _inlining_progress(false),
       _inlining_incrementally(false),
       _has_reserved_stack_access(false),
-      _has_circular_inline_type(false),
+      _has_circular_value_type(false),
 #ifndef PRODUCT
       _igv_idx(0),
       _trace_opto_output(directive->TraceOptoOutputOption),
 #endif
       _clinit_barrier_on_entry(false),
-      _stress_seed(0),
       _comp_arena(mtCompiler, Arena::Tag::tag_comp),
       _barrier_set_state(BarrierSet::barrier_set()->barrier_set_c2()->create_barrier_state(comp_arena())),
       _env(ci_env),
@@ -1005,6 +1003,7 @@ Compile::Compile(ciEnv* ci_env,
       _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
       _for_merge_stores_igvn(comp_arena(), 8, 0, nullptr),
       _congraph(nullptr),
+      _stress(directive, _log, compiler_c2),
       NOT_PRODUCT(_igv_printer(nullptr) COMMA)
       _unique(0),
       _dead_node_count(0),
@@ -1063,10 +1062,6 @@ Compile::Compile(ciEnv* ci_env,
   _igvn_worklist = new (comp_arena()) Unique_Node_List(comp_arena());
   _types = new (comp_arena()) Type_Array(comp_arena());
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), 255);
-
-  if (StressLCM || StressGCM || StressBailout) {
-    initialize_stress_seed(directive);
-  }
 
   {
     PhaseGVN gvn;
@@ -1424,7 +1419,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
   // Process weird unsafe references.
   if (offset == Type::OffsetBot && (tj->isa_instptr() /*|| tj->isa_klassptr()*/)) {
-    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath, "indeterminate pointers come only from unsafe ops");
+    assert(InlineUnsafeOps || StressReflectiveCode || UseAcmpFastPath || UseHashcodeFastPath, "indeterminate pointers come only from unsafe ops");
     assert(!is_known_inst, "scalarizable allocation should not have unsafe references");
     tj = TypeOopPtr::BOTTOM;
     ptr = tj->ptr();
@@ -1453,7 +1448,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
     }
 
     // Remove size and stability
-    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_not_null_free(), ta->is_atomic());
+    const TypeAry* normalized_ary = TypeAry::make(ta->elem(), TypeInt::POS, false, ta->is_flat(), ta->is_not_flat(), ta->is_null_free(), ta->is_not_null_free(), ta->is_atomic());
     // Remove ptr, const_oop, and offset
     if (ta->elem() == Type::BOTTOM) {
       // Bottom array (meet of int[] and byte[] for example), accesses to it will be done with
@@ -1476,7 +1471,7 @@ const TypePtr *Compile::flatten_alias_type( const TypePtr *tj ) const {
 
     // All arrays of references share the same slice
     if (!ta->is_flat() && ta->elem()->make_oopptr() != nullptr) {
-      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, true, true);
+      const TypeAry* tary = TypeAry::make(TypeInstPtr::BOTTOM, TypeInt::POS, false, false, true, false, true, true);
       tj = ta = TypeAryPtr::make(TypePtr::BotPTR, nullptr, tary, nullptr, false, Type::Offset::bottom);
     }
 
@@ -1737,7 +1732,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
            Type::str(adr_type), Type::str(flat), Type::str(flatten_alias_type(flat)));
     assert(flat != TypePtr::BOTTOM, "cannot alias-analyze an untyped ptr: adr_type = %s",
            Type::str(adr_type));
-    if (flat->isa_oopptr() && !flat->isa_klassptr()) {
+    if (flat->isa_instptr()) {
       const TypeOopPtr* foop = flat->is_oopptr();
       // Scalarizable allocations have exact klass always.
       bool exact = !foop->klass_is_exact() || foop->is_known_instance();
@@ -1784,7 +1779,7 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
       int field_offset = flat->is_aryptr()->field_offset().get();
       if (flat->is_flat() &&
           field_offset != Type::OffsetBot) {
-        ciInlineKlass* vk = elemtype->inline_klass();
+        ciValueKlass* vk = elemtype->value_klass();
         field_offset += vk->payload_offset();
         field = vk->get_field_by_offset(field_offset, false);
       }
@@ -1824,9 +1819,9 @@ Compile::AliasType* Compile::find_alias_type(const TypePtr* adr_type, bool no_cr
         // static field
         ciInstanceKlass* k = tinst->const_oop()->as_instance()->java_lang_Class_klass()->as_instance_klass();
         field = k->get_field_by_offset(tinst->offset(), true);
-      } else if (tinst->is_inlinetypeptr()) {
-        // Inline type field
-        ciInlineKlass* vk = tinst->inline_klass();
+      } else if (tinst->is_valueklassptr()) {
+        // Value type field
+        ciValueKlass* vk = tinst->value_klass();
         field = vk->get_field_by_offset(tinst->offset(), false);
       } else {
         ciInstanceKlass *k = tinst->instance_klass();
@@ -1983,19 +1978,19 @@ void Compile::process_for_post_loop_opts_igvn(PhaseIterGVN& igvn) {
   }
 }
 
-void Compile::add_inline_type(Node* n) {
-  assert(n->is_InlineType(), "unexpected node");
-  _inline_type_nodes.push(n);
+void Compile::add_value_type(Node* n) {
+  assert(n->is_ValueType(), "unexpected node");
+  _value_type_nodes.push(n);
 }
 
-void Compile::remove_inline_type(Node* n) {
-  assert(n->is_InlineType(), "unexpected node");
-  if (_inline_type_nodes.contains(n)) {
-    _inline_type_nodes.remove(n);
+void Compile::remove_value_type(Node* n) {
+  assert(n->is_ValueType(), "unexpected node");
+  if (_value_type_nodes.contains(n)) {
+    _value_type_nodes.remove(n);
   }
 }
 
-// Does the return value keep otherwise useless inline type allocations alive?
+// Does the return value keep otherwise useless value type allocations alive?
 static bool return_val_keeps_allocations_alive(Node* ret_val) {
   ResourceMark rm;
   Unique_Node_List wq;
@@ -2006,7 +2001,7 @@ static bool return_val_keeps_allocations_alive(Node* ret_val) {
     if (n->outcnt() > 1) {
       // Some other use for the allocation
       return false;
-    } else if (n->is_InlineType()) {
+    } else if (n->is_ValueType()) {
       wq.push(n->in(1));
     } else if (n->is_Phi()) {
       for (uint j = 1; j < n->req(); j++) {
@@ -2034,7 +2029,7 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
       Node* u = n->fast_out(j);
       if (u->is_Phi()) {
         wq.push(u);
-      } else if (u->is_InlineType() && u->as_InlineType()->get_oop() == n) {
+      } else if (u->is_ValueType() && u->as_ValueType()->get_oop() == n) {
         wq.push(u);
       } else if (u->is_CallJava()) {
         CallJavaNode* call = u->as_CallJava();
@@ -2083,9 +2078,9 @@ bool Compile::clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, 
   return true;
 }
 
-void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
+void Compile::process_value_types(PhaseIterGVN &igvn, bool remove) {
   // Make sure that the return value does not keep an otherwise unused allocation alive
-  if (tf()->returns_inline_type_as_fields()) {
+  if (tf()->returns_value_type_as_fields()) {
     Node* ret = nullptr;
     for (uint i = 1; i < root()->req(); i++) {
       Node* in = root()->in(i);
@@ -2098,7 +2093,7 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
       Node* ret_val = ret->in(TypeFunc::Parms);
       if (igvn.type(ret_val)->isa_oopptr() &&
           return_val_keeps_allocations_alive(ret_val)) {
-        igvn.replace_input_of(ret, TypeFunc::Parms, InlineTypeNode::tagged_klass(igvn.type(ret_val)->inline_klass(), igvn));
+        igvn.replace_input_of(ret, TypeFunc::Parms, ValueTypeNode::tagged_klass(igvn.type(ret_val)->value_klass(), igvn));
         assert(ret_val->outcnt() == 0, "should be dead now");
         igvn.remove_dead_node(ret_val, PhaseIterGVN::NodeOrigin::Graph);
       }
@@ -2113,23 +2108,23 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
       Node* result_cast = allocate->result_cast();
       if (result_cast != nullptr) {
         const Type* result_type = igvn.type(result_cast);
-        if (result_type->is_inlinetypeptr()) {
+        if (result_type->is_valueklassptr()) {
           clear_argument_if_only_used_as_buffer_at_calls(result_cast, igvn);
         }
       }
     }
   }
 
-  if (_inline_type_nodes.length() == 0) {
+  if (_value_type_nodes.length() == 0) {
     // keep the graph canonical
     igvn.optimize();
     return;
   }
-  // Scalarize inline types in safepoint debug info.
+  // Scalarize value types in safepoint debug info.
   // Delay this until all inlining is over to avoid getting inconsistent debug info.
   set_scalarize_in_safepoints(true);
-  for (int i = _inline_type_nodes.length()-1; i >= 0; i--) {
-    InlineTypeNode* vt = _inline_type_nodes.at(i)->as_InlineType();
+  for (int i = _value_type_nodes.length()-1; i >= 0; i--) {
+    ValueTypeNode* vt = _value_type_nodes.at(i)->as_ValueType();
     if (!vt->make_scalar_in_safepoints(&igvn)) {
       record_failure("out of nodes during scalarization");
       return;
@@ -2137,9 +2132,9 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
     igvn.record_for_igvn(vt);
   }
   if (remove) {
-    // Remove inline type nodes by replacing them with their oop input
-    while (_inline_type_nodes.length() > 0) {
-      InlineTypeNode* vt = _inline_type_nodes.pop()->as_InlineType();
+    // Remove value type nodes by replacing them with their oop input
+    while (_value_type_nodes.length() > 0) {
+      ValueTypeNode* vt = _value_type_nodes.pop()->as_ValueType();
       if (vt->outcnt() == 0) {
         igvn.remove_dead_node(vt, PhaseIterGVN::NodeOrigin::Graph);
         continue;
@@ -2148,7 +2143,7 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
         DEBUG_ONLY(bool must_be_buffered = false);
         Node* u = vt->out(i);
         // Check if any users are blackholes. If so, rewrite them to use either the
-        // allocated buffer, or individual components, instead of the inline type node
+        // allocated buffer, or individual components, instead of the value type node
         // that goes away.
         if (u->is_Blackhole()) {
           BlackholeNode* bh = u->as_Blackhole();
@@ -2173,9 +2168,9 @@ void Compile::process_inline_types(PhaseIterGVN &igvn, bool remove) {
           igvn.record_for_igvn(bh);
         }
 #ifdef ASSERT
-        // Verify that inline type is buffered when replacing by oop
-        else if (u->is_InlineType()) {
-          // InlineType uses don't need buffering because they are about to be replaced as well
+        // Verify that value type is buffered when replacing by oop
+        else if (u->is_ValueType()) {
+          // ValueType uses don't need buffering because they are about to be replaced as well
         } else {
           must_be_buffered = true;
         }
@@ -2318,15 +2313,17 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
     }
   }
 
-#ifdef ASSERT
+  int start_alias = num_alias_types(); // Start of new aliases
   for (uint i = 0; i < memnodes.size(); i++) {
     Node* m = memnodes.at(i);
     const TypePtr* adr_type = m->adr_type();
+#ifdef ASSERT
     m->as_Mem()->set_adr_type(adr_type);
-  }
 #endif // ASSERT
+    // This has the side effect of allocating new aliases for flat array accesses
+    get_alias_index(adr_type);
+  }
 
-  int start_alias = num_alias_types(); // Start of new aliases
   Node_Stack stack(0);
 #ifdef ASSERT
   VectorSet seen(Thread::current()->resource_area());
@@ -2414,7 +2411,7 @@ void Compile::adjust_flat_array_access_aliases(PhaseIterGVN& igvn) {
           assert(klass_type->klass_is_exact(), "must be an exact klass");
           ciArrayKlass* klass = klass_type->exact_klass()->as_array_klass();
           assert(klass->is_flat_array_klass(), "must be a flat array");
-          ciInlineKlass* elem_klass = klass->element_klass()->as_inline_klass();
+          ciValueKlass* elem_klass = klass->element_klass()->as_value_klass();
           const TypeAryPtr* oop_type = klass_type->as_exact_instance_type()->is_aryptr();
           assert(oop_type->klass_is_exact(), "must be an exact klass");
 
@@ -2857,13 +2854,32 @@ static void shuffle_array(Compile& C, GrowableArray<E>& array) {
     return;
   }
   for (uint i = array.length() - 1; i >= 1; i--) {
-    uint j = C.random() % (i + 1);
+    uint j = C.stress().random() % (i + 1);
     swap(array.at(i), array.at(j));
   }
 }
 
 void Compile::shuffle_late_inlines() {
   shuffle_array(*C, _late_inlines);
+}
+
+void Compile::process_vector_late_inlines() {
+  for (int i = 0; i < _vector_late_inlines.length(); i++) {
+    CallGenerator* cg = _vector_late_inlines.at(i);
+
+    // When a vector intrinsic fails, set_generator(cg) caches the
+    // LateInlineVectorCallGenerator on the call node to allow retries
+    // if IGVN optimizes the call node's inputs. If the call node is not
+    // on the IGVN worklist when cleanup runs, CallStaticJavaNode::Ideal
+    // does not fire and the cached generator persists. Once _late_inlines
+    // drains and we commit to the fallback here, clear the stale generator
+    // to prevent a subsequent IGVN pass from re-registering the intrinsic
+    // attempt into _late_inlines alongside the fallback, which would create
+    // duplicate call_node entries.
+    cg->call_node()->as_CallJava()->set_generator(nullptr);
+    add_late_inline(cg);
+  }
+  _vector_late_inlines.clear();
 }
 
 // Perform incremental inlining until bound on number of live nodes is reached
@@ -2923,6 +2939,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     print_method(PHASE_INCREMENTAL_INLINE_STEP, 3);
 
     if (failing())  return;
+
+    if (_late_inlines.length() == 0) {
+      process_vector_late_inlines();
+    }
   }
 
   igvn_worklist()->ensure_empty(); // should be done with igvn
@@ -3098,7 +3118,7 @@ void Compile::Optimize() {
   }
   assert(!has_vbox_nodes(), "sanity");
 
-  if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
+  if (RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
     Compile::TracePhase tp(_t_renumberLive);
     igvn_worklist()->ensure_empty(); // should be done with igvn
     {
@@ -3114,8 +3134,8 @@ void Compile::Optimize() {
   // safepoints
   remove_root_to_sfpts_edges(igvn);
 
-  // Process inline type nodes now that all inlining is over
-  process_inline_types(igvn);
+  // Process value type nodes now that all inlining is over
+  process_value_types(igvn);
   if (failing()) {
     return;
   }
@@ -3302,9 +3322,9 @@ void Compile::Optimize() {
   }
   assert(_late_inlines.length() == 0, "late inline queue must be drained");
 
-  // Process inline types before macro expansion. Otherwise, we will not be able to
+  // Process value types before macro expansion. Otherwise, we will not be able to
   // remove unused allocations because it cannot match the expanded allocation.
-  process_inline_types(igvn);
+  process_value_types(igvn);
   if (failing()) {
     return;
   }
@@ -3331,16 +3351,16 @@ void Compile::Optimize() {
       return;
     }
     print_method(PHASE_AFTER_MACRO_ELIMINATION, 2);
-    if (mex.expand_macro_nodes()) {
+    if (!mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
     }
     print_method(PHASE_AFTER_MACRO_EXPANSION, 2);
   }
 
-  // Process inline type nodes again and remove them. From here
+  // Process value type nodes again and remove them. From here
   // on we don't need to keep track of field values anymore.
-  process_inline_types(igvn, /* remove= */ true);
+  process_value_types(igvn, /* remove= */ true);
   if (failing()) {
     return;
   }
@@ -3436,8 +3456,12 @@ bool Compile::has_vbox_nodes() {
 //---------------------------- Bitwise operation packing optimization ---------------------------
 
 static bool is_vector_unary_bitwise_op(Node* n) {
-  return n->Opcode() == Op_XorV &&
-         VectorNode::is_vector_bitwise_not_pattern(n);
+  // A masked XorV not-pattern is NOT unary: on inactive lanes the masked
+  // operation keeps its first operand, so both inputs must be preserved (and
+  // their order matters, since in(1) becomes the masked MacroLogicV
+  // passthrough). Only an unmasked not-pattern is genuinely unary.
+return VectorNode::is_vector_bitwise_not_pattern(n) &&
+       !n->is_predicated_vector();
 }
 
 static bool is_vector_binary_bitwise_op(Node* n) {
@@ -3480,7 +3504,7 @@ static uint collect_unique_inputs(Node* n, Unique_Node_List& inputs) {
   uint cnt = 0;
   if (is_vector_bitwise_op(n)) {
     uint inp_cnt = n->is_predicated_vector() ? n->req()-1 : n->req();
-    if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+    if (is_vector_unary_bitwise_op(n)) {
       assert(n->req() == (n->is_predicated_vector() ? 4 : 3), "must have 2 data inputs");
       Node* opnd = VectorNode::is_all_ones_vector(n->in(1)) ? n->in(2) : n->in(1);
       if (!inputs.member(opnd)) {
@@ -3641,7 +3665,7 @@ uint Compile::compute_truth_table(Unique_Node_List& partition, Unique_Node_List&
         res = func1 & func2;
         break;
       case Op_XorV:
-        if (VectorNode::is_vector_bitwise_not_pattern(n)) {
+        if (is_vector_unary_bitwise_op(n)) {
           assert(func2 == 0 && func3 == 0, "not unary");
           res = (~func1) & 0xFF;
         } else {
@@ -3990,7 +4014,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
     MemBarNode* mb = n->as_MemBar();
     if (mb->trailing_store() || mb->trailing_load_store()) {
       assert(mb->leading_membar()->trailing_membar() == mb, "bad membar pair");
-      Node* mem = BarrierSet::barrier_set()->barrier_set_c2()->step_over_gc_barrier(mb->in(MemBarNode::Precedent));
+      Node* mem = mb->in(MemBarNode::Precedent);
       assert((mb->trailing_store() && mem->is_Store() && mem->as_Store()->is_release()) ||
              (mb->trailing_load_store() && mem->is_LoadStore()), "missing mem op");
     } else if (mb->leading()) {
@@ -4004,10 +4028,7 @@ void Compile::final_graph_reshaping_impl(Node *n, Final_Reshape_Counts& frc, Uni
            "unused CallLeafPureNode should have been removed before final graph reshaping");
   }
 #endif
-  bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->final_graph_reshaping(this, n, nop, dead_nodes);
-  if (!gc_handled) {
-    final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
-  }
+  final_graph_reshaping_main_switch(n, frc, nop, dead_nodes);
 
   // Collect CFG split points
   if (n->is_MultiBranch() && !n->is_RangeCheck()) {
@@ -4683,9 +4704,9 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     break;
   }
 #ifdef ASSERT
-  case Op_InlineType: {
+  case Op_ValueType: {
     n->dump(-1);
-    assert(false, "inline type node was not removed");
+    assert(false, "value type node was not removed");
     break;
   }
   case Op_ConNKlass: {
@@ -4881,6 +4902,8 @@ bool Compile::final_graph_reshaping() {
 
       // Recheck with a better notion of 'required_outcnt'
       if (n->outcnt() != required_outcnt) {
+        DEBUG_ONLY(n->dump_bfs(3, nullptr, "-"));
+        assert(false, "malformed control flow");
         record_method_not_compilable("malformed control flow");
         return true;            // Not all targets reachable!
       }
@@ -5142,7 +5165,7 @@ void Compile::verify_bidirectional_edges(Unique_Node_List& visited, const Unique
       } else if (in == nullptr) {
         assert(i == 0 || i >= n->req() ||
                n->is_Region() || n->is_Phi() || n->is_ArrayCopy() ||
-               (n->is_Allocate() && i >= AllocateNode::InlineType) ||
+               (n->is_Allocate() && i >= AllocateNode::ValueType) ||
                (n->is_Unlock() && i == (n->req() - 1)) ||
                (n->is_MemBar() && i == 5), // the precedence edge to a membar can be removed during macro node expansion
               "only region, phi, arraycopy, allocate, unlock or membar nodes have null data edges");
@@ -5297,10 +5320,10 @@ Compile::SubTypeCheckResult Compile::static_subtype_check(const TypeKlassPtr* su
     int ignored;
     superelem = superk->is_aryklassptr()->base_element_type(ignored);
 
-    // Do not fold the subtype check to an array klass pointer comparison for null-able inline type arrays
+    // Do not fold the subtype check to an array klass pointer comparison for null-able value type arrays
     // because null-free [LMyValue <: null-able [LMyValue but the klasses are different. Perform a full test.
     if (!superk->is_aryklassptr()->is_null_free() && superk->is_aryklassptr()->elem()->isa_instklassptr() &&
-        superk->is_aryklassptr()->elem()->is_instklassptr()->instance_klass()->is_inlinetype()) {
+        superk->is_aryklassptr()->elem()->is_instklassptr()->instance_klass()->is_value_klass()) {
       return SSC_full_test;
     }
   }
@@ -5402,6 +5425,9 @@ void Compile::log_inline_id(CallGenerator* cg) {
 }
 
 void Compile::log_inline_failure(const char* msg) {
+  if (inline_printer()->is_suspended()) {
+    return;
+  }
   if (C->log() != nullptr) {
     C->log()->inline_fail(msg);
   }
@@ -5788,60 +5814,10 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
 
 // Auxiliary methods to support randomized stressing/fuzzing.
 
-void Compile::initialize_stress_seed(const DirectiveSet* directive) {
-  if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
-    _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
-    FLAG_SET_ERGO(StressSeed, _stress_seed);
-  } else {
-    _stress_seed = StressSeed;
-  }
-  if (_log != nullptr) {
-    _log->elem("stress_test seed='%u'", _stress_seed);
-  }
-}
-
-int Compile::random() {
-  _stress_seed = os::next_random(_stress_seed);
-  return static_cast<int>(_stress_seed);
-}
-
-// This method can be called the arbitrary number of times, with current count
-// as the argument. The logic allows selecting a single candidate from the
-// running list of candidates as follows:
-//    int count = 0;
-//    Cand* selected = null;
-//    while(cand = cand->next()) {
-//      if (randomized_select(++count)) {
-//        selected = cand;
-//      }
-//    }
-//
-// Including count equalizes the chances any candidate is "selected".
-// This is useful when we don't have the complete list of candidates to choose
-// from uniformly. In this case, we need to adjust the randomicity of the
-// selection, or else we will end up biasing the selection towards the latter
-// candidates.
-//
-// Quick back-envelope calculation shows that for the list of n candidates
-// the equal probability for the candidate to persist as "best" can be
-// achieved by replacing it with "next" k-th candidate with the probability
-// of 1/k. It can be easily shown that by the end of the run, the
-// probability for any candidate is converged to 1/n, thus giving the
-// uniform distribution among all the candidates.
-//
-// We don't care about the domain size as long as (RANDOMIZED_DOMAIN / count) is large.
-#define RANDOMIZED_DOMAIN_POW 29
-#define RANDOMIZED_DOMAIN (1 << RANDOMIZED_DOMAIN_POW)
-#define RANDOMIZED_DOMAIN_MASK ((1 << (RANDOMIZED_DOMAIN_POW + 1)) - 1)
-bool Compile::randomized_select(int count) {
-  assert(count > 0, "only positive");
-  return (random() & RANDOMIZED_DOMAIN_MASK) < (RANDOMIZED_DOMAIN / count);
-}
-
 #ifdef ASSERT
 // Failures are geometrically distributed with probability 1/StressBailoutMean.
 bool Compile::fail_randomly() {
-  if ((random() % StressBailoutMean) != 0) {
+  if ((stress().random() % StressBailoutMean) != 0) {
     return false;
   }
   record_failure("StressBailout");
@@ -6125,10 +6101,10 @@ void Compile::igv_print_graph_to_network(const char* name, GrowableArray<const N
 
 Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGVN* phase, bool transform_res) {
   precond(type != nullptr);
-
-  if (phase->type(value)->higher_equal(type)) {
+  if (type->base() == Type::Int && phase->type(value)->higher_equal(type)) {
     return value;
   }
+
   Node* result = nullptr;
   if (bt == T_BYTE) {
     result = phase->transform(new LShiftINode(value, phase->intcon(24)));

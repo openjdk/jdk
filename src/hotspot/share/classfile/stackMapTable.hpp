@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,16 +129,25 @@ class StackMapReader : StackObj {
   u2 _max_stack;
 
   // Contains assert_unset_fields generated from classfile
-  StackMapFrame::AssertUnsetFieldTable* _assert_unset_fields_buffer;
+  AssertUnsetFieldTable* _assert_unset_fields_buffer;
+
+  // Cached set of initial unset fields
+  AssertUnsetFieldTable* _initial_unset_fields;
 
   // Check if reading first entry
   bool _first;
 
-  StackMapFrame* next_helper(TRAPS);
+  // We track whether an uninitializedThis was in the previous frame's
+  // locals independently of the flags parameter as most StackMapTable
+  // frames reuse the same locals as the previous frame.  Chop and
+  // Full frames need to handle this specially.
+  bool _uninit_in_prev_frame_locals;
+
+  StackMapFrame* next_helper(bool& parsed_early_larval, TRAPS);
   void check_offset(StackMapFrame* frame);
   void check_size(TRAPS);
   int32_t chop(VerificationType* locals, int32_t length, int32_t chops);
-  VerificationType parse_verification_type(u1* flags, TRAPS);
+  VerificationType parse_verification_type(u1* flags, bool parsing_locals, TRAPS);
   void check_verification_type_array_size(
       int32_t size, int32_t max_size, TRAPS) {
     if (size < 0 || size > max_size) {
@@ -174,7 +183,7 @@ class StackMapReader : StackObj {
                  char* code_data, int32_t code_len,
                  StackMapFrame* init_frame,
                  u2 max_locals, u2 max_stack,
-                 StackMapFrame::AssertUnsetFieldTable* initial_strict_fields, TRAPS);
+                 AssertUnsetFieldTable* initial_strict_fields, TRAPS);
 
   inline int32_t get_frame_count()   const { return _frame_count; }
   inline StackMapFrame* prev_frame() const { return _prev_frame; }

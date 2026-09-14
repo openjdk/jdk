@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -186,7 +186,7 @@ FrameMap::FrameMap(ciMethod* method, int monitors, int reserved_argument_area_si
 }
 
 
-bool FrameMap::finalize_frame(int nof_slots, bool needs_stack_repair) {
+bool FrameMap::finalize_frame(int nof_slots) {
   assert(nof_slots >= 0, "must be positive");
   assert(_num_spills == -1, "can only be set once");
   _num_spills = nof_slots;
@@ -194,7 +194,6 @@ bool FrameMap::finalize_frame(int nof_slots, bool needs_stack_repair) {
   _framesize =  align_up(in_bytes(sp_offset_for_monitor_base(0)) +
                          _num_monitors * (int)sizeof(BasicObjectLock) +
                          (int)sizeof(intptr_t) +                             // offset of deopt orig pc
-                         (needs_stack_repair ? (int)sizeof(intptr_t) : 0) +  // stack increment value
                          frame_pad_in_bytes,
                          StackAlignmentInBytes) / 4;
   int java_index = 0;

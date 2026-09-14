@@ -2135,7 +2135,7 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
       // goal without. In that case, we optimize probing by sorting the attach
       // points: We attempt outermost points first, then work ourselves up to
       // the middle. That reduces address space fragmentation. We also alternate
-      // hemispheres, which increases the chance of successfull mappings if the
+      // hemispheres, which increases the chance of successful mappings if the
       // previous mapping had been blocked by large maps.
       hemi_split(points, num_attempts);
     }
@@ -2386,8 +2386,8 @@ char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc,
 }
 
 char* os::map_memory(int fd, const char* file_name, size_t file_offset,
-                           char *addr, size_t bytes, MemTag mem_tag,
-                            bool read_only, bool allow_exec) {
+                     char *addr, size_t bytes, bool read_only,
+                     MemTag mem_tag, bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != nullptr) {
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, mem_tag);
