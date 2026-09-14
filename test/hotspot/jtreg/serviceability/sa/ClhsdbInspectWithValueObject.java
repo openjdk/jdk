@@ -34,7 +34,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8390106 8392323
+ * @bug 8390106
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
