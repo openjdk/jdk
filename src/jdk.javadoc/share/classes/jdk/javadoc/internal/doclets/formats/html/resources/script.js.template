@@ -335,9 +335,9 @@ function setTheme([theme, underlineLinks]) {
     if (theme === THEME_OS) {
         theme = osDarkTheme.matches ? THEME_DARK : THEME_LIGHT;
     }
-    document.documentElement.setAttribute("data-" + THEME, theme);
+    document.documentElement.setAttribute("data-theme", theme);
     if (underlineLinks) {
-        document.documentElement.setAttribute("data-" + UNDERLINE_LINKS, underlineLinks);
+        document.documentElement.setAttribute("data-underline-links", underlineLinks);
     } else {
         document.getElementById(UNDERLINE_LINKS).checked = (theme === THEME_DARK);
     }
@@ -423,6 +423,8 @@ document.addEventListener("DOMContentLoaded", function(e) {
         if (input.id === currentTheme) {
             input.checked = true;
         } else if (input.id === UNDERLINE_LINKS) {
+            input.checked = (underlineLinks === "on" ||
+                (!underlineLinks && document.documentElement.getAttribute("data-theme") === THEME_DARK));
             input.addEventListener("change", e => {
                 underlineLinks = e.target.checked ? "on" : "off";
                 localStorage.setItem(UNDERLINE_LINKS, underlineLinks);
