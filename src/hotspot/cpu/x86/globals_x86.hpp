@@ -189,7 +189,7 @@ define_pd_global(bool, ValueTypeReturnedAsFields, true);
              range(0, max_jint)                                             \
              constraint(CopyAVX3ThresholdConstraintFunc,AfterErgo)          \
                                                                             \
-  product(bool, IntelJccErratumMitigation, true, DIAGNOSTIC,                \
+  product(bool, IntelJccErratumMitigation, false, DIAGNOSTIC,                \
              "Turn off JVM mitigations related to Intel micro code "        \
              "mitigations for the Intel JCC erratum")                       \
                                                                             \

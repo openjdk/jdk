@@ -46,7 +46,6 @@
 int VM_Version::_cpu;
 int VM_Version::_model;
 int VM_Version::_stepping;
-bool VM_Version::_has_intel_jcc_erratum;
 VM_Version::CpuidInfo VM_Version::_cpuid_info = { 0, };
 
 #define DECLARE_CPU_FEATURE_NAME(id, name) XSTR(name),
@@ -869,258 +868,9 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   };
 };
 
-void VM_Version::get_processor_features() {
-
-  _cpu = 4; // 486 by default
-  _model = 0;
-  _stepping = 0;
-  _logical_processors_per_package = 1;
-  // i486 internal cache is both I&D and has a 16-byte line size
-  _L1_data_cache_line_size = 16;
-
-  // Get raw processor info
-
-  get_cpu_info_stub(&_cpuid_info);
-
-  assert_is_initialized();
-  _cpu = extended_cpu_family();
-  _model = extended_cpu_model();
-  _stepping = cpu_stepping();
-
-  if (cpu_family() > 4) { // it supports CPUID
-    _features = _cpuid_info.feature_flags(); // These can be changed by VM settings
-    _cpu_features = _features; // Preserve features
-    // Logical processors are only available on P4s and above,
-    // and only if hyperthreading is available.
-    _logical_processors_per_package = logical_processor_count();
-    _L1_data_cache_line_size = L1_line_size();
-  }
-
-  // xchg and xadd instructions
-  _supports_atomic_getset4 = true;
-  _supports_atomic_getadd4 = true;
-  _supports_atomic_getset8 = true;
-  _supports_atomic_getadd8 = true;
-
-  // assigning this field effectively enables Unsafe.writebackMemory()
-  // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero
-  // that is only implemented on x86_64 and only if the OS plays ball
-  if (os::supports_map_sync()) {
-    // publish data cache line flush size to generic field, otherwise
-    // let if default to zero thereby disabling writeback
-    _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
-  }
-
-  // Check if processor has Intel Ecore
-  if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) && is_intel() && is_intel_server_family() &&
-    (supports_hybrid() ||
-     _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
-     _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
-    FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
-  }
-
-  if (UseSSE < 4) {
-    clear_feature(CPU_SSE4_1);
-    clear_feature(CPU_SSE4_2);
-  }
-
-  if (UseSSE < 3) {
-    clear_feature(CPU_SSE3);
-    clear_feature(CPU_SSSE3);
-    clear_feature(CPU_SSE4A);
-  }
-
-  // ZX cpus specific settings
-  if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
-    if (cpu_family() == 7) {
-      if (extended_cpu_model() == 0x5B || extended_cpu_model() == 0x6B) {
-        UseAVX = 1;
-      } else if (extended_cpu_model() == 0x1B || extended_cpu_model() == 0x3B) {
-        UseAVX = 0;
-      }
-    } else if (cpu_family() == 6) {
-      UseAVX = 0;
-    }
-  }
-
-  // UseSSE is set to the smaller of what hardware supports and what
-  // the command line requires. i.e., you cannot set UseSSE to 4 on
-  // older systems which do not support it.
-  int use_sse_limit = 2;
-  if (UseSSE > 3 && supports_sse4_1()) {
-    use_sse_limit = 4;
-  } else if (UseSSE > 2 && supports_sse3()) {
-    use_sse_limit = 3;
-  }
-  if (FLAG_IS_DEFAULT(UseSSE)) {
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  } else if (UseSSE > use_sse_limit) {
-    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE, use_sse_limit);
-    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
-  }
-
-  // first try initial setting and detect what we can support
-  int use_avx_limit = 0;
-  if (UseAVX > 0) {
-    if (UseSSE < 4) {
-      // Don't use AVX if SSE is unavailable or has been disabled.
-      use_avx_limit = 0;
-    } else if (UseAVX > 2 && supports_evex()) {
-      use_avx_limit = 3;
-    } else if (UseAVX > 1 && supports_avx2()) {
-      use_avx_limit = 2;
-    } else if (UseAVX > 0 && supports_avx()) {
-      use_avx_limit = 1;
-    } else {
-      use_avx_limit = 0;
-    }
-  }
-  if (FLAG_IS_DEFAULT(UseAVX)) {
-    // Don't use AVX-512 on older Skylakes unless explicitly requested.
-    if (use_avx_limit > 2 && is_intel_skylake() && _stepping < 5) {
-      FLAG_SET_DEFAULT(UseAVX, 2);
-    } else {
-      FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
-    }
-  }
-
-  if (UseAVX > use_avx_limit) {
-    if (UseSSE < 4) {
-      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
-    } else {
-      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX, use_avx_limit);
-    }
-    FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
-  }
-
-  if (UseAVX < 3) {
-    clear_feature(CPU_AVX512F);
-    clear_feature(CPU_AVX512DQ);
-    clear_feature(CPU_AVX512CD);
-    clear_feature(CPU_AVX512BW);
-    clear_feature(CPU_AVX512ER);
-    clear_feature(CPU_AVX512PF);
-    clear_feature(CPU_AVX512VL);
-    clear_feature(CPU_AVX512_VPOPCNTDQ);
-    clear_feature(CPU_AVX512_VPCLMULQDQ);
-    clear_feature(CPU_AVX512_VAES);
-    clear_feature(CPU_AVX512_VNNI);
-    clear_feature(CPU_AVX512_VBMI);
-    clear_feature(CPU_AVX512_VBMI2);
-    clear_feature(CPU_AVX512_BITALG);
-    clear_feature(CPU_AVX512_IFMA);
-    clear_feature(CPU_APX_F);
-    clear_feature(CPU_AVX512_FP16);
-    clear_feature(CPU_AVX10_1);
-    clear_feature(CPU_AVX10_2);
-  }
-
-
-  if (UseAVX < 2) {
-    clear_feature(CPU_AVX2);
-    clear_feature(CPU_AVX_IFMA);
-  }
-
-  if (UseAVX < 1) {
-    clear_feature(CPU_AVX);
-    clear_feature(CPU_VZEROUPPER);
-    clear_feature(CPU_F16C);
-    clear_feature(CPU_SHA512);
-  }
-
-  if (logical_processors_per_package() == 1) {
-    // HT processor could be installed on a system which doesn't support HT.
-    clear_feature(CPU_HT);
-  }
-
-  if (is_intel()) { // Intel cpus specific settings
-    if (is_knights_family()) {
-      clear_feature(CPU_VZEROUPPER);
-      clear_feature(CPU_AVX512BW);
-      clear_feature(CPU_AVX512VL);
-      clear_feature(CPU_APX_F);
-      clear_feature(CPU_AVX512DQ);
-      clear_feature(CPU_AVX512_VNNI);
-      clear_feature(CPU_AVX512_VAES);
-      clear_feature(CPU_AVX512_VPOPCNTDQ);
-      clear_feature(CPU_AVX512_VPCLMULQDQ);
-      clear_feature(CPU_AVX512_VBMI);
-      clear_feature(CPU_AVX512_VBMI2);
-      clear_feature(CPU_CLWB);
-      clear_feature(CPU_FLUSHOPT);
-      clear_feature(CPU_GFNI);
-      clear_feature(CPU_AVX512_BITALG);
-      clear_feature(CPU_AVX512_IFMA);
-      clear_feature(CPU_AVX_IFMA);
-      clear_feature(CPU_AVX512_FP16);
-      clear_feature(CPU_AVX10_1);
-      clear_feature(CPU_AVX10_2);
-    }
-  }
-
-  // Currently APX support is only enabled for targets supporting AVX512VL feature.
-  if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
-    if (FLAG_IS_DEFAULT(UseAPX)) {
-      FLAG_SET_DEFAULT(UseAPX, true); // by default UseAPX is false; enable if supported.
-    } else if (!UseAPX) {
-      clear_feature(CPU_APX_F);
-    }
-  } else {
-    if (!os_supports_apx_egprs() || !supports_avx512vl()) {
-      clear_feature(CPU_APX_F);
-    }
-    if (UseAPX) {
-      if (!FLAG_IS_DEFAULT(UseAPX)) {
-        warning("APX instructions are not available on this CPU");
-      }
-      FLAG_SET_DEFAULT(UseAPX, false);
-    }
-  }
-#if defined(COMPILER2)
-  if (UseAPX) {
-    // Increase InlineSmallCode by 10%
-    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
-      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
-    }
-  }
-#endif
-
-  CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseFMA, FMA, supports_fma(), "FMA" MULTI_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseCountLeadingZerosInstruction, LZCNT, supports_lzcnt(), "lzcnt" SINGLE_INST_WARNING_MSG);
-  // BMI instructions (except tzcnt) use an encoding with VEX prefix.
-  // VEX prefix is generated only when AVX > 0.
-  CHECK_CPU_FEATURE(UseBMI1Instructions, BMI1, supports_bmi1(), "BMI1" MULTI_INST_WARNING_MSG);
-
-  if (supports_bmi2() && supports_avx()) {
-    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
-      FLAG_SET_DEFAULT(UseBMI2Instructions, true);
-    } else if (!UseBMI2Instructions) {
-      clear_feature(CPU_BMI2);
-    }
-  } else {
-    if (!supports_avx()) {
-      clear_feature(CPU_BMI2);
-    }
-    if (UseBMI2Instructions) {
-      if (!FLAG_IS_DEFAULT(UseBMI2Instructions)) {
-        warning("BMI2 instructions are not available on this CPU (AVX is also required)");
-      }
-      FLAG_SET_DEFAULT(UseBMI2Instructions, false);
-    }
-  }
-
-  CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), "popcnt" SINGLE_INST_WARNING_MSG);
-  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "SHA" MULTI_INST_WARNING_MSG);
-
-  if (FLAG_IS_DEFAULT(IntelJccErratumMitigation)) {
-    _has_intel_jcc_erratum = compute_has_intel_jcc_erratum();
-    FLAG_SET_ERGO(IntelJccErratumMitigation, _has_intel_jcc_erratum);
-  } else {
-    _has_intel_jcc_erratum = IntelJccErratumMitigation;
-  }
-
+// Common VM configuration is handled here.
+// Note that it can be overridden by vendors in set_vendor_specific_vm_config().
+void VM_Version::set_vendor_agnostic_vm_config() {
   if (X86ICacheSync == -1) {
     // Auto-detect, choosing the best performant one that still flushes
     // the cache. We could switch to CPUID/SERIALIZE ("4"/"5") going forward.
@@ -1143,71 +893,484 @@ void VM_Version::get_processor_features() {
     }
   }
 
-  stringStream ss(2048);
-  if (supports_hybrid()) {
-    ss.print("(hybrid)");
+#ifdef COMPILER2
+  int max_vector_size = 0;
+  if (UseAVX == 0 || !os_supports_avx_vectors()) {
+    // 16 byte vectors (in XMM) are supported with SSE2+
+    max_vector_size = 16;
+  } else if (UseAVX == 1 || UseAVX == 2) {
+    // 32 bytes vectors (in YMM) are only supported with AVX+
+    max_vector_size = 32;
+  } else if (UseAVX > 2) {
+    // 64 bytes vectors (in ZMM) are only supported with AVX 3
+    max_vector_size = 64;
+  }
+
+  int min_vector_size = 4; // We require MaxVectorSize to be at least 4 on 64bit
+
+  if (FLAG_IS_DEFAULT(MaxVectorSize)) {
+    // If default, use highest supported configuration
+    FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
   } else {
-    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+    if (MaxVectorSize < min_vector_size) {
+      warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, min_vector_size);
+    }
+    if (MaxVectorSize > max_vector_size) {
+      warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+    }
+    if (!is_power_of_2(MaxVectorSize)) {
+      warning("MaxVectorSize must be a power of 2, setting to default: %i", max_vector_size);
+      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
+    }
   }
-  ss.print(" family %d model %d stepping %d microcode 0x%x",
-           cpu_family(), _model, _stepping, os::cpu_microcode_revision());
-  ss.print(", ");
-  int features_offset = (int)ss.size();
-  if (compute_fast_bmi2()) {
-    _features.set_feature(CPU_FAST_BMI2);
+
+#ifdef ASSERT
+  if (MaxVectorSize > 0) {
+    if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
+      tty->print_cr("State of YMM registers after signal handle:");
+      int nreg = 4;
+      const char* ymm_name[4] = {"0", "7", "8", "15"};
+      for (int i = 0; i < nreg; i++) {
+        tty->print("YMM%s:", ymm_name[i]);
+        for (int j = 7; j >=0; j--) {
+          tty->print(" %x", _cpuid_info.ymm_save[i*8 + j]);
+        }
+        tty->cr();
+      }
+    }
+  }
+#endif // ASSERT
+
+  if (UseAPX) {
+    // Increase InlineSmallCode by 10%
+    if (FLAG_IS_DEFAULT(InlineSmallCode)) {
+      FLAG_SET_DEFAULT(InlineSmallCode, InlineSmallCode * 1.10);
+    }
   }
 
-  insert_features_names(_features, ss);
+#endif // COMPILER2
 
-  _cpu_info_string = ss.as_string(true);
-  _features_string = _cpu_info_string + features_offset;
+  // Use count trailing zeros instruction if available
+  if (supports_bmi1()) {
+    // tzcnt does not require VEX prefix
+    if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
+      FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, true);
+    }
+  } else if (UseCountTrailingZerosInstruction) {
+    if (!FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
+      warning("tzcnt instruction is not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
+  }
 
-  // Use AES instructions if available.
-  if (supports_aes()) {
+  // Use fast-string operations if available.
+  if (supports_erms()) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      FLAG_SET_DEFAULT(UseFastStosb, true);
+    }
+  } else if (UseFastStosb) {
+    if (!FLAG_IS_DEFAULT(UseFastStosb)) {
+      warning("fast-string operations are not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseFastStosb, false);
+  }
+
+  // Allocation prefetch settings
+  int cache_line_size = checked_cast<int>(prefetch_data_size());
+  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
+      (cache_line_size > AllocatePrefetchStepSize)) {
+    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+  }
+
+  // Prefetch settings
+
+  // Prefetch interval for gc copy/scan == 9 dcache lines.  Derived from
+  // 50-warehouse specjbb runs on a 2-way 1.8ghz opteron using a 4gb heap.
+  // Tested intervals from 128 to 2048 in increments of 64 == one cache line.
+  // 256 bytes (4 dcache lines) was the nearest runner-up to 576.
+
+  // gc copy/scan is disabled if prefetchw isn't supported, because
+  // Prefetch::write emits an inlined prefetchw on Linux.
+  // Do not use the 3dnow prefetchw instruction.  It isn't supported on em64t.
+  // The used prefetcht0 instruction works for both amd64 and em64t.
+
+  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 576);
+  }
+
+  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
+    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 576);
+  }
+
+  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
+     (cache_line_size > ContendedPaddingWidth)) {
+    FLAG_SET_DEFAULT(ContendedPaddingWidth, cache_line_size);
+  }
+
+  // This machine allows unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
+  // are used for implementing the array copy, fill and clear operations.
+  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
+    FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
+  }
+}
+
+void VM_Version::zx_config() {
+  if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
+    FLAG_SET_DEFAULT(UseStoreImmI16, false); // don't use it on ZX cpus
+  }
+  if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll) && supports_sse3()) {
+    FLAG_SET_DEFAULT(UseXmmRegToRegMoveAll, true); // use movaps, movapd on new ZX cpus
+  }
+  if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+    FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+  }
+  if ((cpu_family() == 6) || (cpu_family() == 7)) {
+    if (FLAG_IS_DEFAULT(UseAddressNop)) {
+      // Use it on all ZX cpus
+      FLAG_SET_DEFAULT(UseAddressNop, true);
+    }
+    if (supports_sse3()) { // new ZX cpus
+#ifdef COMPILER2
+      if (FLAG_IS_DEFAULT(MaxLoopPad)) {
+        // For new ZX cpus do the next optimization:
+        // don't align the beginning of a loop if there are enough instructions
+        // left (NumberOfLoopInstrToAlign defined in c2_globals.hpp)
+        // in current fetch line (OptoLoopAlignment) or the padding
+        // is big (> MaxLoopPad).
+        // Set MaxLoopPad to 11 for new ZX cpus to reduce number of
+        // generated NOP instructions. 11 is the largest size of one
+        // address NOP instruction '0F 1F' (see Assembler::nop(i)).
+        FLAG_SET_DEFAULT(MaxLoopPad, 11);
+      }
+#endif // COMPILER2
+      if (supports_sse4_2()) { // new ZX cpus
+#ifdef COMPILER2
+        if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+          FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+        }
+#endif // COMPILER2
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+          FLAG_SET_DEFAULT(UseUnalignedLoadStores, true); // use movdqu on newest ZX cpus
+        }
+      }
+    }
+  }
+}
+
+void VM_Version::amd_config() {
+  // Settings applicable to all amd architectures
+  if (FLAG_IS_DEFAULT(UseAddressNop)) {
+    // Use it on new AMD cpus starting from Opteron.
+    FLAG_SET_DEFAULT(UseAddressNop, true);
+  }
+  if (supports_sse4a()) {
+    if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll)) {
+      FLAG_SET_DEFAULT(UseXmmRegToRegMoveAll, true); // use movaps, movapd on '10h'
+    }
+    if (FLAG_IS_DEFAULT(UseXmmI2F)) {
+      FLAG_SET_DEFAULT(UseXmmI2F, true);
+    }
+    if (FLAG_IS_DEFAULT(UseXmmI2D)) {
+      FLAG_SET_DEFAULT(UseXmmI2D, true);
+    }
+  } else {
+    if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
+      FLAG_SET_DEFAULT(UseXmmLoadAndClearUpper, false); // use movsd only on '10h' Opteron
+    }
+  }
+
+  // some defaults for AMD family 15h
+  if (cpu_family() == 0x15) {
+    // On family 15h processors default is no sw prefetch
+    if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+      FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+    }
+    // Also, if some other prefetch style is specified, default instruction type is PREFETCHW
+    if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+    }
+    if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
+    }
+  }
+
+#ifdef COMPILER2
+  if (cpu_family() < 0x17 && MaxVectorSize > 16) {
+    // Limit vectors size to 16 bytes on AMD cpus < 17h.
+    FLAG_SET_DEFAULT(MaxVectorSize, 16);
+  }
+#endif // COMPILER2
+
+  // Some defaults for AMD family >= 17h && Hygon family 18h
+  if (cpu_family() >= 0x17) {
+    // On family >=17h processors use XMM and UnalignedLoadStores
+    // for Array Copy
+    if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+      FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
+    }
+  }
+
+#ifdef COMPILER2
+    // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
+    // On Zen3 (family 0x19) and beyond it should be default off.
+  if (cpu_family() >= 0x17 && cpu_family() < 0x19) {
+    if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+    }
+  }
+#endif
+
+  // For AMD Processors use XMM/YMM MOVDQU instructions
+  // for Object Initialization as default
+  if (is_amd()) {
+    if (cpu_family() >= 0x19) {
+      if (FLAG_IS_DEFAULT(UseFastStosb)) {
+        FLAG_SET_DEFAULT(UseFastStosb, false);
+      }
+    }
+    // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
+    // are used for implementing the array copy, fill and clear operations.
+    // The AMD platforms with native 512-bit datapath have improved implementation of
+    // 64-byte load/stores and so the default threshold is set to 0 for these
+    // platforms.
+    if (FLAG_IS_DEFAULT(CopyAVX3Threshold) && is_amd_avx512_datapath_server_family()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    }
+  }
+}
+
+void VM_Version::intel_config() {
+  if (FLAG_IS_DEFAULT(IntelJccErratumMitigation) && is_intel_family_core()) {
+    FLAG_SET_ERGO(IntelJccErratumMitigation, compute_has_intel_jcc_erratum());
+  }
+
+  // Settings applicable to all intel architectures
+  if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
+    FLAG_SET_DEFAULT(UseStoreImmI16, false); // don't use it on Intel cpus
+  }
+  if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll) && supports_sse3()) {
+    FLAG_SET_DEFAULT(UseXmmRegToRegMoveAll, true); // use movaps, movapd on new Intel cpus
+  }
+  if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+    FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
+  }
+#ifdef COMPILER2
+  if (MaxVectorSize > 16) {
+    if (FLAG_IS_DEFAULT(UseFastStosb)) {
+      FLAG_SET_DEFAULT(UseFastStosb, false);
+    }
+  }
+#endif // COMPILER2
+  if (is_intel_server_family()) {
+    // Check if processor has Intel Ecore
+    if (FLAG_IS_DEFAULT(EnableX86ECoreOpts) &&
+      (supports_hybrid() ||
+       _model == 0xAF /* Xeon 6 E-cores (Sierra Forest) */ ||
+       _model == 0xDD /* Xeon 6+ E-cores (Clearwater Forest) */ )) {
+      FLAG_SET_DEFAULT(EnableX86ECoreOpts, true);
+    }
+    if (supports_sse3()) {
+#ifdef COMPILER2
+      if (FLAG_IS_DEFAULT(MaxLoopPad)) {
+        // For new Intel cpus do the next optimization:
+        // don't align the beginning of a loop if there are enough instructions
+        // left (NumberOfLoopInstrToAlign defined in c2_globals.hpp)
+        // in current fetch line (OptoLoopAlignment) or the padding
+        // is big (> MaxLoopPad).
+        // Set MaxLoopPad to 11 for new Intel cpus to reduce number of
+        // generated NOP instructions. 11 is the largest size of one
+        // address NOP instruction '0F 1F' (see Assembler::nop(i)).
+        FLAG_SET_DEFAULT(MaxLoopPad, 11);
+      }
+      if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
+        // Spilling to FPU registers not beneficial on Haswell and beyond
+        if (UseAVX > 1) {
+          FLAG_SET_DEFAULT(UseFPUForSpilling, false);
+        } else {
+          FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+        }
+      }
+#endif // COMPILER2
+      if (is_intel_modern_cpu()) { // Newest Intel cpus
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+          FLAG_SET_DEFAULT(UseUnalignedLoadStores, true); // use movdqu on newest Intel cpus
+        }
+        if (FLAG_IS_DEFAULT(AllocatePrefetchLines)) {
+          FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
+        }
+      }
+    }
+    // CopyAVX3Threshold is the threshold at which 64-byte instructions are used
+    // for implementing the array copy and clear operations.
+    // The Intel platforms that supports the serialize instruction
+    // have improved implementation of 64-byte load/stores and so the default
+    // threshold is set to 0 for these platforms.
+    if (FLAG_IS_DEFAULT(CopyAVX3Threshold) && supports_serialize()) {
+      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
+    }
+  }
+  if (is_intel_server_family() || cpu_family() == 15) {
+    if (FLAG_IS_DEFAULT(UseAddressNop)) {
+      // Use it on all Intel cpus starting from PentiumPro
+      FLAG_SET_DEFAULT(UseAddressNop, true);
+    }
+  }
+  if (is_atom_family() || is_knights_family()) {
+#ifdef COMPILER2
+    if (FLAG_IS_DEFAULT(OptoScheduling)) {
+      FLAG_SET_DEFAULT(OptoScheduling, true);
+    }
+#endif
+    if (supports_sse4_2()) { // Silvermont
+      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+        FLAG_SET_DEFAULT(UseUnalignedLoadStores, true); // use movdqu on newest Intel cpus
+      }
+    }
+    if (FLAG_IS_DEFAULT(UseIncDec)) {
+      FLAG_SET_DEFAULT(UseIncDec, false);
+    }
+  }
+}
+
+void VM_Version::set_vendor_specific_vm_config() {
+  if (is_zx()) {
+    zx_config();
+  }
+  if (is_amd_family()) {
+    amd_config();
+  }
+  if (is_intel()) {
+    intel_config();
+  }
+
+  // Now set or update config which depends on vendor configuration
+#ifdef COMPILER2
+  // MaxVectorSize is vendor dependent
+  if (UseAVX > 2) {
+    if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
+        (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
+         ArrayOperationPartialInlineSize != 0 &&
+         ArrayOperationPartialInlineSize != 16 &&
+         ArrayOperationPartialInlineSize != 32 &&
+         ArrayOperationPartialInlineSize != 64)) {
+      int inline_size = 0;
+      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
+        inline_size = 64;
+      } else if (MaxVectorSize >= 32) {
+        inline_size = 32;
+      } else if (MaxVectorSize >= 16) {
+        inline_size = 16;
+      }
+      if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
+        warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
+      }
+      ArrayOperationPartialInlineSize = inline_size;
+    }
+
+    if (ArrayOperationPartialInlineSize > MaxVectorSize) {
+      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
+      if (ArrayOperationPartialInlineSize) {
+        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
+      } else {
+        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
+      }
+    }
+  }
+
+  // EnableX86ECoreOpts is vendor dependent
+  if (FLAG_IS_DEFAULT(OptimizeFill)) {
+    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
+      FLAG_SET_DEFAULT(OptimizeFill, false);
+    }
+  }
+
+  // UseUnalignedLoadStores is vendor dependent
+  if (FLAG_IS_DEFAULT(AlignVector)) {
+    // Modern processors allow misaligned memory operations for vectors.
+    FLAG_SET_DEFAULT(AlignVector, !UseUnalignedLoadStores);
+  }
+#endif
+
+  // Use XMM/YMM MOVDQU instruction for Object Initialization
+  // UseUnalignedLoadStores is vendor dependent
+  if (UseUnalignedLoadStores) {
+    if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
+      FLAG_SET_DEFAULT(UseXMMForObjInit, true);
+    }
+  } else if (UseXMMForObjInit) {
+    if (!FLAG_IS_DEFAULT(UseXMMForObjInit)) {
+      warning("UseXMMForObjInit requires SSE2 and unaligned load/stores. Feature is switched off.");
+    }
+    FLAG_SET_DEFAULT(UseXMMForObjInit, false);
+  }
+
+  // AllocatePrefetchDistance depends on AllocatePrefetchStyle which is vendor dependent
+  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    bool use_watermark_prefetch = (AllocatePrefetchStyle == 2);
+    FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
+  } else {
+    if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
+      if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
+        warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
+      }
+      FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
+    }
+  }
+}
+
+void VM_Version::configure_intrinsics() {
+  if (UseAES) {
     if (supports_sse3()) {
       if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         FLAG_SET_DEFAULT(UseAESIntrinsics, true);
       }
-    } else if (UseAESIntrinsics) {
+    } else {
       // The AES intrinsic stubs require AES instruction support (of course)
       // but also require sse3 mode or higher for instructions it use.
-      if (!FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         warning("X86 AES intrinsics require SSE3 instructions or higher. Intrinsics will be disabled.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
+    // --AES-CTR begins--
     if (!UseAESIntrinsics) {
-      if (UseAESCTRIntrinsics) {
-        if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-          warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+        warning("AES-CTR intrinsics require UseAESIntrinsics flag to be enabled. Intrinsics will be disabled.");
       }
+      FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
     } else {
       if (supports_sse4_1()) {
         if (FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
           FLAG_SET_DEFAULT(UseAESCTRIntrinsics, true);
         }
-      } else if (UseAESCTRIntrinsics) {
-        // The AES-CTR intrinsic stubs require AES instruction support (of course)
-        // but also require sse4.1 mode or higher for instructions it use.
-        if (!FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-          warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
-        }
-        FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
+      } else {
+         // The AES-CTR intrinsic stubs require AES instruction support (of course)
+         // but also require sse4.1 mode or higher for instructions it use.
+        if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
+           warning("X86 AES-CTR intrinsics require SSE4.1 instructions or higher. Intrinsics will be disabled.");
+         }
+         FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
       }
     }
   } else {
     if (!cpu_supports_aes()) {
       if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        warning("AES intrinsics are not available on this CPU");
+        warning("AES intrinsics are not available on this CPU.");
       }
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       if (UseAESCTRIntrinsics && !FLAG_IS_DEFAULT(UseAESCTRIntrinsics)) {
-        warning("AES-CTR intrinsics are not available on this CPU");
+        warning("AES_CTR intrinsics are not available on this CPU.");
       }
       FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-    } else if (!UseAES) {
+    } else {
+      assert(!UseAES, "must be");
       if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
         warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
@@ -1294,9 +1457,9 @@ void VM_Version::get_processor_features() {
 
   // Dilithium Intrinsics
   if (UseAVX > 1) {
-      if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
-          UseDilithiumIntrinsics = true;
-      }
+    if (FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
+      UseDilithiumIntrinsics = true;
+    }
   } else if (UseDilithiumIntrinsics) {
     if (!FLAG_IS_DEFAULT(UseDilithiumIntrinsics)) {
       warning("Intrinsics for ML-DSA are not available on this CPU.");
@@ -1366,55 +1529,6 @@ void VM_Version::get_processor_features() {
   }
 
 #ifdef COMPILER2
-  int max_vector_size = 0;
-  if (UseAVX == 0 || !os_supports_avx_vectors()) {
-    // 16 byte vectors (in XMM) are supported with SSE2+
-    max_vector_size = 16;
-  } else if (UseAVX == 1 || UseAVX == 2) {
-    // 32 bytes vectors (in YMM) are only supported with AVX+
-    max_vector_size = 32;
-  } else if (UseAVX > 2) {
-    // 64 bytes vectors (in ZMM) are only supported with AVX 3
-    max_vector_size = 64;
-  }
-
-  int min_vector_size = 4; // We require MaxVectorSize to be at least 4 on 64bit
-
-  if (!FLAG_IS_DEFAULT(MaxVectorSize)) {
-    if (MaxVectorSize < min_vector_size) {
-      warning("MaxVectorSize must be at least %i on this platform", min_vector_size);
-      FLAG_SET_DEFAULT(MaxVectorSize, min_vector_size);
-    }
-    if (MaxVectorSize > max_vector_size) {
-      warning("MaxVectorSize must be at most %i on this platform", max_vector_size);
-      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
-    }
-    if (!is_power_of_2(MaxVectorSize)) {
-      warning("MaxVectorSize must be a power of 2, setting to default: %i", max_vector_size);
-      FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
-    }
-  } else {
-    // If default, use highest supported configuration
-    FLAG_SET_DEFAULT(MaxVectorSize, max_vector_size);
-  }
-
-#ifdef ASSERT
-  if (MaxVectorSize > 0) {
-    if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
-      tty->print_cr("State of YMM registers after signal handle:");
-      int nreg = 4;
-      const char* ymm_name[4] = {"0", "7", "8", "15"};
-      for (int i = 0; i < nreg; i++) {
-        tty->print("YMM%s:", ymm_name[i]);
-        for (int j = 7; j >=0; j--) {
-          tty->print(" %x", _cpuid_info.ymm_save[i*8 + j]);
-        }
-        tty->cr();
-      }
-    }
-  }
-#endif // ASSERT
-
   if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
@@ -1440,7 +1554,6 @@ void VM_Version::get_processor_features() {
   if (FLAG_IS_DEFAULT(UseIntPoly25519Intrinsics)) {
     UseIntPoly25519Intrinsics = true;
   }
-
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;
   }
@@ -1457,238 +1570,6 @@ void VM_Version::get_processor_features() {
     UseMontgomerySquareIntrinsic = true;
   }
 #endif // COMPILER2
-
-  // On new cpus instructions which update whole XMM register should be used
-  // to prevent partial register stall due to dependencies on high half.
-  //
-  // UseXmmLoadAndClearUpper == true  --> movsd(xmm, mem)
-  // UseXmmLoadAndClearUpper == false --> movlpd(xmm, mem)
-  // UseXmmRegToRegMoveAll == true  --> movaps(xmm, xmm), movapd(xmm, xmm).
-  // UseXmmRegToRegMoveAll == false --> movss(xmm, xmm),  movsd(xmm, xmm).
-
-
-  if (is_zx()) { // ZX cpus specific settings
-    if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
-      UseStoreImmI16 = false; // don't use it on ZX cpus
-    }
-    if ((cpu_family() == 6) || (cpu_family() == 7)) {
-      if (FLAG_IS_DEFAULT(UseAddressNop)) {
-        // Use it on all ZX cpus
-        UseAddressNop = true;
-      }
-    }
-    if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
-      UseXmmLoadAndClearUpper = true; // use movsd on all ZX cpus
-    }
-    if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll)) {
-      if (supports_sse3()) {
-        UseXmmRegToRegMoveAll = true; // use movaps, movapd on new ZX cpus
-      } else {
-        UseXmmRegToRegMoveAll = false;
-      }
-    }
-    if (((cpu_family() == 6) || (cpu_family() == 7)) && supports_sse3()) { // new ZX cpus
-#ifdef COMPILER2
-      if (FLAG_IS_DEFAULT(MaxLoopPad)) {
-        // For new ZX cpus do the next optimization:
-        // don't align the beginning of a loop if there are enough instructions
-        // left (NumberOfLoopInstrToAlign defined in c2_globals.hpp)
-        // in current fetch line (OptoLoopAlignment) or the padding
-        // is big (> MaxLoopPad).
-        // Set MaxLoopPad to 11 for new ZX cpus to reduce number of
-        // generated NOP instructions. 11 is the largest size of one
-        // address NOP instruction '0F 1F' (see Assembler::nop(i)).
-        MaxLoopPad = 11;
-      }
-#endif // COMPILER2
-      if (supports_sse4_2()) { // new ZX cpus
-        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-          UseUnalignedLoadStores = true; // use movdqu on newest ZX cpus
-        }
-      }
-    }
-
-    if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
-    }
-  }
-
-  if (is_amd_family()) { // AMD cpus specific settings
-    if (FLAG_IS_DEFAULT(UseAddressNop)) {
-      // Use it on new AMD cpus starting from Opteron.
-      UseAddressNop = true;
-    }
-    if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
-      if (supports_sse4a()) {
-        UseXmmLoadAndClearUpper = true; // use movsd only on '10h' Opteron
-      } else {
-        UseXmmLoadAndClearUpper = false;
-      }
-    }
-    if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll)) {
-      if (supports_sse4a()) {
-        UseXmmRegToRegMoveAll = true; // use movaps, movapd only on '10h'
-      } else {
-        UseXmmRegToRegMoveAll = false;
-      }
-    }
-    if (FLAG_IS_DEFAULT(UseXmmI2F)) {
-      if (supports_sse4a()) {
-        UseXmmI2F = true;
-      } else {
-        UseXmmI2F = false;
-      }
-    }
-    if (FLAG_IS_DEFAULT(UseXmmI2D)) {
-      if (supports_sse4a()) {
-        UseXmmI2D = true;
-      } else {
-        UseXmmI2D = false;
-      }
-    }
-
-    // some defaults for AMD family 15h
-    if (cpu_family() == 0x15) {
-      // On family 15h processors default is no sw prefetch
-      if (FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-        FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
-      }
-      // Also, if some other prefetch style is specified, default instruction type is PREFETCHW
-      if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
-        FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
-      }
-      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-        FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
-      }
-    }
-
-#ifdef COMPILER2
-    if (cpu_family() < 0x17 && MaxVectorSize > 16) {
-      // Limit vectors size to 16 bytes on AMD cpus < 17h.
-      FLAG_SET_DEFAULT(MaxVectorSize, 16);
-    }
-#endif // COMPILER2
-
-    // Some defaults for AMD family >= 17h && Hygon family 18h
-    if (cpu_family() >= 0x17) {
-      // On family >=17h processors use XMM and UnalignedLoadStores
-      // for Array Copy
-      if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-        FLAG_SET_DEFAULT(UseUnalignedLoadStores, true);
-      }
-    }
-
-#ifdef COMPILER2
-    // Enable UseFPUForSpilling on Zen1/Zen2 (family 0x17) and Hygon Dhyana (family 0x18).
-    // On Zen3 (family 0x19) and beyond it should be default off.
-    if (cpu_family() >= 0x17 && cpu_family() < 0x19) {
-      if (supports_sse4_2() && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
-      }
-    }
-#endif // COMPILER2
-
-  }
-
-  if (is_intel()) { // Intel cpus specific settings
-    if (FLAG_IS_DEFAULT(UseStoreImmI16)) {
-      UseStoreImmI16 = false; // don't use it on Intel cpus
-    }
-    if (is_intel_server_family() || cpu_family() == 15) {
-      if (FLAG_IS_DEFAULT(UseAddressNop)) {
-        // Use it on all Intel cpus starting from PentiumPro
-        UseAddressNop = true;
-      }
-    }
-    if (FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper)) {
-      UseXmmLoadAndClearUpper = true; // use movsd on all Intel cpus
-    }
-    if (FLAG_IS_DEFAULT(UseXmmRegToRegMoveAll)) {
-      if (supports_sse3()) {
-        UseXmmRegToRegMoveAll = true; // use movaps, movapd on new Intel cpus
-      } else {
-        UseXmmRegToRegMoveAll = false;
-      }
-    }
-    if (is_intel_server_family() && supports_sse3()) { // New Intel cpus
-#ifdef COMPILER2
-      if (FLAG_IS_DEFAULT(MaxLoopPad)) {
-        // For new Intel cpus do the next optimization:
-        // don't align the beginning of a loop if there are enough instructions
-        // left (NumberOfLoopInstrToAlign defined in c2_globals.hpp)
-        // in current fetch line (OptoLoopAlignment) or the padding
-        // is big (> MaxLoopPad).
-        // Set MaxLoopPad to 11 for new Intel cpus to reduce number of
-        // generated NOP instructions. 11 is the largest size of one
-        // address NOP instruction '0F 1F' (see Assembler::nop(i)).
-        MaxLoopPad = 11;
-      }
-#endif // COMPILER2
-
-      if (is_intel_modern_cpu()) { // Newest Intel cpus
-        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-          UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
-        }
-      }
-    }
-    if (is_atom_family() || is_knights_family()) {
-#ifdef COMPILER2
-      if (FLAG_IS_DEFAULT(OptoScheduling)) {
-        OptoScheduling = true;
-      }
-#endif
-      if (supports_sse4_2()) { // Silvermont
-        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
-          UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
-        }
-      }
-      if (FLAG_IS_DEFAULT(UseIncDec)) {
-        FLAG_SET_DEFAULT(UseIncDec, false);
-      }
-    }
-    if (FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 3);
-    }
-  }
-
-#ifdef COMPILER2
-  if (UseAVX > 2) {
-    if (FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) ||
-        (!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize) &&
-         ArrayOperationPartialInlineSize != 0 &&
-         ArrayOperationPartialInlineSize != 16 &&
-         ArrayOperationPartialInlineSize != 32 &&
-         ArrayOperationPartialInlineSize != 64)) {
-      int inline_size = 0;
-      if (MaxVectorSize >= 64 && AVX3Threshold == 0) {
-        inline_size = 64;
-      } else if (MaxVectorSize >= 32) {
-        inline_size = 32;
-      } else if (MaxVectorSize >= 16) {
-        inline_size = 16;
-      }
-      if(!FLAG_IS_DEFAULT(ArrayOperationPartialInlineSize)) {
-        warning("Setting ArrayOperationPartialInlineSize as %d", inline_size);
-      }
-      ArrayOperationPartialInlineSize = inline_size;
-    }
-
-    if (ArrayOperationPartialInlineSize > MaxVectorSize) {
-      ArrayOperationPartialInlineSize = MaxVectorSize >= 16 ? MaxVectorSize : 0;
-      if (ArrayOperationPartialInlineSize) {
-        warning("Setting ArrayOperationPartialInlineSize as MaxVectorSize=%zd", MaxVectorSize);
-      } else {
-        warning("Setting ArrayOperationPartialInlineSize as %zd", ArrayOperationPartialInlineSize);
-      }
-    }
-  }
-
-  if (FLAG_IS_DEFAULT(OptimizeFill)) {
-    if (MaxVectorSize < 32 || (!EnableX86ECoreOpts && !VM_Version::supports_avx512vlbw())) {
-      OptimizeFill = false;
-    }
-  }
-#endif
   if (supports_sse4_2()) {
     if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
       FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
@@ -1710,153 +1591,269 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
   }
   if (UseAVX >= 2) {
-    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+    if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+      FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
+    }
   } else if (UseVectorizedHashCodeIntrinsic) {
     if (!FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
       warning("vectorizedHashCode intrinsics are not available on this CPU");
     }
     FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, false);
   }
+  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
+      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
+  }
+  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
+      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
+  }
+}
 
-  // Use count trailing zeros instruction if available
-  if (supports_bmi1()) {
-    // tzcnt does not require VEX prefix
-    if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      UseCountTrailingZerosInstruction = true;
-    }
-  } else if (UseCountTrailingZerosInstruction) {
-    if (!FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      warning("tzcnt instruction is not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
+void VM_Version::get_processor_features() {
+  _cpu = 4; // 486 by default
+  _model = 0;
+  _stepping = 0;
+  _logical_processors_per_package = 1;
+  // i486 internal cache is both I&D and has a 16-byte line size
+  _L1_data_cache_line_size = 16;
+
+  // Get raw processor info
+
+  get_cpu_info_stub(&_cpuid_info);
+
+  assert_is_initialized();
+  _cpu = extended_cpu_family();
+  _model = extended_cpu_model();
+  _stepping = cpu_stepping();
+
+  if (cpu_family() > 4) { // it supports CPUID
+    _features = _cpuid_info.feature_flags(); // These can be changed by VM settings
+    _cpu_features = _features; // Preserve features
+    // Logical processors are only available on P4s and above,
+    // and only if hyperthreading is available.
+    _logical_processors_per_package = logical_processor_count();
+    _L1_data_cache_line_size = L1_line_size();
   }
 
-  // Use fast-string operations if available.
-  if (supports_erms()) {
-    if (FLAG_IS_DEFAULT(UseFastStosb)) {
-      UseFastStosb = true;
-    }
-  } else if (UseFastStosb) {
-    if (!FLAG_IS_DEFAULT(UseFastStosb)) {
-      warning("fast-string operations are not available on this CPU");
-    }
-    FLAG_SET_DEFAULT(UseFastStosb, false);
+  // xchg and xadd instructions
+  _supports_atomic_getset4 = true;
+  _supports_atomic_getadd4 = true;
+  _supports_atomic_getset8 = true;
+  _supports_atomic_getadd8 = true;
+
+  // assigning this field effectively enables Unsafe.writebackMemory()
+  // by initing UnsafeConstant.DATA_CACHE_LINE_FLUSH_SIZE to non-zero
+  // that is only implemented on x86_64 and only if the OS plays ball
+  if (os::supports_map_sync()) {
+    // publish data cache line flush size to generic field, otherwise
+    // let if default to zero thereby disabling writeback
+    _data_cache_line_flush_size = _cpuid_info.std_cpuid1_ebx.bits.clflush_size * 8;
   }
 
-  // For AMD Processors use XMM/YMM MOVDQU instructions
-  // for Object Initialization as default
-  if (is_amd() && cpu_family() >= 0x19) {
-    if (FLAG_IS_DEFAULT(UseFastStosb)) {
-      UseFastStosb = false;
-    }
+  if (UseSSE < 4) {
+    clear_feature(CPU_SSE4_1);
+    clear_feature(CPU_SSE4_2);
   }
 
-#ifdef COMPILER2
-  if (is_intel() && MaxVectorSize > 16) {
-    if (FLAG_IS_DEFAULT(UseFastStosb)) {
-      UseFastStosb = false;
-    }
-  }
-#endif
-
-  // Use XMM/YMM MOVDQU instruction for Object Initialization
-  if (UseUnalignedLoadStores) {
-    if (FLAG_IS_DEFAULT(UseXMMForObjInit)) {
-      UseXMMForObjInit = true;
-    }
-  } else if (UseXMMForObjInit) {
-    if (!FLAG_IS_DEFAULT(UseXMMForObjInit)) {
-      warning("UseXMMForObjInit requires SSE2 and unaligned load/stores. Feature is switched off.");
-    }
-    FLAG_SET_DEFAULT(UseXMMForObjInit, false);
+  if (UseSSE < 3) {
+    clear_feature(CPU_SSE3);
+    clear_feature(CPU_SSSE3);
+    clear_feature(CPU_SSE4A);
   }
 
-#ifdef COMPILER2
-  if (FLAG_IS_DEFAULT(AlignVector)) {
-    // Modern processors allow misaligned memory operations for vectors.
-    AlignVector = !UseUnalignedLoadStores;
+  // UseSSE is set to the smaller of what hardware supports and what
+  // the command line requires. i.e., you cannot set UseSSE to 4 on
+  // older systems which do not support it.
+  int use_sse_limit = 2;
+  if (UseSSE > 3 && supports_sse4_1()) {
+    use_sse_limit = 4;
+  } else if (UseSSE > 2 && supports_sse3()) {
+    use_sse_limit = 3;
   }
-#endif // COMPILER2
-
-  if (FLAG_IS_DEFAULT(AllocatePrefetchInstr)) {
-    if (AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch()) {
-      FLAG_SET_DEFAULT(AllocatePrefetchInstr, 0);
-    }
-  }
-
-  // Allocation prefetch settings
-  int cache_line_size = checked_cast<int>(prefetch_data_size());
-  if (FLAG_IS_DEFAULT(AllocatePrefetchStepSize) &&
-      (cache_line_size > AllocatePrefetchStepSize)) {
-    FLAG_SET_DEFAULT(AllocatePrefetchStepSize, cache_line_size);
+  if (FLAG_IS_DEFAULT(UseSSE)) {
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
+  } else if (UseSSE > use_sse_limit) {
+    warning("UseSSE=%d is not supported on this CPU, setting it to UseSSE=%d", UseSSE, use_sse_limit);
+    FLAG_SET_DEFAULT(UseSSE, use_sse_limit);
   }
 
-  if ((AllocatePrefetchDistance == 0) && (AllocatePrefetchStyle != 0)) {
-    assert(!FLAG_IS_DEFAULT(AllocatePrefetchDistance), "default value should not be 0");
-    if (!FLAG_IS_DEFAULT(AllocatePrefetchStyle)) {
-      warning("AllocatePrefetchDistance is set to 0 which disable prefetching. Ignoring AllocatePrefetchStyle flag.");
-    }
-    FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
-  }
-
-  if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
-    bool use_watermark_prefetch = (AllocatePrefetchStyle == 2);
-    FLAG_SET_DEFAULT(AllocatePrefetchDistance, allocate_prefetch_distance(use_watermark_prefetch));
-  }
-
-  if (is_intel() && is_intel_server_family() && supports_sse3()) {
-    if (FLAG_IS_DEFAULT(AllocatePrefetchLines) &&
-        is_intel_modern_cpu()) { // Nehalem based cpus
-      FLAG_SET_DEFAULT(AllocatePrefetchLines, 4);
-    }
-#ifdef COMPILER2
-    if (FLAG_IS_DEFAULT(UseFPUForSpilling) && supports_sse4_2()) {
-      // Spilling to FPU registers not beneficial on Haswell and beyond
-      if (UseAVX > 1) {
-        FLAG_SET_DEFAULT(UseFPUForSpilling, false);
-      } else {
-        FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+  // ZX cpus specific settings
+  if (is_zx() && FLAG_IS_DEFAULT(UseAVX)) {
+    if (cpu_family() == 7) {
+      if (extended_cpu_model() == 0x5B || extended_cpu_model() == 0x6B) {
+        UseAVX = 1;
+      } else if (extended_cpu_model() == 0x1B || extended_cpu_model() == 0x3B) {
+        UseAVX = 0;
       }
+    } else if (cpu_family() == 6) {
+      UseAVX = 0;
     }
-#endif
   }
 
-  if (is_zx() && ((cpu_family() == 6) || (cpu_family() == 7)) && supports_sse4_2()) {
-#ifdef COMPILER2
-    if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
-      FLAG_SET_DEFAULT(UseFPUForSpilling, true);
+  // first try initial setting and detect what we can support
+  int use_avx_limit = 0;
+  if (UseAVX > 0) {
+    if (UseSSE < 4) {
+      // Don't use AVX if SSE is unavailable or has been disabled.
+      use_avx_limit = 0;
+    } else if (UseAVX > 2 && supports_evex()) {
+      use_avx_limit = 3;
+    } else if (UseAVX > 1 && supports_avx2()) {
+      use_avx_limit = 2;
+    } else if (UseAVX > 0 && supports_avx()) {
+      use_avx_limit = 1;
+    } else {
+      use_avx_limit = 0;
     }
-#endif
+  }
+  if (FLAG_IS_DEFAULT(UseAVX)) {
+    // Don't use AVX-512 on older Skylakes unless explicitly requested.
+    if (use_avx_limit > 2 && is_intel_skylake() && _stepping < 5) {
+      FLAG_SET_DEFAULT(UseAVX, 2);
+    } else {
+      FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
+    }
   }
 
-  // Prefetch settings
-
-  // Prefetch interval for gc copy/scan == 9 dcache lines.  Derived from
-  // 50-warehouse specjbb runs on a 2-way 1.8ghz opteron using a 4gb heap.
-  // Tested intervals from 128 to 2048 in increments of 64 == one cache line.
-  // 256 bytes (4 dcache lines) was the nearest runner-up to 576.
-
-  // gc copy/scan is disabled if prefetchw isn't supported, because
-  // Prefetch::write emits an inlined prefetchw on Linux.
-  // Do not use the 3dnow prefetchw instruction.  It isn't supported on em64t.
-  // The used prefetcht0 instruction works for both amd64 and em64t.
-
-  if (FLAG_IS_DEFAULT(PrefetchCopyIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchCopyIntervalInBytes, 576);
-  }
-  if (FLAG_IS_DEFAULT(PrefetchScanIntervalInBytes)) {
-    FLAG_SET_DEFAULT(PrefetchScanIntervalInBytes, 576);
+  if (UseAVX > use_avx_limit) {
+    if (UseSSE < 4) {
+      warning("UseAVX=%d requires UseSSE=4, setting it to UseAVX=0", UseAVX);
+    } else {
+      warning("UseAVX=%d is not supported on this CPU, setting it to UseAVX=%d", UseAVX, use_avx_limit);
+    }
+    FLAG_SET_DEFAULT(UseAVX, use_avx_limit);
   }
 
-  if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
-     (cache_line_size > ContendedPaddingWidth))
-    ContendedPaddingWidth = cache_line_size;
-
-  // This machine allows unaligned memory accesses
-  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
-    FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  if (UseAVX < 3) {
+    clear_feature(CPU_AVX512F);
+    clear_feature(CPU_AVX512DQ);
+    clear_feature(CPU_AVX512CD);
+    clear_feature(CPU_AVX512BW);
+    clear_feature(CPU_AVX512ER);
+    clear_feature(CPU_AVX512PF);
+    clear_feature(CPU_AVX512VL);
+    clear_feature(CPU_AVX512_VPOPCNTDQ);
+    clear_feature(CPU_AVX512_VPCLMULQDQ);
+    clear_feature(CPU_AVX512_VAES);
+    clear_feature(CPU_AVX512_VNNI);
+    clear_feature(CPU_AVX512_VBMI);
+    clear_feature(CPU_AVX512_VBMI2);
+    clear_feature(CPU_AVX512_BITALG);
+    clear_feature(CPU_AVX512_IFMA);
+    clear_feature(CPU_APX_F);
+    clear_feature(CPU_AVX512_FP16);
+    clear_feature(CPU_AVX10_1);
+    clear_feature(CPU_AVX10_2);
   }
 
+  if (UseAVX < 2) {
+    clear_feature(CPU_AVX2);
+    clear_feature(CPU_AVX_IFMA);
+  }
+
+  if (UseAVX < 1) {
+    clear_feature(CPU_AVX);
+    clear_feature(CPU_VZEROUPPER);
+    clear_feature(CPU_F16C);
+    clear_feature(CPU_SHA512);
+  }
+
+  if (logical_processors_per_package() == 1) {
+    // HT processor could be installed on a system which doesn't support HT.
+    clear_feature(CPU_HT);
+  }
+
+  if (is_intel() && is_knights_family()) { // Intel cpus specific settings
+    clear_feature(CPU_VZEROUPPER);
+    clear_feature(CPU_AVX512BW);
+    clear_feature(CPU_AVX512VL);
+    clear_feature(CPU_APX_F);
+    clear_feature(CPU_AVX512DQ);
+    clear_feature(CPU_AVX512_VNNI);
+    clear_feature(CPU_AVX512_VAES);
+    clear_feature(CPU_AVX512_VPOPCNTDQ);
+    clear_feature(CPU_AVX512_VPCLMULQDQ);
+    clear_feature(CPU_AVX512_VBMI);
+    clear_feature(CPU_AVX512_VBMI2);
+    clear_feature(CPU_CLWB);
+    clear_feature(CPU_FLUSHOPT);
+    clear_feature(CPU_GFNI);
+    clear_feature(CPU_AVX512_BITALG);
+    clear_feature(CPU_AVX512_IFMA);
+    clear_feature(CPU_AVX_IFMA);
+    clear_feature(CPU_AVX512_FP16);
+    clear_feature(CPU_AVX10_1);
+    clear_feature(CPU_AVX10_2);
+  }
+
+  // Currently APX support is only enabled for targets supporting AVX512VL feature.
+  if (supports_apx_f() && os_supports_apx_egprs() && supports_avx512vl()) {
+    if (FLAG_IS_DEFAULT(UseAPX)) {
+      FLAG_SET_DEFAULT(UseAPX, true); // by default UseAPX is false; enable if supported.
+    } else if (!UseAPX) {
+      clear_feature(CPU_APX_F);
+    }
+  } else {
+    if (!os_supports_apx_egprs() || !supports_avx512vl()) {
+      clear_feature(CPU_APX_F);
+    }
+    if (UseAPX) {
+      if (!FLAG_IS_DEFAULT(UseAPX)) {
+        warning("APX instructions are not available on this CPU");
+      }
+      FLAG_SET_DEFAULT(UseAPX, false);
+    }
+  }
+
+  CHECK_CPU_FEATURE(UseCLMUL, CLMUL, supports_clmul(), "CLMUL" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseAES, AES, supports_aes(), "AES" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseFMA, FMA, supports_fma(), "FMA" MULTI_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseCountLeadingZerosInstruction, LZCNT, supports_lzcnt(), "lzcnt" SINGLE_INST_WARNING_MSG);
+  // BMI instructions (except tzcnt) use an encoding with VEX prefix.
+  // VEX prefix is generated only when AVX > 0.
+  CHECK_CPU_FEATURE(UseBMI1Instructions, BMI1, supports_bmi1(), "BMI1" MULTI_INST_WARNING_MSG);
+
+  if (supports_bmi2() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+      FLAG_SET_DEFAULT(UseBMI2Instructions, true);
+    } else if (!UseBMI2Instructions) {
+      clear_feature(CPU_BMI2);
+    }
+  } else {
+    if (!supports_avx()) {
+      clear_feature(CPU_BMI2);
+    }
+    if (UseBMI2Instructions) {
+      if (!FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+        warning("BMI2 instructions are not available on this CPU (AVX is also required)");
+      }
+      FLAG_SET_DEFAULT(UseBMI2Instructions, false);
+    }
+  }
+
+  CHECK_CPU_FEATURE(UsePopCountInstruction, POPCNT, supports_popcnt(), "popcnt" SINGLE_INST_WARNING_MSG);
+  CHECK_CPU_FEATURE(UseSHA, SHA, supports_sha() || (supports_avx2() && supports_bmi2()), "SHA" MULTI_INST_WARNING_MSG);
+  if (compute_fast_bmi2()) {
+    _features.set_feature(CPU_FAST_BMI2);
+  }
+
+  stringStream ss(2048);
+  if (supports_hybrid()) {
+    ss.print("(hybrid)");
+  } else {
+    ss.print("(%u cores per cpu, %u threads per core)", cores_per_cpu(), threads_per_core());
+  }
+  ss.print(" family %d model %d stepping %d microcode 0x%x",
+           cpu_family(), _model, _stepping, os::cpu_microcode_revision());
+  ss.print(", ");
+  int features_offset = (int)ss.size();
+  insert_features_names(_features, ss);
+
+  _cpu_info_string = ss.as_string(true);
+  _features_string = _cpu_info_string + features_offset;
+}
+
+
+void VM_Version::log_additional_cpu_info() {
 #ifndef PRODUCT
   if (log_is_enabled(Info, os, cpu)) {
     LogStream ls(Log(os, cpu)::info());
@@ -1909,27 +1906,6 @@ void VM_Version::get_processor_features() {
     }
   }
 #endif // !PRODUCT
-  if (FLAG_IS_DEFAULT(UseSignumIntrinsic)) {
-      FLAG_SET_DEFAULT(UseSignumIntrinsic, true);
-  }
-  if (FLAG_IS_DEFAULT(UseCopySignIntrinsic)) {
-      FLAG_SET_DEFAULT(UseCopySignIntrinsic, true);
-  }
-  // CopyAVX3Threshold is the threshold at which 64-byte vector instructions
-  // are used for implementing the array copy, fill and clear operations.
-  // The Intel platforms that support the serialize instruction and the AMD
-  // platforms with native 512-bit datapath have improved implementation of
-  // 64-byte load/stores and so the default threshold is set to 0 for these
-  // platforms.
-  if (FLAG_IS_DEFAULT(CopyAVX3Threshold)) {
-    if (is_intel() && is_intel_server_family() && supports_serialize()) {
-      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
-    } else if (is_amd() && is_amd_avx512_datapath_server_family()) {
-      FLAG_SET_DEFAULT(CopyAVX3Threshold, 0);
-    } else {
-      FLAG_SET_DEFAULT(CopyAVX3Threshold, AVX3Threshold);
-    }
-  }
 }
 
 void VM_Version::print_platform_virtualization_info(outputStream* st) {
@@ -2155,7 +2131,17 @@ void VM_Version::initialize() {
                                      g.clear_apx_test_state());
   getCPUIDBrandString_stub = CAST_TO_FN_PTR(getCPUIDBrandString_stub_t,
                                      g.generate_getCPUIDBrandString());
+
+  // Four step process to configure VM settings:
+  // 1. Get cpu features available on the processor
+  // 2. Set common VM configuration (i.e. vendor agnostic configuration)
+  // 3. Next allow vendors to override or set vendor-specific settings
+  // 4. Lastly set VM flags for intrinsics because they depend on configuration set in previous steps.
   get_processor_features();
+  set_vendor_agnostic_vm_config();
+  set_vendor_specific_vm_config();
+  configure_intrinsics();
+  log_additional_cpu_info();
 
   Assembler::precompute_instructions();
 
