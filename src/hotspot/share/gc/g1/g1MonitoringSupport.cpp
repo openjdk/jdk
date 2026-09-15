@@ -367,6 +367,10 @@ G1MonitoringScope::~G1MonitoringScope() {
   MemoryService::track_memory_usage();
 }
 
+void G1MonitoringScope::set_all_memory_pools_affected() {
+  _tms.set_all_memory_pools_affected();
+}
+
 G1YoungGCMonitoringScope::G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support,
                                                    bool all_memory_pools_affected) :
   G1MonitoringScope(monitoring_support,

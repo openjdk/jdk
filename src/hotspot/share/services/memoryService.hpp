@@ -152,6 +152,8 @@ public:
                   bool recordGCEndTime,
                   bool countCollection);
 
+  void set_all_memory_pools_affected() { _allMemoryPoolsAffected = true; }
+
   ~TraceMemoryManagerStats();
 };
 

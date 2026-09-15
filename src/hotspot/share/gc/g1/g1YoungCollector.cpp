@@ -1011,14 +1011,17 @@ void G1YoungCollector::post_evacuate_cleanup_1(G1ParScanThreadStateSet* per_thre
   phase_times()->record_post_evacuate_cleanup_task_1_time((Ticks::now() - start).seconds() * 1000.0);
 }
 
-void G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
+bool G1YoungCollector::post_evacuate_cleanup_2(G1ParScanThreadStateSet* per_thread_states,
                                                G1EvacInfo* evacuation_info) {
   Ticks start = Ticks::now();
+  bool has_humongous_regions_reclaimed = false;
   {
     G1PostEvacuateCollectionSetCleanupTask2 cl(per_thread_states, evacuation_info, &_evac_failure_regions);
     _g1h->run_batch_task(&cl);
+    has_humongous_regions_reclaimed = cl.has_humongous_regions_reclaimed();
   }
   phase_times()->record_post_evacuate_cleanup_task_2_time((Ticks::now() - start).seconds() * 1000.0);
+  return has_humongous_regions_reclaimed;
 }
 
 void G1YoungCollector::enqueue_candidates_as_root_regions() {
@@ -1030,7 +1033,7 @@ void G1YoungCollector::enqueue_candidates_as_root_regions() {
   });
 }
 
-void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
+bool G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                                     G1ParScanThreadStateSet* per_thread_states) {
   G1GCPhaseTimes* p = phase_times();
 
@@ -1057,7 +1060,7 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
 
   post_evacuate_cleanup_1(per_thread_states);
 
-  post_evacuate_cleanup_2(per_thread_states, evacuation_info);
+  bool has_humongous_regions_reclaimed = post_evacuate_cleanup_2(per_thread_states, evacuation_info);
 
   // Regions in the collection set candidates are roots for the marking (they are
   // not marked through considering they are very likely to be reclaimed soon.
@@ -1081,6 +1084,8 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   _g1h->gc_epilogue(false);
 
   _g1h->resize_heap_after_young_collection(_allocation_word_size);
+
+  return has_humongous_regions_reclaimed;
 }
 
 bool G1YoungCollector::evacuation_failed() const {
@@ -1156,7 +1161,9 @@ void G1YoungCollector::collect() {
     if (may_do_optional_evacuation) {
       evacuate_optional_collection_set(&per_thread_states);
     }
-    post_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
+    if (post_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states)) {
+      ms.set_all_memory_pools_affected();
+    }
 
     // Refine the type of a concurrent mark operation now that we did the
     // evacuation, eventually aborting it.

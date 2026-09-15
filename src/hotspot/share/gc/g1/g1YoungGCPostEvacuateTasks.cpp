@@ -513,12 +513,14 @@ public:
 class G1PostEvacuateCollectionSetCleanupTask2::EagerlyReclaimHumongousObjectsTask : public G1AbstractSubTask {
   uint _humongous_regions_reclaimed;
   size_t _bytes_freed;
+  uint* _num_humongous_regions_reclaimed;
 
 public:
-  EagerlyReclaimHumongousObjectsTask() :
+  EagerlyReclaimHumongousObjectsTask(uint* num_humongous_regions_reclaimed) :
     G1AbstractSubTask(G1GCPhaseTimes::EagerlyReclaimHumongousObjects),
     _humongous_regions_reclaimed(0),
-    _bytes_freed(0) { }
+    _bytes_freed(0),
+    _num_humongous_regions_reclaimed(num_humongous_regions_reclaimed) { }
 
   virtual ~EagerlyReclaimHumongousObjectsTask() {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -540,6 +542,7 @@ public:
 
     _humongous_regions_reclaimed = cl.num_humongous_regions_reclaimed();
     _bytes_freed = cl.bytes_freed();
+    *_num_humongous_regions_reclaimed = _humongous_regions_reclaimed;
   }
 };
 
@@ -942,13 +945,14 @@ public:
 G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                                                                  G1EvacInfo* evacuation_info,
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
-  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times())
+  G1BatchedTask("Post Evacuate Cleanup 2", G1CollectedHeap::heap()->phase_times()),
+  _num_humongous_regions_reclaimed(0)
 {
 #ifdef COMPILER2
   add_serial_task(new UpdateDerivedPointersTask());
 #endif // COMPILER2
   if (G1CollectedHeap::heap()->has_humongous_reclaim_candidates()) {
-    add_serial_task(new EagerlyReclaimHumongousObjectsTask());
+    add_serial_task(new EagerlyReclaimHumongousObjectsTask(&_num_humongous_regions_reclaimed));
   }
   add_serial_task(new DestroyPssTask(per_thread_states));
 

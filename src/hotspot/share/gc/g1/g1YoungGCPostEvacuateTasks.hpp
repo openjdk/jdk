@@ -62,6 +62,8 @@ public:
 // - Resize TLABs and Swap Card Table
 class G1PostEvacuateCollectionSetCleanupTask2 : public G1BatchedTask {
   class EagerlyReclaimHumongousObjectsTask;
+  // Set by EagerlyReclaimHumongousObjectsTask.
+  uint _num_humongous_regions_reclaimed;
 #ifdef COMPILER2
   class UpdateDerivedPointersTask;
 #endif // COMPILER2
@@ -76,6 +78,10 @@ public:
   G1PostEvacuateCollectionSetCleanupTask2(G1ParScanThreadStateSet* per_thread_states,
                                           G1EvacInfo* evacuation_info,
                                           G1EvacFailureRegions* evac_failure_regions);
+
+  bool has_humongous_regions_reclaimed() const {
+    return _num_humongous_regions_reclaimed != 0;
+  }
 };
 
 #endif // SHARE_GC_G1_G1YOUNGGCPOSTEVACUATETASKS_HPP
