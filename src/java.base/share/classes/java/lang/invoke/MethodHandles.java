@@ -1538,7 +1538,7 @@ public final class MethodHandles {
         private Lookup(Class<?> lookupClass, Class<?> prevLookupClass, int allowedModes) {
             assert prevLookupClass == null || ((allowedModes & MODULE) == 0
                     && prevLookupClass.getModule() != lookupClass.getModule());
-            assert !lookupClass.isArray() && !lookupClass.isPrimitive();
+            assert lookupClass.isClassOrInterface();
             this.lookupClass = lookupClass;
             this.prevLookupClass = prevLookupClass;
             this.allowedModes = allowedModes;
