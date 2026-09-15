@@ -1126,35 +1126,55 @@ class ShenandoahEvacuationTask : public WorkerTask {
 private:
   ShenandoahHeap* const _sh;
   ShenandoahCollectionSet* const _cs;
+  ShenandoahCsetTaskAdapter _cs_tasks;
+  TaskTerminator _terminator;
 public:
   ShenandoahEvacuationTask(ShenandoahHeap* sh,
                            ShenandoahCollectionSet* cs) :
     WorkerTask("Shenandoah Evacuation"),
     _sh(sh),
-    _cs(cs) {
+    _cs(cs),
+    _cs_tasks(_cs),
+    _terminator(_sh->workers()->active_workers(), &_cs_tasks) {
   }
 
   void work(uint worker_id) {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     SuspendibleThreadSetJoiner stsj;
-    do_work();
+    do_work(worker_id);
   }
 
 private:
-  void do_work() {
+  void do_work(uint worker_id) {
+    ShenandoahTerminatorTerminator tt(_sh, true);
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
-    ShenandoahHeapRegion* r;
-    while ((r =_cs->claim_next()) != nullptr) {
-      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-      _sh->marked_object_iterate(r, &cl);
-
-      if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+    while (true) {
+      if (_sh->check_cancelled_gc_and_yield(true)) {
         break;
       }
 
-      if (_sh->check_cancelled_gc_and_yield(true)) {
-        break;
+      ShenandoahHeapRegion* r = nullptr;
+      if (tt.can_work()) {
+        // Thread is not a reserved worker, try to take a region
+        r = _cs->claim_next();
+      }
+
+      if (r != nullptr) {
+        ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
+                                  ShenandoahPhaseTimings::Work,
+                                             worker_id, true);
+
+        assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+        _sh->marked_object_iterate(r, &cl);
+
+        if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+          // Thread cannot evacuate more, retire it so that it stays down in termination offer
+          tt.retire();
+        }
+      } else {
+        if (_terminator.offer_termination(&tt)) {
+          break;
+        }
       }
     }
   }

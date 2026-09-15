@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 
-#include "gc/shared/taskqueue.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
 
@@ -33,23 +33,10 @@ class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
-class ShenandoahCollectionSet;
 
-class ShenandoahCsetTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
-  ShenandoahCollectionSet* _collection_set;
-public:
-  explicit ShenandoahCsetTaskAdapter(ShenandoahCollectionSet* collection_set)
-    : _collection_set(collection_set) {}
-
-#ifdef ASSERT
-  void assert_empty() const override;
-#endif
-
-  uint tasks() const override;
-};
 
 // Unlike ShenandoahEvacuationTask, this iterates over all regions rather than just the collection set.
-// This is needed in order to promote humongous start regions if age() >= tenure threshold.
+// This is needed in order to promote regions if age() >= tenure threshold.
 class ShenandoahGenerationalEvacuationTask : public WorkerTask {
 private:
   ShenandoahGenerationalHeap* const _heap;
