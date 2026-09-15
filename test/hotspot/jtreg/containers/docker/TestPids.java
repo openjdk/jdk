@@ -42,7 +42,6 @@ import jdk.test.lib.containers.docker.Common;
 import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Container;
 import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 

@@ -41,7 +41,6 @@ import jdk.test.lib.containers.docker.DockerRunOptions;
 import jdk.test.lib.containers.docker.DockerTestUtils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Container;
 
 public class TestPidsLimit {
     private static final String imageName = Common.imageName("pids");
