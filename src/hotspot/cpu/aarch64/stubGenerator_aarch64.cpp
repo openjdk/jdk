@@ -5105,7 +5105,7 @@ class StubGenerator: public StubCodeGenerator {
     const Register a[25] = {
         r25, r26, r27, r3, r4, r5, r6, r7, rscratch1, rscratch2, r10, r11, r12,
         r13, r14, r15, r16, r17, r28, r19, r20, r21, r22, r23, r24 };
-    Register tmp0 = r0, tmp1 = r1, tmp2 = r2, tmp3 = lr;
+    Register tmp0 = r0, tmp1 = r1, tmp2 = r2;
 
     Label rounds24_loop_0, rounds24_loop_1;
 
@@ -5131,10 +5131,10 @@ class StubGenerator: public StubCodeGenerator {
     __ fmovs(v1, 1.0);  // exact representation
 
     // load round_constants base
-    __ lea(tmp3, ExternalAddress((address) _double_keccak_round_consts));
+    __ lea(lr, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop_0);
-    keccak_round_gpr(can_use_fp, can_use_r18, tmp3, a, tmp0, tmp1, tmp2);
+    keccak_round_gpr(can_use_fp, can_use_r18, lr, a, tmp0, tmp1, tmp2);
     __ fsubs(v0, v0, v1);
     __ fcmps(v0, 0.0);
     __ br(__ NE, rounds24_loop_0);
@@ -5148,10 +5148,10 @@ class StubGenerator: public StubCodeGenerator {
     __ fmovs(v0, 24.0); // reset float loop counter,
 
     // load round_constants base
-    __ lea(tmp3, ExternalAddress((address) _double_keccak_round_consts));
+    __ lea(lr, ExternalAddress((address) _double_keccak_round_consts));
 
     __ BIND(rounds24_loop_1);
-    keccak_round_gpr(can_use_fp, can_use_r18, tmp3, a, tmp0, tmp1, tmp2);
+    keccak_round_gpr(can_use_fp, can_use_r18, lr, a, tmp0, tmp1, tmp2);
     __ fsubs(v0, v0, v1);
     __ fcmps(v0, 0.0);
     __ br(__ NE, rounds24_loop_1);
