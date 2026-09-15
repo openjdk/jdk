@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
+import javax.crypto.spec.PBMAC1ParameterSpec;
 
 import sun.security.pkcs.ParsingException;
 import sun.security.util.*;
@@ -166,6 +167,12 @@ class MacData {
         SecretKeyFactory skf;
         SecretKey pbeKey = null;
         Mac m;
+        String prfHmac = kdfHmac;
+        String macHmac = hmac;
+
+        if (macHmac == null) {
+            macHmac = prfHmac;
+        }
 
         PBEKeySpec keySpec;
 
@@ -177,11 +184,9 @@ class MacData {
          * The prefix used in Algorithm names is guaranteed to be lowercase.
          */
         if (macAlgorithm.startsWith("pbewith")) {
-            m = Mac.getInstance(hmac);
-            int len = keyLength == -1 ? m.getMacLength()*8 : keyLength;
-            skf = SecretKeyFactory.getInstance("PBKDF2With" +kdfHmac);
-            keySpec = new PBEKeySpec(password, params.getSalt(),
-                    params.getIterationCount(), len);
+            m = Mac.getInstance("PBEWith" + macHmac);
+            skf = SecretKeyFactory.getInstance("PBE");
+            keySpec = new PBEKeySpec(password);
         } else {
             m = Mac.getInstance(macAlgorithm);
             skf = SecretKeyFactory.getInstance("PBE");
@@ -191,7 +196,11 @@ class MacData {
         try {
             pbeKey = skf.generateSecret(keySpec);
             if (macAlgorithm.startsWith("pbewith")) {
-                m.init(pbeKey);
+                int effectiveKeyLength = keyLength == -1 ? m.getMacLength() * 8
+                        : keyLength;
+                m.init(pbeKey, new PBEParameterSpec(params.getSalt(),
+                        params.getIterationCount(),
+                        new PBMAC1ParameterSpec(effectiveKeyLength, prfHmac)));
             } else {
                 m.init(pbeKey, params);
             }
@@ -260,8 +269,8 @@ class MacData {
         // The prefix used in Algorithm names is guaranteed to be lowercase.
         if (macAlgorithm.startsWith("pbewith")) {
             algName = "PBMAC1";
-            kdfHmac = MacData.parseKdfHmac(macAlgorithm);
-            hmac = MacData.parseHmac(macAlgorithm);
+            kdfHmac = MacData.canonicalHmac(MacData.parseKdfHmac(macAlgorithm));
+            hmac = MacData.canonicalHmac(MacData.parseHmac(macAlgorithm));
             if (hmac == null) {
                 hmac = kdfHmac;
             }
@@ -367,5 +376,16 @@ class MacData {
         } else {
             return text.substring(index1);
         }
+    }
+
+    private static String canonicalHmac(String hmac) throws NoSuchAlgorithmException {
+        if (hmac == null) {
+            return null;
+        }
+        KnownOIDs o = KnownOIDs.findMatch(hmac);
+        if (o == null) {
+            throw new NoSuchAlgorithmException("Unknown Hmac algorithm: " + hmac);
+        }
+        return o.stdName();
     }
 }

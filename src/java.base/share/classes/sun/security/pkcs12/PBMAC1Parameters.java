@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,8 @@ final class PBMAC1Parameters {
                 !o.stdName().equals("HmacSHA384") &&
                 !o.stdName().equals("HmacSHA512") &&
                 !o.stdName().equals("HmacSHA512/224") &&
-                !o.stdName().equals("HmacSHA512/256"))) {
+                !o.stdName().equals("HmacSHA512/256") &&
+                !o.stdName().equals("HmacSHA3-384"))) {
             throw new IOException("PBMAC1 parameter parsing error: "
                     + "expecting the object identifier for a HmacSHA key "
                     + "derivation function");
