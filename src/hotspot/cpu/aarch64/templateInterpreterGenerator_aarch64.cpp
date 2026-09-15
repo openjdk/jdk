@@ -682,13 +682,13 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& do_continue)
   __ b(do_continue);
 }
 
-// See if we've got enough room on the stack for locals plus overhead
-// below JavaThread::stack_overflow_limit(). If not, throw a StackOverflowError
-// without going through the signal handler, i.e., reserved and yellow zones
-// will not be made usable. The shadow zone must suffice to handle the
-// overflow.
-// The expression stack grows down incrementally, so the normal guard
-// page mechanism will work for that.
+// See if we've got enough room on the stack for locals plus overhead plus the
+// expression stack below JavaThread::stack_overflow_limit(). If not, throw a
+// StackOverflowError without going through the signal handler, i.e., reserved
+// and yellow zones will not be made usable. The shadow zone must suffice to
+// handle the overflow.
+// The expression stack size is included because the expression stack does
+// not grow down incrementally. The max required size is reserved upfront.
 //
 // NOTE: Since the additional locals are also always pushed (wasn't
 // obvious in generate_method_entry) so the guard should work for them
@@ -730,7 +730,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(void) {
   // compute rsp as if this were going to be the last frame on
   // the stack before the red zone
 
-  // locals + overhead, in bytes
+  // locals + overhead + max_stack, in bytes
   __ mov(r0, overhead_size);
   __ add(r0, r0, r3, Assembler::LSL, Interpreter::logStackElementSize);  // 2 slots per parameter.
 
@@ -899,6 +899,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ ldr(r10, Address(r10, in_bytes(Klass::java_mirror_offset())));
   __ resolve_oop_handle(r10, rscratch1, rscratch2);
   if (! native_call) {
+    __ pd_extend_stack(r5_const_method, rscratch1);
     __ ldrh(rscratch1, Address(r5_const_method, ConstMethod::max_stack_offset()));
     __ add(rscratch1, rscratch1, MAX2(3, Method::extra_stack_entries()));
     __ sub(rscratch1, sp, rscratch1, ext::uxtw, 3);
@@ -1641,24 +1642,24 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized, b
   // rscratch1: sender sp
   address entry_point = __ pc();
 
-  const Address constMethod(rmethod, Method::const_offset());
   const Address access_flags(rmethod, Method::access_flags_offset());
-  const Address size_of_parameters(r3,
-                                   ConstMethod::size_of_parameters_offset());
-  const Address size_of_locals(r3, ConstMethod::size_of_locals_offset());
 
   // get parameter size (always needed)
   // need to load the const method first
-  __ ldr(r3, constMethod);
-  __ load_unsigned_short(r2, size_of_parameters);
+  __ ldr(r5, Address(rmethod, Method::const_offset()));
 
   // r2: size of parameters
+  __ load_unsigned_short(r2, Address(r5, ConstMethod::size_of_parameters_offset()));
+  __ load_unsigned_short(r3, Address(r5, ConstMethod::size_of_locals_offset())); // get size of locals in words
+  __ load_unsigned_short(rscratch1, Address(r5, ConstMethod::max_stack_offset()));
+  __ sub(r5, r3, r2); // r5 = no. of additional locals
 
-  __ load_unsigned_short(r3, size_of_locals); // get size of locals in words
-  __ sub(r3, r3, r2); // r3 = no. of additional locals
+  __ add(r3, r5, rscratch1);  // r3 = no. of additional locals + max expression stack size
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
+
+  __ mov(r3, r5); // r3 = no. of additional locals
 
   // compute beginning of parameters (rlocals)
   __ add(rlocals, esp, r2, ext::uxtx, 3);
