@@ -400,7 +400,7 @@ void ShenandoahGeneration::scan_remembered_set(bool is_concurrent) {
   uint nworkers = heap->workers()->active_workers();
 
   ShenandoahReferenceProcessor* rp = ref_processor();
-  ShenandoahRegionChunkIterator work_list(nworkers);
+  ShenandoahRegionChunkIterator work_list(ShenandoahHeap::heap());
   ShenandoahScanRememberedTask task(task_queues(), old_gen_task_queues(), rp, &work_list, is_concurrent);
   heap->assert_gc_workers(nworkers);
   heap->workers()->run_task(&task);
