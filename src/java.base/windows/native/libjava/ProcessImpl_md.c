@@ -389,7 +389,7 @@ Java_java_lang_ProcessImpl_create(JNIEnv *env, jclass ignored,
 
                             ret = processCreate(
                                 env,
-                                pcmd,
+                                pcmdCopy,
                                 penvBlock,
                                 pdir,
                                 handles,
