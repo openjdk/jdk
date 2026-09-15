@@ -141,8 +141,10 @@ address NativeCall::stub_address() const {
   address stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
   if (stub_addr != call_addr) {
     // The call has been linked to its address stub.
-    DEBUG_ONLY(CodeBlob *code = CodeCache::find_blob(call_addr));
+#ifdef ASSERT
+    CodeBlob *code = CodeCache::find_blob(call_addr);
     assert(code != nullptr && code->contains(stub_addr), "Sanity");
+#endif
     return stub_addr;
   }
 
