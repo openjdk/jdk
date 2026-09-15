@@ -1552,6 +1552,20 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   return nullptr;
 }
 
+BasicType MemNode::get_reinterpret_variant(BasicType bt) {
+  switch (bt) {
+    case T_INT: return T_FLOAT;
+    case T_FLOAT: return T_INT;
+    case T_LONG: return T_DOUBLE;
+    case T_DOUBLE: return T_LONG;
+    default: return T_ILLEGAL;
+  }
+}
+
+bool MemNode::has_reinterpret_variant(const Type* vt) const {
+  return get_reinterpret_variant(value_basic_type()) == vt->basic_type();
+}
+
 //----------------------is_instance_field_load_with_local_phi------------------
 bool LoadNode::is_instance_field_load_with_local_phi(Node* ctrl) {
   if( in(Memory)->is_Phi() && in(Memory)->in(0) == ctrl &&
@@ -1680,18 +1694,6 @@ Node* LoadNode::convert_to_signed_load(PhaseGVN& gvn) {
                         false /*require_atomic_access*/, is_unaligned_access(), is_mismatched_access());
 }
 
-bool LoadNode::has_reinterpret_variant(const Type* rt) {
-  BasicType bt = rt->basic_type();
-  switch (Opcode()) {
-    case Op_LoadI: return (bt == T_FLOAT);
-    case Op_LoadL: return (bt == T_DOUBLE);
-    case Op_LoadF: return (bt == T_INT);
-    case Op_LoadD: return (bt == T_LONG);
-
-    default: return false;
-  }
-}
-
 Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   BasicType bt = rt->basic_type();
   assert(has_reinterpret_variant(rt), "no reinterpret variant: %s %s", Name(), type2name(bt));
@@ -1710,18 +1712,6 @@ Node* LoadNode::convert_to_reinterpret_load(PhaseGVN& gvn, const Type* rt) {
   return LoadNode::make(gvn, in(MemNode::Control), in(MemNode::Memory), in(MemNode::Address),
                         mem_t->is_ptr(), rt, bt, _mo, _control_dependency,
                         require_atomic_access, is_unaligned_access(), is_mismatched);
-}
-
-bool StoreNode::has_reinterpret_variant(const Type* vt) {
-  BasicType bt = vt->basic_type();
-  switch (Opcode()) {
-    case Op_StoreI: return (bt == T_FLOAT);
-    case Op_StoreL: return (bt == T_DOUBLE);
-    case Op_StoreF: return (bt == T_INT);
-    case Op_StoreD: return (bt == T_LONG);
-
-    default: return false;
-  }
 }
 
 Node* StoreNode::convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt) {
