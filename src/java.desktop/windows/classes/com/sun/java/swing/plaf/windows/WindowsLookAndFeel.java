@@ -2037,7 +2037,6 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         private Icon icon;
         private String nativeImageName;
         private String fallbackName;
-        private WindowsDesktopProperty desktopProperty;
 
         ActiveWindowsIcon(String desktopPropertyName,
                             String nativeImageName, String fallbackName) {
