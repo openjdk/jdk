@@ -1706,8 +1706,8 @@ void MacroAssembler::access_store_at(BasicType type, DecoratorSet decorators,
 
 void MacroAssembler::safepoint_poll(Register tmp1, Label& slow_path) {
   ldr_u32(tmp1, Address(Rthread, JavaThread::polling_word_offset()));
-  tst(tmp1, exact_log2(SafepointMechanism::poll_bit()));
-  b(slow_path, eq);
+  tst(tmp1, SafepointMechanism::poll_bit());
+  b(slow_path, ne);
 }
 
 void MacroAssembler::get_polling_page(Register dest) {

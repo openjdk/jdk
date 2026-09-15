@@ -484,7 +484,7 @@ void VM_BaseGetOrSetLocal::check_and_clone_this_value_object() {
 
   assert(_type == T_OBJECT, "sanity check");
   assert(obj != nullptr, "expected non-null oop");
-  assert(obj_h()->is_value(), "expected inline oop");
+  assert(obj_h()->is_value(), "expected value oop");
   assert(_index == 0, "expected slot 0 for THIS object");
 
   ValueKlass* klass = ValueKlass::cast(obj_h()->klass());

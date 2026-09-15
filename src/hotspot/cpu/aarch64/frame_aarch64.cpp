@@ -632,7 +632,9 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
       ret_pc_loc = (intptr_t*)cfp.sender_pc_addr;
       fp_loc = (intptr_t*)cfp.saved_fp_addr;
     }
-    address ret_pc = *(address*)ret_pc_loc;
+    // Strip without authenticating: describe may see unsigned or broken LRs,
+    // and is_return_barrier_entry() compares against a raw stub address.
+    address ret_pc = pauth_strip_pointer(*(address*)ret_pc_loc);
     values.describe(frame_no, ret_pc_loc,
       Continuation::is_return_barrier_entry(ret_pc) ? "return address (return barrier)" : "return address");
     values.describe(-1, fp_loc, "saved fp", 0); // "unowned" as value belongs to sender

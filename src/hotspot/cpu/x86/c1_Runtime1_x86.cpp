@@ -918,7 +918,7 @@ OopMapSet* Runtime1::generate_code_for(StubId id, StubAssembler* sasm) {
           case StubId::c1_new_null_free_array_id:
             __ cmpl(t0, Klass::_lh_array_tag_flat_value);  // the array can be a flat array.
             __ jcc(Assembler::equal, ok);
-            __ cmpl(t0, (Klass::_lh_array_tag_ref_value)); // the array cannot be a flat array (due to InlineArrayElementMaxFlatSize, etc)
+            __ cmpl(t0, (Klass::_lh_array_tag_ref_value)); // the array cannot be a flat array.
             __ jcc(Assembler::equal, ok);
             __ stop("assert(is an object or value type array klass)");
             break;
