@@ -3236,6 +3236,9 @@ bool LibraryCallKit::inline_onspinwait() {
 }
 
 bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
+  if (C->do_clinit_barriers()) {
+    return true; // Generate guard in AOT preload code
+  }
   if (!kls->is_Con()) {
     return true;
   }

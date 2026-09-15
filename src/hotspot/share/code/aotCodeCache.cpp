@@ -1711,6 +1711,14 @@ static int uint_cmp(const void *i, const void *j) {
   return a > b ? 1 : a < b ? -1 : 0;
 }
 
+static int preload_cmp(const void *i, const void *j) {
+  AOTCodeEntry* ea = *(AOTCodeEntry**)i;
+  AOTCodeEntry* eb = *(AOTCodeEntry**)j;
+  uint a = ea->comp_id();
+  uint b = eb->comp_id();
+  return a > b ? 1 : a < b ? -1 : 0;
+}
+
 char* AOTCodeCache::store_cpu_features(char* buffer, uint buffer_size) {
   // Align to 8 bytes - see Aarch64 version of get_cpu_features_name()
   precond(is_aligned(buffer, DATA_ALIGNMENT));
@@ -1756,6 +1764,7 @@ bool AOTCodeCache::finish_write() {
 
     // Allocate in AOT Cache buffer
     char* buffer = (char *)AOTCacheAccess::allocate_aot_code_region(total_size + DATA_ALIGNMENT);
+    assert(buffer != nullptr, "CDS should already throw OOM error");
     char* start = align_up(buffer, DATA_ALIGNMENT);
     char* current = start + header_size; // Skip header
 
@@ -1771,23 +1780,33 @@ bool AOTCodeCache::finish_write() {
     AOTCodeEntry* entries_address = _store_entries; // Pointer to latest entry
     AOTCodeEntryStats stats;
     uint max_size = 0;
+
+    // First, sort preload entries based on compile_id.
+    AOTCodeEntry** preload_sorted = NEW_C_HEAP_ARRAY(AOTCodeEntry*, code_count, mtCode);
+    uint preload_entries_cnt = 0;
     // AOTCodeEntry entries were allocated in reverse in store buffer.
     // Process them in reverse order to cache first code first.
-
-    // Store AOTCodeEntry for preload code first.
-    current = align_up(current, DATA_ALIGNMENT);
-    uint preload_entries_cnt = 0;
-    uint preload_entries_offset = current - start;
-    AOTCodeEntry* preload_entries = (AOTCodeEntry*)current;
     for (int i = code_count - 1; i >= 0; i--) {
       AOTCodeEntry* entry = &entries_address[i];
       if (entry->for_preload()) {
         assert(!entry->not_entrant(), "AOT code should not be not_entrant during assembly phase");
-        copy_bytes((const char*)entry, (address)current, sizeof(AOTCodeEntry));
+        preload_sorted[preload_entries_cnt] = entry;
         stats.collect_entry_stats(entry);
-        current += sizeof(AOTCodeEntry);
         preload_entries_cnt++;
       }
+    }
+    if (preload_entries_cnt > 0) {
+      qsort(preload_sorted, preload_entries_cnt, sizeof(AOTCodeEntry*), preload_cmp);
+    }
+    // Store AOTCodeEntry for preload code first.
+    current = align_up(current, DATA_ALIGNMENT);
+    uint preload_entries_offset = current - start;
+    AOTCodeEntry* preload_entries = (AOTCodeEntry*)current;
+    for (int i = 0; i < (int)preload_entries_cnt; i++) {
+      AOTCodeEntry* entry = preload_sorted[i];
+      assert(entry->for_preload(), "sanity");
+      copy_bytes((const char*)entry, (address)current, sizeof(AOTCodeEntry));
+      current += sizeof(AOTCodeEntry);
     }
 
     // Now write the data for preload AOTCodeEntry
@@ -1802,6 +1821,7 @@ bool AOTCodeCache::finish_write() {
       entry->set_offset(current - start); // New offset
       current += size;
     }
+    FREE_C_HEAP_ARRAY(preload_sorted);
 
     // Store the rest of AOTCodeEntry
     uint entries_count = 0;
@@ -4759,9 +4779,6 @@ bool AOTCodeCache::load_strings() {
   // We don't need to duplcate strings from AOT cache to C heap
   // because we don't remove AOT code cache anymore.
   const char** strings_ref = NEW_C_HEAP_ARRAY(const char*, strings_count, mtCode);
-  if (strings_ref == nullptr) {
-    return false;
-  }
   uint  strings_size = 0;
   char* start = (char*)addr(strings_offset);
   char* p = start;

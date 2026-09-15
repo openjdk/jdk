@@ -187,8 +187,8 @@ class Options {
   const bool _do_reduce_allocation_merges;  // Do try to reduce allocation merges.
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
-  const bool _for_preload;           // Generate code for preload (before Java method execution), do class init barriers
   const bool _do_superword;          // Do SuperWord
+  const bool _for_preload;           // Generate code for preload (before Java method execution), do class init barriers
   const bool _install_code;          // Install the code that was compiled
  public:
   Options(bool subsume_loads,
@@ -206,8 +206,8 @@ class Options {
           _do_reduce_allocation_merges(do_reduce_allocation_merges),
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
-          _for_preload(for_preload),
           _do_superword(do_superword),
+          _for_preload(for_preload),
           _install_code(install_code) {
   }
 
@@ -219,8 +219,8 @@ class Options {
        /* do_reduce_allocation_merges = */ false,
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
-       /* for_preload = */ false,
        /* do_superword = */ true,
+       /* for_preload = */ false,
        /* install_code = */ true
     );
   }
