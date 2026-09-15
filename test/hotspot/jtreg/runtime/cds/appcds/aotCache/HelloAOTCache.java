@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@
  * @library /test/lib
  * @build HelloAOTCache
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar HelloAOTCacheApp
- * @run driver HelloAOTCache
+ * @run driver HelloAOTCache AOT
+ * @run driver HelloAOTCache AOT-Retrain
+ * @run driver HelloAOTCache AOT-Retrain2
  */
 
 import jdk.test.lib.cds.SimpleCDSAppTester;
@@ -46,7 +48,7 @@ public class HelloAOTCache {
                     out.shouldMatch("class,load.*HelloAOTCacheApp.*shared objects");
                     out.shouldContain("HelloWorld");
                 })
-            .runAOTWorkflow();
+            .run(args);
     }
 }
 

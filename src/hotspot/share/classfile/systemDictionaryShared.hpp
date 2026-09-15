@@ -275,6 +275,8 @@ public:
   static bool add_unregistered_class(Thread* current, InstanceKlass* k);
   static InstanceKlass* get_unregistered_class(Symbol* name);
   static void copy_unregistered_class_size_and_crc32(InstanceKlass* klass);
+  static void copy_unregistered_classes_for_retraining(JavaThread* current);
+  static void copy_cached_unregistered_class(JavaThread* current, InstanceKlass* k);
 
   static void finish_exclusion_checks();
   static DumpTimeSharedClassTable* dumptime_table() { return _dumptime_table; }
