@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package jdk.internal.foreign;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.foreign.abi.SharedUtils;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.Wrapper;
 
@@ -259,8 +260,13 @@ public final class Utils {
     @ForceInline
     public static void checkNonNegativeIndex(long value, String name) {
         if (value < 0) {
-            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
+            throw indexOutOfBounds(value, name);
         }
+    }
+
+    @DontInline
+    private static IndexOutOfBoundsException indexOutOfBounds(long value, String name) {
+        return new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
     }
 
     private static long computePadding(long offset, long align) {
