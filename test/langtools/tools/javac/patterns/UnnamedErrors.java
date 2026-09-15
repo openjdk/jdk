@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8304246 8309093
+ * @bug 8304246 8309093 8385488
  * @summary Compiler Implementation for Unnamed patterns and variables
  * @compile/fail/ref=UnnamedErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW UnnamedErrors.java
  */
@@ -114,6 +114,13 @@ public class UnnamedErrors {
         for(String s : _) {
             int i = 1;
         }
+    }
+
+    int guardedPattern(String s) {
+        return switch (s) {
+            case _ when s.isEmpty() -> 1;
+            default -> 0;
+        };
     }
 
     class Lock implements AutoCloseable {
