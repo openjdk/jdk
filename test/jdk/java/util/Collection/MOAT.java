@@ -324,6 +324,11 @@ public class MOAT {
         testListIndexOf(12, 12, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
         testListIndexOf(-1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
+        List<Integer> removeAtList = List.of(10, 20, 30);
+        testListRemoveAt(new ArrayList<>(removeAtList));
+        testListRemoveAt(new LinkedList<>(removeAtList));
+        testListRemoveAt(new CopyOnWriteArrayList<>(removeAtList));
+
         // Immutable Set
         testEmptySet(Set.of());
         testEmptySet(Set.ofLazy(Set.of(), _ -> true));
@@ -652,7 +657,8 @@ public class MOAT {
     private static void testListMutatorsAlwaysThrow(List<Integer> c) {
         testCollMutatorsAlwaysThrow(c);
         THROWS(UnsupportedOperationException.class,
-                () -> c.addAll(0, Collections.emptyList()));
+                () -> c.addAll(0, Collections.emptyList()),
+                () -> c.removeAt(0));
     }
 
     private static void testImmutableListMutatorsAlwaysThrow(List<Integer> c) {
@@ -1878,6 +1884,15 @@ public class MOAT {
         equal(m.put(1, 2), null);
         equal(m.put(3, 4), null);
         equal(m.put(5, 9), null);
+    }
+
+    private static void testListRemoveAt(List<Integer> list) {
+        int index = list.size() / 2;
+        List<Integer> expected = new ArrayList<>(list);
+        Integer removed = expected.remove(index);
+
+        equal(list.removeAt(index), removed);
+        equal(list, expected);
     }
 
     //--------------------------------------------------------------------
