@@ -188,6 +188,8 @@ bool ConstantTable::emit(C2_MacroAssembler* masm) const {
       // We use T_VOID as marker for jump-table entries (labels) which
       // need an internal word relocation.
       case T_VOID: {
+        assert(!Matcher::use_branch_jump_table,
+               "branch jump tables do not go through the constant table");
         MachConstantNode* n = (MachConstantNode*) con.get_jobject();
         // Fill the jump-table with a dummy word.  The real value is
         // filled in later in fill_jump_table.
@@ -297,6 +299,8 @@ ConstantTable::Constant ConstantTable::add(MachConstantNode* n, MachOper* oper) 
 }
 
 ConstantTable::Constant ConstantTable::add_jump_table(MachConstantNode* n) {
+  assert(!Matcher::use_branch_jump_table,
+         "branch jump tables do not go through the constant table");
   jvalue value;
   // We can use the node pointer here to identify the right jump-table
   // as this method is called from Compile::Fill_buffer right before
@@ -309,6 +313,9 @@ ConstantTable::Constant ConstantTable::add_jump_table(MachConstantNode* n) {
 }
 
 void ConstantTable::fill_jump_table(C2_MacroAssembler* masm, MachConstantNode* n, GrowableArray<Label*> labels) const {
+  assert(!Matcher::use_branch_jump_table,
+         "branch jump tables do not go through the constant table");
+
   // If called from Compile::scratch_emit_size do nothing.
   if (Compile::current()->output()->in_scratch_emit_size())  return;
 

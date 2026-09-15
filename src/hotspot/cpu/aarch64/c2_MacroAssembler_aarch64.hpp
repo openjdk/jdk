@@ -260,4 +260,5 @@
                      FloatRegister vtmp2, FloatRegister vtmp3, FloatRegister vtmp4);
   void sve_sdiv_short(FloatRegister dst_src1, FloatRegister src2,
                       FloatRegister vtmp1, FloatRegister vtmp2);
+  void jump_table_switch(Register switch_val, const GrowableArray<Label*>& labels);
 #endif // CPU_AARCH64_C2_MACROASSEMBLER_AARCH64_HPP
