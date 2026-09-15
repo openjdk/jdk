@@ -3932,7 +3932,7 @@ const TypeInt* CountedLoopConverter::filtered_type_from_dominators(Node* val, No
         }
       }
       pred = _phase->idom(pred);
-      if (pred == nullptr || pred == _phase->C->top() || pred == _phase->C->root()) {
+      if (pred == nullptr || pred == _phase->C->top() || pred == _phase->C->start()) {
         break;
       }
       // Stop if going beyond definition block of val
