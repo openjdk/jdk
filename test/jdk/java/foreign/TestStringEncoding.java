@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.lang.foreign.SegmentAllocator;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.reflect.Field;
+import java.nio.ByteOrder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -248,14 +249,14 @@ public class TestStringEncoding {
     @ParameterizedTest
     @MethodSource("strings")
     public void testStringsHeap(String testString) {
-        for (Charset charset : singleByteCharsets()) {
+        for (Charset charset : standardCharsets()) {
             for (var arena : arenas()) {
                 try (arena) {
                     MemorySegment text = arena.allocateFrom(testString, charset);
                     text = toHeapSegment(text);
 
-                    int expectedByteLength =
-                            testString.getBytes(charset).length + 1;
+                    int codeUnitSize = StringSupport.CharsetKind.of(charset).codeUnitSize();
+                    int expectedByteLength = testString.getBytes(charset).length + codeUnitSize;
 
                     assertEquals(expectedByteLength, text.byteSize());
 
@@ -372,19 +373,28 @@ public class TestStringEncoding {
     @ParameterizedTest
     @MethodSource("strings")
     public void testSubstringGetString(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
+            if (charset == StandardCharsets.UTF_16) {
+                continue; // BOM prevents byte slicing
+            }
             for (var arena: arenas()) {
                 try (arena) {
                     MemorySegment text = arena.allocateFrom(testString, charset, 0, testString.length());
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
+                        String prefix = testString.substring(0, srcIndex);
+                        if (!charset.newEncoder().canEncode(prefix)) {
+                            continue;
+                        }
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
-                            // this test assumes single-byte charsets
-                            String roundTrip = text.getString(srcIndex, charset, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(substring, roundTrip);
+                            int byteOffset = prefix.encodedLength(charset);
+                            int byteLength = substring.encodedLength(charset);
+                            String roundTrip = text.getString(byteOffset, charset, byteLength);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(substring, roundTrip,
+                                        String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
+                            }
                         }
                     }
                 }
@@ -395,19 +405,22 @@ public class TestStringEncoding {
     @ParameterizedTest
     @MethodSource("strings")
     public void testSubstringAllocate(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
             for (var arena: arenas()) {
                 try (arena) {
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
                         for (int numChars = 0; numChars <= testString.length() - srcIndex; numChars++) {
                             MemorySegment text = arena.allocateFrom(testString, charset, srcIndex, numChars);
                             String substring = testString.substring(srcIndex, srcIndex + numChars);
-                            assertEquals(substring.getBytes(charset).length, text.byteSize());
+                            assertEquals(substring.getBytes(charset).length, text.byteSize(),
+                                    String.format("size mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, testString, srcIndex, numChars));
                             String roundTrip = text.getString(0, charset, text.byteSize());
-                            assertEquals(substring, roundTrip);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(substring, roundTrip,
+                                        String.format("roundtrip mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
+                            }
                         }
                     }
                 }
@@ -418,10 +431,7 @@ public class TestStringEncoding {
     @ParameterizedTest
     @MethodSource("strings")
     public void testSubstringCopy(String testString) {
-        if (testString.length() < 3 || !containsOnlyRegularCharacters(testString)) {
-            return;
-        }
-        for (var charset : singleByteCharsets()) {
+        for (var charset : standardCharsets()) {
             for (var arena: arenas()) {
                 try (arena) {
                     for (int srcIndex = 0; srcIndex <= testString.length(); srcIndex++) {
@@ -431,8 +441,14 @@ public class TestStringEncoding {
                             MemorySegment text = arena.allocate(JAVA_BYTE, length);
                             long copied = MemorySegment.copy(testString, charset, srcIndex, text, 0, numChars);
                             String roundTrip = text.getString(0, charset, length);
-                            assertEquals(substring, roundTrip);
-                            assertEquals(length, copied);
+                            if (charset.newEncoder().canEncode(substring)) {
+                                assertEquals(length, copied,
+                                        String.format("copied length mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
+                                assertEquals(substring, roundTrip,
+                                        String.format("roundtrip mismatch - charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                                charset, testString, srcIndex, numChars));
+                            }
                         }
                     }
                 }
@@ -619,6 +635,78 @@ public class TestStringEncoding {
         }
     }
 
+    @ParameterizedTest
+    @MethodSource("stringsAndCompatibleCharsets")
+    public void testBytesCompatible(List<String> strings, Set<Charset> compatibleCharsets) {
+        for (String string : strings) {
+            for (Charset charset : standardCharsets()) {
+                boolean expected = compatibleCharsets.contains(charset);
+                boolean actual = StringSupport.bytesCompatible(string, charset, 0, string.length());
+                assertEquals(expected, actual,
+                        String.format("charset: %s, string: '%s'", charset, string));
+            }
+        }
+    }
+
+    @Test
+    public void testBytesCompatibleUnpairedSurrogates() {
+        // [a, high surrogate, low surrogate, b]
+        String testString = "a\uD83C\uDC00b";
+        Charset nativeUtf16 = nativeUtf16();
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 0, 1));
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 1, 2)); // full surrogate pair
+        assertTrue(StringSupport.bytesCompatible(testString, nativeUtf16, 3, 1));
+
+        assertFalse(StringSupport.bytesCompatible(testString, nativeUtf16, 1, 1)); // unpaired surrogate
+        assertFalse(StringSupport.bytesCompatible(testString, nativeUtf16, 2, 1)); // unpaired surrogate
+
+        assertFalse(StringSupport.bytesCompatible(testString, StandardCharsets.UTF_8, 1, 1));
+    }
+
+    @ParameterizedTest
+    @MethodSource("strings")
+    public void testCopyToSegmentRaw(String string) {
+        for (Charset charset : standardCharsets()) {
+            for (int srcIndex = 0; srcIndex <= string.length(); srcIndex++) {
+                for (int numChars = 0; numChars <= string.length() - srcIndex; numChars++) {
+                    try (var arena = Arena.ofConfined()) {
+                        if (StringSupport.bytesCompatible(string, charset, srcIndex, numChars)) {
+                            String substring = string.substring(srcIndex, srcIndex + numChars);
+                            var segment = arena.allocate(substring.encodedLength(charset));
+                            StringSupport.copyToSegmentRaw(string, segment, 0, srcIndex, numChars);
+                            assertArrayEquals(substring.getBytes(charset), segment.toArray(JAVA_BYTE),
+                                    String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, string, srcIndex, numChars));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("strings")
+    public void testCopyToSegmentRawOffset(String string) {
+        for (Charset charset : standardCharsets()) {
+            for (int srcIndex = 0; srcIndex <= string.length(); srcIndex++) {
+                for (int numChars = 0; numChars <= string.length() - srcIndex; numChars++) {
+                    try (var arena = Arena.ofConfined()) {
+                        if (StringSupport.bytesCompatible(string, charset, srcIndex, numChars)) {
+                            String substring = string.substring(srcIndex, srcIndex + numChars);
+                            int offset = 6;
+                            int encodedLength = substring.encodedLength(charset);
+                            var segment = arena.allocate(encodedLength + offset * 2);
+                            StringSupport.copyToSegmentRaw(string, segment, offset, srcIndex, numChars);
+                            assertArrayEquals(substring.getBytes(charset), segment.asSlice(offset, encodedLength).toArray(JAVA_BYTE),
+                                    String.format("charset: %s, string: '%s', srcIndex: %d, numChars: %d",
+                                            charset, string, srcIndex, numChars));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public static Object[][] strings() {
         return new Object[][]{
                 {"testing"},
@@ -761,5 +849,57 @@ public class TestStringEncoding {
             }
         }
         return values.toArray(Object[][]::new);
+    }
+
+    public static Charset nativeUtf16() {
+        return ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? StandardCharsets.UTF_16LE
+                : StandardCharsets.UTF_16BE;
+    }
+
+    public static Object[][] stringsAndCompatibleCharsets() {
+        Charset nativeUtf16 = nativeUtf16();
+        return new Object[][] {
+            {
+                List.of(""),
+                Set.of(
+                        StandardCharsets.US_ASCII,
+                        StandardCharsets.ISO_8859_1,
+                        StandardCharsets.UTF_8,
+                        StandardCharsets.UTF_16LE,
+                        StandardCharsets.UTF_16BE),
+            },
+            {
+                List.of("hello world", "123"),
+                Set.of(
+                        StandardCharsets.US_ASCII,
+                        StandardCharsets.ISO_8859_1,
+                        StandardCharsets.UTF_8),
+            },
+            {
+                List.of("section \u00A7", "\u00E9"), Set.of(StandardCharsets.ISO_8859_1),
+            },
+            {
+                List.of(
+                        "cartwheel \uD83E\uDD38",
+                        "snowman \u26C4",
+                        "cjk \u4E00\u4E8C",
+                        "rainbow \uD83C\uDF08",
+                        "\uD83D\uDE00",
+                        "\uFEFF"),
+                Set.of(nativeUtf16),
+            },
+            {
+                List.of(
+                        "unpaired high surrogate: \uD83C",
+                        "unpaired low surrogate: \uDC00",
+                        "low surrogate followed by high surrogate: \uDC00\uD83C",
+                        "high surrogate followed by high surrogate: \uD83C\uD83C",
+                        "high surrogate followed by a non-low surrogate: \uD83C\uE000",
+                        "valid pair followed by an unpaired low surrogate: \uD83D\uDE00\uDC00",
+                        "unpaired low surrogate followed by valid pair: \uDC00\uD83D\uDE00"),
+                Set.of(),
+            },
+        };
     }
 }
