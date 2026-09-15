@@ -3430,7 +3430,13 @@ int PhaseOutput::frame_size_in_words() const {
 // removes the need to bang the stack in the deoptimization blob which
 // in turn simplifies stack overflow handling.
 int PhaseOutput::bang_size_in_bytes() const {
-  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), C->interpreter_frame_size());
+  int extra_arg_size = 0;
+  if (C->needs_stack_repair()) {
+    // Account for required stack extension conservatively
+    extra_arg_size = CompiledEntrySignature::max_stack_slots_cc() * VMRegImpl::stack_slot_size;
+    assert(extra_arg_size < (int)os::vm_page_size(), "assumption is it adds at most one page");
+  }
+  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes() + extra_arg_size, C->interpreter_frame_size());
 }
 
 //------------------------------dump_asm---------------------------------------

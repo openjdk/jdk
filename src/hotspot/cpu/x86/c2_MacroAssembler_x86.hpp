@@ -29,7 +29,7 @@
 
 public:
   // C2 compiled method's prolog code.
-  void verified_entry(Compile* C, int sp_inc = 0);
+  void verified_entry(Compile* C, int sp_inc = 0, bool do_stack_bang = true);
 
   void entry_barrier();
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);

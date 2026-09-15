@@ -6986,7 +6986,7 @@ void MacroAssembler::get_thread(Register dst) {
 #ifdef COMPILER2
 // C2 compiled method's prolog code
 // Moved here from aarch64.ad to support Valhalla code below
-void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -7003,8 +7003,9 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize))
+  if (do_stack_bang && C->output()->need_stack_bang(bangsize)) {
     generate_stack_overflow_check(bangsize);
+  }
 
   // n.b. frame size includes space for return pc and rfp
   const long framesize = C->output()->frame_size_in_bytes();
