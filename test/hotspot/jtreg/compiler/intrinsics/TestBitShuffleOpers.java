@@ -38,6 +38,7 @@ package compiler.intrinsics;
 
 import java.util.concurrent.Callable;
 import compiler.lib.ir_framework.*;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import java.util.Random;
 
@@ -498,8 +499,13 @@ public class TestBitShuffleOpers {
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:CompileThresholdScaling=0.3",
-                                   "-XX:+UseParallelBitInstructions");
+        if (Platform.getOsArch().equals("x86_64")) {
+            TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                       "-XX:CompileThresholdScaling=0.3",
+                                       "-XX:+UseParallelBitInstructions");
+        } else {
+            TestFramework.runWithFlags("-XX:-TieredCompilation",
+                                       "-XX:CompileThresholdScaling=0.3");
+        }
     }
 }
