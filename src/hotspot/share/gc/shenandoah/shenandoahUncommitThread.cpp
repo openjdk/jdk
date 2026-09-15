@@ -187,6 +187,9 @@ void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until
       // would likely quickly deplete our candidate list, so it would be worth the wait.
       delay_ms = 10;
       used_before = used_after;
+    } else if (used_after < used_before) {
+      // Round-tripped during the GC, adjust.
+      used_before = used_after;
     }
     if (!try_set_progress(delay_ms)) {
       // Need to stop.
