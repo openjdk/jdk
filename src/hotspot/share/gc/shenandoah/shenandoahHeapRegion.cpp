@@ -350,6 +350,7 @@ void ShenandoahHeapRegion::make_committed_bypass() {
   switch (state()) {
     case _empty_uncommitted:
       do_commit();
+      _empty_time.store_relaxed(os::elapsedTime());
       set_state(_empty_committed);
       return;
     default:
