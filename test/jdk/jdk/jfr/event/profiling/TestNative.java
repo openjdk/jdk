@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@ import java.time.Duration;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.JVM;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.Events;
 
 /*
  * @test
@@ -45,21 +47,28 @@ public class TestNative {
     static volatile boolean alive = true;
 
     public static void main(String[] args) throws Exception {
+        Thread target = new Thread(TestNative::nativeMethod, "Native Sample Target");
+        target.setDaemon(true);
         try (RecordingStream rs = new RecordingStream()) {
             rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1));
             rs.onEvent(NATIVE_EVENT, e -> {
+                long sampledThreadId = Events.assertField(e, "sampledThread.javaThreadId").getValue();
+                if (sampledThreadId != target.threadId()) {
+                    return;
+                }
+                long eventThreadId = Events.assertField(e, "eventThread.javaThreadId").getValue();
+                Asserts.assertEquals(eventThreadId, sampledThreadId,
+                    "eventThread and sampledThread must identify the same thread");
                 alive = false;
                 rs.close();
             });
-            Thread t = new Thread(TestNative::nativeMethod);
-            t.setDaemon(true);
-            t.start();
+            target.start();
             rs.start();
         }
 
     }
 
-    public static void nativeMethod() {
+    static void nativeMethod() {
         while (alive) {
             JVM.getPid();
         }

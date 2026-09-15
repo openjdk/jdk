@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,24 +36,53 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.RecurseThread;
 
-public class BaseTestFullStackTrace {
+/*
+ * Exercises sampling events across the following matrix:
+ *
+ *   ExecutionSample x platform thread
+ *   ExecutionSample x virtual thread
+ *   CPUTimeSample   x platform thread
+ *   CPUTimeSample   x virtual thread
+ *
+ * Each cell verifies that the event identifies the sampled thread and that
+ * its stack trace contains the expected recursive Java frames. ExecutionSample
+ * additionally verifies that eventThread and sampledThread identify the same
+ * thread.
+ */
+public class StackTraceTestMatrix {
     private final static int MAX_DEPTH = 64; // currently hardcoded in jvm
 
     private final String eventName;
     private final String threadFieldName;
+    private final boolean virtual;
 
-    public BaseTestFullStackTrace(String eventName, String threadFieldName) {
+    private StackTraceTestMatrix(String eventName, String threadFieldName, boolean virtual) {
         this.eventName = eventName;
         this.threadFieldName = threadFieldName;
+        this.virtual = virtual;
+    }
+
+    public static void runAllThreadKinds(String eventName, String threadFieldName) throws Throwable {
+        runPlatformThreads(eventName, threadFieldName);
+        new StackTraceTestMatrix(eventName, threadFieldName, true).run();
+    }
+
+    public static void runPlatformThreads(String eventName, String threadFieldName) throws Throwable {
+        new StackTraceTestMatrix(eventName, threadFieldName, false).run();
     }
 
     public void run() throws Throwable {
         RecurseThread[] threads = new RecurseThread[3];
+        // Virtual threads execute the RecurseThread workloads on distinct Thread objects.
+        Thread[] javaThreads = new Thread[threads.length];
         for (int i = 0; i < threads.length; ++i) {
             int depth = MAX_DEPTH - 1 + i;
             threads[i] = new RecurseThread(depth);
-            threads[i].setName("recursethread-" + depth);
-            threads[i].start();
+            String name = "recursethread-" + depth;
+            Thread thread = virtual ? Thread.ofVirtual().unstarted(threads[i]) : threads[i];
+            thread.setName(name);
+            javaThreads[i] = thread;
+            thread.start();
         }
 
         for (RecurseThread thread : threads) {
@@ -62,15 +91,15 @@ public class BaseTestFullStackTrace {
             }
         }
 
-        assertStackTraces(threads);
+        assertStackTraces(threads, javaThreads);
 
-        for (RecurseThread thread : threads) {
-            thread.quit();
-            thread.join();
+        for (int i = 0; i < threads.length; ++i) {
+            threads[i].quit();
+            javaThreads[i].join();
         }
     }
 
-    private void assertStackTraces(RecurseThread[] threads) throws Throwable {
+    private void assertStackTraces(RecurseThread[] threads, Thread[] javaThreads) throws Throwable {
         while (true) {
             try (Recording recording = new Recording()) {
                 if (eventName.equals(EventNames.CPUTimeSample)) {
@@ -81,26 +110,35 @@ public class BaseTestFullStackTrace {
                 recording.start();
                 Thread.sleep(500);
                 recording.stop();
-                if (hasValidStackTraces(recording, threads)) {
+                if (hasValidStackTraces(recording, threads, javaThreads)) {
                     break;
                 }
             }
         };
     }
 
-    private boolean hasValidStackTraces(Recording recording, RecurseThread[] threads) throws Throwable {
+    private boolean hasValidStackTraces(Recording recording, RecurseThread[] threads, Thread[] javaThreads) throws Throwable {
         boolean[] isEventFound = new boolean[threads.length];
 
         for (RecordedEvent event : Events.fromRecording(recording)) {
             System.out.println("Event: " + event);
+            if (EventNames.ExecutionSample.equals(event.getEventType().getName())) {
+                long sampledThreadId =
+                        Events.assertField(event, "sampledThread.javaThreadId").getValue();
+                long eventThreadId =
+                        Events.assertField(event, "eventThread.javaThreadId").getValue();
+                Asserts.assertEquals(eventThreadId, sampledThreadId,
+                        "eventThread and sampledThread must identify the same thread");
+            }
             String threadName = Events.assertField(event, threadFieldName + ".javaName").getValue();
             long threadId = Events.assertField(event, threadFieldName + ".javaThreadId").getValue();
 
             for (int threadIndex = 0; threadIndex < threads.length; ++threadIndex) {
                 RecurseThread currThread = threads[threadIndex];
-                if (threadId == currThread.getId()) {
-                    System.out.println("ThreadName=" + currThread.getName() + ", depth=" + currThread.totalDepth);
-                    Asserts.assertEquals(threadName, currThread.getName(), "Wrong thread name");
+                Thread javaThread = javaThreads[threadIndex];
+                if (threadId == javaThread.threadId()) {
+                    System.out.println("ThreadName=" + javaThread.getName() + ", depth=" + currThread.totalDepth);
+                    Asserts.assertEquals(threadName, javaThread.getName(), "Wrong thread name");
                     if ("recurseEnd".equals(getTopMethodName(event))) {
                         isEventFound[threadIndex] = true;
                         checkEvent(event, currThread.totalDepth);
@@ -136,7 +174,8 @@ public class BaseTestFullStackTrace {
         try {
             stacktrace = event.getStackTrace();
             List<RecordedFrame> frames = stacktrace.getFrames();
-            Asserts.assertEquals(Math.min(MAX_DEPTH, expectedDepth), frames.size(), "Wrong stacktrace depth. Expected:" + expectedDepth);
+            int expectedStackDepth = Math.min(MAX_DEPTH, expectedDepth + (virtual ? 1 : 0));
+            Asserts.assertEquals(expectedStackDepth, frames.size(), "Wrong stacktrace depth. Expected:" + expectedStackDepth);
             List<String> expectedMethods = getExpectedMethods(expectedDepth);
             Asserts.assertEquals(expectedMethods.size(), frames.size(), "Wrong expectedMethods depth. Test error.");
 
@@ -148,13 +187,21 @@ public class BaseTestFullStackTrace {
             }
 
             boolean isTruncated = stacktrace.isTruncated();
-            boolean isTruncateExpected = expectedDepth > MAX_DEPTH;
+            // Thread.runWith(Object, Runnable) invokes a virtual-thread task below
+            // RecurseThread.run(). With MAX_DEPTH - 1 recursive frames, it fills the
+            // final stack-depth slot, but continuation frames still remain below it.
+            boolean isTruncateExpected = expectedDepth > MAX_DEPTH ||
+                    (virtual && expectedDepth >= MAX_DEPTH - 1);
             Asserts.assertEquals(isTruncated, isTruncateExpected, "Wrong value for isTruncated. Expected:" + isTruncateExpected);
 
             String firstMethod = frames.getLast().getMethod().getName();
-            boolean isFullTrace = "run".equals(firstMethod);
-            String msg = String.format("Wrong values for isTruncated=%b, isFullTrace=%b", isTruncated, isFullTrace);
-            Asserts.assertTrue(isTruncated != isFullTrace, msg);
+            if (!virtual) {
+                boolean isFullTrace = "run".equals(firstMethod);
+                String msg = String.format("Wrong values for isTruncated=%b, isFullTrace=%b", isTruncated, isFullTrace);
+                Asserts.assertTrue(isTruncated != isFullTrace, msg);
+            } else if (!isTruncated) {
+                Asserts.assertEquals(firstMethod, "run", "A full virtual-thread trace should end at RecurseThread.run");
+            }
         } catch (Throwable t) {
             System.out.println(String.format("stacktrace:%n%s", stacktrace));
             throw t;
@@ -167,8 +214,13 @@ public class BaseTestFullStackTrace {
         for (int i = 0; i < depth - 2; ++i) {
             methods.add((i % 2) == 0 ? "recurseA" : "recurseB");
         }
+        // A platform thread enters the recursive workload through RecurseThread.run().
         methods.add("run");
-        if (depth > MAX_DEPTH) {
+        if (virtual) {
+            // A virtual thread invokes that Runnable through Thread.runWith(Object, Runnable).
+            methods.add("runWith");
+        }
+        if (methods.size() > MAX_DEPTH) {
             methods = methods.subList(0, MAX_DEPTH);
         }
         return methods;
