@@ -83,10 +83,13 @@ public class VectorSliceBenchmark {
 
     MemorySegment ksrc1;
     MemorySegment ksrc2;
+    MemorySegment kdst;
     MemorySegment kfsrc1;
     MemorySegment kfsrc2;
+    MemorySegment kfdst;
     MemorySegment kdsrc1;
     MemorySegment kdsrc2;
+    MemorySegment kddst;
 
     int vidx0;
     int vidx1;
@@ -121,10 +124,13 @@ public class VectorSliceBenchmark {
         Arena arena = Arena.ofAuto();
         ksrc1  = kernelOperand(arena, r, 'i');
         ksrc2  = kernelOperand(arena, r, 'i');
+        kdst   = kernelOperand(arena, r, 'i');
         kfsrc1 = kernelOperand(arena, r, 'f');
         kfsrc2 = kernelOperand(arena, r, 'f');
+        kfdst  = kernelOperand(arena, r, 'f');
         kdsrc1 = kernelOperand(arena, r, 'd');
         kdsrc2 = kernelOperand(arena, r, 'd');
+        kddst  = kernelOperand(arena, r, 'd');
         vidx0 = 1;
         vidx1 = 2;
         vidx2 = 3;
@@ -132,800 +138,776 @@ public class VectorSliceBenchmark {
     }
 
     @Benchmark
-    public byte byte128ConstOrigin() {
-        ByteVector acc = ByteVector.zero(B128);
+    public void byte128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += B128.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B128, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B128, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(1, v2).add(v1.slice(5, v2));
-            ByteVector s1 = v1.slice(9, v2).add(v1.slice(13, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(5, v2)
+              .slice(9, v2)
+              .slice(13, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte128ConstOriginMasked() {
-        ByteVector acc = ByteVector.zero(B128);
+    public void byte128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += B128.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B128, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B128, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(1, v2, B128_MASK).add(v1.slice(5, v2, B128_MASK));
-            ByteVector s1 = v1.slice(9, v2, B128_MASK).add(v1.slice(13, v2, B128_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, B128_MASK)
+              .slice(5, v2, B128_MASK)
+              .slice(9, v2, B128_MASK)
+              .slice(13, v2, B128_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512DwordAlignedOrigin() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
+            ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
+            ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
+            v1.slice(16, v2)
+              .slice(16, v1)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void byte256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
+            ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
+            ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
+            v1.slice(16, v2, B256_MASK)
+              .slice(16, v1, B256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void byte256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
+            ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
+            ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
+            v1.slice(3, v2)
+              .slice(9, v2)
+              .slice(22, v2)
+              .slice(29, v2)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void byte256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
+            ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
+            ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
+            v1.slice(3, v2, B256_MASK)
+              .slice(9, v2, B256_MASK)
+              .slice(22, v2, B256_MASK)
+              .slice(29, v2, B256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void byte512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(4, v2).add(v1.slice(20, v2));
-            ByteVector s1 = v1.slice(36, v2).add(v1.slice(52, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(4, v2)
+              .slice(20, v2)
+              .slice(36, v2)
+              .slice(52, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512DwordAlignedOriginMasked() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(4, v2, B512_MASK).add(v1.slice(20, v2, B512_MASK));
-            ByteVector s1 = v1.slice(36, v2, B512_MASK).add(v1.slice(52, v2, B512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(4, v2, B512_MASK)
+              .slice(20, v2, B512_MASK)
+              .slice(36, v2, B512_MASK)
+              .slice(52, v2, B512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512SubDwordOriginMidRange() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512SubDwordOriginMidRange() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(17, v2).add(v1.slice(26, v2));
-            ByteVector s1 = v1.slice(35, v2).add(v1.slice(46, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(17, v2)
+              .slice(26, v2)
+              .slice(35, v2)
+              .slice(46, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512SubDwordOriginMidRangeMasked() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512SubDwordOriginMidRangeMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(17, v2, B512_MASK).add(v1.slice(26, v2, B512_MASK));
-            ByteVector s1 = v1.slice(35, v2, B512_MASK).add(v1.slice(46, v2, B512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(17, v2, B512_MASK)
+              .slice(26, v2, B512_MASK)
+              .slice(35, v2, B512_MASK)
+              .slice(46, v2, B512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512SubDwordOriginEdgeRange() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512SubDwordOriginEdgeRange() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(3, v2).add(v1.slice(14, v2));
-            ByteVector s1 = v1.slice(51, v2).add(v1.slice(62, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(3, v2)
+              .slice(14, v2)
+              .slice(51, v2)
+              .slice(62, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512SubDwordOriginEdgeRangeMasked() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512SubDwordOriginEdgeRangeMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(3, v2, B512_MASK).add(v1.slice(14, v2, B512_MASK));
-            ByteVector s1 = v1.slice(51, v2, B512_MASK).add(v1.slice(62, v2, B512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(3, v2, B512_MASK)
+              .slice(14, v2, B512_MASK)
+              .slice(51, v2, B512_MASK)
+              .slice(62, v2, B512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short128ConstOrigin() {
-        ShortVector acc = ShortVector.zero(S128);
+    public void short128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += S128.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S128, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S128, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(1, v2).add(v1.slice(3, v2));
-            ShortVector s1 = v1.slice(5, v2).add(v1.slice(7, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(3, v2)
+              .slice(5, v2)
+              .slice(7, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short128ConstOriginMasked() {
-        ShortVector acc = ShortVector.zero(S128);
+    public void short128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += S128.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S128, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S128, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(1, v2, S128_MASK).add(v1.slice(3, v2, S128_MASK));
-            ShortVector s1 = v1.slice(5, v2, S128_MASK).add(v1.slice(7, v2, S128_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, S128_MASK)
+              .slice(3, v2, S128_MASK)
+              .slice(5, v2, S128_MASK)
+              .slice(7, v2, S128_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512DwordAlignedOrigin() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
+            ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
+            ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
+            v1.slice(8, v2)
+              .slice(8, v1)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void short256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
+            ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
+            ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
+            v1.slice(8, v2, S256_MASK)
+              .slice(8, v1, S256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void short256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
+            ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
+            ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
+            v1.slice(2, v2)
+              .slice(5, v2)
+              .slice(11, v2)
+              .slice(14, v2)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void short256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
+            ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
+            ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
+            v1.slice(2, v2, S256_MASK)
+              .slice(5, v2, S256_MASK)
+              .slice(11, v2, S256_MASK)
+              .slice(14, v2, S256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void short512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(2, v2).add(v1.slice(10, v2));
-            ShortVector s1 = v1.slice(18, v2).add(v1.slice(26, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(2, v2)
+              .slice(10, v2)
+              .slice(18, v2)
+              .slice(26, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512DwordAlignedOriginMasked() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(2, v2, S512_MASK).add(v1.slice(10, v2, S512_MASK));
-            ShortVector s1 = v1.slice(18, v2, S512_MASK).add(v1.slice(26, v2, S512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(2, v2, S512_MASK)
+              .slice(10, v2, S512_MASK)
+              .slice(18, v2, S512_MASK)
+              .slice(26, v2, S512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512SubDwordOriginMidRange() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512SubDwordOriginMidRange() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(9, v2).add(v1.slice(13, v2));
-            ShortVector s1 = v1.slice(17, v2).add(v1.slice(21, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(9, v2)
+              .slice(13, v2)
+              .slice(17, v2)
+              .slice(21, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512SubDwordOriginMidRangeMasked() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512SubDwordOriginMidRangeMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(9, v2, S512_MASK).add(v1.slice(13, v2, S512_MASK));
-            ShortVector s1 = v1.slice(17, v2, S512_MASK).add(v1.slice(21, v2, S512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(9, v2, S512_MASK)
+              .slice(13, v2, S512_MASK)
+              .slice(17, v2, S512_MASK)
+              .slice(21, v2, S512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512SubDwordOriginEdgeRange() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512SubDwordOriginEdgeRange() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(3, v2).add(v1.slice(7, v2));
-            ShortVector s1 = v1.slice(25, v2).add(v1.slice(29, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(3, v2)
+              .slice(7, v2)
+              .slice(25, v2)
+              .slice(29, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512SubDwordOriginEdgeRangeMasked() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512SubDwordOriginEdgeRangeMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(3, v2, S512_MASK).add(v1.slice(7, v2, S512_MASK));
-            ShortVector s1 = v1.slice(25, v2, S512_MASK).add(v1.slice(29, v2, S512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(3, v2, S512_MASK)
+              .slice(7, v2, S512_MASK)
+              .slice(25, v2, S512_MASK)
+              .slice(29, v2, S512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public int int128ConstOrigin() {
-        IntVector acc = IntVector.zero(I128);
+    public void int128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += I128.vectorByteSize()) {
             IntVector v1 = IntVector.fromMemorySegment(I128, ksrc1, i, ORDER);
             IntVector v2 = IntVector.fromMemorySegment(I128, ksrc2, i, ORDER);
-            IntVector s0 = v1.slice(1, v2).add(v1.slice(2, v2));
-            IntVector s1 = v1.slice(3, v2).add(v2.slice(1, v1));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(2, v2)
+              .slice(3, v2)
+              .slice(1, v1)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public int int128ConstOriginMasked() {
-        IntVector acc = IntVector.zero(I128);
+    public void int128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += I128.vectorByteSize()) {
             IntVector v1 = IntVector.fromMemorySegment(I128, ksrc1, i, ORDER);
             IntVector v2 = IntVector.fromMemorySegment(I128, ksrc2, i, ORDER);
-            IntVector s0 = v1.slice(1, v2, I128_MASK).add(v1.slice(2, v2, I128_MASK));
-            IntVector s1 = v1.slice(3, v2, I128_MASK).add(v2.slice(1, v1, I128_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, I128_MASK)
+              .slice(2, v2, I128_MASK)
+              .slice(3, v2, I128_MASK)
+              .slice(1, v1, I128_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public int int512DwordAlignedOrigin() {
-        IntVector acc = IntVector.zero(I512);
+    public void int256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
+            IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
+            IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
+            v1.slice(4, v2)
+              .slice(4, v1)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void int256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
+            IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
+            IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
+            v1.slice(4, v2, I256_MASK)
+              .slice(4, v1, I256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void int256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
+            IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
+            IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
+            v1.slice(1, v2)
+              .slice(2, v2)
+              .slice(6, v2)
+              .slice(7, v2)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void int256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
+            IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
+            IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
+            v1.slice(1, v2, I256_MASK)
+              .slice(2, v2, I256_MASK)
+              .slice(6, v2, I256_MASK)
+              .slice(7, v2, I256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void int512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += I512.vectorByteSize()) {
             IntVector v1 = IntVector.fromMemorySegment(I512, ksrc1, i, ORDER);
             IntVector v2 = IntVector.fromMemorySegment(I512, ksrc2, i, ORDER);
-            IntVector s0 = v1.slice(1, v2).add(v1.slice(5, v2));
-            IntVector s1 = v1.slice(9, v2).add(v1.slice(13, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(5, v2)
+              .slice(9, v2)
+              .slice(13, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public int int512DwordAlignedOriginMasked() {
-        IntVector acc = IntVector.zero(I512);
+    public void int512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += I512.vectorByteSize()) {
             IntVector v1 = IntVector.fromMemorySegment(I512, ksrc1, i, ORDER);
             IntVector v2 = IntVector.fromMemorySegment(I512, ksrc2, i, ORDER);
-            IntVector s0 = v1.slice(1, v2, I512_MASK).add(v1.slice(5, v2, I512_MASK));
-            IntVector s1 = v1.slice(9, v2, I512_MASK).add(v1.slice(13, v2, I512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, I512_MASK)
+              .slice(5, v2, I512_MASK)
+              .slice(9, v2, I512_MASK)
+              .slice(13, v2, I512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public long long128ConstOrigin() {
-        LongVector acc = LongVector.zero(L128);
+    public void long128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += L128.vectorByteSize()) {
             LongVector v1 = LongVector.fromMemorySegment(L128, ksrc1, i, ORDER);
             LongVector v2 = LongVector.fromMemorySegment(L128, ksrc2, i, ORDER);
-            acc = acc.add(v1.slice(1, v2).add(v2.slice(1, v1)));
+            v1.slice(1, v2)
+              .slice(1, v1)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public long long128ConstOriginMasked() {
-        LongVector acc = LongVector.zero(L128);
+    public void long128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += L128.vectorByteSize()) {
             LongVector v1 = LongVector.fromMemorySegment(L128, ksrc1, i, ORDER);
             LongVector v2 = LongVector.fromMemorySegment(L128, ksrc2, i, ORDER);
-            acc = acc.add(v1.slice(1, v2, L128_MASK).add(v2.slice(1, v1, L128_MASK)));
+            v1.slice(1, v2, L128_MASK)
+              .slice(1, v1, L128_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public long long512DwordAlignedOrigin() {
-        LongVector acc = LongVector.zero(L512);
+    public void long256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
+            LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
+            LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
+            v1.slice(2, v2)
+              .slice(2, v1)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void long256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
+            LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
+            LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
+            v1.slice(2, v2, L256_MASK)
+              .slice(2, v1, L256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void long256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
+            LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
+            LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
+            v1.slice(1, v2)
+              .slice(3, v2)
+              .slice(1, v1)
+              .slice(3, v1)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void long256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
+            LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
+            LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
+            v1.slice(1, v2, L256_MASK)
+              .slice(3, v2, L256_MASK)
+              .slice(1, v1, L256_MASK)
+              .slice(3, v1, L256_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void long512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += L512.vectorByteSize()) {
             LongVector v1 = LongVector.fromMemorySegment(L512, ksrc1, i, ORDER);
             LongVector v2 = LongVector.fromMemorySegment(L512, ksrc2, i, ORDER);
-            LongVector s0 = v1.slice(1, v2).add(v1.slice(3, v2));
-            LongVector s1 = v1.slice(5, v2).add(v1.slice(7, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(3, v2)
+              .slice(5, v2)
+              .slice(7, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public long long512DwordAlignedOriginMasked() {
-        LongVector acc = LongVector.zero(L512);
+    public void long512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += L512.vectorByteSize()) {
             LongVector v1 = LongVector.fromMemorySegment(L512, ksrc1, i, ORDER);
             LongVector v2 = LongVector.fromMemorySegment(L512, ksrc2, i, ORDER);
-            LongVector s0 = v1.slice(1, v2, L512_MASK).add(v1.slice(3, v2, L512_MASK));
-            LongVector s1 = v1.slice(5, v2, L512_MASK).add(v1.slice(7, v2, L512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, L512_MASK)
+              .slice(3, v2, L512_MASK)
+              .slice(5, v2, L512_MASK)
+              .slice(7, v2, L512_MASK)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public float float128ConstOrigin() {
-        FloatVector acc = FloatVector.zero(F128);
+    public void float128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += F128.vectorByteSize()) {
             FloatVector v1 = FloatVector.fromMemorySegment(F128, kfsrc1, i, ORDER);
             FloatVector v2 = FloatVector.fromMemorySegment(F128, kfsrc2, i, ORDER);
-            FloatVector s0 = v1.slice(1, v2).add(v1.slice(2, v2));
-            FloatVector s1 = v1.slice(3, v2).add(v2.slice(1, v1));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(2, v2)
+              .slice(3, v2)
+              .slice(1, v1)
+              .intoMemorySegment(kfdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public float float128ConstOriginMasked() {
-        FloatVector acc = FloatVector.zero(F128);
+    public void float128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += F128.vectorByteSize()) {
             FloatVector v1 = FloatVector.fromMemorySegment(F128, kfsrc1, i, ORDER);
             FloatVector v2 = FloatVector.fromMemorySegment(F128, kfsrc2, i, ORDER);
-            FloatVector s0 = v1.slice(1, v2, F128_MASK).add(v1.slice(2, v2, F128_MASK));
-            FloatVector s1 = v1.slice(3, v2, F128_MASK).add(v2.slice(1, v1, F128_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, F128_MASK)
+              .slice(2, v2, F128_MASK)
+              .slice(3, v2, F128_MASK)
+              .slice(1, v1, F128_MASK)
+              .intoMemorySegment(kfdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public float float512DwordAlignedOrigin() {
-        FloatVector acc = FloatVector.zero(F512);
+    public void float256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
+            FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
+            FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
+            v1.slice(4, v2)
+              .slice(4, v1)
+              .intoMemorySegment(kfdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void float256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
+            FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
+            FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
+            v1.slice(4, v2, F256_MASK)
+              .slice(4, v1, F256_MASK)
+              .intoMemorySegment(kfdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void float256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
+            FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
+            FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
+            v1.slice(1, v2)
+              .slice(2, v2)
+              .slice(6, v2)
+              .slice(7, v2)
+              .intoMemorySegment(kfdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void float256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
+            FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
+            FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
+            v1.slice(1, v2, F256_MASK)
+              .slice(2, v2, F256_MASK)
+              .slice(6, v2, F256_MASK)
+              .slice(7, v2, F256_MASK)
+              .intoMemorySegment(kfdst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void float512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += F512.vectorByteSize()) {
             FloatVector v1 = FloatVector.fromMemorySegment(F512, kfsrc1, i, ORDER);
             FloatVector v2 = FloatVector.fromMemorySegment(F512, kfsrc2, i, ORDER);
-            FloatVector s0 = v1.slice(1, v2).add(v1.slice(5, v2));
-            FloatVector s1 = v1.slice(9, v2).add(v1.slice(13, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(5, v2)
+              .slice(9, v2)
+              .slice(13, v2)
+              .intoMemorySegment(kfdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public float float512DwordAlignedOriginMasked() {
-        FloatVector acc = FloatVector.zero(F512);
+    public void float512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += F512.vectorByteSize()) {
             FloatVector v1 = FloatVector.fromMemorySegment(F512, kfsrc1, i, ORDER);
             FloatVector v2 = FloatVector.fromMemorySegment(F512, kfsrc2, i, ORDER);
-            FloatVector s0 = v1.slice(1, v2, F512_MASK).add(v1.slice(5, v2, F512_MASK));
-            FloatVector s1 = v1.slice(9, v2, F512_MASK).add(v1.slice(13, v2, F512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, F512_MASK)
+              .slice(5, v2, F512_MASK)
+              .slice(9, v2, F512_MASK)
+              .slice(13, v2, F512_MASK)
+              .intoMemorySegment(kfdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public double double128ConstOrigin() {
-        DoubleVector acc = DoubleVector.zero(D128);
+    public void double128ConstOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += D128.vectorByteSize()) {
             DoubleVector v1 = DoubleVector.fromMemorySegment(D128, kdsrc1, i, ORDER);
             DoubleVector v2 = DoubleVector.fromMemorySegment(D128, kdsrc2, i, ORDER);
-            acc = acc.add(v1.slice(1, v2).add(v2.slice(1, v1)));
+            v1.slice(1, v2)
+              .slice(1, v1)
+              .intoMemorySegment(kddst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public double double128ConstOriginMasked() {
-        DoubleVector acc = DoubleVector.zero(D128);
+    public void double128ConstOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += D128.vectorByteSize()) {
             DoubleVector v1 = DoubleVector.fromMemorySegment(D128, kdsrc1, i, ORDER);
             DoubleVector v2 = DoubleVector.fromMemorySegment(D128, kdsrc2, i, ORDER);
-            acc = acc.add(v1.slice(1, v2, D128_MASK).add(v2.slice(1, v1, D128_MASK)));
+            v1.slice(1, v2, D128_MASK)
+              .slice(1, v1, D128_MASK)
+              .intoMemorySegment(kddst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public double double512DwordAlignedOrigin() {
-        DoubleVector acc = DoubleVector.zero(D512);
+    public void double256LaneAlignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
+            DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
+            DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
+            v1.slice(2, v2)
+              .slice(2, v1)
+              .intoMemorySegment(kddst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void double256LaneAlignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
+            DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
+            DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
+            v1.slice(2, v2, D256_MASK)
+              .slice(2, v1, D256_MASK)
+              .intoMemorySegment(kddst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void double256LaneUnalignedOrigin() {
+        for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
+            DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
+            DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
+            v1.slice(1, v2)
+              .slice(3, v2)
+              .slice(1, v1)
+              .slice(3, v1)
+              .intoMemorySegment(kddst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void double256LaneUnalignedOriginMasked() {
+        for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
+            DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
+            DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
+            v1.slice(1, v2, D256_MASK)
+              .slice(3, v2, D256_MASK)
+              .slice(1, v1, D256_MASK)
+              .slice(3, v1, D256_MASK)
+              .intoMemorySegment(kddst, i, ORDER);
+        }
+    }
+
+    @Benchmark
+    public void double512DwordAlignedOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += D512.vectorByteSize()) {
             DoubleVector v1 = DoubleVector.fromMemorySegment(D512, kdsrc1, i, ORDER);
             DoubleVector v2 = DoubleVector.fromMemorySegment(D512, kdsrc2, i, ORDER);
-            DoubleVector s0 = v1.slice(1, v2).add(v1.slice(3, v2));
-            DoubleVector s1 = v1.slice(5, v2).add(v1.slice(7, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2)
+              .slice(3, v2)
+              .slice(5, v2)
+              .slice(7, v2)
+              .intoMemorySegment(kddst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public double double512DwordAlignedOriginMasked() {
-        DoubleVector acc = DoubleVector.zero(D512);
+    public void double512DwordAlignedOriginMasked() {
         for (long i = 0; i < KERNEL_BYTES; i += D512.vectorByteSize()) {
             DoubleVector v1 = DoubleVector.fromMemorySegment(D512, kdsrc1, i, ORDER);
             DoubleVector v2 = DoubleVector.fromMemorySegment(D512, kdsrc2, i, ORDER);
-            DoubleVector s0 = v1.slice(1, v2, D512_MASK).add(v1.slice(3, v2, D512_MASK));
-            DoubleVector s1 = v1.slice(5, v2, D512_MASK).add(v1.slice(7, v2, D512_MASK));
-            acc = acc.add(s0.add(s1));
+            v1.slice(1, v2, D512_MASK)
+              .slice(3, v2, D512_MASK)
+              .slice(5, v2, D512_MASK)
+              .slice(7, v2, D512_MASK)
+              .intoMemorySegment(kddst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public byte byte512VariableOrigin() {
-        ByteVector acc = ByteVector.zero(B512);
+    public void byte512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += B512.vectorByteSize()) {
             ByteVector v1 = ByteVector.fromMemorySegment(B512, ksrc1, i, ORDER);
             ByteVector v2 = ByteVector.fromMemorySegment(B512, ksrc2, i, ORDER);
-            ByteVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            ByteVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public short short512VariableOrigin() {
-        ShortVector acc = ShortVector.zero(S512);
+    public void short512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += S512.vectorByteSize()) {
             ShortVector v1 = ShortVector.fromMemorySegment(S512, ksrc1, i, ORDER);
             ShortVector v2 = ShortVector.fromMemorySegment(S512, ksrc2, i, ORDER);
-            ShortVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            ShortVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public int int512VariableOrigin() {
-        IntVector acc = IntVector.zero(I512);
+    public void int512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += I512.vectorByteSize()) {
             IntVector v1 = IntVector.fromMemorySegment(I512, ksrc1, i, ORDER);
             IntVector v2 = IntVector.fromMemorySegment(I512, ksrc2, i, ORDER);
-            IntVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            IntVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public long long512VariableOrigin() {
-        LongVector acc = LongVector.zero(L512);
+    public void long512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += L512.vectorByteSize()) {
             LongVector v1 = LongVector.fromMemorySegment(L512, ksrc1, i, ORDER);
             LongVector v2 = LongVector.fromMemorySegment(L512, ksrc2, i, ORDER);
-            LongVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            LongVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public float float512VariableOrigin() {
-        FloatVector acc = FloatVector.zero(F512);
+    public void float512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += F512.vectorByteSize()) {
             FloatVector v1 = FloatVector.fromMemorySegment(F512, kfsrc1, i, ORDER);
             FloatVector v2 = FloatVector.fromMemorySegment(F512, kfsrc2, i, ORDER);
-            FloatVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            FloatVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kfdst, i, ORDER);
         }
-        return acc.reduceLanes(VectorOperators.ADD);
     }
 
     @Benchmark
-    public double double512VariableOrigin() {
-        DoubleVector acc = DoubleVector.zero(D512);
+    public void double512VariableOrigin() {
         for (long i = 0; i < KERNEL_BYTES; i += D512.vectorByteSize()) {
             DoubleVector v1 = DoubleVector.fromMemorySegment(D512, kdsrc1, i, ORDER);
             DoubleVector v2 = DoubleVector.fromMemorySegment(D512, kdsrc2, i, ORDER);
-            DoubleVector s0 = v1.slice(vidx0, v2).add(v1.slice(vidx1, v2));
-            DoubleVector s1 = v1.slice(vidx2, v2).add(v1.slice(vidx3, v2));
-            acc = acc.add(s0.add(s1));
-        }
-        return acc.reduceLanes(VectorOperators.ADD);
-    }
-
-    @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    @State(Scope.Thread)
-    @Fork(jvmArgs = {"--add-modules=jdk.incubator.vector", "-XX:UseAVX=2"})
-    public static class Avx2 {
-        MemorySegment ksrc1;
-        MemorySegment ksrc2;
-        MemorySegment kfsrc1;
-        MemorySegment kfsrc2;
-        MemorySegment kdsrc1;
-        MemorySegment kdsrc2;
-
-        @Setup(Level.Trial)
-        public void setup() {
-            Random r = new Random(2048);
-            Arena arena = Arena.ofAuto();
-            ksrc1  = kernelOperand(arena, r, 'i');
-            ksrc2  = kernelOperand(arena, r, 'i');
-            kfsrc1 = kernelOperand(arena, r, 'f');
-            kfsrc2 = kernelOperand(arena, r, 'f');
-            kdsrc1 = kernelOperand(arena, r, 'd');
-            kdsrc2 = kernelOperand(arena, r, 'd');
-        }
-
-        @Benchmark
-        public byte byte256LaneAlignedOrigin() {
-            ByteVector acc = ByteVector.zero(B256);
-            for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
-                ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
-                ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(16, v2).add(v2.slice(16, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public byte byte256LaneAlignedOriginMasked() {
-            ByteVector acc = ByteVector.zero(B256);
-            for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
-                ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
-                ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(16, v2, B256_MASK).add(v2.slice(16, v1, B256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public short short256LaneAlignedOrigin() {
-            ShortVector acc = ShortVector.zero(S256);
-            for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
-                ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
-                ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(8, v2).add(v2.slice(8, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public short short256LaneAlignedOriginMasked() {
-            ShortVector acc = ShortVector.zero(S256);
-            for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
-                ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
-                ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(8, v2, S256_MASK).add(v2.slice(8, v1, S256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public int int256LaneAlignedOrigin() {
-            IntVector acc = IntVector.zero(I256);
-            for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
-                IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
-                IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(4, v2).add(v2.slice(4, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public int int256LaneAlignedOriginMasked() {
-            IntVector acc = IntVector.zero(I256);
-            for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
-                IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
-                IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(4, v2, I256_MASK).add(v2.slice(4, v1, I256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public long long256LaneAlignedOrigin() {
-            LongVector acc = LongVector.zero(L256);
-            for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
-                LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
-                LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(2, v2).add(v2.slice(2, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public long long256LaneAlignedOriginMasked() {
-            LongVector acc = LongVector.zero(L256);
-            for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
-                LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
-                LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
-                acc = acc.add(v1.slice(2, v2, L256_MASK).add(v2.slice(2, v1, L256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public float float256LaneAlignedOrigin() {
-            FloatVector acc = FloatVector.zero(F256);
-            for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
-                FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
-                FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
-                acc = acc.add(v1.slice(4, v2).add(v2.slice(4, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public float float256LaneAlignedOriginMasked() {
-            FloatVector acc = FloatVector.zero(F256);
-            for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
-                FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
-                FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
-                acc = acc.add(v1.slice(4, v2, F256_MASK).add(v2.slice(4, v1, F256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public double double256LaneAlignedOrigin() {
-            DoubleVector acc = DoubleVector.zero(D256);
-            for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
-                DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
-                DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
-                acc = acc.add(v1.slice(2, v2).add(v2.slice(2, v1)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public double double256LaneAlignedOriginMasked() {
-            DoubleVector acc = DoubleVector.zero(D256);
-            for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
-                DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
-                DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
-                acc = acc.add(v1.slice(2, v2, D256_MASK).add(v2.slice(2, v1, D256_MASK)));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public byte byte256LaneUnalignedOrigin() {
-            ByteVector acc = ByteVector.zero(B256);
-            for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
-                ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
-                ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
-                ByteVector s0 = v1.slice(3, v2).add(v1.slice(9, v2));
-                ByteVector s1 = v1.slice(22, v2).add(v1.slice(29, v2));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public byte byte256LaneUnalignedOriginMasked() {
-            ByteVector acc = ByteVector.zero(B256);
-            for (long i = 0; i < KERNEL_BYTES; i += B256.vectorByteSize()) {
-                ByteVector v1 = ByteVector.fromMemorySegment(B256, ksrc1, i, ORDER);
-                ByteVector v2 = ByteVector.fromMemorySegment(B256, ksrc2, i, ORDER);
-                ByteVector s0 = v1.slice(3, v2, B256_MASK).add(v1.slice(9, v2, B256_MASK));
-                ByteVector s1 = v1.slice(22, v2, B256_MASK).add(v1.slice(29, v2, B256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public short short256LaneUnalignedOrigin() {
-            ShortVector acc = ShortVector.zero(S256);
-            for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
-                ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
-                ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
-                ShortVector s0 = v1.slice(2, v2).add(v1.slice(5, v2));
-                ShortVector s1 = v1.slice(11, v2).add(v1.slice(14, v2));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public short short256LaneUnalignedOriginMasked() {
-            ShortVector acc = ShortVector.zero(S256);
-            for (long i = 0; i < KERNEL_BYTES; i += S256.vectorByteSize()) {
-                ShortVector v1 = ShortVector.fromMemorySegment(S256, ksrc1, i, ORDER);
-                ShortVector v2 = ShortVector.fromMemorySegment(S256, ksrc2, i, ORDER);
-                ShortVector s0 = v1.slice(2, v2, S256_MASK).add(v1.slice(5, v2, S256_MASK));
-                ShortVector s1 = v1.slice(11, v2, S256_MASK).add(v1.slice(14, v2, S256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public int int256LaneUnalignedOrigin() {
-            IntVector acc = IntVector.zero(I256);
-            for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
-                IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
-                IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
-                IntVector s0 = v1.slice(1, v2).add(v1.slice(2, v2));
-                IntVector s1 = v1.slice(6, v2).add(v1.slice(7, v2));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public int int256LaneUnalignedOriginMasked() {
-            IntVector acc = IntVector.zero(I256);
-            for (long i = 0; i < KERNEL_BYTES; i += I256.vectorByteSize()) {
-                IntVector v1 = IntVector.fromMemorySegment(I256, ksrc1, i, ORDER);
-                IntVector v2 = IntVector.fromMemorySegment(I256, ksrc2, i, ORDER);
-                IntVector s0 = v1.slice(1, v2, I256_MASK).add(v1.slice(2, v2, I256_MASK));
-                IntVector s1 = v1.slice(6, v2, I256_MASK).add(v1.slice(7, v2, I256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public long long256LaneUnalignedOrigin() {
-            LongVector acc = LongVector.zero(L256);
-            for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
-                LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
-                LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
-                LongVector s0 = v1.slice(1, v2).add(v1.slice(3, v2));
-                LongVector s1 = v2.slice(1, v1).add(v2.slice(3, v1));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public long long256LaneUnalignedOriginMasked() {
-            LongVector acc = LongVector.zero(L256);
-            for (long i = 0; i < KERNEL_BYTES; i += L256.vectorByteSize()) {
-                LongVector v1 = LongVector.fromMemorySegment(L256, ksrc1, i, ORDER);
-                LongVector v2 = LongVector.fromMemorySegment(L256, ksrc2, i, ORDER);
-                LongVector s0 = v1.slice(1, v2, L256_MASK).add(v1.slice(3, v2, L256_MASK));
-                LongVector s1 = v2.slice(1, v1, L256_MASK).add(v2.slice(3, v1, L256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public float float256LaneUnalignedOrigin() {
-            FloatVector acc = FloatVector.zero(F256);
-            for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
-                FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
-                FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
-                FloatVector s0 = v1.slice(1, v2).add(v1.slice(2, v2));
-                FloatVector s1 = v1.slice(6, v2).add(v1.slice(7, v2));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public float float256LaneUnalignedOriginMasked() {
-            FloatVector acc = FloatVector.zero(F256);
-            for (long i = 0; i < KERNEL_BYTES; i += F256.vectorByteSize()) {
-                FloatVector v1 = FloatVector.fromMemorySegment(F256, kfsrc1, i, ORDER);
-                FloatVector v2 = FloatVector.fromMemorySegment(F256, kfsrc2, i, ORDER);
-                FloatVector s0 = v1.slice(1, v2, F256_MASK).add(v1.slice(2, v2, F256_MASK));
-                FloatVector s1 = v1.slice(6, v2, F256_MASK).add(v1.slice(7, v2, F256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public double double256LaneUnalignedOrigin() {
-            DoubleVector acc = DoubleVector.zero(D256);
-            for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
-                DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
-                DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
-                DoubleVector s0 = v1.slice(1, v2).add(v1.slice(3, v2));
-                DoubleVector s1 = v2.slice(1, v1).add(v2.slice(3, v1));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
-        }
-
-        @Benchmark
-        public double double256LaneUnalignedOriginMasked() {
-            DoubleVector acc = DoubleVector.zero(D256);
-            for (long i = 0; i < KERNEL_BYTES; i += D256.vectorByteSize()) {
-                DoubleVector v1 = DoubleVector.fromMemorySegment(D256, kdsrc1, i, ORDER);
-                DoubleVector v2 = DoubleVector.fromMemorySegment(D256, kdsrc2, i, ORDER);
-                DoubleVector s0 = v1.slice(1, v2, D256_MASK).add(v1.slice(3, v2, D256_MASK));
-                DoubleVector s1 = v2.slice(1, v1, D256_MASK).add(v2.slice(3, v1, D256_MASK));
-                acc = acc.add(s0.add(s1));
-            }
-            return acc.reduceLanes(VectorOperators.ADD);
+            v1.slice(vidx0, v2)
+              .slice(vidx1, v2)
+              .slice(vidx2, v2)
+              .slice(vidx3, v2)
+              .intoMemorySegment(kddst, i, ORDER);
         }
     }
 }

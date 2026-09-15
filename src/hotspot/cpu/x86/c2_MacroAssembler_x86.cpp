@@ -7131,7 +7131,14 @@ void C2_MacroAssembler::vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMR
      // res[127:0]   = {src1[255:128] , src1[127:0]}    >> SHIFT
      // res[255:128] = {src2[127:0]   , src1[255:128]}  >> SHIFT
      vperm2f128(dst, src1, src2, 0x21);
-     vpalignr(dst, dst, src1, origin, Assembler::AVX_256bit);
+     // origin == 8 is a 64-bit rotate of each 128-bit lane after the
+     // VPERM2F128. VSHUFPS imm8=0x4E (selectors 2,3,0,1) produces that
+     // rotate in the FP domain and avoids a VPALIGNR domain-crossing.
+     if (origin == 8) {
+       vshufps(dst, src1, dst, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, dst, src1, origin, Assembler::AVX_256bit);
+     }
    } else {
      assert(origin > 16 && origin < 32, "");
      // Similarly, when SHIFT >= 16 bytes, lower 128bit lane of
@@ -7145,7 +7152,13 @@ void C2_MacroAssembler::vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMR
      // res[127:0]   = {src2[127:0]   , src1[255:127]}  >> (SHIFT - 16)
      // res[255:128] = {src2[255:128] , src2[127:0]}    >> (SHIFT - 16)
      vperm2f128(dst, src1, src2, 0x21);
-     vpalignr(dst, src2, dst, origin - 16, Assembler::AVX_256bit);
+     // origin == 24 is the same 8-byte-per-lane rotate on the
+     // origin > 16 shuffle inputs; reuse VSHUFPS as for origin == 8.
+     if (origin == 24) {
+       vshufps(dst, dst, src2, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, src2, dst, origin - 16, Assembler::AVX_256bit);
+     }
    }
 }
 

@@ -3056,6 +3056,29 @@ Node* VectorSliceNode::Identity(PhaseGVN* phase) {
   return this;
 }
 
+Node* VectorSliceNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const TypeVect* vt = vect_type();
+  BasicType elem_bt = vt->element_basic_type();
+  uint num_elem = vt->length();
+  jint byte_origin = origin()->get_int();
+
+  if (Matcher::vector_slice_prefers_select_from_two_vector(elem_bt, byte_origin)) {
+    int add_vopc = VectorNode::opcode(Op_AddI, elem_bt);
+    if (Matcher::match_rule_supported_vector(Op_SelectFromTwoVector, num_elem, elem_bt) &&
+        Matcher::match_rule_supported_vector(Op_VectorLoadConst, num_elem, elem_bt)     &&
+        Matcher::match_rule_supported_vector(Op_Replicate, num_elem, elem_bt)           &&
+        Matcher::match_rule_supported_vector(add_vopc, num_elem, elem_bt)) {
+      jint elem_origin = byte_origin / type2aelembytes(elem_bt);
+      Node* iota  = phase->transform(new VectorLoadConstNode(phase->makecon(TypeInt::ZERO), vt));
+      Node* shift = phase->transform(VectorNode::scalar2vector(phase->intcon(elem_origin), num_elem, elem_bt));
+      Node* index = phase->transform(VectorNode::make(add_vopc, iota, shift, vt));
+      return new SelectFromTwoVectorNode(index, vec1(), vec2(), vt);
+    }
+  }
+
+  return VectorNode::Ideal(phase, can_reshape);
+}
+
 #ifndef PRODUCT
 void VectorBoxAllocateNode::dump_spec(outputStream *st) const {
   CallStaticJavaNode::dump_spec(st);

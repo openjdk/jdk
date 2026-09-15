@@ -1830,6 +1830,7 @@ class VectorSliceNode : public VectorNode {
   Node* vec2() const { return in(2); }
   Node* origin() const { return in(3); }
   virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
 
