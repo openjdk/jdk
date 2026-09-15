@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -110,8 +110,19 @@ void NativeCall::optimize_call(address dest, bool mt_safe) {
   }
   // We changed instruction stream
   if (mt_safe) {
-    // IC invalidate provides a leading full fence, it thus happens after we changed the instruction stream.
-    ICache::invalidate_range(jmp_ins_pc, NativeInstruction::instruction_size);
+    if (UseZiccid) {
+      // Ziccid provides in-order instruction fetches and eventual store visibility
+      // without FENCE.I for cacheable, coherent memory. It requires Ziccif, which
+      // guarantees atomic, naturally aligned power-of-two instruction fetches up
+      // to min(ILEN, XLEN) bits. This aligned atomic 32-bit jal/jalr replacement
+      // satisfies Ziccif's patching rules, and old/new calls can safely execute
+      // concurrently, so ICache::invalidate_range can be omitted.
+      // Preserve the full data fence otherwise provided by ICache::invalidate_range.
+      OrderAccess::fence();
+    } else {
+      // IC invalidate provides a leading full fence after the instruction store.
+      ICache::invalidate_range(jmp_ins_pc, NativeInstruction::instruction_size);
+    }
   }
 }
 

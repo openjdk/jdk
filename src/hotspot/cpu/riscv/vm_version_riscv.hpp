@@ -275,6 +275,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zicbop      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicbop))                                 \
   /* Zicboz Cache Block Zero Operations */                                                                \
   decl(Zicboz      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZicboz))                                 \
+  /* Ziccid Instruction/Data Coherence and Consistency */                                                 \
+  decl(Ziccid      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZiccid))                                 \
   /* Base Counters and Timers */                                                                          \
   decl(Zicntr      ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zicond Conditional operations */                                                                     \
