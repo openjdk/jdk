@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,9 +33,11 @@
  */
 
 import jdk.internal.agent.ConnectorAddressLink;
+import jdk.test.lib.Platform;
 import jdk.test.lib.Utils;
 import jdk.test.lib.process.ProcessTools;
 import org.testng.Assert;
+import org.testng.SkipException;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.Test;
 
@@ -233,6 +235,9 @@ public class HashedPasswordFileTest {
 
     @Test
     public void testReadOnlyPasswordFile() throws IOException {
+        if (Platform.isRoot()) {
+            throw new SkipException("Test skipped when executed by root user.");
+        }
         Boolean[] bvals = new Boolean[]{true, false};
         for (boolean bval : bvals) {
             try {
