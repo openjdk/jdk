@@ -197,7 +197,7 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
 
             SortOrder sortOrder = getColumnSortOrder(header.getTable(), column);
             if (sortOrder != null) {
-                 switch(sortOrder) {
+                 switch (sortOrder) {
                  case ASCENDING:
                  case DESCENDING:
                      switch (state) {
