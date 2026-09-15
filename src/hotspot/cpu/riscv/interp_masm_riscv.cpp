@@ -218,16 +218,16 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
   resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
-  shadd(result, index, result, index, LogBytesPerHeapOop);
+  shadd(result, index, result, LogBytesPerHeapOop, index);
   load_heap_oop(result, Address(result, 0), tmp, t1);
 }
 
 void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                 Register cpool, Register index, Register klass, Register temp) {
-  shadd(temp, index, cpool, temp, LogBytesPerWord);
+  shadd(temp, index, cpool, LogBytesPerWord);
   lhu(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
   ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
-  shadd(klass, temp, klass, temp, LogBytesPerWord);
+  shadd(klass, temp, klass, LogBytesPerWord, temp);
   ld(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
 }
 
@@ -457,10 +457,10 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (table == Interpreter::dispatch_table(state)) {
     mv(t1, Interpreter::distance_from_dispatch_table(state));
     add(t1, Rs, t1);
-    shadd(t1, t1, xdispatch, t1, 3);
+    shadd(t1, t1, xdispatch, 3);
   } else {
     mv(t1, (address)table);
-    shadd(t1, Rs, t1, Rs, 3);
+    shadd(t1, Rs, t1, 3, Rs);
   }
   ld(t1, Address(t1));
   jr(t1);
@@ -468,7 +468,7 @@ void InterpreterMacroAssembler::dispatch_base(TosState state,
   if (needs_thread_local_poll) {
     bind(safepoint);
     la(t1, ExternalAddress((address)safepoint_table));
-    shadd(t1, Rs, t1, Rs, 3);
+    shadd(t1, Rs, t1, 3, Rs);
     ld(t1, Address(t1));
     jr(t1);
   }
@@ -601,7 +601,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     // We use c_rarg1 so that if we go slow path it will be the correct
     // register for unlock_object to pass to VM directly
     ld(c_rarg1, monitor_block_top); // derelativize pointer
-    shadd(c_rarg1, c_rarg1, fp, c_rarg1, LogBytesPerWord);
+    shadd(c_rarg1, c_rarg1, fp, LogBytesPerWord);
     // c_rarg1 points to current entry, starting with top-most entry
 
     la(x9, monitor_block_bot);  // points to word before bottom of
@@ -1720,7 +1720,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
         assert(SingleTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
-        shadd(mdp, tmp, mdp, tmp, exact_log2(DataLayout::cell_size));
+        shadd(mdp, tmp, mdp, exact_log2(DataLayout::cell_size), tmp);
       }
       sd(mdp, Address(fp, frame::interpreter_frame_mdp_offset * wordSize));
     } else {
@@ -1802,17 +1802,17 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
     add(t0, mdp, off_base);
     add(t1, mdp, type_base);
 
-    shadd(tmp2, tmp1, t0, tmp2, per_arg_scale);
+    shadd(tmp2, tmp1, t0, per_arg_scale);
     // load offset on the stack from the slot for this parameter
     ld(tmp2, Address(tmp2, 0));
     neg(tmp2, tmp2);
 
     // read the parameter from the local area
-    shadd(tmp2, tmp2, xlocals, tmp2, Interpreter::logStackElementSize);
+    shadd(tmp2, tmp2, xlocals, Interpreter::logStackElementSize);
     ld(tmp2, Address(tmp2, 0));
 
     // profile the parameter
-    shadd(t1, tmp1, t1, t0, per_arg_scale);
+    shadd(t1, tmp1, t1, per_arg_scale, t0);
     Address arg_type(t1, 0);
     profile_obj_type(tmp2, arg_type, tmp3);
 
@@ -1938,7 +1938,7 @@ void InterpreterMacroAssembler::verify_frame_setup() {
   Label L;
   const Address monitor_block_top(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
   ld(t0, monitor_block_top);
-  shadd(t0, t0, fp, t0, LogBytesPerWord);
+  shadd(t0, t0, fp, LogBytesPerWord);
   beq(esp, t0, L);
   stop("broken stack frame setup in interpreter");
   bind(L);

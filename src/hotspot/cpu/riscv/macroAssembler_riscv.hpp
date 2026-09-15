@@ -1484,8 +1484,12 @@ public:
   void zero_memory(Register addr, Register len, Register tmp);
   void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
-  // shift left by shamt and add
-  void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  // Rd = Rs2 + (Rs1 << shamt). Uses Rd itself as the scratch register on the
+  // non-Zba path, so Rd must not alias Rs2.
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
+  // Same as above, but takes an explicit scratch register; use this when
+  // Rd == Rs2 and Rs1 must be preserved.
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
