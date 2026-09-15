@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,15 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import jdk.jfr.Contextual;
 import jdk.jfr.Event;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.StackTrace;
+import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -43,7 +46,7 @@ import jdk.test.lib.process.ProcessTools;
 /**
  * @test
  * @requires vm.flagless
- * @requires vm.hasJFR
+ * @requires vm.hasJFR & vm.continuations
  * @library /test/lib
  * @run main/othervm jdk.jfr.tool.TestPrintContextual
  */
@@ -109,6 +112,7 @@ public class TestPrintContextual {
         testDeepContext();
         testThreadedContext();
         testFiltered();
+        testSampledThreadContext();
     }
 
     // Tests that context values are injected into non-contextual events
@@ -356,6 +360,61 @@ public class TestPrintContextual {
         }
     }
 
+    // Tests that context values are also injected into sampled threads.
+    private static void testSampledThreadContext() throws Exception {
+        testSampledThreadContext(false);
+        testSampledThreadContext(true);
+    }
+
+    private static void testSampledThreadContext(boolean virtual) throws Exception {
+        String threadKind = virtual ? "virtual" : "platform";
+        String contextName = threadKind + " sample context";
+        CountDownLatch contextStarted = new CountDownLatch(1);
+        CountDownLatch sampleReceived = new CountDownLatch(1);
+        AtomicBoolean running = new AtomicBoolean(true);
+        Thread target = (virtual ? Thread.ofVirtual() : Thread.ofPlatform())
+            .name(threadKind + " sample target")
+            .unstarted(() -> {
+                TraceEvent trace = new TraceEvent();
+                trace.name = contextName;
+                trace.begin();
+                contextStarted.countDown();
+                while (running.get()) {
+                    Thread.onSpinWait();
+                }
+                trace.commit();
+            });
+
+        try (RecordingStream rs = new RecordingStream()) {
+            rs.enable("Trace").withoutStackTrace();
+            rs.enable("jdk.ExecutionSample").withoutStackTrace().withPeriod(java.time.Duration.ofMillis(1));
+            rs.onEvent("jdk.ExecutionSample", event -> {
+                if (event.getThread("sampledThread").getJavaThreadId() == target.threadId()) {
+                    sampleReceived.countDown();
+                }
+            });
+            rs.startAsync();
+            target.start();
+            contextStarted.await();
+            sampleReceived.await();
+            running.set(false);
+            target.join();
+
+            Path file = Path.of(threadKind + "-sample-context.jfr");
+            rs.dump(file);
+            List<PrintedEvent> events = parseEvents(readPrintedLines(file, "--stack-depth", "0"));
+            for (PrintedEvent event : events) {
+                if (event.name.equals("jdk.ExecutionSample") && contextName.equals(event.getContextValue("Trace.name"))) {
+                    return;
+                }
+            }
+            throw new Exception("No ExecutionSample found with context " + contextName);
+        } finally {
+            running.set(false);
+            target.join();
+        }
+    }
+
     private static void assertName(PrintedEvent event, String name) throws Exception {
         if (!event.name.equals(name)) {
             throw new Exception("Expected event name " + name + ", but was " + event.name);
@@ -401,6 +460,9 @@ public class TestPrintContextual {
                 pe = null;
             } else if (pe != null) {
                 int index = line.indexOf("=");
+                if (index < 0) {
+                    continue;
+                }
                 String field = line.substring(0, index).trim();
                 String value = line.substring(index + 1).trim();
                 if (value.startsWith("\"") && value.endsWith("\"")) {
