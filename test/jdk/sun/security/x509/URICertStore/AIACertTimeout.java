@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.spec.*;
 import java.util.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.security.CertificateBuilder;
@@ -77,9 +79,8 @@ public class AIACertTimeout {
                 Boolean.parseBoolean(args[1]);
 
         createAuthorities();
-        CaCertHttpServer aiaServer = new CaCertHttpServer(intCert,
-                servTimeoutMsec);
-        try {
+
+        try(CaCertHttpServer aiaServer = new CaCertHttpServer(intCert, servTimeoutMsec)) {
             aiaServer.start();
             createEE(aiaServer.getAddress());
 
@@ -108,21 +109,21 @@ public class AIACertTimeout {
                     throw cpve;
                 }
             }
-        } finally {
-            aiaServer.stop();
         }
     }
 
-    private static class CaCertHttpServer {
+    private static class CaCertHttpServer implements AutoCloseable {
 
         private final X509Certificate caCert;
         private final HttpServer server;
         private final int timeout;
+        private final ExecutorService serverExecutor;
 
         public CaCertHttpServer(X509Certificate cert, int timeout)
                 throws IOException {
             caCert = Objects.requireNonNull(cert, "Null CA cert disallowed");
             server = HttpServer.create();
+            serverExecutor = Executors.newSingleThreadExecutor();
             this.timeout = timeout;
             if (timeout > 0) {
                 log("Created HttpServer with timeout of " + timeout + " msec.");
@@ -132,7 +133,7 @@ public class AIACertTimeout {
         }
 
         public void start() throws IOException {
-            server.bind(new InetSocketAddress("localhost", 0), 0);
+            server.bind(new InetSocketAddress("127.0.0.1", 0), 0);
             server.createContext("/cacert", t -> {
                 try (InputStream is = t.getRequestBody()) {
                     is.readAllBytes();
@@ -156,17 +157,22 @@ public class AIACertTimeout {
                     throw new IOException(exc);
                 }
             });
-            server.setExecutor(null);
+            server.setExecutor(serverExecutor);
             server.start();
             log("Started HttpServer: Listening on " + server.getAddress());
         }
 
-        public void stop() {
+        private void stop() {
             server.stop(0);
         }
 
         public InetSocketAddress getAddress() {
             return server.getAddress();
+        }
+
+        public void close() throws Exception {
+            server.stop(0);
+            serverExecutor.close();
         }
     }
 
@@ -245,7 +251,7 @@ public class AIACertTimeout {
         List<String> ekuOids = List.of("1.3.6.1.5.5.7.3.1",
                 "1.3.6.1.5.5.7.3.2", "1.3.6.1.5.5.7.3.4");
         String aiaUri = String.format("http://%s:%d/cacert",
-                aiaAddr.getHostName(), aiaAddr.getPort());
+                "127.0.0.1", aiaAddr.getPort());
 
         CertificateBuilder cbld = new CertificateBuilder();
         cbld.setSubjectName("CN=Oscar T. Grouch, O=SomeCompany").
