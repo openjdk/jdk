@@ -359,7 +359,7 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         if (allGray == JNI_TRUE) {
             initInverseGrayLut(pRgb, bisdo->lutsize, cData);
         }
-        (*env)->ReleaseIntArrayElements(env, bisdo->lutarray, pRgb, 0);
+        (*env)->ReleaseIntArrayElements(env, bisdo->lutarray, pRgb, JNI_ABORT);
 
         initDitherTables(cData);
 
