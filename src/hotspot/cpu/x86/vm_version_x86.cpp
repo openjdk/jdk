@@ -1513,6 +1513,8 @@ void VM_Version::get_processor_features() {
     // Based on community benchmarks(https://uops.info/html-instr/PDEP_R64_R64_R64.html),
     // PEXT/PDEP performance is known to be similarly poor to pre-Zen3 AMD, suggesting a microcode implementation.
     // This cannot be confirmed as Zhaoxin publishes no public optimization guide.
+    // Therefore we disable the flag by default, but allow it to be enabled explicitly on command line,
+    // provided bmi2 support is enabled.
     if (FLAG_IS_DEFAULT(UseParallelBitInstructions) || (!supports_bmi2() && UseParallelBitInstructions)) {
       if (!FLAG_IS_DEFAULT(UseParallelBitInstructions)) {
         warning("pdep/pext instructions are not available on this CPU");
