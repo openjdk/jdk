@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -287,6 +287,7 @@ private:
   size_t    _num_regions;
   ShenandoahHeapRegion** _regions;
   uint8_t* _affiliations;       // Holds array of enum ShenandoahAffiliation, including FREE status in non-generational mode
+  uint8_t* _biased_affiliations;
 
 public:
 
@@ -634,6 +635,15 @@ public:
   inline bool is_in_young(const void* p) const;
   inline bool is_in_old(const void* p) const;
 
+  // Returns true if `maybe_old` is in old and `maybe_young` is in young
+  inline bool is_old_to_young(const void* maybe_old, oop maybe_young) const;
+
+  // Returns false if `p` is not in the heap or does not have the given affiliation.
+  inline bool has_affiliation(const void* p, ShenandoahAffiliation affiliation) const;
+
+  // Does not check that `obj` is in the heap (debug builds assert that `obj` is in the heap).
+  inline bool has_affiliation(oop obj, ShenandoahAffiliation affiliation) const;
+
   // Returns true iff the young generation is being collected and the given pointer
   // is in the old generation. This is used to prevent the young collection from treating
   // such an object as unreachable.
@@ -643,6 +653,10 @@ public:
   inline void set_affiliation(ShenandoahHeapRegion* r, ShenandoahAffiliation new_affiliation);
 
   inline ShenandoahAffiliation region_affiliation(size_t index) const;
+
+  inline bool is_region_young(size_t index) const;
+  inline bool is_region_old(size_t index) const;
+  inline bool is_region_free(size_t index) const;
 
   bool requires_barriers(stackChunkOop obj) const override;
 

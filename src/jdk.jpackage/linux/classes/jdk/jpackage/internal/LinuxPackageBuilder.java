@@ -26,12 +26,17 @@ package jdk.jpackage.internal;
 
 import static jdk.jpackage.internal.I18N.buildConfigException;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.regex.Pattern;
 import jdk.jpackage.internal.model.AppImageLayout;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LinuxApplication;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.LinuxPackageMixin;
@@ -71,6 +76,12 @@ final class LinuxPackageBuilder {
 
         final var app = ApplicationBuilder.overrideAppImageLayout(pkgBuilder.app(), relativeInstalledLayout);
 
+        menuGroupName().filter(_ -> {
+            return desktopEntryFileValidator != null && probeMenuGroupNameFile != null;
+        }).ifPresent(v -> {
+            validateMenuGroupName(desktopEntryFileValidator, probeMenuGroupNameFile, v);
+        });
+
         return create(pkgBuilder
                 .app(LinuxApplication.create(app))
                 .installedPackageLayout(relativeInstalledLayout.resolveAt(Path.of("/")).resetRootDirectory())
@@ -79,7 +90,7 @@ final class LinuxPackageBuilder {
 
     private LinuxPackage create(Package pkg) {
         return LinuxPackage.create(pkg, new LinuxPackageMixin.Stub(
-                Optional.ofNullable(menuGroupName).orElseGet(DEFAULTS::menuGroupName),
+                menuGroupName().orElseGet(DEFAULTS::menuGroupName),
                 category(),
                 Optional.ofNullable(additionalDependencies),
                 release(),
@@ -94,6 +105,10 @@ final class LinuxPackageBuilder {
     LinuxPackageBuilder menuGroupName(String v) {
         menuGroupName = v;
         return this;
+    }
+
+    Optional<String> menuGroupName() {
+        return Optional.ofNullable(menuGroupName);
     }
 
     LinuxPackageBuilder category(String v) {
@@ -124,6 +139,16 @@ final class LinuxPackageBuilder {
         return this;
     }
 
+    LinuxPackageBuilder probeMenuGroupNameFile(Path v) {
+        probeMenuGroupNameFile = v;
+        return this;
+    }
+
+    LinuxPackageBuilder desktopEntryFileValidator(DesktopEntryFileValidator v) {
+        desktopEntryFileValidator = v;
+        return this;
+    }
+
     private static LinuxApplicationLayout usrTreePackageLayout(Path prefix, String packageName) {
         final var lib = prefix.resolve(Path.of("lib", packageName));
         return LinuxApplicationLayout.create(
@@ -134,6 +159,7 @@ final class LinuxPackageBuilder {
                         .desktopIntegrationDirectory(lib)
                         .appModsDirectory(lib.resolve("app/mods"))
                         .contentDirectory(lib)
+                        .resourcesDirectory(lib)
                         .create(),
                 lib.resolve("lib/libapplauncher.so"));
     }
@@ -181,6 +207,35 @@ final class LinuxPackageBuilder {
         }
     }
 
+    private static void validateMenuGroupName(DesktopEntryFileValidator desktopEntryFileValidator, Path probeFile, String menuGroupName) {
+        Objects.requireNonNull(desktopEntryFileValidator);
+        Objects.requireNonNull(probeFile);
+        Objects.requireNonNull(menuGroupName);
+
+        try {
+            Files.createDirectories(probeFile.getParent());
+            Files.write(probeFile, List.of(
+                    "[Desktop Entry]",
+                    DesktopEntry.NAME.formatDesktopFileEntry("acme"),
+                    DesktopEntry.EXEC.formatDesktopFileEntry("foo"),
+                    DesktopEntry.TYPE.formatDesktopFileEntry("Application"),
+                    DesktopEntry.CATEGORIES.formatDesktopFileEntry(menuGroupName)));
+        } catch (IOException ex) {
+            // This is fatal if we can't create a probe file.
+            throw new UncheckedIOException(ex);
+        }
+
+        var result = desktopEntryFileValidator.validate(probeFile);
+        result.exitCode().ifPresent(exitCode -> {
+            if (exitCode != 0) {
+                // Validation failed as the command returned an unexpected exit code.
+                throw new ConfigException(
+                        I18N.format("error.parameter-invalid-value", menuGroupName, "--linux-menu-group"),
+                        I18N.format("error.invalid-desktop-category.advice"));
+            }
+        });
+    }
+
     private record Defaults(String menuGroupName) {
     }
 
@@ -189,6 +244,8 @@ final class LinuxPackageBuilder {
     private String category;
     private String additionalDependencies;
     private String release;
+    private Path probeMenuGroupNameFile;
+    private DesktopEntryFileValidator desktopEntryFileValidator;
     private LinuxPackageArch arch;
 
     private final PackageBuilder pkgBuilder;

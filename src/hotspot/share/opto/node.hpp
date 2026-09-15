@@ -188,7 +188,7 @@ class SubTypeCheckNode;
 class Type;
 class TypeNode;
 class UnlockNode;
-class InlineTypeNode;
+class ValueTypeNode;
 class LoadFlatNode;
 class StoreFlatNode;
 class VectorNode;
@@ -774,7 +774,7 @@ public:
         DEFINE_CLASS_ID(NegV, Vector, 8)
         DEFINE_CLASS_ID(SaturatingVector, Vector, 9)
         DEFINE_CLASS_ID(MulVL, Vector, 10)
-      DEFINE_CLASS_ID(InlineType, Type, 8)
+      DEFINE_CLASS_ID(ValueType, Type, 8)
       DEFINE_CLASS_ID(Con, Type, 9)
           DEFINE_CLASS_ID(ConI, Con, 0)
       DEFINE_CLASS_ID(SafePointScalarMerge, Type, 10)
@@ -1047,7 +1047,7 @@ public:
   DEFINE_CLASS_QUERY(Sub)
   DEFINE_CLASS_QUERY(SubTypeCheck)
   DEFINE_CLASS_QUERY(Type)
-  DEFINE_CLASS_QUERY(InlineType)
+  DEFINE_CLASS_QUERY(ValueType)
   DEFINE_CLASS_QUERY(LoadFlat)
   DEFINE_CLASS_QUERY(StoreFlat)
   DEFINE_CLASS_QUERY(Vector)
@@ -1293,6 +1293,14 @@ public:
   // for the transformations to happen.
   bool has_special_unique_user() const;
 
+  // Some nodes can be processed when one of its outputs is disconnected
+  bool should_process_when_disconnect_output(Node* output) const;
+
+private:
+  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
+
+public:
+
   // Skip Proj and CatchProj nodes chains. Check for Null and Top.
   Node* find_exact_control(Node* ctrl);
 
@@ -1455,8 +1463,6 @@ public:
   bool is_memory_phi() const { return is_Phi() && bottom_type() == Type::MEMORY; }
 
   bool is_div_or_mod(BasicType bt) const;
-
-  bool is_data_proj_of_pure_function(const Node* maybe_pure_function) const;
 
 //----------------- Printing, etc
 #ifndef PRODUCT
