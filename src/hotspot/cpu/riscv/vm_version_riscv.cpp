@@ -41,14 +41,15 @@
 // libraries are the closest such C++ code, so gate UseZalasr on the
 // toolchain that built this VM. See riscv-elf-psabi-doc,
 // "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+static constexpr bool toolchain_uses_psabi_atomics() {
 #if defined(__clang_major__)
-  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS (__clang_major__ >= 19)
+  return __clang_major__ >= 19;
 #elif defined(__GNUC__)
-  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS \
-    ((__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3))
+  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
 #else
-  #define JVM_TOOLCHAIN_USES_PSABI_ATOMICS 0
+  return false;
 #endif
+}
 
 uint32_t VM_Version::_initial_vector_length = 0;
 
@@ -164,7 +165,7 @@ void VM_Version::common_initialize() {
     }
   }
 
-  if (UseZalasr && !JVM_TOOLCHAIN_USES_PSABI_ATOMICS) {
+  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
     // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
     // is incompatible with the Zalasr sequences the JIT would emit; mixing them
     // can break Java volatile semantics. Only warn when Zalasr was asked for
@@ -177,7 +178,6 @@ void VM_Version::common_initialize() {
     }
     FLAG_SET_DEFAULT(UseZalasr, false);
   }
-#undef JVM_TOOLCHAIN_USES_PSABI_ATOMICS
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,

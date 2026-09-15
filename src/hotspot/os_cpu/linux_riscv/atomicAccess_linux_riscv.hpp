@@ -241,36 +241,40 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 // naturally aligned, which is already assumed for the LR/SC and AMO sequences
 // used elsewhere in this file.
 
-template<size_t byte_size> inline uint64_t zalasr_load_acquire(const void* p);
-template<size_t byte_size> inline void zalasr_store_release(void* p, uint64_t v);
-
-#define DEFINE_ZALASR_ACCESS(BYTE_SIZE, WIDTH)                                        \
-  template<> inline uint64_t zalasr_load_acquire<BYTE_SIZE>(const void* p) {          \
-    uint64_t data;                                                                    \
-    __asm__ __volatile__ (".insn r 0x2f, " #WIDTH ", 0x1a, %0, %1, zero"              \
-                          : "=r" (data)                                               \
-                          : "r" (p)                                                   \
-                          : "memory");                                                \
-    return data;                                                                      \
-  }                                                                                   \
-  template<> inline void zalasr_store_release<BYTE_SIZE>(void* p, uint64_t v) {       \
-    __asm__ __volatile__ (".insn r 0x2f, " #WIDTH ", 0x1d, zero, %0, %1"              \
-                          : /* no output */                                           \
-                          : "r" (p), "r" (v)                                          \
-                          : "memory");                                                \
+// funct3 encoding, log2 of the access size in bytes; matches
+// Assembler::ZalasrWidthFunct3. 1 -> lb.aq/sb.rl, 2 -> lh.aq/sh.rl,
+// 4 -> lw.aq/sw.rl, 8 -> ld.aq/sd.rl.
+constexpr int zalasr_width(size_t byte_size) {
+  switch (byte_size) {
+    case 1: return 0;
+    case 2: return 1;
+    case 4: return 2;
+    case 8: return 3;
+    default: return -1;
   }
+}
 
-// One load-acquire and one store-release per access width. The second argument
-// is the funct3 width encoding, which is log2 of the access size in bytes; it
-// matches Assembler::ZalasrWidthFunct3 in assembler_riscv.hpp. Only these four
-// widths are defined; PlatformOrderedLoad and PlatformOrderedStore below assert
-// that nothing else reaches here.
-DEFINE_ZALASR_ACCESS(1, 0) // lb.aq / sb.rl
-DEFINE_ZALASR_ACCESS(2, 1) // lh.aq / sh.rl
-DEFINE_ZALASR_ACCESS(4, 2) // lw.aq / sw.rl
-DEFINE_ZALASR_ACCESS(8, 3) // ld.aq / sd.rl
+template<size_t byte_size>
+inline uint64_t zalasr_load_acquire(const void* p) {
+  constexpr int width = zalasr_width(byte_size);
+  static_assert(width >= 0, "unsupported Zalasr access size");
+  uint64_t data;
+  __asm__ __volatile__ (".insn r 0x2f, %2, 0x1a, %0, %1, zero"
+                        : "=r" (data)
+                        : "r" (p), "i" (width)
+                        : "memory");
+  return data;
+}
 
-#undef DEFINE_ZALASR_ACCESS
+template<size_t byte_size>
+inline void zalasr_store_release(void* p, uint64_t v) {
+  constexpr int width = zalasr_width(byte_size);
+  static_assert(width >= 0, "unsupported Zalasr access size");
+  __asm__ __volatile__ (".insn r 0x2f, %2, 0x1d, zero, %0, %1"
+                        : /* no output */
+                        : "r" (p), "r" (v), "i" (width)
+                        : "memory");
+}
 
 template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
