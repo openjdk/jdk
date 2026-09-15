@@ -153,9 +153,7 @@ class AOTClassLocationConfig : public CHeapObj<mtClassShared> {
 
   // Used to translate dumptime boot/app classpaths to their runtime equivalent in case
   // the runtime classpath is different.
-  static const char* _runtime_lcp;
-  static size_t _runtime_lcp_len;
-  static bool _use_lcp_match;
+  static RuntimePathInfo _runtime_path_info;
 
   int _boot_classpath_end;
   int _app_classpath_end;

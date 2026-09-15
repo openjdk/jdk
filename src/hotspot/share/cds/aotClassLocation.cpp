@@ -53,9 +53,7 @@
 Array<ClassPathZipEntry*>* AOTClassLocationConfig::_dumptime_jar_files = nullptr;
 AOTClassLocationConfig* AOTClassLocationConfig::_dumptime_instance = nullptr;
 const AOTClassLocationConfig* AOTClassLocationConfig::_runtime_instance = nullptr;
-const char* AOTClassLocationConfig::_runtime_lcp;
-size_t AOTClassLocationConfig::_runtime_lcp_len;
-bool AOTClassLocationConfig::_use_lcp_match;
+AOTClassLocationConfig::RuntimePathInfo AOTClassLocationConfig::_runtime_path_info = { false, nullptr, 0 };
 
 // A ClassLocationStream represents a list of code locations, which can be iterated using
 // start() and has_next().
@@ -525,9 +523,9 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
 
 const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index, const char* path) const {
   const char* real_path = path;
-  if (_use_lcp_match && !class_location_at(shared_path_index)->from_module_path()) {
+  if (_runtime_path_info.use_lcp_match && !class_location_at(shared_path_index)->from_module_path()) {
     // lcp match is not done for module paths
-    real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_lcp, _runtime_lcp_len);
+    real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_path_info.runtime_lcp, _runtime_path_info.runtime_lcp_len);
   }
   return real_path;
 }
@@ -1111,14 +1109,11 @@ bool AOTClassLocationConfig::validate(const char* cache_filename, bool has_aot_l
     }
   }
 
-  if (_runtime_lcp_len > 0) {
-    os::free((void*)_runtime_lcp);
+  if (_runtime_path_info.runtime_lcp_len > 0) {
+    os::free((void*)_runtime_path_info.runtime_lcp);
   }
 
-  _use_lcp_match = path_info.use_lcp_match;
-  _runtime_lcp = path_info.runtime_lcp;
-  _runtime_lcp_len = path_info.runtime_lcp_len;
-
+  _runtime_path_info = path_info;
   _runtime_instance = this;
   return true;
 }

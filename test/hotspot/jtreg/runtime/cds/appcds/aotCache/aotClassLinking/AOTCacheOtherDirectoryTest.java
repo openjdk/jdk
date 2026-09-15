@@ -67,15 +67,23 @@ public class AOTCacheOtherDirectoryTest {
             .appCommandLine(mainClass)
             .runAOTTrainingAndAssemblyWorkflow();
 
-        // At runtime, run from /target so the classpath is different but use the same JAR
+        // Sanity test, run from same directory
         String[] cmdLine = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
-                                          "-XX:AOTCache=" + aotCacheName + ".aot",
+                                          "-XX:AOTCache=" + targetDirName + File.separator + aotCacheName + ".aot",
                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production.map:none:filesize=0",
-                                          "-cp", jarName, mainClass};
+                                          "-cp", destPath.toString(), mainClass};
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
-        pb.directory(destDir.toFile());
-
         OutputAnalyzer output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
+        output.shouldHaveExitValue(0);
+
+        // At runtime, run from /target so the classpath is different but use the same JAR
+        String[] cmdLine2 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
+                                           "-XX:AOTCache=" + aotCacheName + ".aot",
+                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production.map:none:filesize=0",
+                                           "-cp", jarName, mainClass};
+        pb = ProcessTools.createTestJavaProcessBuilder(cmdLine2);
+        pb.directory(destDir.toFile());
+        output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
         output.shouldHaveExitValue(0);
     }
 }
