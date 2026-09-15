@@ -54,8 +54,8 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Indicates that regions are being actively uncommitted
   ShenandoahSharedFlag _uncommit_in_progress;
 
-  // Indicates that termination is in progress
-  ShenandoahSharedFlag _terminating;
+  // Indicates that current plan needs to be re-evaluated.
+  ShenandoahSharedFlag _reevaluate;
 
   // This lock is used to coordinate allowing or forbidding regions to be uncommitted
   Monitor _uncommit_lock;

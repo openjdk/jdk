@@ -61,20 +61,22 @@ void ShenandoahUncommitThread::run_service() {
 
     {
       MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-      if (_terminating.is_set()) {
+      if (should_terminate()) {
         // Already requested termination, exit.
         break;
       }
 
       locker.wait(poll_interval);
 
-      if (_terminating.is_set()) {
+      if (should_terminate()) {
         // Wake up for terminating, exit.
         break;
       }
 
       soft_max_changed = _soft_max_changed.try_unset();
       explicit_gc_requested = _explicit_gc_requested.try_unset();
+
+      _reevaluate.unset();
     }
 
     // Explicit GC tries to uncommit everything down to min capacity.
@@ -140,20 +142,6 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
   } else {
     // No regions that match our target at all.
     return false;
-  }
-}
-
-void ShenandoahUncommitThread::notify_soft_max_changed() {
-  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-  if (_soft_max_changed.try_set()) {
-    locker.notify_all();
-  }
-}
-
-void ShenandoahUncommitThread::notify_explicit_gc_requested() {
-  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
-  if (_explicit_gc_requested.try_set()) {
-    locker.notify_all();
   }
 }
 
@@ -235,26 +223,26 @@ bool ShenandoahUncommitThread::try_set_progress(int delay_ms) {
   assert(_uncommit_in_progress.is_unset(), "Should be unset before checks");
 
   // Optimistic: uncommits are allowed, just wait a bit, if requested.
-  while (_uncommit_allowed.is_set() && (delay_ms > 0)) {
-    double started = os::elapsedTime();
+  double deadline = os::elapsedTime() + delay_ms * 1.0 / MILLIUNITS;
+  while (_uncommit_allowed.is_set() && _reevaluate.is_unset() &&
+         os::elapsedTime() < deadline) {
     locker.wait(delay_ms);
-    delay_ms -= (os::elapsedTime() - started) * MILLIUNITS;
   }
 
-  // Pessimistic: uncommits are disallowed. Wait until allowed again or terminated.
-  while (_uncommit_allowed.is_unset() && _terminating.is_unset()) {
+  // Pessimistic: uncommits are disallowed. Wait until allowed again.
+  while (_uncommit_allowed.is_unset() && _reevaluate.is_unset()) {
     locker.wait();
   }
 
-  // Anything changed drastically? Exit then.
-  if (_terminating.is_set() || _soft_max_changed.is_set() || _explicit_gc_requested.is_set()) {
+  if (_reevaluate.is_set()) {
+    // Requested to re-evaluate the plan? Exit then.
     assert(_uncommit_in_progress.is_unset(), "Should remain unset");
     return false;
+  } else {
+    // We are good to enable uncommits.
+    _uncommit_in_progress.set();
+    return true;
   }
-
-  // We are good to enable uncommits.
-  _uncommit_in_progress.set();
-  return true;
 }
 
 void ShenandoahUncommitThread::unset_progress() {
@@ -266,7 +254,7 @@ void ShenandoahUncommitThread::unset_progress() {
 void ShenandoahUncommitThread::stop_service() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_safepoint_check_flag);
   _uncommit_allowed.unset();
-  _terminating.set();
+  _reevaluate.set();
   locker.notify_all();
 }
 
@@ -283,4 +271,20 @@ void ShenandoahUncommitThread::allow_uncommit() {
   MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   _uncommit_allowed.set();
   locker.notify_all();
+}
+
+void ShenandoahUncommitThread::notify_soft_max_changed() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  if (_soft_max_changed.try_set()) {
+    _reevaluate.set();
+    locker.notify_all();
+  }
+}
+
+void ShenandoahUncommitThread::notify_explicit_gc_requested() {
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
+  if (_explicit_gc_requested.try_set()) {
+    _reevaluate.set();
+    locker.notify_all();
+  }
 }
