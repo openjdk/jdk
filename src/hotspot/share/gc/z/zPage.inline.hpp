@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 
 #include "gc/z/zPage.hpp"
 
+#include "cppstdlib/limits.hpp"
 #include "gc/z/zAddress.inline.hpp"
 #include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zGlobals.hpp"
@@ -171,6 +172,20 @@ inline ZMultiPartitionTracker* ZPage::multi_partition_tracker() const {
 
 inline ZPageAge ZPage::age() const {
   return _age;
+}
+
+inline void ZPage::inc_relocation_target_ref_count() {
+  assert(_relocation_target_ref_count < std::numeric_limits<uint32_t>::max(), "Relocation target ref count overflow");
+
+  _relocation_target_ref_count++;
+}
+
+inline bool ZPage::dec_relocation_target_ref_count() {
+  assert(_relocation_target_ref_count > 0, "Invalid ref count");
+
+  _relocation_target_ref_count--;
+
+  return  _relocation_target_ref_count == 0;
 }
 
 inline uint32_t ZPage::seqnum() const {
