@@ -240,7 +240,7 @@ ciField::ciField(ciField* declared_field, ciField* subfield) {
 
   _signature = subfield->_signature;
   _type = subfield->_type;
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = subfield->_known_to_link_with_put;
   _known_to_link_with_get = subfield->_known_to_link_with_get;
   _constant_value = ciConstant();
@@ -269,7 +269,7 @@ ciField::ciField(ciField* declared_field) {
   _signature = ciSymbols::bool_signature();
   _type = ciType::make(T_BOOLEAN);
 
-  _is_constant = (declared_field->is_strict() && declared_field->is_final()) || declared_field->is_constant();
+  _is_constant = declared_field->is_constant();
   _known_to_link_with_put = nullptr;
   _known_to_link_with_get = nullptr;
   _constant_value = ciConstant();
@@ -340,7 +340,7 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // An instance field can be constant if it's a final static field or if
       // it's a final non-static field of a trusted class (classes in
       // java.lang.invoke and sun.invoke packages and subpackages).
-      _is_constant = is_stable_field || trust_final_nonstatic_fields(_holder);
+      _is_constant = is_strict() || is_stable_field || trust_final_nonstatic_fields(_holder);
     }
   } else {
     // For CallSite objects treat the target field as a compile time constant.
