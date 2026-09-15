@@ -571,8 +571,7 @@ void trace_method_handle_stub(const char* adaptername,
                           adaptername, mh_reg_name,
                           p2i(mh), p2i(sender_sp), p2i(args));
 
-  LogTarget(Trace, methodhandles) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, methodhandles) lt; lt.is_enabled()) {
     // Dumping last frame with frame::describe.
     ResourceMark rm;
     LogStream ls(lt);

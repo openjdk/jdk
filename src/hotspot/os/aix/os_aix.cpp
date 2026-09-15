@@ -636,8 +636,7 @@ static void *thread_native_entry(Thread *thread) {
   const pthread_t pthread_id = ::pthread_self();
   const tid_t kernel_thread_id = ::thread_self();
 
-  LogTarget(Info, os, thread) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, os, thread) lt; lt.is_enabled()) {
     address low_address = thread->stack_end();
     address high_address = thread->stack_base();
     lt.print("Thread is alive (tid: %zu, kernel thread id: %zu"

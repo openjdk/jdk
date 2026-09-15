@@ -164,9 +164,7 @@ static const char* phase_to_explanatory_string(G1NUMAStats::NodeDataItems phase)
 #define RATE_TOTAL_FORMAT "%0.0f%% %zu/%zu"
 
 void G1NUMAStats::print_info(G1NUMAStats::NodeDataItems phase) {
-  LogTarget(Info, gc, heap, numa) lt;
-
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, gc, heap, numa) lt; lt.is_enabled()) {
     LogStream ls(lt);
     Stat result;
     size_t array_width = _num_node_ids;
@@ -189,9 +187,7 @@ void G1NUMAStats::print_info(G1NUMAStats::NodeDataItems phase) {
 }
 
 void G1NUMAStats::print_mutator_alloc_stat_debug() {
-  LogTarget(Debug, gc, heap, numa) lt;
-
-  if (lt.is_enabled()) {
+  if (const LogTarget(Debug, gc, heap, numa) lt; lt.is_enabled()) {
     LogStream ls(lt);
     uint array_width = _num_node_ids;
 

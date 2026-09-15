@@ -76,8 +76,7 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   }
 
 #ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, foreign, downcall) lt; lt.is_enabled()) {
     LogStream ls(lt);
     stub->print_on(&ls);
   }
@@ -197,8 +196,7 @@ void DowncallLinker::StubGenerator::generate() {
   }
 
 #ifndef PRODUCT
-  LogTarget(Trace, foreign, downcall) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, foreign, downcall) lt; lt.is_enabled()) {
     LogStream ls(lt);
     arg_shuffle.print_on(&ls);
   }

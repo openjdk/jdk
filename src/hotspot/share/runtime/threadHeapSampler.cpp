@@ -417,8 +417,7 @@ void ThreadHeapSampler::pick_next_sample() {
 
 #ifndef PRODUCT
 void ThreadHeapSampler::log_sample_decision(HeapWord* tlab_top) {
-  LogTarget(Debug, gc, tlab) log;
-  if (log.is_enabled()) {
+  if (const LogTarget(Debug, gc, tlab) log; log.is_enabled()) {
     const bool should_sample = bytes_since_last_sample(tlab_top) >= _sample_threshold;
     log_debug(gc, tlab)("Should sample: %s sample threshold: %zu total: %zu tlab: %zu current tlab: %zu outside tlab: %zu",
                         should_sample ? "yes" : "no ",

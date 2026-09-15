@@ -205,9 +205,8 @@ void ShenandoahCollectionSet::print_on(outputStream* out) const {
 }
 
 void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_garbage, size_t immediate_regions) const {
-  const LogTarget(Info, gc, ergo) lt;
-  LogStream ls(lt);
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, gc, ergo) lt; lt.is_enabled()) {
+    LogStream ls(lt);
     const size_t cset_percent = (total_garbage == 0) ? 0 : (garbage() * 100 / total_garbage);
     const size_t collectable_garbage = garbage() + immediate_garbage;
     const size_t collectable_garbage_percent = (total_garbage == 0) ? 0 : (collectable_garbage * 100 / total_garbage);

@@ -125,8 +125,7 @@ void BarrierSetNMethod::deoptimize(nmethod* nm, address* return_address_ptr) {
   address* callers_rbp = callers_rsp - 1; // 1 to move to the callers return address, 1 more to move to the rbp
   address* cookie = return_address_ptr - 1;
 
-  LogTarget(Trace, nmethod, barrier) out;
-  if (out.is_enabled()) {
+  if (const LogTarget(Trace, nmethod, barrier) out; out.is_enabled()) {
     JavaThread* jth = JavaThread::current();
     ResourceMark mark;
     log_trace(nmethod, barrier)("deoptimize(nmethod: %p, return_addr: %p, osr: %d, thread: %p(%s), making rsp: %p) -> %p",
