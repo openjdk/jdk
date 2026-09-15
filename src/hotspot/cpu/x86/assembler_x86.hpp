@@ -1555,6 +1555,11 @@ private:
   void kanddl(KRegister dst, KRegister src1, KRegister src2);
   void kandql(KRegister dst, KRegister src1, KRegister src2);
 
+  void kandnbl(KRegister dst, KRegister src1, KRegister src2);
+  void kandnwl(KRegister dst, KRegister src1, KRegister src2);
+  void kandndl(KRegister dst, KRegister src1, KRegister src2);
+  void kandnql(KRegister dst, KRegister src1, KRegister src2);
+
   void korbl(KRegister dst, KRegister src1, KRegister src2);
   void korwl(KRegister dst, KRegister src1, KRegister src2);
   void kordl(KRegister dst, KRegister src1, KRegister src2);
