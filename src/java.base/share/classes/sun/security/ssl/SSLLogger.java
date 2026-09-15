@@ -555,8 +555,8 @@ public final class SSLLogger implements System.Logger {
                         Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
-                        dateTimeFormat.format(x509.getNotBefore().toInstant()),
-                        dateTimeFormat.format(x509.getNotAfter().toInstant()),
+                        dateTimeFormat.format(x509.getNotBeforeInstant()),
+                        dateTimeFormat.format(x509.getNotAfterInstant()),
                         x509.getSubjectX500Principal().toString(),
                         x509.getPublicKey().getAlgorithm()
                         };
@@ -579,8 +579,8 @@ public final class SSLLogger implements System.Logger {
                         Debug.toString(x509.getSerialNumber()),
                         x509.getSigAlgName(),
                         x509.getIssuerX500Principal().toString(),
-                        dateTimeFormat.format(x509.getNotBefore().toInstant()),
-                        dateTimeFormat.format(x509.getNotAfter().toInstant()),
+                        dateTimeFormat.format(x509.getNotBeforeInstant()),
+                        dateTimeFormat.format(x509.getNotAfterInstant()),
                         x509.getSubjectX500Principal().toString(),
                         x509.getPublicKey().getAlgorithm(),
                         Utilities.indent(extBuilder.toString())

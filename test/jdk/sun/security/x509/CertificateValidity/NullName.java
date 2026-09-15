@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@
 import jdk.test.lib.Utils;
 import sun.security.x509.CertificateValidity;
 
-import java.util.Date;
+import java.time.Instant;
 
 public class NullName {
 
     public static void main(String[] argv) throws Exception {
-        Date now = new Date();
+        Instant now = Instant.now();
         Utils.runAndCheckException(
                 () -> new CertificateValidity(null, null),
                 NullPointerException.class);
