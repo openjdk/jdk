@@ -5899,6 +5899,13 @@ public class Attr extends JCTree.Visitor {
             }
             super.visitNewArray(tree);
         }
+        @Override
+        public void visitReference(JCMemberReference tree) {
+            if (TreeInfo.symbol(tree.expr) instanceof TypeSymbol) {
+                validateAnnotatedType(tree.expr, tree.expr.type);
+            }
+            super.visitReference(tree);
+        }
         public void visitClassDef(JCClassDecl tree) {
             //System.err.println("validateTypeAnnotations.visitClassDef " + tree);
             if (sigOnly) {
