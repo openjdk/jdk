@@ -65,17 +65,17 @@ class Thread;
 
 class Handle {
  private:
-  oop* _raw_handle;
+  oop* _handle;
 
  protected:
-  oop     obj() const                            { return _raw_handle == nullptr ? (oop)nullptr : *_raw_handle; }
-  oop     non_null_obj() const                   { assert(_raw_handle != nullptr, "resolving null handle"); return *_raw_handle; }
+  oop     obj() const                            { return _handle == nullptr ? (oop)nullptr : *_handle; }
+  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving null handle"); return *_handle; }
 
-  explicit Handle(oop* raw_handle)               { _raw_handle = raw_handle; }
+  explicit Handle(oop* raw_handle)               { _handle = raw_handle; }
 
  public:
   // Constructors
-  Handle()                                       { _raw_handle = nullptr; }
+  Handle()                                       { _handle = nullptr; }
   inline Handle(Thread* thread, oop obj);
 
   // General access
@@ -88,8 +88,8 @@ class Handle {
   bool operator != (const Handle& h) const       { return obj() != h.obj(); }
 
   // Null checks
-  bool    is_null() const                        { return _raw_handle == nullptr; }
-  bool    not_null() const                       { return _raw_handle != nullptr; }
+  bool    is_null() const                        { return _handle == nullptr; }
+  bool    not_null() const                       { return _handle != nullptr; }
 
   // Debugging
   void    print()                                { obj()->print(); }
@@ -100,7 +100,7 @@ class Handle {
 
   // Raw handle access. Allows easy duplication of Handles. This can be very unsafe
   // since duplicates is only valid as long as original handle is alive.
-  oop* raw_value() const                         { return _raw_handle; }
+  oop* raw_value() const                         { return _handle; }
   static oop raw_resolve(oop* raw_handle)        { return raw_handle == nullptr ? (oop)nullptr : *raw_handle; }
 
   inline void replace(oop obj);
