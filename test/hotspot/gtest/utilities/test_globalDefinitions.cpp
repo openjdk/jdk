@@ -195,24 +195,24 @@ TEST(globalDefinitions, array_size) {
 
   {
     int test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   {
     double test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   struct ArrayElt { int x; };
 
   {
     ArrayElt test_array[test_size] = {};
-    static_assert(test_size == ARRAY_SIZE(test_array), "must be");
+    static_assert(test_size == ARRAY_SIZE(test_array));
   }
 
   {
     const ArrayElt test_array[] = { {0}, {1}, {2}, {3}, {4}, {5} };
-    static_assert(6 == ARRAY_SIZE(test_array), "must be");
+    static_assert(6 == ARRAY_SIZE(test_array));
   }
 
 }

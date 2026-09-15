@@ -266,6 +266,6 @@ public:
   }
 };
 
-STATIC_ASSERT(sizeof(ShenandoahThreadLocalData) <= sizeof(GCThreadLocalData));
+static_assert(sizeof(ShenandoahThreadLocalData) <= sizeof(GCThreadLocalData));
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTHREADLOCALDATA_HPP

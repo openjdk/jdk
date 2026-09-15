@@ -1618,7 +1618,7 @@ static bool counters_are_meaningful(int counter1, int counter2, int min) {
   }
   // check for integer overflow of the sum
   int64_t sum = (int64_t)counter1 + (int64_t)counter2;
-  STATIC_ASSERT(sizeof(counter1) < sizeof(sum));
+  static_assert(sizeof(counter1) < sizeof(sum));
   if (sum > INT_MAX) {
     return false;
   }

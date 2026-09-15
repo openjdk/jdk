@@ -25,9 +25,9 @@
 #include "nmt/nmtCommon.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-STATIC_ASSERT(NMT_off > NMT_unknown);
-STATIC_ASSERT(NMT_summary > NMT_off);
-STATIC_ASSERT(NMT_detail > NMT_summary);
+static_assert(NMT_off > NMT_unknown);
+static_assert(NMT_summary > NMT_off);
+static_assert(NMT_detail > NMT_summary);
 
 #define MEMORY_TAG_DECLARE_NAME(tag, human_readable) \
   { #tag, human_readable },

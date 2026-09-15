@@ -71,7 +71,7 @@ class FreeBlocks : public CHeapObj<mtMetaspace> {
 
   // This verifies that blocks too large to go into the binlist can be
   // kept in the blocktree.
-  STATIC_ASSERT(BinList32::MaxWordSize >= BlockTree::MinWordSize);
+  static_assert(BinList32::MaxWordSize >= BlockTree::MinWordSize);
 
 public:
 

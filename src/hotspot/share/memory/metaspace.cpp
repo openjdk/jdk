@@ -563,7 +563,7 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
 
 // Given a prereserved space, use that to set up the compressed class space list.
 void Metaspace::initialize_class_space(ReservedSpace rs) {
-  STATIC_ASSERT(INCLUDE_CLASS_SPACE == 1);
+  static_assert(INCLUDE_CLASS_SPACE == 1);
   assert(rs.size() >= CompressedClassSpaceSize,
          "%zu != %zu", rs.size(), CompressedClassSpaceSize);
 

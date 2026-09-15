@@ -180,7 +180,7 @@ static void generate_pre_barrier_slow_path(MacroAssembler* masm,
   Address buffer_addr(thread, in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset()));
 
   // This code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+  static_assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   Label L_runtime;
 
@@ -501,7 +501,7 @@ void G1BarrierSetAssembler::g1_write_barrier_post_c1(MacroAssembler* masm,
 
 void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm) {
   // Generated code assumes that buffer index is pointer sized.
-  STATIC_ASSERT(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
+  static_assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t));
 
   __ prologue("g1_pre_barrier", false);
   // arg0 : previous value of memory

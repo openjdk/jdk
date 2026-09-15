@@ -152,7 +152,7 @@ class Thread: public ThreadShadow {
   }
 
   template <typename T> T* gc_data() {
-    STATIC_ASSERT(sizeof(T) <= sizeof(_gc_data));
+    static_assert(sizeof(T) <= sizeof(_gc_data));
     return reinterpret_cast<T*>(&_gc_data);
   }
 

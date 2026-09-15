@@ -1623,15 +1623,15 @@ static enum RC rc_class(OptoReg::Name reg) {
   if (reg == OptoReg::Bad) return rc_bad;
 
   // We have 64 integer register halves, starting at index 0.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
+  static_assert((int)ConcreteRegisterImpl::max_gpr == (int)MachRegisterNumbers::F0_num);
   if (reg < ConcreteRegisterImpl::max_gpr) return rc_int;
 
   // We have 64 floating-point register halves, starting at index 64.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_fpr == (int)MachRegisterNumbers::VR0_num);
   if (reg < ConcreteRegisterImpl::max_fpr) return rc_float;
 
   // We have 64 vector-scalar registers, starting at index 128.
-  STATIC_ASSERT((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
+  static_assert((int)ConcreteRegisterImpl::max_vr == (int)MachRegisterNumbers::CR0_num);
   if (reg < ConcreteRegisterImpl::max_vr) return rc_vec;
 
   // Condition and special purpose registers are not allocated. We only accept stack from here.

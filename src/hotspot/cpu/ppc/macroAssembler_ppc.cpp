@@ -4829,8 +4829,8 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 
   bind(retry);
-  STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
-  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
+  static_assert(markWord::fast_locked_value == 0); // Or need to change this!
+  static_assert(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
     xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit

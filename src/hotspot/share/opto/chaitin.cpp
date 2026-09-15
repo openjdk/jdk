@@ -256,7 +256,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   }
 
   // Squash the partially filled buckets together into the first one.
-  static_assert(NUMBUCKS >= 2, "must"); // If this isn't true then it'll mess up the squashing.
+  static_assert(NUMBUCKS >= 2); // If this isn't true then it'll mess up the squashing.
   Block** offset = &buckets[0][buckcnt[0]];
   for (int i = 1; i < NUMBUCKS; i++) {
     ::memmove(offset, buckets[i], buckcnt[i]*sizeof(Block*));
