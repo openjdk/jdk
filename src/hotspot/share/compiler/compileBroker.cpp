@@ -2151,6 +2151,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * since we currently handle a full code cache uniformly.
  */
 void CompileBroker::handle_full_code_cache(CodeBlobType code_blob_type) {
+  assert(code_blob_type != CodeBlobType::MethodHot, "Full HotCodeHeap should not stop compilation. It is for relocated code.");
+
   UseInterpreter = true;
   if (UseCompiler) {
     if (xtty != nullptr) {
