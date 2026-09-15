@@ -105,6 +105,7 @@ class TestValueArgEscapeState {
         escape(holder);
     }
 
+    // Variant of the above test using a nested value object.
     @Test
     @Arguments(values = {Argument.NUMBER_42})
     @IR(counts = {IRNode.FAST_LOCK, "> 0",

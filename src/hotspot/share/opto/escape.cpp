@@ -2665,9 +2665,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
               // the value object itself, not its fields), and we need to
               // conservatively assume that the field may escape globally. An
               // exception is if the bytecode escape analyzer determines the
-              // value object argument is local, in that case its fields are not
-              // dereferenced within the callee, and hence they cannot escape
-              // globally.
+              // value object argument is local; in that case the callee does
+              // not dereference its fields and hence cannot cause them to
+              // escape globally.
               set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
             } else if (!call_analyzer->is_arg_stack(jvms_slot)) {
               // The argument global escapes
