@@ -287,6 +287,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
   decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                            \
+  /* Wait-on-Reservation-Set instructions */                                                              \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZawrs, &ext_a, nullptr))             \
   /* Total Store Ordering */                                                                              \
   decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                   \
   /* Vector Basic Bit-manipulation */                                                                     \
@@ -461,6 +463,7 @@ private:
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
+    RV_ENABLE_EXTENSION(UseZawrs)                   \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
     RV_ENABLE_EXTENSION(UseZvbb)                    \
 
