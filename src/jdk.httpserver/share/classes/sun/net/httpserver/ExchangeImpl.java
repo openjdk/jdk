@@ -59,6 +59,8 @@ class ExchangeImpl {
     boolean close;
     boolean closed;
     boolean http10 = false;
+    boolean upgrade;
+    boolean upgraded;
 
     /* for formatting the Date: header */
     private static final DateTimeFormatter FORMATTER;
@@ -72,6 +74,7 @@ class ExchangeImpl {
     }
 
     private static final String HEAD = "HEAD";
+    private static final String GET = "GET";
 
     /* streams which take care of the HTTP protocol framing
      * and are passed up to higher layers
@@ -110,6 +113,7 @@ class ExchangeImpl {
         this.uri = u;
         this.connection = connection;
         this.reqContentLen = len;
+        this.upgrade = isUpgradeRequest(reqHdrs);
         this.attributes = perExchangeAttributes
             ? new ConcurrentHashMap<>()
             : getHttpContext().getAttributes();
@@ -193,6 +197,18 @@ class ExchangeImpl {
         return HEAD.equals(getRequestMethod());
     }
 
+    // check if Upgrade connection
+    private boolean isUpgradeRequest(Headers headers) {
+        var values = headers.get("Connection");
+        return !http10
+            && values != null
+            && GET.equals(method)
+            && headers.containsKey("Upgrade")
+            && !headers.containsKey("Content-length")
+            && !headers.containsKey("Transfer-encoding")
+            && values.stream().filter("Upgrade"::equalsIgnoreCase).findAny().isPresent();
+    }
+
     public void close() {
         if (closed) {
             return;
@@ -228,13 +244,14 @@ class ExchangeImpl {
         if (uis != null) {
             return uis;
         }
-        if (reqContentLen == -1L) {
+        if (upgrade) {
+            uis_orig = new UpgradeInputStream(this, ris);
+        } else if (reqContentLen == -1L) {
             uis_orig = new ChunkedInputStream(this, ris);
-            uis = uis_orig;
         } else {
-            uis_orig = new FixedLengthInputStream(this, ris, reqContentLen);
-            uis = uis_orig;
+            uis_orig = new FixedLengthInputStream (this, ris, reqContentLen);
         }
+        uis = uis_orig;
         return uis;
     }
 
@@ -290,11 +307,18 @@ class ExchangeImpl {
         boolean noContentLengthHeader = false; // must not send Content-length is set
         rspHdrs.set("Date", FORMATTER.format(Instant.now()));
 
+        /* check for connection upgrade */
+        if (upgrade && rCode == 101) {
+            if (contentLen != RSPBODY_CHUNKED) {
+                logger.log(
+                    Level.WARNING,
+                    () -> "sendResponseHeaders: rCode = " + rCode + ": forcing contentLen = 0");
+            }
+            contentLen = RSPBODY_CHUNKED;
         /* check for response type that is not allowed to send a body */
-
-        if ((rCode >= 100 && rCode < 200) /* informational */
-            ||(rCode == 204)           /* no content */
-            ||(rCode == 304))          /* not modified */
+        } else if (rCode >= 100 && rCode < 200 /* informational */
+            || rCode == 204           /* no content */
+            || rCode == 304)          /* not modified */
         {
             if (contentLen != RSPBODY_EMPTY) {
                 String msg = "sendResponseHeaders: rCode = " + rCode
@@ -321,6 +345,11 @@ class ExchangeImpl {
             if (contentLen == RSPBODY_CHUNKED) {
                 if (http10) {
                     o.setWrappedStream(new UndefLengthOutputStream(this, ros));
+                    close = true;
+                } else if (upgrade && rCode == 101) {
+                    o.setWrappedStream (new UpgradeOutputStream(this, ros));
+                     // the connection should not be returned to the pool but should
+                    // be closed when the upgraded exchange finishes
                     close = true;
                 } else {
                     rspHdrs.set("Transfer-encoding", "chunked");
@@ -360,6 +389,9 @@ class ExchangeImpl {
         if (noContentToSend) {
             ros.flush();
             close();
+        } else if (upgrade && rCode == 101) {
+            upgraded = true;
+            ros.flush();
         }
         server.logReply(rCode, req.requestLine(), null);
     }
