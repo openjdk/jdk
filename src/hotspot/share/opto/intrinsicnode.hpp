@@ -147,7 +147,6 @@ public:
   StrIntrinsicNode(control, arymem, s1, s2, c, none), _adr_type(adr_type) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return TypeInt::INT; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 
 private:
   virtual uint size_of() const override { return sizeof(StrCompressedCopyNode); }
@@ -169,7 +168,6 @@ public:
   StrIntrinsicNode(control, arymem, s1, s2, c, none), _adr_type(adr_type) {};
   virtual int Opcode() const override;
   virtual const Type* bottom_type() const override { return Type::MEMORY; }
-  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape) override;
 
 private:
   virtual uint size_of() const override { return sizeof(StrInflatedCopyNode); }

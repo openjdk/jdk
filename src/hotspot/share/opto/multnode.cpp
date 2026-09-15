@@ -151,27 +151,25 @@ const Type *ProjNode::bottom_type() const {
   return proj_type(in(0)->bottom_type());
 }
 
-const TypePtr *ProjNode::adr_type() const {
-  if (bottom_type() == Type::MEMORY) {
-    // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
-    Node* ctrl = in(0);
-    if (ctrl->Opcode() == Op_Tuple) {
-      // Jumping over Tuples: the i-th projection of a Tuple is the i-th input of the Tuple.
-      ctrl = ctrl->in(_con);
-    }
-    // node is dead or we are in the process of removing a dead subgraph
-    if (ctrl == nullptr || ctrl->is_top()) {
-      return nullptr;
-    }
-    const TypePtr* adr_type = ctrl->adr_type();
-    #ifdef ASSERT
-    if (!VMError::is_error_reported() && !Node::in_dump())
-      assert(adr_type != nullptr, "source must have adr_type");
-    #endif
-    return adr_type;
+const TypePtr* ProjNode::adr_type() const {
+  if (bottom_type() != Type::MEMORY) {
+    assert(bottom_type()->base() != Type::Memory, "no other memories?");
+    return nullptr;
   }
-  assert(bottom_type()->base() != Type::Memory, "no other memories?");
-  return nullptr;
+
+  Node* ctrl = in(0);
+  // node is dead or we are in the process of removing a dead subgraph
+  if (ctrl == nullptr || ctrl->is_top()) {
+    return nullptr;
+  }
+
+  const TypePtr* adr_type = ctrl->adr_type();
+#ifdef ASSERT
+  if (!VMError::is_error_reported() && !Node::in_dump()) {
+    assert(adr_type != nullptr, "source must have adr_type");
+  }
+#endif // ASSERT
+  return adr_type;
 }
 
 bool ProjNode::pinned() const { return in(0)->pinned(); }
