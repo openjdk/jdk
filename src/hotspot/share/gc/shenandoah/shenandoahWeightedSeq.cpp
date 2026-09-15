@@ -26,7 +26,7 @@
 #include "memory/allocation.hpp"
 
 #include <cmath>
-#include <float.h>
+#include <cfloat>
 
 ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
 : _size(size),
@@ -100,16 +100,16 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   _y_origin /= _num_samples;
 
   for (uint i = 0; i < _num_samples; i++) {
-    double x = _x_values[i] - _x_origin;
-    double y = _y_values[i] - _y_origin;
-    _x_sum += x;
-    _y_sum += y;
-    _xx_sum += x * x;
-    _xy_sum += x * y;
-    _yy_sum += y * y;
+    const double xi = _x_values[i] - _x_origin;
+    const double yi = _y_values[i] - _y_origin;
+    _x_sum += xi;
+    _y_sum += yi;
+    _xx_sum += xi * xi;
+    _xy_sum += xi * yi;
+    _yy_sum += yi * yi;
     _weighted_sum += _weights[i];
-    _weighted_y_sum += _weights[i] * y;
-    _weighted_yy_sum += _weights[i] * y * y;
+    _weighted_y_sum += _weights[i] * yi;
+    _weighted_yy_sum += _weights[i] * yi * yi;
   }
 
   const double K = 100.0;
@@ -130,7 +130,7 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   const double sum_of_cross_deviations = _xy_sum - _x_sum * _y_sum / _num_samples;
   const double residual_sum_of_squares = total_sum_of_squares - _slope * sum_of_cross_deviations;
   _residual_sd = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples);
-  _slope_se = std::sqrt(MAX2(residual_sum_of_squares, 0.0)) / (_num_samples - 2) / sqrt(_xx_sum);
+  _slope_se = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / (_num_samples - 2) / _xx_sum);
 }
 
 double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error) const {
