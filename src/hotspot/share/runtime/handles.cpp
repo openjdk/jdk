@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,15 @@
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");         \
 
 
-oop* HandleArea::allocate_handle(oop obj) {
+oop* HandleArea::allocate_raw_handle(oop obj) {
   assert_handle_mark_nesting();
   assert(oopDesc::is_oop(obj), "not an oop: " INTPTR_FORMAT, p2i(obj));
-  return real_allocate_handle(obj);
+  return allocate_raw_handle_internal(obj);
 }
 
-oop* HandleArea::allocate_null_handle() {
+oop* HandleArea::allocate_raw_handle() {
   assert_handle_mark_nesting();
-  return real_allocate_handle(nullptr);
+  return allocate_raw_handle_internal(nullptr);
 }
 #endif
 
