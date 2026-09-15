@@ -48,6 +48,7 @@ import javax.swing.UIManager;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.UIResource;
 
+import com.sun.java.swing.SwingUtilities3;
 import sun.swing.MenuItemCheckIconFactory;
 import sun.swing.SwingUtilities2;
 
@@ -881,6 +882,8 @@ public final class WindowsIconFactory implements Serializable
                 assert menuItem == null || c == menuItem;
                 Icon icon = getIcon();
 
+                boolean isCheckBulletAndIconPresent = WindowsMenuItemUI.isCheckBulletAndIconPresent(menuItem);
+
                 if (type == JCheckBoxMenuItem.class
                       || type == JRadioButtonMenuItem.class) {
                     AbstractButton b = (AbstractButton) c;
@@ -904,7 +907,9 @@ public final class WindowsIconFactory implements Serializable
                         }
                         XPStyle xp = XPStyle.getXP();
                         if (xp != null) {
-                            Skin skin = xp.getSkin(c, part);
+                            Skin skin =  xp.getSkin(c, backgroundPart);
+                            skin.paintSkin(g, x, y, backgroundState);
+                            skin = xp.getSkin(c, part);
                             if (WindowsGraphicsUtils.isLeftToRight(c)) {
                                 if (icon == null || icon.getIconHeight() <= 16) {
                                     skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
@@ -913,7 +918,11 @@ public final class WindowsIconFactory implements Serializable
                                 }
                             } else {
                                 if (icon == null) {
-                                    skin.paintSkin(g, x + 4 * OFFSET, y + OFFSET, state);
+                                    if (isCheckBulletAndIconPresent) {
+                                        skin.paintSkin(g, x + 4 * OFFSET, y + OFFSET, state);
+                                    } else {
+                                        skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                                    }
                                 } else {
                                     int ycoord = (icon.getIconHeight() <= 16)
                                                   ? y + OFFSET
@@ -950,14 +959,18 @@ public final class WindowsIconFactory implements Serializable
                     }
                 }
                 if (icon != null) {
-                    if (WindowsGraphicsUtils.isLeftToRight(c)) {
-                        icon.paintIcon(c, g,
-                                       x + VistaMenuItemCheckIconFactory.getIconWidth(),
-                                       y + OFFSET);
+                    if (isCheckBulletAndIconPresent) {
+                        if (WindowsGraphicsUtils.isLeftToRight(c)) {
+                            icon.paintIcon(c, g,
+                                    x + VistaMenuItemCheckIconFactory.getIconWidth(),
+                                    y + OFFSET);
+                        } else {
+                            icon.paintIcon(c, g,
+                                    x - VistaMenuItemCheckIconFactory.getIconWidth() + 2 * OFFSET,
+                                    y + OFFSET);
+                        }
                     } else {
-                        icon.paintIcon(c, g,
-                                       x - VistaMenuItemCheckIconFactory.getIconWidth() + 2 * OFFSET,
-                                       y + OFFSET);
+                        icon.paintIcon(c, g, x + OFFSET, y + OFFSET);
                     }
                 }
             }
