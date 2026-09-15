@@ -640,6 +640,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls value-objects-8.1.1.5 {@code value} Classes
      * @see AccessFlag#IDENTITY
+     * @see Object##Indistinguishability object distinguishability
      * @since 28
      */
     @PreviewFeature(feature = PreviewFeature.Feature.VALUE_OBJECTS, reflective=true)
