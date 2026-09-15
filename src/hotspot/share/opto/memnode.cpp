@@ -525,22 +525,18 @@ Node *MemNode::Ideal_common(PhaseGVN *phase, bool can_reshape) {
     return NodeSentinel; // caller will return null
   }
 
+  if (t_adr->base() == Type::AnyPtr) {
+    // Weird access to null+offset, either is a dead unsafe access that cannot be proved to be so,
+    // or should be folded later
+    assert(t_adr->is_ptr()->ptr() == TypePtr::Null, "must be null");
+    return NodeSentinel; // caller will return null
+  }
+
   // Do NOT remove or optimize the next lines: ensure a new alias index
   // is allocated for an oop pointer type before Escape Analysis.
   // Note: C++ will not remove it since the call has side effect.
   if (t_adr->isa_oopptr()) {
     int alias_idx = phase->C->get_alias_index(t_adr->is_ptr());
-  }
-
-  Node* base = nullptr;
-  if (address->is_AddP()) {
-    base = address->in(AddPNode::Base);
-  }
-  if (base != nullptr && phase->type(base)->higher_equal(TypePtr::NULL_PTR) &&
-      !t_adr->isa_rawptr()) {
-    // Note: raw address has TOP base and top->higher_equal(TypePtr::NULL_PTR) is true.
-    // Skip this node optimization if its address has TOP base.
-    return NodeSentinel; // caller will return null
   }
 
   // Avoid independent memory operations
