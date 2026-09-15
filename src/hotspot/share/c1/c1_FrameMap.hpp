@@ -31,7 +31,6 @@
 #include "memory/allocation.hpp"
 #include "oops/compressedOops.hpp"
 #include "runtime/frame.hpp"
-#include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 

@@ -150,7 +150,7 @@
     }
 
     // Use r26 or r27 for randomized profile captures.
-    if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+    if (ProfileCaptureRatio > 0) {
       range -= 1;
     }
 

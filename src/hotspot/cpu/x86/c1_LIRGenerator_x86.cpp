@@ -1391,7 +1391,7 @@ void LIRGenerator::do_If(If* x) {
   // Generate branch profiling. Profiling code doesn't kill flags.
   profile_branch(x, cond);
   // If we're subsampling counter updates, then profiling code kills flags
-  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+  if (ProfileCaptureRatio > 0) {
     __ cmp(lir_cond(cond), left, right);
   }
   move_to_phi(x->state());

@@ -1334,7 +1334,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src) {
   __ block_comment("increment_mdo {");
   Label nope, do_increment;
   int ratio_shift = exact_log2(ProfileCaptureRatio);
-  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+  if (ProfileCaptureRatio > 0) {
     if (ProfileCaptureRatio > 1)
       __ cmpw(zr, r_profile_rng, __ LSR, (32 - ratio_shift) & 31);
     else
@@ -1358,7 +1358,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
-  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+  if (ProfileCaptureRatio > 0) {
     __ profile_receiver_type(recv, mdo, mdp_offset, &increment_mdo);
   } else {
     __ profile_receiver_type(recv, mdo, mdp_offset);
@@ -2754,7 +2754,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
   assert(threshold > 0, "must be");
 
   ProfileStub *counter_stub
-    = !FLAG_IS_DEFAULT(ProfileCaptureRatio) ? new ProfileStub() : nullptr;
+    = ProfileCaptureRatio > 0 ? new ProfileStub() : nullptr;
 
   Register dest = as_reg(dest_opr);
   auto type = dest_opr->type();
@@ -2800,13 +2800,13 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (step->is_register()) {
       Register inc = step->as_register();
 
-      if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+      if (ProfileCaptureRatio > 0) {
         __ lsl(inc, inc, ratio_shift);
       }
       __ load(dest, adjusted_counter_address, type);
       __ add(dest, dest, inc);
       __ store(dest, adjusted_counter_address, type);
-      if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+      if (ProfileCaptureRatio > 0) {
         __ lsr(inc, inc, ratio_shift);
       }
     } else {

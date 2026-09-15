@@ -372,7 +372,7 @@ void C1_MacroAssembler::step_random(Register state, Register temp) {
 }
 
 void C1_MacroAssembler::save_profile_rng() {
-  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+  if (ProfileCaptureRatio > 0) {
 #ifndef PRODUCT
     Label not_zero;
     orl(r_profile_rng, r_profile_rng);
@@ -385,7 +385,7 @@ void C1_MacroAssembler::save_profile_rng() {
 }
 
 void C1_MacroAssembler::restore_profile_rng() {
-  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
+  if (ProfileCaptureRatio > 0) {
     movl(r_profile_rng, Address(r15_thread, JavaThread::profile_rng_offset()));
 #ifndef PRODUCT
     Label not_zero;
