@@ -2659,14 +2659,18 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
           }
           if (at->isa_oopptr() != nullptr &&
               arg_ptn->escape_state() < PointsToNode::GlobalEscape) {
-            if (scalarized_arg || !call_analyzer->is_arg_stack(jvms_slot)) {
-              // Set the argument as a global escape:
-              // - If the argument is a field of a scalarized value object, the
+            if (scalarized_arg && !call_analyzer->is_arg_local(jvms_slot)) {
+              // If the argument is a field of a scalarized value object, the
               // bytecode escape analyzer results do not apply (they apply to
               // the value object itself, not its fields), and we need to
-              // conservatively assume that the field may escape globally.
-              // - If not, the bytecode escape analyzer results do apply to the
-              // argument and dictate the global escape state.
+              // conservatively assume that the field may escape globally. An
+              // exception is if the bytecode escape analyzer determines the
+              // value object argument is local, in that case its fields are not
+              // dereferenced within the callee, and hence they cannot escape
+              // globally.
+              set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
+            } else if (!call_analyzer->is_arg_stack(jvms_slot)) {
+              // The argument global escapes
               set_escape_state(arg_ptn, PointsToNode::GlobalEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
             } else {
               set_escape_state(arg_ptn, PointsToNode::ArgEscape NOT_PRODUCT(COMMA trace_arg_escape_message(call)));
