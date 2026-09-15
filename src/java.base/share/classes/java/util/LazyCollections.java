@@ -33,7 +33,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.reflect.Array;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -583,29 +582,29 @@ final class LazyCollections {
 
     private static final class Mutexes {
 
+        private static final long COUNTER_OFFSET = UNSAFE.objectFieldOffset(Mutexes.class, "counter");
         private static final Object TOMB_STONE = new Object();
 
         // Filled on demand and then discarded once it is not needed anymore.
         // A mutex element can only transition like so: `null` -> `new Object()` -> `TOMB_STONE`
         private volatile Object[] mutexes;
-        // Used to detect we have computed all elements and no longer need the `mutexes` array
-        private volatile AtomicInteger counter;
+        // Used to detect we have computed all elements and no longer need the `mutexes`
+        // array. This field is accessed via Unsafe.
+        private int counter;
 
         private Mutexes(int length) {
             this.mutexes = new Object[length];
-            this.counter = new AtomicInteger(length);
+            UNSAFE.putIntRelease(this, COUNTER_OFFSET, length);
         }
 
         private Object acquireMutex(long offset) {
             // Snapshot
-            var mutexes = this.mutexes;
+            final var mutexes = this.mutexes;
             if (mutexes == null) {
-                // We have already computed all the elements and if we end up here
-                // there was at least one unchecked exception thrown by the
-                // computing function.
+                // We have already computed all the elements (successfully or exceptionally).
                 return null;
             }
-            // Check if there already is a mutex (Object or TOMB_STONE)
+            // Check if a mutex alredy exists
             final Object mutex = UNSAFE.getReferenceVolatile(mutexes, offset);
             if (mutex != null) {
                 return mutex;
@@ -617,11 +616,19 @@ final class LazyCollections {
         }
 
         private void releaseMutex(long offset) {
+            // Defensively snapshot the volatile field and check for null as we are
+            // using Unsafe directly.
+            final Object[] mutexes = Objects.requireNonNull(this.mutexes, "Should not reach here");
             // Replace the old mutex with a tomb stone since now the old mutex can be collected.
             UNSAFE.putReferenceVolatile(mutexes, offset, TOMB_STONE);
-            if (counter != null && counter.decrementAndGet() == 0) {
-                mutexes = null;
-                counter = null;
+            // In order not to rely on incidental volatile operations elsewhere, we elect
+            // to use full volatile semantics here in addition to atomicity. Each
+            // decrement publishes this slot's state and acquires state propagated by
+            // preceding decrements. The thread observing 1 has therefore acquired all
+            // completed-slot state before publishing `mutexes == null`.
+            if (UNSAFE.getAndAddInt(this, COUNTER_OFFSET, -1) == 1) {
+                // Make the mutexes array eligible for garbage collection.
+                this.mutexes = null;
             }
         }
 
