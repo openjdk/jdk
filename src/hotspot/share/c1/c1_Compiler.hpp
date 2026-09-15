@@ -45,7 +45,7 @@ class Compiler: public AbstractCompiler {
   virtual const char* name()                     { return "C1"; }
 
   // Initialization
-  virtual void initialize();
+  virtual void initialize(bool is_aot_comp_thread);
 
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive);

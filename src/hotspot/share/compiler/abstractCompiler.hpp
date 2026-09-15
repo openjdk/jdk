@@ -33,6 +33,7 @@ typedef void (*initializer)(void);
 
 // Per-compiler statistics
 class CompilerStatistics {
+ public:
   class Data {
     friend class VMStructs;
   public:
@@ -50,9 +51,11 @@ class CompilerStatistics {
     }
   };
 
- public:
   Data _standard;  // stats for non-OSR compilations
   Data _osr;       // stats for OSR compilations
+  Data _bailout;
+  Data _invalidated;
+  Data _made_not_entrant;
   uint _nmethods_size; //
   uint _nmethods_code_size;
 
@@ -73,6 +76,7 @@ class CompilerStatistics {
 class AbstractCompiler : public CHeapObj<mtCompiler> {
  private:
   volatile int _num_compiler_threads;
+  volatile int _num_aot_compiler_threads;
 
  protected:
   volatile int _compiler_state;
@@ -83,17 +87,22 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // This thread will initialize the compiler runtime.
   bool should_perform_init();
 
+  void wait_for_initialization();
+
  private:
   const CompilerType _type;
 
   CompilerStatistics _stats;
 
  public:
-  AbstractCompiler(CompilerType type) : _num_compiler_threads(0), _compiler_state(uninitialized), _type(type) {}
+  AbstractCompiler(CompilerType type) : _num_compiler_threads(0),
+                                        _num_aot_compiler_threads(0),
+                                        _compiler_state(uninitialized),
+                                        _type(type) {}
 
   // This function determines the compiler thread that will perform the
   // shutdown of the corresponding compiler runtime.
-  bool should_perform_shutdown();
+  bool should_perform_shutdown(bool is_aot_comp_thread);
 
   // Name of this compiler
   virtual const char* name() = 0;
@@ -149,10 +158,13 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   CompilerType type() const              { return _type; }
 
   // Customization
-  virtual void initialize () = 0;
+  virtual void initialize (bool is_aot_comp_thread) = 0;
 
   void set_num_compiler_threads(int num) { _num_compiler_threads = num;  }
   int num_compiler_threads()             { return _num_compiler_threads; }
+
+  void set_num_aot_compiler_threads(int num) { _num_aot_compiler_threads = num;  }
+  int num_aot_compiler_threads()             { return _num_aot_compiler_threads; }
 
   // Get/set state of compiler objects
   bool is_initialized()           { return _compiler_state == initialized; }

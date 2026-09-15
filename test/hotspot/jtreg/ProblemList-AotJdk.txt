@@ -57,6 +57,12 @@ compiler/ciReplay/TestInliningProtectionDomain.java   0000000 generic-all
 compiler/arguments/TestStressReflectiveCode.java 8323727 generic-all
 compiler/arraycopy/TestCloneWithStressReflectiveCode.java 8323727 generic-all
 
+serviceability/sa/TestJhsdbJstackMixedWithXComp.java#xcomp-disable-tiered-compilation 8382548 linux-aarch64
+
+compiler/calls/NativeCalls.java 8383780 generic-all
+
+vmTestbase/vm/mlvm/indy/stress/jdi/breakpointInCompiledCode/Test.java 8383781 generic-all
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.

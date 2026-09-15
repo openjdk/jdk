@@ -111,6 +111,18 @@ OopMap::OopMap(int frame_size, int arg_count) {
 #endif
 }
 
+OopMap::OopMap(int data_size) {
+  // OopMaps are usually quite so small, so pick a small initial size
+  set_write_stream(new CompressedWriteStream(data_size));
+  set_omv_count(0);
+  _num_oops = 0;
+  _has_derived_oops = false;
+  _index = -1;
+#ifdef ASSERT
+  _locs_length = 0;
+  _locs_used   = nullptr;
+#endif
+}
 
 OopMap::OopMap(OopMap::DeepCopyToken, OopMap* source) {
   // This constructor does a deep copy
@@ -363,6 +375,8 @@ void OopMap::set_derived_oop(VMReg reg, VMReg derived_from_local_register ) {
 // OopMapSet
 
 OopMapSet::OopMapSet() : _list(MinOopMapAllocation) {}
+
+OopMapSet::OopMapSet(int size) : _list(size) {}
 
 int OopMapSet::add_gc_map(int pc_offset, OopMap *map ) {
   map->set_offset(pc_offset);
