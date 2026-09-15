@@ -73,6 +73,11 @@ void ShenandoahUncommitThread::run_service() {
         break;
       }
 
+      if (_uncommit_allowed.is_unset()) {
+        // Futile wakeup, go back to sleep.
+        continue;
+      }
+
       soft_max_changed = _soft_max_changed.try_unset();
       explicit_gc_requested = _explicit_gc_requested.try_unset();
 
