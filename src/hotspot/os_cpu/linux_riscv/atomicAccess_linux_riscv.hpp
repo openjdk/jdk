@@ -32,6 +32,12 @@
 
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
+//
+// Under Ztso, loads and stores already have acquire and release semantics
+// respectively, and AMO/LR/SC instructions are inherently sequentially
+// consistent (equivalent to .aqrl).  Only a compiler barrier is needed to
+// prevent the C++ compiler from reordering memory accesses across the
+// atomic operation.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -51,13 +57,21 @@ struct AtomicAccess::PlatformAdd {
 #endif
 
     if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+      if (UseZtso) {
+        compiler_barrier();
+      } else {
+        FULL_MEM_BARRIER;
+      }
     }
 
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
 
     if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+      if (UseZtso) {
+        compiler_barrier();
+      } else {
+        FULL_MEM_BARRIER;
+      }
     }
     return res;
   }
@@ -78,7 +92,11 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
   STATIC_ASSERT(1 == sizeof(T));
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   uint32_t volatile* aligned_dst = (uint32_t volatile*)(((uintptr_t)dest) & (~((uintptr_t)0x3)));
@@ -107,7 +125,11 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
     : "memory" );
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   return (T)((old_value & mask) >> shift);
@@ -132,7 +154,11 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
   uint64_t rc_temp;
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   __asm__ __volatile__ (
@@ -146,7 +172,11 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
     : "memory" );
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
   return (T)old_value;
 }
@@ -170,13 +200,21 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   STATIC_ASSERT(byte_size == 4 || byte_size == 8);
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
   return res;
 }
@@ -195,14 +233,22 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 
   STATIC_ASSERT(byte_size == sizeof(T));
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
 
   __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
                             __ATOMIC_RELAXED, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+    if (UseZtso) {
+      compiler_barrier();
+    } else {
+      FULL_MEM_BARRIER;
+    }
   }
   return compare_value;
 }
@@ -211,14 +257,22 @@ template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
 {
   template <typename T>
-  T operator()(const volatile T* p) const { T data; __atomic_load(const_cast<T*>(p), &data, __ATOMIC_ACQUIRE); return data; }
+  T operator()(const volatile T* p) const {
+    T data;
+    __atomic_load(const_cast<T*>(p), &data, __ATOMIC_RELAXED);
+    OrderAccess::acquire();
+    return data;
+  }
 };
 
 template<size_t byte_size>
 struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
 {
   template <typename T>
-  void operator()(volatile T* p, T v) const { __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELEASE); }
+  void operator()(volatile T* p, T v) const {
+    OrderAccess::release();
+    __atomic_store(const_cast<T*>(p), &v, __ATOMIC_RELAXED);
+  }
 };
 
 template<size_t byte_size>
