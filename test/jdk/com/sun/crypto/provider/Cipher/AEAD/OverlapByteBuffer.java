@@ -25,6 +25,7 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -77,97 +78,115 @@ public class OverlapByteBuffer {
 
     void test() throws Exception {
         // Output offset from the baseBuf
-        for (int i = 0; i < 3; i++) {
-            for (outOfs = -1; outOfs <= 1; outOfs++) {
+        try(Arena arena = Arena.ofConfined()) {
+            for (int i = 0; i < 4; i++) {
+                for (outOfs = -1; outOfs <= 1; outOfs++) {
 
-                Cipher cipher = Cipher.getInstance(algorithm);
-                cipher.init(Cipher.ENCRYPT_MODE, key, params);
+                    Cipher cipher = Cipher.getInstance(algorithm);
+                    cipher.init(Cipher.ENCRYPT_MODE, key, params);
 
-                // Offset on the particular ByteBuffer (aka position())
-                int inOfsInBuf = 1;
-                int outOfsInBuf = inOfsInBuf + outOfs;
-                int sliceLen = cipher.getOutputSize(baseBuf.length);
-                int bufferSize = sliceLen + Math.max(inOfsInBuf, outOfsInBuf);
-                byte[] buffer;
-                // Create overlapping input and output buffers
-                switch (i) {
-                    case 0 -> {
-                        buffer = new byte[bufferSize];
-                        output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
-                            slice();
-                        input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
-                            slice();
-                        System.out.println("Using array-backed ByteBuffer");
-                        in = input.duplicate();
+                    // Offset on the particular ByteBuffer (aka position())
+                    int inOfsInBuf = 1;
+                    int outOfsInBuf = inOfsInBuf + outOfs;
+                    int sliceLen = cipher.getOutputSize(baseBuf.length);
+                    int bufferSize = sliceLen + Math.max(inOfsInBuf, outOfsInBuf);
+                    byte[] buffer;
+                    // Create overlapping input and output buffers
+                    switch (i) {
+                        case 0 -> {
+                            buffer = new byte[bufferSize];
+                            output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
+                                    slice();
+                            input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
+                                    slice();
+                            System.out.println("Using array-backed ByteBuffer");
+                            in = input.duplicate();
+                        }
+                        case 1 -> {
+                            buffer = new byte[bufferSize];
+                            output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
+                                    slice();
+                            input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
+                                    slice();
+
+                            System.out.println("Using read-only array-backed " +
+                                    "ByteBuffer");
+                            in = input.asReadOnlyBuffer();
+                        }
+                        case 2 -> {
+                            System.out.println("Using direct ByteBuffer");
+                            ByteBuffer buf = ByteBuffer.allocateDirect(bufferSize);
+                            output = buf.duplicate();
+                            output.position(outOfsInBuf);
+                            output.limit(sliceLen + outOfsInBuf);
+                            output = output.slice();
+
+                            input = buf.duplicate();
+                            input.position(inOfsInBuf);
+                            input.limit(sliceLen + inOfsInBuf);
+                            input = input.slice();
+
+                            in = input.duplicate();
+                        }
+
+                        case 3 -> {
+                            System.out.println("Using memory-segment ByteBuffer");
+                            ByteBuffer buf = arena.allocate(bufferSize).asByteBuffer();
+                            output = buf.duplicate();
+                            output.position(outOfsInBuf);
+                            output.limit(sliceLen + outOfsInBuf);
+                            output = output.slice();
+
+                            input = buf.duplicate();
+                            input.position(inOfsInBuf);
+                            input.limit(sliceLen + inOfsInBuf);
+                            input = input.slice();
+
+                            in = input.duplicate();
+                        }
+                        default -> throw new Exception("Unknown index " + i);
                     }
-                    case 1 -> {
-                        buffer = new byte[bufferSize];
-                        output = ByteBuffer.wrap(buffer, outOfsInBuf, sliceLen).
-                            slice();
-                        input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
-                            slice();
 
-                        System.out.println("Using read-only array-backed " +
-                            "ByteBuffer");
-                        in = input.asReadOnlyBuffer();
-                    }
-                    case 2 -> {
-                        System.out.println("Using direct ByteBuffer");
-                        ByteBuffer buf = ByteBuffer.allocateDirect(bufferSize);
-                        output = buf.duplicate();
-                        output.position(outOfsInBuf);
-                        output.limit(sliceLen + outOfsInBuf);
-                        output = output.slice();
+                    System.out.println("inOfsInBuf  = " + inOfsInBuf);
+                    System.out.println("outOfsInBuf = " + outOfsInBuf);
 
-                        input = buf.duplicate();
-                        input.position(inOfsInBuf);
-                        input.limit(sliceLen + inOfsInBuf);
-                        input = input.slice();
-
-                        in = input.duplicate();
-                    }
-                    default -> throw new Exception("Unknown index " + i);
-                }
-
-                System.out.println("inOfsInBuf  = " + inOfsInBuf);
-                System.out.println("outOfsInBuf = " + outOfsInBuf);
-
-                // Copy data into shared buffer
-                input.put(baseBuf);
-                input.flip();
-                in.limit(input.limit());
-
-                try {
-                    int ctSize = cipher.doFinal(in, output);
-
-                    // Get ready to decrypt
-                    byte[] tmp = new byte[ctSize];
-                    output.flip();
-                    output.get(tmp);
-                    output.clear();
-
-                    input.clear();
-                    input.put(tmp);
+                    // Copy data into shared buffer
+                    input.put(baseBuf);
                     input.flip();
-
-                    in.clear();
                     in.limit(input.limit());
 
-                    cipher.init(Cipher.DECRYPT_MODE, key, params);
-                    cipher.doFinal(in, output);
+                    try {
+                        int ctSize = cipher.doFinal(in, output);
 
-                    output.flip();
-                    ByteBuffer b = ByteBuffer.wrap(baseBuf);
-                    if (b.compareTo(output) != 0) {
-                        System.err.println(
-                            "\nresult   (" + output + "):\n" +
-                            byteToHex(output) +
-                            "\nexpected (" + b + "):\n" +
-                            byteToHex(b));
-                        throw new Exception("Mismatch");
+                        // Get ready to decrypt
+                        byte[] tmp = new byte[ctSize];
+                        output.flip();
+                        output.get(tmp);
+                        output.clear();
+
+                        input.clear();
+                        input.put(tmp);
+                        input.flip();
+
+                        in.clear();
+                        in.limit(input.limit());
+
+                        cipher.init(Cipher.DECRYPT_MODE, key, params);
+                        cipher.doFinal(in, output);
+
+                        output.flip();
+                        ByteBuffer b = ByteBuffer.wrap(baseBuf);
+                        if (b.compareTo(output) != 0) {
+                            System.err.println(
+                                    "\nresult   (" + output + "):\n" +
+                                            byteToHex(output) +
+                                            "\nexpected (" + b + "):\n" +
+                                            byteToHex(b));
+                            throw new Exception("Mismatch");
+                        }
+                    } catch (Exception e) {
+                        throw new Exception("Error with base offset " + outOfs, e);
                     }
-                } catch (Exception e) {
-                    throw new Exception("Error with base offset " + outOfs, e);
                 }
             }
         }

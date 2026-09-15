@@ -31,10 +31,13 @@
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.security.Key;
 import java.security.Provider;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 public class TestPaddingOOB extends PKCS11Test {
 
@@ -70,13 +73,24 @@ public class TestPaddingOOB extends PKCS11Test {
             throw new Exception("Invalid decrypted data (array)");
         }
 
+        testWithBuffers(bs, plainArr, c, key, plainArr2, ByteBuffer::allocate);
+
+        try (Arena arena = Arena.ofConfined()) {
+            testWithBuffers(bs, plainArr, c, key, plainArr2,
+                    (size) -> arena.allocate(size).asByteBuffer());
+        }
+    }
+
+    private static void testWithBuffers(int bs, byte[] plainArr, Cipher c, Key key,
+                                        byte[] plainArr2, IntFunction<ByteBuffer> allocator) throws Exception {
+        int off;
         // Test with buffers
-        ByteBuffer plainBuf = ByteBuffer.allocate(bs);
+        ByteBuffer plainBuf = allocator.apply(bs);
         Arrays.fill(plainArr, (byte) 'b');
         plainBuf.put(plainArr);
         plainBuf.flip();
         c.init(Cipher.ENCRYPT_MODE, key);
-        ByteBuffer encBuf = ByteBuffer.allocate(c.getOutputSize(plainBuf.limit()));
+        ByteBuffer encBuf = allocator.apply(c.getOutputSize(plainBuf.limit()));
         plainBuf.limit(1);
         off = c.update(plainBuf, encBuf);
         plainBuf.limit(bs);
@@ -86,7 +100,7 @@ public class TestPaddingOOB extends PKCS11Test {
         }
         encBuf.flip();
         c.init(Cipher.DECRYPT_MODE, key);
-        ByteBuffer plainBuf2 = ByteBuffer.allocate(c.getOutputSize(encBuf.limit()));
+        ByteBuffer plainBuf2 = allocator.apply(c.getOutputSize(encBuf.limit()));
         off = c.doFinal(encBuf, plainBuf2);
         if (off != bs) {
             throw new Exception("Unexpected decrypted size (buffer): " + off);
@@ -97,5 +111,4 @@ public class TestPaddingOOB extends PKCS11Test {
             throw new Exception("Invalid decrypted data (buffer)");
         }
     }
-
 }

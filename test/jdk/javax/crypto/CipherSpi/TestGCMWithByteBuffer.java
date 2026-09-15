@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
  * @key randomness
  */
 
+import java.lang.foreign.Arena;
 import java.nio.ByteBuffer;
 import java.security.*;
 import java.util.Random;
@@ -77,21 +78,29 @@ public class TestGCMWithByteBuffer {
          * Iterate through various sizes to make sure that the code works with
          * internal temp buffer size 4096.
          */
-        for (int t = 1; t <= multiples; t++) {
-            int size = t * dataSize;
+        try (Arena arena = Arena.ofConfined()) {
+            for (int t = 1; t <= multiples; t++) {
+                int size = t * dataSize;
 
-            System.out.println("\nTesting data size: " + size);
+                System.out.println("\nTesting data size: " + size);
 
-            try {
-                decrypt(cipher, key, s, dataChunk, t,
-                        ByteBuffer.allocate(dataSize),
-                        ByteBuffer.allocate(size),
-                        ByteBuffer.allocateDirect(dataSize),
-                        ByteBuffer.allocateDirect(size));
-            } catch (Exception e) {
-                System.out.println("\tFailed with data size " + size);
-                failedOnce = true;
-                failedReason = e;
+                try {
+                    decrypt(cipher, key, s, dataChunk, t,
+                            ByteBuffer.allocate(dataSize),
+                            ByteBuffer.allocate(size),
+                            ByteBuffer.allocateDirect(dataSize),
+                            ByteBuffer.allocateDirect(size));
+
+                    decrypt(cipher, key, s, dataChunk, t,
+                            ByteBuffer.allocate(dataSize),
+                            ByteBuffer.allocate(size),
+                            arena.allocate(dataSize).asByteBuffer(),
+                            arena.allocate(size).asByteBuffer());
+                } catch (Exception e) {
+                    System.out.println("\tFailed with data size " + size);
+                    failedOnce = true;
+                    failedReason = e;
+                }
             }
         }
         if (failedOnce) {
