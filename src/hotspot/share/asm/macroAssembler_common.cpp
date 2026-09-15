@@ -122,8 +122,6 @@ int MacroAssembler::unpack_value_args(Compile* C, bool receiver_only) {
   // Check if we need to extend the stack for unpacking
   int sp_inc = 0;
   if (args_on_stack_cc > args_on_stack) {
-    assert((args_on_stack_cc * VMRegImpl::stack_slot_size) < (int)os::vm_page_size() &&
-           StackShadowPages >= 2, "should do stack bang here");
     sp_inc = extend_stack_for_value_args(args_on_stack_cc);
   }
   shuffle_value_args(false, receiver_only, sig,

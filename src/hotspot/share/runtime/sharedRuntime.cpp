@@ -2800,6 +2800,11 @@ CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   }
 }
 
+
+int CompiledEntrySignature::max_stack_slots_cc() {
+  return UseShenandoahGC ? 64 : 128;
+}
+
 // Returns all super methods (transitive) in classes and interfaces that are overridden by the current method.
 GrowableArray<Method*>* CompiledEntrySignature::get_supers() {
   if (_supers != nullptr) {
@@ -2975,8 +2980,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
 
     // Limit the scalarized stack argument area to ensure that generated entry
     // points fit into nmethod's uint16_t *_entry_offset fields.
-    const int max_stack_slots = UseShenandoahGC ? 64 : 128;
-    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots) {
+    if (MAX2(_args_on_stack_cc, _args_on_stack_cc_ro) <= max_stack_slots_cc()) {
       return; // Success
     }
 
@@ -2984,7 +2988,7 @@ void CompiledEntrySignature::compute_calling_conventions(bool link_time) {
     // receiver would help. If so, use the receiver-as-oop convention for the
     // method body but keep scalarizing the other arguments. This also preserves
     // the convention used by calls through super methods.
-    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots && _num_value_args > 1) {
+    if (_has_value_recv && _args_on_stack_cc_ro <= max_stack_slots_cc() && _num_value_args > 1) {
       _sig_cc = _sig_cc_ro;
       _args_on_stack_cc = SharedRuntime::java_calling_convention(_sig_cc, _regs_cc);
       assert(_args_on_stack_cc == _args_on_stack_cc_ro, "calling conventions must match");
