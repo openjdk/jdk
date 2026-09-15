@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -349,6 +349,7 @@ void ostream_init();
 void ostream_init_log();
 void ostream_exit();
 void ostream_abort();
+void ostream_revive();
 const char* make_log_name(const char* log_name, const char* force_directory);
 
 // In the non-fixed buffer case an underlying buffer will be created and
