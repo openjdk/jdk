@@ -422,6 +422,22 @@ void HeapShared::archive_interned_string(oop string) {
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
 }
 
+void HeapShared::update_scratch_mirror_field(oop scratch_m, int field_offset, oop new_field_obj) {
+  archive_updated_mirror_field(scratch_m->obj_field(field_offset), new_field_obj);
+  scratch_m->obj_field_put(field_offset, new_field_obj);
+}
+
+// It's possible for a scratch mirror to be scanned before one of its oop fields (such as acmp_maps) is
+// updated. When this happens, we must ensure that the new oop is also archived.
+void HeapShared::archive_updated_mirror_field(oop old_field_obj, oop new_field_obj) {
+  if (old_field_obj != new_field_obj) {
+    assert(old_field_obj == nullptr, "cannot update a non-null oop field that might have already been scanned");
+    assert(new_field_obj != nullptr, "must be");
+    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, new_field_obj);
+    assert(success, "mirror field must be archivable");
+  }
+}
+
 void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   if (HeapShared::is_loading()) {
     if (HeapShared::is_loading_streaming_mode()) {
@@ -812,7 +828,6 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
-
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
 
@@ -843,11 +858,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
             // to null and it will be recreated at runtime.
             field_obj = nullptr;
           }
-          m->obj_field_put(offset, field_obj);
-          if (field_obj != nullptr) {
-            bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, field_obj);
-            assert(success, "sanity");
-          }
+          update_scratch_mirror_field(m, offset, field_obj);
         }
         break;
       case T_BOOLEAN:
@@ -882,19 +893,14 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   }
 
   oop class_data = java_lang_Class::class_data(orig_mirror);
+  archive_updated_mirror_field(java_lang_Class::class_data(m), class_data);
   java_lang_Class::set_class_data(m, class_data);
-  if (class_data != nullptr) {
-    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, class_data);
-    assert(success, "sanity");
-  }
 
   if (ik->is_value_klass()) {
     ValueKlass* vk = ValueKlass::cast(ik);
     if (vk->supports_nullable_layouts()) {
       oop null_reset_value = vk->null_reset_value();
-      m->obj_field_put(vk->null_reset_value_offset(), null_reset_value);
-      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, null_reset_value);
-      assert(success, "sanity");
+      update_scratch_mirror_field(m, vk->null_reset_value_offset(), null_reset_value);
     }
   }
 
@@ -930,14 +936,18 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
 
     if (ik->has_acmp_maps_offset()) {
       int maps_offset = ik->acmp_maps_offset();
-      oop maps = orig_mirror->obj_field(maps_offset);
-      scratch_m->obj_field_put(maps_offset, maps);
+      update_scratch_mirror_field(scratch_m, maps_offset, orig_mirror->obj_field(maps_offset));
     }
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    java_lang_Class::set_module(scratch_m, java_lang_Class::module(orig_mirror));
-    java_lang_Class::set_protection_domain(scratch_m, java_lang_Class::protection_domain(orig_mirror));
+    oop module = java_lang_Class::module(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::module(scratch_m), module);
+    java_lang_Class::set_module(scratch_m, module);
+
+    oop pd = java_lang_Class::protection_domain(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::protection_domain(scratch_m), pd);
+    java_lang_Class::set_protection_domain(scratch_m, pd);
   }
 }
 
