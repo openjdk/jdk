@@ -25,10 +25,13 @@
  * @test
  * @key stress randomness
  * @requires vm.compiler2.enabled
- * @bug 8268019
+ * @bug 8268019 8341818
  * @summary Splitting an If through a dying loop header region that is not a LoopNode, yet, results in a dead data loop.
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.TestDeadLoopSplitIfLoop::test -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+StressIGVN -XX:StressSeed=2382674767 -XX:CompileCommand=dontinline,compiler.c2.TestDeadLoopSplitIfLoop::test
+ *                   compiler.c2.TestDeadLoopSplitIfLoop
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.TestDeadLoopSplitIfLoop::test -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:+StressIGVN -XX:StressSeed=401557934 -XX:CompileCommand=dontinline,compiler.c2.TestDeadLoopSplitIfLoop::test
  *                   compiler.c2.TestDeadLoopSplitIfLoop
  * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileCommand=compileonly,compiler.c2.TestDeadLoopSplitIfLoop::test -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+StressIGVN -XX:CompileCommand=dontinline,compiler.c2.TestDeadLoopSplitIfLoop::test
