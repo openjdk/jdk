@@ -912,6 +912,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                     if ((n = b.next) == null) {
                         if (b.key == null) // empty
                             break outer;
+                        else if (b.val == null)
+                            break;
                         else
                             return b;
                     }
@@ -1023,8 +1025,16 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             for (;;) {
                 Node<K,V> n; K k; int c;
                 if ((n = b.next) == null) {
-                    result = ((rel & LT) != 0 && b.key != null) ? b : null;
-                    break outer;
+                    if ((rel & LT) == 0 || b.key == null) {
+                        result = null;
+                        break outer;
+                    }
+                    else if (b.val == null)
+                        break;
+                    else {
+                        result = b;
+                        break outer;
+                    }
                 }
                 else if ((k = n.key) == null)
                     break;
@@ -1036,8 +1046,16 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                     break outer;
                 }
                 else if (c <= 0 && (rel & LT) != 0) {
-                    result = (b.key != null) ? b : null;
-                    break outer;
+                    if (b.key == null) {
+                        result = null;
+                        break outer;
+                    }
+                    else if (b.val == null)
+                        break;
+                    else {
+                        result = b;
+                        break outer;
+                    }
                 }
                 else
                     b = n;
@@ -2632,13 +2650,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                 }
                 return null;
             }
-            for (;;) {
-                Node<K,V> n = m.findNear(key, rel, cmp);
-                if (n == null || !inBounds(n.key, cmp))
-                    return null;
-                if (n.val != null)
-                    return n.key;
-            }
+            Node<K,V> n = m.findNear(key, rel, cmp);
+            return (n == null || !inBounds(n.key, cmp)) ? null : n.key;
         }
 
         /* ----------------  Map API methods -------------- */
