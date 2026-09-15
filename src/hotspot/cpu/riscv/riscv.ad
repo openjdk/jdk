@@ -3863,6 +3863,28 @@ operand cmpOpEqNe()
   %}
 %}
 
+operand cmpOpEqNeOverflow()
+%{
+  match(Bool);
+  op_cost(0);
+  predicate(n->as_Bool()->_test._test == BoolTest::ne ||
+            n->as_Bool()->_test._test == BoolTest::eq ||
+            n->as_Bool()->_test._test == BoolTest::overflow ||
+            n->as_Bool()->_test._test == BoolTest::no_overflow);
+
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal(0x0, "eq");
+    greater(0x1, "gt");
+    overflow(0x2, "overflow");
+    less(0x3, "lt");
+    not_equal(0x4, "ne");
+    less_equal(0x5, "le");
+    no_overflow(0x6, "no_overflow");
+    greater_equal(0x7, "ge");
+  %}
+%}
+
 operand cmpOpULtGe()
 %{
   match(Bool);
@@ -6723,6 +6745,355 @@ instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   %}
 
   ins_pipe(lmul_reg_reg);
+%}
+
+// ============================================================================
+// Overflow Math Instructions
+
+instruct overflowAddI_reg_sext(rFlagsReg cr, iRegI op1, iRegI op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "add    $cr, $op1, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowAddI_reg_sext" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ add(cr, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowAddI_imm_sext(rFlagsReg cr, iRegI op1, immIAdd op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "addi   $cr, $op1, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowAddI_imm_sext" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ addi(cr, as_Register($op1$$reg), $op2$$constant);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowAddI_reg(rFlagsReg cr, iRegIorL2I op1, iRegIorL2I op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(5 * ALU_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "add    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowAddI_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ add(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowAddI_imm(rFlagsReg cr, iRegIorL2I op1, immIAdd op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowAddI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(4 * ALU_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "addi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowAddI_imm" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ addi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowSubI_reg_sext(rFlagsReg cr, iRegI op1, iRegI op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "sub    $cr, $op1, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowSubI_reg_sext" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sub(cr, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowSubI_imm_sext(rFlagsReg cr, iRegI op1, immISub op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "subi   $cr, $op1, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowSubI_imm_sext" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ subi(cr, as_Register($op1$$reg), $op2$$constant);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowSubI_reg(rFlagsReg cr, iRegIorL2I op1, iRegIorL2I op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(5 * ALU_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "sub    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowSubI_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ sub(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowSubI_imm(rFlagsReg cr, iRegIorL2I op1, immISub op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(4 * ALU_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "subi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowSubI_imm" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ subi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowNegI_sext(rFlagsReg cr, immI0 zero, iRegI op1, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI zero op1));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "neg    $cr, $op1\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowNegI_sext" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ neg(cr, as_Register($op1$$reg));
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowNegI(rFlagsReg cr, immI0 zero, iRegIorL2I op1, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubI zero op1));
+  effect(TEMP tmp);
+
+  ins_cost(4 * ALU_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "neg    $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowNegI" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ neg(cr, tmp);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowAddL_reg(rFlagsReg cr, iRegL op1, iRegL op2, iRegLNoSp tmp1, iRegLNoSp tmp2)
+%{
+  match(Set cr (OverflowAddL op1 op2));
+  effect(TEMP tmp1, TEMP tmp2);
+
+  ins_cost(5 * ALU_COST);
+  format %{ "add    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $tmp1, $op1\n\t"
+            "xor    $cr, $tmp1, $op2\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "srli   $cr, $cr, 63\t# overflow check long, #@overflowAddL_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ add(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, tmp1, as_Register($op1$$reg));
+    __ xorr(cr, tmp1, as_Register($op2$$reg));
+    __ andr(cr, cr, tmp2);
+    __ srli(cr, cr, 63);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowSubL_reg(rFlagsReg cr, iRegL op1, iRegL op2, iRegLNoSp tmp1, iRegLNoSp tmp2)
+%{
+  match(Set cr (OverflowSubL op1 op2));
+  effect(TEMP tmp1, TEMP tmp2);
+
+  ins_cost(5 * ALU_COST);
+  format %{ "sub    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $op1, $op2\n\t"
+            "xor    $cr, $op1, $tmp1\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "srli   $cr, $cr, 63\t# overflow check long, #@overflowSubL_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ sub(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(cr, as_Register($op1$$reg), tmp1);
+    __ andr(cr, cr, tmp2);
+    __ srli(cr, cr, 63);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowNegL(rFlagsReg cr, immL0 zero, iRegL op1, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowSubL zero op1));
+  effect(TEMP tmp);
+
+  ins_cost(3 * ALU_COST);
+  format %{ "neg    $tmp, $op1\n\t"
+            "and    $cr, $tmp, $op1\n\t"
+            "srli   $cr, $cr, 63\t# overflow check long, #@overflowNegL" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ neg(tmp, as_Register($op1$$reg));
+    __ andr(cr, tmp, as_Register($op1$$reg));
+    __ srli(cr, cr, 63);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowMulI_reg(rFlagsReg cr, iRegIorL2I op1, iRegIorL2I op2, iRegLNoSp tmp)
+%{
+  match(Set cr (OverflowMulI op1 op2));
+  effect(TEMP tmp);
+
+  ins_cost(IMUL_COST + 3 * ALU_COST);
+  format %{ "sext.w $cr, $op1\n\t"
+            "sext.w $tmp, $op2\n\t"
+            "mul    $cr, $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "xor    $cr, $cr, $tmp\t# overflow check int, #@overflowMulI_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(cr, as_Register($op1$$reg));
+    __ sext_w(tmp, as_Register($op2$$reg));
+    __ mul(cr, cr, tmp);
+    __ sext_w(tmp, cr);
+    __ xorr(cr, cr, tmp);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
+instruct overflowMulL_reg(rFlagsReg cr, iRegL op1, iRegL op2, iRegLNoSp tmp1, iRegLNoSp tmp2)
+%{
+  match(Set cr (OverflowMulL op1 op2));
+  effect(TEMP tmp1, TEMP tmp2);
+
+  ins_cost(2 * IMUL_COST + 2 * ALU_COST);
+  format %{ "mulh   $tmp1, $op1, $op2\n\t"
+            "mul    $cr, $op1, $op2\n\t"
+            "srai   $tmp2, $cr, 63\n\t"
+            "xor    $cr, $tmp1, $tmp2\t# overflow check long, #@overflowMulL_reg" %}
+
+  ins_encode %{
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ mulh(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mul(cr, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ srai(tmp2, cr, 63);
+    __ xorr(cr, tmp1, tmp2);
+  %}
+
+  ins_pipe(pipe_slow);
 %}
 
 // Integer Divide
@@ -9608,7 +9979,7 @@ instruct branch(label lbl)
 // Patterns for short (< 12KiB) variants
 
 // Compare flags and branch near instructions.
-instruct cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
+instruct cmpFlag_branch(cmpOpEqNeOverflow cmp, rFlagsReg cr, label lbl) %{
   match(If cmp cr);
   effect(USE lbl);
 
@@ -9619,6 +9990,337 @@ instruct cmpFlag_branch(cmpOpEqNe cmp, rFlagsReg cr, label lbl) %{
     __ enc_cmpEqNe_imm0_branch($cmp$$cmpcode, as_Register($cr$$reg), *($lbl$$label));
   %}
   ins_pipe(pipe_cmpz_branch);
+  ins_short_branch(1);
+%}
+
+instruct overflowAddI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                              label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(4 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "add    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowAddI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ add(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowAddI_imm_branch(cmpOp cmp, iRegIorL2I op1, immIAdd op2,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "addi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowAddI_imm_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ addi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowSubI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                              label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(4 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "sub    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowSubI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ sub(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowSubI_imm_branch(cmpOp cmp, iRegIorL2I op1, immISub op2,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "subi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowSubI_imm_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ subi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowNegI_branch(cmpOp cmp, immI0 zero, iRegIorL2I op1,
+                              label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI zero op1));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "neg    $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowNegI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ neg(cr, tmp);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowAddL_branch(cmpOpEqNeOverflow cmp, iRegL op1, iRegL op2,
+                              label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(4 * ALU_COST + BRANCH_COST);
+  format %{ "add    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $tmp1, $op1\n\t"
+            "xor    $cr, $tmp1, $op2\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "b$cmp  $cr, zr, $lbl\t# overflow check long, #@overflowAddL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ add(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, tmp1, as_Register($op1$$reg));
+    __ xorr(cr, tmp1, as_Register($op2$$reg));
+    __ andr(cr, cr, tmp2);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L);
+    } else {
+      __ bgez(cr, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowSubL_branch(cmpOpEqNeOverflow cmp, iRegL op1, iRegL op2,
+                              label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(4 * ALU_COST + BRANCH_COST);
+  format %{ "sub    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $op1, $op2\n\t"
+            "xor    $cr, $op1, $tmp1\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "b$cmp  $cr, zr, $lbl\t# overflow check long, #@overflowSubL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ sub(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(cr, as_Register($op1$$reg), tmp1);
+    __ andr(cr, cr, tmp2);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L);
+    } else {
+      __ bgez(cr, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowNegL_branch(cmpOpEqNeOverflow cmp, immL0 zero, iRegL op1,
+                              label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubL zero op1));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(2 * ALU_COST + BRANCH_COST);
+  format %{ "neg    $tmp, $op1\n\t"
+            "and    $cr, $tmp, $op1\n\t"
+            "b$cmp  $cr, zr, $lbl\t# overflow check long, #@overflowNegL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ neg(tmp, as_Register($op1$$reg));
+    __ andr(cr, tmp, as_Register($op1$$reg));
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L);
+    } else {
+      __ bgez(cr, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowMulI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                            label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(IMUL_COST + 2 * ALU_COST + BRANCH_COST);
+  format %{ "sext.w $cr, $op1\n\t"
+            "sext.w $tmp, $op2\n\t"
+            "mul    $cr, $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "b$cmp  $cr, $tmp, $lbl\t# overflow check int, #@overflowMulI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(cr, as_Register($op1$$reg));
+    __ sext_w(tmp, as_Register($op2$$reg));
+    __ mul(cr, cr, tmp);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L);
+    } else {
+      __ beq(cr, tmp, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+  ins_short_branch(1);
+%}
+
+instruct overflowMulL_branch(cmpOp cmp, iRegL op1, iRegL op2,
+                            label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(2 * IMUL_COST + ALU_COST + BRANCH_COST);
+  format %{ "mulh   $tmp1, $op1, $op2\n\t"
+            "mul    $cr, $op1, $op2\n\t"
+            "srai   $tmp2, $cr, 63\n\t"
+            "b$cmp  $tmp1, $tmp2, $lbl\t# overflow check long, #@overflowMulL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ mulh(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mul(cr, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ srai(tmp2, cr, 63);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(tmp1, tmp2, *L);
+    } else {
+      __ beq(tmp1, tmp2, *L);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
   ins_short_branch(1);
 %}
 
@@ -9992,11 +10694,11 @@ instruct cmpP_narrowOop_imm0_branch(cmpOpEqNe cmp, iRegN op1, immP0 zero, label 
 
 // Patterns for far (20KiB) variants
 
-instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
+instruct far_cmpFlag_branch(cmpOpEqNeOverflow cmp, rFlagsReg cr, label lbl) %{
   match(If cmp cr);
   effect(USE lbl);
 
-  ins_cost(BRANCH_COST);
+  ins_cost(2 * BRANCH_COST);
   format %{ "far_b$cmp $cr, zr, $lbl\t#@far_cmpFlag_branch"%}
 
   ins_encode %{
@@ -10004,6 +10706,327 @@ instruct far_cmpFlag_branch(cmpOp cmp, rFlagsReg cr, label lbl) %{
   %}
 
   ins_pipe(pipe_cmpz_branch);
+%}
+
+instruct far_overflowAddI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(4 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "add    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowAddI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ add(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowAddI_imm_branch(cmpOp cmp, iRegIorL2I op1, immIAdd op2,
+                                      label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "addi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowAddI_imm_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ addi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowSubI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(4 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "sext.w $cr, $op2\n\t"
+            "sub    $cr, $tmp, $cr\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowSubI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ sext_w(cr, as_Register($op2$$reg));
+    __ sub(cr, tmp, cr);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowSubI_imm_branch(cmpOp cmp, iRegIorL2I op1, immISub op2,
+                                      label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "subi   $cr, $tmp, $op2\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowSubI_imm_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ subi(cr, tmp, $op2$$constant);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowNegI_branch(cmpOp cmp, immI0 zero, iRegIorL2I op1,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubI zero op1));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(3 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $tmp, $op1\n\t"
+            "neg    $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowNegI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(tmp, as_Register($op1$$reg));
+    __ neg(cr, tmp);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowAddL_branch(cmpOpEqNeOverflow cmp, iRegL op1, iRegL op2,
+                                  label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowAddL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(4 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "add    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $tmp1, $op1\n\t"
+            "xor    $cr, $tmp1, $op2\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "far_b$cmp $cr, zr, $lbl\t# overflow check long, #@far_overflowAddL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ add(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, tmp1, as_Register($op1$$reg));
+    __ xorr(cr, tmp1, as_Register($op2$$reg));
+    __ andr(cr, cr, tmp2);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L, /* is_far */ true);
+    } else {
+      __ bgez(cr, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowSubL_branch(cmpOpEqNeOverflow cmp, iRegL op1, iRegL op2,
+                                  label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(4 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sub    $tmp1, $op1, $op2\n\t"
+            "xor    $tmp2, $op1, $op2\n\t"
+            "xor    $cr, $op1, $tmp1\n\t"
+            "and    $cr, $cr, $tmp2\n\t"
+            "far_b$cmp $cr, zr, $lbl\t# overflow check long, #@far_overflowSubL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ sub(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(tmp2, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ xorr(cr, as_Register($op1$$reg), tmp1);
+    __ andr(cr, cr, tmp2);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L, /* is_far */ true);
+    } else {
+      __ bgez(cr, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowNegL_branch(cmpOpEqNeOverflow cmp, immL0 zero, iRegL op1,
+                                  label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowSubL zero op1));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(2 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "neg    $tmp, $op1\n\t"
+            "and    $cr, $tmp, $op1\n\t"
+            "far_b$cmp $cr, zr, $lbl\t# overflow check long, #@far_overflowNegL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ neg(tmp, as_Register($op1$$reg));
+    __ andr(cr, tmp, as_Register($op1$$reg));
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bltz(cr, *L, /* is_far */ true);
+    } else {
+      __ bgez(cr, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowMulI_branch(cmpOp cmp, iRegIorL2I op1, iRegIorL2I op2,
+                                label lbl, iRegLNoSp tmp, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp, KILL cr);
+
+  ins_cost(IMUL_COST + 2 * ALU_COST + 2 * BRANCH_COST);
+  format %{ "sext.w $cr, $op1\n\t"
+            "sext.w $tmp, $op2\n\t"
+            "mul    $cr, $cr, $tmp\n\t"
+            "sext.w $tmp, $cr\n\t"
+            "far_b$cmp $cr, $tmp, $lbl\t# overflow check int, #@far_overflowMulI_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp = as_Register($tmp$$reg);
+    __ sext_w(cr, as_Register($op1$$reg));
+    __ sext_w(tmp, as_Register($op2$$reg));
+    __ mul(cr, cr, tmp);
+    __ sext_w(tmp, cr);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(cr, tmp, *L, /* is_far */ true);
+    } else {
+      __ beq(cr, tmp, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct far_overflowMulL_branch(cmpOp cmp, iRegL op1, iRegL op2,
+                                label lbl, iRegLNoSp tmp1, iRegLNoSp tmp2, rFlagsReg cr)
+%{
+  match(If cmp (OverflowMulL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::overflow ||
+            n->in(1)->as_Bool()->_test._test == BoolTest::no_overflow);
+  effect(USE lbl, TEMP tmp1, TEMP tmp2, KILL cr);
+
+  ins_cost(2 * IMUL_COST + ALU_COST + 2 * BRANCH_COST);
+  format %{ "mulh   $tmp1, $op1, $op2\n\t"
+            "mul    $cr, $op1, $op2\n\t"
+            "srai   $tmp2, $cr, 63\n\t"
+            "far_b$cmp $tmp1, $tmp2, $lbl\t# overflow check long, #@far_overflowMulL_branch" %}
+
+  ins_encode %{
+    Label* L = $lbl$$label;
+    Register cr = as_Register($cr$$reg);
+    Register tmp1 = as_Register($tmp1$$reg);
+    Register tmp2 = as_Register($tmp2$$reg);
+    __ mulh(tmp1, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ mul(cr, as_Register($op1$$reg), as_Register($op2$$reg));
+    __ srai(tmp2, cr, 63);
+    if ($cmp$$cmpcode == BoolTest::overflow) {
+      __ bne(tmp1, tmp2, *L, /* is_far */ true);
+    } else {
+      __ beq(tmp1, tmp2, *L, /* is_far */ true);
+    }
+  %}
+
+  ins_pipe(pipe_serial);
 %}
 
 // Compare signed int and branch far instructions
