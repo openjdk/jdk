@@ -80,14 +80,14 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   _weights[index] = weight;
 
   // Recompute everything from current data, to avoid accumulating errors.
-  _x_sum = 0;
-  _y_sum = 0;
-  _xx_sum = 0;
-  _xy_sum = 0;
-  _yy_sum = 0;
-  _weighted_sum = 0;
-  _weighted_y_sum = 0;
-  _weighted_yy_sum = 0;
+  _x_sum = 0.0;
+  _y_sum = 0.0;
+  _xx_sum = 0.0;
+  _xy_sum = 0.0;
+  _yy_sum = 0.0;
+  _weighted_sum = 0.0;
+  _weighted_y_sum = 0.0;
+  _weighted_yy_sum = 0.0;
 
   // Most robust estimation is when origin is at average
   _x_origin = 0;
@@ -112,14 +112,15 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     _weighted_yy_sum += _weights[i] * yi * yi;
   }
 
-  const double K = 100.0;
-  const double x_noise = K * DBL_EPSILON * _x_origin;
+  // Treat x-spread below 100 ulps as numerical noise.
+  const double x_noise = 100.0 * DBL_EPSILON * _x_origin;
+
   if (_num_samples < 3 || _xx_sum <= _num_samples * x_noise * x_noise) {
     // The data is untrustworthy for slope calculations.
-    _slope = 0;
+    _slope = 0.0;
     _y_intercept = y - _y_origin;
     _residual_sd = 0.0;
-    _slope_se = 0;
+    _slope_se = 0.0;
     return;
   }
 
