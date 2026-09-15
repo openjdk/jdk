@@ -77,6 +77,8 @@ compiler/vectorapi/VectorMaskCompareNotTest.java 8392087 windows-x64
 
 compiler/vectorapi/VectorExpressionFuzzer.java 8337281 linux-aarch64,macosx-aarch64
 
+compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
+
 #############################################################################
 
 # :hotspot_gc
