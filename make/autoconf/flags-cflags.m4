@@ -462,24 +462,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS],
 # platform independent
 AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 [
-  #### OS DEFINES, these should be independent on toolchain
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    CFLAGS_OS_DEF_JVM="-DLINUX -D_FILE_OFFSET_BITS=64"
-    CFLAGS_OS_DEF_JDK="-D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64"
-  elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    CFLAGS_OS_DEF_JVM="-D_ALLBSD_SOURCE -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
-    CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
-  elif test "x$OPENJDK_TARGET_OS" = xaix; then
-    CFLAGS_OS_DEF_JVM="-DAIX -D_LARGE_FILES"
-    CFLAGS_OS_DEF_JDK="-D_LARGE_FILES"
-  elif test "x$OPENJDK_TARGET_OS" = xbsd; then
-    CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE"
-  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
-    CFLAGS_OS_DEF_JVM="-D_WINDOWS -DWIN32 -D_JNI_IMPLEMENTATION_"
-  fi
-
-  CFLAGS_OS_DEF_JDK="$CFLAGS_OS_DEF_JDK -D$OPENJDK_TARGET_OS_UPPERCASE"
-
   #### GLOBAL DEFINES
   # Set some common defines. These works for all compilers, but assume
   # -D is universally accepted.
@@ -674,6 +656,31 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
 # $3 - Optional prefix for compiler variables (either BUILD_ or nothing).
 AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
 [
+  #### OS DEFINES, these should be independent on toolchain
+  # FLAGS_OS is the target on the first call and the build platform on the
+  # second, so this has to be recomputed rather than shared between them.
+  CFLAGS_OS_DEF_JVM=
+  CFLAGS_OS_DEF_JDK=
+  if test "x$FLAGS_OS" = xlinux; then
+    CFLAGS_OS_DEF_JVM="-DLINUX -D_FILE_OFFSET_BITS=64"
+    CFLAGS_OS_DEF_JDK="-D_GNU_SOURCE -D_REENTRANT -D_FILE_OFFSET_BITS=64"
+  elif test "x$FLAGS_OS" = xmacosx; then
+    CFLAGS_OS_DEF_JVM="-D_ALLBSD_SOURCE -D_DARWIN_C_SOURCE -D_XOPEN_SOURCE"
+    CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
+  elif test "x$FLAGS_OS" = xaix; then
+    CFLAGS_OS_DEF_JVM="-DAIX -D_LARGE_FILES"
+    CFLAGS_OS_DEF_JDK="-D_LARGE_FILES"
+  elif test "x$FLAGS_OS" = xbsd; then
+    CFLAGS_OS_DEF_JVM="-D_ALLBSD_SOURCE"
+    CFLAGS_OS_DEF_JDK="-D_ALLBSD_SOURCE -D_REENTRANT"
+  elif test "x$FLAGS_OS" = xwindows; then
+    CFLAGS_OS_DEF_JVM="-D_WINDOWS -DWIN32 -D_JNI_IMPLEMENTATION_"
+  fi
+
+  FLAGS_OS_UPPERCASE=`$ECHO $FLAGS_OS | $TR 'abcdefghijklmnopqrstuvwxyz' \
+      'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
+  CFLAGS_OS_DEF_JDK="$CFLAGS_OS_DEF_JDK -D$FLAGS_OS_UPPERCASE"
+
   #### CPU DEFINES, these should (in theory) be independent on toolchain
 
   # Setup target CPU
@@ -884,12 +891,28 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     )
   fi
 
+  # OpenBSD's compiler protects every return with retguard: the prologue
+  # stores the return address XORed with a per-function cookie and the
+  # epilogue checks it, trapping with int3 on a mismatch.  HotSpot rewrites
+  # return addresses on the stack -- deoptimization patches them, and a
+  # thawed continuation carries frames copied in from elsewhere -- so a
+  # protected runtime function returning into one of those dies with
+  # SIGTRAP and no hs_err, since the VM does not handle SIGTRAP on x86.
+  # Every test that parks a virtual thread on a monitor went that way.
+  # The flag is OpenBSD's own, so ask the compiler before using it.
+  $1_RETGUARD_CFLAGS_JVM=
+  if test "x$FLAGS_OS" = xbsd; then
+    FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [-fno-ret-protector],
+        PREFIX: $3,
+        IF_TRUE: [$1_RETGUARD_CFLAGS_JVM="-fno-ret-protector"])
+  fi
+
   # EXPORT to API
   CFLAGS_JVM_COMMON="$ALWAYS_CFLAGS_JVM $ALWAYS_DEFINES_JVM \
       $TOOLCHAIN_CFLAGS_JVM ${$1_TOOLCHAIN_CFLAGS_JVM} \
       $OS_CFLAGS $OS_CFLAGS_JVM $CFLAGS_OS_DEF_JVM $DEBUG_CFLAGS_JVM \
       $WARNING_CFLAGS_JVM $JVM_PICFLAG $FILE_MACRO_CFLAGS \
-      $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS"
+      $REPRODUCIBLE_CFLAGS $BRANCH_PROTECTION_CFLAGS ${$1_RETGUARD_CFLAGS_JVM}"
 
   CFLAGS_JDK_COMMON="$ALWAYS_DEFINES_JDK $TOOLCHAIN_CFLAGS_JDK \
       $OS_CFLAGS $CFLAGS_OS_DEF_JDK $DEBUG_CFLAGS_JDK $DEBUG_OPTIONS_FLAGS_JDK \

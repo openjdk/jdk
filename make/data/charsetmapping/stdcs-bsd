@@ -1,0 +1,26 @@
+#
+#   generate these charsets into sun.nio.cs
+#
+#   EUC_JP_LINUX must stay wherever EUC_JP is: the generated EUC_JP_LINUX
+#   reaches into EUC_JP's Encoder, which is package private, so splitting the
+#   pair between sun.nio.cs and sun.nio.cs.ext does not compile.
+#
+Big5
+Big5_HKSCS
+EUC_CN
+EUC_KR
+EUC_JP
+EUC_JP_LINUX
+EUC_TW
+GBK
+ISO_8859_11
+ISO_8859_3
+ISO_8859_6
+ISO_8859_8
+Johab
+TIS_620
+JIS_X_0201
+JIS_X_0208
+JIS_X_0212
+MS932
+SJIS

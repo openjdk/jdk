@@ -62,18 +62,19 @@
 #endif
 
 /**
- * IPV6_ADD_MEMBERSHIP/IPV6_DROP_MEMBERSHIP may not be defined on OSX and AIX
+ * RFC 3493 spells these IPV6_JOIN_GROUP and IPV6_LEAVE_GROUP.  Linux and the
+ * older BSDs carry the IPV6_*_MEMBERSHIP names as well; macOS, AIX and NetBSD
+ * do not.  Ask for the name rather than for the platform.
  */
-#if defined(__APPLE__) || defined(_AIX)
-  #ifndef IPV6_ADD_MEMBERSHIP
-    #define IPV6_ADD_MEMBERSHIP     IPV6_JOIN_GROUP
-    #define IPV6_DROP_MEMBERSHIP    IPV6_LEAVE_GROUP
-  #endif
+#ifndef IPV6_ADD_MEMBERSHIP
+  #define IPV6_ADD_MEMBERSHIP     IPV6_JOIN_GROUP
+  #define IPV6_DROP_MEMBERSHIP    IPV6_LEAVE_GROUP
 #endif
 
 #define COPY_INET6_ADDRESS(env, source, target) \
     (*env)->GetByteArrayRegion(env, source, 0, 16, target)
 
+#ifdef MCAST_JOIN_SOURCE_GROUP
 /*
  * Copy IPv6 group, interface index, and IPv6 source address
  * into group_source_req structure.
@@ -93,6 +94,7 @@ static void initGroupSourceReq(JNIEnv* env, jbyteArray group, jint index,
     sin6->sin6_family = AF_INET6;
     COPY_INET6_ADDRESS(env, source, (jbyte *)&(sin6->sin6_addr));
 }
+#endif
 
 #ifdef _AIX
 
@@ -614,7 +616,9 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jint group, jint interf, jint source)
 {
     struct ip_mreq mreq;
+#ifdef IP_ADD_SOURCE_MEMBERSHIP
     struct ip_mreq_source mreq_source;
+#endif
     int opt, n, optlen;
     void* optval;
 
@@ -625,12 +629,17 @@ Java_sun_nio_ch_Net_joinOrDrop4(JNIEnv *env, jobject this, jboolean join, jobjec
         optval = (void*)&mreq;
         optlen = sizeof(mreq);
     } else {
+#ifndef IP_ADD_SOURCE_MEMBERSHIP
+        /* no IPv4 include-mode filtering */
+        return IOS_UNAVAILABLE;
+#else
         mreq_source.imr_multiaddr.s_addr = htonl(group);
         mreq_source.imr_sourceaddr.s_addr = htonl(source);
         mreq_source.imr_interface.s_addr = htonl(interf);
         opt = (join) ? IP_ADD_SOURCE_MEMBERSHIP : IP_DROP_SOURCE_MEMBERSHIP;
         optval = (void*)&mreq_source;
         optlen = sizeof(mreq_source);
+#endif
     }
 
     n = setsockopt(fdval(env,fdo), IPPROTO_IP, opt, optval, optlen);
@@ -663,7 +672,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock4(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jint group, jint interf, jint source)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || !defined(IP_BLOCK_SOURCE)
     /* no IPv4 exclude-mode filtering for now */
     return IOS_UNAVAILABLE;
 #else
@@ -690,7 +699,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
                                 jbyteArray group, jint index, jbyteArray source)
 {
     struct ipv6_mreq mreq6;
-#ifndef __APPLE__
+#if !defined(__APPLE__) && defined(MCAST_JOIN_SOURCE_GROUP)
     struct group_source_req req;
 #endif
     int opt, n, optlen;
@@ -703,7 +712,7 @@ Java_sun_nio_ch_Net_joinOrDrop6(JNIEnv *env, jobject this, jboolean join, jobjec
         optval = (void*)&mreq6;
         optlen = sizeof(mreq6);
     } else {
-#ifdef __APPLE__
+#if defined(__APPLE__) || !defined(MCAST_JOIN_SOURCE_GROUP)
         /* no IPv6 include-mode filtering for now */
         return IOS_UNAVAILABLE;
 #else
@@ -739,7 +748,7 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_blockOrUnblock6(JNIEnv *env, jobject this, jboolean block, jobject fdo,
                                     jbyteArray group, jint index, jbyteArray source)
 {
-#ifdef __APPLE__
+#if defined(__APPLE__) || !defined(MCAST_BLOCK_SOURCE)
     /* no IPv6 exclude-mode filtering for now */
     return IOS_UNAVAILABLE;
 #else

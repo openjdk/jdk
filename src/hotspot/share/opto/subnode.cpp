@@ -2096,9 +2096,15 @@ const Type* AbsNode::Value(PhaseGVN* phase) const {
     return integral_abs_value(tl);
   }
   case Type::FloatCon:
-    return TypeF::make(abs(t1->getf()));
+    // fabsf/fabs, not abs: only <math.h> is pulled in here, so the
+    // unqualified name is C's int abs(int) unless something else has
+    // dragged <cmath>'s overloads into the global namespace.  Where
+    // nothing has, folding Math.abs(NaN) went through int and came back
+    // as -2147483648, which is how Double.isNaN(Math.abs(Double.NaN))
+    // came out false in compiled code and true in the interpreter.
+    return TypeF::make(fabsf(t1->getf()));
   case Type::DoubleCon:
-    return TypeD::make(abs(t1->getd()));
+    return TypeD::make(fabs(t1->getd()));
   default:
     break;
   }

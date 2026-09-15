@@ -207,10 +207,24 @@ JNIEXPORT sa_handler_t sigset(int sig, sa_handler_t disp) {
 #endif
 }
 
+/*
+ * NetBSD's <signal.h> renames sigaction to __sigaction_siginfo, so that is
+ * the symbol callers are bound to and the one this library has to define and
+ * to look up.  The symbol still called "sigaction" in libc is the old ABI's
+ * entry point and answers with SIGSYS.
+ */
+#ifdef __NetBSD__
+#define JSIG_SIGACTION_SYMBOL "__sigaction_siginfo"
+#define JSIG_SIGACTION_NAME   __sigaction_siginfo
+#else
+#define JSIG_SIGACTION_SYMBOL "sigaction"
+#define JSIG_SIGACTION_NAME   sigaction
+#endif
+
 static int call_os_sigaction(int sig, const struct sigaction  *act,
                              struct sigaction *oact) {
   if (os_sigaction == NULL) {
-    os_sigaction = (sigaction_t)dlsym(RTLD_NEXT, "sigaction");
+    os_sigaction = (sigaction_t)dlsym(RTLD_NEXT, JSIG_SIGACTION_SYMBOL);
     if (os_sigaction == NULL) {
       printf("%s\n", dlerror());
       exit(0);
@@ -219,7 +233,7 @@ static int call_os_sigaction(int sig, const struct sigaction  *act,
   return (*os_sigaction)(sig, act, oact);
 }
 
-JNIEXPORT int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
+JNIEXPORT int JSIG_SIGACTION_NAME(int sig, const struct sigaction *act, struct sigaction *oact) {
   int res;
   bool sigused;
   struct sigaction oldAct;

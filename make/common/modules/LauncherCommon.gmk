@@ -157,6 +157,12 @@ define SetupBuildLauncherBody
   ifneq ($$($1_STATIC_LAUNCHER), true)
       $1_JDK_LIBS := java.base:libjli
       $1_JDK_LIBS_windows := java.base:libjava
+      # libjli is a static library on OpenBSD, so what it in turn links
+      # against has to be named here: a static library carries no NEEDED
+      # entries to bring them along.
+      ifeq ($(OPENJDK_TARGET_OS_ENV), bsd.openbsd)
+        $1_LIBS += $(LIBZ_LIBS) $(LIBPTHREAD)
+      endif
   else
     ifneq ($(findstring $(TOOLCHAIN_TYPE), gcc clang), )
       $1_LDFLAGS_FILTER_OUT := -Wl$(COMMA)--exclude-libs$(COMMA)ALL
@@ -183,6 +189,7 @@ define SetupBuildLauncherBody
       LDFLAGS := $$($1_LDFLAGS), \
       LDFLAGS_linux := $$(call SetExecutableOrigin,/../lib), \
       LDFLAGS_macosx := $$(call SetExecutableOrigin,/../lib), \
+      LDFLAGS_bsd := $$(call SetExecutableOrigin,/../lib), \
       LDFLAGS_FILTER_OUT := $$($1_LDFLAGS_FILTER_OUT), \
       JDK_LIBS := $$($1_JDK_LIBS), \
       JDK_LIBS_windows := $$($1_JDK_LIBS_windows), \

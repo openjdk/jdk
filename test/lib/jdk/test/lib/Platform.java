@@ -107,6 +107,24 @@ public class Platform {
         return isOs("linux");
     }
 
+    /**
+     * True on any BSD other than macOS.  os.name is uname(2)'s sysname
+     * there, so each one names itself and there is no single prefix to
+     * match; macOS is deliberately excluded, being covered by isOSX().
+     */
+    public static boolean isBsd() {
+        return isOs("netbsd") || isOs("freebsd")
+                || isOs("openbsd") || isOs("dragonfly");
+    }
+
+    public static boolean isOpenBsd() {
+        return isOs("openbsd");
+    }
+
+    public static boolean isDragonFly() {
+        return isOs("dragonfly");
+    }
+
     public static boolean isBusybox(String tool) {
         try {
             Path toolpath = Paths.get(tool);
@@ -249,7 +267,17 @@ public class Platform {
         }
         if (isAix()) {
             return false; // SA not implemented.
-        } else if (isLinux()) {
+        }
+        if (isOpenBsd() || isDragonFly()) {
+            // SA finds what a process has mapped, and from where, through
+            // kinfo_getvmmap(3).  OpenBSD's kinfo_vmentry carries the ranges
+            // but no path, so there is no way to say which file a mapping
+            // came from; DragonFly has neither the function nor the struct.
+            // Without them there are no load objects and no symbols to read
+            // out of them.  Not implemented, rather than implemented badly.
+            return false;
+        }
+        if (isLinux()) {
             if (isS390x() || isARM()) {
                 return false; // SA not implemented.
             }

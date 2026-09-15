@@ -54,6 +54,8 @@ public interface BsdDebugger extends JVMDebugger {
 
   // For BsdCDebugger
   public List<ThreadProxy> getThreadList();
+  public boolean      canDemangle();
+  public String       demangle(String sym);
   public List<LoadObject> getLoadObjectList();
   public ClosestSymbol lookup(long address);
 

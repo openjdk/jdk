@@ -45,7 +45,9 @@ EXCLUDE_FILES += \
 # data files and shouldn't go in the product
 EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
 
-ifeq ($(call isTargetOs, macosx aix), false)
+# BsdFileSystem.newWatchService() returns one of these, and macosx is not
+# the only OS that uses BsdFileSystem.
+ifeq ($(call isTargetOs, macosx aix bsd), false)
   EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
 endif
 

@@ -53,6 +53,15 @@ static int TEST_FAILED=1;
 // This variable is used to notify whether signal has been received or not.
 static volatile sig_atomic_t sig_received = 0;
 
+// OpenBSD dropped the obsolete sigset(3) and DragonFly never had it --
+// neither declares it nor carries the symbol in libc -- so the sigset mode
+// cannot be built there.  SigTestDriver skips it for the same reason.
+#if defined(__OpenBSD__) || defined(__DragonFly__)
+  #define HAVE_SIGSET 0
+#else
+  #define HAVE_SIGSET 1
+#endif
+
 static char *mode = 0;
 static char *scenario = 0;
 static char *signal_name;
@@ -144,7 +153,7 @@ boolean isSupportedSigScenario ()
 
 boolean isSupportedSigMode ()
 {
-    if ( (!strcmp(mode, "sigset")) || (!strcmp(mode, "sigaction")) )
+    if ( (!strcmp(mode, "sigset") && HAVE_SIGSET) || (!strcmp(mode, "sigaction")) )
     {
         // printf("%s is a supported mode\n", mode);
         return TRUE;
@@ -240,6 +249,7 @@ void setSignalHandler()
            exit(TEST_FAILED);
         }
     } // end - dealing with sigaction
+#if HAVE_SIGSET
     else if (!strcmp(mode, "sigset"))
     {
 #ifdef __GNUC__
@@ -251,6 +261,7 @@ void setSignalHandler()
 #pragma GCC diagnostic pop
 #endif
     } // end dealing with sigset
+#endif
     printf("%s: signal handler using function '%s' has been set\n", signal_name, mode);
 }
 

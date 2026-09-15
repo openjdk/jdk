@@ -43,6 +43,19 @@
 #endif
 
 /*
+ * AI_V4MAPPED and AI_ALL ask getaddrinfo(3) to report IPv4 addresses as
+ * IPv4-mapped IPv6 ones.  NetBSD does not implement that, so an AF_INET6
+ * listener there answers on IPv6 alone.  Asking for nothing extra is the
+ * closest we can get.
+ */
+#ifndef AI_V4MAPPED
+ #define AI_V4MAPPED 0
+#endif
+#ifndef AI_ALL
+ #define AI_ALL 0
+#endif
+
+/*
  * The Socket Transport Library.
  *
  * This module is an implementation of the Java Debug Wire Protocol Transport

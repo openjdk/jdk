@@ -117,7 +117,7 @@ inline bool multiply_by_1k(T& n) {
 template<typename T>
 inline bool parse_integer(const char *s, char **endptr, T* result) {
 
-  if (!isdigit(s[0]) && s[0] != '-') {
+  if (!isdigit((unsigned char)s[0]) && s[0] != '-') {
     // strtoll/strtoull may allow leading spaces. Forbid it.
     return false;
   }

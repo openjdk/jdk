@@ -198,6 +198,13 @@ public class ExternalEditor {
     }
 
     private void deleteDirectory() {
+        if (dir == null) {
+            // setupWatch() failed before it got as far as creating one.  The
+            // failure is on its way out of edit(); walking a null path here
+            // replaces it with a NullPointerException that says nothing about
+            // what actually went wrong.
+            return;
+        }
         try {
             Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                 @Override

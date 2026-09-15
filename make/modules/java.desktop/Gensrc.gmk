@@ -31,7 +31,9 @@ ifeq ($(call isTargetOs, windows), false)
   include gensrc/GensrcIcons.gmk
 endif
 
-ifeq ($(call isTargetOs, linux aix), true)
+# macOS has its own AWT and needs no X11 wrappers; the other BSDs use X11
+# like linux and aix do.
+ifeq ($(call isTargetOs, linux aix bsd), true)
   include gensrc/GensrcX11Wrappers.gmk
 endif
 

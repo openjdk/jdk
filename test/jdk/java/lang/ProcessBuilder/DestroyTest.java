@@ -47,7 +47,13 @@ abstract class ProcessTest implements Runnable {
             while ((line = is.readLine()) != null)
                 System.err.println("ProcessTrap: " + line);
         } catch(IOException e) {
-            if (!e.getMessage().matches("[Ss]tream [Cc]losed")) {
+            // The reader races destroyForcibly(): the reaper drains and
+            // closes the pipe as the child dies.  Where the close leaves a
+            // read that has already begun to return EOF, readLine() ends the
+            // loop; where it makes that read fail instead, as it does on
+            // NetBSD, the message is the errno's.  Either way it says the
+            // stream went away, which is what the test arranged.
+            if (!e.getMessage().matches("[Ss]tream [Cc]losed|Bad file descriptor")) {
                 throw new RuntimeException(e);
             }
         }
@@ -80,7 +86,9 @@ class UnixTest extends ProcessTest {
         processTrapScript.deleteOnExit();
         try (FileWriter fstream = new FileWriter(processTrapScript);
              BufferedWriter out = new BufferedWriter(fstream)) {
-            out.write("#!/bin/bash\n" +
+            // sh, not bash: the script uses nothing bash has and sh has not,
+            // and bash is not part of a NetBSD or OpenBSD installation.
+            out.write("#!/bin/sh\n" +
                 "echo \\\"ProcessTrap.sh started\\\"\n" +
                 "while :\n" +
                 "do\n" +
@@ -111,9 +119,15 @@ public class DestroyTest {
         } else {
             File userDir = new File(System.getProperty("user.dir", "."));
             File tempFile = File.createTempFile("ProcessTrap-", ".sh", userDir);
+            // os.name is uname(2)'s sysname on the BSDs, so each one names
+            // itself; the test itself only needs a POSIX shell and kill.
             if (osName.startsWith("Linux")
                     || osName.startsWith("Mac OS")
-                    || osName.equals("AIX")) {
+                    || osName.equals("AIX")
+                    || osName.equals("NetBSD")
+                    || osName.equals("FreeBSD")
+                    || osName.equals("OpenBSD")
+                    || osName.equals("DragonFly")) {
                 return new UnixTest(tempFile);
             }
         }

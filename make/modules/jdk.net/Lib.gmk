@@ -31,14 +31,20 @@ include LibCommon.gmk
 ## Build libextnet
 ################################################################################
 
-$(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
-    NAME := extnet, \
-    OPTIMIZATION := LOW, \
-    EXTRA_HEADER_DIRS := java.base:libjvm, \
-    JDK_LIBS := java.base:libjava, \
-    LIBS_windows := ws2_32.lib, \
-))
+# The extended socket options are implemented per platform, and the BSDs have
+# no <os>SocketOptions.c yet.  ExtendedSocketOptions falls back to the base
+# PlatformSocketOptions there, which reports every option as unsupported, so
+# there is nothing for libextnet to hold.
+ifeq ($(call isTargetOs, bsd), false)
+  $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
+      NAME := extnet, \
+      OPTIMIZATION := LOW, \
+      EXTRA_HEADER_DIRS := java.base:libjvm, \
+      JDK_LIBS := java.base:libjava, \
+      LIBS_windows := ws2_32.lib, \
+  ))
 
-TARGETS += $(BUILD_LIBEXTNET)
+  TARGETS += $(BUILD_LIBEXTNET)
+endif
 
 ################################################################################

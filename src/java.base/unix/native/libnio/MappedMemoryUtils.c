@@ -43,6 +43,12 @@ typedef char mincore_vec_t;
 jboolean JNICALL MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
                                              jlong len, jlong numPages)
 {
+#ifdef __OpenBSD__
+    /* OpenBSD removed mincore(2).  isLoaded() is a hint, and the honest
+       answer where there is no way to ask is that nothing is known to be
+       resident. */
+    return JNI_FALSE;
+#else
     jboolean loaded = JNI_TRUE;
     int result = 0;
     long i = 0;
@@ -76,6 +82,7 @@ jboolean JNICALL MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong add
     }
     free(vec);
     return loaded;
+#endif
 }
 
 

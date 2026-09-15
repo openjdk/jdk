@@ -29,6 +29,8 @@
 #ifdef MACOSX
 #include <unistd.h>
 #include <sys/param.h>
+#elif defined(_ALLBSD_SOURCE)
+/* The BSDs have no <malloc.h>; <stdlib.h> above declares what is used here. */
 #else
 #include <malloc.h>
 #endif
@@ -81,6 +83,18 @@ void *__mlib_malloc(mlib_u32 size)
   return (void *) malloc(size);
 #elif defined(MACOSX)
   return valloc(size);
+#elif defined(_ALLBSD_SOURCE)
+  /*
+   * memalign(3) is a glibc and Solaris function; the BSDs offer the POSIX
+   * posix_memalign(3) instead.
+   */
+  {
+    void *ptr = NULL;
+    if (posix_memalign(&ptr, 8, size) != 0) {
+      return NULL;
+    }
+    return ptr;
+  }
 #else
   return (void *) memalign(8, size);
 #endif /* _MSC_VER */

@@ -78,7 +78,7 @@
 #define SPELL_REG_FP "rbp"
 #define REG_BCP context_r13
 
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__DragonFly__)
 # define context_trapno uc_mcontext.mc_trapno
 # define context_pc uc_mcontext.mc_rip
 # define context_sp uc_mcontext.mc_rsp
@@ -459,6 +459,11 @@ void os::Bsd::init_thread_fpu_state(void) {
 }
 
 juint os::cpu_microcode_revision() {
+#ifdef __OpenBSD__
+  // OpenBSD has no sysctlbyname(3), and no machdep.cpu.microcode_version to
+  // ask for by any name.
+  return 0;
+#else
   juint result = 0;
   char data[8];
   size_t sz = sizeof(data);
@@ -468,6 +473,7 @@ juint os::cpu_microcode_revision() {
     if (sz == 8) result = *((juint*)data + 1); // upper 32-bits
   }
   return result;
+#endif
 }
 
 ////////////////////////////////////////////////////////////////////////////////

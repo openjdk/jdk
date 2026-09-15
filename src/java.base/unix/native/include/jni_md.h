@@ -53,7 +53,13 @@
 #endif
 
 typedef int jint;
-#ifdef _LP64
+/*
+ * jlong has to be the same type as int64_t, or every format string that
+ * describes one describes the other wrongly.  That is "long" on LP64 for
+ * every system here except OpenBSD, which spells int64_t "long long"
+ * whatever the model.
+ */
+#if defined(_LP64) && !defined(__OpenBSD__)
 typedef long jlong;
 #else
 typedef long long jlong;

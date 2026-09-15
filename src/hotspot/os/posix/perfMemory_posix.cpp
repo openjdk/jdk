@@ -182,7 +182,7 @@ static pid_t filename_to_pid(const char* filename) {
   // a filename that doesn't begin with a digit is not a
   // candidate for conversion.
   //
-  if (!isdigit(*filename)) {
+  if (!isdigit((unsigned char)*filename)) {
     return 0;
   }
 
