@@ -108,8 +108,8 @@ public class ModalDialogOrderingTest {
             int clickY = y1 + (y2 - y1) / 2;
 
             robot.mouseMove(clickX, clickY);
-            robot.mousePress(InputEvent.BUTTON1_MASK);
-            robot.mouseRelease(InputEvent.BUTTON1_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.waitForIdle(1000);
 
             int colorX = dialogBounds.x + dialogBounds.width / 2;
