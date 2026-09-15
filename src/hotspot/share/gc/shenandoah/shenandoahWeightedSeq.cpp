@@ -112,15 +112,14 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
     _weighted_yy_sum += _weights[i] * y * y;
   }
 
-  // For centered math, the "noisy" path is when the spread is at the scale
-  // representation noise of inputs.
   const double K = 100.0;
   const double x_noise = K * DBL_EPSILON * _x_origin;
-  if (_num_samples < 2 || _xx_sum <= _num_samples * x_noise * x_noise) {
-    // All samples are the sample point, can't make a line
+  if (_num_samples < 3 || _xx_sum <= _num_samples * x_noise * x_noise) {
+    // The data is untrustworthy for slope calculations.
     _slope = 0;
     _y_intercept = y - _y_origin;
     _residual_sd = 0.0;
+    _slope_se = 0;
     return;
   }
 
@@ -131,7 +130,7 @@ void ShenandoahWeightedSeq::add(double x, double y, double weight) {
   const double sum_of_cross_deviations = _xy_sum - _x_sum * _y_sum / _num_samples;
   const double residual_sum_of_squares = total_sum_of_squares - _slope * sum_of_cross_deviations;
   _residual_sd = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples);
-  _slope_se = std::sqrt(MAX2(residual_sum_of_squares, 0.0) / _num_samples) / _xx_sum;
+  _slope_se = std::sqrt(MAX2(residual_sum_of_squares, 0.0)) / (_num_samples - 2) / sqrt(_xx_sum);
 }
 
 double ShenandoahWeightedSeq::predict(double x_absolute, double margin_of_error) const {
