@@ -48,7 +48,7 @@ America/Indiana/Tell_City CST CDT
 America/Indiana/Vevay EST EDT
 America/Indiana/Vincennes EST EDT
 America/Indiana/Winamac EST EDT
-America/Inuvik MST MDT
+America/Inuvik CST
 America/Iqaluit EST EDT
 America/Jamaica EST
 America/Juneau AKST AKDT
@@ -122,6 +122,8 @@ Australia/Lindeman AEST AEDT
 Australia/Melbourne AEST AEDT
 Australia/Perth AWST AWDT
 Australia/Sydney AEST AEDT
+CST6CDT CST CDT
+EST5EDT EST EDT
 Europe/Andorra CET CEST
 Europe/Athens EET EEST
 Europe/Belgrade CET CEST
@@ -154,6 +156,8 @@ Europe/Vilnius EET EEST
 Europe/Volgograd MSK
 Europe/Warsaw CET CEST
 Europe/Zurich CET CEST
+MST7MDT MST MDT
+PST8PDT PST PDT
 Pacific/Auckland NZST NZDT
 Pacific/Guam ChST
 Pacific/Honolulu HST
