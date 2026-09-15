@@ -218,7 +218,8 @@ sun/java2d/OpenGL/ScaleParamsOOB.java#id0 8377908 linux-all
 sun/java2d/SunGraphics2D/EmptyClipRenderingTest.java 8144029 macosx-all,linux-all
 sun/java2d/SunGraphics2D/DrawImageBilinear.java 8297175 linux-all
 sun/java2d/SunGraphics2D/PolyVertTest.java 6986565 generic-all
-sun/java2d/SunGraphics2D/SimplePrimQuality.java 6992007 generic-all
+sun/java2d/SunGraphics2D/SimplePrimQuality.java#default 6322554,8392436 windows-all,macosx-all
+sun/java2d/SunGraphics2D/SimplePrimQuality.java#nod3d 6322554 windows-all
 sun/java2d/SunGraphics2D/SourceClippingBlitTest/SourceClippingBlitTest.java 8196185 generic-all
 
 java/awt/FullScreen/DisplayChangeVITest/DisplayChangeVITest.java 8169469,8273617 windows-all,macosx-aarch64
