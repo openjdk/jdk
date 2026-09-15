@@ -101,9 +101,8 @@ void CgroupUtil::adjust_controller(CgroupMemoryController* mem, physical_memory_
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
   char* limit_cg_path = nullptr;
   physical_memory_size_type limit = value_unlimited;
-  physical_memory_size_type lowest_limit = upper_bound;
-  lowest_limit = get_updated_mem_limit(mem, lowest_limit, upper_bound);
-  physical_memory_size_type orig_limit = lowest_limit != upper_bound ? lowest_limit : upper_bound;
+  physical_memory_size_type lowest_limit = get_updated_mem_limit(mem, upper_bound, upper_bound);
+  const physical_memory_size_type orig_limit = lowest_limit;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
     // update to shortened path and try again
@@ -163,9 +162,9 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, double upper_bound)
   char* cg_path = os::strdup(orig);
   char* last_slash;
   assert(cg_path[0] == '/', "cgroup path must start with '/'");
-  double lowest_limit = upper_bound;
-  double cpus = get_updated_cpu_limit(cpu, lowest_limit, upper_bound);
-  double orig_limit = lowest_limit != upper_bound ? lowest_limit : upper_bound;
+  double lowest_limit = get_updated_cpu_limit(cpu, upper_bound, upper_bound);
+  double cpus = lowest_limit;
+  const double orig_limit = lowest_limit;
   char* limit_cg_path = nullptr;
   while ((last_slash = strrchr(cg_path, '/')) != cg_path) {
     *last_slash = '\0'; // strip path
