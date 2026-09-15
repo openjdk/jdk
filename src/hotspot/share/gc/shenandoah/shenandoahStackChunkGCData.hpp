@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 2018, 2023, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -20,37 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
-#include "gc/shenandoah/shenandoahEvacTracker.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
-#include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_HPP
 
-ShenandoahThreadLocalData::ShenandoahThreadLocalData() :
-  _gc_state(0),
-  _satb_mark_queue(&ShenandoahBarrierSet::satb_mark_queue_set()),
-  _card_table(nullptr),
-  _gclab(nullptr),
-  _gclab_size(0),
-  _shenandoah_plab(nullptr),
-  _evacuation_stats(new ShenandoahEvacuationStats()),
-  _invisible_root(nullptr),
-  _invisible_root_word_size(0),
-  _pin_region_idx(0),
-  _pin_count(0) {
-}
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 
-ShenandoahThreadLocalData::~ShenandoahThreadLocalData() {
-  if (_gclab != nullptr) {
-    delete _gclab;
-  }
-  if (_shenandoah_plab != nullptr) {
-    _shenandoah_plab->retire();
-    delete _shenandoah_plab;
-  }
+class ShenandoahStackChunkGCData {
+private:
+  // Monotonically increasing epoch counter.
+  // Must not wrap to track the epoch accurately.
+  static Atomic<int64_t> _epoch_id_counter;
 
-  delete _evacuation_stats;
-}
+  // The GC epoch when chunk was allocated.
+  int64_t _epoch;
+
+  static ShenandoahStackChunkGCData* data(stackChunkOop chunk);
+
+public:
+  static void change_epoch_id();
+
+  static void initialize(stackChunkOop chunk);
+  static bool is_different_epoch(stackChunkOop chunk);
+};
+
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHSTACKCHUNKGCDATA_HPP

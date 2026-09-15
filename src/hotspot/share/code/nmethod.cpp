@@ -2038,6 +2038,9 @@ void nmethod::finalize_relocations() {
       next_data++;
     }
   }
+
+  BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+  bs_nm->finalize_relocations(this);
 }
 
 void nmethod::make_deoptimized() {
@@ -3883,6 +3886,13 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           barrier_Relocation* const reloc = iter.barrier_reloc();
           stringStream st;
           st.print("barrier format=%d", reloc->format());
+          return st.as_string();
+        }
+        case relocInfo::patchable_barrier_type: {
+          patchable_barrier_Relocation* const reloc = iter.patchable_barrier_reloc();
+          stringStream st;
+          st.print("patchable_barrier metadata=0x%x target=" PTR_FORMAT,
+                   reloc->metadata(), (intptr_t)code_begin() + reloc->target_offset());
           return st.as_string();
         }
 

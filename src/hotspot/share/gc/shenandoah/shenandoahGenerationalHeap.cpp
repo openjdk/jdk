@@ -161,8 +161,8 @@ void ShenandoahGenerationalHeap::start_idle_span() {
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) {
-    return false;
+  if (ShenandoahHeap::requires_barriers(obj)) {
+    return true;
   }
 
   if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
@@ -172,11 +172,6 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 
   if (is_in_old(obj)) {
     // Card marking barriers are required for objects in the old generation
-    return true;
-  }
-
-  if (has_forwarded_objects()) {
-    // Object may have pointers that need to be updated
     return true;
   }
 
