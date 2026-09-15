@@ -244,7 +244,8 @@ public class TypeAnnosOnMemberReferenceTest {
 
     @Test //JDK-8391567
     public void testTreeInfoIsTypeSelectorDelegatesToSelectInvalid() throws Exception {
-        //annotating "@Ann1 T.N" or "@Ann p.T.N", where N is a static nested class
+        //annotating "@Ann1 T.N" where N is a static nested class
+        //or "@Ann p.T.N" or "@Ann p.T.I", where I is an inner class
         //and p is a package is not valid:
         Path src = base.resolve("src");
         Path classes = base.resolve("classes");
@@ -262,15 +263,18 @@ public class TypeAnnosOnMemberReferenceTest {
                     @Target(ElementType.TYPE_USE)
                     @interface Ann1 {}
                     static class N {}
+                           class I {}
                     Supplier<N> f1 = @Ann1 Test.N::new;
                     Supplier<N> f2 = @Ann1 p.Test.N::new;
+                    Supplier<I> f3 = @Ann1 p.Test.I::new;
                 }
                 """);
 
         List<String> expected = List.of(
-            "Test.java:10:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
             "Test.java:11:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
-            "2 errors"
+            "Test.java:12:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, @p.Test.Ann1 p.Test.N",
+            "Test.java:13:28: compiler.err.type.annotation.inadmissible: (compiler.misc.type.annotation.1: @p.Test.Ann1), p.Test, p.Test.@p.Test.Ann1 I",
+            "3 errors"
         );
 
         List<String> log =
