@@ -3440,7 +3440,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   b(done);
 
   bind(tagged);
-  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  static_assert(JNIHandles::TypeTag::weak_global == 0b1);
   tbnz(value, 0, weak_tagged);    // Test for weak tag.
 
   // Resolve global handle
@@ -3465,7 +3465,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    static_assert(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     tbnz(value, 1, valid_global_tag); // Test for global tag
     stop("non global jobject using resolve_global_jobject");

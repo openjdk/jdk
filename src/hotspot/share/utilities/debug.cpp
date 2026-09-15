@@ -780,29 +780,29 @@ extern "C" bool dbg_is_good_oop(oopDesc* o) {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// Test multiple STATIC_ASSERT forms in various scopes.
+// Test multiple static_assert forms in various scopes.
 
 #ifndef PRODUCT
 
 // namespace scope
-STATIC_ASSERT(true);
-STATIC_ASSERT(true);
-STATIC_ASSERT(1 == 1);
-STATIC_ASSERT(0 == 0);
+static_assert(true);
+static_assert(true);
+static_assert(1 == 1);
+static_assert(0 == 0);
 
 void test_multiple_static_assert_forms_in_function_scope() {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
+  static_assert(true);
+  static_assert(true);
+  static_assert(0 == 0);
+  static_assert(1 == 1);
 }
 
 // class scope
 struct TestMultipleStaticAssertFormsInClassScope {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
+  static_assert(true);
+  static_assert(true);
+  static_assert(0 == 0);
+  static_assert(1 == 1);
 };
 
 #endif // !PRODUCT

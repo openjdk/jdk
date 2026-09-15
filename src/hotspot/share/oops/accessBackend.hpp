@@ -1136,7 +1136,7 @@ namespace AccessInternal {
   inline void verify_types(){
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
-    STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
+    static_assert((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
                    (std::is_pointer<T>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // not allowed primitive type
   }
@@ -1256,7 +1256,7 @@ namespace AccessInternal {
   inline OopCopyResult arraycopy(arrayOop src_obj, size_t src_offset_in_bytes, const T* src_raw,
                                  arrayOop dst_obj, size_t dst_offset_in_bytes, T* dst_raw,
                                  size_t length) {
-    STATIC_ASSERT((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
+    static_assert((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value ||
                    (std::is_same<T, void>::value || std::is_integral<T>::value) ||
                     std::is_floating_point<T>::value)); // arraycopy allows type erased void elements
     using DecayedT = std::decay_t<T>;
