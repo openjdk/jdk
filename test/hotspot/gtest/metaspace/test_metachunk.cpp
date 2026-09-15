@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "metaspaceGtestCommon.hpp"
 #include "metaspaceGtestContexts.hpp"
 #include "runtime/mutexLocker.hpp"
+#include "gtestRandom.hpp"
 
 using metaspace::ChunkManager;
 using metaspace::FreeChunkListVector;
@@ -315,7 +316,7 @@ TEST_VM(metaspace, chunk_split_and_merge) {
     // We allocate from this chunk to be able to completely paint the payload.
     context.allocate_from_chunk(c, c->word_size());
 
-    const uintx canary = os::random();
+    const uintx canary = GtestRandom::random();
     fill_range_with_pattern(c->base(), c->word_size(), canary);
 
     FreeChunkListVector splinters;

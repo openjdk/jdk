@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -38,6 +38,7 @@
 #include "jfr/utilities/jfrTimeConverter.hpp"
 #include "jfr/utilities/jfrTryLock.hpp"
 #include "logging/log.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/spinCriticalSection.hpp"
 #include "unittest.hpp"
@@ -150,16 +151,16 @@ class JfrGTestAdaptiveSampling : public ::testing::Test {
 
  public:
   size_t incoming_uniform() const {
-    return os::random() % max_population_per_window + min_population_per_window;
+    return GtestRandom::random() % max_population_per_window + min_population_per_window;
   }
 
   size_t incoming_bursty_10_percent() const {
-    bool is_burst = (os::random() % 100) < 10; // 10% burst chance
+    bool is_burst = (GtestRandom::random() % 100) < 10; // 10% burst chance
     return is_burst ? max_population_per_window : min_population_per_window;
   }
 
   size_t incoming_bursty_90_percent() const {
-    bool is_burst = (os::random() % 100) < 90; // 90% burst chance
+    bool is_burst = (GtestRandom::random() % 100) < 90; // 90% burst chance
     return is_burst ? max_population_per_window : min_population_per_window;
   }
 
@@ -207,7 +208,7 @@ void JfrGTestAdaptiveSampling::test(JfrGTestAdaptiveSampling::incoming inc, size
     const size_t incoming_events = (this->*inc)();
     for (size_t i = 0; i < incoming_events; i++) {
       ++population_size;
-      size_t index = os::random() % 100;
+      size_t index = GtestRandom::random() % 100;
       population[index] += 1;
       if (sampler.sample()) {
         ++sample_size;

@@ -24,6 +24,7 @@
 
 #include "memory/resourceArea.hpp"
 #include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
 #include "utilities/growableArray.hpp"
@@ -547,7 +548,7 @@ public:
     }
 
     for (int i = 0; i < 2000; i++) {
-      int r = os::random() % 10000;
+      int r = GtestRandom::random() % 10000;
       Node* to_delete = rbtree.find_node(r);
       if (to_delete != nullptr && to_delete->_left != nullptr &&
           to_delete->_right != nullptr) {
@@ -575,7 +576,7 @@ public:
     }
 
     for (int i = 0; i < 2000; i++) {
-      int r = os::random() % 10000;
+      int r = GtestRandom::random() % 10000;
       Node* to_delete = rbtree.find_node(r);
       if (to_delete != nullptr && to_delete->_left != nullptr &&
           to_delete->_right != nullptr) {
@@ -766,7 +767,7 @@ public:
           ASSERT_EQ(rbtree_const.rightmost(), rbtree.rightmost());
           ASSERT_EQ(rbtree_const.leftmost(), rbtree.leftmost());
         }
-        const int r = os::random();
+        const int r = GtestRandom::random();
         rbtree.upsert(r, r);
         min = MIN2(min, r);
         max = MAX2(max, r);
@@ -790,13 +791,13 @@ public:
     int size = 10000;
     // Create random values
     for (int i = 0; i < size; i++) {
-      int r = os::random() % size;
+      int r = GtestRandom::random() % size;
       allocations.append(r);
     }
 
     // Insert ~half of the values
     for (int i = 0; i < size; i++) {
-      int r = os::random();
+      int r = GtestRandom::random();
       if (r % 2 == 0) {
         rbtree.upsert(allocations.at(i), allocations.at(i));
       }
@@ -807,7 +808,7 @@ public:
 
     // Insert and remove randomly
     for (int i = 0; i < size; i++) {
-      int r = os::random();
+      int r = GtestRandom::random();
       if (r % 2 == 0) {
         rbtree.upsert(allocations.at(i), allocations.at(i));
       } else {
@@ -1288,7 +1289,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     RBTreeInt rbtree;
     constexpr int ten_thousand = 10000;
     for (int i = 0; i < ten_thousand; i++) {
-      int r = os::random();
+      int r = GtestRandom::random();
       if (r % 2 == 0) {
         rbtree.upsert(i, i);
       } else {
@@ -1301,7 +1302,7 @@ TEST_VM_F(RBTreeTest, VerifyItThroughStressTest) {
     RBTreeInt::Cursor cursor = rbtree.cursor(10);
     RBTreeInt::Cursor cursor2 = rbtree.next(cursor);
     for (int i = 0; i < ten_thousand; i++) {
-      int r = os::random();
+      int r = GtestRandom::random();
       if (r % 2 == 0) {
         rbtree.upsert(i, i);
       } else {
