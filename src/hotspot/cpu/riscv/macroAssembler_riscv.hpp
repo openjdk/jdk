@@ -1192,6 +1192,49 @@ public:
 
 #undef INSN
 
+#define INSN(NAME, LOAD_INSN, ZALASR_INSN, BITS)                               \
+  void NAME(Register Rd, Register Rs1) {                                       \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rd, Rs1);                                         \
+      zext(Rd, Rd, BITS);                                                      \
+    } else {                                                                   \
+      Assembler::LOAD_INSN(Rd, Rs1, 0);                                        \
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);            \
+    }                                                                          \
+  }
+
+INSN(lbu_acquire, lbu, lb_aq,  8);
+INSN(lhu_acquire, lhu, lh_aq, 16);
+INSN(lwu_acquire, lwu, lw_aq, 32);
+
+#undef INSN
+
+  void ld_acquire(Register Rd, Register Rs1) {
+    if (UseZalasr) {
+      Assembler::ld_aq(Rd, Rs1);
+    } else {
+      Assembler::ld(Rd, Rs1, 0);
+      membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    }
+  }
+
+#define INSN(NAME, STORE_INSN, ZALASR_INSN)                                    \
+  void NAME(Register Rs2, Register Rs1) {                                      \
+    if (UseZalasr) {                                                           \
+      Assembler::ZALASR_INSN(Rs2, Rs1);                                        \
+    } else {                                                                   \
+      membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);          \
+      Assembler::STORE_INSN(Rs2, Rs1, 0);                                      \
+    }                                                                          \
+  }
+
+INSN(sb_release, sb, sb_rl);
+INSN(sh_release, sh, sh_rl);
+INSN(sw_release, sw, sw_rl);
+INSN(sd_release, sd, sd_rl);
+
+#undef INSN
+
 #define INSN(NAME)                                                                                 \
   void NAME(FloatRegister Rs, address dest, Register temp = t0) {                                  \
     assert_cond(dest != nullptr);                                                                  \

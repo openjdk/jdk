@@ -34,7 +34,25 @@
 
 #include <ctype.h>
 
+// The Zalasr (Table A.7 / RCsc) sequences emitted by the JIT for volatile
+// accesses only interoperate with C++ code compiled using the psABI atomics
+// mapping (A6S: seq_cst stores carry a trailing full fence), i.e.
+// gcc >= 13.3 or clang >= 19. libjvm itself and the bundled JDK native
+// libraries are the closest such C++ code, so gate UseZalasr on the
+// toolchain that built this VM. See riscv-elf-psabi-doc,
+// "RISC-V Atomics Mappings" (note 3: do not combine with older mappings).
+static constexpr bool toolchain_uses_psabi_atomics() {
+#if defined(__clang_major__)
+  return __clang_major__ >= 19;
+#elif defined(__GNUC__)
+  return (__GNUC__ > 13) || (__GNUC__ == 13 && __GNUC_MINOR__ >= 3);
+#else
+  return false;
+#endif
+}
+
 uint32_t VM_Version::_initial_vector_length = 0;
+bool VM_Version::_use_zalasr_atomics = false;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -148,6 +166,20 @@ void VM_Version::common_initialize() {
     }
   }
 
+  if (UseZalasr && !toolchain_uses_psabi_atomics()) {
+    // A JVM built by a pre-psABI toolchain contains C++ atomics whose mapping
+    // is incompatible with the Zalasr sequences the JIT would emit; mixing them
+    // can break Java volatile semantics. Only warn when Zalasr was asked for
+    // explicitly: where the extension is detected it is enabled by default, and
+    // a plain start-up should stay quiet.
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr requires a JVM built with a toolchain using the "
+              "psABI atomics mapping (gcc >= 13.3 or clang >= 19); "
+              "disabling Zalasr");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
     FLAG_SET_DEFAULT(AvoidUnalignedAccesses,
       unaligned_scalar.value() != MISALIGNED_SCALAR_FAST);
@@ -175,6 +207,24 @@ void VM_Version::common_initialize() {
     FLAG_SET_DEFAULT(UseZtso, true);
   }
 #endif
+
+  // Zalasr and Ztso are mutually exclusive. Under Ztso the acquire and release fences
+  // are elided anyway, see MacroAssembler::membar(), so all Zalasr would still buy is
+  // eliding the trailing StoreLoad fence of a volatile store, which is a separate
+  // optimization. Ztso takes precedence for now, so Zalasr is turned off
+  if (UseZtso && UseZalasr) {
+    if (!FLAG_IS_DEFAULT(UseZalasr)) {
+      warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
+    }
+    FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
+  // adjustment above has settled. See the comment on _use_zalasr_atomics in
+  // vm_version_riscv.hpp.
+  if (UseZalasr) {
+    _use_zalasr_atomics = UseZalasr;
+  }
 
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
