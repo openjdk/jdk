@@ -306,7 +306,7 @@ size_t OopStorage::Block::active_index_safe(const Block* block) {
   assert(block != nullptr, "precondition");
   uintptr_t block_addr = reinterpret_cast<uintptr_t>(block);
   uintptr_t index_loc = block_addr + offset_of(Block, _active_index);
-  static_assert(sizeof(size_t) == sizeof(intptr_t), "assumption");
+  static_assert(sizeof(size_t) == sizeof(intptr_t));
   return static_cast<size_t>(SafeFetchN(reinterpret_cast<intptr_t*>(index_loc), 0));
 }
 
@@ -386,7 +386,7 @@ OopStorage::Block::block_for_ptr(const OopStorage* owner, const oop* ptr) {
   intptr_t owner_addr = reinterpret_cast<intptr_t>(owner);
   for (unsigned i = 0; i < section_count; ++i, section += section_size_in_bytes) {
     uintptr_t owner_loc = section + offset_of(Block, _owner_address);
-    static_assert(sizeof(OopStorage*) == sizeof(intptr_t), "assumption");
+    static_assert(sizeof(OopStorage*) == sizeof(intptr_t));
     if (SafeFetchN(reinterpret_cast<intptr_t*>(owner_loc), 0) == owner_addr) {
       return reinterpret_cast<Block*>(section);
     }
