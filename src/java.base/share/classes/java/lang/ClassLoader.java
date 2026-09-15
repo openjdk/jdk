@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -310,22 +310,11 @@ public abstract class ClassLoader {
     // Shared among all packages with unsigned classes
     private static final Certificate[] nocerts = new Certificate[0];
 
-    // The classes loaded by this class loader. The only purpose of this table
-    // is to keep the classes from being GC'ed until the loader is GC'ed.
-    private final ArrayList<Class<?>> classes = new ArrayList<>();
-
     // The "default" domain. Set as the default ProtectionDomain on newly
     // created classes.
     private final ProtectionDomain defaultDomain =
         new ProtectionDomain(new CodeSource(null, (Certificate[]) null),
                              null, this, null);
-
-    // Invoked by the VM to record every loaded class with this loader.
-    void addClass(Class<?> c) {
-        synchronized (classes) {
-            classes.add(c);
-        }
-    }
 
     // The packages defined in this class loader.  Each package name is
     // mapped to its corresponding NamedPackage object.
@@ -2646,8 +2635,6 @@ public abstract class ClassLoader {
         }
 
         reinitObjectField("package2certs", new ConcurrentHashMap<>());
-        classes.clear();
-        classes.trimToSize();
         classLoaderValueMap = null;
     }
 }

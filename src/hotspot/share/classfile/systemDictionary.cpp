@@ -1564,19 +1564,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   // which will require a token to perform the define class
   check_constraints(k, loader_data, true, CHECK);
 
-  // Register class just loaded with class loader (placed in ArrayList)
-  // Note we do this before updating the dictionary, as this can
-  // fail with an OutOfMemoryError (if it does, we will *not* put this
-  // class in the dictionary and will not update the class hierarchy).
-  // JVMTI FollowReferences needs to find the classes this way.
-  if (k->class_loader() != nullptr) {
-    methodHandle m(THREAD, Universe::loader_addClass_method());
-    JavaValue result(T_VOID);
-    JavaCallArguments args(class_loader);
-    args.push_oop(Handle(THREAD, k->java_mirror()));
-    JavaCalls::call(&result, m, &args, CHECK);
-  }
-
   JFR_ONLY(Jfr::on_definition(k, THREAD);)
 
   // Add to class hierarchy, and do possible deoptimizations.
@@ -1688,8 +1675,8 @@ InstanceKlass* SystemDictionary::find_or_define_instance_class(Symbol* class_nam
     assert(defined_k != nullptr, "Should have a klass if there's no exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   } else if (HAS_PENDING_EXCEPTION) {
-    // Remove this InstanceKlass from the LoaderConstraintTable if added.
-    LoaderConstraintTable::remove_failed_loaded_klass(k, class_loader_data(class_loader));
+    // Validate that this InstanceKlass is not present in the LoaderConstraintTable.
+    LoaderConstraintTable::check_failed_loaded_klass(k, class_loader_data(class_loader));
     assert(defined_k == nullptr, "Should not have a klass if there's an exception");
     k->class_loader_data()->add_to_deallocate_list(k);
   }
