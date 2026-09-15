@@ -82,20 +82,20 @@ private:
   Atomic<uint> _min_desired_num_regions;
   Atomic<uint> _max_desired_num_regions;
 
-  uint calculate_default_min_num_regions(uint new_number_of_heap_regions);
-  uint calculate_default_max_num_regions(uint new_number_of_heap_regions);
+  uint calculate_default_min_num_regions(uint new_num_regions);
+  uint calculate_default_max_num_regions(uint new_num_regions);
 
   // Recalculate the minimum and maximum number of young regions for the
   // given number of heap regions according to the current sizing algorithm.
-  void recalculate_min_max_num_regions(uint number_of_heap_regions, uint* min_num_young_regions, uint* max_num_young_regions);
+  void recalculate_min_max_num_regions(uint num_regions, uint* min_num_young_regions, uint* max_num_young_regions);
 
 public:
   G1YoungGenSizer();
   // Calculate the maximum size of the young gen given the number of regions
   // depending on the sizing algorithm.
-  virtual void adjust_max_new_size(uint number_of_heap_regions);
+  virtual void adjust_max_new_size(uint num_regions);
 
-  virtual void heap_size_changed(uint new_number_of_heap_regions);
+  virtual void heap_size_changed(uint new_num_regions);
   uint min_desired_num_regions() const {
     return _min_desired_num_regions.load_relaxed();
   }

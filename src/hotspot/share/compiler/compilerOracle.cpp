@@ -1043,7 +1043,7 @@ class LineCopy : StackObj {
   const char* _copy;
 public:
     LineCopy(char* line) {
-      _copy = os::strdup(line, mtInternal);
+      _copy = os::strdup(line, mtCompiler);
     }
     ~LineCopy() {
       os::free((void*)_copy);

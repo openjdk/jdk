@@ -2010,6 +2010,36 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  HKEY hKey;
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+
+  DWORD valueLength = bufferSize;
+
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  // Open the registry key
+  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
+    // Return empty buffer if key cannot be opened
+    return false;
+  }
+
+  // Query the value
+  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
+    RegCloseKey(hKey);
+    buffer[0] = '\0';
+    return false;
+  }
+
+  // If the value being queried is a string the value returned is NOT guaranteed to be null-terminated
+  buffer[valueLength - 1] = '\0';
+
+  RegCloseKey(hKey);
+  return true;
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
 
@@ -2097,6 +2127,12 @@ void os::win32::print_windows_version(outputStream* st) {
 
   st->print(" Build %d", build_number);
   st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
+  // InstallationType (e.g. Server Core, Nano server)
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
+  }
   st->cr();
 }
 
@@ -4275,33 +4311,7 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-void getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return;
-  }
-
-  RegCloseKey(hKey);
-}
-
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);

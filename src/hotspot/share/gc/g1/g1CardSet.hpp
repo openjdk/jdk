@@ -82,7 +82,7 @@ public:
                          double cards_in_bitmap_threshold_percent,
                          uint max_buckets_in_howl,
                          double cards_in_howl_threshold_percent,
-                         uint max_cards_in_cardset,
+                         uint max_cards_in_card_set,
                          uint log2_card_region_per_region);
 
   ~G1CardSetConfiguration();
@@ -188,7 +188,7 @@ class G1CardSet : public CHeapObj<mtGCCardSet> {
   friend class G1CardSetMtTestTask;
   friend class G1CardSetTest;
   friend class G1CheckCardClosure;
-  friend class G1ReleaseCardsets;
+  friend class G1ReleaseCardSets;
   friend class G1TransferCard;
 
   // When splitting addresses into region and card within that region, the logical
