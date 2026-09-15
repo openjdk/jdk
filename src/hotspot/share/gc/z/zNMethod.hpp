@@ -29,8 +29,9 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 
-class nmethod;
+class ICacheInvalidationContext;
 class NMethodClosure;
+class nmethod;
 class ZReentrantLock;
 class ZWorkers;
 
