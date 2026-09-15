@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,10 +95,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     public void beginHandshake() throws SSLException {
         engineLock.lock();
         try {
-            if (conContext.isUnsureMode) {
-                throw new IllegalStateException(
-                        "Client/Server mode has not yet been set.");
-            }
+            checkUnsureMode();
 
             try {
                 conContext.kickstart();
@@ -127,10 +124,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
         engineLock.lock();
         try {
-            if (conContext.isUnsureMode) {
-                throw new IllegalStateException(
-                        "Client/Server mode has not yet been set.");
-            }
+            checkUnsureMode();
 
             // See if the handshaker needs to report back some SSLException.
             checkTaskThrown();
@@ -488,10 +482,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
         engineLock.lock();
         try {
-            if (conContext.isUnsureMode) {
-                throw new IllegalStateException(
-                        "Client/Server mode has not yet been set.");
-            }
+            checkUnsureMode();
 
             // See if the handshaker needs to report back some SSLException.
             checkTaskThrown();
@@ -940,6 +931,8 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public boolean getUseClientMode() {
+        checkUnsureMode();
+
         engineLock.lock();
         try {
             return conContext.sslConfig.isClientMode;
@@ -1176,6 +1169,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             return (SSLException)taskThrown;
         } else {
             return new SSLException(msg, taskThrown);
+        }
+    }
+
+    private void checkUnsureMode() {
+        if (conContext.isUnsureMode) {
+            throw new IllegalStateException(
+                    "Client/Server mode has not yet been set.");
         }
     }
 
