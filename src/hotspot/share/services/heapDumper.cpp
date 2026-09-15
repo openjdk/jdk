@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -2199,6 +2200,10 @@ void HeapObjectDumper::do_object(oop o) {
   }
 
   if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
+    return;
+  }
+
+  if (CollectedHeap::is_filler_object(o)) {
     return;
   }
 
