@@ -32,7 +32,7 @@ import jdk.test.lib.security.SecurityUtils;
 
 /*
  * @test
- * @bug 8370885
+ * @bug 8370885 8388484
  * @summary Default namedGroups values are not being filtered against
  *          algorithm constraints
  * @library /javax/net/ssl/templates
@@ -44,8 +44,8 @@ public class DefaultNamedGroups extends SSLEngineTemplate {
 
     protected static final String DISABLED_NG = "secp256r1";
     protected static final List<String> REFERENCE_NG = Stream.of(
-                    "X25519MLKEM768",
-                    "x25519",
+                    "*X25519MLKEM768",
+                    "*x25519",
                     "secp256r1",
                     "secp384r1",
                     "secp521r1",
