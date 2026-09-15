@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,12 @@ public class ModuleInfoExtraTest {
             "   exports p1 to m1;",
             "   exports p1 to m2;",
             "}"
-        },                      ".*, line .*, multiple exports p1.*"
+        },                      ".*, line .*, multiple exports p1.*",
+        new String[] {
+            "module x {",
+            "   exports p1 to m1, m2, m1;",
+            "}"
+        },                      ".*, line .*, duplicate target m1 in exports p1.*"
     );
 
     final Map<String[], String> badExtraFiles = Map.of(
@@ -234,7 +239,13 @@ public class ModuleInfoExtraTest {
             new String[] {
                 "   provides s with impl1;",
                 "   provides s with impl2, impl3;"
-            },                      ".*, line .*, multiple provides s.*"
+            },                      ".*, line .*, multiple provides s.*",
+            new String[] {
+                "   opens p1 to m1, m1;"
+            },                      ".*, line .*, duplicate target m1 in opens p1.*",
+            new String[] {
+                "   provides s with impl1, impl1;"
+            },                      ".*, line .*, duplicate target impl1 in provides s.*"
     );
 
     void errorCases() {
