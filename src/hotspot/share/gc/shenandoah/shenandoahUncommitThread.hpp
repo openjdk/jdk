@@ -66,9 +66,6 @@ class ShenandoahUncommitThread : public ConcurrentGCThread {
   // Perform the work of uncommitting empty regions
   void uncommit(double shrink_delay, size_t shrink_until);
 
-  // True if the control thread has allowed this thread to uncommit regions
-  bool is_uncommit_allowed() const;
-
   // Try to set progress, potentially stalling until uncommits are allowed
   bool try_set_progress(int delay_ms);
 

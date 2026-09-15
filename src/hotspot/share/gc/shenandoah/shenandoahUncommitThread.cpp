@@ -56,13 +56,13 @@ void ShenandoahUncommitThread::run_service() {
   const double normal_shrink_delay = double(ShenandoahUncommitDelay) / 1000;
 
   while (true) {
-    bool soft_max_changed = _soft_max_changed.try_unset();
-    bool explicit_gc_requested = _explicit_gc_requested.try_unset();
+    bool soft_max_changed;
+    bool explicit_gc_requested;
 
-    if (!soft_max_changed && !explicit_gc_requested) {
+    {
       MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
       if (_terminating.is_set()) {
-        // Terminating already, exit.
+        // Already requested termination, exit.
         break;
       }
 
@@ -72,11 +72,10 @@ void ShenandoahUncommitThread::run_service() {
         // Wake up for terminating, exit.
         break;
       }
-    }
 
-    // Recheck after sleep too.
-    soft_max_changed |= _soft_max_changed.try_unset();
-    explicit_gc_requested |= _explicit_gc_requested.try_unset();
+      soft_max_changed = _soft_max_changed.try_unset();
+      explicit_gc_requested = _explicit_gc_requested.try_unset();
+    }
 
     // Explicit GC tries to uncommit everything down to min capacity.
     // Soft max change tries to uncommit everything down to target capacity.
@@ -145,23 +144,17 @@ bool ShenandoahUncommitThread::plan_work(double shrink_delay, size_t shrink_unti
 }
 
 void ShenandoahUncommitThread::notify_soft_max_changed() {
-  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   if (_soft_max_changed.try_set()) {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
 }
 
 void ShenandoahUncommitThread::notify_explicit_gc_requested() {
-  assert(is_uncommit_allowed(), "Only notify if uncommit is allowed");
+  MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
   if (_explicit_gc_requested.try_set()) {
-    MonitorLocker locker(&_uncommit_lock, Mutex::_no_safepoint_check_flag);
     locker.notify_all();
   }
-}
-
-bool ShenandoahUncommitThread::is_uncommit_allowed() const {
-  return _uncommit_allowed.is_set();
 }
 
 void ShenandoahUncommitThread::uncommit(double shrink_delay, size_t shrink_until) {
