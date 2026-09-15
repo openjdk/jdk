@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8298405
+ * @bug      8298405 8390674
  * @summary  Markdown support in the standard doclet
  * @library  /tools/lib ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
@@ -98,6 +98,40 @@ public class TestMarkdownLinks extends JavadocTester {
                     Method m1.
                     This is different from <a href="#m2()"><code>m2()</code></a>.""");
 
+    }
+
+    @Test
+    public void testLinkWithLineBreak(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src, """
+                package p;
+                public class OtherClass {
+                    ///[
+                    /// OtherClass.InnerClass#FIRST]
+                    public void m1() {}
+
+                    ///[\s\s
+                    /// OtherClass.InnerClass#SECOND]
+                    public void m2() {}
+
+                    public static enum InnerClass {
+                        FIRST,
+                        SECOND,
+                        THIRD;
+                    }
+                }
+                """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path",
+                src.toString(),
+                "p");
+
+        checkExit(Exit.OK);
+        checkOutput("p/OtherClass.html", true,
+                "<a href=\"OtherClass.InnerClass.html#FIRST\">",
+                "<a href=\"OtherClass.InnerClass.html#SECOND\">");
     }
 
     @Test
