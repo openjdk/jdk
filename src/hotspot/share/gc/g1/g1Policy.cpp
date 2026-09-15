@@ -65,7 +65,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _eden_surv_rate_group(new G1SurvRateGroup()),
   _survivor_surv_rate_group(new G1SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
-  _reserve_regions(0),
+  _num_reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
   _pending_cards_from_gc(0),
@@ -75,7 +75,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _phase_times_timer(gc_timer),
   _phase_times(nullptr),
   _tenuring_threshold(MaxTenuringThreshold),
-  _max_survivor_regions(0),
+  _max_num_survivor_regions(0),
   _survivors_age_table(true)
 {
 }
@@ -156,16 +156,15 @@ class G1NumYoungRegionsPredictor {
   }
 };
 
-void G1Policy::record_new_heap_size(uint new_number_of_regions) {
-  // re-calculate the necessary reserve
-  double reserve_regions_d = (double) new_number_of_regions * _reserve_factor;
-  // We use ceiling so that if reserve_regions_d is > 0.0 (but
-  // smaller than 1.0) we'll get 1.
-  _reserve_regions.store_relaxed((uint) ceil(reserve_regions_d));
+void G1Policy::record_new_heap_size(uint new_num_regions) {
+  // Re-calculate the necessary reserve.
+  double num_reserve_regions_d = (double)new_num_regions * _reserve_factor;
+  // Round up above result to always get a non-zero result.
+  _num_reserve_regions.store_relaxed((uint)ceil(num_reserve_regions_d));
 
-  _young_gen_sizer.heap_size_changed(new_number_of_regions);
+  _young_gen_sizer.heap_size_changed(new_num_regions);
 
-  _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
+  _ihop_control->update_target_occupancy(new_num_regions * G1HeapRegion::GrainBytes);
 }
 
 uint G1Policy::calculate_desired_num_eden_regions_by_mmu() const {
@@ -340,10 +339,10 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
     // It can be concurrently modified by the mutator as it expands the heap. It can
     // only increase at that time, so this is a conservative snapshot. So at worst this
     // method will return a too small number of young regions in that case.
-    uint reserve_regions = _reserve_regions.load_relaxed();
+    uint num_reserve_regions = _num_reserve_regions.load_relaxed();
 
     uint max_to_eat_into_reserve = MIN2(min_num_young_regions_by_sizer,
-                                        (reserve_regions + 1) / 2);
+                                        (num_reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Target young regions: Common "
                               "free regions at end of collection %u "
@@ -352,14 +351,14 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
                               "max to eat into reserve %u",
                               _free_regions_at_end_of_collection,
                               desired_num_young_regions,
-                              reserve_regions,
+                              num_reserve_regions,
                               max_to_eat_into_reserve);
 
     uint num_survivor_regions = _g1h->num_survivor_regions();
     uint desired_num_eden_regions = desired_num_young_regions - num_survivor_regions;
     uint num_eden_regions = num_young_regions - num_survivor_regions;
 
-    if (_free_regions_at_end_of_collection <= reserve_regions) {
+    if (_free_regions_at_end_of_collection <= num_reserve_regions) {
       // Fully eat (or already eating) into the reserve.
       uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
                                  desired_num_eden_regions,
@@ -374,9 +373,9 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
       log_trace(gc, ergo, heap)("Target young regions: Fully eat into reserve "
                                 "receiving eden %u receiving additional eden %u",
                                 receiving_eden, receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_num_eden_regions + reserve_regions)) {
+    } else if (_free_regions_at_end_of_collection < (desired_num_eden_regions + num_reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
-      uint free_outside_reserve = _free_regions_at_end_of_collection - reserve_regions;
+      uint free_outside_reserve = _free_regions_at_end_of_collection - num_reserve_regions;
       assert(free_outside_reserve < desired_num_eden_regions,
              "must be %u %u",
              free_outside_reserve, desired_num_eden_regions);
@@ -508,16 +507,16 @@ uint G1Policy::calculate_desired_num_eden_regions_before_young_only(double base_
 uint G1Policy::calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
                                                                uint min_num_eden_regions,
                                                                uint max_num_eden_regions) const {
-  uint min_marking_candidates = MIN2(calc_min_old_cset_length(candidates()->last_marking_candidates_length()),
-                                     candidates()->from_marking_groups().num_regions());
+  uint min_num_marking_candidate_regions = MIN2(calc_min_num_old_cset_regions(candidates()->num_last_marking_candidate_regions()),
+                                                candidates()->from_marking_groups().num_regions());
   double predicted_region_evac_time_ms = base_time_ms;
-  uint selected_candidates = 0;
-  for (G1CSetCandidateGroup* gr : candidates()->from_marking_groups()) {
-    if (selected_candidates >= min_marking_candidates) {
+  uint num_selected_candidate_regions = 0;
+  for (G1CardSetGroup* gr : candidates()->from_marking_groups()) {
+    if (num_selected_candidate_regions >= min_num_marking_candidate_regions) {
       break;
     }
     predicted_region_evac_time_ms += gr->predict_group_total_time_ms();
-    selected_candidates += gr->length();
+    num_selected_candidate_regions += gr->num_regions();
   }
 
   return calculate_desired_num_eden_regions_before_young_only(predicted_region_evac_time_ms,
@@ -540,15 +539,15 @@ double G1Policy::predict_retained_regions_evac_time() const {
 
   double result = 0.0;
 
-  G1CSetCandidateGroupList* retained_groups = &candidates()->retained_groups();
-  uint min_regions_left = MIN2(min_retained_old_cset_length(),
+  G1CardSetGroupList* retained_groups = &candidates()->retained_groups();
+  uint min_regions_left = MIN2(min_num_retained_old_cset_regions(),
                                retained_groups->num_regions());
 
-  for (G1CSetCandidateGroup* group : *retained_groups) {
-    assert(group->length() == 1, "We should only have one region in a retained group");
+  for (G1CardSetGroup* group : *retained_groups) {
+    assert(group->num_regions() == 1, "We should only have one region in a retained group");
     G1HeapRegion* r = group->region_at(0); // We only have one region per group.
-    // We optimistically assume that any of these marking candidate regions will
-    // be reclaimable the next gc, so just consider them as normal.
+    // We optimistically assume that any regions of these card set groups that contain pinned
+    // regions can be evacuated the next gc, so just consider them like normal.
     if (r->has_pinned_objects()) {
       num_pinned_regions++;
     }
@@ -699,9 +698,9 @@ void G1Policy::record_young_collection_start() {
   // every time we calculate / recalculate the target number of young regions.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
+  assert(max_num_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
+         max_num_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   // do that for any other surv rate groups
@@ -858,8 +857,8 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take
     // place we can safely ignore them here.
-    uint regions_allocated = _collection_set->num_eden_regions();
-    double alloc_rate_ms = (double) regions_allocated / app_time_ms;
+    uint num_eden_regions = _collection_set->num_eden_regions();
+    double alloc_rate_ms = (double) num_eden_regions / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
     double merge_refinement_table_time = p->cur_merge_refinement_table_time();
@@ -1184,7 +1183,7 @@ double G1Policy::predict_merge_scan_time(size_t card_rs_length) const {
 }
 
 double G1Policy::predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const {
-  size_t code_root_length = hr->rem_set()->code_roots_list_length();
+  size_t code_root_length = hr->rem_set()->code_roots_length();
 
   return
     _analytics->predict_code_root_scan_time_ms(code_root_length, for_young_only_phase);
@@ -1222,8 +1221,8 @@ size_t G1Policy::estimate_used_young_bytes_locked() const {
   return bytes_used + allocator->used_in_alloc_regions();
 }
 
-size_t G1Policy::desired_survivor_size(uint max_regions) const {
-  size_t const survivor_capacity = G1HeapRegion::GrainWords * max_regions;
+size_t G1Policy::desired_survivor_size(uint max_num_regions) const {
+  size_t const survivor_capacity = G1HeapRegion::GrainWords * max_num_regions;
   return (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
 }
 
@@ -1233,14 +1232,14 @@ void G1Policy::print_age_table() {
 
 // Calculates survivor space parameters.
 void G1Policy::update_survivors_policy() {
-  double max_survivor_regions_d =
+  double max_num_survivor_regions_d =
                  (double)target_num_young_regions() / (double) SurvivorRatio;
 
   // Calculate desired survivor size based on desired max survivor regions (unconstrained
   // by remaining heap). Otherwise we may cause undesired promotions as we are
   // already getting close to end of the heap, impacting performance even more.
-  uint const desired_max_survivor_regions = ceil(max_survivor_regions_d);
-  size_t const survivor_size = desired_survivor_size(desired_max_survivor_regions);
+  uint const desired_max_num_survivor_regions = ceil(max_num_survivor_regions_d);
+  size_t const survivor_size = desired_survivor_size(desired_max_num_survivor_regions);
 
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(survivor_size);
   if (UsePerfData) {
@@ -1249,8 +1248,8 @@ void G1Policy::update_survivors_policy() {
   }
   // The real maximum survivor size is bounded by the number of regions that can
   // be allocated into.
-  _max_survivor_regions = MIN2(desired_max_survivor_regions,
-                               _g1h->num_available_regions());
+  _max_num_survivor_regions = MIN2(desired_max_num_survivor_regions,
+                                   _g1h->num_available_regions());
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
@@ -1492,13 +1491,13 @@ size_t G1Policy::current_to_collection_set_cards() {
   return _to_collection_set_cards;
 }
 
-uint G1Policy::min_retained_old_cset_length() const {
+uint G1Policy::min_num_retained_old_cset_regions() const {
   // Guarantee some progress with retained regions regardless of available time by
   // taking at least one region.
   return 1;
 }
 
-uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
+uint G1Policy::calc_min_num_old_cset_regions(uint num_candidate_regions) const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -1513,7 +1512,7 @@ uint G1Policy::calc_min_old_cset_length(uint num_candidate_regions) const {
   return (uint)ceil((double)num_candidate_regions / gc_num);
 }
 
-uint G1Policy::calc_max_old_cset_length() const {
+uint G1Policy::calc_max_num_old_cset_regions() const {
   // The max old CSet region bound is based on the threshold expressed
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many

@@ -97,7 +97,7 @@ void ShenandoahControlThread::run_service() {
       }
     } else if (is_gc_requested) {
       cause = requested_gc_cause;
-      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC Request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
