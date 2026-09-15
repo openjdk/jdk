@@ -69,11 +69,7 @@ public:
   void work(uint worker_id) override;
 private:
   void do_work();
-  void promote_regions();
   void evacuate_and_promote_regions();
-  void maybe_promote_region(ShenandoahHeapRegion* region);
-  void promote_in_place(ShenandoahHeapRegion* region);
-  void promote_humongous(ShenandoahHeapRegion* region);
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
