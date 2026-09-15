@@ -888,6 +888,15 @@ public class Infer {
          * Is source type 's' compatible with target type 't' given source and target bound kinds?
          */
         boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn, InferenceContext ic) {
+            // An inference variable bounded by a wildcard must not be instantiated
+            // to an unrelated concrete type (e.g. Pair<Object,?> must not become
+            // Pair<Object,Object>).
+            if (s.hasTag(WILDCARD) != t.hasTag(WILDCARD) &&
+                    (ib_s == InferenceBound.EQ || ib_t == InferenceBound.EQ)) {
+                if (!isSameType(s, t, ic)) {
+                    return false;
+                }
+            }
             if (ib_s.lessThan(ib_t)) {
                 return isSubtype(s, t, warn, ic);
             } else if (ib_t.lessThan(ib_s)) {
