@@ -6986,7 +6986,7 @@ void MacroAssembler::get_thread(Register dst) {
 #ifdef COMPILER2
 // C2 compiled method's prolog code
 // Moved here from aarch64.ad to support Valhalla code below
-void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -7003,11 +7003,7 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  // If sp_inc > 0, the stack has already been extended for the extra
-  // arg space. We can't do this stack bang because we won't be able
-  // to walk the stack if we hit the guard zone. The stack bang was
-  // already done before extending the frame (see MachVEPNode::emit).
-  if (C->output()->need_stack_bang(bangsize) && sp_inc == 0) {
+  if (do_stack_bang && C->output()->need_stack_bang(bangsize)) {
     generate_stack_overflow_check(bangsize);
   }
 

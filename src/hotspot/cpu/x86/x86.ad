@@ -2594,8 +2594,9 @@ void MachVEPNode::emit(C2_MacroAssembler* masm, PhaseRegAlloc* ra_) const
     // Unpack value type args passed as oop and then jump to
     // the verified entry point (skipping the unverified entry).
     int sp_inc = __ unpack_value_args(ra_->C, _receiver_only);
-    // Emit code for verified entry and save increment for stack repair on return
-    __ verified_entry(ra_->C, sp_inc);
+    // Emit code for verified entry and save increment for stack repair on return.
+    // Skip stack bang since we already did it above.
+    __ verified_entry(ra_->C, sp_inc, false/*do_stack_bang*/);
     if (Compile::current()->output()->in_scratch_emit_size()) {
       Label dummy_verified_entry;
       __ jmp(dummy_verified_entry);

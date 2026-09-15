@@ -54,7 +54,7 @@
 // Beware! This sp_inc is NOT the same as the one mentioned in MacroAssembler::remove_frame but only the size
 // of the extension space + the additional copy of the return address. That means, it doesn't contain the
 // frame size (where the local and sp_inc are) and the saved RBP.
-void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
@@ -87,14 +87,8 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
-    // If sp_inc > 0, the stack has already been extended for the extra
-    // arg space. We can't do this stack bang because we won't be able
-    // to walk the stack if we hit the guard zone. The stack bang was
-    // already done before extending the frame (see MachVEPNode::emit).
-    if (sp_inc == 0) {
-      generate_stack_overflow_check(stack_bang_size);
-    }
+  if (do_stack_bang && stack_bang_size > 0) {
+    generate_stack_overflow_check(stack_bang_size);
 
     // We always push rbp, so that on return to interpreter rbp, will be
     // restored correctly and we can correct the stack.
