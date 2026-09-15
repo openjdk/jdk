@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,8 @@ final class MethodTypeForm {
             LF_VH_GEN_INVOKER          = 23,  // VarHandle generic invoker
             LF_VH_GEN_LINKER           = 24,  // VarHandle generic linker
             LF_COLLECTOR               = 25,  // collector handle
-            LF_LIMIT                   = 26;
+            LF_SYNCHRONIZE             = 26,  // synchronize handle
+            LF_LIMIT                   = 27;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.
