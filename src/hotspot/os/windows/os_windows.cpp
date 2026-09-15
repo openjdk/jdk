@@ -2786,17 +2786,24 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                 exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
+      // Decide the next steps based on the address that caused the exception.
+      address addr = (address) exception_record->ExceptionInformation[1];
+      StackOverflow* overflow_state = thread->stack_overflow_state();
+      if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
+        assert(!in_vm, "Undersized StackShadowPages");
+        overflow_state->disable_stack_yellow_reserved_zone();
+        return in_java
+            ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
+            : EXCEPTION_CONTINUE_EXECUTION;
+      } else if (overflow_state->in_stack_red_zone(addr)) {
+        overflow_state->disable_stack_red_zone();
+        tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
+      }
+
       if (in_java) {
         // Either stack overflow or null pointer exception.
-        address addr = (address) exception_record->ExceptionInformation[1];
-        address stack_end = thread->stack_end();
-        if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
-          // Stack overflow.
-          assert(!os::uses_stack_guard_pages(),
-                 "should be caught by red zone code above.");
-          return Handle_Exception(exceptionInfo,
-                                  SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
-        }
         // Check for safepoint polling and implicit null
         // We only expect null pointers in the stubs (vtable)
         // the rest are checked explicitly now.
@@ -4106,7 +4113,7 @@ bool os::protect_memory(char* addr, size_t bytes, ProtType prot,
 
 bool os::guard_memory(char* addr, size_t bytes) {
   DWORD old_status;
-  return VirtualProtect(addr, bytes, PAGE_READWRITE | PAGE_GUARD, &old_status) != 0;
+  return VirtualProtect(addr, bytes, PAGE_NOACCESS, &old_status) != 0;
 }
 
 bool os::unguard_memory(char* addr, size_t bytes) {
