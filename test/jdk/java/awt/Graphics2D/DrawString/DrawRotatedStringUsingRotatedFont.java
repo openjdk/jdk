@@ -48,7 +48,7 @@ public final class DrawRotatedStringUsingRotatedFont {
     private static final int SIZE = 500;
     private static final String STR = "MMMMMMMMMMMMMMMM";
 
-    private static AffineTransform[] txs = {
+    private static final AffineTransform[] txs = {
                             AffineTransform.getRotateInstance(toRadians(00)),
                             AffineTransform.getRotateInstance(toRadians(45)),
                             AffineTransform.getRotateInstance(toRadians(-45)),
@@ -68,19 +68,23 @@ public final class DrawRotatedStringUsingRotatedFont {
                             AffineTransform.getRotateInstance(toRadians(-360))
     };
 
-    public static void main(final String[] args) throws IOException {
+    public static void main(final String[] args) throws Exception {
+
+        final Font font = new Font(Font.DIALOG, Font.PLAIN, 20);
+
         for (final AffineTransform tx2 : txs) {
             for (final AffineTransform tx1 : txs) {
                 for (final boolean aa : new boolean[]{true, false}) {
-                    final BufferedImage bi1 = createImage(aa, tx1, tx2);
-                    final BufferedImage bi2 = createImage(aa, tx2, tx1);
+                    final BufferedImage bi1 = createImage(font, aa, tx1, tx2);
+                    final BufferedImage bi2 = createImage(font, aa, tx2, tx1);
                     compareImage(bi1, bi2);
-                    fillTextArea(bi1, tx1, tx2);
-                    fillTextArea(bi2, tx2, tx1);
+                    fillTextArea(bi1, font, tx1, tx2);
+                    fillTextArea(bi2, font, tx2, tx1);
                     checkColors(bi1, bi2);
                 }
             }
         }
+
         System.out.println("Passed");
     }
 
@@ -88,8 +92,7 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Compares two images.
      */
     private static void compareImage(final BufferedImage bi1,
-                                     final BufferedImage bi2)
-            throws IOException {
+                                        final BufferedImage bi2) throws IOException {
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
                 if (bi1.getRGB(i, j) != bi2.getRGB(i, j)) {
@@ -105,8 +108,7 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Checks an image color. RED and GREEN are allowed only.
      */
     private static void checkColors(final BufferedImage bi1,
-                                    final BufferedImage bi2)
-            throws IOException {
+                                       final BufferedImage bi2) throws IOException {
         for (int i = 0; i < SIZE; ++i) {
             for (int j = 0; j < SIZE; ++j) {
                 final int rgb1 = bi1.getRGB(i, j);
@@ -114,7 +116,7 @@ public final class DrawRotatedStringUsingRotatedFont {
                 if (rgb1 != rgb2 || rgb1 != 0xFFFF0000 && rgb1 != 0xFF00FF00) {
                     ImageIO.write(bi1, "png", new File("image1.png"));
                     ImageIO.write(bi2, "png", new File("image2.png"));
-                    throw new RuntimeException("Failed: wrong text location");
+                    throw new RuntimeException("Failed: wrong color");
                 }
             }
         }
@@ -124,7 +126,8 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Creates an BufferedImage and draws a text, using two transformations,
      * one for graphics and one for font.
      */
-    private static BufferedImage createImage(final boolean aa,
+    private static BufferedImage createImage(final Font font,
+                                             final boolean aa,
                                              final AffineTransform gtx,
                                              final AffineTransform ftx) {
         final BufferedImage bi = new BufferedImage(SIZE, SIZE, TYPE_INT_RGB);
@@ -137,7 +140,7 @@ public final class DrawRotatedStringUsingRotatedFont {
         bg.translate(100, 100);
         bg.transform(gtx);
         bg.setColor(Color.BLACK);
-        bg.setFont(bg.getFont().deriveFont(20.0f).deriveFont(ftx));
+        bg.setFont(font.deriveFont(20.0f).deriveFont(ftx));
         bg.drawString(STR, 0, 0);
         bg.dispose();
         return bi;
@@ -147,6 +150,7 @@ public final class DrawRotatedStringUsingRotatedFont {
      * Fills the area of text using green solid color.
      */
     private static void fillTextArea(final BufferedImage bi,
+                                     final Font font,
                                      final AffineTransform tx1,
                                      final AffineTransform tx2) {
         final Graphics2D bg = bi.createGraphics();
@@ -154,10 +158,10 @@ public final class DrawRotatedStringUsingRotatedFont {
         bg.transform(tx1);
         bg.transform(tx2);
         bg.setColor(Color.GREEN);
-        final Font font = bg.getFont().deriveFont(20.0f);
-        bg.setFont(font);
-        bg.fill(font.getStringBounds(STR, bg.getFontRenderContext()));
+        final Font derivedFont = font.deriveFont(20.0f);
+        bg.setFont(derivedFont);
+        bg.fill(derivedFont.getStringBounds(STR, bg.getFontRenderContext()));
         bg.dispose();
     }
-}
 
+}
