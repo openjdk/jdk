@@ -70,6 +70,8 @@
   // Suppress CMOVF for Power8 because there are no fast nodes.
   static int float_cmove_cost() { return (PowerArchitecturePPC64 >= 9) ? 0 : ConditionalMoveLimit; }
 
+  static constexpr bool supports_conditional_zero_arithmetic() { return false; }
+
   // This affects two different things:
   //  - how Decode nodes are matched
   //  - how ImplicitNullCheck opportunities are recognized
