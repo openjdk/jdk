@@ -201,4 +201,10 @@
     return false;
   }
 
+  // Return true if VectorSlice is better served by a two source permute than by
+  // the native slice lowering.
+  static bool vector_slice_prefers_select_from_two_vector(BasicType elem_bt, int byte_origin) {
+    return false;
+  }
+
 #endif // CPU_PPC_MATCHER_PPC_HPP
