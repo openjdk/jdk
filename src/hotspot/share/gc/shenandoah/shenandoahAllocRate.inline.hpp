@@ -153,7 +153,7 @@ ShenandoahAnticipatedConsumption ShenandoahAllocRate<Clock>::snapshot(const doub
 
   result._baseline = upper_bound_no_lock(standard_deviations);
 
-  constexpr double slope_confidence = 2.0;
+  constexpr double slope_confidence = 3.0;
   if (_recent.weighted_average() <= _baseline.weighted_average() ||
       _recent.slope() <= _recent.slope_se() * slope_confidence) {
     // Not accelerating, or acceleration is not trustworthy. Just use the momentary average.
