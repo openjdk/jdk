@@ -2808,19 +2808,57 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
     Node *iff = loop->_body[i];
     if (iff->Opcode() == Op_If ||
         iff->Opcode() == Op_RangeCheck) { // Test?
-      // Test is an IfNode, has 2 projections.  If BOTH are in the loop
-      // we need loop unswitching instead of iteration splitting.
-      Node *exit = loop->is_loop_exit(iff);
-      if (!exit) continue;
-      int flip = (exit->Opcode() == Op_IfTrue) ? 1 : 0;
+      assert(iff->outcnt() == 2, "IfNode should have two projections");
+
+      IfNode* if_node = iff->as_If();
+      ProjNode* if_true_proj = if_node->proj_out(1);
+      ProjNode* if_false_proj = if_node->proj_out(0);
+
+      // Select the projection to keep in the constrained main loop.
+      // The other projection is folded away by RCE.
+      // For loop exits, keep the in-loop projection and fold away the exit.
+      // For internal branches, only apply RCE when profiling is strongly
+      // biased. If several such branches are folded, pre/post-loop work is
+      // governed by the maximum cold path rather than a sum of probabilities.
+      ProjNode* main_proj = nullptr;
+      Node* exit = loop->is_loop_exit(iff);
+      if (exit != nullptr) {
+        main_proj = (exit->Opcode() == Op_IfTrue) ? if_false_proj : if_true_proj;
+      } else {
+        assert(loop->is_member(get_loop(if_true_proj)), "IfTrue should stay in loop for internal branch");
+        assert(loop->is_member(get_loop(if_false_proj)), "IfFalse should stay in loop for internal branch");
+        // _prob is the probability of taking IfTrue.
+        // Only apply RCE on internal branches when profile is available and
+        // sufficiently biased so the constrained main loop remains effective.
+        float true_prob = if_node->_prob;
+        if (true_prob == PROB_UNKNOWN) {
+          continue;
+        }
+
+        const float min_hot_prob = 0.1f;
+        if (true_prob <= min_hot_prob) {
+          main_proj = if_false_proj;
+        } else if (true_prob >= (1.0f - min_hot_prob)) {
+          main_proj = if_true_proj;
+        } else {
+          continue;
+        }
+      }
+
+      int keep_con = main_proj->is_IfTrue() ? 1 : 0;
+      bool negate_test = (keep_con == 0);
 
       // Get boolean condition to test
       Node *i1 = iff->in(1);
       if (!i1->is_Bool()) continue;
       BoolNode *bol = i1->as_Bool();
+      if (loop->is_invariant(bol)) {
+        // Keep loop-invariant conditions for loop unswitching.
+        continue;
+      }
       BoolTest b_test = bol->_test;
-      // Flip sense of test if exit condition is flipped
-      if (flip) {
+      // Flip sense of test if the kept projection is IfFalse.
+      if (negate_test) {
         b_test = b_test.negate();
       }
       // Get compare
@@ -2882,7 +2920,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
 #ifdef ASSERT
       if (TraceRangeLimitCheck) {
-        tty->print_cr("RC bool node%s", flip ? " flipped:" : ":");
+        tty->print_cr("RC bool node%s", negate_test ? " flipped:" : ":");
         bol->dump(2);
       }
 #endif
@@ -2992,11 +3030,12 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree* loop) {
 
       // Kill the eliminated test
       C->set_major_progress();
-      Node* kill_con = intcon(1-flip);
+      Node* kill_con = intcon(keep_con);
       _igvn.replace_input_of(iff, 1, kill_con);
       // Find surviving projection
       assert(iff->is_If(), "");
-      ProjNode* dp = ((IfNode*)iff)->proj_out(1-flip);
+      ProjNode* dp = if_node->proj_out(keep_con);
+      assert(dp != nullptr, "missing surviving projection");
       // Find loads off the surviving projection; remove their control edge
       for (DUIterator_Fast imax, i = dp->fast_outs(imax); i < imax; i++) {
         Node* cd = dp->fast_out(i); // Control-dependent node
