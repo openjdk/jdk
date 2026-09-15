@@ -48,8 +48,15 @@ static int entry_barrier_offset(nmethod* nm) {
   switch (bs_asm->nmethod_patching_type()) {
     case NMethodPatchingType::stw_instruction_and_data_patch:
       return -4 * (5 + slow_path_size(nm));
-    case NMethodPatchingType::conc_instruction_and_data_patch:
-      return -4 * ((UseZtso ? 14 : 16) + slow_path_size(nm));
+    case NMethodPatchingType::conc_instruction_and_data_patch: {
+      // The fixed part excludes the movptr used by
+      // BarrierSetAssembler::nmethod_entry_barrier() to materialize
+      // the address of the patching epoch.
+      const int fixed_instruction_count =
+          (UseZtso ? 8 : 10) + slow_path_size(nm);
+      return -(fixed_instruction_count * NativeInstruction::instruction_size +
+               MacroAssembler::movptr_instruction_size(/* use_temp */ false));
+    }
   }
   ShouldNotReachHere();
   return 0;

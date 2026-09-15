@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -34,6 +34,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/align.hpp"
 #include "utilities/ostream.hpp"
 #ifdef COMPILER1
@@ -42,6 +43,28 @@
 
 //-----------------------------------------------------------------------------
 // NativeInstruction
+
+static int current_mode_movptr_size_at(address addr) {
+  switch (VM_Version::satp_mode.value()) {
+    case VM_Version::VM_SV39:
+      return MacroAssembler::is_movptr_sv39_at(addr)
+             ? MacroAssembler::movptr_sv39_instruction_size : 0;
+    case VM_Version::VM_SV48:
+      if (MacroAssembler::is_movptr1_sv48_at(addr)) {
+        return MacroAssembler::movptr1_sv48_instruction_size;
+      } else if (MacroAssembler::is_movptr2_sv48_at(addr)) {
+        return MacroAssembler::movptr2_sv48_instruction_size;
+      }
+      return 0;
+    default:
+      ShouldNotReachHere();
+      return 0;
+  }
+}
+
+bool NativeInstruction::is_movptr() const {
+  return current_mode_movptr_size_at(addr_at(0)) != 0;
+}
 
 bool NativeInstruction::is_call_at(address addr) {
   return NativeCall::is_at(addr);
@@ -223,6 +246,25 @@ NativeCall* nativeCall_before(address return_address) {
 
 //-------------------------------------------------------------------
 
+address NativeMovConstReg::next_instruction_address() const {
+  int movptr_size = current_mode_movptr_size_at(instruction_address());
+
+  if (movptr_size != 0) {
+    // The final immediate may be a standalone addi or folded into the
+    // following load/jalr. In the latter case, that instruction is next.
+    int last_instruction_offset = movptr_size - NativeInstruction::instruction_size;
+    return MacroAssembler::is_addi_at(addr_at(last_instruction_offset))
+           ? addr_at(movptr_size)
+           : addr_at(last_instruction_offset);
+  } else if (MacroAssembler::is_load_pc_relative_at(instruction_address())) {
+    // Assume: auipc, ld
+    return addr_at(load_pc_relative_instruction_size);
+  }
+
+  guarantee(false, "Unknown instruction in NativeMovConstReg");
+  return nullptr;
+}
+
 void NativeMovConstReg::verify() {
   NativeInstruction* ni = nativeInstruction_at(instruction_address());
   if (ni->is_movptr() || ni->is_auipc()) {
@@ -246,8 +288,8 @@ void NativeMovConstReg::set_data(intptr_t x) {
     MacroAssembler::put_native_u8(addr, x);
   } else {
     // Store x into the instruction stream.
-    MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
-    ICache::invalidate_range(instruction_address(), movptr1_instruction_size /* > movptr2_instruction_size */ );
+    int bytes = MacroAssembler::pd_patch_instruction_size(instruction_address(), (address)x);
+    ICache::invalidate_range(instruction_address(), bytes);
   }
 
   // Find and replace the oop/metadata corresponding to this
@@ -340,17 +382,18 @@ bool NativeInstruction::is_stop() {
 //-------------------------------------------------------------------
 
 void NativeGeneralJump::insert_unconditional(address code_pos, address entry) {
-  CodeBuffer cb(code_pos, instruction_size);
+  int jump_size = NativeGeneralJump::insn_size();
+  CodeBuffer cb(code_pos, jump_size);
   MacroAssembler a(&cb);
-  Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::get_instruction_size()
+  Assembler::IncompressibleScope scope(&a); // Fixed length: see NativeGeneralJump::insn_size()
 
   MacroAssembler::assert_alignment(code_pos);
 
   int32_t offset = 0;
-  a.movptr(t1, entry, offset, t0); // lui, lui, slli, add
+  a.movptr(t1, entry, offset, t0);
   a.jr(t1, offset); // jalr
 
-  ICache::invalidate_range(code_pos, instruction_size);
+  ICache::invalidate_range(code_pos, jump_size);
 }
 
 // MT-safe patching of a long jump instruction.
