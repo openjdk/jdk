@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,6 +90,19 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  *    );
  * }</pre>
  *
+ * <h3>Range requests</h3>
+ *
+ * <p>The file server and {@linkplain #createFileHandler(Path) file handler} also support HTTP
+ * <i>range requests</i>, allowing clients to
+ * request partial file content using the {@code Range} request header, as specified in
+ * <a href="https://www.rfc-editor.org/rfc/rfc9110.html#name-range-requests">RFC 9110</a>.
+ * Multiple ranges are sorted, and overlapping or adjacent ranges are merged.
+ * Requests containing an excessive number of ranges may be rejected.</p>
+ *
+ * <p>Conditional range requests with the {@code If-Range}
+ * request header are not supported. If {@code If-Range} is present,
+ * the server ignores the {@code Range} request header and returns the entire file.</p>
+ *
  * <h2>Output filter</h2>
  *
  * <p> The {@link #createOutputFilter(OutputStream, OutputLevel) createOutputFilter}
@@ -111,6 +124,8 @@ import sun.net.httpserver.simpleserver.OutputFilter;
  * {@code jwebserver} tool.
  *
  * @toolGuide jwebserver
+ * @spec https://www.rfc-editor.org/info/rfc9110
+ *       RFC 9110: HTTP Semantics
  *
  * @since 18
  */
