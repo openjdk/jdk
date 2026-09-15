@@ -73,6 +73,7 @@ import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
+import com.sun.source.doctree.NoteTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
 import com.sun.source.doctree.RawTextTree;
@@ -972,6 +973,26 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
         warnIfEmpty(tree, tree.getDescription());
         return super.visitParam(tree, ignore);
+    }
+
+    @Override
+    public Void visitNote(NoteTree node, Void unused) {
+        Set<Name> names = new HashSet<>();
+
+        node.getAttributes().stream()
+                .filter(dt -> dt instanceof AttributeTree)
+                .map(dt -> (AttributeTree) dt)
+                .forEach(attr -> {
+                    if (attr.getValue() == null) {
+                        env.messages.warning(SYNTAX, attr, "dc.attr.lacks.value");
+                    }
+                    if (names.contains(attr.getName())) {
+                        env.messages.warning(SYNTAX, attr, "dc.attr.repeated", attr);
+                    }
+                    names.add(attr.getName());
+                });
+
+        return super.visitNote(node, unused);
     }
 
     private void checkParamsDocumented(List<? extends Element> list) {

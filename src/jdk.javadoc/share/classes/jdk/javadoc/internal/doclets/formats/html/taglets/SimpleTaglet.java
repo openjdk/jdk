@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -56,28 +55,28 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * The header to output.
      */
-    private final String header;
+    protected final String header;
 
     private final boolean enabled;
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} of kind {@code UNKNOWN_BLOCK_TAG} with the given tag name.
      *
+     * @param config    the configuration
      * @param tagName   the name of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
-     *                  The string can contain 'p' for package, 't' for type,
-     *                  'm' for method, 'c' for constructor and 'f' for field.
-     *                  See {@link #getLocations(String) getLocations} for the
-     *                  complete list.
      */
-    SimpleTaglet(HtmlConfiguration config, String tagName, String header, String locations) {
-        this(config, tagName, header, getLocations(locations), isEnabled(locations));
+    SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations) {
+        super(config, tagName, DocTree.Kind.UNKNOWN_BLOCK_TAG, false, locations);
+        this.header = header;
+        this.enabled = true;
     }
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} with its tag name defined by {@code tagKind}.
      *
+     * @param config    the configuration
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
@@ -87,40 +86,35 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     /**
-     * Constructs a {@code SimpleTaglet}.
+     * Constructs a {@code SimpleTaglet} with its tag name defined by {@code tagKind}.
      *
-     * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     */
-    SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations) {
-        this(config, tagName, header, locations, true);
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
-     * @param tagName   the name of this tag
-     * @param header    the header to output
-     * @param locations the possible locations that this tag can appear in
-     * @param enabled   whether this tag is enabled
-     */
-    private SimpleTaglet(HtmlConfiguration config, String tagName, String header, Set<Taglet.Location> locations, boolean enabled) {
-        super(config, tagName, false, locations);
-        this.header = header;
-        this.enabled = enabled;
-    }
-
-    /**
-     * Constructs a {@code SimpleTaglet}.
-     *
+     * @param config    the configuration
      * @param tagKind   the kind of this tag
      * @param header    the header to output
      * @param locations the possible locations that this tag can appear in
      * @param enabled   whether this tag is enabled
      */
-    protected SimpleTaglet(HtmlConfiguration config, DocTree.Kind tagKind, String header, Set<Taglet.Location> locations, boolean enabled) {
+    private SimpleTaglet(HtmlConfiguration config, DocTree.Kind tagKind, String header,
+                         Set<Taglet.Location> locations, boolean enabled) {
         super(config, tagKind, false, locations);
+        this.header = header;
+        this.enabled = enabled;
+    }
+
+    /**
+     * Constructs a {@code SimpleTaglet} with the given tag name and kind.
+     *
+     * @param config    the configuration
+     * @param tagName   the name of this tag
+     * @param tagKind   the kind of this tag
+     * @param header    the header to output
+     * @param inline    whether this is an inline tag
+     * @param locations the possible locations that this tag can appear in
+     * @param enabled   whether this tag is enabled
+     */
+    protected SimpleTaglet(HtmlConfiguration config, String tagName, DocTree.Kind tagKind, String header,
+                           boolean inline, Set<Taglet.Location> locations, boolean enabled) {
+        super(config, tagName, tagKind, inline, locations);
         this.header = header;
         this.enabled = enabled;
     }
@@ -189,16 +183,14 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
 
     /**
      * Returns whether this taglet accepts a {@code BlockTagTree} node.
-     * The taglet accepts a tree node if it has the same kind, or
-     * if the kind is {@code UNKNOWN_BLOCK_TAG} with the same tag name.
+     * The taglet accepts a tree node if it has the same kind and the
+     * same tag name.
      *
      * @param tree the tree node
      * @return {@code true} if this taglet accepts this tree node
      */
     private boolean accepts(BlockTagTree tree) {
-        return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
-                ? tree.getTagName().equals(name)
-                : tree.getKind() == tagKind;
+        return (tree.getKind() == tagKind) && tree.getTagName().equals(name);
     }
 
     record Documentation(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }
@@ -222,7 +214,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         return simpleBlockTagOutput(holder, tags, header);
     }
 
-    private List<? extends BlockTagTree> getBlockTags(Element e) {
+    protected List<? extends BlockTagTree> getBlockTags(Element e) {
         var tags = utils.getBlockTags(e, this::accepts);
         if (tags.isEmpty()) {
             tags = getDefaultBlockTags(e, this::accepts);
@@ -263,43 +255,5 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         return new ContentBuilder(
                 HtmlTree.DT(RawHtml.of(header)),
                 HtmlTree.DD(body));
-    }
-
-    private static Set<Taglet.Location> getLocations(String locations) {
-        Set<Taglet.Location> set = EnumSet.noneOf(Taglet.Location.class);
-        for (int i = 0; i < locations.length(); i++) {
-            switch (locations.charAt(i)) {
-                case 'a':  case 'A':
-                    return EnumSet.allOf(Taglet.Location.class);
-                case 'c':  case 'C':
-                    set.add(Taglet.Location.CONSTRUCTOR);
-                    break;
-                case 'f':  case 'F':
-                    set.add(Taglet.Location.FIELD);
-                    break;
-                case 'm':  case 'M':
-                    set.add(Taglet.Location.METHOD);
-                    break;
-                case 'o':  case 'O':
-                    set.add(Taglet.Location.OVERVIEW);
-                    break;
-                case 'p':  case 'P':
-                    set.add(Taglet.Location.PACKAGE);
-                    break;
-                case 's':  case 'S':        // super-packages, anyone?
-                    set.add(Taglet.Location.MODULE);
-                    break;
-                case 't':  case 'T':
-                    set.add(Taglet.Location.TYPE);
-                    break;
-                case 'x':  case 'X':
-                    break;
-            }
-        }
-        return set;
-    }
-
-    private static boolean isEnabled(String locations) {
-        return locations.matches("[^Xx]*");
     }
 }
