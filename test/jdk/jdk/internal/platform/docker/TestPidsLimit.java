@@ -44,6 +44,7 @@ import jdk.test.lib.Asserts;
 
 public class TestPidsLimit {
     private static final String imageName = Common.imageName("pids");
+    private static final int UNLIMITED_PIDS = -1;
 
     public static void main(String[] args) throws Exception {
         DockerTestUtils.checkCanTestDocker();
@@ -105,9 +106,9 @@ public class TestPidsLimit {
         Common.logNewTestCase("testPidsLimit (limit: " + pidsLimit + ")");
         DockerRunOptions opts = Common.newOptsShowSettings(imageName);
         if (pidsLimit.equals("Unlimited")) {
-            opts.addDockerOpts("--pids-limit=-1");
+            opts.addDockerOpts("--pids-limit=" + UNLIMITED_PIDS);
         } else {
-            opts.addDockerOpts("--pids-limit="+pidsLimit);
+            opts.addDockerOpts("--pids-limit=" + pidsLimit);
         }
 
         OutputAnalyzer out = DockerTestUtils.dockerRunJava(opts);
