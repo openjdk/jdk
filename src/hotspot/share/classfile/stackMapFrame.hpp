@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,8 @@ class StackMapFrame : public ResourceObj {
   VerificationType* _locals; // local variable type array
   VerificationType* _stack;  // operand stack type array
 
+  AssertUnsetFieldTable* _assert_unset_fields; // List of unsatisfied strict fields in the basic block
+
   ClassVerifier* _verifier;  // the verifier verifying this method
 
   StackMapFrame(const StackMapFrame& cp) :
@@ -85,6 +87,7 @@ class StackMapFrame : public ResourceObj {
         _stack[i] = VerificationType::bogus_type();
       }
     }
+    set_assert_unset_fields(cp.assert_unset_fields());
     _verifier = nullptr;
   }
 
@@ -94,7 +97,7 @@ class StackMapFrame : public ResourceObj {
   // This constructor is used by the type checker to allocate frames
   // in type state, which have _max_locals and _max_stack array elements
   // in _locals and _stack.
-  StackMapFrame(u2 max_locals, u2 max_stack, ClassVerifier* verifier);
+  StackMapFrame(u2 max_locals, u2 max_stack, AssertUnsetFieldTable* initial_strict_fields, ClassVerifier* verifier);
 
   // This constructor is used to initialize stackmap frames in stackmap table,
   // which have _locals_size and _stack_size array elements in _locals and _stack.
@@ -106,6 +109,7 @@ class StackMapFrame : public ResourceObj {
                 u2 max_stack,
                 VerificationType* locals,
                 VerificationType* stack,
+                AssertUnsetFieldTable* assert_unset_fields,
                 ClassVerifier* v) : _offset(offset),
                                     _locals_size(locals_size),
                                     _stack_size(stack_size),
@@ -113,11 +117,19 @@ class StackMapFrame : public ResourceObj {
                                     _max_locals(max_locals),
                                     _max_stack(max_stack),  _flags(flags),
                                     _locals(locals), _stack(stack),
-                                    _verifier(v) { }
+                                    _assert_unset_fields(assert_unset_fields),
+                                    _verifier(v) {
+    // Must have the uninitialized_this flag set to be allowed to have unset fields.
+    if ((flags & FLAG_THIS_UNINIT) != FLAG_THIS_UNINIT) {
+      _assert_unset_fields = nullptr;
+    }
+  }
 
   static StackMapFrame* copy(StackMapFrame* smf) {
     return new StackMapFrame(*smf);
   }
+
+  StackMapFrame& operator=(StackMapFrame const&) = delete;
 
   inline void set_offset(int32_t offset)      { _offset = offset; }
   inline void set_verifier(ClassVerifier* v)  { _verifier = v; }
@@ -135,6 +147,94 @@ class StackMapFrame : public ResourceObj {
   inline u2 max_locals() const                { return _max_locals; }
   inline u2 max_stack() const                 { return _max_stack; }
   inline bool flag_this_uninit() const        { return _flags & FLAG_THIS_UNINIT; }
+
+  AssertUnsetFieldTable* assert_unset_fields() const {
+    return _assert_unset_fields;
+  }
+
+  static AssertUnsetFieldTable* copy_unset_fields(AssertUnsetFieldTable* unset_fields) {
+    if (unset_fields == nullptr) {
+      return nullptr;
+    }
+
+    AssertUnsetFieldTable* new_table = new AssertUnsetFieldTable();
+    auto copy_unset_field = [&] (const NameAndSig& key, const bool& value) {
+      new_table->put(key, value);
+    };
+    unset_fields->iterate_all(copy_unset_field);
+    return new_table;
+  }
+
+  void set_assert_unset_fields(AssertUnsetFieldTable* table) {
+    _assert_unset_fields = copy_unset_fields(table);
+  }
+
+  // Called when verifying putfields to mark strict instance fields as satisfied
+  void satisfy_unset_field(Symbol* name, Symbol* signature) {
+    // The verifier creates the initial set of strict instance fields and
+    // validates the set of strict fields named in early_larval frames
+    // so there is no way to have a non-strict field in the set.  We
+    // can unconditionally remove fields here, regardless of whether
+    // they are strict or not, or have been removed already, as the
+    // easiest and safest implementation.
+    if (_assert_unset_fields != nullptr) {
+      NameAndSig field(name, signature);
+      _assert_unset_fields->remove(field);
+    }
+  }
+
+  // Verify that all strict fields have been initialized
+  // Strict fields must be initialized before the super constructor is called
+  bool verify_unset_fields_satisfied() const {
+    // A frame without uninitializedThis or otherwise without any strict fields
+    // will have a null unset field table.
+    if (_assert_unset_fields == nullptr || _assert_unset_fields->number_of_entries() == 0) {
+      return true;
+    }
+    return false;
+  }
+
+  // Verify that strict fields are compatible between the current frame and the successor
+  // Called during merging of frames
+  bool verify_unset_fields_compatibility(AssertUnsetFieldTable* target_table) const {
+    // There are four permutations of the source and target unset fields:
+    //   1. Source and target unset fields are null
+    //     Both frames have a null set of fields.  null == null so this is a trivial merge
+    //   2. Source unset fields are null, target unset fields are non-null
+    //     This is not possible as we are trying to go from either an initialized state
+    //     back to an uninitialized state.
+    //   3. Source unset fields are non-null, target unset fields are null
+    //     Error case, We are jumping from an uninitialized state to an initialized one
+    //     or from a frame with unset strict field information to one that doesn't.
+    //   4. Source and target unset fields are non-null
+    //     We are merging from one frame with unset strict fields information to another
+    //     and must ensure the unset fields lists are compatible.
+
+    // It is valid to inherit more debts, so if the current frame's unset fields
+    // list is null, any set of unset fields is compatible.
+    if (_assert_unset_fields == nullptr) {
+      return true;
+    }
+
+    // The target frame is does not have uninitializedThis, meaning the unset fields must
+    // all be satisfied at this point.
+    if (target_table == nullptr) {
+      return verify_unset_fields_satisfied();
+    }
+
+    bool compatible = true;
+    auto is_unset = [&] (const NameAndSig& key, const bool& satisfied) {
+      // Successor must have same (or more) unsatisfied debts as current frame.
+      if (!target_table->contains(key)) {
+        compatible = false;
+      }
+    };
+    _assert_unset_fields->iterate_all(is_unset);
+    return compatible;
+  }
+
+  void unsatisfied_strict_fields_error(InstanceKlass* ik, int bci);
+  static void print_strict_fields(AssertUnsetFieldTable* table);
 
   // Set locals and stack types to bogus
   inline void reset() {
@@ -199,6 +299,11 @@ class StackMapFrame : public ResourceObj {
           "Operand stack overflow");
       return;
     }
+
+    if (type.is_uninitialized_this()) {
+      _flags |= FLAG_THIS_UNINIT;
+    }
+
     _stack[_stack_size++] = type;
   }
 

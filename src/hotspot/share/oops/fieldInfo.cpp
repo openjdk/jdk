@@ -115,6 +115,12 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
     if (fi_ref->field_flags().is_contended()) {
       assert(fi_ref->contended_group() == fi.contended_group(), "Must be");
     }
+    if (fi_ref->field_flags().is_flat()) {
+      assert(fi_ref->layout_kind() == fi.layout_kind(), "Must be");
+    }
+    if (fi_ref->field_flags().has_null_marker()) {
+      assert(fi_ref->null_marker_offset() == fi.null_marker_offset(), "Must be");
+    }
   }
 #endif // ASSERT
 

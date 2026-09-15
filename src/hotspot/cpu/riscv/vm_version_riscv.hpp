@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * Copyright (c) 2023, Rivos Inc. All rights reserved.
@@ -32,10 +32,11 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/sizes.hpp"
 
 class RiscvHwprobe;
+class stringStream;
 
 class VM_Version : public Abstract_VM_Version {
   friend RiscvHwprobe;
@@ -43,7 +44,14 @@ class VM_Version : public Abstract_VM_Version {
 
   // JEDEC encoded as ((bank - 1) << 7) | (0x7f & JEDEC)
   enum VendorId {
-    RIVOS = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    RIVOS   = 0x6cf, // JEDEC: 0x4f, Bank: 14
+    XUANTIE = 0x5b7, // JEDEC: 0x37, Bank: 12
+  };
+
+  enum XuantieArchitectureId : uint64_t {
+    C925_MARCHID = 0x80000000091c1600ULL,
+    C930_MARCHID = 0x8000000009201600ULL,
+    C950_MARCHID = 0x8000000009241600ULL,
   };
 
   class RVExtFeatures;
@@ -248,7 +256,7 @@ class VM_Version : public Abstract_VM_Version {
   /* Zbb Basic bit-manipulation */                                                                        \
   decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
   /* Zbc Carry-less multiplication */                                                                     \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
   /* Bitmanip instructions for Cryptography */                                                            \
   decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
   /* Zbs Single-bit instructions */                                                                       \
@@ -396,6 +404,15 @@ private:
       int idx = element_index(f);
       return (_features_bitmap[idx] & feature_bit(f)) != 0;
     }
+
+    bool verify_aot_code_cache_features(RVExtFeatures* features_to_test) const {
+      for (int i = 0; i < element_count(); i++) {
+        if (_features_bitmap[i] != features_to_test->_features_bitmap[i]) {
+          return false;
+        }
+      }
+      return true;
+    }
   };
 
   // enable extensions based on profile, current supported profiles:
@@ -489,6 +506,7 @@ private:
   static void vendor_features();
   // Vendors specific features
   static void rivos_features();
+  static void xuantie_features();
 
   // Determine vector length iff ext_V/UseRVV
   static uint32_t cpu_vector_length();
@@ -523,6 +541,17 @@ private:
 
   // Check intrinsic support
   static bool is_intrinsic_supported(vmIntrinsicID id);
+
+  // AOT Code Cache support
+  static int  cpu_features_size();
+  static void store_cpu_features(void* buf);
+  static bool verify_aot_code_cache_features(void* features_buffer);
+  static void get_cpu_features_name(void* features_buffer, stringStream& ss);
+  static void get_missing_features_name(void* features_set1, void* features_set2, stringStream& ss);
+
+ private:
+  static void print_feature_name(stringStream& ss, RVFeatureValue* feature);
+  static void insert_features_names(RVExtFeatures* features, stringStream& ss);
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP

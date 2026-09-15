@@ -557,7 +557,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         tvis.hInsertAfter = TVI_LAST;  // make tree in order given
         tvis.item = tvi;
 
-        HTREEITEM treeNodeItem = TreeView_InsertItem(treeWnd, &tvis);
+        [[maybe_unused]] HTREEITEM treeNodeItem = TreeView_InsertItem(treeWnd, &tvis);
     }
 }
 

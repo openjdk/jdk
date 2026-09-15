@@ -36,7 +36,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "runtime/sharedRuntime.hpp"
 #include "utilities/align.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -45,7 +44,6 @@
 
 address VtableStub::_chunk             = nullptr;
 address VtableStub::_chunk_end         = nullptr;
-VMReg   VtableStub::_receiver_location = VMRegImpl::Bad();
 
 
 void* VtableStub::operator new(size_t size, int code_size) throw() {
@@ -81,8 +79,8 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = %zd, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
-             index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
+  st->print("vtable stub (index = %d, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "])",
+             index(), p2i(code_begin()), p2i(code_end()));
 }
 
 void VtableStub::print() const { print_on(tty); }
@@ -124,9 +122,6 @@ int VtableStubs::_itab_stub_size = 0;
 
 
 void VtableStubs::initialize() {
-  assert(VtableStub::_receiver_location == VMRegImpl::Bad(), "initialized multiple times?");
-
-  VtableStub::_receiver_location = SharedRuntime::name_for_receiver();
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
     for (int i = 0; i < N; i++) {
@@ -207,18 +202,18 @@ void VtableStubs::bookkeeping(MacroAssembler* masm, outputStream* out, VtableStu
 }
 
 
-address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
+address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index, bool caller_is_c1) {
   assert(vtable_index >= 0, "must be positive");
 
   VtableStub* s;
   {
     MutexLocker ml(VtableStubs_lock, Mutex::_no_safepoint_check_flag);
-    s = lookup(is_vtable_stub, vtable_index);
+    s = lookup(is_vtable_stub, vtable_index, caller_is_c1);
     if (s == nullptr) {
       if (is_vtable_stub) {
-        s = create_vtable_stub(vtable_index);
+        s = create_vtable_stub(vtable_index, caller_is_c1);
       } else {
-        s = create_itable_stub(vtable_index);
+        s = create_itable_stub(vtable_index, caller_is_c1);
       }
 
       // Creation of vtable or itable can fail if there is not enough free space in the code cache.
@@ -226,10 +221,11 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
         return nullptr;
       }
 
-      enter(is_vtable_stub, vtable_index, s);
+      enter(is_vtable_stub, vtable_index, caller_is_c1, s);
       if (PrintAdapterHandlers) {
-        tty->print_cr("Decoding VtableStub %s[%d]@" PTR_FORMAT " [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
-                      is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()),
+        tty->print_cr("Decoding VtableStub (%s) %s[%d] [" PTR_FORMAT ", " PTR_FORMAT "] (%zu bytes)",
+                      caller_is_c1 ? "c1" : "full opt",
+                      is_vtable_stub? "vtbl": "itbl", vtable_index,
                       p2i(s->code_begin()), p2i(s->code_end()), pointer_delta(s->code_end(), s->code_begin(), 1));
         Disassembler::decode(s->code_begin(), s->code_end());
       }
@@ -238,6 +234,7 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
       // all locks. Only post this event if a new state is not required. Creating a new state would
       // cause a safepoint and the caller of this code has a NoSafepointVerifier.
       if (JvmtiExport::should_post_dynamic_code_generated()) {
+        // FIXME: Is it needed to pass caller_is_c1? Tracked by JDK-8383384
         JvmtiExport::post_dynamic_code_generated_while_holding_locks(is_vtable_stub? "vtable stub": "itable stub",
                                                                      s->code_begin(), s->code_end());
       }
@@ -247,10 +244,9 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 }
 
 
-inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index){
-  // Assumption: receiver_location < 4 in most cases.
-  int hash = ((vtable_index << 2) ^ VtableStub::receiver_location()->value()) + vtable_index;
-  return (is_vtable_stub ? ~hash : hash)  & mask;
+inline uint VtableStubs::hash(bool is_vtable_stub, int vtable_index, bool caller_is_c1) {
+  int hash = (vtable_index << 2) + (is_vtable_stub ? 2 : 0) + (caller_is_c1 ? 1 : 0);
+  return hash & mask;
 }
 
 
@@ -259,28 +255,29 @@ inline uint VtableStubs::unsafe_hash(address entry_point) {
   address vtable_stub_addr = entry_point - VtableStub::entry_offset();
   assert(CodeCache::contains(vtable_stub_addr), "assumed to always be the case");
   address vtable_type_addr = vtable_stub_addr + offset_of(VtableStub, _type);
+  address vtable_caller_type_addr = vtable_stub_addr + offset_of(VtableStub, _caller_type);
   address vtable_index_addr = vtable_stub_addr + offset_of(VtableStub, _index);
   bool is_vtable_stub = *vtable_type_addr == static_cast<uint8_t>(VtableStub::Type::vtable_stub);
+  bool caller_is_c1 = (*vtable_caller_type_addr == static_cast<uint8_t>(VtableStub::CallerType::c1));
   short vtable_index;
   static_assert(sizeof(VtableStub::_index) == sizeof(vtable_index), "precondition");
   memcpy(&vtable_index, vtable_index_addr, sizeof(vtable_index));
-  return hash(is_vtable_stub, vtable_index);
+  return hash(is_vtable_stub, vtable_index, caller_is_c1);
 }
 
-
-VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index) {
+VtableStub* VtableStubs::lookup(bool is_vtable_stub, int vtable_index, bool caller_is_c1) {
   assert_lock_strong(VtableStubs_lock);
-  unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index);
+  unsigned hash = VtableStubs::hash(is_vtable_stub, vtable_index, caller_is_c1);
   VtableStub* s = AtomicAccess::load(&_table[hash]);
-  while( s && !s->matches(is_vtable_stub, vtable_index)) s = s->next();
+  while( s && !s->matches(is_vtable_stub, vtable_index, caller_is_c1)) s = s->next();
   return s;
 }
 
 
-void VtableStubs::enter(bool is_vtable_stub, int vtable_index, VtableStub* s) {
+void VtableStubs::enter(bool is_vtable_stub, int vtable_index, bool caller_is_c1, VtableStub* s) {
   assert_lock_strong(VtableStubs_lock);
-  assert(s->matches(is_vtable_stub, vtable_index), "bad vtable stub");
-  unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index);
+  assert(s->matches(is_vtable_stub, vtable_index, caller_is_c1), "bad vtable stub");
+  unsigned int h = VtableStubs::hash(is_vtable_stub, vtable_index, caller_is_c1);
   // Insert s at the beginning of the corresponding list.
   s->set_next(AtomicAccess::load(&_table[h]));
   // Make sure that concurrent readers not taking the mutex observe the writing of "next".

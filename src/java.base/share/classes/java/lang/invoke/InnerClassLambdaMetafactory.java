@@ -312,6 +312,8 @@ import sun.invoke.util.Wrapper;
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER | ACC_FINAL | ACC_SYNTHETIC)
                    .withInterfaceSymbols(interfaces);
+                // All Classes in the BSM argument method types are loaded; no need for LoadableDescriptors
+
                 // Generate final fields to be filled in by constructor
                 for (int i = 0; i < argDescs.length; i++) {
                     clb.withField(argName(i), argDescs[i], ACC_PRIVATE | ACC_FINAL);

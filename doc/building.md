@@ -171,9 +171,11 @@ possible to use [cross-compiling](#cross-compiling).
 
 In order to use Branch Protection features in the VM,
 `--enable-branch-protection` must be used. This option requires C++ compiler
-support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
-machines with and without support for branch protection in hardware. Branch
-Protection is only supported for Linux targets.
+support for `-mbranch-protection=standard` in GCC 9.1.0+ or Clang 10+ on
+Linux/AArch64 or for `/guard:signret` in Visual Studio 2019+ on Windows/ARM64.
+The resulting build can be run on both machines with and without support for
+branch protection in hardware. Branch Protection is fully supported for the
+Linux/AArch64 target and only partially supported for the Windows/ARM64 target.
 
 ### Building on 32-bit ARM
 
@@ -1554,6 +1556,15 @@ ccache can radically speed up compilation of native code if you often rebuild
 the same sources. Your mileage may vary however, so we recommend evaluating it
 for yourself. To enable it, make sure it's on the path and configure with
 `--enable-ccache`.
+
+### Sccache
+
+The JDK build supports building with sccache when using gcc, clang, or Microsoft
+toolchains.  To enable it, make sure the sccache binary is on the path (or
+specify the path to the binary using the `SCCACHE` argument to the configure
+script) and configure with `--enable-sccache`.  To optionally specify where
+sccache stores its cache files, use `--with-sccache-dir`.  Precompiled headers
+are disabled when sccache is enabled.
 
 ### Precompiled Headers
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,18 @@ package java.io;
 /**
  * Thrown when the Serialization runtime detects one of the following
  * problems with a Class.
- * <UL>
- * <LI> The serial version of the class does not match that of the class
- *      descriptor read from the stream
- * <LI> The class contains unknown datatypes
- * <LI> The class does not have an accessible no-arg constructor
- * <LI> The ObjectStreamClass of an enum constant does not represent
- *      an enum type
- * <LI> Other conditions given in the <cite>Java Object Serialization
+ * <ul>
+ * <li>The serial version of the class does not match that of the class
+ *     descriptor read from the stream
+ * <li>The class contains unknown datatypes
+ * <li>The class does not have an accessible no-arg constructor
+ * <li>The ObjectStreamClass of an enum constant does not represent
+ *     an enum type
+ * <li>The class declares or inherits any strictly-initialized instance field
+ * <li>A {@linkplain Class#isValue value class} cannot be serialized
+ * <li> Other conditions given in the <cite>Java Object Serialization
  *      Specification</cite>
- * </UL>
+ * </ul>
  *
  * @since   1.1
  */

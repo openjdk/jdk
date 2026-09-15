@@ -33,6 +33,7 @@ class ShenandoahGeneration;
 class ShenandoahHeap;
 class ShenandoahCollectionSet;
 class RegionData;
+class ShenandoahGenerationalHeap;
 
 typedef struct {
   ShenandoahHeapRegion* _region;
@@ -58,12 +59,24 @@ public:
   void record_cycle_end() override;
 
 protected:
+  // Select regions for in place promotion and zero evacuation reserves
+  void prepare_for_abbreviated_cycle() override;
+
   // Wraps budget computation, subclass region selection, budget adjustment, and tracing.
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                              RegionData* data, size_t data_size,
                                              size_t free) override;
 
 private:
+  // When we decide to do an abbreviated cycle, withdraw reserves so memory can be made available to mutators.
+  void adjust_reserves_for_abbreviated(ShenandoahGenerationalHeap* heap);
+
+  // Select regions for in place promotion and optionally record tenurable regions that are not eligible
+  // for in-place promotion in the given sorted_regions array for possible inclusion in the collection set.
+  size_t prepare_regions_for_promotion(ShenandoahInPlacePromotionPlanner& in_place_promotions,
+                                       ShenandoahGenerationalHeap* heap,
+                                       AgedRegionData* sorted_regions);
+
   // Compute evacuation budgets prior to choosing collection set.
   void compute_evacuation_budgets(ShenandoahInPlacePromotionPlanner& in_place_promotions, ShenandoahHeap* const heap);
 
@@ -77,11 +90,10 @@ private:
   // being those of at least tenuring_threshold age that have lower garbage
   // density.
   //
-  // Updates promotion_potential and pad_for_promote_in_place fields
-  // of the heap. Returns bytes of live object memory in the preselected
-  // regions, which are marked in the preselected_regions() indicator
-  // array of the heap's collection set, which should be initialized
-  // to false.
+  // Updates promotion_potential field of the heap. Returns bytes of live object
+  // memory in the preselected regions, which are marked in the
+  // preselected_regions() indicator array of the heap's collection set, which
+  // should be initialized to false.
   size_t select_aged_regions(ShenandoahInPlacePromotionPlanner& in_place_promotions, const size_t old_promotion_reserve);
 
   // Select regions for inclusion in the collection set that are tenured, but do
@@ -89,6 +101,9 @@ private:
   void add_tenured_regions_to_collection_set(size_t old_promotion_reserve,
                                              ShenandoahGenerationalHeap *const heap,
                                              size_t candidates, AgedRegionData* sorted_regions);
+
+  // Updates the anticipated promotions for the next cycle and returns the maximum promotions for the current cycle
+  size_t compute_promotion_potential(ShenandoahGenerationalHeap* heap, size_t tenurable_this_cycle);
 
   // Adjust evacuation budgets after choosing collection set.  On entry, the instance variable _regions_to_xfer
   // represents regions to be transferred to old based on decisions made in top_off_collection_set()

@@ -29,8 +29,9 @@
 
 public:
   // C2 compiled method's prolog code.
-  void verified_entry(int framesize, int stack_bang_size, bool fp_mode_24b, bool is_stub);
+  void verified_entry(Compile* C, int sp_inc = 0);
 
+  void entry_barrier();
   Assembler::AvxVectorLen vector_length_encoding(int vlen_in_bytes);
 
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
@@ -307,6 +308,8 @@ public:
 
   void convertF2I(BasicType dst_bt, BasicType src_bt, Register dst, XMMRegister src);
 
+  void convertHF2X(BasicType dst_bt, Register dst, Register src, XMMRegister xtmp);
+
   void evmasked_op(int ideal_opc, BasicType eType, KRegister mask,
                    XMMRegister dst, XMMRegister src1, XMMRegister src2,
                    bool merge, int vlen_enc, bool is_varshift = false);
@@ -333,6 +336,14 @@ public:
   void vector_castF2X_avx(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4,
                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
+
+  void vector_castHF2I_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                            AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
+
+  void vector_castHF2L_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2,
+                            AddressLiteral double_sign_flip, Register rscratch, int vec_enc);
 
   void vector_castF2X_evex(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
                            XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, AddressLiteral float_sign_flip,
@@ -362,21 +373,16 @@ public:
                                                    XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5, Register rscratch,
                                                    AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_double_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                    int vec_enc);
+  void evcmp_fp(BasicType src_elem_bt, KRegister kdst, KRegister mask, XMMRegister nds, XMMRegister src,
+                ComparisonPredicateFP comparison, int vec_enc);
 
-  void vector_cast_double_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                     KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                     int vec_enc);
+  void vector_cast_fp_to_int_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                AddressLiteral float_sign_flip, int vec_enc);
 
-  void vector_cast_float_to_int_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                   KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral float_sign_flip,
-                                                   int vec_enc);
-
-  void vector_cast_float_to_long_special_cases_evex(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2,
-                                                    KRegister ktmp1, KRegister ktmp2, Register rscratch, AddressLiteral double_sign_flip,
-                                                    int vec_enc);
+  void vector_cast_fp_to_long_special_cases_evex(BasicType src_elem_bt, XMMRegister dst, XMMRegister src, XMMRegister xtmp1,
+                                                 XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2, Register rscratch,
+                                                 AddressLiteral double_sign_flip, int vec_enc);
 
   void vector_cast_float_to_int_special_cases_avx(XMMRegister dst, XMMRegister src, XMMRegister xtmp1, XMMRegister xtmp2, XMMRegister xtmp3,
                                                   XMMRegister xtmp4, Register rscratch, AddressLiteral float_sign_flip,

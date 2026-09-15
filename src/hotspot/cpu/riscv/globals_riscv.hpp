@@ -76,6 +76,9 @@ define_pd_global(intx, InitArrayShortSize, BytesPerLong);
 
 define_pd_global(intx, InlineSmallCode,          1000);
 
+define_pd_global(bool, ValueTypePassFieldsAsArgs, false);
+define_pd_global(bool, ValueTypeReturnedAsFields, false);
+
 #define ARCH_FLAGS(develop,                                                      \
                    product,                                                      \
                    range,                                                        \
@@ -101,6 +104,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseRVV, false, DIAGNOSTIC, "Use RVV instructions")               \
   product(bool, UseZba, false, DIAGNOSTIC, "Use Zba instructions")               \
   product(bool, UseZbb, false, DIAGNOSTIC, "Use Zbb instructions")               \
+  product(bool, UseZbc, false, DIAGNOSTIC, "Use Zbc instructions")               \
   product(bool, UseZbkb, false, EXPERIMENTAL, "Use Zbkb instructions")           \
   product(bool, UseZbs, false, DIAGNOSTIC, "Use Zbs instructions")               \
   product(bool, UseZfa, false, DIAGNOSTIC, "Use Zfa instructions")               \
@@ -108,7 +112,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZfhmin, false, DIAGNOSTIC, "Use Zfhmin instructions")         \
   product(bool, UseZacas, false, EXPERIMENTAL, "Use Zacas instructions")         \
   product(bool, UseZabha, false, EXPERIMENTAL, "Use UseZabha instructions")      \
-  product(bool, UseZcb, false, EXPERIMENTAL, "Use Zcb instructions")             \
+  product(bool, UseZcb, false, DIAGNOSTIC, "Use Zcb instructions")               \
   product(bool, UseZic64b, false, EXPERIMENTAL, "Use Zic64b instructions")       \
   product(bool, UseZicbom, false, EXPERIMENTAL, "Use Zicbom instructions")       \
   product(bool, UseZicbop, false, EXPERIMENTAL, "Use Zicbop instructions")       \
