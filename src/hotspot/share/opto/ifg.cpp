@@ -28,12 +28,9 @@
 #include "opto/addnode.hpp"
 #include "opto/block.hpp"
 #include "opto/callnode.hpp"
-#include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
-#include "opto/coalesce.hpp"
 #include "opto/indexSet.hpp"
 #include "opto/machnode.hpp"
-#include "opto/memnode.hpp"
 #include "opto/opcodes.hpp"
 
 #include <fenv.h>
@@ -892,6 +889,22 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
       Node* n = block->get_node(location);
       uint lid = _lrg_map.live_range_id(n);
 
+      if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+        const MachNode* mach = n->as_Mach();
+        for (uint i = 1; i < n->req(); i++) {
+          if (mach->is_killed_input(i)) {
+            uint lidx = _lrg_map.live_range_id(n->in(i));
+            assert(lidx != 0, "");
+            if (liveout.member(lidx)) {
+              LRG &lrg = lrgs(lidx);
+              must_spill++;
+              lrg._must_spill = 1;
+              lrg.set_reg(OptoReg::Name(LRG::SPILL_REG));
+            }
+          }
+        }
+      }
+
       if (lid) {
         LRG& lrg = lrgs(lid);
 
@@ -937,6 +950,16 @@ uint PhaseChaitin::build_ifg_physical( ResourceArea *a ) {
           remove_bound_register_from_interfering_live_ranges(lrg, &liveout, must_spill);
         }
         interfere_with_live(lid, &liveout);
+        if (n->is_Mach() && n->as_Mach()->has_killed_inputs()) {
+          const MachNode* mach = n->as_Mach();
+          for (uint i = 1; i < n->req(); i++) {
+            if (mach->is_killed_input(i)) {
+              uint lidx = _lrg_map.live_range_id(n->in(i));
+              assert(lidx != 0, "");
+              interfere_with_live(lidx, &liveout);
+            }
+          }
+        }
         if (C->failing()) {
           return 0;
         }
