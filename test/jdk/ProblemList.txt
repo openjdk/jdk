@@ -289,6 +289,7 @@ java/awt/Mouse/RemovedComponentMouseListener/RemovedComponentMouseListener.java 
 java/awt/Modal/ToFront/DialogToFrontNonModalTest.java 8221899 linux-all
 javax/print/PrintSEUmlauts/PrintSEUmlauts.java 8135174 generic-all
 java/awt/font/Rotate/RotatedTextTest.java 8219641 linux-all
+java/awt/font/TextLayout/LigatureCaretTest.java 8392224 aix-ppc64
 java/awt/image/VolatileImage/CustomCompositeTest.java 8199002 windows-all,linux-all
 java/awt/image/VolatileImage/GradientPaints.java 8199003 linux-all
 java/awt/JAWT/JAWT.sh 8197798 windows-all,linux-all
