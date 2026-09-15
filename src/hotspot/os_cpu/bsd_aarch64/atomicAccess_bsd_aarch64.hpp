@@ -82,7 +82,7 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest,
     FULL_MEM_BARRIER;
     return value;
   } else {
-    static_assert (
+    static_assert(
        // The modes that align with C++11 are intended to
        // follow the same semantics.
        memory_order_relaxed == __ATOMIC_RELAXED &&

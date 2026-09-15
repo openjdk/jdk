@@ -1136,9 +1136,9 @@ namespace AccessInternal {
   inline void verify_types(){
     // If this fails to compile, then you have sent in something that is
     // not recognized as a valid primitive type to a primitive Access function.
-    static_assert((HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
-                   (std::is_pointer<T>::value || std::is_integral<T>::value) ||
-                    std::is_floating_point<T>::value)); // not allowed primitive type
+    static_assert(HasDecorator<decorators, INTERNAL_VALUE_IS_OOP>::value || // oops have already been validated
+                  std::is_pointer<T>::value || std::is_integral<T>::value ||
+                  std::is_floating_point<T>::value); // not allowed primitive type
   }
 
   template <DecoratorSet decorators, typename P, typename T>
