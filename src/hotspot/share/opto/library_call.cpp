@@ -9140,6 +9140,11 @@ bool LibraryCallKit::inline_dilithiumAlmostInverseNtt() {
 }
 
 //------------------------------inline_dilithiumNttMult
+//
+// int sun.security.provider.ML_DSA.implDilithiumNttMult(int[] product,
+//                                                       int[] coeffs1,
+//                                                       int[] coeffs2)
+//
 bool LibraryCallKit::inline_dilithiumNttMult() {
   address stubAddr;
   const char *stubName;
@@ -9153,12 +9158,10 @@ bool LibraryCallKit::inline_dilithiumNttMult() {
   Node* result          = argument(0);
   Node* ntta            = argument(1);
   Node* nttb            = argument(2);
-  Node* zetas           = argument(3);
 
   result = must_be_not_null(result, true);
   ntta = must_be_not_null(ntta, true);
   nttb = must_be_not_null(nttb, true);
-  zetas = must_be_not_null(zetas, true);
 
   Node* result_start  = array_element_address(result, intcon(0), T_INT);
   assert(result_start, "result is null");
