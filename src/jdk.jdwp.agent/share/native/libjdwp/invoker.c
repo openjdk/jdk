@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "threadControl.h"
 #include "outStream.h"
 #include "signature.h"
+#include "commonRef.h"
 
 static jrawMonitorID invokerLock;
 
@@ -726,6 +727,7 @@ invoker_completeInvokeRequest(jthread thread)
     jint id;
     InvokeRequest *request;
     jboolean detached;
+    jbyte options;
     jboolean mustReleaseReturnValue = JNI_FALSE;
 
     JDI_ASSERT(thread);
@@ -752,9 +754,12 @@ invoker_completeInvokeRequest(jthread thread)
     request->started = JNI_FALSE;
     request->available = JNI_TRUE; /* For next time around */
 
+    options = request->options;
+    request->options = 0;
+
     detached = request->detached;
     if (!detached) {
-        if (request->options & JDWP_INVOKE_OPTIONS(SINGLE_THREADED)) {
+        if (options & JDWP_INVOKE_OPTIONS(SINGLE_THREADED)) {
             (void)threadControl_suspendThread(thread, JNI_FALSE);
         } else {
             (void)threadControl_suspendAll();
@@ -817,6 +822,32 @@ invoker_completeInvokeRequest(jthread thread)
         (void)outStream_writeValue(env, &out, tag, returnValue);
         (void)outStream_writeObjectTag(env, &out, exc);
         (void)outStream_writeObjectRef(env, &out, exc);
+
+        /*
+         * Pin the returnValue object and exception object if this invoke has
+         * JDWP_INVOKE_OPTIONS(DISABLE_COllECTION) enabled.
+         */
+        if (options & JDWP_INVOKE_OPTIONS(DISABLE_COllECTION)) {
+            if (mustReleaseReturnValue && returnValue.l != NULL) {
+                jlong id = commonRef_refToID(env, returnValue.l);
+                //tty_message("return id: %ld", id);
+                jvmtiError error = commonRef_pin(id);
+                if (error != JVMTI_ERROR_NONE) {
+                    outStream_setError(&out, map2jdwpError(error));
+                }
+                commonRef_release(env, id);
+            }
+            if (exc != NULL) {
+                jlong id = commonRef_refToID(env, exc);
+                //tty_message("exception id: %ld", id);
+                jvmtiError error = commonRef_pin(id);
+                if (error != JVMTI_ERROR_NONE) {
+                    outStream_setError(&out, map2jdwpError(error));
+                }
+                commonRef_release(env, id);
+            }
+        }
+
         /*
          * Delete potentially saved global references for return value
          * and exception. This must be done before sending the reply or
