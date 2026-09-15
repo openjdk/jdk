@@ -478,3 +478,9 @@ int os::extra_bang_size_in_bytes() {
 
 void os::setup_fpu() {}
 
+uintptr_t os::vm_max_address() {
+  // On s390, technically the full 64-bit user space address is user-addressable. But
+  // note that this is mostly theoretical: using high addresses triggers a stepped page table
+  // expansion, which we usually want to avoid. See also: os::vm_page_table_expansion_point().
+  return 0;
+}

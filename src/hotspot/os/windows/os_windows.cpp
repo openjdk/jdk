@@ -129,6 +129,8 @@ static FILETIME process_user_time;
 static FILETIME process_kernel_time;
 static HANDLE heap_file_handle = INVALID_HANDLE_VALUE;
 
+static uintptr_t          g_vm_max_address                      = 0;
+
 #if defined(_M_ARM64)
   #define __CPU__ aarch64
 #elif defined(_M_AMD64)
@@ -2265,6 +2267,10 @@ void os::print_memory_info(outputStream* st) {
     st->print("\nGetProcessMemoryInfo did not succeed so we miss some memory values.");
   }
 
+  st->print_cr("User Address Space: [" PTR_FORMAT "-" PTR_FORMAT "] (%u bits)",
+               os::vm_min_address(), os::vm_max_address(),
+               log2i_ceil(os::vm_max_address()));
+
   st->cr();
 }
 
@@ -3738,9 +3744,13 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   return res;
 }
 
-size_t os::vm_min_address() {
+uintptr_t os::vm_min_address() {
   assert(is_aligned(_vm_min_address_default, os::vm_allocation_granularity()), "Sanity");
   return _vm_min_address_default;
+}
+
+uintptr_t os::vm_max_address() {
+  return g_vm_max_address;
 }
 
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
@@ -4478,6 +4488,10 @@ void os::win32::initialize_system_info() {
   OSInfo::set_vm_allocation_granularity(si.dwAllocationGranularity);
   _processor_type  = si.dwProcessorType;
   _processor_level = si.wProcessorLevel;
+
+  g_vm_max_address = p2u(si.lpMaximumApplicationAddress) + 1; // usually 128TB - 1
+  assert(is_aligned(_vm_max_address + 1, si.dwAllocationGranularity), "strange alignment?");
+  assert(g_vm_max_address > (G * 4), "weirdly low?");
 
   DWORD processors = 0;
   bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
