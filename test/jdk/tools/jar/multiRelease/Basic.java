@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -432,7 +432,7 @@ public class Basic extends MRTestBase {
                 output.get(0));
         assertTrue(output.get(1).contains("contains a new public class"),
                 output.get(1));
-        assertTrue(output.get(2).contains("invalid multi-release jar file"),
+        assertTrue(output.get(2).contains("invalid multi-release JAR file"),
                output.get(2));
 
         FileUtils.deleteFileIfExistsWithRetry(Paths.get(jarfile));
