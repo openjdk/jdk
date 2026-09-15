@@ -2149,6 +2149,46 @@ instruct vmul(vReg dst, vReg src1, vReg src2) %{
   ins_pipe(pipe_slow);
 %}
 
+// Vector Multiply-Add Shorts into Integer.
+instruct vmulAddVS2VI(vReg dst, vReg src1, vReg src2, vReg tmp1, vReg tmp2, vReg tmp3, vReg tmp4, vReg tmp5) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT &&
+            Matcher::vector_element_basic_type(n->in(1)) == T_SHORT);
+  match(Set dst (MulAddVS2VI src1 src2));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5);
+
+  format %{ "vmulAddVS2VI $dst, $src1, $src2\t# KILL $tmp1, $tmp2, $tmp3, $tmp4, $tmp5" %}
+  ins_encode %{
+    uint vlen = Matcher::vector_length(this);
+    VectorRegister vdst = as_VectorRegister($dst$$reg);
+    VectorRegister vsrc1 = as_VectorRegister($src1$$reg);
+    VectorRegister vsrc2 = as_VectorRegister($src2$$reg);
+    VectorRegister even1 = as_VectorRegister($tmp1$$reg);
+    VectorRegister even2 = as_VectorRegister($tmp2$$reg);
+    VectorRegister odd1 = as_VectorRegister($tmp3$$reg);
+    VectorRegister odd2 = as_VectorRegister($tmp4$$reg);
+    VectorRegister idx = as_VectorRegister($tmp5$$reg);
+
+    __ vsetvli_helper(T_SHORT, vlen);
+    __ vid_v(idx);
+    __ vsll_vi(idx, idx, 1);
+    __ vrgather_vv(even1, vsrc1, idx);
+    __ vrgather_vv(even2, vsrc2, idx);
+    __ vadd_vi(idx, idx, 1);
+    __ vrgather_vv(odd1, vsrc1, idx);
+    __ vrgather_vv(odd2, vsrc2, idx);
+
+    // Gather strided short inputs into the low half, then use mf2 so the
+    // widening multiply consumes those lanes and produces an int vector.
+    __ vsetvli_helper(T_SHORT, vlen, Assembler::mf2);
+    __ vwmul_vv(vdst, even1, even2);
+    __ vwmul_vv(even1, odd1, odd2);
+
+    __ vsetvli_helper(T_INT, vlen);
+    __ vadd_vv(vdst, vdst, even1);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 instruct vmul_hfp(vReg dst, vReg src1, vReg src2) %{
   match(Set dst (MulVHF src1 src2));
   format %{ "vmul_hfp $dst, $src1, $src2" %}

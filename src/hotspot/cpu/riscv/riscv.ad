@@ -6725,6 +6725,34 @@ instruct umulHiL_rReg(iRegLNoSp dst, iRegL src1, iRegL src2)
   ins_pipe(lmul_reg_reg);
 %}
 
+// Combined Multiply-Add Shorts into Integer (dst = src1 * src2 + src3 * src4)
+
+instruct mulAddS2I(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2,
+                   iRegIorL2I src3, iRegIorL2I src4) %{
+  match(Set dst (MulAddS2I (Binary src1 src2) (Binary src3 src4)));
+
+  ins_cost(IMUL_COST * 2 + ALU_COST * 5);
+  format %{ "sext  t0, $src1, 16\n\t"
+            "sext  t1, $src2, 16\n\t"
+            "mulw  t0, t0, t1\n\t"
+            "sext  t1, $src4, 16\n\t"
+            "sext  $dst, $src3, 16\n\t"
+            "mulw  t1, $dst, t1\n\t"
+            "addw  $dst, t0, t1\t#@mulAddS2I" %}
+
+  ins_encode %{
+    __ sext(t0, as_Register($src1$$reg), 16);
+    __ sext(t1, as_Register($src2$$reg), 16);
+    __ mulw(t0, t0, t1);
+    __ sext(t1, as_Register($src4$$reg), 16);
+    __ sext(as_Register($dst$$reg), as_Register($src3$$reg), 16);
+    __ mulw(t1, as_Register($dst$$reg), t1);
+    __ addw(as_Register($dst$$reg), t0, t1);
+  %}
+
+  ins_pipe(pipe_slow);
+%}
+
 // Integer Divide
 
 instruct divI(iRegINoSp dst, iRegIorL2I src1, iRegIorL2I src2) %{
