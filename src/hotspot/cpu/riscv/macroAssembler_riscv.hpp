@@ -189,8 +189,8 @@ class MacroAssembler: public Assembler {
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
-  void movoop(Register dst, jobject obj);
-  void mov_metadata(Register dst, Metadata* obj);
+  void movoop(Register dst, jobject obj, Register tmp = noreg);
+  void mov_metadata(Register dst, Metadata* obj, Register tmp = noreg);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
