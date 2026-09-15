@@ -81,6 +81,8 @@ source %{
       case Op_ReverseBytesV:
       case Op_ReverseV:
         return UseZvbb;
+      case Op_VectorWideningShiftLeft:
+        return UseZvbb && (bt == T_SHORT || bt == T_INT || bt == T_LONG);
       case Op_RotateLeftV:
       case Op_RotateRightV:
         if (bt != T_INT && bt != T_LONG) {
@@ -3740,6 +3742,45 @@ instruct vlsrL_vi_masked(vReg dst_src, immI shift, vRegMask_V0 v0) %{
     __ vsetvli_helper(T_LONG, Matcher::vector_length(this));
     __ vsrl_vi(as_VectorRegister($dst_src$$reg), as_VectorRegister($dst_src$$reg), con,
                Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vwsllBtoS_vi(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (VectorWideningShiftLeft src (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllBtoS_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_BYTE, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vwsllStoI_vi(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT);
+  match(Set dst (VectorWideningShiftLeft src (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllStoI_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_SHORT, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vwsllItoL_vi(vReg dst, vReg src, immI shift) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (VectorWideningShiftLeft src (LShiftCntV shift)));
+  effect(TEMP_DEF dst);
+  format %{ "vwsllItoL_vi $dst, $src, $shift" %}
+  ins_encode %{
+    uint32_t con = (unsigned)$shift$$constant & 0x1f;
+    __ vsetvli_helper(T_INT, Matcher::vector_length(this), Assembler::mf2);
+    __ vwsll_vi(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg), con);
   %}
   ins_pipe(pipe_slow);
 %}
