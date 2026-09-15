@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,8 +28,9 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARKBITMAP_HPP
 
 #include "memory/memRegion.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 
 class ShenandoahMarkBitMap {
 public:

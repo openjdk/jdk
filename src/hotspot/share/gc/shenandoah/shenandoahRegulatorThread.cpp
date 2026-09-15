@@ -22,15 +22,22 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcCause.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
 
 ShenandoahRegulatorThread::ShenandoahRegulatorThread(ShenandoahGenerationalControlThread* control_thread) :
   _heap(ShenandoahHeap::heap()),

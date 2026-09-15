@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Red Hat, Inc. and/or its affiliates.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -25,9 +25,16 @@
  */
 
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkBitMap.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
+#include "memory/memRegion.hpp"
 #include "runtime/os.hpp"
+#include "utilities/align.hpp"
+#include "utilities/bitMap.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
 
 ShenandoahMarkBitMap::ShenandoahMarkBitMap(MemRegion heap, MemRegion storage) :
   _shift(LogMinObjAlignment),

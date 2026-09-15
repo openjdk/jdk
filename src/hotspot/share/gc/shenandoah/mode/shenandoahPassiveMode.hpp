@@ -27,6 +27,9 @@
 
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
+class ShenandoahHeuristics;
+class ShenandoahSpaceInfo;
+
 class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;

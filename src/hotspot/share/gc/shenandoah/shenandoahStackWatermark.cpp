@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,13 +25,24 @@
  */
 
 
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "runtime/frame.hpp"
+#include "runtime/javaThread.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/stackWatermarkKind.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class RegisterMap;
+class nmethod;
 
 uint32_t ShenandoahStackWatermark::_epoch_id = MIN_EPOCH_ID;
 

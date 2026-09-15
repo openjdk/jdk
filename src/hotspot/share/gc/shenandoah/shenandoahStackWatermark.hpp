@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,17 +26,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHSTACKWATERMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTACKWATERMARK_HPP
 
-#include "gc/shared/barrierSet.hpp"
-#include "gc/shared/barrierSetNMethod.hpp"
+#include "gc/shared/threadLocalAllocBuffer.hpp"
 #include "gc/shenandoah/shenandoahClosures.hpp"
-#include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class BarrierSetNMethod;
 class frame;
 class JavaThread;
+class nmethod;
+class RegisterMap;
+class ShenandoahHeap;
 
 class ShenandoahOnStackNMethodClosure : public NMethodClosure {
 private:

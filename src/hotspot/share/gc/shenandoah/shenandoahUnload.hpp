@@ -25,9 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCLASSUNLOAD_HPP
 
-#include "memory/allocation.hpp"
 
-class ShenandoahHeap;
 
 class ShenandoahUnload {
 public:

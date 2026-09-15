@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2016, 2020, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,26 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionCounters.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
+#include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/javaThread.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfData.inline.hpp"
-#include "utilities/defaultStream.hpp"
+#include "runtime/perfDataTypes.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/exceptions.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <string.h>
 
 ShenandoahHeapRegionCounters::ShenandoahHeapRegionCounters() :
   _last_sample_millis(0)

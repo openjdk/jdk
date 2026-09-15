@@ -25,13 +25,16 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
-#include "gc/shenandoah/shenandoahStripedCounter.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
+#include "jni.h"
 #include "runtime/atomic.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocationClock {

@@ -26,8 +26,10 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
 
 
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // Applies the given closure to all regions with the given affiliation
 template<ShenandoahAffiliation AFFILIATION>
@@ -93,8 +95,8 @@ public:
   void synchronize_pin_count(ShenandoahHeapRegion* r);
 };
 
-class ShenandoahMarkingContext;
 class ShenandoahGeneration;
+class ShenandoahMarkingContext;
 
 // Synchronizes region pinned status, sets update watermark and adjusts live data tally for regions.
 // Live data tally is only adjusted for regions in the given generation.

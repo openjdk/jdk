@@ -27,6 +27,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAH_GLOBALS_HPP
 
+#include "runtime/globals_shared.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 #define GC_SHENANDOAH_FLAGS(develop,                                        \
                             develop_pd,                                     \
                             product,                                        \

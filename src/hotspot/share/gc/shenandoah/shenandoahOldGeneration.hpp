@@ -26,17 +26,24 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
-#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/macros.hpp"
+
 
 class LogStream;
-class ShenandoahScanRemembered;
+class ShenandoahAllocRequest;
 class ShenandoahHeapRegion;
-class ShenandoahHeapRegionClosure;
-class ShenandoahOldHeuristics;
+class ShenandoahHeuristics;
+class ShenandoahMode;
+class ShenandoahScanRemembered;
+class Thread;
 
 class ShenandoahOldGeneration : public ShenandoahGeneration {
 private:

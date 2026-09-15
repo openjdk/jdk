@@ -25,9 +25,11 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHFORWARDING_HPP
 
-#include "oops/markWord.hpp"
-#include "oops/oop.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+class Klass;
+class markWord;
 
 class ShenandoahForwarding {
 public:

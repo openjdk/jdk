@@ -28,8 +28,11 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shared/gcCause.hpp"
 #include "gc/shared/markBitMap.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
@@ -41,37 +44,58 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
+#include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "memory/metaspace.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/atomic.hpp"
 #include "services/memoryManager.hpp"
+#include "services/memoryPool.hpp"
+#include "services/memoryUsage.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/stack.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
 
+class ClassLoaderData;
 class ConcurrentGCTimer;
+class GCTracer;
+class JavaThread;
+class Klass;
+class nmethod;
+class ObjectClosure;
 class ObjectIterateScanRootClosure;
+class outputStream;
 class ShenandoahAllocator;
+class ShenandoahCollectionSet;
 class ShenandoahCollectorPolicy;
+class ShenandoahConcurrentMark;
+class ShenandoahFreeSet;
+class ShenandoahFullGC;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
 class ShenandoahGeneration;
-class ShenandoahYoungGeneration;
-class ShenandoahOldGeneration;
-class ShenandoahHeuristics;
-class ShenandoahMarkingContext;
-class ShenandoahMode;
-class ShenandoahPhaseTimings;
 class ShenandoahHeap;
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
-class ShenandoahCollectionSet;
-class ShenandoahFreeSet;
-class ShenandoahConcurrentMark;
-class ShenandoahFullGC;
+class ShenandoahHeuristics;
+class ShenandoahMarkingContext;
 class ShenandoahMonitoringSupport;
+class ShenandoahOldGeneration;
+class ShenandoahPhaseTimings;
 class ShenandoahReferenceProcessor;
 class ShenandoahUncommitThread;
 class ShenandoahVerifier;
 class ShenandoahWorkerThreads;
+class ShenandoahYoungGeneration;
+class Thread;
+class ThreadClosure;
+enum class VerifyOption : uint;
 class VMStructs;
+class WorkerThreads;
 
 // Used for buffering per-region liveness data.
 // Needed since ShenandoahHeapRegion uses atomics to update liveness.

@@ -26,9 +26,11 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHCARDTABLE_HPP
 
 #include "gc/shared/cardTable.hpp"
-#include "memory/virtualspace.hpp"
-#include "oops/oopsHierarchy.hpp"
-#include "utilities/macros.hpp"
+#include "memory/memRegion.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+
+class ReservedSpace;
 
 #define ShenandoahMinCardSizeInBytes 128
 

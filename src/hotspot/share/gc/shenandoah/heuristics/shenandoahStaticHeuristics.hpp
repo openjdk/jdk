@@ -26,6 +26,10 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSTATICHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahCollectionSet;
+class ShenandoahSpaceInfo;
 
 /*
  * The static heuristic will trigger cycles if the available memory falls

@@ -24,6 +24,9 @@
 
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetStackChunk.hpp"
+#include "oops/accessDecorators.hpp"
+
+class OopIterator;
 
 void ShenandoahBarrierSetStackChunk::encode_gc_mode(stackChunkOop chunk, OopIterator* oop_iterator) {
   // Nothing to do

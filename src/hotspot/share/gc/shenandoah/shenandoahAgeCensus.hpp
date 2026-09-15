@@ -26,6 +26,10 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHAGECENSUS_HPP
 
 #include "gc/shared/ageTable.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #ifndef PRODUCT
 // Enable noise instrumentation

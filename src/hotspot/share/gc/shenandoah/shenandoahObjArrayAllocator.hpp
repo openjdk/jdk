@@ -26,6 +26,12 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHOBJARRAYALLOCATOR_HPP
 
 #include "gc/shared/memAllocator.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+
+class Klass;
+class Thread;
 
 class ShenandoahObjArrayAllocator : public ObjArrayAllocator {
 private:

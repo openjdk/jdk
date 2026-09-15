@@ -24,12 +24,15 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ShenandoahStaticHeuristics::ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {

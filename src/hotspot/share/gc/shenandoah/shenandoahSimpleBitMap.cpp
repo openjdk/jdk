@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,14 @@
  */
 
 #include "gc/shenandoah/shenandoahSimpleBitMap.inline.hpp"
+#include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/align.hpp"
+#include "utilities/count_leading_zeros.hpp"
+#include "utilities/count_trailing_zeros.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 
 ShenandoahSimpleBitMap::ShenandoahSimpleBitMap(idx_t num_bits) :
     _num_bits(num_bits),
