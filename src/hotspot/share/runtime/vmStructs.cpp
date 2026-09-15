@@ -191,6 +191,7 @@
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
+  nonstatic_field(ValueFieldLayoutInfo,        _klass,                                        ValueKlass*)                           \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -220,6 +221,10 @@
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
+  nonstatic_field(InstanceKlass,               _value_field_layout_info_array,                Array<ValueFieldLayoutInfo>*)          \
+  nonstatic_field(InstanceKlass,               _adr_value_klass_members,                      address)                               \
+  nonstatic_field(ValueKlass::Members,         _payload_offset,                               int)                                   \
+  nonstatic_field(ValueKlass::Members,         _null_marker_offset,                           int)                                   \
   nonstatic_field(Klass,                       _kind,                                         const Klass::KlassKind)                \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
@@ -729,6 +734,7 @@
   unchecked_nonstatic_field(Array<ResolvedMethodEntry>,_data,                                 sizeof(ResolvedMethodEntry))           \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
   unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
+  unchecked_nonstatic_field(Array<ValueFieldLayoutInfo>,_data,                                sizeof(ValueFieldLayoutInfo))          \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -947,6 +953,9 @@
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
+    declare_type(ValueFieldLayoutInfo, MetaspaceObj)                      \
+                                                                          \
+  declare_toplevel_type(ValueKlass::Members)                              \
                                                                           \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
@@ -1207,6 +1216,7 @@
             declare_type(Array<ResolvedMethodEntry>, MetaspaceObj)        \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
             declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
+            declare_type(Array<ValueFieldLayoutInfo>, MetaspaceObj)       \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \

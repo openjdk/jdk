@@ -2489,13 +2489,11 @@ void PhaseChaitin::dump_frame() const {
       tty->print_cr("return address");
     } else if (reg >= begin_in_preserve) {
       // Preserved slots are present on x86
-      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word))
+      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word)) {
         tty->print_cr("saved fp register");
-      else if (return_addr == OptoReg::add(reg, 2*VMRegImpl::slots_per_word) &&
-               VerifyStackAtCalls)
-        tty->print_cr("<Majik cookie>   +VerifyStackAtCalls");
-      else
+      } else {
         tty->print_cr("in_preserve");
+      }
     } else if (stack_slot < fixed_slots) {
       tty->print("Fixed slot %d", OptoReg::reg2stack(reg));
       if (stack_slot == stack_increment_slot) {

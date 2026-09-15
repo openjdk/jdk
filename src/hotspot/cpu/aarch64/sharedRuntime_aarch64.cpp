@@ -584,7 +584,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
                             OopMapSet* oop_maps,
                             int& frame_complete,
                             int& frame_size_in_words,
-                            bool alloc_inline_receiver) {
+                            bool alloc_value_receiver) {
   if (requires_clinit_barrier) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     Label L_skip_barrier;
@@ -656,7 +656,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
 
       __ mov(c_rarg0, rthread);
       __ mov(c_rarg1, rmethod);
-      __ mov(c_rarg2, (int64_t)alloc_inline_receiver);
+      __ mov(c_rarg2, (int64_t)alloc_value_receiver);
 
       __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::allocate_value_types)));
       __ blr(rscratch1);
@@ -735,7 +735,7 @@ static void gen_c2i_adapter(MacroAssembler *masm,
       int vt = 1;
       // write fields we get from compiled code in registers/stack
       // slots to the buffer: we know we are done with that value type
-      // argument when we hit the T_VOID that acts as an end of inline
+      // argument when we hit the T_VOID that acts as an end of value
       // type delimiter for this value type. Value types are flattened
       // so we might encounter embedded value types. Each entry in
       // sig_extended contains a field offset in the buffer.
@@ -993,7 +993,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   if (regs_cc != regs_cc_ro) {
     // No class init barrier needed because method is guaranteed to be non-static
     gen_c2i_adapter(masm, sig_cc_ro, regs_cc_ro, /* requires_clinit_barrier = */ false, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ false);
     skip_fixup.reset();
   }
 
@@ -1001,7 +1001,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
   entry_address[AdapterBlob::C2I]       = __ pc();
   entry_address[AdapterBlob::C2I_Value] = __ pc();
   gen_c2i_adapter(masm, sig_cc, regs_cc, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                  skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ true);
+                  skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ true);
 
   // Non-scalarized c2i adapter
   if (regs != regs_cc) {
@@ -1011,7 +1011,7 @@ void SharedRuntime::generate_i2c2i_adapters(MacroAssembler* masm,
 
     entry_address[AdapterBlob::C2I_Value] = __ pc();
     gen_c2i_adapter(masm, sig, regs, /* requires_clinit_barrier = */ true, entry_address[AdapterBlob::C2I_No_Clinit_Check],
-                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_inline_receiver = */ false);
+                    value_entry_skip_fixup, entry_address[AdapterBlob::I2C], oop_maps, frame_complete, frame_size_in_words, /* alloc_value_receiver = */ false);
   }
 
   // The c2i adapters might safepoint and trigger a GC. The caller must make sure that

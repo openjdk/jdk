@@ -78,6 +78,7 @@ class ValueKlass: public InstanceKlass {
   //
   class Members {
     friend class ValueKlass;
+    friend class VMStructs;
 
     // Addresses used for value type calling convention
     Array<SigEntry>* _extended_sig;
