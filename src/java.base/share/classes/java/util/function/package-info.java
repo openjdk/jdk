@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,9 @@
  */
 
 /**
- * <em>Functional interfaces</em> provide target types for lambda expressions
- * and method references.  Each functional interface has a single abstract
+ * <em>Functional interfaces</em> (JLS {@jls 9.8}) provide target types
+ * for lambda expressions and method references.
+ * Each functional interface has a single abstract
  * method, called the <em>functional method</em> for that functional interface,
  * to which the lambda expression's parameter and return types are matched or
  * adapted.  Functional interfaces can provide a target type in multiple
@@ -107,6 +108,17 @@
  *     prefix may be left out (as in {@link java.util.function.ObjIntConsumer}).
  *     </li>
  * </ul>
+ *
+ * <h2><a id=functionsAndNull>Handling null</a></h2>
+ *
+ * The interfaces in this package focus on defining the
+ * <em>structure</em> of the functional interfaces; the exact
+ * semantics of the methods on null arguments and whether or not a
+ * return value can be null is largely left to particular
+ * implementations of the interfaces. Therefore, unless otherwise
+ * specified for arguments and return values that have a reference
+ * type, arguments to methods may be null and the return value may be
+ * null.
  *
  * @see java.lang.FunctionalInterface
  * @since 1.8
