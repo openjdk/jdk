@@ -35,12 +35,7 @@
  *
  * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC -DGCCount=1
- *      TestStringDedup
- *
- * @run main/othervm -Xmx256m -Xlog:stringdedup -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -XX:+UseStringDeduplication
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC -DGCCount=1
+ *      -DGCCount=1
  *      TestStringDedup
  */
 

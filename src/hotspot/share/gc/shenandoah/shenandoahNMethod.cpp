@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,7 @@ void ShenandoahNMethod::detect_reloc_oops(nmethod* nm, GrowableArray<oop*>& oops
     if (value != nullptr) {
       oop* addr = r->oop_addr();
       shenandoah_assert_correct(addr, value);
-      shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc());
+      shenandoah_assert_not_in_cset_except(addr, value, ShenandoahHeap::heap()->cancelled_gc() || ShenandoahHeap::heap()->has_self_forwarded_objects());
       shenandoah_assert_not_forwarded(addr, value);
       // Non-null immediate oop found. null oops can safely be
       // ignored since the method will be re-registered if they

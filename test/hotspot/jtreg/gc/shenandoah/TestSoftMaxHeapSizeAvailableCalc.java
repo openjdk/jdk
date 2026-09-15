@@ -33,7 +33,6 @@
  * @run main/othervm -XX:SoftMaxHeapSize=512m -Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=adaptive
  *      -XX:ShenandoahLearningSteps=0
  *      TestSoftMaxHeapSizeAvailableCalc
@@ -47,7 +46,6 @@
  * @run main/othervm -XX:SoftMaxHeapSize=512m -Xmx2g -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=static
  *      TestSoftMaxHeapSizeAvailableCalc
  */
