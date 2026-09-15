@@ -34,16 +34,16 @@ import java.io.IOException;
 final class ProxyAuthenticationRequired extends IOException {
     private static final long serialVersionUID = 0;
     final transient Response proxyResponse;
+    final transient byte[] proxyResponseBody;
 
-    /**
-     * Constructs a {@code ProxyAuthenticationRequired} with the specified detail
-     * message and cause.
-     *
-     * @param   proxyResponse the response from the proxy
-     */
     public ProxyAuthenticationRequired(Response proxyResponse) {
+        this(proxyResponse, null);
+    }
+
+    public ProxyAuthenticationRequired(Response proxyResponse, byte[] proxyResponseBody) {
         super("Proxy Authentication Required");
         assert proxyResponse.statusCode() == 407;
         this.proxyResponse = proxyResponse;
+        this.proxyResponseBody = proxyResponseBody;
     }
 }
