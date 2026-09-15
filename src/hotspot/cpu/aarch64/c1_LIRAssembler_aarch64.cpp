@@ -2770,6 +2770,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
        : Address(md_reg->as_pointer_register(),
                  as_reg(md_offset_opr)));
 
+  // Insert a runtime check iff the counter is zero at the time we
+  // generate this code.
   const bool load_dest_early = counter_stub != nullptr && counter_contents == 0;
   if (load_dest_early) {
     const2reg(md_opr, md_reg, lir_patch_none, nullptr);
@@ -2787,6 +2789,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
     assert(md_opr->is_valid(), "must be");
+
     if (!load_dest_early) {
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
       // Fix up any out-of-range offsets.
@@ -2862,8 +2865,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
   if (counter_stub != nullptr) {
     if (load_dest_early) {
-      // Counter is zero at compile time, so generate a runtime check
-      // to make sure we don't miss its first increment.
+      // Insert a runtime check iff the counter is zero at the time we
+      // generate this code.
       __ load(dest, counter_address, type);
       __ cbz(dest, *counter_stub->entry());
     } else {
@@ -2900,6 +2903,7 @@ void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
     __ block_comment("profile_call {");
   }
 #endif
+
   // Update counter for all call types
   ciMethodData* md = method->method_data_or_null();
   assert(md != nullptr, "Sanity");

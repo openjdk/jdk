@@ -311,10 +311,7 @@ bool ciMethodData::load_data() {
 void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
   for (uint row = 0; row < row_limit(); row++) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
-    volatile char *volatile s = nullptr;
-    if (k != nullptr)  s = k->name()->as_C_string();
     if (k != nullptr && k->class_loader_data() != nullptr && is_klass_loaded(k)) {
-      k->name()->as_C_string();
       if (k->is_loader_alive()) {
         ciKlass* klass = CURRENT_ENV->get_klass(k);
         set_receiver(row, klass);
