@@ -3777,17 +3777,7 @@ operand immN_0() %{
 %}
 
 // Compressed klass constants
-operand immNKlass_no_mask() %{
-  predicate(Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass*)n->bottom_type()->is_narrowklass()->get_con()), 31));
-  match(ConNKlass);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immNKlass_mask() %{
-  predicate(!Assembler::is_uimm((jlong)CompressedKlassPointers::encode((Klass*)n->bottom_type()->is_narrowklass()->get_con()), 31));
+operand immNKlass() %{
   match(ConNKlass);
 
   op_cost(0);
@@ -5692,36 +5682,16 @@ instruct loadConN(iRegNdst dst, immN src) %{
   ins_pipe(pipe_class_default);
 %}
 
-instruct loadConNKlass(iRegNdst dst, immNKlass_no_mask src) %{
-  match(Set dst src);
-  ins_cost(DEFAULT_COST*2);
-
-  format %{ "LIS/ORI $dst, $src \t// narrow klass" %}
-  size(8);
-  ins_encode %{
-    // Notify OOP recorder (don't need the relocation).
-    AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
-    __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
-    __ ori($dst$$Register, $dst$$Register, Csrc & 0xffff);
-  %}
-  ins_pipe(pipe_class_default);
-%}
-
-instruct loadConNKlass_mask(iRegNdst dst, immNKlass_mask src) %{
+instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*3);
 
-  format %{ "LIS/CLRLDI/ORI $dst, $src \t// narrow klass" %}
-  size(12);
+  format %{ "LoadConst $dst, $src \t// narrow klass" %}
   ins_encode %{
     // Notify OOP recorder (don't need the relocation).
     AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
-    intptr_t Csrc = CompressedKlassPointers::encode((Klass*)md.value());
-    __ lis($dst$$Register, (int)(short)((Csrc >> 16) & 0xffff));
-    // The high half is sign extended by lis. Clear it for constants >= 2^31.
-    __ clrldi($dst$$Register, $dst$$Register, 0x20);
-    __ ori($dst$$Register, $dst$$Register, Csrc & 0xffff);
+    narrowKlass Csrc = CompressedKlassPointers::encode((Klass*)md.value());
+    __ load_const_optimized($dst$$Register, Csrc, R0);
   %}
   ins_pipe(pipe_class_default);
 %}
