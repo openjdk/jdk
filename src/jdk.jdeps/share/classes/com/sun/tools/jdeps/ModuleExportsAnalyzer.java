@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.stream.Stream;
 
 /**
  * Analyze module dependences and any reference to JDK internal APIs.
- * It can apply transition reduction on the resulting module graph.
+ * It can apply transitive reduction on the resulting module graph.
  *
  * The result prints one line per module it depends on
  * one line per JDK internal API package it references:
@@ -153,7 +153,7 @@ public class ModuleExportsAnalyzer extends DepsAnalyzer {
             .forEach(m -> builder.addEdge(root, m));
 
         // build module dependence graph
-        // if reduced is set, apply transition reduction
+        // if reduced is set, apply transitive reduction
         Graph<Module> g = reduced ? builder.reduced() : builder.build();
         return g.adjacentNodes(root);
     }
