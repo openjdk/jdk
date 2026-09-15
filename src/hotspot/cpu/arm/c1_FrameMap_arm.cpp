@@ -143,7 +143,7 @@ void FrameMap::initialize() {
   SP_opr      = as_pointer_opr(SP);
   Rthread_opr = as_pointer_opr(Rthread);
 
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     profile_rng_opr = LIR_OprFact::single_cpu(cpu_reg2rnr(r_profile_rng));
   }
 

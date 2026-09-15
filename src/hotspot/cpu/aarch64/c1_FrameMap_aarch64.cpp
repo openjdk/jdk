@@ -202,7 +202,7 @@ void FrameMap::initialize() {
     remaining -= r27;
   }
 
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     // Use the highest remaining register for r_profile_rng.
     r_profile_rng = *remaining.rbegin();
     remaining -= r_profile_rng;
@@ -228,7 +228,7 @@ void FrameMap::initialize() {
   map_register(i, r31_sp); sp_opr = LIR_OprFact::single_cpu(i); i++; // sp
   map_register(i, r8); r8_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch1
   map_register(i, r9); r9_opr = LIR_OprFact::single_cpu(i); i++;   // rscratch2
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     map_register(i, r_profile_rng); // r_profile_rng_opr = LIR_OprFact::single_cpu(i);
     i++;
   }
@@ -332,7 +332,7 @@ void FrameMap::initialize() {
   sp_opr = as_pointer_opr(r31_sp);
   rfp_opr = as_pointer_opr(rfp);
 
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     profile_rng_opr = LIR_OprFact::single_cpu(cpu_reg2rnr(r_profile_rng));
   }
 

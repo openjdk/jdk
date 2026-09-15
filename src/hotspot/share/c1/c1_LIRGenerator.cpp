@@ -1163,7 +1163,7 @@ void LIRGenerator::do_ExceptionObject(ExceptionObject* x) {
                new LIR_Address(thread_reg, in_bytes(JavaThread::exception_pc_offset()), T_OBJECT));
 
 #ifdef RANDOMIZED_PROFILE_CAPTURE
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     __ move(new LIR_Address(thread_reg, in_bytes(JavaThread::profile_rng_offset()), T_INT),
             profile_rng_opr());
   }

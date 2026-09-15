@@ -150,7 +150,7 @@
     }
 
     // Use r26 or r27 for randomized profile captures.
-    if (ProfileCaptureRatio > 0) {
+    if (ProfileCaptureRatio > 1) {
       range -= 1;
     }
 

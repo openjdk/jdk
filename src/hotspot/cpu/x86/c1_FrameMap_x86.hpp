@@ -133,7 +133,7 @@
     // Reduce the number of available regs (to free r12 or r14) in
     // case of compressed oops and randomized profile captures.
     if (UseCompressedOops)        result -= 1;
-    if (ProfileCaptureRatio > 0)  result -= 1;
+    if (ProfileCaptureRatio > 1)  result -= 1;
     return result;
   }
 

@@ -776,7 +776,7 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
   } else if (type == T_INT) {
     __ cas_int(addr->as_address_ptr()->base(), cmp_value.result(), new_value.result(), tmp1, tmp1, result);
   } else if (type == T_LONG) {
-    if (ProfileCaptureRatio > 0) {
+    if (ProfileCaptureRatio > 1) {
       // Call out to runtime because we don't have enough registers to
       // expand compareAndSet(long) inline.
       arm_cas_long(addr, cmp_value, new_value, result);
@@ -1310,7 +1310,7 @@ void LIRGenerator::do_If(If* x) {
   __ cmp(lir_cond(cond), left, right);
   profile_branch(x, cond);
   // If we're subsampling counter updates, then profiling code kills flags
-  if (ProfileCaptureRatio > 0) {
+  if (ProfileCaptureRatio > 1) {
     __ cmp(lir_cond(cond), left, right);
   }
   move_to_phi(x->state());
