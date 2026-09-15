@@ -102,7 +102,10 @@ class PhaseStringOpts : public Phase {
 
   enum {
     // max length of constant string copy unrolling in copy_string
-    unroll_string_copy_length = 6
+    unroll_string_copy_length = 6,
+    // Estimated worst-case number of IR nodes a single concat argument can expand to.
+    // Used to estimate whether expanding a concat would exceed the node limit.
+    estimated_nodes_per_concat_arg = 330
   };
 
  public:
