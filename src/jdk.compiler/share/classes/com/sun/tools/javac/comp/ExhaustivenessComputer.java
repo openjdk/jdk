@@ -112,15 +112,21 @@ public class ExhaustivenessComputer {
     }
 
     public ExhaustivenessResult exhausts(Env<AttrContext> env, JCExpression selector, List<JCCase> cases) {
+        return exhausts(env, selector.pos(), selector.type, cases);
+    }
+
+    public ExhaustivenessResult exhausts(Env<AttrContext> env, JCDiagnostic.DiagnosticPosition selectorPosition,
+                                          Type selectorType, List<JCCase> cases) {
         this.env = env;
         try {
-            return doExhausts(selector, cases);
+            return doExhausts(selectorPosition, selectorType, cases);
         } finally {
             this.env = null;
         }
     }
 
-    private ExhaustivenessResult doExhausts(JCExpression selector, List<JCCase> cases) {
+    private ExhaustivenessResult doExhausts(JCDiagnostic.DiagnosticPosition selectorPosition,
+                                            Type selectorType, List<JCCase> cases) {
         Set<PatternDescription> patternSet = new LinkedHashSet<>();
         Map<Symbol, Set<Symbol>> enum2Constants = new LinkedHashMap<>();
         Set<Object> booleanLiterals = new LinkedHashSet<>(Set.of(0, 1));
@@ -130,11 +136,11 @@ public class ExhaustivenessComputer {
 
             for (var l : c.labels) {
                 if (l instanceof JCPatternCaseLabel patternLabel) {
-                    for (Type component : components(selector.type)) {
+                    for (Type component : components(selectorType)) {
                         patternSet.add(makePatternDescription(component, patternLabel.pat));
                     }
                 } else if (l instanceof JCConstantCaseLabel constantLabel) {
-                    if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN)) {
+                    if (types.unboxedTypeOrType(selectorType).hasTag(TypeTag.BOOLEAN)) {
                         Object value = ((JCLiteral) constantLabel.expr).value;
                         booleanLiterals.remove(value);
                     } else {
@@ -153,7 +159,7 @@ public class ExhaustivenessComputer {
             }
         }
 
-        if (types.unboxedTypeOrType(selector.type).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
+        if (types.unboxedTypeOrType(selectorType).hasTag(TypeTag.BOOLEAN) && booleanLiterals.isEmpty()) {
             return ExhaustivenessResult.ofExhaustive();
         }
 
@@ -163,13 +169,13 @@ public class ExhaustivenessComputer {
             }
         }
         try {
-            CoverageResult coveredResult = computeCoverage(selector.type, patternSet, PatternEquivalence.STRICT);
+            CoverageResult coveredResult = computeCoverage(selectorType, patternSet, PatternEquivalence.STRICT);
             if (coveredResult.covered()) {
                 return ExhaustivenessResult.ofExhaustive();
             }
 
             Set<PatternDescription> details =
-                    this.computeMissingPatternDescriptions(selector.type, coveredResult.incompletePatterns())
+                    this.computeMissingPatternDescriptions(selectorType, coveredResult.incompletePatterns())
                         .stream()
                         .flatMap(pd -> {
                             if (pd instanceof BindingPattern bp && enum2Constants.containsKey(bp.type.tsym)) {
@@ -183,7 +189,7 @@ public class ExhaustivenessComputer {
 
             return ExhaustivenessResult.ofDetails(details);
         } catch (CompletionFailure cf) {
-            chk.completionError(selector.pos(), cf);
+            chk.completionError(selectorPosition, cf);
             return ExhaustivenessResult.ofExhaustive(); //error recovery
         }
     }

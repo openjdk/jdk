@@ -53,6 +53,7 @@ import com.sun.tools.javac.tree.JCTree.JCContinue;
 import com.sun.tools.javac.tree.JCTree.JCDefaultCaseLabel;
 import com.sun.tools.javac.tree.JCTree.JCDoWhileLoop;
 import com.sun.tools.javac.tree.JCTree.JCEnhancedForLoop;
+import com.sun.tools.javac.tree.JCTree.JCEnhancedVariableDeclaration;
 import com.sun.tools.javac.tree.JCTree.JCErroneous;
 import com.sun.tools.javac.tree.JCTree.JCExports;
 import com.sun.tools.javac.tree.JCTree.JCExpressionStatement;
@@ -253,6 +254,12 @@ public class TreeDiffer extends TreeScanner {
     }
 
     @Override
+    public void visitEnhancedVariableDeclaration(JCEnhancedVariableDeclaration tree) {
+        JCEnhancedVariableDeclaration that = (JCEnhancedVariableDeclaration) parameter;
+        result = scan(tree.pattern, that.pattern) && scan(tree.expr, that.expr);
+    }
+
+    @Override
     public void visitAssign(JCAssign tree) {
         JCAssign that = (JCAssign) parameter;
         result = scan(tree.lhs, that.lhs) && scan(tree.rhs, that.rhs);
@@ -400,7 +407,7 @@ public class TreeDiffer extends TreeScanner {
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         JCEnhancedForLoop that = (JCEnhancedForLoop) parameter;
         result =
-                scan(tree.var, that.var)
+                scan(tree.varOrRecordPattern, that.varOrRecordPattern)
                         && scan(tree.expr, that.expr)
                         && scan(tree.body, that.body);
     }
