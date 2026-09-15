@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,7 +662,9 @@ public final class SoftVoice extends VoiceStatus {
             for (int i = 0; i < performer.ctrl_connections.length; i++)
                 processConnection(performer.ctrl_connections[i]);
 
-            osc_stream.setPitch((float)co_osc_pitch[0]);
+            if (osc_stream != null) {
+                osc_stream.setPitch((float)co_osc_pitch[0]);
+            }
 
             int filter_type = (int)co_filter_type[0];
             double filter_freq;
@@ -829,7 +831,10 @@ public final class SoftVoice extends VoiceStatus {
             osc_buff[0] = buffer[SoftMainMixer.CHANNEL_LEFT_DRY].array();
             if (nrofchannels != 1)
                 osc_buff[1] = buffer[SoftMainMixer.CHANNEL_RIGHT_DRY].array();
-            int ret = osc_stream.read(osc_buff, 0, bufferlen);
+            int ret = -1;
+            if (osc_stream != null) {
+                ret = osc_stream.read(osc_buff, 0, bufferlen);
+            }
             if (ret == -1) {
                 stopping = true;
                 return;
