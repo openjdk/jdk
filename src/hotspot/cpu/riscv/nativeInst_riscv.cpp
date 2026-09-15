@@ -50,36 +50,11 @@ bool NativeInstruction::is_call_at(address addr) {
 //-----------------------------------------------------------------------------
 // NativeCall
 
+// The destination of a reloc call is kept in its address stub.
+// Returns nullptr as long as the call has no address stub, see stub_address().
 address NativeCall::destination() const {
-  address addr = instruction_address();
-  assert(NativeCall::is_at(addr), "unexpected code at call site");
-
-  address stub_addr = MacroAssembler::target_addr_for_insn(addr);
-
-  CodeBlob* cb = CodeCache::find_blob(addr);
-  assert(cb != nullptr && cb->is_nmethod(), "nmethod expected");
-  nmethod *nm = (nmethod *)cb;
-  assert(nm->stub_contains(stub_addr), "Sanity");
-  assert(stub_addr != nullptr, "Sanity");
-
-  return stub_address_destination_at(stub_addr);
-}
-
-address NativeCall::reloc_destination() {
-  address call_addr = instruction_address();
-  assert(NativeCall::is_at(call_addr), "unexpected code at call site");
-
-  CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != nullptr, "Could not find the containing code blob");
-
-  address stub_addr = nullptr;
-  if (code->is_nmethod()) {
-    // TODO: Need to revisit this when porting the AOT features.
-    stub_addr = trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
-    assert(stub_addr != nullptr, "Sanity");
-  }
-
-  return stub_addr;
+  address stub_addr = stub_address();
+  return stub_addr != nullptr ? stub_address_destination_at(stub_addr) : nullptr;
 }
 
 void NativeCall::verify() {
@@ -131,25 +106,15 @@ bool NativeCall::set_destination_mt_safe(address dest) {
   return true;
 }
 
-// The argument passed in is the address to the stub containing the destination
-bool NativeCall::reloc_set_destination(address stub_addr) {
+void NativeCall::set_destination(address dest) {
   address call_addr = instruction_address();
   assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
-  CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != nullptr, "Could not find the containing code blob");
-
-  if (code->is_nmethod()) {
-    // TODO: Need to revisit this when porting the AOT features.
-    assert(stub_addr != nullptr, "Sanity");
-    assert(stub_addr == trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod()), "Sanity");
-    MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr); // patches auipc + ld to stub_addr
-
-    address dest = stub_address_destination_at(stub_addr);
-    optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depending on dest
-  }
-
-  return true;
+  address stub_addr = stub_address();
+  assert(stub_addr != nullptr, "No stub?");
+  set_stub_address_destination_at(stub_addr, dest);
+  MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr); // patches auipc + ld to stub_addr
+  optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depending on dest
 }
 
 void NativeCall::set_stub_address_destination_at(address dest, address value) {
@@ -166,15 +131,33 @@ address NativeCall::stub_address_destination_at(address src) {
   return dest;
 }
 
-address NativeCall::stub_address() {
+// Returns the address stub of this reloc call, or nullptr if the call does not
+// have an address stub yet, which is the case while code is being emitted into
+// a CodeBuffer.
+address NativeCall::stub_address() const {
   address call_addr = instruction_address();
-
-  CodeBlob *code = CodeCache::find_blob(call_addr);
-  assert(code != nullptr, "Could not find the containing code blob");
+  assert(NativeCall::is_at(call_addr), "unexpected code at call site");
 
   address stub_addr = MacroAssembler::target_addr_for_insn(call_addr);
-  assert(code->contains(stub_addr), "Sanity");
-  return stub_addr;
+  if (stub_addr != call_addr) {
+    // The call has been linked to its address stub.
+    DEBUG_ONLY(CodeBlob *code = CodeCache::find_blob(call_addr));
+    assert(code != nullptr && code->contains(stub_addr), "Sanity");
+    return stub_addr;
+  }
+
+  // The auipc + ld pair still points to itself, i.e. the call has not been
+  // linked to its address stub yet. This is the case when we are relocating
+  // freshly generated code, where the stub can only be found through the
+  // relocation info. See Relocation::pd_set_call_destination.
+  CodeBlob *code = CodeCache::find_blob(call_addr);
+  if (code == nullptr || !code->is_nmethod()) {
+    // Code is still living in a CodeBuffer, there is no relocation info to
+    // search and nothing to patch yet.
+    return nullptr;
+  }
+
+  return trampoline_stub_Relocation::get_trampoline_for(call_addr, code->as_nmethod());
 }
 
 bool NativeCall::is_at(address addr) {
