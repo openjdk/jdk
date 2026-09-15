@@ -1278,6 +1278,7 @@ public class ForkJoinPool extends AbstractExecutorService
                 else {
                     a[m & s] = task;
                     top = s + 1;
+                    U.fullFence();
                     if (a[m & (s - 1)] != null)
                         pool = null;
                 }
@@ -2047,22 +2048,24 @@ public class ForkJoinPool extends AbstractExecutorService
      * @return true if worker should exit
      */
     private boolean deactivate(WorkQueue w, int r) {
-        if (w == null || (runState & STOP) != 0L)
+        if (w == null)
             return true;
         int phase = w.phase, ip = phase | IDLE, ap = phase + (IDLE << 1);
-        long pc = ctl, qc = ((pc - RC_UNIT) & UMASK) | (ap & LMASK);
+        long pc = ctl, qc = ((pc - RC_UNIT) & UMASK) | (ap & LMASK), ac;
         w.stackPred = (int)pc;
         w.phase = ip;            // enqueue
         if (!U.compareAndSetLong(this, CTL, pc, qc)) {
             w.phase = phase;     // back out on contention
             return false;
         }
-        int prechecks = Math.min((int)(qc >> RC_SHIFT), 8);
-        outer: for (int i = phase;;) {
-            WorkQueue[] qs; int n; long e;
+        if ((ac = qc >> RC_SHIFT) <= 0L && (runState & SHUTDOWN) != 0L &&
+            quiescent() > 0)
+            return true;
+        for (int prechecks = Math.min((int)ac, 8), i = phase;;) {
+            WorkQueue[] qs; int n;
             if ((w.phase & IDLE) == 0)
                 return false;
-            if (((e = runState) & STOP) != 0L ||
+            if ((runState & STOP) != 0L ||
                 (qs = queues) == null || (n = qs.length) <= 0)
                 return true;
             r ^= r << 6; r ^= r >>> 21; r ^= r << 7;
@@ -2091,7 +2094,7 @@ public class ForkJoinPool extends AbstractExecutorService
                             return false;
                         if (v.parking == sp)
                             U.unpark(v.owner);
-                        break outer;
+                        break;
                     }
                     else if (q.base != b)
                         break;
@@ -2099,10 +2102,9 @@ public class ForkJoinPool extends AbstractExecutorService
                 if ((--polls & 0x7) == 0 && ((phase = w.phase) & IDLE) == 0)
                     return false;
                 if (polls == 0)
-                    break outer;
+                    return awaitWork(w, phase);
             }
         }
-        return awaitWork(w, phase);
     }
 
     /**
@@ -2126,10 +2128,10 @@ public class ForkJoinPool extends AbstractExecutorService
                 w.source = EMPTY_SCAN;
             }
             do {
-                boolean trimmable; long d, c;
+                long d = 0, c; boolean trimmable;
                 Thread.interrupted();        // clear status
                 if (trimmable =
-                    (((c = ctl) & RC_MASK) == 0L && (int)c == activePhase)) {
+                    (((c = ctl) & RC_MASK) <= 0L && (int)c == activePhase)) {
                     if ((runState & SHUTDOWN) != 0L && quiescent() > 0) {
                         stat = true;
                         break;
@@ -2144,12 +2146,10 @@ public class ForkJoinPool extends AbstractExecutorService
                         break;
                     }
                 }
-                else if ((runState & STOP) != 0L) {
+                if ((runState & STOP) != 0L) {
                     stat = true;
                     break;
                 }
-                else
-                    d = 0L;
                 if (!parked) {
                     if ((w.phase & IDLE) == 0)
                         break;
