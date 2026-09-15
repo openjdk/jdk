@@ -43,24 +43,25 @@ import java.util.function.UnaryOperator;
  * and open a new {@code StructuredTaskScope}. It defines the {@link #close() close()}
  * method to close it. The API is designed to be used with the {@code try}-with-resources
  * statement where a {@code StructuredTaskScope} is opened as a resource and then closed
- * automatically. The code inside the {@code try} block uses the {@link #fork(Callable)}
- * method to <em>fork</em> subtasks. Each call to the {@code fork(Callable)} method starts
- * a new {@link Thread} (typically a {@linkplain Thread##virtual-threads virtual thread})
- * to execute a subtask as a {@linkplain Callable value-returning method}. The subtask
- * executes concurrently with the code inside the {@code try} block, and concurrently with
- * other subtasks forked in the scope. After forking all subtasks, the code inside the
- * block uses the {@link #join() join()} method to wait for all subtasks to finish
- * (or for another outcome) as a single operation. The code after the {@code join()}
- * method processes the outcome. Execution does not continue beyond the {@code try} block
- * (or {@code close} method) until all threads started in the scope to execute subtasks
- * have finished.
+ * automatically. The code inside the {@code try} block <em>forks</em> subtasks with the
+ * {@link #fork(Callable)} or {@link #fork(Runnable)} methods. Each call to {@code
+ * fork(Callable)} starts a new {@link Thread} (typically a {@linkplain
+ * Thread##virtual-threads virtual thread}) to execute a {@linkplain Callable
+ * value-returning method} as a subtask. Each call to {@code fork(Runnable)} starts a new
+ * {@link Thread} to execute a method that does not return a result as a subtask. The
+ * threads executing subtasks run concurrently with each other and with the code inside
+ * the {@code try} block. After forking all subtasks, the code inside the block uses the
+ * {@link #join() join()} method to wait for all subtasks to finish (or for another
+ * outcome) as a single operation. The code after the {@code join()} method processes the
+ * outcome. Execution does not continue beyond the {@code try} block (or {@code close}
+ * method) until all threads started in the scope to execute subtasks have finished.
  *
  * <p> As a first example, consider a "main" task that splits into two subtasks to
  * concurrently fetch values from two remote services. The main task aggregates the results
  * of both subtasks. The example invokes {@link #fork(Callable)} to fork the two subtasks.
  * Each call to {@code fork(Callable)} returns a {@link Subtask Subtask} as a handle to
- * the forked subtask. Both subtasks may complete successfully, one subtask may succeed
- * and the other may fail, or both subtasks may fail.
+ * the forked subtask. Both subtasks may succeed, one may succeed and the other fail, or
+ * both may fail.
  *
  * {@snippet lang=java :
  *    // @link substring="open()" target="#open()" :
@@ -81,7 +82,7 @@ import java.util.function.UnaryOperator;
  *    } // close
  * }
  *
- * <p> The main task in the example is interested in the successful result from both
+ * <p> The main task in the example is interested in the successful result of both
  * subtasks. It waits in the {@link #join()} method for both subtasks to complete
  * successfully or for either subtask to fail. If both subtasks complete successfully then
  * the {@code join()} method completes normally and the task uses the {@link Subtask#get()
@@ -173,7 +174,7 @@ import java.util.function.UnaryOperator;
  * join()} method for either subtask to complete successfully or for both subtasks to fail.
  * If one of the subtasks completes successfully then the {@code Joiner} causes the other
  * subtask to be cancelled (this will interrupt the thread executing the subtask), and
- * the {@code join()} method returns the result from the successful subtask. Cancelling the
+ * the {@code join()} method returns the result of the successful subtask. Cancelling the
  * other subtask avoids the task waiting for a result that it doesn't care about. If
  * both subtasks fail then the {@code join()} method throws {@link ExecutionException} with
  * the exception from one of the subtasks as the {@linkplain Throwable#getCause() cause}.
@@ -434,7 +435,7 @@ public sealed interface StructuredTaskScope<T, R, R_X extends Throwable>
          * Returns the result of this subtask if it completed successfully. If the scope
          * is {@linkplain StructuredTaskScope##Cancellation cancelled}, the subtask
          * completed successfully before the scope was cancelled. If the subtask was
-         * forked with {@link #fork(Callable) fork(Callable)} then the result from the
+         * forked with {@link #fork(Callable) fork(Callable)} then the result of the
          * {@link Callable#call() call()} method is returned. If the subtask was forked
          * with {@link #fork(Runnable) fork(Runnable)} then {@code null} is returned.
          * This method does not wait for a result.
