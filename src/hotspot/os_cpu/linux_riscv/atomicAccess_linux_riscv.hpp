@@ -283,7 +283,7 @@ struct AtomicAccess::PlatformOrderedLoad<byte_size, X_ACQUIRE>
   T operator()(const volatile T* p) const {
     STATIC_ASSERT(byte_size == sizeof(T));
     STATIC_ASSERT(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
-    if (UseZalasr) {
+    if (VM_Version::use_zalasr_atomics()) {
       // Zalasr has no zero-extending form; l{b|h|w}.aq sign-extend. Narrowing
       // the result back to T discards the extra bits, so both signed and
       // unsigned T end up with the value the caller expects.
@@ -303,7 +303,7 @@ struct AtomicAccess::PlatformOrderedStore<byte_size, RELEASE_X>
   void operator()(volatile T* p, T v) const {
     STATIC_ASSERT(byte_size == sizeof(T));
     STATIC_ASSERT(byte_size == 1 || byte_size == 2 || byte_size == 4 || byte_size == 8);
-    if (UseZalasr) {
+    if (VM_Version::use_zalasr_atomics()) {
       // s{b|h|w|d}.rl stores the low byte_size bytes of the register, so
       // widening v here is value-preserving for both signed and unsigned T.
       zalasr_store_release<byte_size>((void*)p, (uint64_t)v);

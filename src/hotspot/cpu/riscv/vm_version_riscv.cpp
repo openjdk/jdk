@@ -52,6 +52,7 @@ static constexpr bool toolchain_uses_psabi_atomics() {
 }
 
 uint32_t VM_Version::_initial_vector_length = 0;
+bool VM_Version::_use_zalasr_atomics = false;
 
 #define DEF_RV_EXT_FEATURE(PRETTY, LINUX_BIT, FSTRING, FLAGF) \
 VM_Version::ext_##PRETTY##RVExtFeatureValue VM_Version::ext_##PRETTY;
@@ -216,6 +217,13 @@ void VM_Version::common_initialize() {
       warning("UseZalasr is not supported together with UseZtso, disabling Zalasr.");
     }
     FLAG_SET_DEFAULT(UseZalasr, false);
+  }
+
+  // Latch the native AtomicAccess dispatch flag only after every UseZalasr
+  // adjustment above has settled. See the comment on _use_zalasr_atomics in
+  // vm_version_riscv.hpp.
+  if (UseZalasr) {
+    _use_zalasr_atomics = UseZalasr;
   }
 
   if (UseZbb) {
