@@ -1343,7 +1343,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Reg
   __ block_comment("increment_mdo {");
   int ratio_shift = exact_log2(ProfileCaptureRatio);
   Label nope, do_increment;
-  if (ProfileCaptureRatio > 0) {
+  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
     assert(!dst.uses(temp), "fix register allocation");
     __ movq(temp, dst);
     __ orq(temp, temp);
@@ -1354,7 +1354,7 @@ static void increment_mdo(MacroAssembler *C1_masm, Address dst, int32_t src, Reg
   }
   __ bind(do_increment);
   __ addptr(dst, src << ratio_shift);
-  if (ProfileCaptureRatio > 0) {
+  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
     __ bind(nope);
     __ step_random(r_profile_rng, temp);
   }
@@ -1365,7 +1365,7 @@ void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Register temp) {
   int mdp_offset = md->byte_offset_of_slot(data, in_ByteSize(0));
-  if (ProfileCaptureRatio > 0) {
+  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
     __ profile_receiver_type(recv, mdo, mdp_offset, temp, &increment_mdo);
   } else {
     __ profile_receiver_type(recv, mdo, mdp_offset, temp);
@@ -3028,7 +3028,7 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
   assert(threshold > 0, "must be");
 
   ProfileStub *counter_stub
-    = ProfileCaptureRatio > 0 ? new ProfileStub() : nullptr;
+    = !FLAG_IS_DEFAULT(ProfileCaptureRatio) ? new ProfileStub() : nullptr;
 
   Register dest = dest_opr->as_pointer_register();
 
@@ -3052,12 +3052,12 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
 
     if (step_opr->is_register()) {
       Register inc = step_opr->as_register();
-      if (ProfileCaptureRatio > 0) {
+      if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
         __ shll(inc, ratio_shift);
       }
       __ lea(dest, Address(dest, inc, Address::times_1));
       __ movl(counter_address, dest);
-      if (ProfileCaptureRatio > 0) {
+      if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
         __ shrl(inc, ratio_shift);
       }
     } else {

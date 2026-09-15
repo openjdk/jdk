@@ -172,8 +172,8 @@ void FrameMap::initialize() {
   // r_profile_rng is allocated conditionally. It is used to hold the random
   // generator for profile counters.
   r_profile_rng
-    = (UseCompressedOops && ProfileCaptureRatio > 0) ? r14
-    : (ProfileCaptureRatio > 0) ? r12
+    = (UseCompressedOops && !FLAG_IS_DEFAULT(ProfileCaptureRatio)) ? r14
+    : (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) ? r12
     : noreg;
 
   long0_opr = LIR_OprFact::double_cpu(3 /*eax*/, 3 /*eax*/);
@@ -269,7 +269,7 @@ void FrameMap::initialize() {
   r13_metadata_opr = as_metadata_opr(r13);
   r14_metadata_opr = as_metadata_opr(r14);
 
-  if (ProfileCaptureRatio > 0) {
+  if (!FLAG_IS_DEFAULT(ProfileCaptureRatio)) {
     profile_rng_opr = LIR_OprFact::single_cpu(cpu_reg2rnr(r_profile_rng));
   }
 

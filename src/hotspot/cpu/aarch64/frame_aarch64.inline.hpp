@@ -34,6 +34,7 @@
 #include "pauth_aarch64.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
+#include "runtime/globals_extension.hpp"
 #endif
 
 // Inline functions for AArch64 frames:
