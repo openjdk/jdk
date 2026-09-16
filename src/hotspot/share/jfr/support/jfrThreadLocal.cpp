@@ -617,7 +617,6 @@ bool JfrThreadLocal::try_acquire_cpu_time_jfr_enqueue_lock() {
 }
 
 bool JfrThreadLocal::try_acquire_cpu_time_jfr_dequeue_lock() {
-  CPUTimeLockState got;
   while (true)  {
     CPUTimeLockState got = AtomicAccess::cmpxchg(&_cpu_time_jfr_locked, UNLOCKED, DEQUEUE);
     if (got == UNLOCKED) {
