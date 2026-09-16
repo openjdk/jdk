@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT workflow.
  * @requires vm.cds & vm.compMode != "Xcomp"
  * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
  * @comment Some of the tests run excessively slowly with -Xcomp. The original
  *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
  *          the generated tests from -Xcomp execution as well.
@@ -38,6 +39,40 @@
  *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
  *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
  * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT MethodHandlesInvokersTest
+ */
+/*
+ * @test id=aot-retrain
+ * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Retrain workflow.
+ * @requires vm.cds & vm.compMode != "Xcomp"
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @comment Some of the tests run excessively slowly with -Xcomp. The original
+ *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
+ *          the generated tests from -Xcomp execution as well.
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @compile ../../../../../../jdk/java/lang/invoke/MethodHandlesTest.java
+ *        ../../../../../../lib/jdk/test/lib/Utils.java
+ *        ../../../../../../jdk/java/lang/invoke/MethodHandlesInvokersTest.java
+ *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
+ *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
+ * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Retrain MethodHandlesInvokersTest
+ */
+/*
+ * @test id=aot-retrain2
+ * @summary Run the MethodHandlesInvokersTest.java test in CDSAppTester::AOT-Retrain2 workflow.
+ * @requires vm.cds & vm.compMode != "Xcomp"
+ * @requires vm.cds.supports.aot.class.linking
+ * @comment work around JDK-8345635
+ * @comment Some of the tests run excessively slowly with -Xcomp. The original
+ *          tests aren't executed with -Xcomp in the CI pipeline, so let's exclude
+ *          the generated tests from -Xcomp execution as well.
+ * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds
+ * @compile ../../../../../../jdk/java/lang/invoke/MethodHandlesTest.java
+ *        ../../../../../../lib/jdk/test/lib/Utils.java
+ *        ../../../../../../jdk/java/lang/invoke/MethodHandlesInvokersTest.java
+ *        ../../../../../../jdk/java/lang/invoke/remote/RemoteExample.java
+ *        ../../../../../../jdk/java/lang/invoke/common/test/java/lang/invoke/lib/CodeCacheOverflowProcessor.java
+ * @run junit/othervm/timeout=480 -Dcds.app.tester.workflow=AOT-Retrain2 MethodHandlesInvokersTest
  */
 /*
  * @test id=dynamic
