@@ -41,7 +41,7 @@
     cflags(BreakAtCompile,          bool, false, BreakAtCompile) \
     cflags(Log,                     bool, LogCompilation, Unknown) \
     cflags(MemLimit,                intx, 0, MemLimit) \
-    cflags(MemStat,                 uintx, 0, MemStat) \
+    cflags(MemStat,                 uint, 0, MemStat) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintCompilation,        bool, PrintCompilation, PrintCompilation) \
     cflags(PrintCompilation2,       bool, PrintCompilation2, PrintCompilation2) \
@@ -225,7 +225,9 @@ void set_##name(void* value) {                                      \
   };
 
   void print_intx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zd ", n, v); } }
-  void print_uintx(outputStream* st, ccstr n, intx v, bool mod) { if (mod) { st->print("%s:%zu ", n, v); } }
+  void print_uintx(outputStream* st, ccstr n, uintx v, bool mod) { if (mod) { st->print("%s:%zu ", n, v); } }
+  void print_int(outputStream* st, ccstr n, int v, bool mod) { if (mod) { st->print("%s:%d ", n, v); } }
+  void print_uint(outputStream* st, ccstr n, uint v, bool mod) { if (mod) { st->print("%s:%u ", n, v); } }
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8074980
+ * @bug 8074980 8380669
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -33,14 +33,16 @@
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstrlist,TestOptionList,_foo,_bar
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,ccstr,TestOptionStr,_foo
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,TestOptionBool,false
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,intx,TestOptionInt,-1
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uintx,TestOptionUint,1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,int,TestOptionInt,-1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uint,TestOptionUint,1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,intx,TestOptionIntx,-1
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,uintx,TestOptionUintx,1
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,TestOptionBool2
  *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,double,TestOptionDouble,1.123
  *                   compiler.oracle.GetMethodOptionTest
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,TestOptionBool,false,intx,TestOptionInt,-1,uintx,TestOptionUint,1,bool,TestOptionBool2,true,ccstr,TestOptionStr,_foo,double,TestOptionDouble,1.123,ccstrlist,TestOptionList,_foo,_bar
+ *                   -XX:CompileCommand=option,compiler.oracle.GetMethodOptionTest::test,bool,TestOptionBool,false,int,TestOptionInt,-1,uint,TestOptionUint,1,intx,TestOptionIntx,-1,uintx,TestOptionUintx,1,bool,TestOptionBool2,true,ccstr,TestOptionStr,_foo,double,TestOptionDouble,1.123,ccstrlist,TestOptionList,_foo,_bar
  *                   compiler.oracle.GetMethodOptionTest
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -50,6 +52,8 @@
                      -XX:CompileCommand=TestOptionBool2,compiler.oracle.GetMethodOptionTest::test
  *                   -XX:CompileCommand=TestOptionInt,compiler.oracle.GetMethodOptionTest::test,-1
  *                   -XX:CompileCommand=TestOptionUint,compiler.oracle.GetMethodOptionTest::test,1
+ *                   -XX:CompileCommand=TestOptionIntx,compiler.oracle.GetMethodOptionTest::test,-1
+ *                   -XX:CompileCommand=TestOptionUintx,compiler.oracle.GetMethodOptionTest::test,1
  *                   -XX:CompileCommand=TestOptionDouble,compiler.oracle.GetMethodOptionTest::test,1.123
  *                   compiler.oracle.GetMethodOptionTest
  */
@@ -87,8 +91,10 @@ public class GetMethodOptionTest {
     private static enum TestCase {
         TestOptionBool(false, WB::getMethodBooleanOption),
         TestOptionStr("_foo", WB::getMethodStringOption),
-        TestOptionInt(-1L, WB::getMethodIntxOption),
-        TestOptionUint(1L, WB::getMethodUintxOption),
+        TestOptionInt(-1L, WB::getMethodIntOption),
+        TestOptionUint(1L, WB::getMethodUintOption),
+        TestOptionIntx(-1L, WB::getMethodIntxOption),
+        TestOptionUintx(1L, WB::getMethodUintxOption),
         TestOptionBool2(true, WB::getMethodBooleanOption),
         TestOptionDouble(1.123d, WB::getMethodDoubleOption),
         TestOptionList("_foo _bar", WB::getMethodStringOption);
