@@ -26,7 +26,7 @@
  * @bug 8391777
  * @summary Test detection of start node when browsing dominator nodes to narrow IV type
  * @requires vm.compiler2.enabled
- * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
  *                   -XX:CompileCommand=quiet -XX:CompileCommand=compileonly,${test.main.class}::test
  *                   ${test.main.class}
  */
