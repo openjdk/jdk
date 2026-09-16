@@ -762,10 +762,6 @@ private:
     _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
   }
 
-  static bool needs_update(const ShenandoahHeapRegion* r) {
-    return r->is_active() && (!r->is_cset() || r->has_self_forwards());
-  }
-
   template<class T>
   void do_work(uint worker_id) {
     T cl;
@@ -774,6 +770,9 @@ private:
       return_evac_reserves_to_mutators();
     }
 
+    bool do_regions = true;
+    bool do_chunks = _generation->is_young();
+
     // We update references for global, mixed, and young collections.
     assert(_generation->is_mark_complete(), "Expected complete marking");
     while (true) {
@@ -781,27 +780,52 @@ private:
         return;
       }
 
-      ShenandoahHeapRegion* r = _regions->next();
-      if (r != nullptr) {
-        log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-        if (needs_update(r)) {
-          update_refs_in_region<T>(r, cl);
-        }
-      } else if (_generation->is_young()) {
-        ShenandoahRegionChunk assignment;
-        if (_work_chunks->next(&assignment)) {
-          r = assignment._r;
-          if (needs_update(r) && r->is_old()) {
-            update_refs_in_old_region<T>(assignment, r, cl, worker_id);
-          }
-        } else {
-          // no region work, no rset chunks left
-          break;
-        }
-      } else {
+      if (do_regions) {
+        do_regions = do_next_region(cl, worker_id);
+        continue;
+      }
+
+      if (do_chunks) {
+        do_chunks = do_next_chunk(cl, worker_id);
+        continue;
+      }
+
+      if (!do_regions && !do_chunks) {
         break;
       }
     }
+  }
+
+  static bool needs_update(const ShenandoahHeapRegion* r) {
+    return r->is_active() && (!r->is_cset() || r->has_self_forwards());
+  }
+
+  template<typename T>
+  bool do_next_region(T& cl, uint worker_id) {
+    ShenandoahHeapRegion* r = _regions->next();
+    if (r == nullptr) {
+      return false;
+    }
+
+    log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
+    if (needs_update(r)) {
+      update_refs_in_region<T>(r, cl);
+    }
+    return true;
+  }
+
+  template<typename T>
+  bool do_next_chunk(T& cl, uint worker_id) {
+    ShenandoahRegionChunk assignment;
+    if (!_work_chunks->next(&assignment)) {
+      return false;
+    }
+
+    ShenandoahHeapRegion* r = assignment._r;
+    if (needs_update(r) && r->is_old()) {
+      update_refs_in_old_region<T>(assignment, r, cl, worker_id);
+    }
+    return true;
   }
 
   template <class T>
