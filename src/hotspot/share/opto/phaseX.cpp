@@ -2723,6 +2723,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // If changed AddI inputs, check for Phi users for
+  // "(P < Q) ? X+Y : X" optimization in is_cond_add.
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](const Node* u) -> bool {
+      return u->Opcode() == Op_Phi;
+    });
+  }
   // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
   // URShiftI/URShiftL users for "((x << z) + y) >>> z" optimization opportunity
   // (see URShiftINode::Ideal). Handles the case where the LShift input changes.
