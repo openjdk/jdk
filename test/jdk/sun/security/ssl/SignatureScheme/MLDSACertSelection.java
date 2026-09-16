@@ -59,8 +59,10 @@
  *      MLDSACertSelection
  */
 
+import static jdk.test.lib.Asserts.assertEquals;
+
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
@@ -126,14 +128,14 @@ public class MLDSACertSelection extends SSLSocketTemplate {
             new MLDSACertSelection().run();
             if (expectFail) {
                 throw new RuntimeException(
-                        "Expected SSLHandshakeException was not thrown");
+                        "Expected SSLException was not thrown");
             }
-        } catch (SSLHandshakeException e) {
+        } catch (SSLException e) {
             if (!expectFail) {
                 throw e;
             }
-            System.out.println("Expected SSLHandshakeException: " +
-                    e.getMessage());
+            assertEquals(e.getMessage(), "(internal_error) No supported " +
+                    "CertificateVerify signature algorithm for ML-DSA key");
         }
     }
 }

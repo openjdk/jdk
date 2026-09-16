@@ -28,6 +28,7 @@
  *          signatures but certificate-signature constraints accept
  *          or reject RSA signed and ML-DSA signed certificate chains
  * @library /javax/net/ssl/templates
+ *          /test/lib
  *
  * @run main/othervm -Dtest.case=successRsaCertSig
  *      MLDSACertSignSchemeConstraint
@@ -37,11 +38,17 @@
  *      MLDSACertSignSchemeConstraint
  * @run main/othervm -Dtest.case=failMldsaCertSig
  *      MLDSACertSignSchemeConstraint
+ * @run main/othervm -Dtest.case=successHandshakeMldsa65Disabled
+ *      MLDSACertSignSchemeConstraint
+ * @run main/othervm -Dtest.case=failHandshakeMldsa44Disabled
+ *      MLDSACertSignSchemeConstraint
  */
+
+import static jdk.test.lib.Asserts.assertEquals;
 
 import java.security.Security;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
@@ -57,7 +64,9 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
                             new Cert[] { Cert.EE_MLDSA_65 },
                             getServerContextParameters());
-            case "successMldsaCertSig", "failMldsaCertSig" ->
+            case "successMldsaCertSig", "failMldsaCertSig",
+                    "successHandshakeMldsa65Disabled",
+                    "failHandshakeMldsa44Disabled" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_MLDSA_65 },
                             new Cert[] { Cert.EE_MLDSA_44_BY_CA_MLDSA_65 },
@@ -75,7 +84,9 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
                             new Cert[] { Cert.CA_RSA_SHA384_FOR_MLDSA },
                             null,
                             getClientContextParameters());
-            case "successMldsaCertSig", "failMldsaCertSig" ->
+            case "successMldsaCertSig", "failMldsaCertSig",
+                    "successHandshakeMldsa65Disabled",
+                    "failHandshakeMldsa44Disabled" ->
                     createSSLContext(
                             new Cert[] { Cert.CA_MLDSA_65 },
                             null,
@@ -96,9 +107,10 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
     }
 
     public static void main(String[] args) throws Exception {
-        boolean mldsaCertSig = TEST_CASE.endsWith("MldsaCertSig");
+        boolean mldsaCertSig = !TEST_CASE.contains("Rsa");
         boolean expectFail = "failRsaCertSig".equals(TEST_CASE) ||
-                "failMldsaCertSig".equals(TEST_CASE);
+                "failMldsaCertSig".equals(TEST_CASE) ||
+                "failHandshakeMldsa44Disabled".equals(TEST_CASE);
 
         String signatureSchemes = mldsaCertSig
                 ? "mldsa44,mldsa65"
@@ -106,16 +118,21 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
         System.setProperty("jdk.tls.client.SignatureSchemes", signatureSchemes);
         System.setProperty("jdk.tls.server.SignatureSchemes", signatureSchemes);
 
-        if ("failRsaCertSig".equals(TEST_CASE)) {
+        String disabledAlgorithm = switch (TEST_CASE) {
+            case "failRsaCertSig" ->
+                    "rsa_pkcs1_sha384 usage certificateSignature";
+            case "failMldsaCertSig" ->
+                    "mldsa65 usage certificateSignature";
+            case "successHandshakeMldsa65Disabled" ->
+                    "mldsa65 usage HandshakeSignature";
+            case "failHandshakeMldsa44Disabled" ->
+                    "mldsa44 usage HandshakeSignature";
+            default -> null;
+        };
+        if (disabledAlgorithm != null) {
             Security.setProperty("jdk.tls.disabledAlgorithms",
                     Security.getProperty("jdk.tls.disabledAlgorithms")
-                    + ", rsa_pkcs1_sha384 usage certificateSignature");
-        } else {
-            if ("failMldsaCertSig".equals(TEST_CASE)) {
-                Security.setProperty("jdk.tls.disabledAlgorithms",
-                        Security.getProperty("jdk.tls.disabledAlgorithms")
-                        + ", mldsa65 usage certificateSignature");
-            }
+                    + ", " + disabledAlgorithm);
         }
 
         try {
@@ -124,12 +141,15 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
                 throw new RuntimeException(
                         "Expected SSLHandshakeException was not thrown");
             }
-        } catch (SSLHandshakeException e) {
+        } catch (SSLException e) {
             if (!expectFail) {
                 throw e;
             }
-            System.out.println("Expected SSLHandshakeException: "
-                    + e.getMessage());
+            String expectedMessage = "failHandshakeMldsa44Disabled".equals(
+                    TEST_CASE) ? "(internal_error) No supported " +
+                    "CertificateVerify signature algorithm for ML-DSA key" :
+                    "(handshake_failure) No available authentication scheme";
+            assertEquals(e.getMessage(), expectedMessage);
         }
     }
 }

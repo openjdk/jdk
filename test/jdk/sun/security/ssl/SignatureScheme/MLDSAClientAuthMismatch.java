@@ -27,6 +27,7 @@
  * @summary Test ML-DSA client-authentication certificate selection and
  *          parameter matching
  * @library /javax/net/ssl/templates
+ *          /test/lib
  *
  * @run main/othervm
  *      -Djdk.tls.server.SignatureSchemes=mldsa65,rsa_pkcs1_sha384
@@ -53,8 +54,10 @@
  *      MLDSAClientAuthMismatch
  */
 
+import static jdk.test.lib.Asserts.assertEquals;
+
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
@@ -128,15 +131,15 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
             new MLDSAClientAuthMismatch().run();
             if (expectFail) {
                 throw new RuntimeException(
-                        "Expected SSLHandshakeException was not thrown");
+                        "Expected SSLException was not thrown");
             }
-        } catch (SSLHandshakeException e) {
+        } catch (SSLException e) {
             if (!expectFail) {
                 throw e;
             }
 
-            System.out.println("Expected SSLHandshakeException: " +
-                    e.getMessage());
+            assertEquals(e.getMessage(), "(internal_error) Received " +
+                    "fatal alert: internal_error");
         }
     }
 }
