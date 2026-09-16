@@ -340,15 +340,15 @@ class StubGenerator: public StubCodeGenerator {
 
       // case T_OBJECT:
       __ bind(ret_is_object);
-      if (InlineTypeReturnedAsFields) {
+      if (ValueTypeReturnedAsFields) {
         // Check for scalarized return value
         __ cmpdi(CR0, R3_RET, 0);
         __ beq(CR0, ret_is_long);
         // Load pack handler address
-        __ untested("call stub InlineTypeReturnedAsFields"); // TODO: check return registers usage
+        __ untested("call stub ValueTypeReturnedAsFields"); // TODO: check return registers usage
         __ andi(R12_scratch2, R3_RET, -2);
-        __ ld(R12_scratch2, InlineKlass::adr_members_offset(), R12_scratch2);
-        __ ld(R12_scratch2, InlineKlass::pack_handler_jobject_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::adr_members_offset(), R12_scratch2);
+        __ ld(R12_scratch2, ValueKlass::pack_handler_jobject_offset(), R12_scratch2);
         __ mtctr(R12_scratch2);
         __ bctr(); // tail call
       } // else fall through
@@ -604,13 +604,13 @@ class StubGenerator: public StubCodeGenerator {
     VectorRegister vTmp10 = VR10;
     VectorRegister vSwappedH = VR11;
     VectorRegister vTmp12 = VR12;
-    VectorRegister loadOrder = VR13;
-    VectorRegister vHigh = VR14;
-    VectorRegister vLow = VR15;
-    VectorRegister vState = VR16;
-    VectorRegister vPerm = VR17;
-    VectorRegister vCombinedResult = VR18;
-    VectorRegister vConstC2 = VR19;
+    VectorRegister vState = VR13;
+    VectorRegister vCombinedResult = VR14;
+    VectorRegister vConstC2 = VR15;
+    VectorRegister vp = VR16; // permute vector for byte vector accesses on P8 LE
+
+    // vp must be computed before any byte vector access. Clobbers R0.
+    __ compute_vp_for_byte_vector_unaligned(vp, vTmp12);
 
     __ li(temp1, 0xc2);
     __ sldi(temp1, temp1, 56);
@@ -638,14 +638,6 @@ class StubGenerator: public StubCodeGenerator {
 #endif
     __ clrldi(blocks, blocks, 32);
     __ mtctr(blocks);
-    __ lvsl(loadOrder, temp1);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, 0xf);
-    __ vxor(loadOrder, loadOrder, vTmp12);
-#define LE_swap_bytes(x) __ vec_perm(x, x, x, loadOrder)
-#else
-#define LE_swap_bytes(x)
-#endif
 
     // This code performs Karatsuba multiplication in Galois fields to compute the GHASH operation.
     //
@@ -666,43 +658,22 @@ class StubGenerator: public StubCodeGenerator {
     // "Intel® Carry-Less Multiplication Instruction and its Usage for Computing the GCM Mode"
     // https://web.archive.org/web/20110609115824/https://software.intel.com/file/24918
     //
-    Label L_aligned_loop, L_store, L_unaligned_loop, L_initialize_unaligned_loop;
-    __ andi(temp1, data, 15);
-    __ cmpwi(CR0, temp1, 0);
-    __ bne(CR0, L_initialize_unaligned_loop);
 
-    __ bind(L_aligned_loop);
-      __ lvx(vH, temp1, data);
-      LE_swap_bytes(vH);
+    Label L_loop;
+    __ align(32);
+    __ bind(L_loop);
+      __ load_byte_vector_unaligned(vH, 0, data, temp1, vp);
       computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
+                        vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
       __ addi(data, data, 16);
-    __ bdnz(L_aligned_loop);
-    __ b(L_store);
+    __ bdnz(L_loop);
 
-    __ bind(L_initialize_unaligned_loop);
-    __ li(temp1, 0);
-    __ lvsl(vPerm, temp1, data);
-    __ lvx(vHigh, temp1, data);
-#ifdef VM_LITTLE_ENDIAN
-    __ vspltisb(vTmp12, -1);
-    __ vxor(vPerm, vPerm, vTmp12);
-#endif
-    __ bind(L_unaligned_loop);
-      __ addi(data, data, 16);
-      __ lvx(vLow, temp1, data);
-      __ vec_perm(vH, vHigh, vLow, vPerm);
-      computeGCMProduct(_masm, vLowerH, vH, vHigherH, vConstC2, vZero, vState,
-                    vLowProduct, vMidProduct, vHighProduct, vReducedLow, vTmp8, vTmp9, vCombinedResult, vSwappedH);
-      __ vmr(vHigh, vLow);
-    __ bdnz(L_unaligned_loop);
-
-    __ bind(L_store);
     __ stxvd2x(vState->to_vsr(), state);
     __ blr();
 
     return start;
   }
+
   // -XX:+OptimizeFill : convert fill/copy loops into intrinsic
   //
   // The code is implemented(ported from sparc) as we believe it benefits JVM98, however
@@ -2622,10 +2593,10 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpd(CR5, src_klass, dst_klass);          // if (src->klass() != dst->klass()) return -1;
     __ bne(CR5, L_failed);
 
-    // Check for flat inline type array -> return -1
+    // Check for flat value type array -> return -1
     __ test_flat_array_oop(src, temp, L_failed);
 
-    // Check for null-free (non-flat) inline type array -> handle as object array
+    // Check for null-free (non-flat) value type array -> handle as object array
     __ test_null_free_array_oop(src, temp, L_objArray);
 
     __ cmpwi(CR6, lh, Klass::_lh_neutral_value); // if (!src->is_Array()) return -1;
@@ -4761,7 +4732,7 @@ void generate_lookup_secondary_supers_table_stub() {
     }
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       __ mr(nvtmp, R3_RET); __ fmr(nvftmp, F1_RET); // preserve possible return value from a method returning to the return barrier
       DEBUG_ONLY(__ ld_ptr(tmp1, _abi0(callers_sp), R1_SP);)
       __ ld_ptr(R1_SP, JavaThread::cont_entry_offset(), R16_thread);
@@ -4806,7 +4777,7 @@ void generate_lookup_secondary_supers_table_stub() {
     __ mr(R1_SP, R3_RET); // R3_RET contains the SP of the thawed top frame
 
     if (return_barrier) {
-      assert(!InlineTypeReturnedAsFields, "unsupported");
+      assert(!ValueTypeReturnedAsFields, "unsupported");
       // we're now in the caller of the frame that returned to the barrier
       __ mr(R3_RET, nvtmp); __ fmr(F1_RET, nvftmp); // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
     } else {
@@ -4978,7 +4949,7 @@ void generate_lookup_secondary_supers_table_stub() {
     // Generates all stubs and initializes the entry points
 
     // support for verify_oop (must happen after universe_init)
-    StubRoutines::_verify_oop_subroutine_entry             = generate_verify_oop();
+    StubRoutines::_verify_oop_subroutine_entry = generate_verify_oop();
 
     // nmethod entry barriers for concurrent class unloading
     StubRoutines::_method_entry_barrier = generate_method_entry_barrier();

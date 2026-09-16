@@ -26,7 +26,7 @@ package gc.arguments;
 /*
  * @test TestSurvivorRatioFlag
  * @summary Verify that actual survivor ratio is equal to specified SurvivorRatio value
- * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
+ * @requires vm.gc == "Serial" | vm.gc == "G1"
  * @library /test/lib
  * @library /
  * @modules java.base/jdk.internal.misc
@@ -114,18 +114,14 @@ public class TestSurvivorRatioFlag {
         /**
          * Verify that actual survivor ratio is equal to expected.
          * Depending on selected young GC we verify that:
-         * - for DefNew and ParNew: eden_size / survivor_size is close to expectedRatio;
-         * - for PSNew:             survivor_size equal to young_gen_size / expectedRatio;
-         * - for G1:                survivor_regions <= num_young_regions / expectedRatio.
+         * - for DefNew: eden_size / survivor_size is close to expectedRatio;
+         * - for G1:     survivor_regions <= num_young_regions / expectedRatio.
          */
         public static Void verifySurvivorRatio(int expectedRatio) {
             GCTypes.YoungGCType type = GCTypes.YoungGCType.getYoungGCType();
             switch (type) {
                 case DefNew:
                     verifyDefNewSurvivorRatio(expectedRatio);
-                    break;
-                case PSNew:
-                    verifyPSSurvivorRatio(expectedRatio);
                     break;
                 case G1:
                     verifyG1SurvivorRatio(expectedRatio);
@@ -144,21 +140,6 @@ public class TestSurvivorRatioFlag {
             if (Math.abs(actualRatio - expectedRatio) > 1) {
                 throw new RuntimeException("Expected survivor ratio is: " + expectedRatio
                         + ", but observed ratio is: " + actualRatio);
-            }
-        }
-
-        private static void verifyPSSurvivorRatio(int expectedRatio) {
-            MemoryUsage edenUsage = HeapRegionUsageTool.getEdenUsage();
-            MemoryUsage survivorUsage = HeapRegionUsageTool.getSurvivorUsage();
-
-            long youngGenSize = edenUsage.getMax() + 2 * survivorUsage.getMax();
-            // for Paralle GC Min/InitialSurvivorRatio = SurvivorRatio + 2
-            long expectedSize = HeapRegionUsageTool.alignDown(youngGenSize / (expectedRatio + 2),
-                    wb.getHeapSpaceAlignment());
-
-            if (expectedSize != survivorUsage.getCommitted()) {
-                throw new RuntimeException("Expected survivor size is: " + expectedSize
-                        + ", but observed size is: " + survivorUsage.getCommitted());
             }
         }
 

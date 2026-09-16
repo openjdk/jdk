@@ -100,7 +100,7 @@ class TypeVect;
 class Type_Array;
 class Unique_Node_List;
 class UnstableIfTrap;
-class InlineTypeNode;
+class ValueTypeNode;
 class nmethod;
 class Node_Stack;
 struct Final_Reshape_Counts;
@@ -348,7 +348,7 @@ class Compile : public Phase {
   bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
   bool                  _has_boxed_value;       // True if a boxed object is allocated
   bool                  _has_reserved_stack_access; // True if the method or an inlined method is annotated with ReservedStackAccess
-  bool                  _has_circular_inline_type; // True if method loads an inline type with a circular, non-flat field
+  bool                  _has_circular_value_type; // True if method loads a value type with a circular, non-flat field
   bool                  _needs_nm_slot;         // True if an extra stack slot is needed to hold the null marker at scalarized returns
   uint                  _max_vector_size;       // Maximum size of generated vectors
   bool                  _clear_upper_avx;       // Clear upper bits of ymm registers using vzeroupper
@@ -379,7 +379,7 @@ class Compile : public Phase {
   int                   _loop_opts_cnt;         // loop opts round
   bool                  _has_flat_accesses;     // Any known flat array accesses?
   bool                  _flat_accesses_share_alias; // Initially all flat array share a single slice
-  bool                  _scalarize_in_safepoints; // Scalarize inline types in safepoint debug info
+  bool                  _scalarize_in_safepoints; // Scalarize value types in safepoint debug info
 
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
@@ -398,7 +398,7 @@ class Compile : public Phase {
   GrowableArray<Node*>  _expensive_nodes;       // List of nodes that are expensive to compute and that we'd better not let the GVN freely common
   GrowableArray<ReachabilityFenceNode*> _reachability_fences; // List of reachability fences
   GrowableArray<Node*>  _for_post_loop_igvn;    // List of nodes for IGVN after loop opts are over
-  GrowableArray<Node*>  _inline_type_nodes;     // List of InlineType nodes
+  GrowableArray<Node*>  _value_type_nodes;      // List of ValueType nodes
   GrowableArray<Node*>  _flat_access_nodes;     // List of LoadFlat and StoreFlat nodes
   GrowableArray<Node*>  _for_merge_stores_igvn; // List of nodes for IGVN merge stores
   GrowableArray<UnstableIfTrap*> _unstable_if_traps;        // List of ifnodes after IGVN
@@ -646,8 +646,8 @@ public:
   void          set_has_boxed_value(bool z)     { _has_boxed_value = z; }
   bool              has_reserved_stack_access() const { return _has_reserved_stack_access; }
   void          set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
-  bool              has_circular_inline_type() const { return _has_circular_inline_type; }
-  void          set_has_circular_inline_type(bool z) { _has_circular_inline_type = z; }
+  bool              has_circular_value_type() const { return _has_circular_value_type; }
+  void          set_has_circular_value_type(bool z) { _has_circular_value_type = z; }
   uint              max_vector_size() const     { return _max_vector_size; }
   void          set_max_vector_size(uint s)     { _max_vector_size = s; }
   bool              clear_upper_avx() const     { return _clear_upper_avx; }
@@ -688,7 +688,7 @@ public:
   bool          scalarize_in_safepoints() const { return _scalarize_in_safepoints; }
   void          set_scalarize_in_safepoints(bool z) { _scalarize_in_safepoints = z; }
 
-  // Support for scalarized inline type calling convention
+  // Support for scalarized value type calling convention
   bool              has_scalarized_args() const  { return _method != nullptr && _method->has_scalarized_args(); }
   bool              needs_stack_repair()  const  { return _method != nullptr && _method->needs_stack_repair(); }
   bool              needs_nm_slot()       const  { return _needs_nm_slot; }
@@ -837,13 +837,13 @@ public:
   void remove_from_post_loop_opts_igvn(Node* n);
   void process_for_post_loop_opts_igvn(PhaseIterGVN& igvn);
 
-  // Keep track of inline type nodes for later processing
-  void add_inline_type(Node* n);
-  void remove_inline_type(Node* n);
+  // Keep track of value type nodes for later processing
+  void add_value_type(Node* n);
+  void remove_value_type(Node* n);
 
   bool clear_argument_if_only_used_as_buffer_at_calls(Node* result_cast, PhaseIterGVN& igvn);
 
-  void process_inline_types(PhaseIterGVN &igvn, bool remove = false);
+  void process_value_types(PhaseIterGVN &igvn, bool remove = false);
 
   void add_flat_access(Node* n);
   void remove_flat_access(Node* n);
