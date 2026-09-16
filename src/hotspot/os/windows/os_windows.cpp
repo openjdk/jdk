@@ -2192,8 +2192,7 @@ void os::get_summary_cpu_info(char* buf, size_t buflen) {
   DWORD size = (DWORD)buflen;
   DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
                               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
-                              "ProcessorNameString",
-                              RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, buf, &size);
+                              "ProcessorNameString", RRF_RT_REG_SZ, nullptr, buf, &size);
   if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
