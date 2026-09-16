@@ -569,10 +569,10 @@ public:
     return new_target != nullptr;
   }
 
-  void set_target_for_in_place_relocation(ZForwarding* forwarding, ZPage* page) {
+  void set_target_for_in_place_relocation(ZForwarding* forwarding, ZPage* new_target) {
     precond(target(forwarding) == nullptr);
 
-    set_target(forwarding, page);
+    set_target(forwarding, new_target);
   }
 
   void reuse_in_place_target_page(ZForwarding* forwarding) {
@@ -646,10 +646,10 @@ public:
     if (previous_target != previous_shared_target) {
       // Someone else beat us to installing a new shared target page
 
-      // Release the previous page for local usage
+      // Release from local usage
       release_target_page(previous_target);
 
-      // Retain the new page for local usage
+      // Retain for local usage
       retain_target_page(previous_shared_target);
 
       return previous_shared_target;
@@ -664,43 +664,44 @@ public:
       _in_place = true;
     }
 
-    // Release the previous shared target page
+    // Release from shared usage
     release_target_page(previous_shared_target);
 
-    // Retain the new shared target page
+    // Retain for shared usage
     retain_target_page(new_target);
 
     // Replace the previous shared target page
     set_shared_target(forwarding, new_target);
 
-    // Release the previous page for local usage
+    // Release from local usage
     release_target_page(previous_target);
 
-    // Retain the new page for local usage.
+    // Retain for local usage
     retain_target_page(new_target);
 
     return new_target;
   }
 
-  void retain_in_place_target_page(ZPage* new_target) {
-    ZLocker<ZConditionLock> locker(&_lock);
-
-    // Retain the new page for local usage
-    retain_target_page(new_target);
-  }
-
   void share_in_place_target_page(ZForwarding* forwarding, ZPage* new_target) {
-    assert(new_target != nullptr, "Invalid page");
-
     ZLocker<ZConditionLock> locker(&_lock);
-    assert(_in_place, "Invalid state");
 
-    // Retain the new target page
+    // Retain for shared usage
     retain_target_page(new_target);
 
     // Set the new, shared target page
     assert(shared_target(forwarding) == nullptr, "Invalid state");
     set_shared_target(forwarding, new_target);
+
+    // Retain for local usage
+    retain_target_page(new_target);
+  }
+
+  void signal_in_place_done(ZForwarding* forwarding) {
+    ZLocker<ZConditionLock> locker(&_lock);
+
+    // The page is already installed as the shared target.
+    precond(shared_target(forwarding) != nullptr);
+    precond(_in_place);
 
     _in_place = false;
 
@@ -750,18 +751,17 @@ public:
   void set_target_for_in_place_relocation(ZForwarding* forwarding, ZPage* new_target) {
     precond(target(forwarding) == nullptr);
 
-    _shared_allocator->retain_in_place_target_page(new_target);
+    _shared_allocator->share_in_place_target_page(forwarding, new_target);
 
     set_target(forwarding, new_target);
   }
 
   void reuse_in_place_target_page(ZForwarding* forwarding) {
     // The page is already installed in the target.
-    ZPage* const page = target(forwarding);
-    assert(page != nullptr, "Invalid state");
+    precond(target(forwarding) != nullptr);
 
     // Medium pages are shared.
-    _shared_allocator->share_in_place_target_page(forwarding, page);
+    _shared_allocator->signal_in_place_done(forwarding);
   }
 
   zaddress alloc_object(ZForwarding* forwarding, size_t size) const {
