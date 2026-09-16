@@ -253,6 +253,15 @@ public class Rdn implements Serializable, Comparable<Object> {
     }
 
     /**
+     * {@return the number of type/value mappings contained in this Rdn}
+     * This method is same as {@link #size()}, except that it cannot be
+     * overridden by sub-classes.
+     */
+    final int numAttributes() {
+        return this.entries.size();
+    }
+
+    /**
      * Retrieves one of this Rdn's value.
      * This is a convenience method for obtaining the value,
      * when the RDN contains a single type and value mapping,

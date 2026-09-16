@@ -124,7 +124,7 @@ final class Rfc2253Parser {
 
             // RFC 2253 - RDN must contain at least one attributeTypeAndValue:
             // RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
-            if (rdn.size() == 0) {
+            if (rdn.numAttributes() == 0) {
                 throw new InvalidNameException(
                 "Invalid name: \"" + name + "\" (empty RDN)");
             }
