@@ -48,6 +48,9 @@ source %{
   }
 
   bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
+    if (opcode == Op_MulReductionVF || opcode == Op_MulReductionVD) {
+      return false;
+    }
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
@@ -111,6 +114,12 @@ source %{
           return false;
         }
         break;
+      case Op_MulReductionVF:
+      case Op_MulReductionVD:
+        if (vlen < 2 || !is_power_of_2(vlen)) {
+          return false;
+        }
+        break;
       case Op_VectorCastHF2F:
       case Op_VectorCastF2HF:
         return UseZvfh || UseZvfhmin;
@@ -150,6 +159,9 @@ source %{
     }
 
     switch (opcode) {
+      case Op_MulReductionVF:
+      case Op_MulReductionVD:
+        return false;
       case Op_SelectFromTwoVector:
         // There is no masked version of selectFrom two vector, i.e. selectFrom(av, bv, mask) in vector API.
         return false;
@@ -2994,6 +3006,36 @@ instruct reduce_mulL_masked(iRegLNoSp dst, iRegL isrc, vReg vsrc,
                              as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
                              Matcher::vector_element_basic_type(this, $vsrc), Matcher::vector_length(this, $vsrc),
                              Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulF(fRegF dst, fRegF fsrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  predicate(!n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVF fsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulF $dst, $fsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+
+  ins_encode %{
+    __ reduce_mul_fp_v($dst$$FloatRegister, $fsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
+                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                       false /* is_double */, Matcher::vector_length(this, $vsrc));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct reduce_mulD(fRegD dst, fRegD dsrc, vReg vsrc,
+                     vReg tmp1, vReg tmp2) %{
+  predicate(!n->as_Reduction()->requires_strict_order());
+  match(Set dst (MulReductionVD dsrc vsrc));
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2);
+  format %{ "reduce_mulD $dst, $dsrc, $vsrc\t# KILL $tmp1, $tmp2" %}
+
+  ins_encode %{
+    __ reduce_mul_fp_v($dst$$FloatRegister, $dsrc$$FloatRegister, as_VectorRegister($vsrc$$reg),
+                       as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
+                       true /* is_double */, Matcher::vector_length(this, $vsrc));
   %}
   ins_pipe(pipe_slow);
 %}
