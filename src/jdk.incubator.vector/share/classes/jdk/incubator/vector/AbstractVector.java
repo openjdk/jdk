@@ -177,53 +177,20 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     /*package-private*/
     @ForceInline
+    @SuppressWarnings({"unchecked", "rawtypes"})
     final AbstractVector<?> asVectorRawTemplate(LaneType laneType) {
         // NOTE:  This assumes that convert0('X')
         // respects REGISTER_ENDIAN order.
-        return convert0('X', vspecies().withLanes(laneType)).swapIfNeeded(vspecies());
-    }
-
-    @ForceInline
-    static <T> VectorShuffle<T> normalizeSubLanesForSpecies(AbstractSpecies<T> targetSpecies, int subLanesPerSrc) {
-        final int lanes = targetSpecies.laneCount();
-
-        if ((lanes % subLanesPerSrc) != 0) {
-            throw new IllegalArgumentException("laneCount " + lanes + " not divisible by subLanesPerSrc " + subLanesPerSrc);
-        }
-
-        // Each group corresponds to one source lane.
-        // For each group, reverse the lanes inside that group.
-        final int groups = lanes / subLanesPerSrc;
-        int[] map = new int[lanes];
-        for (int g = 0; g < groups; ++g) {
-            int base = g * subLanesPerSrc;
-            for (int j = 0; j < subLanesPerSrc; ++j) {
-                 map[base + j] = base + (subLanesPerSrc - 1 - j);
-            }
-        }
-        return VectorShuffle.fromArray(targetSpecies, map, 0);
-    }
-
-    @ForceInline
-    final int subLanesToSwap(AbstractSpecies<?> srcSpecies) {
-        if (java.nio.ByteOrder.nativeOrder() != ByteOrder.BIG_ENDIAN) {
-            return -1;
-        }
-        int sBytes = srcSpecies.elementSize();
-        int tBytes = vspecies().elementSize();
-
-        // No lane reordering needed for same size or widening reinterprets
-        if (sBytes == tBytes || (sBytes % tBytes) != 0) {
-            return -1;
-        }
-        int subLanesPerSrc = sBytes / tBytes;
-        return subLanesPerSrc;
+        AbstractSpecies<E> srcSpecies = vspecies();
+        AbstractSpecies dstSpecies = srcSpecies.withLanes(laneType);
+        return dstSpecies.swapIfNeeded(srcSpecies, convert0('X', dstSpecies));
     }
 
     /*package-private*/
     @ForceInline
     ByteVector asByteVectorRawTemplate() {
-        return (ByteVector) asVectorRawTemplate(LaneType.BYTE);
+        // NOTE: asByteVectorRaw respects REGISTER_ENDIAN order.
+        return (ByteVector) convert0('X', vspecies().byteSpecies());
     }
 
 
@@ -276,9 +243,6 @@ abstract sealed class AbstractVector<E> extends Vector<E>
 
     /*package-private*/
     abstract AbstractVector<E> maybeSwap(ByteOrder bo);
-
-    /*package-private*/
-    abstract AbstractVector<?> swapIfNeeded(AbstractSpecies<?> srcSpecies);
 
     /*package-private*/
     @ForceInline

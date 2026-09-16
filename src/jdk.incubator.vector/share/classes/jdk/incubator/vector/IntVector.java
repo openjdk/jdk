@@ -3730,18 +3730,6 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
         return this;
     }
 
-    @Override
-    @ForceInline
-    final
-    IntVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Integer> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (IntVector) this.rearrange(shuffle);
-    }
-
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_INT_INDEX_SCALE);
     static final long ARRAY_BASE =

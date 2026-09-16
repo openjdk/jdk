@@ -3619,18 +3619,6 @@ public abstract sealed class Float16Vector extends AbstractVector<Float16>
         return this;
     }
 
-    @Override
-    @ForceInline
-    final
-    Float16Vector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Float16> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (Float16Vector) this.rearrange(shuffle);
-    }
-
     static final int ARRAY_SHIFT =
         31 - Integer.numberOfLeadingZeros(Unsafe.ARRAY_SHORT_INDEX_SCALE);
     static final long ARRAY_BASE =
