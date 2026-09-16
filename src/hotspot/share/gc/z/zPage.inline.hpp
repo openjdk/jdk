@@ -185,7 +185,7 @@ inline bool ZPage::dec_relocation_target_ref_count() {
 
   _relocation_target_ref_count--;
 
-  return  _relocation_target_ref_count == 0;
+  return _relocation_target_ref_count == 0;
 }
 
 inline uint32_t ZPage::seqnum() const {
