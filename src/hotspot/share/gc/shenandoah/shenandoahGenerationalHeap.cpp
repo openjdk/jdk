@@ -762,6 +762,48 @@ private:
     _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
   }
 
+  static bool needs_update(const ShenandoahHeapRegion* r) {
+    return r->is_active() && (!r->is_cset() || r->has_self_forwards());
+  }
+
+  template<class T>
+  void do_work(uint worker_id) {
+    T cl;
+
+    if (worker_id == 0) {
+      return_evac_reserves_to_mutators();
+    }
+
+    // We update references for global, mixed, and young collections.
+    assert(_generation->is_mark_complete(), "Expected complete marking");
+    while (true) {
+      if (_heap->check_cancelled_gc_and_yield(true)) {
+        return;
+      }
+
+      ShenandoahHeapRegion* r = _regions->next();
+      if (r != nullptr) {
+        log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
+        if (needs_update(r)) {
+          update_refs_in_region<T>(r, cl);
+        }
+      } else if (_generation->is_young()) {
+        ShenandoahRegionChunk assignment;
+        if (_work_chunks->next(&assignment)) {
+          r = assignment._r;
+          if (needs_update(r) && r->is_old()) {
+            update_refs_in_old_region<T>(assignment, r, cl, worker_id);
+          }
+        } else {
+          // no region work, no rset chunks left
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+  }
+
   template <class T>
   void update_refs_in_region(ShenandoahHeapRegion* r, T& cl) {
     HeapWord* update_watermark = r->get_update_watermark();
@@ -789,91 +831,43 @@ private:
     }
   }
 
-  template<class T>
-  void do_work(uint worker_id) {
-    T cl;
-
-    if (worker_id == 0) {
-      return_evac_reserves_to_mutators();
+  template <class T>
+  void update_refs_in_old_region(ShenandoahRegionChunk& assignment, ShenandoahHeapRegion* r, T& cl, uint worker_id) {
+    // allocations into old (i.e., promotions or evacuations) do _not_ update references
+    // when they copy, so we move the UWM up for each such allocation.
+    HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
+    HeapWord* end_of_range = r->get_update_watermark();
+    if (end_of_range > start_of_range + assignment._chunk_size) {
+      end_of_range = start_of_range + assignment._chunk_size;
     }
 
-    // We update references for global, mixed, and young collections.
-    assert(_generation->is_mark_complete(), "Expected complete marking");
-    while (true) {
-      if (_heap->check_cancelled_gc_and_yield(true)) {
-        return;
-      }
-
-      ShenandoahHeapRegion* r = _regions->next();
-      if (r == nullptr) {
-        break;
-      }
-
-      log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
-        update_refs_in_region<T>(r, cl);
-      }
-    }
-
-    if (_generation->is_young()) {
-      // Since this is generational and not GLOBAL, we have to process the remembered set.  There's no remembered
-      // set processing if not in generational mode or if GLOBAL mode.
-
-      // After this thread has exhausted its traditional update-refs work, it continues with updating refs within
-      // remembered set. The remembered set workload is better balanced between threads, so threads that are "behind"
-      // can catch up with other threads during this phase, allowing all threads to work more effectively in parallel.
-      update_references_in_remembered_set(worker_id, cl);
-    }
-  }
-
-  template<class T>
-  void update_references_in_remembered_set(uint worker_id, T &cl) {
-    ShenandoahMarkingContext* const ctx = _heap->marking_context();
-    bool is_mixed = _heap->collection_set()->has_old_regions();
-    ShenandoahRegionChunk assignment;
-    ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
-
-    while (!_heap->check_cancelled_gc_and_yield(true) && _work_chunks->next(&assignment)) {
-      // Keep grabbing next work chunk to process until finished, or asked to yield
-      ShenandoahHeapRegion* r = assignment._r;
-      if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {
-        // allocations into old (i.e., promotions or evacuations) do _not_ update references
-        // when they copy, so we move the UWM up for each such allocation.
-        HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;
-        HeapWord* end_of_range = r->get_update_watermark();
-        if (end_of_range > start_of_range + assignment._chunk_size) {
-          end_of_range = start_of_range + assignment._chunk_size;
-        }
-
-        if (start_of_range >= end_of_range) {
-          continue;
-        }
-
-        // Old region in a young cycle or mixed cycle.
-        if (is_mixed) {
-          if (r->is_humongous()) {
-            // Need to examine both dirty and clean cards during mixed evac.
-            r->oop_iterate_humongous_slice_all(&cl,start_of_range, assignment._chunk_size);
-          } else {
-            // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
-            // and filled.  This will use mark bits to find objects that need to be updated.
-            update_references_in_old_region(cl, ctx, scanner, r, start_of_range, end_of_range);
-          }
+    if (start_of_range < end_of_range) {
+      if (_heap->collection_set()->has_old_regions()) {
+        // Old region in a mixed cycle may have old -> old pointers
+        if (r->is_humongous()) {
+          // Need to examine both dirty and clean cards during mixed evac.
+          r->oop_iterate_humongous_slice_all(&cl, start_of_range, assignment._chunk_size);
         } else {
-          // This is a young evacuation
-          size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
-          size_t clusters = assignment._chunk_size / cluster_size;
-          assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
-          scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
+          // Since this is mixed evacuation, old regions that are candidates for collection have not been coalesced
+          // and filled. This will use mark bits to find objects that need to be updated.
+          update_all_refs_in_old_range(cl, r, start_of_range, end_of_range);
         }
+      } else {
+        // This is a young evacuation
+        ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
+        size_t cluster_size = CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+        size_t clusters = assignment._chunk_size / cluster_size;
+        assert(clusters * cluster_size == assignment._chunk_size, "Chunk assignment must align on cluster boundaries");
+        scanner->process_region_slice(r, assignment._chunk_offset, clusters, end_of_range, &cl, true, worker_id);
       }
     }
   }
 
   template<class T>
-  void update_references_in_old_region(T &cl, const ShenandoahMarkingContext* ctx, ShenandoahScanRemembered* scanner,
-                                    const ShenandoahHeapRegion* r, HeapWord* start_of_range,
-                                    HeapWord* end_of_range) const {
+  void update_all_refs_in_old_range(T &cl, const ShenandoahHeapRegion* r,
+                                    HeapWord* start_of_range, HeapWord* end_of_range) const {
+    ShenandoahMarkingContext* const ctx = _heap->marking_context();
+    ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
     // In case last object in my range spans boundary of my chunk, I may need to scan all the way to top()
     ShenandoahObjectToOopBoundedClosure<T> objs(&cl, start_of_range, r->top());
 
