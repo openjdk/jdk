@@ -45,9 +45,9 @@ public class ClassLoaderTest {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Test"), clb ->
             clb.withFlags(ACC_PUBLIC)
                .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob ->
-               cob.aload(0)
-                  .invokespecial(CD_Object, INIT_NAME, MTD_void)
-                  .return_())
+                               cob.aload(0)
+                                  .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                  .return_())
         );
 
         @Override
@@ -82,6 +82,5 @@ public class ClassLoaderTest {
                            "FollowReferences should have reported Test.class as target kind OTHER");
 
         Reference.reachabilityFence(ldr);
-        Reference.reachabilityFence(test);
     }
 }

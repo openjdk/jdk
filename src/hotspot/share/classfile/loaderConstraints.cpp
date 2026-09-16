@@ -442,8 +442,7 @@ InstanceKlass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
   return nullptr;
 }
 
-// Checks that a class wasn't added to the table then class loading subsequently failed for this class,
-// so we don't have a dangling pointer to InstanceKlass in the LoaderConstraintTable.
+// Checks that a class that failed to load wasn't added to the table.
 void LoaderConstraintTable::check_failed_loaded_klass(InstanceKlass* klass,
                                                       ClassLoaderData* loader) {
 

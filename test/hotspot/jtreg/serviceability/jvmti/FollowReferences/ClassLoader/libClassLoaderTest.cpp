@@ -33,8 +33,7 @@ static jvmtiEnv* jvmti = nullptr;
 JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **)&jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == nullptr) {
-    printf("jvm->GetEnv failed\n");
-    fflush(nullptr);
+    LOG("jvm->GetEnv failed\n");
     return JNI_ERR;
   }
   jvmtiCapabilities caps;
