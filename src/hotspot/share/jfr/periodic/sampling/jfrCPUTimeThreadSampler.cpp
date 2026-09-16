@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +27,7 @@
 #include "logging/log.hpp"
 
 #if defined(LINUX)
+#include "code/codeCache.hpp"
 #include "jfr/periodic/sampling/jfrThreadSampling.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -34,6 +36,7 @@
 #include "jfrfiles/jfrEventClasses.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -44,6 +47,8 @@
 #include "utilities/ticks.hpp"
 
 static const int64_t RECOMPUTE_INTERVAL_MS = 100;
+
+static bool _native_stack_enabled = false;
 
 static bool is_excluded(JavaThread* jt) {
   return jt->is_hidden_from_external_view() ||
@@ -248,6 +253,8 @@ class JfrCPUSamplerThread : public NonJavaThread {
   int64_t get_sampling_period() const { return AtomicAccess::load(&_current_sampling_period_ns); };
 
   void sample_thread(JfrSampleRequest& request, void* ucontext, JavaThread* jt, JfrThreadLocal* tl, JfrTicks& now);
+
+  u4 walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs);
 
   // process the queues for all threads that are in native state (and requested to be processed)
   void stackwalk_threads_in_native();
@@ -536,6 +543,10 @@ void JfrCPUTimeThreadSampling::set_period(u8 nanos) {
   instance().set_throttle_value(throttle);
 }
 
+void JfrCPUTimeThreadSampling::set_native_stack_enabled(bool enabled) {
+  _native_stack_enabled = enabled;
+}
+
 void JfrCPUTimeThreadSampling::set_throttle_value(JfrCPUSamplerThrottle& throttle) {
   if (_sampler != nullptr) {
     _sampler->set_throttle(throttle);
@@ -606,6 +617,35 @@ static bool check_state(JavaThread* thread) {
   }
 }
 
+// Walks the native part of the stack until the topmost Java frame
+// and collects PC addresses of the native frames to the provided array.
+u4 JfrCPUSamplerThread::walk_native_stack(const void* ucontext, JavaThread* jt, address* pcs) {
+  frame f = os::fetch_frame_from_context(ucontext);
+  const intptr_t* const last_java_sp = jt->last_Java_sp();
+
+  u4 count = 0;
+  while (count < JfrCPUTimeSampleRequest::MAX_NATIVE_FRAMES) {
+    const address pc = f.pc();
+    if (pc == nullptr || CodeCache::contains(pc)) {
+      break; // reached generated Java code
+    }
+    pcs[count++] = pc;
+
+    if (!jt->is_in_full_stack_checked(reinterpret_cast<address>(f.fp())) ||
+        (last_java_sp != nullptr && f.fp() >= last_java_sp) ||
+        os::is_first_C_frame(&f)) {
+      break;
+    }
+
+    const frame sender = os::get_sender_for_C_frame(&f);
+    if (sender.fp() <= f.fp()) {
+      break; // frame pointers must increase
+    }
+    f = sender;
+  }
+  return count;
+}
+
 void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   JfrTicks now = JfrTicks::now();
   JavaThread* jt = get_java_thread_if_valid();
@@ -629,6 +669,10 @@ void JfrCPUSamplerThread::handle_timer_signal(siginfo_t* info, void* context) {
   int64_t period = get_sampling_period() * (info->si_overrun + 1);
   request._cpu_time_period = Ticks(period / 1000000000.0 * JfrTime::frequency()) - Ticks(0);
   sample_thread(request._request, context, jt, tl, now);
+
+  if (jt->thread_state() == _thread_in_native && _native_stack_enabled) {
+    request._native_pc_count = walk_native_stack(context, jt, request._native_pcs);
+  }
 
   if (queue.enqueue(request)) {
     if (queue.size() == 1) {
@@ -851,6 +895,12 @@ void JfrCPUTimeThreadSampling::set_rate(double rate) {
 
 void JfrCPUTimeThreadSampling::set_period(u8 period_nanos) {
   if (period_nanos != 0) {
+    warn();
+  }
+}
+
+void JfrCPUTimeThreadSampling::set_native_stack_enabled(bool enabled) {
+  if (enabled) {
     warn();
   }
 }
