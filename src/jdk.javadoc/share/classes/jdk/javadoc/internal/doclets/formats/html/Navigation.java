@@ -48,6 +48,7 @@ import jdk.javadoc.internal.html.HtmlAttr;
 import jdk.javadoc.internal.html.HtmlId;
 import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
 
 /**
@@ -533,7 +534,7 @@ public class Navigation {
     private void addThemePanel(Content target) {
         var selectTheme = contents.getContent("doclet.theme.select_theme");
         target.add(HtmlTree.DIV(HtmlIds.THEME_PANEL)
-                .add(HtmlTree.DIV(selectTheme))
+                .add(HtmlTree.DIV(HtmlStyles.panelHeading, selectTheme))
                 .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlIds.THEME_LIGHT.name(), Text.EMPTY)
                                 .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_LIGHT)
                                         .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_LIGHT.name()))
@@ -545,7 +546,13 @@ public class Navigation {
                         .add(HtmlTree.LABEL(HtmlIds.THEME_OS.name(), Text.EMPTY)
                                 .add(HtmlTree.INPUT(HtmlAttr.InputType.RADIO, HtmlIds.THEME_OS)
                                         .put(HtmlAttr.NAME, "theme").put(HtmlAttr.VALUE, HtmlIds.THEME_OS.name()))
-                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system"))))));
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.system")))))
+                .add(HtmlTree.DIV(HtmlTree.LABEL(HtmlId.of("underline-links").name(),
+                                        HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, HtmlId.of("underline-links"))
+                                                .put(HtmlAttr.ONCLICK, ""))
+                                .add(HtmlTree.SPAN(contents.getContent("doclet.theme.underline_links")))))
+                .add(HtmlTree.BUTTON(HtmlId.of("theme-panel-close-button"))));
+        target.add(new Script().append("initTheme();\n").asContent());
     }
 
     private void addSearch(Content target) {
