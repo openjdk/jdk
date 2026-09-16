@@ -2507,15 +2507,19 @@ class ShenandoahUpdateHeapRefsTask : public WorkerTask {
 private:
   ShenandoahHeap* _heap;
   ShenandoahRegionIterator* _regions;
+  ShenandoahRegionIteratorTaskAdapter _region_tasks;
+  TaskTerminator _terminator;
+
 public:
   explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
     WorkerTask("Shenandoah Update References"),
     _heap(ShenandoahHeap::heap()),
-    _regions(regions) {
+    _regions(regions),
+    _region_tasks(_regions),
+    _terminator(_heap->workers()->active_workers(), &_region_tasks) {
   }
 
   void work(uint worker_id) {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
     SuspendibleThreadSetJoiner stsj;
     do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
@@ -2536,20 +2540,35 @@ private:
       _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
 
+    ShenandoahTerminatorTerminator tt(_heap, true);
     T cl;
-    ShenandoahHeapRegion* r = _regions->next();
-    while (r != nullptr) {
-      // Regions put into service after final mark will not have an update watermark. Regions with self forwarded objects
-      // must also have the references in these objects be updated.
-      HeapWord* update_watermark = r->get_update_watermark();
-      assert (update_watermark >= r->bottom(), "sanity");
-      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
-        _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-      }
+    while (true) {
       if (_heap->check_cancelled_gc_and_yield(true)) {
         return;
       }
-      r = _regions->next();
+
+      ShenandoahHeapRegion* r = nullptr;
+      if (tt.can_work()) {
+        r = _regions->next();
+      }
+
+      if (r != nullptr) {
+        ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
+                                  ShenandoahPhaseTimings::Work,
+                                             worker_id, true);
+
+        HeapWord* update_watermark = r->get_update_watermark();
+        assert (update_watermark >= r->bottom(), "sanity");
+        if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
+          // Regions put into service after final mark will not have an update watermark. Regions with self forwarded objects
+          // must also have the references in these objects be updated.
+          _heap->marked_object_oop_iterate(r, &cl, update_watermark);
+        }
+      } else {
+        if (_terminator.offer_termination(&tt)) {
+          break;
+        }
+      }
     }
   }
 };
@@ -2795,9 +2814,16 @@ void ShenandoahRegionIterator::reset() {
   _index.store_relaxed(0);
 }
 
-bool ShenandoahRegionIterator::has_next() const {
-  return _index.load_relaxed() < _heap->num_regions();
+#ifdef ASSERT
+void ShenandoahRegionIteratorTaskAdapter::assert_empty() const {
+  assert(_regions->remaining() == 0, "All regions should be visited");
 }
+#endif
+
+uint ShenandoahRegionIteratorTaskAdapter::tasks() const {
+  return checked_cast<uint>(_regions->remaining());
+}
+
 
 ShenandoahLiveData* ShenandoahHeap::get_liveness_cache(uint worker_id) {
 #ifdef ASSERT

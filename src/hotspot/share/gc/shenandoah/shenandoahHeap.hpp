@@ -29,6 +29,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
@@ -106,9 +107,23 @@ public:
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
 
-  // This is *not* MT safe. However, in the absence of multithreaded access, it
-  // can be used to determine if there is more work to do.
-  bool has_next() const;
+  // Return the number of regions yet to be visited. Note that this is
+  // an upper bound in a multi-threaded context. That is, it is a stale
+  // estimate.
+  inline size_t remaining() const;
+};
+
+class ShenandoahRegionIteratorTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
+  ShenandoahRegionIterator* _regions;
+public:
+  explicit ShenandoahRegionIteratorTaskAdapter(ShenandoahRegionIterator* regions)
+    : _regions(regions) {}
+
+#ifdef ASSERT
+  void assert_empty() const override;
+#endif
+
+  uint tasks() const override;
 };
 
 class ShenandoahHeapRegionClosure : public StackObj {

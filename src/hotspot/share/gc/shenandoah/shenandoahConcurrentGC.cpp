@@ -650,7 +650,7 @@ void ShenandoahConcurrentGC::entry_update_refs() {
   EventMark em("%s", msg);
 
   ShenandoahWorkerScope scope(heap->workers(),
-                              ShenandoahWorkerPolicy::calc_workers_for_conc_update_ref(),
+                              heap->max_workers(),
                               "concurrent reference update");
 
   update_phase(ShenandoahController::UPDATE_REFS);
