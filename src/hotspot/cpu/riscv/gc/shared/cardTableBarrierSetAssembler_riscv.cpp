@@ -91,7 +91,7 @@ void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembl
 
   __ beqz(count, L_done); // zero count - nothing to do
   // end = start + count << LogBytesPerHeapOop
-  __ shadd(end, count, start, count, LogBytesPerHeapOop);
+  __ shadd(end, count, start, LogBytesPerHeapOop);
   __ subi(end, end, BytesPerHeapOop); // last element address to make inclusive
 
   __ srli(start, start, CardTable::card_shift());
