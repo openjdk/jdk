@@ -988,9 +988,9 @@ void HeapShared::start_scanning_for_oops() {
     if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                     UseCompressedOops ? p2i(CompressedOops::end()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
     }
 
     archive_subgraphs();
@@ -1759,7 +1759,7 @@ public:
   ValueKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
     : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
     precond(obj != nullptr);
-    precond(ik->has_inlined_fields());
+    precond(ik->has_flat_fields());
   }
 
   // This function is called on every field of _ik.
@@ -1777,7 +1777,7 @@ public:
       if (fd->is_null_free_value_type() || !vk->is_payload_marked_as_null(field_addr)) {
         // Found a non-null flattened instance of vk. Let's record vk.
         add_value_class(_subgraph_info, vk);
-        if (vk->has_inlined_fields()) {
+        if (vk->has_flat_fields()) {
           ValueKlassFinder finder(_subgraph_info, vk, field_addr);
           finder.find();
         }
@@ -1827,7 +1827,7 @@ void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_o
         if (!added) {
           add_value_class(subgraph_info, elem_k);
         }
-        if (elem_k->has_inlined_fields()) {
+        if (elem_k->has_flat_fields()) {
           // "logical address" of the i-th array element.
           address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
           ValueKlassFinder finder(subgraph_info, elem_k, elem);
@@ -1837,7 +1837,7 @@ void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_o
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    if (ik->has_inlined_fields()) {
+    if (ik->has_flat_fields()) {
       ValueKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
       finder.find();
     }

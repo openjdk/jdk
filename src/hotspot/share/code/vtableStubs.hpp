@@ -137,7 +137,6 @@ class VtableStub {
 
   static address _chunk;             // For allocation
   static address _chunk_end;         // For allocation
-  static VMReg   _receiver_location; // Where to find receiver
 
   VtableStub*    _next;              // Pointer to next entry in hash table
   const short    _index;             // vtable index
@@ -155,7 +154,6 @@ class VtableStub {
           _type(is_vtable_stub ? Type::vtable_stub : Type::itable_stub),
           _caller_type(caller_is_c1 ? CallerType::c1 : CallerType::unspecified) {}
   VtableStub* next() const                       { return _next; }
-  static VMReg receiver_location()               { return _receiver_location; }
   void set_next(VtableStub* n)                   { _next = n; }
 
  public:

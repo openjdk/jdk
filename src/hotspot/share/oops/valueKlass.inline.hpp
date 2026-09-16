@@ -121,8 +121,8 @@ void ValueKlass::oop_iterate_value_payload_f(address payload, Function function)
   OopMapBlock* const end_map = map + nonstatic_oop_map_count();
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {
@@ -150,8 +150,8 @@ inline void ValueKlass::oop_iterate_value_payload_bounded(address payload, OopCl
   T* const h   = (T*) hi;
 
   // OopMap offsets are relative to an object header, but we are iterating over
-  // inlined value payloads, which often don't have an object header. Set up a
-  // synthetic object base that can be used by the oop map offset calculations.
+  // flattened value payloads, which often don't have an object header. Use a
+  // synthetic object base for the oop map offset calculations.
   const address synthetic_object_base = payload - payload_offset();
 
   for (; map < end_map; map++) {

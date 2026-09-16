@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ int CompilerEvent::PhaseEvent::get_phase_id(const char* phase_name, bool may_exi
   {
     PhaseTypeGuard guard(sync);
     if (_phase_names == nullptr) {
-      _phase_names = new (mtInternal) GrowableArray<const char*>(100, mtCompiler);
+      _phase_names = new (mtCompiler) GrowableArray<const char*>(100, mtCompiler);
       register_jfr_serializer = true;
     } else if (may_exist) {
       index = lookup_phase(phase_name);

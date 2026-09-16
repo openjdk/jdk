@@ -2791,6 +2791,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   if (use->is_MinMax()) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_MinMax(); });
   }
+  // Check for A | (B | C) and (B | C) | A where A == B or A == C.
+  if (use_op == Op_OrI || use_op == Op_OrL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
+  }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
   };

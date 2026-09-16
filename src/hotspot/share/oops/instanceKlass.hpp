@@ -386,8 +386,8 @@ class InstanceKlass: public Klass {
   bool has_localvariable_table() const     { return _misc_flags.has_localvariable_table(); }
   void set_has_localvariable_table(bool b) { _misc_flags.set_has_localvariable_table(b); }
 
-  bool has_inlined_fields() const { return _misc_flags.has_inlined_fields(); }
-  void set_has_inlined_fields()   { _misc_flags.set_has_inlined_fields(true); }
+  bool has_flat_fields() const { return _misc_flags.has_flat_fields(); }
+  void set_has_flat_fields()   { _misc_flags.set_has_flat_fields(true); }
 
   bool has_null_restricted_static_fields() const { return _misc_flags.has_null_restricted_static_fields(); }
   void set_has_null_restricted_static_fields()   { _misc_flags.set_has_null_restricted_static_fields(true); }
