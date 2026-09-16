@@ -212,7 +212,7 @@ instruct encodePAndStoreN_volatile_shenandoah(iRegP src, indirect mem, iRegPNoSp
         t1,
         /* is_volatile = */ true);
   %}
-  ins_cost(4 * STORE_COST);
+  ins_cost(VOLATILE_REF_COST);
   ins_pipe(pipe_serial);
 %}
 

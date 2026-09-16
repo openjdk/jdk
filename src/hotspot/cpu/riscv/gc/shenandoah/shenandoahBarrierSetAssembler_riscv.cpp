@@ -597,6 +597,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
   // Do the actual load. This load is the candidate for implicit null check, and MUST come first.
   if (is_narrow) {
     if (is_acquire) {
+      assert(UseZalasr, "acquire path requires Zalasr");
       assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
           "acquire path requires address to be base-only");
       __ lw_aq(dst, src.base());
@@ -606,6 +607,7 @@ void ShenandoahBarrierSetAssembler::load_c2(const MachNode* node, MacroAssembler
     }
   } else {
     if (is_acquire) {
+      assert(UseZalasr, "acquire path requires Zalasr");
       assert(src.getMode() == Address::base_plus_offset && src.offset() == 0,
           "acquire path requires address to be base-only");
       __ ld_aq(dst, src.base());
@@ -635,6 +637,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
       src = tmp1;
     }
     if (is_volatile) {
+      assert(UseZalasr, "volatile path requires Zalasr");
       assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
           "volatile path requires address to be base-only");
       __ sw_rl(src, dst.base());
@@ -643,6 +646,7 @@ void ShenandoahBarrierSetAssembler::store_c2(const MachNode* node, MacroAssemble
     }
   } else {
     if (is_volatile) {
+      assert(UseZalasr, "volatile path requires Zalasr");
       assert(dst.getMode() == Address::base_plus_offset && dst.offset() == 0,
           "volatile path requires address to be base-only");
       __ sd_rl(src, dst.base());
