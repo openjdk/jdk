@@ -210,23 +210,29 @@ void VM_Version::common_initialize() {
     }
   } else {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
-      warning("CRC32 intrinsic are not available on this CPU.");
+      warning("CRC32 intrinsic is not available on this CPU.");
     }
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
-  if (UseCRC32CIntrinsics) {
-    warning("CRC32C intrinsics are not available on this CPU.");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  if (UseZbc) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, true);
+    }
+  } else {
+    if (UseCRC32CIntrinsics) {
+      warning("CRC32C intrinsic is not available on this CPU.");
+      FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+    }
   }
 
-  if (InlineTypePassFieldsAsArgs) {
-    warning("InlineTypePassFieldsAsArgs is not supported on this CPU");
-    FLAG_SET_DEFAULT(InlineTypePassFieldsAsArgs, false);
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
   }
-  if (InlineTypeReturnedAsFields) {
-    warning("InlineTypeReturnedAsFields is not supported on this CPU");
-    FLAG_SET_DEFAULT(InlineTypeReturnedAsFields, false);
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 }
 

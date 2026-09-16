@@ -93,7 +93,7 @@ class fieldDescriptor {
   bool is_transient()             const    { return access_flags().is_transient(); }
   bool is_strict()                const    { return access_flags().is_strict(); }
   inline bool is_flat()           const;
-  inline bool is_null_free_inline_type() const;
+  inline bool is_null_free_value_type() const;
   inline bool has_null_marker()   const;
 
   bool is_synthetic()             const    { return access_flags().is_synthetic(); }

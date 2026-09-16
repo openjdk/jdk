@@ -29,12 +29,12 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
@@ -501,16 +501,16 @@ Symbol* SignatureStream::find_symbol() {
   return name;
 }
 
-InlineKlass* SignatureStream::as_inline_klass(InstanceKlass* holder) {
-  assert(InlineTypePassFieldsAsArgs || InlineTypeReturnedAsFields, "Not needed");
+ValueKlass* SignatureStream::as_value_klass(InstanceKlass* holder) {
+  assert(ValueTypePassFieldsAsArgs || ValueTypeReturnedAsFields, "Not needed");
   ThreadInVMfromUnknown tiv;
   JavaThread* THREAD = JavaThread::current();
   HandleMark hm(THREAD);
   Handle class_loader(THREAD, holder->class_loader());
   Klass* k = as_klass(class_loader, SignatureStream::CachedOrNull, THREAD);
   assert(!HAS_PENDING_EXCEPTION, "Should never throw");
-  if (k != nullptr && k->is_inline_klass()) {
-    return InlineKlass::cast(k);
+  if (k != nullptr && k->is_value_klass()) {
+    return ValueKlass::cast(k);
   } else {
     return nullptr;
   }
@@ -691,7 +691,7 @@ void SigEntry::add_null_marker(GrowableArray<SigEntry>* sig, Symbol* name, int o
   sig->append(SigEntry(T_BOOLEAN, offset, name, true, false));
 }
 
-// Returns true if the argument at index 'i' is not an inline type delimiter
+// Returns true if the argument at index 'i' is not a value type delimiter
 bool SigEntry::skip_value_delimiters(const GrowableArray<SigEntry>* sig, int i) {
   return (sig->at(i)._bt != T_METADATA &&
           (sig->at(i)._bt != T_VOID || sig->at(i-1)._bt == T_LONG || sig->at(i-1)._bt == T_DOUBLE));
