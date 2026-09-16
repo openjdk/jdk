@@ -26,8 +26,6 @@ package jdk.jfr.event.gc.stacktrace;
  * @test
  * @requires vm.flagless
  * @requires vm.hasJFR
- *
- * @requires vm.gc == "null" | vm.gc == "G1"
  * @library /test/lib /test/jdk
  * @run main/othervm -XX:MaxNewSize=10M -Xmx64M -XX:+UseG1GC -Xlog:gc*
  *                   -XX:FlightRecorderOptions:stackdepth=256
