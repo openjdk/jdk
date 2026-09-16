@@ -313,7 +313,8 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_ZGC],
         AVAILABLE=false
       fi
     elif test "x$OPENJDK_TARGET_CPU" = "xppc64le" || \
-        test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
+          test "x$OPENJDK_TARGET_CPU" = "xriscv64"  || \
+          test "x$OPENJDK_TARGET_CPU" = "xs390x"; then
       if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
         AC_MSG_RESULT([yes])
       else
