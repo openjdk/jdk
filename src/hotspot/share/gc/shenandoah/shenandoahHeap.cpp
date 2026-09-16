@@ -2311,6 +2311,10 @@ uint ShenandoahHeap::max_workers() {
   return _max_workers;
 }
 
+uint ShenandoahHeap::eligible_workers() {
+  return control_thread()->concurrent_worker_count();
+}
+
 void ShenandoahHeap::stop() {
   // The shutdown sequence should be able to terminate when GC is running.
 

@@ -174,7 +174,7 @@ void ShenandoahConcurrentMark::concurrent_mark() {
 
   {
     ShenandoahTimingsTracker t(ShenandoahPhaseTimings::conc_mark_rebalance_queues);
-    task_queues()->rebalance(nworkers);
+    task_queues()->rebalance(heap->eligible_workers());
   }
 
   ShenandoahGenerationType gen_type = _generation->type();
