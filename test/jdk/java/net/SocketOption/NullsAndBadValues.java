@@ -27,6 +27,7 @@
  * @summary Basic test for NPE, UOE, and IAE for get/setOption
  * @run junit ${test.main.class}
  * @run junit/othervm -Dsun.net.useExclusiveBind=false ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=true ${test.main.class}
  */
 
 import java.net.DatagramSocket;

@@ -30,7 +30,6 @@
  * @run main/othervm --limit-modules=java.base OptionsTest
  */
 
-import java.lang.reflect.Method;
 import java.net.*;
 import java.util.*;
 
@@ -73,10 +72,7 @@ public class OptionsTest {
     static Test<?>[] serverSocketTests = new Test<?>[] {
         Test.create(StandardSocketOptions.SO_RCVBUF, Integer.valueOf(8 * 100)),
         Test.create(StandardSocketOptions.SO_REUSEADDR, Boolean.FALSE),
-        Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE),
-        Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(0)),  // lower-bound
-        Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(100)),
-        Test.create(StandardSocketOptions.IP_TOS, Integer.valueOf(255))  //upper-bound
+        Test.create(StandardSocketOptions.SO_REUSEPORT, Boolean.FALSE)
     };
 
     static Test<?>[] datagramSocketTests = new Test<?>[] {
@@ -268,8 +264,6 @@ public class OptionsTest {
                 return Boolean.valueOf(socket.getReuseAddress());
             } else if (option.equals(StandardSocketOptions.SO_REUSEPORT) && reuseport) {
                 return Boolean.valueOf(socket.getOption(StandardSocketOptions.SO_REUSEPORT));
-            } else if (option.equals(StandardSocketOptions.IP_TOS)) {
-                return getServerSocketTrafficClass(socket);
             } else {
                 throw new RuntimeException("unexpected socket option");
             }
@@ -330,21 +324,5 @@ public class OptionsTest {
         doServerSocketTests();
         doDatagramSocketTests();
         doMulticastSocketTests();
-    }
-
-    // Reflectively access jdk.net.Sockets.getOption so that the test can run
-    // without the jdk.net module.
-    static Object getServerSocketTrafficClass(ServerSocket ss) throws Exception {
-        try {
-            Class<?> c = Class.forName("jdk.net.Sockets");
-            Method m = c.getMethod("getOption", ServerSocket.class, SocketOption.class);
-            return m.invoke(null, ss, StandardSocketOptions.IP_TOS);
-        } catch (ClassNotFoundException e) {
-            // Ok, jdk.net module not present, just fall back
-            System.out.println("jdk.net module not present, falling back.");
-            return Integer.valueOf(ss.getOption(StandardSocketOptions.IP_TOS));
-        } catch (ReflectiveOperationException e) {
-            throw new AssertionError(e);
-        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,14 @@
 
 package jdk.net;
 
-import jdk.net.ExtendedSocketOptions.PlatformSocketOptions;
-
+import java.io.IOError;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketOption;
-import java.net.StandardSocketOptions;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -62,9 +57,6 @@ import java.util.Set;
  */
 @Deprecated(since = "16")
 public class Sockets {
-
-    private static final Map<Class<?>,Set<SocketOption<?>>>
-            options = optionSets();
 
     private Sockets() {}
 
@@ -250,11 +242,29 @@ public class Sockets {
      */
     @Deprecated(since = "16", forRemoval=true)
     public static Set<SocketOption<?>> supportedOptions(Class<?> socketType) {
-        Set<SocketOption<?>> set = options.get(socketType);
-        if (set == null) {
-            throw new IllegalArgumentException("unknown socket type");
+        Objects.requireNonNull(socketType);
+        try {
+            if (socketType == Socket.class) {
+                try (var s = new Socket()) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == ServerSocket.class) {
+                try (var s = new ServerSocket()) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == DatagramSocket.class) {
+                try (var s = new DatagramSocket(null)) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == MulticastSocket.class) {
+                try (var s = new MulticastSocket(null)) {
+                    return s.supportedOptions();
+                }
+            }
+        } catch (IOException e) {
+            throw new IOError(e);
         }
-        return set;
+        throw new IllegalArgumentException("unknown socket type");
     }
 
     private static void checkValueType(Object value, Class<?> type) {
@@ -265,136 +275,4 @@ public class Sockets {
         }
     }
 
-    private static volatile boolean checkedReusePort;
-    private static volatile boolean isReusePortAvailable;
-
-    /**
-     * Tells whether SO_REUSEPORT is supported.
-     */
-    static boolean isReusePortAvailable() {
-        if (!checkedReusePort) {
-            Set<SocketOption<?>> s = new Socket().supportedOptions();
-            isReusePortAvailable = s.contains(StandardSocketOptions.SO_REUSEPORT);
-            checkedReusePort = true;
-        }
-        return isReusePortAvailable;
-    }
-
-    private static Map<Class<?>,Set<SocketOption<?>>> optionSets() {
-        Map<Class<?>,Set<SocketOption<?>>> options = new HashMap<>();
-        boolean incomingNapiIdsupported = PlatformSocketOptions.get().incomingNapiIdSupported();
-
-        boolean reuseportsupported = isReusePortAvailable();
-        // Socket
-
-        Set<SocketOption<?>> set = new HashSet<>();
-        set.add(StandardSocketOptions.SO_KEEPALIVE);
-        set.add(StandardSocketOptions.SO_SNDBUF);
-        set.add(StandardSocketOptions.SO_RCVBUF);
-        set.add(StandardSocketOptions.SO_REUSEADDR);
-        if (reuseportsupported) {
-            set.add(StandardSocketOptions.SO_REUSEPORT);
-        }
-        set.add(StandardSocketOptions.SO_LINGER);
-        set.add(StandardSocketOptions.IP_TOS);
-        set.add(StandardSocketOptions.TCP_NODELAY);
-        if (QuickAck.available) {
-            set.add(ExtendedSocketOptions.TCP_QUICKACK);
-        }
-        if (KeepAliveOptions.AVAILABLE) {
-            set.addAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
-                    ExtendedSocketOptions.TCP_KEEPIDLE,
-                    ExtendedSocketOptions.TCP_KEEPINTERVAL));
-        }
-        if (incomingNapiIdsupported) {
-            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
-        }
-        set = Collections.unmodifiableSet(set);
-        options.put(Socket.class, set);
-
-        // ServerSocket
-
-        set = new HashSet<>();
-        set.add(StandardSocketOptions.SO_RCVBUF);
-        set.add(StandardSocketOptions.SO_REUSEADDR);
-        if (reuseportsupported) {
-            set.add(StandardSocketOptions.SO_REUSEPORT);
-        }
-        if (QuickAck.available) {
-            set.add(ExtendedSocketOptions.TCP_QUICKACK);
-        }
-        if (KeepAliveOptions.AVAILABLE) {
-            set.addAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
-                    ExtendedSocketOptions.TCP_KEEPIDLE,
-                    ExtendedSocketOptions.TCP_KEEPINTERVAL));
-        }
-        set.add(StandardSocketOptions.IP_TOS);
-        if (incomingNapiIdsupported) {
-            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
-        }
-        set = Collections.unmodifiableSet(set);
-        options.put(ServerSocket.class, set);
-
-        // DatagramSocket
-
-        set = new HashSet<>();
-        set.add(StandardSocketOptions.SO_SNDBUF);
-        set.add(StandardSocketOptions.SO_RCVBUF);
-        set.add(StandardSocketOptions.SO_REUSEADDR);
-        if (reuseportsupported) {
-            set.add(StandardSocketOptions.SO_REUSEPORT);
-        }
-        set.add(StandardSocketOptions.IP_TOS);
-        if (incomingNapiIdsupported) {
-            set.add(ExtendedSocketOptions.SO_INCOMING_NAPI_ID);
-        }
-        set = Collections.unmodifiableSet(set);
-        options.put(DatagramSocket.class, set);
-
-        // MulticastSocket
-
-        set = new HashSet<>();
-        set.add(StandardSocketOptions.SO_SNDBUF);
-        set.add(StandardSocketOptions.SO_RCVBUF);
-        set.add(StandardSocketOptions.SO_REUSEADDR);
-        if (reuseportsupported) {
-            set.add(StandardSocketOptions.SO_REUSEPORT);
-        }
-        set.add(StandardSocketOptions.IP_TOS);
-        set.add(StandardSocketOptions.IP_MULTICAST_IF);
-        set.add(StandardSocketOptions.IP_MULTICAST_TTL);
-        set.add(StandardSocketOptions.IP_MULTICAST_LOOP);
-        set = Collections.unmodifiableSet(set);
-        options.put(MulticastSocket.class, set);
-
-        return Collections.unmodifiableMap(options);
-    }
-
-    /**
-     * Tells whether TCP_QUICKACK is supported.
-     */
-    static class QuickAck {
-
-        static final boolean available;
-
-        static {
-            Set<SocketOption<?>> s = new Socket().supportedOptions();
-            available = s.contains(ExtendedSocketOptions.TCP_QUICKACK);
-        }
-    }
-
-    /**
-     * Tells whether TCP_KEEPALIVE options are supported.
-     */
-    static class KeepAliveOptions {
-
-        static final boolean AVAILABLE;
-
-        static {
-            Set<SocketOption<?>> s = new Socket().supportedOptions();
-            AVAILABLE = s.containsAll(Set.of(ExtendedSocketOptions.TCP_KEEPCOUNT,
-                                            ExtendedSocketOptions.TCP_KEEPIDLE,
-                                            ExtendedSocketOptions.TCP_KEEPINTERVAL));
-        }
-    }
 }

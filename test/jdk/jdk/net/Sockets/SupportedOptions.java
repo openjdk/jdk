@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,27 +23,76 @@
 
 /*
  * @test
- * @bug 8062744
+ * @bug 8062744 8392151
+ * @summary Check supported option sets and opt-in IP_TOS support on ServerSocket
  * @modules jdk.net
- * @run main SupportedOptions
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=false ${test.main.class}
+ * @run junit/othervm -Djdk.net.ServerSocket.IP_TOS=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true -Djdk.net.ServerSocket.IP_TOS=TrUe ${test.main.class}
  */
 
 import java.net.*;
-import java.io.IOException;
 import jdk.net.*;
 
-public class SupportedOptions {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        if (!Sockets.supportedOptions(ServerSocket.class)
-              .contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class SupportedOptions {
+
+    @Test
+    void optionSets() throws Exception {
+        try (var s = new Socket();
+             var ss = new ServerSocket();
+             var ds = new DatagramSocket(null);
+             var ms = new MulticastSocket(null)) {
+            assertEquals(s.supportedOptions(), Sockets.supportedOptions(Socket.class));
+            assertEquals(ss.supportedOptions(), Sockets.supportedOptions(ServerSocket.class));
+            assertEquals(ds.supportedOptions(), Sockets.supportedOptions(DatagramSocket.class));
+            assertEquals(ms.supportedOptions(), Sockets.supportedOptions(MulticastSocket.class));
         }
-        // Now set the option
-        ServerSocket ss = new ServerSocket();
-        if (!ss.supportedOptions().contains(StandardSocketOptions.IP_TOS)) {
-            throw new RuntimeException("Test failed");
+    }
+
+    @Test
+    void serverSocketOptions() throws Exception {
+        var option = StandardSocketOptions.IP_TOS;
+        var property = "jdk.net.ServerSocket.IP_TOS";
+        String originalValue = System.getProperty(property);
+        boolean enabled = Boolean.getBoolean(property);
+
+        try (var ss = new ServerSocket()) {
+            // Changes after the default implementation is initialized have no effect.
+            System.setProperty(property, Boolean.toString(!enabled));
+
+            assertEquals(enabled, Sockets.supportedOptions(ServerSocket.class).contains(option),
+                    "Unexpected IP_TOS support in ServerSocket class options");
+            assertEquals(enabled, ss.supportedOptions().contains(option),
+                    "Unexpected IP_TOS support in ServerSocket options");
+
+            if (enabled) {
+                ss.setOption(option, 128);
+                ss.getOption(option);
+                Sockets.setOption(ss, option, 128);
+                Sockets.getOption(ss, option);
+            } else {
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.setOption(option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> ss.getOption(option));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.setOption(ss, option, 128));
+                assertThrows(UnsupportedOperationException.class,
+                        () -> Sockets.getOption(ss, option));
+            }
+        } finally {
+            if (originalValue == null) {
+                System.clearProperty(property);
+            } else {
+                System.setProperty(property, originalValue);
+            }
         }
-        Sockets.setOption(ss, java.net.StandardSocketOptions.IP_TOS, 128);
     }
 }
