@@ -28,6 +28,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.nio.file.Path;
 import java.util.Objects;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
@@ -53,6 +54,7 @@ import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -336,7 +338,7 @@ public class TestBase {
 
     protected void process(String filename, TransformerFactory tf, boolean expectError,
             String expected) throws Exception {
-        String xsl = getPath(TEST_SOURCE_DIR, filename);
+        String xsl = getSystemId(TEST_SOURCE_DIR, filename);
         try {
             SAXSource xslSource = new SAXSource(new InputSource(xsl));
             xslSource.setSystemId(xsl);
@@ -350,10 +352,9 @@ public class TestBase {
 
     protected void transform(String xmlFile, String xsl, TransformerFactory tf,
             boolean expectError, String expected) throws Exception {
-        String xmlSysId = getPath(TEST_SOURCE_DIR, xmlFile);
+        String xmlSysId = getSystemId(TEST_SOURCE_DIR, xmlFile);
         try {
             SAXSource xslSource = new SAXSource(new InputSource(new StringReader(xsl)));
-            //SAXSource xslSource = new SAXSource(new InputSource(xslSysId));
             xslSource.setSystemId(xmlSysId);
             Transformer transformer = tf.newTransformer(xslSource);
             StringWriter sw = new StringWriter();
@@ -783,6 +784,10 @@ public class TestBase {
                 }
                 break;
         }
+    }
+
+    public static String getSystemId(String base, String file) {
+        return Path.of(base, file).toUri().toString();
     }
 
     public static String getPath(String base, String file) {
