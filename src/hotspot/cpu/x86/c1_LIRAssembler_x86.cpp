@@ -2982,34 +2982,6 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
-// Generate code to move the address of a counter at
-// md_opr + md_offset_pr into dest. If requested, also return the
-// current contents of that counter.
-Address LIR_Assembler::metadata_address(Register md_reg, LIR_Opr md_opr,
-                                        LIR_Opr md_offset_opr, uintptr_t *contents) {
-  auto md_address = md_opr->as_constant_ptr();
-  address counter_address = nullptr;
-  if (md_opr->type() == T_METADATA) {
-    counter_address = (address)md_address->as_metadata();
-    __ mov_metadata(md_reg, md_address->as_metadata());
-  } else {
-    counter_address = (address)md_address->as_pointer();
-    __ lea(md_reg,
-           ExternalAddress(md_address->as_pointer()));
-  }
-
-  RegisterOrConstant offset =
-    md_offset_opr->is_constant()
-    ? RegisterOrConstant(md_offset_opr->as_constant_ptr()->as_jint())
-    : as_reg(md_offset_opr);
-
-  if (contents != nullptr && offset.is_constant()) {
-    *contents = *(uintptr_t*)(counter_address + offset.as_constant());
-  }
-
-  return Address(md_reg, offset);
-}
-
 long is_zero, is_nonzero;
 
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
@@ -3032,23 +3004,37 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
 
   Register dest = dest_opr->as_pointer_register();
 
-  uintptr_t counter_contents = 0;
-  auto counter_address = metadata_address(as_reg(md_reg), md_opr, md_offset_opr,
-                                          &counter_contents);
-  // If a counter is zero at code generation time, generate code to
-  // increment the counter immediately rather that waiting for a
-  // random period of time.
-  const bool load_dest_early = counter_contents == 0;
+  address md_base_address =
+    md_opr->type() == T_METADATA ? (address)md_opr->as_constant_ptr()->as_metadata()
+                                 : (address)md_opr->as_constant_ptr()->as_pointer();
+  LIR_Opr counter_address_opr
+    = md_offset_opr->is_constant()
+      ? new LIR_Address(md_reg, md_offset_opr->as_constant_ptr()->as_jint(), dest_opr->type())
+      : new LIR_Address(md_reg, md_offset_opr, dest_opr->type());
+  uintptr_t counter_contents = md_offset_opr->is_constant()
+    ? *(uintptr_t*)(md_base_address + md_offset_opr->as_constant_ptr()->as_jint())
+    : 0;
+
+  // Insert a runtime check iff the counter is zero at the time we
+  // generate this code.
+  const bool load_dest_early = counter_stub != nullptr && counter_contents == 0;
+  if (load_dest_early) {
+    const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+  }
 
   auto lambda = [counter_stub, overflow_stub, freq_opr, ratio_shift, step_opr,
                  md_reg, md_opr, md_offset_opr, dest_opr, dest,
-                 counter_address, load_dest_early] (LIR_Assembler* ce, LIR_Op* op) {
+                 counter_address_opr, load_dest_early, threshold] (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
-    if (!load_dest_early)  __ movptr(dest, counter_address);
+    if (!load_dest_early) {
+      ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
+      ce->mem2reg(counter_address_opr, dest_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
+    }
 
     if (step_opr->is_register()) {
       Register inc = step_opr->as_register();
@@ -3056,22 +3042,16 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
         __ shll(inc, ratio_shift);
       }
       __ lea(dest, Address(dest, inc, Address::times_1));
-      __ movl(counter_address, dest);
+      ce->reg2mem(dest_opr, counter_address_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
       if (ProfileCaptureRatio > 1) {
         __ shrl(inc, ratio_shift);
       }
     } else {
       jint inc = step_opr->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
-      switch (dest_opr->type()) {
-        case T_LONG: {
-          // Use lea instead of add to avoid destroying condition codes on x86
-          __ lea(dest, Address(dest, inc, Address::times_1));
-          __ movq(counter_address, dest);
-          break;
-        }
-        default:
-          ShouldNotReachHere();
-      }
+      __ lea(dest, Address(dest, inc, Address::times_1));
+      ce->reg2mem(dest_opr, counter_address_opr,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
     }
 
     if (overflow_stub != nullptr) {
@@ -3124,7 +3104,8 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step_opr, LIR_Opr dest_opr,
     if (load_dest_early) {
       // Counter is zero at compile time, so generate a runtime check
       // to make sure we don't miss its first increment.
-      __ movptr(dest, counter_address);
+      mem2reg(counter_address_opr, dest_opr,
+              dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
       __ orq(dest, dest);
       __ jcc(Assembler::equal, *counter_stub->entry());
     } else {
