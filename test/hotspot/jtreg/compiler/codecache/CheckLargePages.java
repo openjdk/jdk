@@ -73,11 +73,13 @@ public class CheckLargePages {
     }
 
     private static void testSegmented2GbCodeCacheWith1GbPage() throws Exception {
+        boolean is_riscv64 = System.getProperty("os.arch").equals("riscv64");
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
                 "-XX:+UseLargePages",
                 "-XX:+SegmentedCodeCache",
-                "-XX:InitialCodeCacheSize=2g",
-                "-XX:ReservedCodeCacheSize=2g",
+                // For riscv, code cache limit is below 2g, so use a close value 1900m instead.
+                is_riscv64 ? "-XX:InitialCodeCacheSize=1900m" : "-XX:InitialCodeCacheSize=2g",
+                is_riscv64 ? "-XX:ReservedCodeCacheSize=1900m" : "-XX:ReservedCodeCacheSize=2g",
                 "-XX:LargePageSizeInBytes=1g",
                 "-Xlog:pagesize=info",
                 "-version");
