@@ -2736,6 +2736,26 @@ void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
   __ load_klass(result, obj, rscratch1);
 }
 
+LIR_Opr LIR_Assembler::adjust_mdo_address(LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
+                                          BasicType t) {
+  int size = type2aelembytes(t);
+  if (!md_offset_opr->is_constant()) {
+    return new LIR_Address(md_reg, md_offset_opr, t);
+  }
+
+  auto offset = md_offset_opr->as_constant_ptr()->as_jint();
+  if (__ legitimize_address_requires_lea(Address(noreg, offset), size)) {
+    int64_t offset_lo = offset & right_n_bits(12);
+    int64_t offset_hi = offset - offset_lo;
+    __ block_comment(__FUNCTION__);
+    __ lea(md_reg->as_register(), Address(md_reg->as_register(), offset_hi));
+    auto result = new LIR_Address(md_reg, offset_lo, t);
+    return result;
+  }
+
+  return new LIR_Address(md_reg, offset, t);
+}
+
 void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Opr freq_opr,
                                           LIR_Opr md_reg, LIR_Opr md_opr, LIR_Opr md_offset_opr,
                                           CodeStub* overflow_stub) {
@@ -2770,21 +2790,24 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
        : Address(md_reg->as_pointer_register(),
                  as_reg(md_offset_opr)));
 
+  LIR_Opr counter_address_opr = nullptr;
+
   // Insert a runtime check iff the counter is zero at the time we
   // generate this code.
   const bool load_dest_early = counter_stub != nullptr && counter_contents == 0;
   if (load_dest_early) {
     const2reg(md_opr, md_reg, lir_patch_none, nullptr);
     // Fix up any out-of-range offsets.
-    __ adjust_mdo_address(&counter_address, type);
+    counter_address_opr
+      = adjust_mdo_address(md_reg, md_opr, md_offset_opr, dest_opr->type());
   }
 
   auto lambda = [type, counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
-                 md_reg, md_opr, md_offset_opr, counter_address, load_dest_early]
+                 md_reg, md_opr, md_offset_opr, counter_address_opr, load_dest_early]
     (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
-    auto adjusted_counter_address = counter_address;
+    auto adjusted_counter_address = counter_address_opr;
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
@@ -2793,8 +2816,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (!load_dest_early) {
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
       // Fix up any out-of-range offsets.
-      __ adjust_mdo_address(&adjusted_counter_address, type);
-      __ load(dest, adjusted_counter_address, type);
+      adjusted_counter_address = adjust_mdo_address(md_reg, md_opr, md_offset_opr, dest_opr->type());
+      ce->mem2reg(dest_opr, adjusted_counter_address,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
     }
 
     if (step->is_register()) {
