@@ -4324,6 +4324,7 @@ void AOTCodeAddressTable::init_extrs() {
 
   initializing_extrs = true;
   _extrs_addr = NEW_C_HEAP_ARRAY(address, _extrs_max, mtCode);
+  memset(_extrs_addr, 0, _extrs_max * sizeof(address));
 
   {
     // Required by initial stubs
@@ -4613,6 +4614,7 @@ void AOTCodeAddressTable::init_extrs() {
   log_debug(aot, codecache, init)("External addresses opened and recorded");
   // allocate storage for stub entries
   _stubs_addr = NEW_C_HEAP_ARRAY(address, _stubs_max, mtCode);
+  memset(_stubs_addr, 0, _stubs_max * sizeof(address));
   log_debug(aot, codecache, init)("Stub addresses opened");
 }
 

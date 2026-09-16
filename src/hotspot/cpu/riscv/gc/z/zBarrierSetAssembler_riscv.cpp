@@ -749,7 +749,7 @@ void ZBarrierSetAssembler::generate_c2_load_barrier_stub(MacroAssembler* masm, Z
   {
     SaveLiveRegisters save_live_registers(masm, stub);
     ZSetupArguments setup_arguments(masm, stub);
-    __ rt_call(stub->slow_path()));
+    __ rt_call(stub->slow_path());
   }
 
   // Stub exit
