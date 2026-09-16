@@ -114,10 +114,5 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
         assertEquals(signatureSchemes.subList(0, MLDSA_SCHEMES.size()),
                 MLDSA_SCHEMES, "Unexpected ML-DSA signature scheme order in "
                 + messageSource);
-
-        MLDSA_SCHEMES.forEach(signatureScheme ->
-                assertTrue(signatureSchemes.contains(signatureScheme),
-                        "Signature scheme " + signatureScheme
-                        + " not present in " + messageSource));
     }
 }
