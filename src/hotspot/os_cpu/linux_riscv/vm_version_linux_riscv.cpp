@@ -361,12 +361,14 @@ void VM_Version::xuantie_features() {
   ext_Zvfh.enable_feature();
   ext_Zvkn.enable_feature();
   ext_Zvkg.enable_feature();
-
-  ext_Zacas.enable_feature();
   ext_Zabha.enable_feature();
+
+#ifndef PRODUCT
+  ext_Zacas.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicond.enable_feature();
   ext_Ztso.enable_feature();
+#endif
 
   unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
   unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
