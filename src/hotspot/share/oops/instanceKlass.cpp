@@ -4114,7 +4114,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 // -----------------------------------------------------------------------------------------------------
 // Printing
 
-
 static const char* state_names[] = {
   "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
 };

@@ -1002,7 +1002,6 @@ void Klass::print_on(outputStream* st) const {
   st->cr();
 }
 
-
 // Caller needs ResourceMark
 void Klass::oop_print_on(oop obj, outputStream* st) {
   // print title

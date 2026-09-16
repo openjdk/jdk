@@ -87,7 +87,6 @@ void Annotations::print_value_on(outputStream* st) const {
   st->print("Annotations(" PTR_FORMAT ")", p2i(this));
 }
 
-
 #ifndef PRODUCT
 void Annotations::print_on(outputStream* st) const {
   st->print(" - class_annotations            "); class_annotations()->print_value_on(st);

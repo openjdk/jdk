@@ -518,7 +518,6 @@ void ValueKlass::remove_unshareable_info() {
 
 #endif // CDS
 
-
 void ValueKlass::print_on(outputStream* st) const {
   InstanceKlass::print_on(st);
   members().print_on(st);
