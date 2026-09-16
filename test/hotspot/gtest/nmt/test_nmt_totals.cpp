@@ -40,21 +40,33 @@ static size_t get_total_malloc_size() {
   return MallocMemorySummary::as_snapshot()->total();
 }
 
+static size_t get_peak_total_malloc_size() {
+  return MallocMemorySummary::as_snapshot()->total_peak();
+}
+
+static size_t get_total_arena_size() {
+  return MallocMemorySummary::as_snapshot()->total_arena();
+}
+
 static size_t get_malloc_overhead() {
   return MallocMemorySummary::as_snapshot()->malloc_overhead();
 }
 
-struct totals_t { size_t n; size_t s; size_t ovrh; };
+struct totals_t { size_t n; size_t s; size_t ps; size_t a; size_t ovrh; };
 
 static totals_t get_totals() {
   totals_t tot;
   tot.n = get_total_malloc_invocs();
   tot.s = get_total_malloc_size();
+  tot.a = get_total_arena_size();
+  tot.ps = get_peak_total_malloc_size();
   tot.ovrh = get_malloc_overhead();
   return tot;
 }
 
 // Concurrent code can malloc and free too, therefore we need to compare with a leeway factor
+// Note that a snapshot is never taken, thus make_adjustment(), does not undo arena chunk double counting.
+// Therefore we need to subtract arena size when verifying peak total malloc size.
 #define compare_totals(t_real, t_expected) {                                  \
   double leeway_factor = 0.33;                                                \
   size_t leeway_n = (size_t)(((double)t_expected.n) * leeway_factor);         \
@@ -65,6 +77,7 @@ static totals_t get_totals() {
   EXPECT_LE(t_real.s, t_expected.s + leeway_s);                               \
   EXPECT_GE(t_real.ovrh, t_expected.ovrh - (leeway_n * sizeof(MallocHeader)));   \
   EXPECT_LE(t_real.ovrh, t_expected.ovrh + (leeway_n * sizeof(MallocHeader)));   \
+  EXPECT_GE(t_real.ps, t_real.s - t_real.a);                                     \
   LOG("Deviation: n=%zd, s=%zd, ovrh=%zd",   \
       (ssize_t)t_real.n - (ssize_t)t_expected.n,                                 \
       (ssize_t)t_real.s - (ssize_t)t_expected.s,                                 \
