@@ -54,26 +54,20 @@ public class ModuleOptions {
 
     // Non-existent paths specified by --module-path should be ignored by AOTClassLocation checks
     static void nonExistentPath(String[] args) throws Exception {
-        nonExistentPath(args, true, false);
-        nonExistentPath(args, false, true);
-        nonExistentPath(args, true, true);
+        nonExistentPath(args, RunMode.TRAINING);
+        nonExistentPath(args, RunMode.ASSEMBLY);
+        nonExistentPath(args, RunMode.PRODUCTION);
     }
 
-    static void nonExistentPath(String[] args, boolean train, boolean production) throws Exception {
+    static void nonExistentPath(String[] args, RunMode testPhase) throws Exception {
         CDSAppTester tester = new CDSAppTester(mainClass) {
-                private boolean useNoSuchFile(RunMode runMode) {
-                    if (train && (runMode == RunMode.TRAINING || runMode == RunMode.ASSEMBLY)) {
-                        return true;
-                    }
-                    if (production && runMode == RunMode.PRODUCTION) {
-                        return true;
-                    }
-                    return false;
+                private boolean isTestPhase(RunMode runMode) {
+                    return runMode == testPhase;
                 }
 
                 @Override
                 public String[] vmArgs(RunMode runMode) {
-                    if (useNoSuchFile(runMode)) {
+                    if (isTestPhase(runMode)) {
                         return new String [] { "--module-path", "nosuchfile", "-Xlog:class+path" };
                     } else {
                         return new String[] {};
@@ -92,8 +86,11 @@ public class ModuleOptions {
 
                 @Override
                 public void checkExecution(OutputAnalyzer out, RunMode runMode) {
-                    if (useNoSuchFile(runMode)) {
-                        out.shouldContain("Found non-existent module path (ignored): 'nosuchfile'");
+                    String s = "Found non-existent module path (ignored): 'nosuchfile'";
+                    if (isTestPhase(runMode)) {
+                        out.shouldContain(s);
+                    } else {
+                        out.shouldNotContain(s);
                     }
                 }
             };
