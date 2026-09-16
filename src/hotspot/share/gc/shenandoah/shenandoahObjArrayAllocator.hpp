@@ -29,7 +29,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class Klass;
 class Thread;
 

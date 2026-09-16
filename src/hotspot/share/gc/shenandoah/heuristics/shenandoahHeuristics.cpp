@@ -44,8 +44,6 @@
 #include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 
-#include <stdarg.h>
-
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   if (a.get_garbage() > b.get_garbage()) {

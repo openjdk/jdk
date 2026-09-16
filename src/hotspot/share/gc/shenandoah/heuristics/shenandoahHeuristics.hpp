@@ -37,7 +37,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/numberSeq.hpp"
 
-
 #define SHENANDOAH_ERGO_DISABLE_FLAG(name)                                  \
   do {                                                                      \
     if (FLAG_IS_DEFAULT(name) && (name)) {                                  \

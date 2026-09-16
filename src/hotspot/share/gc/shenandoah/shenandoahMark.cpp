@@ -23,8 +23,6 @@
  *
  */
 
-
-
 #include "code/codeCache.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/satbMarkQueue.hpp"

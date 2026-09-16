@@ -47,7 +47,6 @@ ShenandoahYoungHeuristics::ShenandoahYoungHeuristics(ShenandoahYoungGeneration* 
     : ShenandoahGenerationalHeuristics(generation) {
 }
 
-
 void ShenandoahYoungHeuristics::select_collection_set_regions(ShenandoahCollectionSet* cset,
                                                               RegionData* data, size_t size,
                                                               size_t actual_free) {

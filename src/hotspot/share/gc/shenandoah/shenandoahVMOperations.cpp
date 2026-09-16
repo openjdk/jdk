@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"

@@ -29,7 +29,6 @@
 #include "memory/memRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class ReservedSpace;
 
 #define ShenandoahMinCardSizeInBytes 128

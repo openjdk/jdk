@@ -43,7 +43,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/sizes.hpp"
 
-
 class ShenandoahThreadLocalData {
 private:
   // Thread-local mirror for global GC state

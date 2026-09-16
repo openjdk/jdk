@@ -42,9 +42,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-class Klass;
-class Thread;
-
 ShenandoahObjArrayAllocator::ShenandoahObjArrayAllocator(
     Klass* klass, size_t word_size, int length, bool do_zero, Thread* thread)
   : ObjArrayAllocator(klass, word_size, length, do_zero, thread) {

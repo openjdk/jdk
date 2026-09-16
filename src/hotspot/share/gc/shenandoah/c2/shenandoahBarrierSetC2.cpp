@@ -47,7 +47,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
-class Arena;
 class PhaseRegAlloc;
 
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :

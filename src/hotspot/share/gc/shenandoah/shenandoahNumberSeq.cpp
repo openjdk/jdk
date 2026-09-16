@@ -24,7 +24,6 @@
  *
  */
 
-
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "utilities/debug.hpp"

@@ -31,7 +31,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-
 class ShenandoahMarkBitMap {
 public:
   typedef size_t idx_t;        // Type used for bit and word indices.

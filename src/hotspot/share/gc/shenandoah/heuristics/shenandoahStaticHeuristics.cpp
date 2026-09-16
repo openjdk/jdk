@@ -23,7 +23,6 @@
  *
  */
 
-
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"

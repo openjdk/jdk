@@ -35,7 +35,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
-
 const char* ShenandoahGlobalGeneration::name() const {
   return type() == NON_GEN ? "" : "Global";
 }

@@ -36,7 +36,6 @@ struct ShenandoahAnticipatedConsumption;
 class ShenandoahCollectionSet;
 class ShenandoahSpaceInfo;
 
-
 /*
  * The adaptive heuristic tracks the allocation behavior and average cycle
  * time of the application. It attempts to start a cycle with enough time

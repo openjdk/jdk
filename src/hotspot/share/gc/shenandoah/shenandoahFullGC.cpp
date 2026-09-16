@@ -24,7 +24,6 @@
  *
  */
 
-
 #include "compiler/oopMap.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"

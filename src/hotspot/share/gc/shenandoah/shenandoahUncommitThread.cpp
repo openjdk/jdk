@@ -34,7 +34,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 ShenandoahUncommitThread::ShenandoahUncommitThread(ShenandoahHeap* heap)
   : _heap(heap),
     _uncommit_lock(Mutex::safepoint - 2, "ShenandoahUncommit_lock", true) {

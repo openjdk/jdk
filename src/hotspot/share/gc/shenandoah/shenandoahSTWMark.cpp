@@ -23,7 +23,6 @@
  *
  */
 
-
 #include "code/nmethod.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"

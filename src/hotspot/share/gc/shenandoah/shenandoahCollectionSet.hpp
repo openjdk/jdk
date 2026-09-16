@@ -36,6 +36,7 @@
 #include "utilities/globalDefinitions.hpp"
 
 class outputStream;
+class ShenandoahHeap;
 class ShenandoahHeapRegion;
 
 class ShenandoahCollectionSet : public CHeapObj<mtGC> {

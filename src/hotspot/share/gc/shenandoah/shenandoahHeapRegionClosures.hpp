@@ -25,10 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGIONCLOSURES_HPP
 
-
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Applies the given closure to all regions with the given affiliation

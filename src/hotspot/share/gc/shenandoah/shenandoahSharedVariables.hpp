@@ -30,8 +30,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <limits.h>
-
 typedef int32_t ShenandoahSharedValue;
 typedef struct ShenandoahSharedFlag {
   enum {

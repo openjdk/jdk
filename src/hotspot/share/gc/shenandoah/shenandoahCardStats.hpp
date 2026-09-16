@@ -33,7 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-
 enum CardStatType {
   DIRTY_RUN,
   CLEAN_RUN,

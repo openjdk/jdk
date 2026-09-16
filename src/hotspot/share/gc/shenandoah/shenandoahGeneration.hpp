@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
@@ -33,7 +33,6 @@
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 
 class ShenandoahFreeSet;
 class ShenandoahHeap;
@@ -187,4 +186,4 @@ public:
   virtual void record_success_concurrent(bool abbreviated);
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATION_HPP

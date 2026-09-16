@@ -23,7 +23,6 @@
  *
  */
 
-
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/workerDataArray.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"

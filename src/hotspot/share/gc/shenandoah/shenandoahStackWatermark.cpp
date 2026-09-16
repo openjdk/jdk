@@ -24,7 +24,6 @@
  *
  */
 
-
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/tlab_globals.hpp"
@@ -40,9 +39,6 @@
 #include "runtime/thread.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-
-class RegisterMap;
-class nmethod;
 
 uint32_t ShenandoahStackWatermark::_epoch_id = MIN_EPOCH_ID;
 

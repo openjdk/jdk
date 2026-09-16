@@ -22,8 +22,6 @@
  *
  */
 
-
-
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahParallelCleaning.hpp"
 #include "runtime/safepoint.hpp"

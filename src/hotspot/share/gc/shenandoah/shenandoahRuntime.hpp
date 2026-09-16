@@ -29,7 +29,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class oopDesc;
 
 class ShenandoahRuntime : public AllStatic {

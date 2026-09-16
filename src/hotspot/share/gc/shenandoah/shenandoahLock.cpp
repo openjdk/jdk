@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"

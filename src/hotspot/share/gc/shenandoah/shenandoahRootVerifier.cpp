@@ -23,9 +23,6 @@
  *
  */
 
-
-
-
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/codeCache.hpp"

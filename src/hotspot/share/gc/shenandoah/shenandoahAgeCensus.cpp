@@ -39,7 +39,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-
 ShenandoahAgeCensus::ShenandoahAgeCensus()
   : ShenandoahAgeCensus(ShenandoahHeap::heap()->max_workers())
 {

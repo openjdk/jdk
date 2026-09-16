@@ -24,7 +24,6 @@
  *
  */
 
-
 #include "classfile/classLoaderData.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/collectorCounters.hpp"

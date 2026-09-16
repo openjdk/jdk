@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"

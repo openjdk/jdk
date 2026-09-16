@@ -81,7 +81,6 @@
 class ShenandoahConcUpdateRefsClosure;
 class ShenandoahNonConcUpdateRefsClosure;
 
-
 class ShenandoahGenerationalInitLogger : public ShenandoahInitLogger {
 public:
   static void print() {

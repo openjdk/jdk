@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "compiler/oopMap.hpp"
 #include "gc/shared/oopStorageSetParState.inline.hpp"
 #include "gc/shared/workerThread.hpp"

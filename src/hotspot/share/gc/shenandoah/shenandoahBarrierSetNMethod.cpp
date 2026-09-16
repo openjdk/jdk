@@ -22,7 +22,6 @@
  *
  */
 
-
 #include "code/nmethod.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"

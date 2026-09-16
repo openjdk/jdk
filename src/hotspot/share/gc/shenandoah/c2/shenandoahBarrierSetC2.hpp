@@ -30,8 +30,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#include <limits.h>
-
 class Arena;
 class ArrayCopyNode;
 class CodeBuffer;

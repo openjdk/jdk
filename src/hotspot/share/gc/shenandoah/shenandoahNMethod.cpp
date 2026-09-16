@@ -23,7 +23,6 @@
  *
  */
 
-
 #include "code/nmethod.hpp"
 #include "code/relocInfo.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"

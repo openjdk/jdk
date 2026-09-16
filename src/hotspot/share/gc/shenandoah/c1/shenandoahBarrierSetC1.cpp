@@ -36,7 +36,6 @@
 #include "runtime/stubInfo.hpp"
 #include "utilities/sizes.hpp"
 
-class LIR_Assembler;
 class OopMapSet;
 class StubAssembler;
 

@@ -34,8 +34,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
 
-class Thread;
-
 ShenandoahEvacuationStats::ShenandoahEvacuations* ShenandoahEvacuationStats::get_category(
   ShenandoahAffiliation from,
   ShenandoahAffiliation to) {

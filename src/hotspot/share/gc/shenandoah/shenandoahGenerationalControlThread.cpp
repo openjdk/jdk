@@ -59,7 +59,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(CONTROL_LOCK_RANK, "ShenandoahGCRequest_lock", true),
   _requested_gc_cause(GCCause::_no_gc),

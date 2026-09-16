@@ -26,7 +26,7 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP
 
-#include "gc/shared/taskqueue.inline.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "memory/padded.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"

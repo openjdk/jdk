@@ -24,7 +24,9 @@
  */
 
 #include "gc/shared/gc_globals.hpp"
+#include "gc/shenandoah/heuristics/shenandoahGenerationalHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -39,7 +41,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/quickSort.hpp"
-
 
 bool ShenandoahEvacuationBudget::try_reserve(size_t bytes) {
   size_t new_consumption = _consumed + bytes;

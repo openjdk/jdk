@@ -31,7 +31,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/stack.inline.hpp"
+#include "utilities/stack.hpp"
 
 class MarkBitMap;
 class ShenandoahGeneration;

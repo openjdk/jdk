@@ -22,15 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
-
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
@@ -98,4 +97,4 @@ public:
   void prepare_gc() override;
 };
 
-#endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

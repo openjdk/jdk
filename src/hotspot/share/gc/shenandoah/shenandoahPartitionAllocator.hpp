@@ -29,7 +29,6 @@
 #include "nmt/memTag.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class ShenandoahAllocRequest;
 class ShenandoahFreeSet;
 enum class ShenandoahFreeSetPartitionId : uint8_t;

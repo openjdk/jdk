@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
-#define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
@@ -35,7 +35,6 @@
 #include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
-
 
 class LogStream;
 class ShenandoahAllocRequest;
@@ -366,4 +365,4 @@ public:
 };
 
 
-#endif //SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
+#endif //SHARE_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP

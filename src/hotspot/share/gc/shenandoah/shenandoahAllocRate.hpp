@@ -26,7 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHALLOCRATE_HPP
 
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/shenandoahStripedCounter.inline.hpp"
+#include "gc/shenandoah/shenandoahStripedCounter.hpp"
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "jni.h"
 #include "runtime/atomic.hpp"

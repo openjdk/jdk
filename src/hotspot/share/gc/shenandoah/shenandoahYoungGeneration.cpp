@@ -25,6 +25,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -36,8 +37,6 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "utilities/debug.hpp"
-
-class ShenandoahMode;
 
 ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues) :
   ShenandoahGeneration(YOUNG, max_queues),

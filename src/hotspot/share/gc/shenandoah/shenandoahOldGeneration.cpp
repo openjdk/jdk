@@ -73,8 +73,6 @@
 #include "utilities/events.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class ShenandoahHeuristics;
-
 class ShenandoahPurgeSATBTask : public WorkerTask {
 public:
   explicit ShenandoahPurgeSATBTask() : WorkerTask("Purge SATB") {

@@ -32,7 +32,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class MemRegion;
 class ShenandoahHeapRegion;
 

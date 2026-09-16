@@ -32,7 +32,6 @@
 #include "logging/log.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-
 inline size_t ShenandoahAnticipatedConsumption::baseline_consumption() const {
   return shenandoah_safe_size_cast(_baseline * _duration_seconds);
 }

@@ -34,7 +34,6 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-
 class JavaThread;
 class MemRegion;
 class outputStream;

@@ -24,7 +24,6 @@
  *
  */
 
-
 #include "cds/aotMappedHeapWriter.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
@@ -158,8 +157,6 @@
 #include "utilities/ostream.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
-
-#include <string.h>
 
 class GCTracer;
 class Klass;
