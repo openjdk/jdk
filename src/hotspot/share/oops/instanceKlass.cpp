@@ -4114,7 +4114,6 @@ nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_le
 // -----------------------------------------------------------------------------------------------------
 // Printing
 
-#define BULLET  " - "
 
 static const char* state_names[] = {
   "allocated", "loaded", "linked", "being_initialized", "fully_initialized", "initialization_error"
@@ -4162,14 +4161,14 @@ void InstanceKlass::print_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   Klass::print_on(st);
 
-  st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
-  st->print(BULLET"klass size:        %d", size());                               st->cr();
-  st->print(BULLET"access:            "); print_class_flags(st);                  st->cr();
-  st->print(BULLET"flags:             "); _misc_flags.print_on(st);               st->cr();
-  st->print(BULLET"state:             "); st->print_cr("%s", init_state_name());
-  st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
-  st->print(BULLET"super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
-  st->print(BULLET"sub:               ");
+  st->print(" - instance size:     %d", size_helper());                        st->cr();
+  st->print(" - klass size:        %d", size());                               st->cr();
+  st->print(" - access:            "); print_class_flags(st);                  st->cr();
+  st->print(" - flags:             "); _misc_flags.print_on(st);               st->cr();
+  st->print(" - state:             "); st->print_cr("%s", init_state_name());
+  st->print(" - name:              "); name()->print_value_on(st);             st->cr();
+  st->print(" - super:             "); Metadata::print_value_on_maybe_null(st, super()); st->cr();
+  st->print(" - sub:               ");
   Klass* sub = subklass();
   int n;
   for (n = 0; sub != nullptr; n++, sub = sub->next_sibling()) {
@@ -4182,47 +4181,47 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 
   if (is_interface()) {
-    st->print_cr(BULLET"nof implementors:  %d", nof_implementors());
+    st->print_cr(" - nof implementors:  %d", nof_implementors());
     if (nof_implementors() == 1) {
-      st->print_cr(BULLET"implementor:    ");
+      st->print_cr(" - implementor:    ");
       st->print("   ");
       implementor()->print_value_on(st);
       st->cr();
     }
   }
 
-  st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
-  st->print(BULLET"methods:           ");
+  st->print(" - arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
+  st->print(" - methods:           ");
   print_array_on(st, methods(), [](outputStream* ost, Method* method) {
     method->print_value_on(ost);
   });
-  st->print(BULLET"method ordering:   ");
+  st->print(" - method ordering:   ");
   print_array_on(st, method_ordering(), [](outputStream* ost, int i) {
     ost->print("%d", i);
   });
   if (default_methods() != nullptr) {
-    st->print(BULLET"default_methods:   ");
+    st->print(" - default_methods:   ");
     print_array_on(st, default_methods(), [](outputStream* ost, Method* method) {
       method->print_value_on(ost);
     });
   }
-  print_on_maybe_null(st, BULLET"default vtable indices:   ", default_vtable_indices());
-  st->print(BULLET"local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
-  st->print(BULLET"trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
+  print_on_maybe_null(st, " - default vtable indices:   ", default_vtable_indices());
+  st->print(" - local interfaces:  "); local_interfaces()->print_value_on(st);      st->cr();
+  st->print(" - trans. interfaces: "); transitive_interfaces()->print_value_on(st); st->cr();
 
-  st->print(BULLET"secondary supers:  "); secondary_supers()->print_value_on(st); st->cr();
+  st->print(" - secondary supers:  "); secondary_supers()->print_value_on(st); st->cr();
 
-  st->print(BULLET"hash_slot:         %d", hash_slot()); st->cr();
-  st->print(BULLET"secondary bitmap:  " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
+  st->print(" - hash_slot:         %d", hash_slot()); st->cr();
+  st->print(" - secondary bitmap:  " UINTX_FORMAT_X_0, _secondary_supers_bitmap); st->cr();
 
   if (secondary_supers() != nullptr) {
     if (Verbose) {
       bool is_hashed = (_secondary_supers_bitmap != SECONDARY_SUPERS_BITMAP_FULL);
-      st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+      st->print_cr(" - ---- secondary supers (%d words):", _secondary_supers->length());
       for (int i = 0; i < _secondary_supers->length(); i++) {
         ResourceMark rm; // for external_name()
         Klass* secondary_super = _secondary_supers->at(i);
-        st->print(BULLET"%2d:", i);
+        st->print(" - %2d:", i);
         if (is_hashed) {
           int home_slot = compute_home_slot(secondary_super, _secondary_supers_bitmap);
           int distance = (i - home_slot) & SECONDARY_SUPERS_TABLE_MASK;
@@ -4232,19 +4231,19 @@ void InstanceKlass::print_on(outputStream* st) const {
       }
     }
   }
-  st->print(BULLET"constants:         "); constants()->print_value_on(st);         st->cr();
+  st->print(" - constants:         "); constants()->print_value_on(st);         st->cr();
 
-  print_on_maybe_null(st, BULLET"class loader data: ", class_loader_data());
-  print_on_maybe_null(st, BULLET"source file:       ", source_file_name());
+  print_on_maybe_null(st, " - class loader data: ", class_loader_data());
+  print_on_maybe_null(st, " - source file:       ", source_file_name());
   if (source_debug_extension() != nullptr) {
-    st->print(BULLET"source debug extension:       ");
+    st->print(" - source debug extension:       ");
     st->print("%s", source_debug_extension());
     st->cr();
   }
-  print_on_maybe_null(st, BULLET"class annotations:       ", class_annotations());
-  print_on_maybe_null(st, BULLET"class type annotations:  ", class_type_annotations());
-  print_on_maybe_null(st, BULLET"field annotations:       ", fields_annotations());
-  print_on_maybe_null(st, BULLET"field type annotations:  ", fields_type_annotations());
+  print_on_maybe_null(st, " - class annotations:       ", class_annotations());
+  print_on_maybe_null(st, " - class type annotations:  ", class_type_annotations());
+  print_on_maybe_null(st, " - field annotations:       ", fields_annotations());
+  print_on_maybe_null(st, " - field type annotations:  ", fields_type_annotations());
   {
     bool have_pv = false;
     // previous versions are linked together through the InstanceKlass
@@ -4252,40 +4251,40 @@ void InstanceKlass::print_on(outputStream* st) const {
          pv_node != nullptr;
          pv_node = pv_node->previous_versions()) {
       if (!have_pv)
-        st->print(BULLET"previous version:  ");
+        st->print(" - previous version:  ");
       have_pv = true;
       pv_node->constants()->print_value_on(st);
     }
     if (have_pv) st->cr();
   }
 
-  print_on_maybe_null(st, BULLET"generic signature: ", generic_signature());
-  st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
-  st->print(BULLET"nest members:      "); nest_members()->print_value_on(st);     st->cr();
-  print_on_maybe_null(st, BULLET"record components:     ", record_components());
-  st->print(BULLET"permitted subclasses:     "); permitted_subclasses()->print_value_on(st);     st->cr();
-  st->print(BULLET"loadable descriptors:     "); loadable_descriptors()->print_value_on(st); st->cr();
+  print_on_maybe_null(st, " - generic signature: ", generic_signature());
+  st->print(" - inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
+  st->print(" - nest members:      "); nest_members()->print_value_on(st);     st->cr();
+  print_on_maybe_null(st, " - record components:     ", record_components());
+  st->print(" - permitted subclasses:     "); permitted_subclasses()->print_value_on(st);     st->cr();
+  st->print(" - loadable descriptors:     "); loadable_descriptors()->print_value_on(st); st->cr();
   if (java_mirror() != nullptr) {
-    st->print(BULLET"java mirror:       ");
+    st->print(" - java mirror:       ");
     java_mirror()->print_value_on(st);
     st->cr();
   } else {
-    st->print_cr(BULLET"java mirror:       null");
+    st->print_cr(" - java mirror:       null");
   }
-  st->print(BULLET"vtable length      %d  (start addr: " PTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
+  st->print(" - vtable length      %d  (start addr: " PTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
-  st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
+  st->print(" - itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
 
   InstanceKlass* ik = const_cast<InstanceKlass*>(this);
   // There is no oop so static and nonstatic printing can use the same printer.
   FieldPrinter field_printer(st);
-  st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
+  st->print_cr(" - ---- static fields (%d words):", static_field_size());
   ik->do_local_static_fields(&field_printer);
-  st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
+  st->print_cr(" - ---- non-static fields (%d words):", nonstatic_field_size());
   ik->print_nonstatic_fields(&field_printer);
 
-  st->print(BULLET"non-static oop maps (%d entries): ", nonstatic_oop_map_count());
+  st->print(" - non-static oop maps (%d entries): ", nonstatic_oop_map_count());
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
   OopMapBlock* end_map = map + nonstatic_oop_map_count();
   while (map < end_map) {
@@ -4295,7 +4294,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->cr();
 
   if (fieldinfo_search_table() != nullptr) {
-    st->print_cr(BULLET"---- field info search table:");
+    st->print_cr(" - ---- field info search table:");
     FieldInfoStream::print_search_table(st, _constants, _fieldinfo_stream, _fieldinfo_search_table);
   }
 }
@@ -4308,7 +4307,7 @@ void InstanceKlass::print_value_on(outputStream* st) const {
 
 void FieldPrinter::do_field(fieldDescriptor* fd) {
   for (int i = 0; i < _indent; i++) _st->print("  ");
-  _st->print(BULLET);
+  _st->print(" - ");
   // Handles the cases of static fields or instance fields but no oop is given.
   if (_obj == nullptr) {
     fd->print_on(_st, _base_offset);
@@ -4329,27 +4328,27 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st, int indent, int base
     if (value != nullptr &&
         value->is_typeArray() &&
         length <= (juint) value->length()) {
-      st->print(BULLET"string: ");
+      st->print(" - string: ");
       java_lang_String::print(obj, st);
       st->cr();
     }
   }
 
-  st->print_cr(BULLET"---- fields (total size %zu words):", oop_size(obj));
+  st->print_cr(" - ---- fields (total size %zu words):", oop_size(obj));
   FieldPrinter print_field(st, obj, indent, base_offset);
   print_nonstatic_fields(&print_field);
 
   if (this == vmClasses::Class_klass()) {
-    st->print(BULLET"signature: ");
+    st->print(" - signature: ");
     java_lang_Class::print_signature(obj, st);
     st->cr();
     Klass* real_klass = java_lang_Class::as_Klass(obj);
     if (real_klass != nullptr && real_klass->is_instance_klass()) {
-      st->print_cr(BULLET"---- static fields (%d):", java_lang_Class::static_oop_field_count(obj));
+      st->print_cr(" - ---- static fields (%d):", java_lang_Class::static_oop_field_count(obj));
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == vmClasses::MethodType_klass()) {
-    st->print(BULLET"signature: ");
+    st->print(" - signature: ");
     java_lang_invoke_MethodType::print_signature(obj, st);
     st->cr();
   }
