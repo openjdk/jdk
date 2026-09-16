@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 8381641
- * @summary Test ML-DSA signature scheme advertisement in TLS 1.2 and TLS 1.3
+ * @summary Test ML-DSA signature scheme advertisement in TLS 1.2
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm MLDSANotAllowedInTLS12
  */
 
 import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertEquals;
 import static jdk.test.lib.Asserts.assertTrue;
 
 import java.util.List;
@@ -38,7 +39,7 @@ import java.util.List;
 public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
 
     private static final List<String> MLDSA_SCHEMES = List.of(
-            "mldsa44", "mldsa65", "mldsa87");
+            "mldsa65", "mldsa87", "mldsa44");
 
     protected MLDSANotAllowedInTLS12() throws Exception {
         super();
@@ -108,6 +109,12 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
 
     protected static void assertMldsa(List<String> signatureSchemes,
             String messageSource) {
+        assertTrue(signatureSchemes.size() >= MLDSA_SCHEMES.size(),
+                "Not enough signature schemes in " + messageSource);
+        assertEquals(signatureSchemes.subList(0, MLDSA_SCHEMES.size()),
+                MLDSA_SCHEMES, "Unexpected ML-DSA signature scheme order in "
+                + messageSource);
+
         MLDSA_SCHEMES.forEach(signatureScheme ->
                 assertTrue(signatureSchemes.contains(signatureScheme),
                         "Signature scheme " + signatureScheme
