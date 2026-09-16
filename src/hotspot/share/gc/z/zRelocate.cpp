@@ -456,14 +456,6 @@ public:
     } else {
       _generation->increase_compacted(page->used());
     }
-
-    // Free target page if it is empty. We can end up with an empty target
-    // page if we allocated a new target page, and then lost the race to
-    // relocate the remaining objects, leaving the target page empty when
-    // relocation completed.
-    if (page->used() == 0) {
-      ZHeap::heap()->free_page(page);
-    }
   }
 
   size_t in_place_count() const {
