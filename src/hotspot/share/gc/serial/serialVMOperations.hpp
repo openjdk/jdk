@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,8 @@ class VM_SerialCollectForAllocation : public VM_CollectForAllocation {
   VM_SerialCollectForAllocation(size_t word_size,
                                 bool tlab,
                                 uint gc_count_before)
-    : VM_CollectForAllocation(word_size, gc_count_before, GCCause::_allocation_failure),
-      _tlab(tlab) {
-    assert(word_size != 0, "An allocation should always be requested with this operation.");
-  }
+    : VM_CollectForAllocation(AllocationRequest::for_allocation(word_size), gc_count_before, GCCause::_allocation_failure),
+      _tlab(tlab) {}
   virtual VMOp_Type type() const { return VMOp_SerialCollectForAllocation; }
   virtual void doit();
 };

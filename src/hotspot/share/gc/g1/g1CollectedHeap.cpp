@@ -441,7 +441,8 @@ HeapWord* G1CollectedHeap::mem_allocate(size_t word_size) {
   return attempt_allocation(word_size, word_size, &dummy, true /* allow_gc */);
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc) {
+HeapWord* G1CollectedHeap::attempt_allocation_slow(AllocationRequest request, bool allow_gc) {
+  size_t word_size = request.word_size();
   ResourceMark rm; // For retrieving the thread names in log messages.
 
   // Make sure you read the note in attempt_allocation_humongous().
@@ -465,7 +466,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
 
       // Now that we have the lock, we first retry the allocation in case another
       // thread changed the region while we were waiting to acquire the lock.
-      result = _allocator->attempt_allocation_locked(node_index, word_size);
+      result = _allocator->attempt_allocation_locked(request);
       if (result != nullptr) {
         return result;
       } else if (!allow_gc) {
@@ -477,7 +478,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
     }
 
     bool succeeded;
-    result = do_collection_pause(node_index, word_size, gc_count_before, &succeeded,
+    result = do_collection_pause(request, gc_count_before, &succeeded,
                                  GCCause::_g1_inc_collection_pause);
     if (succeeded) {
       log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
@@ -502,7 +503,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(uint node_index, size_t word_
     // here and the follow-on attempt will be at the start of the next loop
     // iteration (after taking the Heap_lock).
     size_t dummy = 0;
-    result = _allocator->attempt_allocation(node_index, word_size, word_size, &dummy);
+    result = _allocator->attempt_allocation(request, word_size, &dummy);
     if (result != nullptr) {
       return result;
     }
@@ -648,13 +649,15 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t min_word_size,
          "be called for humongous allocation requests");
 
   // Fix NUMA node association for the duration of this allocation
-  const uint node_index = _allocator->current_node_index();
+  const AllocationRequest request = _numa->is_enabled()
+  ? AllocationRequest::for_numa_allocation(desired_word_size, os::numa_get_group_id())
+  : AllocationRequest::for_allocation(desired_word_size);
 
-  HeapWord* result = _allocator->attempt_allocation(node_index, min_word_size, desired_word_size, actual_word_size);
+  HeapWord* result = _allocator->attempt_allocation(request, min_word_size, actual_word_size);
 
   if (result == nullptr) {
     *actual_word_size = desired_word_size;
-    result = attempt_allocation_slow(node_index, desired_word_size, allow_gc);
+    result = attempt_allocation_slow(request, allow_gc);
   }
 
   assert_heap_not_locked();
@@ -690,6 +693,9 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
   assert(is_humongous(word_size), "attempt_allocation_humongous() "
          "should only be called for humongous allocations");
+
+  // Humongous allocations do not have a preferred NUMA node.
+  const AllocationRequest request = AllocationRequest::for_allocation(word_size);
 
   // Humongous objects can exhaust the heap quickly, so we should check if we
   // need to start a marking cycle at each humongous object allocation. We do
@@ -730,7 +736,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
     }
 
     bool succeeded;
-    result = do_collection_pause(G1NUMA::AnyNodeIndex, word_size, gc_count_before, &succeeded,
+    result = do_collection_pause(request, gc_count_before, &succeeded,
                                  GCCause::_g1_humongous_allocation);
     if (succeeded) {
       log_trace(gc, alloc)("%s: Successfully scheduled collection returning " PTR_FORMAT,
@@ -769,18 +775,18 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size) {
   return nullptr;
 }
 
-HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(uint node_index,
-                                                           size_t word_size,
+HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(AllocationRequest request,
                                                            bool expect_null_mutator_alloc_region) {
   assert_at_safepoint_on_vm_thread();
+  size_t word_size = request.word_size();
 
   if (!is_humongous(word_size)) {
-    assert(!_allocator->has_mutator_alloc_region(node_index) || !expect_null_mutator_alloc_region,
+    assert(!_allocator->has_mutator_alloc_region(_numa->index_for_numa_id(request.numa_id())) ||
+           !expect_null_mutator_alloc_region,
            "the requested alloc region was unexpectedly found to be non-null");
-    return _allocator->attempt_allocation_locked(node_index, word_size);
+    return _allocator->attempt_allocation_locked(request);
   } else {
-    assert(node_index == G1NUMA::AnyNodeIndex,
-           "Humongous allocation must not have a specific NUMA node index: %u", node_index);
+    assert(!request.has_numa_id(), "Humongous allocation must not have a specific NUMA id");
     HeapWord* result = humongous_obj_allocate(word_size);
     if (result != nullptr &&
         // We just allocated the humongous object, so the given allocation size is 0.
@@ -1012,8 +1018,7 @@ bool G1CollectedHeap::gc_overhead_limit_exceeded() {
   return _gc_overhead_counter >= GCOverheadLimitThreshold;
 }
 
-HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(uint node_index,
-                                                            size_t word_size,
+HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(AllocationRequest request,
                                                             bool do_gc,
                                                             bool maximal_compaction,
                                                             bool expect_null_mutator_alloc_region) {
@@ -1028,8 +1033,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(uint node_index,
   if (!gc_overhead_limit_exceeded()) {
     // Let's attempt the allocation first.
     HeapWord* result =
-      attempt_allocation_at_safepoint(node_index,
-                                      word_size,
+      attempt_allocation_at_safepoint(request,
                                       expect_null_mutator_alloc_region);
     if (result != nullptr) {
       return result;
@@ -1039,7 +1043,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(uint node_index,
     // incremental pauses.  Therefore, at least for now, we'll favor
     // expansion over collection.  (This might change in the future if we can
     // do something smarter than full collection to satisfy a failed alloc.)
-    result = expand_and_allocate(node_index, word_size);
+    result = expand_and_allocate(request);
     if (result != nullptr) {
       return result;
     }
@@ -1055,7 +1059,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(uint node_index,
     } else {
       log_info(gc, ergo)("Attempting full compaction");
     }
-    do_full_collection(word_size /* allocation_word_size */,
+    do_full_collection(request.word_size() /* allocation_word_size */,
                        maximal_compaction /* clear_all_soft_refs */,
                        maximal_compaction /* do_maximal_compaction */);
   }
@@ -1063,7 +1067,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(uint node_index,
   return nullptr;
 }
 
-HeapWord* G1CollectedHeap::satisfy_failed_allocation(uint node_index, size_t word_size) {
+HeapWord* G1CollectedHeap::satisfy_failed_allocation(AllocationRequest request) {
   assert_at_safepoint_on_vm_thread();
 
   // Update GC overhead limits after the initial garbage collection leading to this
@@ -1072,8 +1076,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(uint node_index, size_t wor
 
   // Attempts to allocate followed by Full GC.
   HeapWord* result =
-    satisfy_failed_allocation_helper(node_index,
-                                     word_size,
+    satisfy_failed_allocation_helper(request,
                                      true,  /* do_gc */
                                      false, /* maximal_compaction */
                                      false /* expect_null_mutator_alloc_region */);
@@ -1083,8 +1086,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(uint node_index, size_t wor
   }
 
   // Attempts to allocate followed by Full GC that will collect all soft references.
-  result = satisfy_failed_allocation_helper(node_index,
-                                            word_size,
+  result = satisfy_failed_allocation_helper(request,
                                             true, /* do_gc */
                                             true, /* maximal_compaction */
                                             true /* expect_null_mutator_alloc_region */);
@@ -1094,8 +1096,7 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(uint node_index, size_t wor
   }
 
   // Attempts to allocate, no GC
-  result = satisfy_failed_allocation_helper(node_index,
-                                            word_size,
+  result = satisfy_failed_allocation_helper(request,
                                             false, /* do_gc */
                                             false, /* maximal_compaction */
                                             true  /* expect_null_mutator_alloc_region */);
@@ -1116,12 +1117,13 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation(uint node_index, size_t wor
 }
 
 // Attempting to expand the heap sufficiently
-// to support an allocation of the given "word_size".  If
+// to support an allocation of the given allocation request.  If
 // successful, perform the allocation and return the address of the
 // allocated block, or else null.
 
-HeapWord* G1CollectedHeap::expand_and_allocate(uint node_index, size_t word_size) {
+HeapWord* G1CollectedHeap::expand_and_allocate(AllocationRequest request) {
   assert_at_safepoint_on_vm_thread();
+  size_t word_size = request.word_size();
 
   _verifier->verify_region_sets_optional();
 
@@ -1133,8 +1135,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(uint node_index, size_t word_size
   if (expand(expand_bytes, _workers)) {
     _hrm.verify_optional();
     _verifier->verify_region_sets_optional();
-    return attempt_allocation_at_safepoint(node_index,
-                                           word_size,
+    return attempt_allocation_at_safepoint(request,
                                            false /* expect_null_mutator_alloc_region */);
   }
   return nullptr;
@@ -2122,10 +2123,8 @@ bool G1CollectedHeap::try_collect(size_t allocation_word_size,
              DEBUG_ONLY(|| cause == GCCause::_scavenge_alot)) {
 
     assert(allocation_word_size == 0, "must be");
-    // Schedule a standard evacuation pause. We're setting word_size
-    // to 0 which means that we are not requesting a post-GC allocation.
-    VM_G1CollectForAllocation op(G1NUMA::AnyNodeIndex,
-                                 0,     /* word_size */
+    // Schedule a standard evacuation pause without a post-GC allocation
+    VM_G1CollectForAllocation op(AllocationRequest::no_allocation(),
                                  counters_before.total_collections(),
                                  cause);
     VMThread::execute(&op);
@@ -2537,13 +2536,12 @@ void G1CollectedHeap::verify_numa_regions(const char* desc) {
   }
 }
 
-HeapWord* G1CollectedHeap::do_collection_pause(uint node_index,
-                                               size_t word_size,
+HeapWord* G1CollectedHeap::do_collection_pause(AllocationRequest request,
                                                uint gc_count_before,
                                                bool* succeeded,
                                                GCCause::Cause gc_cause) {
   assert_heap_not_locked_and_not_at_safepoint();
-  VM_G1CollectForAllocation op(node_index, word_size, gc_count_before, gc_cause);
+  VM_G1CollectForAllocation op(request, gc_count_before, gc_cause);
   VMThread::execute(&op);
 
   HeapWord* result = op.result();

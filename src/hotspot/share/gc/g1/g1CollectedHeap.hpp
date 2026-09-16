@@ -44,6 +44,7 @@
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/g1YoungRegions.hpp"
+#include "gc/shared/allocationRequest.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
@@ -459,7 +460,7 @@ private:
   // retry the allocation attempt, potentially scheduling a GC
   // pause if allow_gc is set. This should only be used for non-humongous
   // allocations.
-  HeapWord* attempt_allocation_slow(uint node_index, size_t word_size, bool allow_gc);
+  HeapWord* attempt_allocation_slow(AllocationRequest request, bool allow_gc);
 
   // Takes the Heap_lock and attempts a humongous allocation. It can
   // potentially schedule a GC pause.
@@ -469,8 +470,7 @@ private:
   // at the end of a successful GC). expect_null_mutator_alloc_region
   // specifies whether the mutator alloc region is expected to be null
   // or not.
-  HeapWord* attempt_allocation_at_safepoint(uint node_index,
-                                            size_t word_size,
+  HeapWord* attempt_allocation_at_safepoint(AllocationRequest request,
                                             bool expect_null_mutator_alloc_region);
 
   // These methods are the "callbacks" from the G1AllocRegion class.
@@ -509,7 +509,7 @@ private:
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
   // failed allocation request (including collection, expansion, etc.)
-  HeapWord* satisfy_failed_allocation(uint node_index, size_t word_size);
+  HeapWord* satisfy_failed_allocation(AllocationRequest request);
   // Internal helpers used during full GC to split it up to
   // increase readability.
   bool abort_concurrent_cycle();
@@ -521,17 +521,16 @@ private:
   void print_heap_after_full_collection();
 
   // Helper method for satisfy_failed_allocation()
-  HeapWord* satisfy_failed_allocation_helper(uint node_index,
-                                             size_t word_size,
+  HeapWord* satisfy_failed_allocation_helper(AllocationRequest request,
                                              bool do_gc,
                                              bool maximal_compaction,
                                              bool expect_null_mutator_alloc_region);
 
   // Attempting to expand the heap sufficiently
-  // to support an allocation of the given "word_size".  If
+  // to support the given allocation request.  If
   // successful, perform the allocation and return the address of the
   // allocated block, or else null.
-  HeapWord* expand_and_allocate(uint node_index, size_t word_size);
+  HeapWord* expand_and_allocate(AllocationRequest request);
 
   void verify_numa_regions(const char* desc);
 
@@ -746,7 +745,7 @@ private:
   void shrink_helper(size_t expand_bytes);
 
   // Schedule the VM operation that will do an evacuation pause to
-  // satisfy an allocation request of word_size. *succeeded will
+  // satisfy the given allocation request. *succeeded will
   // return whether the VM operation was successful (it did do an
   // evacuation pause) or not (another thread beat us to it or the GC
   // locker was active). Given that we should not be holding the
@@ -755,8 +754,7 @@ private:
   // it has to be read while holding the Heap_lock. Currently, both
   // methods that call do_collection_pause() release the Heap_lock
   // before the call, so it's easy to read gc_count_before just before.
-  HeapWord* do_collection_pause(uint node_index,
-                                size_t word_size,
+  HeapWord* do_collection_pause(AllocationRequest request,
                                 uint gc_count_before,
                                 bool* succeeded,
                                 GCCause::Cause gc_cause);
