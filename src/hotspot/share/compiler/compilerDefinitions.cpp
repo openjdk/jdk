@@ -246,14 +246,15 @@ void CompilerConfig::set_legacy_emulation_flags() {
 
 
 void CompilerConfig::set_compilation_policy_flags() {
-  if (is_tiered() || is_c1_profiling()) {
+  if (is_c1_profiling()) {
     // Increase the code cache size
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
-    // Enable SegmentedCodeCache if tiered compilation is enabled or C1 profiling is enabled, ReservedCodeCacheSize >= 240M
-    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+    // Enable SegmentedCodeCache if tiered compilation is enabled or C1 profiling is enabled. Also
+    // require that ReservedCodeCacheSize >= 240M and the code cache contains at least 8 pages
+    // (segmentation disables advantage of huge pages).
     if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
         8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
