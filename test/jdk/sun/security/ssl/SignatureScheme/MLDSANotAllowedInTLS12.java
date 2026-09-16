@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 8381641
- * @summary Ensure ML-DSA signature schemes are not advertised in TLS 1.2
+ * @summary Test ML-DSA signature scheme advertisement in TLS 1.2 and TLS 1.3
  * @library /javax/net/ssl/templates
  *          /test/lib
  * @run main/othervm MLDSANotAllowedInTLS12
  */
 
 import static jdk.test.lib.Asserts.assertFalse;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.util.List;
 
@@ -53,7 +54,7 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
     }
 
     // Run things in TLS handshake order
-    private void run() throws Exception {
+    protected void run() throws Exception {
         // Produce ClientHello
         clientEngine.wrap(clientOut, cTOs);
         cTOs.flip();
@@ -71,7 +72,7 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
         checkCertificateRequest();
     }
 
-    private void checkClientHello() throws Exception {
+    protected void checkClientHello() throws Exception {
         // Get signature_algorithms extension signature schemes
         List<String> sigAlgsSS = getSigSchemesCliHello(
                 extractHandshakeMsg(cTOs, TLS_HS_CLI_HELLO),
@@ -89,7 +90,7 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
                 "ClientHello signature_algorithms_cert extension");
     }
 
-    private void checkCertificateRequest() throws Exception {
+    protected void checkCertificateRequest() throws Exception {
         // Get CertificateRequest message signature schemes
         List<String> certReqSS = getSigSchemesCertReq(
                 extractHandshakeMsg(sTOc, TLS_HS_CERT_REQ));
@@ -97,11 +98,19 @@ public class MLDSANotAllowedInTLS12 extends AbstractCheckSignatureSchemes {
         assertNoMldsa(certReqSS, "TLS 1.2 CertificateRequest");
     }
 
-    private static void assertNoMldsa(List<String> signatureSchemes,
+    protected static void assertNoMldsa(List<String> signatureSchemes,
             String messageSource) {
         MLDSA_SCHEMES.forEach(signatureScheme ->
                 assertFalse(signatureSchemes.contains(signatureScheme),
                         "Signature scheme " + signatureScheme
                         + " present in " + messageSource));
+    }
+
+    protected static void assertMldsa(List<String> signatureSchemes,
+            String messageSource) {
+        MLDSA_SCHEMES.forEach(signatureScheme ->
+                assertTrue(signatureSchemes.contains(signatureScheme),
+                        "Signature scheme " + signatureScheme
+                        + " not present in " + messageSource));
     }
 }

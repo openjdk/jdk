@@ -65,6 +65,10 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
 
     private static final String TEST_CASE = System.getProperty("test.case");
 
+    private MLDSAClientAuthMismatch() {
+        super(true); // server on separate thread, client on current thread
+    }
+
     @Override
     protected SSLContext createServerSSLContext() throws Exception {
         return switch (TEST_CASE) {
@@ -138,8 +142,8 @@ public class MLDSAClientAuthMismatch extends SSLSocketTemplate {
                 throw e;
             }
 
-            assertEquals(e.getMessage(), "(internal_error) Received " +
-                    "fatal alert: internal_error");
+            assertEquals(e.getMessage(), "(internal_error) No supported " +
+                    "CertificateVerify signature algorithm for ML-DSA key");
         }
     }
 }
