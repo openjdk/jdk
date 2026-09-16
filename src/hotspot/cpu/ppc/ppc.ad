@@ -5684,7 +5684,7 @@ instruct loadConN(iRegNdst dst, immN src) %{
 
 instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
   match(Set dst src);
-  ins_cost(DEFAULT_COST*3);
+  ins_cost(DEFAULT_COST*2);
 
   format %{ "LoadConst $dst, $src \t// narrow klass" %}
   ins_encode %{
