@@ -25,9 +25,9 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 
-#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
