@@ -111,11 +111,11 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
     }
 
     private static boolean shouldRun(Provider p) {
-        return p.getService("KeyGenerator", "SunTlsExtendedMasterSecret") != null;
+        return p.getService("KeyGenerator", "SunTls12ExtendedMasterSecret") != null;
     }
 
     private static void verifyDirectEMSGeneration(Provider p) throws Exception {
-        KeyGenerator kg = KeyGenerator.getInstance("SunTlsExtendedMasterSecret", p);
+        KeyGenerator kg = KeyGenerator.getInstance("SunTls12ExtendedMasterSecret", p);
         if (kg.getProvider() != p) {
             throw new RuntimeException("Unexpected provider: " + kg.getProvider().getName());
         }

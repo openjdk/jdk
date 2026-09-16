@@ -1032,7 +1032,7 @@ public final class SunPKCS11 extends AuthProvider {
         d(KG, "SunTls12MasterSecret",
                 "sun.security.pkcs11.P11TlsMasterSecretGenerator",
             m(CKM_TLS12_MASTER_KEY_DERIVE, CKM_TLS12_MASTER_KEY_DERIVE_DH));
-        d(KG, "SunTlsExtendedMasterSecret",
+        d(KG, "SunTls12ExtendedMasterSecret",
                 "sun.security.pkcs11.P11TlsExtendedMasterSecretGenerator",
                 m(CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE,
                         CKM_TLS12_EXTENDED_MASTER_KEY_DERIVE_DH));
@@ -1461,7 +1461,7 @@ public final class SunPKCS11 extends AuthProvider {
                         || algorithm == "SunTls12MasterSecret") {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
-                } else if (algorithm == "SunTlsExtendedMasterSecret") {
+                } else if (algorithm == "SunTls12ExtendedMasterSecret") {
                     return new P11Tls12ExtendedMasterSecretGenerator(
                             token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsKeyMaterial"
