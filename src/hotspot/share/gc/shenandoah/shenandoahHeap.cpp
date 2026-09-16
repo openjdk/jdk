@@ -52,6 +52,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -1122,61 +1123,45 @@ public:
   }
 };
 
-class ShenandoahEvacuationTask : public WorkerTask {
-private:
-  ShenandoahHeap* const _sh;
+class ShenandoahEvacuationTask : public ShenandoahElasticTask<ShenandoahCsetTaskAdapter> {
   ShenandoahCollectionSet* const _cs;
-  ShenandoahCsetTaskAdapter _cs_tasks;
-  TaskTerminator _terminator;
+
 public:
   ShenandoahEvacuationTask(ShenandoahHeap* sh,
                            ShenandoahCollectionSet* cs) :
-    WorkerTask("Shenandoah Evacuation"),
-    _sh(sh),
-    _cs(cs),
-    _cs_tasks(_cs),
-    _terminator(_sh->workers()->active_workers(), &_cs_tasks) {
+    ShenandoahElasticTask(sh, ShenandoahCsetTaskAdapter(cs), "Shenandoah Evacuation"),
+    _cs(cs) {
   }
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
     do_work(worker_id);
   }
 
 private:
   void do_work(uint worker_id) {
-    ShenandoahTerminatorTerminator tt(_sh, true);
-    ShenandoahConcurrentEvacuateRegionObjectClosure cl(_sh);
-    while (true) {
-      if (_sh->check_cancelled_gc_and_yield(true)) {
-        break;
+    ShenandoahConcurrentEvacuateRegionObjectClosure cl(_heap);
+    elastic_loop<true>([&]{
+
+      ShenandoahHeapRegion* r = _cs->claim_next();
+      if (r == nullptr) {
+        return ShenandoahWorkResult::NoWork;
       }
 
-      ShenandoahHeapRegion* r = nullptr;
-      if (tt.can_work()) {
-        // Thread is not a reserved worker, try to take a region
-        r = _cs->claim_next();
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
+                                ShenandoahPhaseTimings::Work,
+                                           worker_id, true);
+
+      assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+      _heap->marked_object_iterate(r, &cl);
+
+      if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+        // Thread cannot evacuate more, retire it so that it stays down in termination offer
+        return ShenandoahWorkResult::Retire;
       }
 
-      if (r != nullptr) {
-        ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
-                                  ShenandoahPhaseTimings::Work,
-                                             worker_id, true);
-
-        assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-        _sh->marked_object_iterate(r, &cl);
-
-        if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
-          // Thread cannot evacuate more, retire it so that it stays down in termination offer
-          tt.retire();
-        }
-      } else {
-        if (_terminator.offer_termination(&tt)) {
-          break;
-        }
-      }
-    }
+      return ShenandoahWorkResult::DidWork;
+    });
   }
 };
 
@@ -2507,25 +2492,19 @@ ShenandoahVerifier* ShenandoahHeap::verifier() {
   return _verifier;
 }
 
-class ShenandoahUpdateHeapRefsTask : public WorkerTask {
-private:
-  ShenandoahHeap* _heap;
+class ShenandoahUpdateHeapRefsTask : public ShenandoahElasticTask<ShenandoahRegionIteratorTaskAdapter> {
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionIteratorTaskAdapter _region_tasks;
-  TaskTerminator _terminator;
 
 public:
   explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
-    WorkerTask("Shenandoah Update References"),
-    _heap(ShenandoahHeap::heap()),
+    ShenandoahElasticTask(ShenandoahHeap::heap(), ShenandoahRegionIteratorTaskAdapter(regions), "Shenandoah Update References"),
     _regions(regions),
-    _region_tasks(_regions),
-    _terminator(_heap->workers()->active_workers(), &_region_tasks) {
+    _region_tasks(_regions) {
   }
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
     do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
   }
 
@@ -2544,36 +2523,26 @@ private:
       _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
     }
 
-    ShenandoahTerminatorTerminator tt(_heap, true);
     T cl;
-    while (true) {
-      if (_heap->check_cancelled_gc_and_yield(true)) {
-        return;
+    elastic_loop<true>([&] {
+      ShenandoahHeapRegion* r = _regions->next();
+      if (r == nullptr) {
+        return ShenandoahWorkResult::NoWork;
       }
 
-      ShenandoahHeapRegion* r = nullptr;
-      if (tt.can_work()) {
-        r = _regions->next();
-      }
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
+                                ShenandoahPhaseTimings::Work,
+                                           worker_id, true);
 
-      if (r != nullptr) {
-        ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
-                                  ShenandoahPhaseTimings::Work,
-                                             worker_id, true);
-
-        HeapWord* update_watermark = r->get_update_watermark();
-        assert (update_watermark >= r->bottom(), "sanity");
-        if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
-          // Regions put into service after final mark will not have an update watermark. Regions with self forwarded objects
-          // must also have the references in these objects be updated.
-          _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-        }
-      } else {
-        if (_terminator.offer_termination(&tt)) {
-          break;
-        }
+      HeapWord* update_watermark = r->get_update_watermark();
+      assert (update_watermark >= r->bottom(), "sanity");
+      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
+        // Regions put into service after final mark will not have an update watermark. Regions with self forwarded objects
+        // must also have the references in these objects be updated.
+        _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
-    }
+      return ShenandoahWorkResult::DidWork;
+    });
   }
 };
 
