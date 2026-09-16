@@ -299,9 +299,6 @@ static bool trust_final_nonstatic_fields(ciInstanceKlass* holder) {
   // can't be serialized, so there is no hacking of finals going on with them.
   if (holder->is_hidden())
     return true;
-  // Trust final fields in value type buffers
-  if (holder->is_value_klass())
-    return true;
   // Trust final fields in records
   if (holder->is_record())
     return true;
