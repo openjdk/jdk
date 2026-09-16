@@ -32,8 +32,7 @@ import java.net.MulticastSocket;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketOption;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -58,9 +57,6 @@ import java.util.Set;
  */
 @Deprecated(since = "16")
 public class Sockets {
-
-    private static final Map<Class<?>,Set<SocketOption<?>>>
-            options = optionSets();
 
     private Sockets() {}
 
@@ -246,11 +242,29 @@ public class Sockets {
      */
     @Deprecated(since = "16", forRemoval=true)
     public static Set<SocketOption<?>> supportedOptions(Class<?> socketType) {
-        Set<SocketOption<?>> set = options.get(socketType);
-        if (set == null) {
-            throw new IllegalArgumentException("unknown socket type");
+        Objects.requireNonNull(socketType);
+        try {
+            if (socketType == Socket.class) {
+                try (var s = new Socket()) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == ServerSocket.class) {
+                try (var s = new ServerSocket()) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == DatagramSocket.class) {
+                try (var s = new DatagramSocket(null)) {
+                    return s.supportedOptions();
+                }
+            } else if (socketType == MulticastSocket.class) {
+                try (var s = new MulticastSocket(null)) {
+                    return s.supportedOptions();
+                }
+            }
+        } catch (IOException e) {
+            throw new IOError(e);
         }
-        return set;
+        throw new IllegalArgumentException("unknown socket type");
     }
 
     private static void checkValueType(Object value, Class<?> type) {
@@ -261,28 +275,4 @@ public class Sockets {
         }
     }
 
-    private static Map<Class<?>, Set<SocketOption<?>>> optionSets() {
-        var map = new HashMap<Class<?>, Set<SocketOption<?>>>();
-        try (var s = new Socket()) {
-            map.put(Socket.class, s.supportedOptions());
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-        try (var s = new ServerSocket()) {
-            map.put(ServerSocket.class, s.supportedOptions());
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-        try (var s = new DatagramSocket(null)) {
-            map.put(DatagramSocket.class, s.supportedOptions());
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-        try (var s = new MulticastSocket(null)) {
-            map.put(MulticastSocket.class, s.supportedOptions());
-        } catch (IOException e) {
-            throw new IOError(e);
-        }
-        return Map.copyOf(map);
-    }
 }
