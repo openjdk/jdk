@@ -1970,7 +1970,8 @@ public class Basic {
                     : AIX.is()
                             ? "LC_ALL=C,LIBPATH="+libpath+","
                             : "LC_ALL=C,"),
-                  "Incorrect handling of envstrings containing NULs");
+                  "Incorrect handling of envstrings containing NULs, "+
+                    "got: >'" + commandOutput + "'<");
         } catch (Throwable t) { unexpected(t); }
 
         //----------------------------------------------------------------
