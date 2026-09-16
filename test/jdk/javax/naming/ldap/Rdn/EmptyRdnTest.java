@@ -28,7 +28,13 @@
  * @run junit ${test.main.class}
  */
 
+import java.io.ByteArrayInputStream;
+import java.io.ObjectInputStream;
+import java.io.StreamCorruptedException;
+import java.util.Base64;
+
 import javax.naming.InvalidNameException;
+import javax.naming.directory.BasicAttributes;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 
@@ -41,6 +47,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmptyRdnTest {
 
+    /*
+     * Generated on OpenJDK 17.0.20, without the fix for JDK-8391649,
+     * by serializing new Rdn("") with ObjectOutputStream and encoding
+     * the resulting bytes with Base64.getEncoder().encodeToString().
+     */
+    private static final String SERIALIZED_EMPTY_RDN =
+            "rO0ABXNyABVqYXZheC5uYW1pbmcubGRhcC5SZG6sz2HICnWTyAMAAHhwdAAAeA==";
+
+    /*
+     * Generated in the same way by serializing new LdapName("cn=x,").
+     */
+    private static final String SERIALIZED_LDAP_NAME_WITH_EMPTY_RDN =
+            "rO0ABXNyABpqYXZheC5uYW1pbmcubGRhcC5MZGFwTmFtZenbkvtWYgcUAwAAeHB0AAVjbj14LHg=";
+
     @Test
     void rejectsEmptyRdn() {
         assertThrows(InvalidNameException.class, () -> new Rdn(""));
@@ -49,6 +69,12 @@ public class EmptyRdnTest {
     @Test
     void rejectsWhitespaceRdn() {
         assertThrows(InvalidNameException.class, () -> new Rdn("   "));
+    }
+
+    @Test
+    void rejectsEmptyAttributes() {
+        assertThrows(InvalidNameException.class,
+                () -> new Rdn(new BasicAttributes()));
     }
 
     @Test
@@ -81,6 +107,29 @@ public class EmptyRdnTest {
     void rejectsEmptyIntermediateRdn() {
         assertThrows(InvalidNameException.class,
                 () -> new LdapName("cn=a,,cn=b"));
+    }
+
+    @Test
+    void rejectsSerializedEmptyRdn() throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(SERIALIZED_EMPTY_RDN);
+
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes))) {
+            assertThrows(StreamCorruptedException.class,
+                    () -> in.readObject());
+        }
+    }
+
+    @Test
+    void rejectsSerializedLdapNameWithEmptyRdn() throws Exception {
+        byte[] bytes = Base64.getDecoder().decode(
+                SERIALIZED_LDAP_NAME_WITH_EMPTY_RDN);
+
+        try (ObjectInputStream in = new ObjectInputStream(
+                new ByteArrayInputStream(bytes))) {
+            assertThrows(StreamCorruptedException.class,
+                    () -> in.readObject());
+        }
     }
 
     @Test
