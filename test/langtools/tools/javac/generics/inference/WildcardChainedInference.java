@@ -22,7 +22,8 @@
  */
 
 /*
- * @test /nodynamiccopyright/
+ * @test
+ * @bug 8386318
  * @summary Inference must not widen wildcard type arguments to Object
  * @compile/fail WildcardChainedInference.java
  */
