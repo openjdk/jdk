@@ -1390,7 +1390,7 @@ public class IRNode {
 
     public static final String MINMAX_D_REG = PREFIX + "MINMAX_D_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MINMAX_D_REG, "minmaxD_reg");
+        machOnlyNameRegex(MINMAX_D_REG, "(minD_reg|maxD_reg|minmaxD_reg)");
     }
 
     public static final String MIN_F = PREFIX + "MIN_F" + POSTFIX;
@@ -1405,7 +1405,7 @@ public class IRNode {
 
     public static final String MINMAX_F_REG = PREFIX + "MINMAX_F_REG" + POSTFIX;
     static {
-        machOnlyNameRegex(MINMAX_F_REG, "minmaxF_reg");
+        machOnlyNameRegex(MINMAX_F_REG, "(minF_reg|maxF_reg|minmaxF_reg)");
     }
 
     public static final String MIN_I = PREFIX + "MIN_I" + POSTFIX;

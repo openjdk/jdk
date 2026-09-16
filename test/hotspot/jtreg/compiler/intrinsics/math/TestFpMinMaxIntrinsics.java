@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2019, Arm Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8212043
+ * @bug 8212043 8309776
  * @summary Test compiler intrinsics of floating-point Math.min/max
  * @library /test/lib
  *
@@ -140,10 +140,10 @@ public class TestFpMinMaxIntrinsics {
     }
 
     private static void fCheck(float a, float b, float fmin, float fmax, float efmin, float efmax) {
-        int min = Float.floatToRawIntBits(fmin);
-        int max = Float.floatToRawIntBits(fmax);
-        int emin = Float.floatToRawIntBits(efmin);
-        int emax = Float.floatToRawIntBits(efmax);
+        int min = Float.floatToIntBits(fmin);
+        int max = Float.floatToIntBits(fmax);
+        int emin = Float.floatToIntBits(efmin);
+        int emax = Float.floatToIntBits(efmax);
 
         if (min != emin || max != emax) {
             throw new AssertionError("Unexpected result of float min/max: " +
@@ -169,10 +169,10 @@ public class TestFpMinMaxIntrinsics {
     }
 
     private static void dCheck(double a, double b, double dmin, double dmax, double edmin, double edmax) {
-        double min = Double.doubleToRawLongBits(dmin);
-        double max = Double.doubleToRawLongBits(dmax);
-        double emin = Double.doubleToRawLongBits(edmin);
-        double emax = Double.doubleToRawLongBits(edmax);
+        long min = Double.doubleToLongBits(dmin);
+        long max = Double.doubleToLongBits(dmax);
+        long emin = Double.doubleToLongBits(edmin);
+        long emax = Double.doubleToLongBits(edmax);
 
         if (min != emin || max != emax) {
             throw new AssertionError("Unexpected result of double min/max: " +
