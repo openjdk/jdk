@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
 /*
  * Provides storage as a function of an epoch, with iteration capabilities for the current and previous epoch.
  *
- * When iterating the previous epoch, where exclusive access to buffers is assumed,
+ * When iterating the previous epoch, where exclusive access to buffers is assumed (see disclaimer below),
  * all buffers will be reinitialized post-callback, with retired buffers reclaimed
  * and moved onto the free list and non-retired buffers left in-place.
  *
@@ -46,6 +46,12 @@
  *
  * The design caters to use cases having multiple incremental iterations over the current epoch,
  * and a single iteration over the previous epoch.
+ *
+ * DISCLAIMER: Exclusive access to the previous epoch is only guaranteed for uses that respect the safepoint protocol.
+ *             This is because the JFR epoch evolves under a safepoint. If non-Java threads use the storage,
+ *             observe that they do NOT respect when the epoch evolves. As such, they could still have active uses
+ *             towards the previous epoch, although JavaThreads do not. In effect, this becomes another instance
+ *             of concurrent access, as described for the current epoch. Be extra careful about who is using this kind of storage.
  *
  * The JfrEpochStorage can be specialized by the following policies:
  *

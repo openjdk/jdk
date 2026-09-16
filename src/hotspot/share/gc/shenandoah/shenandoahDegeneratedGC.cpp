@@ -24,6 +24,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
@@ -301,10 +302,6 @@ void ShenandoahDegenGC::op_degenerated() {
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
       }
 
-      // Disarm nmethods that armed in concurrent cycle.
-      // In above case, update roots should disarm them
-      ShenandoahCodeRoots::disarm_nmethods();
-
       op_cleanup_complete();
 
       if (heap->mode()->is_generational()) {
@@ -317,6 +314,9 @@ void ShenandoahDegenGC::op_degenerated() {
   }
 
   DEBUG_ONLY(heap->assert_no_self_forwards());
+
+  // Leaving degenerated GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   if (ShenandoahVerify) {
     heap->verifier()->verify_after_degenerated(_generation);
@@ -498,7 +498,7 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
 }
 
 void ShenandoahDegenGC::upgrade_to_full() {
-  log_info(gc)("Degenerated GC upgrading to Full GC");
+  log_info(gc, phases)("Degenerated GC upgrading to Full GC");
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   heap->cancel_gc(GCCause::_shenandoah_upgrade_to_full_gc);
   heap->increment_total_collections(true);

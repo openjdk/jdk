@@ -31,9 +31,9 @@
 #include "oops/access.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/layoutKind.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "runtime/atomicAccess.hpp"
 #include "runtime/orderAccess.hpp"
@@ -336,7 +336,7 @@ template <DecoratorSet decorators>
 inline void RawAccessBarrier<decorators>::value_copy(const ValuePayload& src, const ValuePayload& dst) {
   precond(src.klass() == dst.klass());
 
-  const InlineKlass* klass = src.klass();
+  const ValueKlass* klass = src.klass();
   const LayoutKind copy_layout = LayoutKindHelper::get_copy_layout(
       src.layout_kind(), dst.layout_kind());
   const int size = klass->layout_size_in_bytes(copy_layout);
@@ -349,7 +349,7 @@ template <DecoratorSet decorators>
 inline void RawAccessBarrier<decorators>::value_store_null(const ValuePayload& dst) {
   address dst_addr = dst.addr();
   const LayoutKind lk = dst.layout_kind();
-  const InlineKlass* klass = dst.klass();
+  const ValueKlass* klass = dst.klass();
   const int size = klass->layout_size_in_bytes(lk);
 
   AccessInternal::value_store_null(dst_addr, static_cast<size_t>(size));

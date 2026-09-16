@@ -22,15 +22,16 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
-#define SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
 
 #include "gc/g1/g1HeapRegionRemSet.hpp"
 
 #include "gc/g1/g1CardSet.inline.hpp"
-#include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1HeapRegion.inline.hpp"
-#include "utilities/bitMap.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1FromCardCache.inline.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "runtime/safepoint.hpp"
 
 void G1HeapRegionRemSet::set_state_untracked() {
   guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
@@ -38,19 +39,16 @@ void G1HeapRegionRemSet::set_state_untracked() {
   if (_state == Untracked) {
     return;
   }
-  clear_fcc();
   _state = Untracked;
 }
 
 void G1HeapRegionRemSet::set_state_updating() {
   guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
             "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
-  clear_fcc();
   _state = Updating;
 }
 
 void G1HeapRegionRemSet::set_state_complete() {
-  clear_fcc();
   _state = Complete;
 }
 
@@ -123,18 +121,15 @@ uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }
 
-void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, uint tid) {
-  assert(has_cset_group(), "pre-condition");
+void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache) {
+  precond(has_card_set_group());
+  precond(_state != Untracked);
 
-  assert(_state != Untracked, "must be");
-
-  uint cur_idx = _hr->hrm_index();
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 
-  if (G1FromCardCache::contains_or_replace(tid, cur_idx, from_card)) {
+  if (from_card_cache.contains_or_add(from_card, card_set_group()->group_id())) {
     // We can't check whether the card is in the remembered set - the card container
     // may be coarsened just now.
-    //assert(contains_reference(from), "We just found " PTR_FORMAT " in the FromCardCache", p2i(from));
     return;
   }
 
@@ -149,4 +144,4 @@ void G1HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
   card_set()->print_info(st, to_card(from));
 }
 
-#endif // SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP

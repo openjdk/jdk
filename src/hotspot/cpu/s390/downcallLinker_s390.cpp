@@ -247,7 +247,8 @@ void DowncallLinker::StubGenerator::generate() {
 
   if (_needs_transition) {
     __ block_comment("thread_native2java {");
-    __ set_thread_state(_thread_in_native_trans);
+    // change thread state
+    __ set_thread_state(_thread_in_Java);
 
     if (!UseSystemMemoryBarrier) {
       __ z_fence(); // Order state change wrt. safepoint poll.
@@ -259,9 +260,6 @@ void DowncallLinker::StubGenerator::generate() {
     __ z_brne(L_safepoint_poll_slow_path);
 
     __ bind(L_after_safepoint_poll);
-
-    // change thread state
-    __ set_thread_state(_thread_in_Java);
 
     __ block_comment("reguard_stack_check {");
     __ z_cli(Address(Z_thread,
@@ -288,7 +286,7 @@ void DowncallLinker::StubGenerator::generate() {
       // Need to save the native result registers around any runtime calls.
       out_reg_spiller.generate_spill(_masm, out_spill_offset);
 
-    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, JavaThread::check_special_condition_for_native_trans));
+    __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, SharedRuntime::check_special_condition_for_native_trans));
     __ z_lgr(Z_ARG1, Z_thread);
     __ call(call_target_address);
 
@@ -316,5 +314,5 @@ void DowncallLinker::StubGenerator::generate() {
 
   //////////////////////////////////////////////////////////////////////////////
 
-  __ flush();
+  // Code will be copied. No ICache sync required.
 }

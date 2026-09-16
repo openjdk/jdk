@@ -947,9 +947,9 @@ static const char* rtv_linkedin_libpath() {
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
   constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
-  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
-  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
-  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
+  static_assert(sizeof(the_xcoff) == xcoffsz);
+  static_assert(sizeof(the_scn) == SCNHSZ);
+  static_assert(sizeof(the_ldr) == LDHDRSZ);
   // read the generic XCOFF header and analyze the substructures
   // to find the burned in libpath. In any case of error perform the assert
   if (nullptr == (f = fopen(buffer, "r")) ||
