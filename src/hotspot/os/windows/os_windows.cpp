@@ -2011,32 +2011,17 @@ void os::print_os_info(outputStream* st) {
 }
 
 static bool getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
   const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
   const char* valueName = "InstallationType";
-
   DWORD valueLength = bufferSize;
-
   // Initialize buffer with empty string
   buffer[0] = '\0';
 
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return false;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
+  if (RegGetValueA(HKEY_LOCAL_MACHINE, subKey, valueName,
+                   RRF_RT_REG_SZ, nullptr, buffer, &valueLength) != ERROR_SUCCESS) {
     buffer[0] = '\0';
     return false;
   }
-
-  // If the value being queried is a string the value returned is NOT guaranteed to be null-terminated
-  buffer[valueLength - 1] = '\0';
-
-  RegCloseKey(hKey);
   return true;
 }
 
@@ -2204,22 +2189,12 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-  if (status == ERROR_SUCCESS) {
-    DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
-    if (status != ERROR_SUCCESS) {
-        strncpy(buf, "## __CPU__", buflen);
-    } else {
-      if (size < buflen) {
-        buf[size] = '\0';
-      }
-    }
-    RegCloseKey(key);
-  } else {
-    // Put generic cpu info to return
+  DWORD size = (DWORD)buflen;
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "ProcessorNameString",
+                              RRF_RT_REG_SZ | RRF_RT_REG_EXPAND_SZ, nullptr, buf, &size);
+  if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
 }
