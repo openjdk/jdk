@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,14 @@ public class MaskQueryOperationsBenchmark {
     VectorSpecies<Short> sspecies;
     VectorSpecies<Integer> ispecies;
     VectorSpecies<Long> lspecies;
+    VectorSpecies<Float> fspecies;
+    VectorSpecies<Double> dspecies;
     VectorMask<Byte> bmask;
     VectorMask<Short> smask;
     VectorMask<Integer> imask;
     VectorMask<Long> lmask;
+    VectorMask<Float> fmask;
+    VectorMask<Double> dmask;
     boolean [] mask_arr;
 
     static final boolean [] mask_avg_case = {
@@ -88,6 +92,8 @@ public class MaskQueryOperationsBenchmark {
         sspecies = VectorSpecies.of(short.class, VectorShape.forBitSize(bits));
         ispecies = VectorSpecies.of(int.class, VectorShape.forBitSize(bits));
         lspecies = VectorSpecies.of(long.class, VectorShape.forBitSize(bits));
+        fspecies = VectorSpecies.of(float.class, VectorShape.forBitSize(bits));
+        dspecies = VectorSpecies.of(double.class, VectorShape.forBitSize(bits));
 
         if( 1 == inputs) {
           mask_arr = mask_best_case;
@@ -101,6 +107,8 @@ public class MaskQueryOperationsBenchmark {
         smask   = VectorMask.fromArray(sspecies, mask_arr, 0);
         imask   = VectorMask.fromArray(ispecies, mask_arr, 0);
         lmask   = VectorMask.fromArray(lspecies, mask_arr, 0);
+        fmask   = VectorMask.fromArray(fspecies, mask_arr, 0);
+        dmask   = VectorMask.fromArray(dspecies, mask_arr, 0);
     }
 
     @Benchmark
@@ -155,6 +163,14 @@ public class MaskQueryOperationsBenchmark {
     @Benchmark
     public int testLastTrueLong(Blackhole bh) {
         return lmask.lastTrue();
+    }
+    @Benchmark
+    public int testLastTrueFloat(Blackhole bh) {
+        return fmask.lastTrue();
+    }
+    @Benchmark
+    public int testLastTrueDouble(Blackhole bh) {
+        return dmask.lastTrue();
     }
 
     @Benchmark
