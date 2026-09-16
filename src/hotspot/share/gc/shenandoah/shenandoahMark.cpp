@@ -24,12 +24,12 @@
  */
 
 
-
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -130,37 +130,23 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
-  ShenandoahTerminatorTerminator tt(heap, CANCELLABLE);
-  while (true) {
-    if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-      return;
-    }
-
+  shenandoah_elastic_loop<CANCELLABLE>(heap, terminator, [&]{
     uint work = 0;
-    if (tt.can_work()) {
-      // This worker is allowed to perform work. Otherwise, this worker will be held in 'reserve' by
-      // letting it fall through and offering termination.
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
 
-      while (satb_mq_set.completed_buffers_num() > 0) {
-        satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
-      }
+    while (satb_mq_set.completed_buffers_num() > 0) {
+      satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
+    }
 
-      for (uint i = 0; i < stride; i++) {
-        if (q->pop(t) || queues->steal(worker_id, t)) {
-          do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
-          work++;
-        } else {
-          break;
-        }
+    for (uint i = 0; i < stride; i++) {
+      if (q->pop(t) || queues->steal(worker_id, t)) {
+        do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
+        work++;
+      } else {
+        break;
       }
     }
 
-    if (work == 0) {
-      // No work encountered in current stride, try to terminate.
-      // Need to leave the STS here otherwise it might block safepoints.
-      SuspendibleThreadSetLeaver stsl(CANCELLABLE);
-      if (terminator->offer_termination(&tt)) return;
-    }
-  }
+    return work == 0 ? ShenandoahWorkResult::NoWork : ShenandoahWorkResult::DidWork;
+  });
 }

@@ -56,10 +56,10 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
     _cm->mark_loop(worker_id, _terminator, GENERATION, true /*cancellable*/);
     // Concurrent marking loop flushes Java thread buffers, coordinating with a handshake.
     // Here, a GC worker has completed marking work, so it is a good time to flush its SATB buffers too.
+    SuspendibleThreadSetJoiner stsj;
     SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
     satb_mq_set.flush_queue(ShenandoahThreadLocalData::satb_mark_queue(Thread::current()));
   }

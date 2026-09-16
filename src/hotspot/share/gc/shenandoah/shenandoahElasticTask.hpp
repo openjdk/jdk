@@ -35,6 +35,32 @@ enum class ShenandoahWorkResult {
   DidWork, NoWork, Retire
 };
 
+template<bool Cancellable, typename WorkFn>
+void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
+  ShenandoahTerminatorTerminator tt(heap, Cancellable);
+  SuspendibleThreadSetJoiner stsj(Cancellable);
+  while (true) {
+    if (Cancellable && heap->check_cancelled_gc_and_yield()) {
+      return;
+    }
+
+    if (tt.can_work()) {
+      const ShenandoahWorkResult result = work();
+      if (result == ShenandoahWorkResult::DidWork) {
+        continue;
+      }
+
+      if (result == ShenandoahWorkResult::Retire) {
+        tt.retire();
+      }
+    }
+
+    SuspendibleThreadSetLeaver stsl(Cancellable);
+    if (terminator->offer_termination(&tt)) {
+      break;
+    }
+  }
+}
 
 template <typename Adapter>
 class ShenandoahElasticTask : public WorkerTask {
@@ -56,29 +82,7 @@ public:
 protected:
   template<bool Cancellable, typename WorkFn>
   void elastic_loop(WorkFn work) {
-    ShenandoahTerminatorTerminator tt(_heap, Cancellable);
-    SuspendibleThreadSetJoiner stsj(Cancellable);
-    while (true) {
-      if (Cancellable && _heap->check_cancelled_gc_and_yield()) {
-        return;
-      }
-
-      if (tt.can_work()) {
-        const ShenandoahWorkResult result = work();
-        if (result == ShenandoahWorkResult::DidWork) {
-          continue;
-        }
-
-        if (result == ShenandoahWorkResult::Retire) {
-          tt.retire();
-        }
-      }
-
-      SuspendibleThreadSetLeaver stsl(Cancellable);
-      if (_terminator.offer_termination(&tt)) {
-        break;
-      }
-    }
+    shenandoah_elastic_loop<Cancellable>(_heap, &_terminator, work);
   }
 };
 
