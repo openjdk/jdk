@@ -1670,8 +1670,12 @@ bool FileMapInfo::can_use_heap_region() {
                       narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
     aot_log_info(aot)("    AOTCompatibleOopCompression = %s", header()->compatible_oop_compression() ? "true" : "false");
   }
+#if INCLUDE_G1GC
   aot_log_info(aot)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
+#else
+  aot_log_info(aot)("The current max heap size = %zuM", MaxHeapSize/M);
+#endif
   aot_log_info(aot)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
   if (UseCompressedOops) {
@@ -1682,9 +1686,9 @@ bool FileMapInfo::can_use_heap_region() {
   if (!object_streaming_mode()) {
     aot_log_info(aot)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                       UseCompressedOops ? p2i(CompressedOops::begin()) :
-                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
+                      G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                       UseCompressedOops ? p2i(CompressedOops::end()) :
-                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+                      G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
   }
 
   int err = 0;
