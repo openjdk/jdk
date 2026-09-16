@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2024, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,21 @@
  *
  */
 
-#include "c1/c1_IR.hpp"
-#include "gc/shared/satbMarkQueue.hpp"
+#include "code/codeBlob.hpp"
+#include "gc/shared/barrierSet.hpp"
+#include "gc/shared/cardTable.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/c1/shenandoahBarrierSetC1.hpp"
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahBarrierSetAssembler.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
+#include "runtime/stubInfo.hpp"
+#include "utilities/sizes.hpp"
+
+class LIR_Assembler;
+class OopMapSet;
+class StubAssembler;
 
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->

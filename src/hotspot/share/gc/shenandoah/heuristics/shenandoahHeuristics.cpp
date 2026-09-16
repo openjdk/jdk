@@ -24,20 +24,27 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
+#include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.inline.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahTrace.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
-#include "runtime/globals_extension.hpp"
-#include "utilities/quickSort.hpp"
+#include "logging/logStream.hpp"
+#include "memory/resourceArea.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/os.hpp"
+
+#include <stdarg.h>
 
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {

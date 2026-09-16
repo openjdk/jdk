@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHARGUMENTS_HPP
 
 #include "gc/shared/gcArguments.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class CollectedHeap;
 

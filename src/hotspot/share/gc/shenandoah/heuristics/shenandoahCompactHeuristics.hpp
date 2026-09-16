@@ -27,6 +27,10 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHCOMPACTHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class ShenandoahCollectionSet;
+class ShenandoahSpaceInfo;
 
 /*
  * This heuristic has simpler triggers than the adaptive heuristic. The

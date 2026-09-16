@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,23 @@
  *
  */
 
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahInPlacePromoter.hpp"
+#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
+#include "memory/iterator.hpp"
+#include "oops/oop.inline.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/thread.hpp"
+#include "utilities/debug.hpp"
 
 class ShenandoahConcurrentEvacuator : public ObjectClosure {
 private:

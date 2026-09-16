@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,12 +27,18 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHREFERENCEPROCESSOR_HPP
 
 #include "gc/shared/referenceDiscoverer.hpp"
-#include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessorStats.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "memory/allocation.hpp"
+#include "memory/referenceType.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/oopsHierarchy.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class AlwaysClearPolicy;
+class ReferencePolicy;
+class ShenandoahGeneration;
 class ShenandoahMarkRefsSuperClosure;
 class WorkerThreads;
 

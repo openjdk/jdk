@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,15 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahPassiveHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 ShenandoahPassiveHeuristics::ShenandoahPassiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {}

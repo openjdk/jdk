@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
+
+#include <cmath>
 
 HdrSeq::HdrSeq() {
   _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
@@ -113,7 +118,7 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-          return pow(10.0, MagMinimum + mag) * val / ValBuckets;
+          return std::pow(10.0, MagMinimum + mag) * val / ValBuckets;
         }
       }
     }

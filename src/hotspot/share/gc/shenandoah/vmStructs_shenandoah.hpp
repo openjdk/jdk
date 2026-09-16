@@ -24,6 +24,7 @@
 #ifndef SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 #define SHARE_GC_SHENANDOAH_VMSTRUCTS_SHENANDOAH_HPP
 
+#include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"

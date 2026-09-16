@@ -22,12 +22,11 @@
  *
  */
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahSATBMode.hpp"
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
-#include "runtime/java.hpp"
 
 void ShenandoahSATBMode::initialize_flags() const {
   if (ClassUnloading) {

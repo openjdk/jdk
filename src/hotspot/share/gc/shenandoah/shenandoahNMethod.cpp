@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2022, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,12 +24,34 @@
  */
 
 
+#include "code/nmethod.hpp"
+#include "code/relocInfo.hpp"
+#include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "logging/log.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/continuation.hpp"
+#include "memory/universe.hpp"
+#include "nmt/memTag.hpp"
+#include "oops/access.hpp"
+#include "oops/accessBackend.hpp"
+#include "oops/instanceKlass.hpp"
+#include "oops/method.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "oops/symbol.hpp"
+#include "runtime/atomic.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/ostream.hpp"
 
 ShenandoahNMethod::ShenandoahNMethod(nmethod* nm, GrowableArray<oop*>& oops, bool non_immediate_oops) :
   _nm(nm), _oops(nullptr), _oops_count(0), _unregistered(false), _lock(), _ic_lock() {

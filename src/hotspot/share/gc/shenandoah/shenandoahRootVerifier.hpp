@@ -27,7 +27,11 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP
 
 #include "memory/allocation.hpp"
-#include "memory/iterator.hpp"
+#include "memory/allStatic.hpp"
+
+class OopIterateClosure;
+class ShenandoahGeneration;
+class ShenandoahHeap;
 
 class ShenandoahGCStateResetter : public StackObj {
 private:

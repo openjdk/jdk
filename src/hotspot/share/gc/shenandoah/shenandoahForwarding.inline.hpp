@@ -29,6 +29,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "oops/markWord.hpp"
+#include "oops/oop.inline.hpp"
 #include "runtime/javaThread.hpp"
 
 inline oop ShenandoahForwarding::get_forwardee_raw(oop obj) {

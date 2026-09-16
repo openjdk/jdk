@@ -23,11 +23,13 @@
  */
 
 
+#include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logStream.hpp"
-#include "memory/resourceArea.hpp"
+#include "memory/padded.hpp"
+#include "nmt/memTag.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {

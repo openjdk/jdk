@@ -28,6 +28,8 @@
 
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "memory/allocation.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class ShenandoahAllocRequest : StackObj {
 public:

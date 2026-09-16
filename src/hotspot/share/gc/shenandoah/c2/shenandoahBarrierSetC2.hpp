@@ -25,7 +25,27 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
+#include "asm/register.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+#include <limits.h>
+
+class Arena;
+class ArrayCopyNode;
+class CodeBuffer;
+class Compile;
+class GraphKit;
+template <typename> class GrowableArray;
+class Label;
+class MacroAssembler;
+class Node;
+class outputStream;
+class PhaseIterGVN;
+class PhaseMacroExpand;
+class Type;
+class TypeOopPtr;
 
 static const uint8_t ShenandoahBitStrong    = 1 << 0; // Barrier: LRB, strong
 static const uint8_t ShenandoahBitWeak      = 1 << 1; // Barrier: LRB, weak
@@ -41,7 +61,6 @@ static const uint8_t ShenandoahBitsReal = ShenandoahBitStrong | ShenandoahBitWea
                                           ShenandoahBitKeepAlive |
                                           ShenandoahBitCardMark;
 
-class MachNode;
 class ShenandoahBarrierStubC2;
 
 class ShenandoahBarrierSetC2State : public BarrierSetC2State {

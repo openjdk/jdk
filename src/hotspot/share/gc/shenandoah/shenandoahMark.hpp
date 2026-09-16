@@ -26,15 +26,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP
 
-#include "gc/shared/ageTable.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
-#include "gc/shared/taskTerminator.hpp"
-#include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "memory/allocation.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
+class Klass;
+class ShenandoahGeneration;
 class ShenandoahMarkingContext;
+class TaskTerminator;
 
 // Base class for mark
 // Mark class does not maintain states. Instead, mark states are

@@ -23,12 +23,14 @@
  */
 
 
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "logging/log.hpp"
-#include "logging/logTag.hpp"
+#include "runtime/globals_extension.hpp"
 #include "runtime/os.hpp"
+
+class ShenandoahSpaceInfo;
 
 ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahSpaceInfo* space_info) :
   ShenandoahHeuristics(space_info) {

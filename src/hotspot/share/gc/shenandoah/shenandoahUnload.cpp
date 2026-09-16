@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,19 +29,33 @@
 #include "code/codeBehaviours.hpp"
 #include "code/codeCache.hpp"
 #include "code/dependencyContext.hpp"
+#include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcBehaviours.hpp"
+#include "gc/shared/gcTimer.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "gc/shenandoah/shenandoahLock.hpp"
+#include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahCodeRoots.hpp"
+#include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahHeap.inline.hpp"
+#include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 #include "gc/shenandoah/shenandoahUnload.hpp"
-#include "gc/shenandoah/shenandoahVerifier.hpp"
+#include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
-#include "memory/resourceArea.hpp"
 #include "oops/access.inline.hpp"
+#include "oops/accessBackend.hpp"
+#include "oops/compressedOops.hpp"
+#include "oops/klass.hpp"
+#include "oops/oopsHierarchy.hpp"
+#include "runtime/globals.hpp"
+#include "runtime/mutex.hpp"
+#include "runtime/mutexLocker.hpp"
+#include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 
 class ShenandoahIsUnloadingOopClosure : public OopClosure {
 private:

@@ -26,14 +26,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHVERIFIER_HPP
 
-#include "gc/shared/markBitMap.hpp"
-#include "gc/shenandoah/shenandoahRootVerifier.hpp"
 #include "memory/allocation.hpp"
+#include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "utilities/stack.hpp"
+#include "runtime/atomic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/stack.inline.hpp"
 
+class MarkBitMap;
+class ShenandoahGeneration;
 class ShenandoahHeap;
-class ShenandoahMarkingContext;
+class ShenandoahHeapRegion;
+enum class VerifyOption : uint;
 
 #ifdef _WINDOWS
 #pragma warning( disable : 4522 )
