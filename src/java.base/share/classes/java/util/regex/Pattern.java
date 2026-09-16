@@ -5572,16 +5572,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             if (i > startIndex) {
                 ch = Character.codePointBefore(seq, i);
-                left = (isWord(ch) ||
-                    ((Character.getType(ch) == Character.NON_SPACING_MARK)
-                     && hasBaseCharacter(matcher, i-1, seq)));
+                left = isWord(ch) || isNonSpacingMark(matcher, seq, ch, i - Character.charCount(ch));
             }
             boolean right = false;
             if (i < endIndex) {
                 ch = Character.codePointAt(seq, i);
-                right = (isWord(ch) ||
-                    ((Character.getType(ch) == Character.NON_SPACING_MARK)
-                     && hasBaseCharacter(matcher, i, seq)));
+                right = isWord(ch) || isNonSpacingMark(matcher, seq, ch, i);
             } else {
                 // Tried to access char past the end
                 matcher.hitEnd = true;
@@ -5590,30 +5586,38 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             }
             return ((left ^ right) ? (right ? LEFT : RIGHT) : NONE);
         }
+
+        private boolean isNonSpacingMark(Matcher matcher, CharSequence seq, int ch, int i) {
+            return (Character.getType(ch) == Character.NON_SPACING_MARK)
+                    && hasBaseCharacter(matcher, i, seq);
+        }
+
+        /**
+         * Non spacing marks only count as word characters in bounds calculations
+         * if they have a base character.
+         */
+        private boolean hasBaseCharacter(Matcher matcher, int i,
+                                                CharSequence seq)
+        {
+            int start = (!matcher.transparentBounds) ?
+                    matcher.from : 0;
+            for (int x=i; x > start; ) {
+                int ch = Character.codePointBefore(seq, x);
+                if (isWord(ch))
+                    return true;
+                if (Character.getType(ch) == Character.NON_SPACING_MARK) {
+                    x -= Character.charCount(ch);
+                    continue;
+                }
+                return false;
+            }
+            return false;
+        }
+
         boolean match(Matcher matcher, int i, CharSequence seq) {
             return (check(matcher, i, seq) & type) > 0
                 && next.match(matcher, i, seq);
         }
-    }
-
-    /**
-     * Non spacing marks only count as word characters in bounds calculations
-     * if they have a base character.
-     */
-    private static boolean hasBaseCharacter(Matcher matcher, int i,
-                                            CharSequence seq)
-    {
-        int start = (!matcher.transparentBounds) ?
-            matcher.from : 0;
-        for (int x=i; x >= start; x--) {
-            int ch = Character.codePointAt(seq, x);
-            if (Character.isLetterOrDigit(ch))
-                return true;
-            if (Character.getType(ch) == Character.NON_SPACING_MARK)
-                continue;
-            return false;
-        }
-        return false;
     }
 
     /**
