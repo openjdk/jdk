@@ -180,7 +180,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
         TestConfinedSegmentPoolUtils.rethrowIfFailed(failure.get());
     }
 
-    static void release(long pool, long size) throws Throwable {
+    static void release(long pool, int size) throws Throwable {
         try {
             RELEASE.invoke(null, pool, size);
         } catch (InvocationTargetException ex) {
@@ -190,7 +190,7 @@ final class TestConfinedSegmentPoolDefensiveRelease {
 
     static Method releaseMethod() {
         try {
-            Method method = ConfinedSegmentPool.class.getDeclaredMethod("release", long.class, long.class);
+            Method method = ConfinedSegmentPool.class.getDeclaredMethod("release", long.class, int.class);
             method.setAccessible(true);
             return method;
         } catch (ReflectiveOperationException ex) {
