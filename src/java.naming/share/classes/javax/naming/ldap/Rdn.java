@@ -181,6 +181,7 @@ public class Rdn implements Serializable, Comparable<Object> {
     public Rdn(Rdn rdn) {
         entries = new ArrayList<>(rdn.entries.size());
         entries.addAll(rdn.entries);
+        assert !entries.isEmpty();
     }
 
     /**
