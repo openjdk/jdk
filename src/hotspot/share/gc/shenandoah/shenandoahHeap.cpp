@@ -1133,13 +1133,8 @@ public:
     _cs(cs) {
   }
 
-  void work(uint worker_id) {
+  void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    do_work(worker_id);
-  }
-
-private:
-  void do_work(uint worker_id) {
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_heap);
     elastic_loop<true>([&]{
 
@@ -1149,7 +1144,7 @@ private:
       }
 
       ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
-                                ShenandoahPhaseTimings::Work,
+                                           ShenandoahPhaseTimings::Work,
                                            worker_id, true);
 
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());

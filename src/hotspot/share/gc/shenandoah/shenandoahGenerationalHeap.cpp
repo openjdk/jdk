@@ -46,6 +46,7 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
+#include "shenandoahElasticTask.hpp"
 #include "utilities/events.hpp"
 
 
@@ -749,27 +750,23 @@ public:
 };
 
 
-class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
+class ShenandoahGenerationalUpdateHeapRefsTask : public ShenandoahElasticTask<ShenandoahUpdateRefsTaskAdapter> {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.
   ShenandoahGeneration* _generation;
-  ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
-  ShenandoahUpdateRefsTaskAdapter _tasks;
-  TaskTerminator _terminator;
 
 public:
   ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahGeneration* generation,
                                            ShenandoahRegionIterator* regions,
                                            ShenandoahRegionChunkIterator* work_chunks) :
-          WorkerTask("Shenandoah Update References"),
+          ShenandoahElasticTask(ShenandoahGenerationalHeap::heap(),
+                                ShenandoahUpdateRefsTaskAdapter(regions, work_chunks, generation->is_young()),
+                                "Shenandoah Update References"),
           _generation(generation),
-          _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
-          _work_chunks(work_chunks),
-          _tasks(_regions, _work_chunks, _generation->is_young()),
-          _terminator(_heap->workers()->active_workers(), &_tasks)
+          _work_chunks(work_chunks)
   {
     assert(_generation->is_mark_complete(), "Expected complete marking");
     const bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
@@ -777,9 +774,7 @@ public:
   }
 
   void work(uint worker_id) override {
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
-    SuspendibleThreadSetJoiner stsj;
     do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
   }
 
@@ -805,40 +800,26 @@ private:
     T cl;
     bool do_regions = true;
     bool do_chunks = _generation->is_young();
-    bool did_work = false;
-    ShenandoahTerminatorTerminator tt(_heap, true);
 
-    // We update references for global, mixed, and young collections.
-    while (true) {
-      if (_heap->check_cancelled_gc_and_yield(true)) {
-        return;
+    elastic_loop<true>([&]{
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
+                                ShenandoahPhaseTimings::Work, worker_id, true);
+      if (do_regions) {
+        if (do_next_region(cl, worker_id)) {
+          return ShenandoahWorkResult::DidWork;
+        }
+        do_regions = false;
       }
 
-      did_work = false;
-      if (tt.can_work()) {
-        if (do_regions) {
-          if (do_next_region(cl, worker_id)) {
-            did_work = true;
-          } else {
-            do_regions = false;
-          }
+      if (do_chunks) {
+        if (do_next_chunk(cl, worker_id)) {
+          return ShenandoahWorkResult::DidWork;
         }
-
-        if (!did_work && do_chunks) {
-          if (do_next_chunk(cl, worker_id)) {
-            did_work = true;
-          } else {
-            do_chunks = false;
-          }
-        }
+        do_chunks = false;
       }
 
-      if (!did_work) {
-        if (_terminator.offer_termination(&tt)) {
-          break;
-        }
-      }
-    }
+      return ShenandoahWorkResult::NoWork;
+    });
   }
 
   static bool needs_update(const ShenandoahHeapRegion* r) {
