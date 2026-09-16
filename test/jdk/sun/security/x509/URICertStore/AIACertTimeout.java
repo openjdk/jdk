@@ -43,29 +43,41 @@
  *      -Dcom.sun.security.cert.readtimeout=20000ms AIACertTimeout 10000 false
  */
 
-import com.sun.net.httpserver.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.Security;
-import java.security.cert.*;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.spec.*;
-import java.util.*;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertPathBuilderResult;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.PKIXBuilderParameters;
+import java.security.cert.PKIXParameters;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
+import java.util.Date;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.security.CertificateBuilder;
 
 public class AIACertTimeout {
 
-    private static final boolean logging = true;
-
     // PKI and server components we will need for this test
     private static KeyPair          rootKp;     // Root CA keys
-    private static X509Certificate  rootCert;
+    private static X509Certificate rootCert;
     private static KeyPair          intKp;      // Intermediate CA keys
     private static X509Certificate  intCert;
     private static KeyPair          eeKp;       // End-entity keys
@@ -133,7 +145,8 @@ public class AIACertTimeout {
         }
 
         public void start() throws IOException {
-            server.bind(new InetSocketAddress("127.0.0.1", 0), 0);
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(),
+                    0), 0);
             server.createContext("/cacert", t -> {
                 try (InputStream is = t.getRequestBody()) {
                     is.readAllBytes();
@@ -153,7 +166,7 @@ public class AIACertTimeout {
                         os.write(derCert);
                     }
                 } catch (InterruptedException |
-                        CertificateEncodingException exc) {
+                         CertificateEncodingException exc) {
                     throw new IOException(exc);
                 }
             });
@@ -251,7 +264,8 @@ public class AIACertTimeout {
         List<String> ekuOids = List.of("1.3.6.1.5.5.7.3.1",
                 "1.3.6.1.5.5.7.3.2", "1.3.6.1.5.5.7.3.4");
         String aiaUri = String.format("http://%s:%d/cacert",
-                "127.0.0.1", aiaAddr.getPort());
+                InetAddress.getLoopbackAddress().getHostAddress(), aiaAddr.getPort());
+        log("aiaUri = " + aiaUri);
 
         CertificateBuilder cbld = new CertificateBuilder();
         cbld.setSubjectName("CN=Oscar T. Grouch, O=SomeCompany").
@@ -288,9 +302,6 @@ public class AIACertTimeout {
     }
 
     private static void log(String str) {
-        if (logging) {
-            System.out.println("[" + Thread.currentThread().getName() + "] " +
-                    str);
-        }
+        System.out.println("[" + Thread.currentThread().getName() + "] " + str);
     }
 }
