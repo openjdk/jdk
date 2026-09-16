@@ -862,6 +862,12 @@ public:
   static const int RAW_SUMMANDS_SIZE = 16;
   static const int SUMMANDS_SIZE = 10;
 
+#ifndef _LP64
+  static const BasicType TYPE = T_INT;
+#else
+  static const BasicType TYPE = T_LONG;
+#endif
+
   // A base can be:
   // - Known:
   //   - On-heap: Object
