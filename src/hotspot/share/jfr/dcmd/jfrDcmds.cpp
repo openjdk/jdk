@@ -174,10 +174,10 @@ static void handle_dcmd_result(outputStream* output,
     log(result, THREAD);
     if (is_warn_level) {
       LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
-    } else {
-      // Print output for jcmd or MXBean
-      print_message(output, result, THREAD);
     }
+  } else {
+    // Print output for jcmd or MXBean
+    print_message(output, result, THREAD);
   }
 }
 
