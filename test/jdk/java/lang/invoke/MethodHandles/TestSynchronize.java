@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run junit/othervm -Xverify:all TestSynchronize
+ * @run junit/othervm -Xverify:all -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=-1 TestSynchronize
  */
 
 import org.junit.jupiter.api.Test;
@@ -34,6 +34,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntConsumer;
@@ -121,5 +122,23 @@ public class TestSynchronize {
             arguments(Object.class, new Object()),
             arguments(String.class, "asdf")
         );
+    }
+
+    @ParameterizedTest
+    @MethodSource("passThroughCases")
+    public void testVarArgsCollector(Class<?> type, Object testValue) throws Throwable {
+        Class<?> arrayType = type.arrayType();
+        MethodHandle mh = MethodHandles.identity(arrayType);
+        mh = mh.asVarargsCollector(arrayType);
+        mh = MethodHandles.synchronize(mh);
+        mh = mh.asType(mh.type().generic());
+
+        Object lock = new Object();
+        assertFalse(Thread.holdsLock(lock));
+        Object arr = Array.newInstance(type, 1);
+        Array.set(arr, 0, testValue);
+        Object result = mh.invokeExact(lock, arr);
+        assertEquals(arr, result);
+        assertFalse(Thread.holdsLock(lock));
     }
 }

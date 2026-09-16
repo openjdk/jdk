@@ -7723,7 +7723,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static MethodHandle synchronize(MethodHandle body) {
         Objects.requireNonNull(body);
-        return MethodHandleImpl.makeSynchronize(body);
+        return MethodHandleImpl.makeSynchronize(body.asFixedArity());
     }
 
     /**
