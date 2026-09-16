@@ -429,6 +429,18 @@ JVMFlag::Error LoopStripMiningIterConstraintFunc(uintx value, bool verbose) {
 }
 #endif // COMPILER2
 
+JVMFlag::Error StressDeepIGVNRevisitConstraintFunc(ccstr value, bool verbose) {
+  if (value != nullptr &&
+      strcmp(value, "all") != 0 &&
+      strcmp(value, "random") != 0) {
+    JVMFlag::printError(verbose,
+                        "Unrecognized value %s for StressDeepIGVNRevisit. "
+                        "Must be one of: all, random\n", value);
+    return JVMFlag::VIOLATES_CONSTRAINT;
+  }
+  return JVMFlag::SUCCESS;
+}
+
 JVMFlag::Error DisableIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
   ControlIntrinsicValidator validator(value, true/*disabled_all*/);
   if (!validator.is_valid()) {
