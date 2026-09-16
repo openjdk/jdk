@@ -96,7 +96,8 @@ TEST_VM_F(BasicShenandoahNumberSeqTest, maximum_test) {
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, minimum_test) {
-  EXPECT_EQ(0, seq1.percentile(0));
+  // Magnitude of 0 cannot be expressed as a power of 2.
+  EXPECT_EQ(1.1641532182693481e-10, seq1.percentile(0));
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, percentile_test) {

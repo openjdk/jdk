@@ -56,18 +56,18 @@ void HdrSeq::add(double val) {
   NumberSeq::add(val);
 
   // Normalize val and compute which bucket it should reside in.
-  int exp;
+  int exponent;
   double v;
   if (val == 0) {
-    exp = MagMinimum;
+    exponent = MagMinimum;
     v = 0.5;
   } else {
-    v = std::frexp(val, &exp);
+    v = std::frexp(val, &exponent);
   }
-  int bucket = exp - MagMinimum;
+  int bucket = exponent - MagMinimum;
 
   // Rescale v from [0.5, 1) to [0, 1) to fit into the sub buckets.
-  int sub_bucket = (int) ((v - 0.5) * 2 * ValBuckets);
+  int sub_bucket = (int) ((v - 0.5) * 2.0 * ValBuckets);
 
   // Defensively saturate for product bits
   if (bucket < 0) {
