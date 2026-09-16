@@ -2276,7 +2276,7 @@ abstract class MethodHandleImpl {
      *    t3:L=BoundMethodHandle$Species_LLL.argL0(a0:L); // body handle
      *    t4:L=BoundMethodHandle$Species_LLL.argL1(a0:L); // collect args
      *    t5:L=BoundMethodHandle$Species_LLL.argL2(a0:L); // unbox result
-     *    t6:L=MethodHandle.invokeBasic(t4:L,a1:L,a2:L); // collect args into an Object[]
+     *    t6:L=MethodHandle.invokeBasic(t4:L,a2:L); // collect args into an Object[]
      *    t7:L=MethodHandleImpl.synchronize(a1:L,t3:L,t6:L); // call synchronize with lock, body, and collected arg
      *   t10:I=MethodHandle.invokeBasic(t5:L,t7:L);t10:I} // unbox the result if needed
      * }</pre></blockquote>
