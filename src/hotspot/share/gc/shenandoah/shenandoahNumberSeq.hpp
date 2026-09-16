@@ -32,16 +32,16 @@
 // It does so by maintaining the double array, where first array defines
 // the magnitude of the value being stored, and the second array maintains
 // the low resolution histogram within that magnitude. For example, storing
-// 4.352819 * 10^3 increments the bucket _hdr[3][435]. This allows for
-// memory efficient storage of huge amount of samples.
+// 0.012 seconds gives 0.768 * 2^-6 and that increments the bucket _hdr[26][34].
+// This allows for memory efficient storage of huge amount of samples.
 //
 // Accepts positive numbers only.
 class HdrSeq: public NumberSeq {
 private:
   enum PrivateConstants {
-    ValBuckets = 512,
-    MagBuckets = 24,
-    MagMinimum = -12
+    ValBuckets = 64,
+    MagBuckets = 48,
+    MagMinimum = -32
   };
   int** _hdr;
 

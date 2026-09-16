@@ -28,6 +28,8 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
 
+#include <cmath>
+
 HdrSeq::HdrSeq() {
   _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
   for (int c = 0; c < MagBuckets; c++) {
@@ -53,24 +55,19 @@ void HdrSeq::add(double val) {
 
   NumberSeq::add(val);
 
-  double v = val;
-  int mag;
-  if (v > 0) {
-    mag = 0;
-    while (v >= 1) {
-      mag++;
-      v /= 10;
-    }
-    while (v < 0.1) {
-      mag--;
-      v *= 10;
-    }
+  // Normalize val and compute which bucket it should reside in.
+  int exp;
+  double v;
+  if (val == 0) {
+    exp = MagMinimum;
+    v = 0.5;
   } else {
-    mag = MagMinimum;
+    v = std::frexp(val, &exp);
   }
+  int bucket = exp - MagMinimum;
 
-  int bucket = -MagMinimum + mag;
-  int sub_bucket = (int) (v * ValBuckets);
+  // Rescale v from [0.5, 1) to [0, 1) to fit into the sub buckets.
+  int sub_bucket = (int) ((v - 0.5) * 2 * ValBuckets);
 
   // Defensively saturate for product bits
   if (bucket < 0) {
@@ -113,7 +110,7 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-          return pow(10.0, MagMinimum + mag) * val / ValBuckets;
+          return std::ldexp((((double) val / ValBuckets) / 2.0 + 0.5), MagMinimum + mag);
         }
       }
     }
