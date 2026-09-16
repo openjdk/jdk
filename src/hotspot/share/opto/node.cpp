@@ -1235,6 +1235,9 @@ bool Node::has_special_unique_user() const {
   } else if (this->is_Load() && n->is_Move()) {
     // Condition for MoveX2Y (LoadX mem) => LoadY mem
     return true;
+  } else if (op == Op_LoadUS && n->Opcode() == Op_LShiftI) {
+    // Condition for RShiftI(LShiftI(LoadUS(...), 16), 16) => LoadS(...), see RShiftINode::Ideal
+    return true;
   } else if (op == Op_AddL) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1253,7 +1256,7 @@ bool Node::has_special_unique_user() const {
   } else {
     return false;
   }
-};
+}
 
 bool Node::should_process_when_disconnect_output(Node* output) const {
   return (is_Phi() && as_Phi()->is_dead_phi()) ||

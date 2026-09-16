@@ -2361,9 +2361,8 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
             if (in->outcnt() == 0) { // Made input go dead?
               stack.push(in, PROCESS_INPUTS); // Recursively remove
               recurse = true;
-            } else if (in->outcnt() == 1 &&
-                       in->has_special_unique_user()) {
-              _worklist.push(in->unique_out());
+            } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+              add_users_to_worklist(in);
             } else if (in->outcnt() <= 2 && dead->is_Phi()) {
               if (in->Opcode() == Op_Region) {
                 _worklist.push(in);
@@ -2513,10 +2512,13 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   return nullptr;
 }
 
-void PhaseIterGVN::add_users_to_worklist(Node *n) {
-  add_users_to_worklist0(n, _worklist);
+void PhaseIterGVN::add_users_to_worklist(Node *n) const {
+  add_users_to_worklist(n, _worklist);
+}
 
-  Unique_Node_List& worklist = _worklist;
+void PhaseIterGVN::add_users_to_worklist(Node* n, Unique_Node_List& worklist) {
+  add_users_to_worklist0(n, worklist);
+
   // Move users of node to worklist
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i); // Get use
