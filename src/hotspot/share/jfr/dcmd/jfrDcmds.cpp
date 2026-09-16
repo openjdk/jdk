@@ -143,30 +143,6 @@ static void log(oop content, TRAPS) {
   }
 }
 
-// RAII object to ensure log level.
-// handle_dcmd_result() need to print info level jfr+startup message to stdout,
-// so this RAII would log level of jfr+startup to Info if needs, and would restore
-// it to Warning.
-class LogLevelForJfrStartupMark : StackObj {
-    const bool _active;
-
-  public:
-    // Info or lower is enabled if the log level is Warning, thus we need to
-    // check it is not Info (or lower).
-    LogLevelForJfrStartupMark()
-      : _active(log_is_enabled(Warning, jfr, startup) && !log_is_enabled(Info, jfr, startup)) {
-      if (_active) {
-        LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
-      }
-    }
-
-    ~LogLevelForJfrStartupMark() {
-      if (_active) {
-        LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
-      }
-    }
-};
-
 static void handle_dcmd_result(outputStream* output,
                                const oop result,
                                const DCmdSource source,
@@ -187,9 +163,18 @@ static void handle_dcmd_result(outputStream* output,
   assert(!HAS_PENDING_EXCEPTION, "invariant");
 
   if (startup) {
-    LogLevelForJfrStartupMark mark;
+    // jfr+startup message requires info level to print to stdout,
+    // so updating log level of jfr+startup to Info temporally if needs,
+    // and would restore it to Warning.
+    // The user can disable default output by setting -Xlog:jfr+startup=error/off.
+    bool is_warn_level = log_is_enabled(Warning, jfr, startup) && !log_is_enabled(Info, jfr, startup);
+    if (is_warn_level) {
+      LogConfiguration::configure_stdout(LogLevel::Info, true, LOG_TAGS(jfr, startup));
+    }
     log(result, THREAD);
-  } else {
+    if (is_warn_level) {
+      LogConfiguration::configure_stdout(LogLevel::Warning, true, LOG_TAGS(jfr, startup));
+    }  } else {
       // Print output for jcmd or MXBean
       print_message(output, result, THREAD);
   }
