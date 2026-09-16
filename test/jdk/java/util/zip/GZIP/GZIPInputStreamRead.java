@@ -24,6 +24,7 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
@@ -45,11 +46,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @key randomness
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
+ * @modules java.base/java.util.zip:open
  * @run junit ${test.main.class}
  */
 class GZIPInputStreamRead {
 
     private static final Random random = RandomFactory.getRandom();
+
+    // 'GZIPInputStream.alwaysReadNextMember' configures whether GZIPInputStream skips the call to
+    // 'InputStream.available()' when checking for additional GZIP members in a stream. Tests which
+    // specifically test the non-blocking behavior (i.e. for the 'alwaysReadNextMember=false' case)
+    // have to be skipped if 'GZIPInputStream.alwaysReadNextMember' is 'true'.
+    static boolean alwaysReadNextMember = false;
+    static {
+        try {
+            Field alwaysReadNextMemberField = GZIPInputStream.class.getDeclaredField("alwaysReadNextMember");
+            alwaysReadNextMemberField.setAccessible(true);
+            alwaysReadNextMember = alwaysReadNextMemberField.getBoolean(null);
+        } catch (Exception e) {
+            System.out.println("Warning: can't get value of 'GZIPInputStream.alwaysReadNextMember'");
+            e.printStackTrace(System.out);
+        }
+    }
 
     /*
      * Generates GZIP content containing multiple members and then verifies
@@ -172,7 +190,9 @@ class GZIPInputStreamRead {
             while ((n = gzipIn.read(tmpBuf)) != -1) {
                 decompressedBaos.write(tmpBuf, 0, n);
             }
-            assertTrue(availableInvoked.get(), "InputStream.available() wasn't invoked");
+            if (!alwaysReadNextMember) {
+              assertTrue(availableInvoked.get(), "InputStream.available() wasn't invoked");
+            }
             final byte[] decompressed = decompressedBaos.toByteArray();
             // verify the decompressed content, it should represent the two GZIP members
             assertEquals(rawUncompressedMember1.length + rawUncompressedMember2.length,
