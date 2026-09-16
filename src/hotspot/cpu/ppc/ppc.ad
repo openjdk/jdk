@@ -5670,7 +5670,7 @@ instruct loadConN(iRegNdst dst, immN src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*3);
 
-  format %{ "LIS/ORI/CLRLDI $dst, $src \t// narrow oop" %}
+  format %{ "LIS/ORI/CLRLDI $dst, $src" %}
   size(12);
   ins_encode %{
     AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
@@ -5686,7 +5686,7 @@ instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*2);
 
-  format %{ "LoadConst $dst, $src \t// narrow klass" %}
+  format %{ "LOAD $dst, $src" %}
   ins_encode %{
     // Notify OOP recorder (don't need the relocation).
     AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
