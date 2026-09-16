@@ -27,6 +27,7 @@ package jdk.test.lib.containers.cgroup;
 import java.util.Objects;
 
 import jdk.internal.platform.Metrics;
+import jtreg.SkippedException;
 
 /**
  * Cgroup version agnostic metrics tester
@@ -83,10 +84,9 @@ public class MetricsTester {
 
     public static void main(String[] args) throws Exception {
         Metrics m = Metrics.systemMetrics();
-        // If cgroups is not configured, report success
+        // If cgroups is not configured, the test is skipped.
         if (m == null) {
-            System.out.println("TEST PASSED!!!");
-            return;
+            throw new SkippedException("Cgroup is not configured, test skipped.");
         }
 
         boolean inContainer = false;
