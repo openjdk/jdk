@@ -608,7 +608,7 @@ static int report_code_heap_full_event(CodeBlobType code_blob_type) {
     event.set_methodCount(heap->nmethod_count());
     event.set_adaptorCount(heap->adapter_count());
     event.set_unallocatedCapacity(heap->unallocated_capacity());
-    event.set_fullCount(heap->full_count());
+    event.set_fullCount(full_count);
     event.set_codeCacheMaxCapacity(CodeCache::max_capacity());
     event.commit();
   }
