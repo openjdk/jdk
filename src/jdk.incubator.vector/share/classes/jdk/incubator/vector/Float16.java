@@ -26,6 +26,8 @@
 package jdk.incubator.vector;
 
 import java.io.IOException;
+import java.io.Serial;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -101,7 +103,7 @@ import jdk.internal.vm.vector.Float16Math;
 // expected to be aligned with Value Classes and Object as described in
 // JEP-401 (https://openjdk.org/jeps/401).
 @jdk.internal.ValueBased
-public final class Float16
+public final /*value*/ class Float16
     extends Number
     implements Comparable<Float16> {
 
@@ -1767,6 +1769,18 @@ public final class Float16
      */
     public static Float16 signum(Float16 f) {
         return (f.floatValue() == 0.0f || isNaN(f)) ? f : copySign(ONE, f);
+    }
+
+    @Serial
+    private Object writeReplace() {
+        return new SerialProxy(value);
+    }
+
+    private record SerialProxy(short value) implements Serializable {
+        @Serial
+        private Object readResolve() {
+            return Float16.shortBitsToFloat16(value);
+        }
     }
 
     // TODO: Temporary location for this functionality while Float16
