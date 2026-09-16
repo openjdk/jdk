@@ -750,63 +750,69 @@ public:
   }
 
 private:
+  void return_evac_reserves_to_mutators() const {
+    // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
+    // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
+    const size_t cset_regions = _heap->collection_set()->count();
+
+    // Now that evacuation is done, we can reassign any regions that had been reserved to hold the results of evacuation
+    // to the mutator free set.  At the end of GC, we will have cset_regions newly evacuated fully empty regions from
+    // which we will be able to replenish the Collector free set and the OldCollector free set in preparation for the
+    // next GC cycle.
+    _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
+  }
+
+  template <class T>
+  void update_refs_in_region(ShenandoahHeapRegion* r, T& cl) {
+    HeapWord* update_watermark = r->get_update_watermark();
+    assert(update_watermark >= r->bottom(), "sanity");
+    if (r->is_young()) {
+      _heap->marked_object_oop_iterate(r, &cl, update_watermark);
+    } else if (r->is_old()) {
+      if (_generation->is_global()) {
+        _heap->marked_object_oop_iterate(r, &cl, update_watermark);
+      }
+    } else {
+      // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
+      // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
+      // active status may propagate at a different speed than the changing of the region's affiliation.
+
+      // When we reach this control point, it is because a race has allowed a region's is_active() status to be seen
+      // by this thread before the region's affiliation() is seen by this thread.
+
+      // It's ok for this race to occur because the newly transformed region does not have any references to be
+      // updated.
+
+      assert(r->get_update_watermark() == r->bottom(),
+             "%s Region %zu is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
+             r->affiliation_name(), r->index());
+    }
+  }
+
   template<class T>
   void do_work(uint worker_id) {
     T cl;
 
     if (worker_id == 0) {
-      // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
-      // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
-      size_t cset_regions = _heap->collection_set()->count();
-
-      // Now that evacuation is done, we can reassign any regions that had been reserved to hold the results of evacuation
-      // to the mutator free set.  At the end of GC, we will have cset_regions newly evacuated fully empty regions from
-      // which we will be able to replenish the Collector free set and the OldCollector free set in preparation for the
-      // next GC cycle.
-      _heap->free_set()->move_regions_from_collector_to_mutator(cset_regions);
+      return_evac_reserves_to_mutators();
     }
 
-    ShenandoahHeapRegion* r = _regions->next();
     // We update references for global, mixed, and young collections.
     assert(_generation->is_mark_complete(), "Expected complete marking");
-    ShenandoahMarkingContext* const ctx = _heap->marking_context();
-    bool is_mixed = _heap->collection_set()->has_old_regions();
-    while (r != nullptr) {
-      HeapWord* update_watermark = r->get_update_watermark();
-      assert(update_watermark >= r->bottom(), "sanity");
-
-      log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
-        if (r->is_young()) {
-          _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-        } else if (r->is_old()) {
-          if (_generation->is_global()) {
-
-            _heap->marked_object_oop_iterate(r, &cl, update_watermark);
-          }
-          // Otherwise, this is an old region in a young or mixed cycle.  Process it during a second phase, below.
-        } else {
-          // Because updating of references runs concurrently, it is possible that a FREE inactive region transitions
-          // to a non-free active region while this loop is executing.  Whenever this happens, the changing of a region's
-          // active status may propagate at a different speed than the changing of the region's affiliation.
-
-          // When we reach this control point, it is because a race has allowed a region's is_active() status to be seen
-          // by this thread before the region's affiliation() is seen by this thread.
-
-          // It's ok for this race to occur because the newly transformed region does not have any references to be
-          // updated.
-
-          assert(r->get_update_watermark() == r->bottom(),
-                 "%s Region %zu is_active but not recognized as YOUNG or OLD so must be newly transitioned from FREE",
-                 r->affiliation_name(), r->index());
-        }
-      }
-
+    while (true) {
       if (_heap->check_cancelled_gc_and_yield(true)) {
         return;
       }
 
-      r = _regions->next();
+      ShenandoahHeapRegion* r = _regions->next();
+      if (r == nullptr) {
+        break;
+      }
+
+      log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
+      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
+        update_refs_in_region<T>(r, cl);
+      }
     }
 
     if (_generation->is_young()) {
@@ -816,13 +822,14 @@ private:
       // After this thread has exhausted its traditional update-refs work, it continues with updating refs within
       // remembered set. The remembered set workload is better balanced between threads, so threads that are "behind"
       // can catch up with other threads during this phase, allowing all threads to work more effectively in parallel.
-      update_references_in_remembered_set(worker_id, cl, ctx, is_mixed);
+      update_references_in_remembered_set(worker_id, cl);
     }
   }
 
   template<class T>
-  void update_references_in_remembered_set(uint worker_id, T &cl, const ShenandoahMarkingContext* ctx, bool is_mixed) {
-
+  void update_references_in_remembered_set(uint worker_id, T &cl) {
+    ShenandoahMarkingContext* const ctx = _heap->marking_context();
+    bool is_mixed = _heap->collection_set()->has_old_regions();
     ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
