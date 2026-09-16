@@ -452,7 +452,21 @@ void ShenandoahDegenGC::op_update_roots() {
 
 void ShenandoahDegenGC::op_cleanup_complete() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_cleanup_complete);
-  ShenandoahHeap::heap()->recycle_trash();
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+
+  // There might still be young pointers in SATB queues, while we are degenerating
+  // and old marking is still in progress. We need to filter them out before we perform
+  // cleanups. Otherwise we expose dangling pointers to future GC cycles.
+  // This matches ShenandoahConcurrentGC::op_update_thread_roots().
+  if (heap->is_concurrent_old_mark_in_progress()) {
+    ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+    satb_qs.set_filter_out_young(true);
+    ShenandoahFlushSATB flush_satb(satb_qs);
+    Threads::threads_do(&flush_satb);
+  }
+
+  heap->recycle_trash();
 }
 
 void ShenandoahDegenGC::op_degenerated_fail() {
