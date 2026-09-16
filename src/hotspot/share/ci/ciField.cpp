@@ -337,9 +337,9 @@ void ciField::initialize_from(fieldDescriptor* fd) {
       // java.lang.System.out, and java.lang.System.err.
       _is_constant = !fd->is_mutable_static_final();
     } else {
-      // An instance field can be constant if it's a final static field or if
-      // it's a final non-static field of a trusted class (classes in
-      // java.lang.invoke and sun.invoke packages and subpackages).
+      // A final field should generally be constant, but reflection is allowed to subvert this
+      // expection, so we only consider a final field constant if either it is strict, it is
+      // annotated with @Stable, or it is one of some special cases where we want constant folding
       _is_constant = is_strict() || is_stable_field || trust_final_nonstatic_fields(_holder);
     }
   } else {
