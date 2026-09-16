@@ -657,15 +657,15 @@ void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
 }
 #endif
 
-void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_inline, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  if (allow_inline) {
+void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, bool allow_value, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
+  if (allow_value) {
     assert(!is_unresolved && klass->is_loaded(), "value type klass should be resolved");
     __ metadata2reg(klass->constant_encoding(), klass_reg);
   } else {
     klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
   }
   // If klass is not loaded we do not know if the klass has finalizers or is an unexpected value klass
-  if (UseFastNewInstance && klass->is_loaded() && (allow_inline || !klass->is_value_klass())
+  if (UseFastNewInstance && klass->is_loaded() && (allow_value || !klass->is_value_klass())
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {
 
     StubId stub_id = klass->is_initialized() ? StubId::c1_fast_new_instance_id : StubId::c1_fast_new_instance_init_check_id;
@@ -2744,7 +2744,7 @@ void LIRGenerator::do_TableSwitch(TableSwitch* x) {
   assert(lo_key <= (lo_key + (len - 1)), "integer overflow");
   LIR_Opr value = tag.result();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
@@ -2802,7 +2802,7 @@ void LIRGenerator::do_LookupSwitch(LookupSwitch* x) {
   LIR_Opr value = tag.result();
   int len = x->length();
 
-  if (compilation()->env()->comp_level() == CompLevel_full_profile && UseSwitchProfiling) {
+  if (compilation()->profile_switches()) {
     ciMethod* method = x->state()->scope()->method();
     ciMethodData* md = method->method_data_or_null();
     assert(md != nullptr, "Sanity");
