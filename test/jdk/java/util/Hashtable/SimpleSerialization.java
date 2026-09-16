@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,11 +43,15 @@ import java.util.Map;
 
 public class SimpleSerialization {
     public static void main(final String[] args) throws Exception {
-        Hashtable<String, String> h1 = new Hashtable<>();
-
         System.err.println("*** BEGIN TEST ***");
 
-        h1.put("key", "value");
+        test(new Hashtable<String, String>(), "key", "value");
+        test(new Hashtable<Integer, Integer>(), 1, 2);
+    }
+
+    private static <K, V> void test(Hashtable<K, V> h1, K key, V value)
+            throws Exception {
+        h1.put(key, value);
 
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
@@ -66,11 +70,14 @@ public class SimpleSerialization {
         }
 
         if (false == h1.equals(deserializedObject)) {
-             Hashtable<String, String> d1 = (Hashtable<String, String>) h1;
-            for(Map.Entry entry: h1.entrySet()) {
-                System.err.println("h1.key::" + entry.getKey() + " d1.containsKey()::" + d1.containsKey((String) entry.getKey()));
-                System.err.println("h1.value::" + entry.getValue() + " d1.contains()::" + d1.contains(entry.getValue()));
-                System.err.println("h1.value == d1.value " + entry.getValue().equals(d1.get((String) entry.getKey())));
+            Hashtable<?, ?> copy = (Hashtable<?, ?>) deserializedObject;
+            for (Map.Entry<K, V> entry : h1.entrySet()) {
+                System.err.println("h1.key::" + entry.getKey()
+                        + " copy.containsKey()::" + copy.containsKey(entry.getKey()));
+                System.err.println("h1.value::" + entry.getValue()
+                        + " copy.contains()::" + copy.contains(entry.getValue()));
+                System.err.println("h1.value equals copy.value "
+                        + entry.getValue().equals(copy.get(entry.getKey())));
             }
 
             throw new RuntimeException(getFailureText(h1, deserializedObject));

@@ -38,20 +38,19 @@ public class Swap {
     static final int SIZE = 100;
 
     public static void main(String[] args) throws Exception {
-        List l = new ArrayList(Collections.nCopies(100, Boolean.FALSE));
-        l.set(0, Boolean.TRUE);
-        for (int i=0; i < SIZE-1; i++)
-            Collections.swap(l, i, i+1);
+        test(Boolean.TRUE, Boolean.FALSE);
+        test(new VClass(1, new int[] { 1 }), new VClass(0, new int[] { 0 }));
+    }
 
-        List l2 = new ArrayList(Collections.nCopies(100, Boolean.FALSE));
-        l2.set(SIZE-1, Boolean.TRUE);
-        if (!l.equals(l2))
+    static <T> void test(T marked, T unmarked) throws Exception {
+        List<T> l = new ArrayList<>(Collections.nCopies(SIZE, unmarked));
+        l.set(0, marked);
+        for (int i = 0; i < SIZE - 1; i++)
+            Collections.swap(l, i, i + 1);
+
+        List<T> golden = new ArrayList<>(Collections.nCopies(SIZE, unmarked));
+        golden.set(SIZE - 1, marked);
+        if (!l.equals(golden))
             throw new RuntimeException("Wrong result");
-
-        List<VClass> vl = new ArrayList<>(Collections.nCopies(SIZE, new VClass(0, new int[] { 0 })));
-        vl.set(0, new VClass(1, new int[] { 1 }));
-        for (int i = 0; i < SIZE - 1; i++) Collections.swap(vl, i, i + 1);
-        if (!vl.get(SIZE - 1).equals(new VClass(1, new int[] { 1 })))
-            throw new RuntimeException("value swap failed");
     }
 }

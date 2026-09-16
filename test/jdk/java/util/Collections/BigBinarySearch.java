@@ -40,35 +40,28 @@ import java.util.RandomAccess;
 
 public class BigBinarySearch {
 
-    static class SparseTupleList extends AbstractList<VClass> implements RandomAccess {
-        final Map<Integer, VClass> m = new HashMap<>();
-        public VClass get(int i) { return m.getOrDefault(i, new VClass(0, new int[] { 0 })); }
-        public int size() { return Collections.max(m.keySet()) + 1; }
-        public VClass set(int i, VClass v) { return m.put(i, v); }
-    }
-
     // Allows creation of very "big" collections without using too
     // many real resources
-    static class SparseIntegerList
-        extends AbstractList<Integer>
-        implements RandomAccess
-    {
-        private Map<Integer,Integer> m = new HashMap<>();
+    static class SparseList<T> extends AbstractList<T> implements RandomAccess {
+        private final Map<Integer, T> m = new HashMap<>();
+        private final T zero;
 
-        public Integer get(int i) {
-            if (i < 0) throw new IndexOutOfBoundsException(""+i);
-            Integer v = m.get(i);
-            return (v == null) ? Integer.valueOf(0) : v;
+        SparseList(T zero) { this.zero = zero; }
+
+        public T get(int i) {
+            if (i < 0) throw new IndexOutOfBoundsException("" + i);
+            T v = m.get(i);
+            return (v == null) ? zero : v;
         }
 
         public int size() {
             return Collections.max(m.keySet()) + 1;
         }
 
-        public Integer set(int i, Integer v) {
-            if (i < 0) throw new IndexOutOfBoundsException(""+i);
-            Integer ret = get(i);
-            if (v == 0)
+        public T set(int i, T v) {
+            if (i < 0) throw new IndexOutOfBoundsException("" + i);
+            T ret = get(i);
+            if (v.equals(zero))
                 m.remove(i);
             else
                 m.put(i, v);
@@ -77,14 +70,14 @@ public class BigBinarySearch {
     }
 
     /** Checks that binarySearch finds an element where we got it. */
-    private static void checkBinarySearch(List<Integer> l, int i) {
+    private static <T extends Comparable<T>> void checkBinarySearch(List<T> l, int i) {
         try { equal(i, Collections.binarySearch(l, l.get(i))); }
         catch (Throwable t) { unexpected(t); }
     }
 
     /** Checks that binarySearch finds an element where we got it. */
-    private static void checkBinarySearch(List<Integer> l, int i,
-                                          Comparator<Integer> comparator) {
+    private static <T> void checkBinarySearch(List<T> l, int i,
+                                              Comparator<T> comparator) {
         try { equal(i, Collections.binarySearch(l, l.get(i), comparator)); }
         catch (Throwable t) { unexpected(t); }
     }
@@ -93,7 +86,7 @@ public class BigBinarySearch {
         final int n = (1<<30) + 47;
 
         System.out.println("binarySearch(List<Integer>, Integer)");
-        List<Integer> big = new SparseIntegerList();
+        List<Integer> big = new SparseList<>(0);
         big.set(  0, -44);
         big.set(  1, -43);
         big.set(n-2,  43);
@@ -112,13 +105,13 @@ public class BigBinarySearch {
         for (int i : ints)
             checkBinarySearch(big, i, reverse);
 
-        System.out.println("binarySearch(SparseTupleList, Tuple)");
-        SparseTupleList vl = new SparseTupleList();
+        System.out.println("binarySearch(SparseList<VClass>, VClass)");
+        List<VClass> vl = new SparseList<>(new VClass(0, new int[] { 0 }));
         vl.set(0, new VClass(0, new int[] { 0 }));
         vl.set(1, new VClass(1, new int[] { 1 }));
         vl.set(n - 2, new VClass(n - 2, new int[] { n - 2 }));
         vl.set(n - 1, new VClass(n - 1, new int[] { n - 1 }));
-        equal(n - 1, Collections.binarySearch(vl, new VClass(n - 1, new int[] { n - 1 })));
+        checkBinarySearch(vl, n - 1);
     }
 
     //--------------------- Infrastructure ---------------------------

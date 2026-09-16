@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,19 +27,27 @@
  * @summary If the key to be inserted into a HashMap is null and the table
  * needs to be resized as part of the insertion then addEntry will try to
  * recalculate the hash of a null key. This will fail with an NPE.
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.*;
+import java.util.function.IntFunction;
 
 public class NullKeyAtResize {
     public static void main(String[] args) throws Exception {
+        test(Integer::valueOf);
+        test(i -> new VClass(i, new int[] { i }));
+    }
+
+    private static void test(IntFunction<Object> keyFactory) throws Exception {
         List<Object> old_order = new ArrayList<>();
         Map<Object,Object> m = new HashMap<>(16);
         int number = 0;
         while(number < 100000) {
             m.put(null,null); // try to put in null. This may cause resize.
             m.remove(null); // remove it.
-            Integer adding = (number += 100);
+            Object adding = keyFactory.apply(number += 100);
             m.put(adding, null); // try to put in a number. This wont cause resize.
             List<Object> new_order = new ArrayList<>();
             new_order.addAll(m.keySet());

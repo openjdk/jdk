@@ -32,6 +32,7 @@ import jdk.test.lib.valueclass.VClass;
 import java.util.Collections;
 import java.util.List;
 import java.util.Vector;
+import java.util.function.IntFunction;
 
 public class Enum {
 
@@ -39,20 +40,18 @@ public class Enum {
 
     public static void main(String[] args) throws Exception {
         int[] sizes = {0, 10, 100};
-        for (int i=0; i<sizes.length; i++) {
-            Vector v = new Vector();
-            int size = sizes[i];
-            for (int j=0; j<size; j++)
-                v.add(new Integer(j));
-            List l = Collections.list(v.elements());
-            if (!l.equals(v))
-                throw new Exception("Copy failed: "+size);
-        }
+        for (int size : sizes)
+            test(size, Integer::valueOf);
 
-        Vector<VClass> vv = new Vector<>();
-        for (int j = 0; j < SIZE; j++) vv.add(new VClass(j, new int[] { j }));
-        List<VClass> vl = Collections.list(vv.elements());
-        if (!vl.equals(vv))
-            throw new RuntimeException("value Enumeration -> List failed");
+        test(SIZE, j -> new VClass(j, new int[] { j }));
+    }
+
+    private static void test(int size, IntFunction<Object> factory) throws Exception {
+        Vector v = new Vector();
+        for (int j = 0; j < size; j++)
+            v.add(factory.apply(j));
+        List l = Collections.list(v.elements());
+        if (!l.equals(v))
+            throw new Exception("Copy failed: " + size);
     }
 }
