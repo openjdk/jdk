@@ -88,9 +88,9 @@ class Label {
   //
   // To avoid having to allocate from the C-heap each time, we provide
   // a local cache and use the overflow only if we exceed the local cache
-  int _patches[PatchCacheSize];
+  PatchInfo _patches[PatchCacheSize];
   int _patch_index;
-  GrowableArray<int>* _patch_overflow;
+  GrowableArray<PatchInfo>* _patch_overflow;
 
   NONCOPYABLE(Label);
  protected:
@@ -146,7 +146,9 @@ class Label {
    * @param cb         the code buffer being patched
    * @param branch_loc the locator of the branch instruction in the code buffer
    */
-  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr, int line = 0);
+  void add_patch_at(CodeBuffer* cb, int branch_loc, const char* file = nullptr,
+                    int line = 0, LabelPatchKind pk = LPK_FULL_ADDRESS,
+                    int patch_shift = 0);
 
   /**
    * Iterate over the list of patches, resolving the instructions
