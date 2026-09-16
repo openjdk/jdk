@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,5 +69,9 @@ class ClassLoaderHelper {
         paths.add((pathStart < ldLen) ?
                 ldPath.substring(pathStart, ldLen) : ".");
         return paths.toArray(new String[paths.size()]);
+    }
+
+    static String mapToNativeLibraryName(String name) {
+        return name;
     }
 }
