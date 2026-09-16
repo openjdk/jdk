@@ -28,6 +28,8 @@ package jdk.test.lib.valueclass;
  * @bug 8384068
  * @summary Tests ValueClassPlugin
  * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.api
+ *          jdk.compiler/com.sun.tools.javac.main
  * @library /test/lib /test/langtools/tools/lib
  * @run junit ${test.main.class}
  */
@@ -63,18 +65,21 @@ public class ValueClassPluginTest {
 
     @BeforeAll
     static void setup() throws Throwable {
-        Path pluginSrc = tb.findFromTestRoot("../jtreg_value_class_plugin");
+        Path pluginSrc = tb.findFromTestRoot("../jtreg_value_class_plugin/plugin");
         requireNonNull(pluginSrc);
         Path pluginClasses = Files.createDirectories(Path.of("plugin-classes"));
         new JavacTask(tb)
                 .outdir(pluginClasses)
-                .options("-d", pluginSrc.toString(), "--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
+                .files(tb.findJavaFiles(pluginSrc))
+                .options("--add-exports", "jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED",
                         "--add-exports", "jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED",
                         "--add-exports", "jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED",
                         "--add-exports", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED",
-                        "--enable-preview")
+                        "--enable-preview", "-source", Integer.toString(Runtime.version().feature()))
                 .run()
                 .writeAll();
+        tb.copyDir(pluginSrc.resolve("META-INF"), pluginClasses.resolve("META-INF"));
+        pluginJar = Path.of("plugin.jar");
         new JarTask(tb, pluginJar)
                 .baseDir(pluginClasses)
                 .run()
@@ -94,19 +99,19 @@ public class ValueClassPluginTest {
         return new Arguments[] {
                 Arguments.of("fully-qualified", """
                         @jdk.test.lib.valueclass.AsValueClass
-                        class Test {}
+                        final class Test {}
                         """),
                 Arguments.of("explicit-import", """
                         import jdk.test.lib.valueclass.AsValueClass;
 
                         @AsValueClass
-                        class Test {}
+                        final class Test {}
                         """),
                 Arguments.of("star-import", """
                         import jdk.test.lib.valueclass.*;
 
                         @AsValueClass
-                        class Test {}
+                        final class Test {}
                         """),
         };
     }
@@ -132,6 +137,7 @@ public class ValueClassPluginTest {
         assertSame(ClassFile.latestMajorVersion(), classModel.majorVersion());
         assertSame(0, classModel.flags().flagsMask() & ClassFile.ACC_IDENTITY);
         var loaded = ByteCodeLoader.load("Test", bytes);
-        MethodHandles.lookup().ensureInitialized(loaded); // Ensure no format error
+        var lookup = MethodHandles.privateLookupIn(loaded, MethodHandles.lookup());
+        lookup.ensureInitialized(loaded); // Ensure no format error
     }
 }

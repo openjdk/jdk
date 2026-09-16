@@ -35,6 +35,7 @@ import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Names;
 
 import java.util.stream.StreamSupport;
@@ -86,6 +87,7 @@ public class ValueClassPlugin implements Plugin {
 
                 Symtab symtab = Symtab.instance(ctx);
                 Names names = Names.instance(ctx);
+                Log log = Log.instance(ctx);
                 var classes = StreamSupport.stream(symtab.getClassesForName(names.fromString(FULLY_QUALIFIED)).spliterator(), false).toList();
                 if (classes.size() != 1) {
                     throw new IllegalStateException("Multiple " + FULLY_QUALIFIED + " candidates on classpath");
@@ -101,10 +103,18 @@ public class ValueClassPlugin implements Plugin {
                         if (hasAnnotation) {
                             tree.mods.flags |= Flags.VALUE_CLASS;
                             tree.mods.flags &= ~Flags.IDENTITY_TYPE;
-                            // Mark the source file as using a preview feature so
-                            // the class file gets minor version 0xFFFF, which the
-                            // JVM requires to recognize the class as a value class.
-                            preview.markUsesPreview(null);
+                            tree.sym.flags_field |= Flags.VALUE_CLASS;
+                            tree.sym.flags_field &= ~Flags.IDENTITY_TYPE;
+
+                            var prevSource = log.useSource(unit.sourcefile);
+                            try {
+                                // Mark the source file as using a preview feature so
+                                // the class file gets minor version 0xFFFF, which the
+                                // JVM requires to recognize the class as a value class.
+                                preview.markUsesPreview(null);
+                            } finally {
+                                log.useSource(prevSource);
+                            }
                         }
                         super.visitClassDef(tree);
                     }
