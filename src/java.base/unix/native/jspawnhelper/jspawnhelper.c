@@ -43,7 +43,7 @@ extern int errno;
     void *mptr; \
     mptr = malloc (Y); \
     if (mptr == 0) { \
-        sendErrorCodeAndExit (fdout, ESTEP_JSPAWN_ALLOC_FAILED, (int)Y, errno); \
+        sendErrorCodeAndExit (fdout, ESTEP_JSPAWN_ALLOC_FAILED, (int)(Y), errno); \
     } \
     X = mptr; \
 }
