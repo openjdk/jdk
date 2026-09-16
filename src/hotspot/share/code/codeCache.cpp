@@ -671,13 +671,11 @@ CodeBlob* CodeCache::allocate(uint size, CodeBlobType code_blob_type, bool handl
           return allocate(size, type, handle_alloc_failure, orig_code_blob_type);
         }
       }
-      {
+      if (handle_alloc_failure) {
         MutexUnlocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-        if (handle_alloc_failure) {
-          CompileBroker::handle_full_code_cache(orig_code_blob_type);
-        } else {
-          report_code_heap_full_event(orig_code_blob_type);
-        }
+        CompileBroker::handle_full_code_cache(orig_code_blob_type);
+      } else if (orig_code_blob_type == CodeBlobType::MethodHot) {
+        report_code_heap_full_event(orig_code_blob_type);
       }
       return nullptr;
     } else {
