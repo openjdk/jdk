@@ -879,12 +879,15 @@ bool AttachOperation::RequestReader::read_request(AttachOperation* op, ReplyWrit
     // read size of the data
     buffer_size = read_uint();
     if (buffer_size < 0) {
-      log_error(attach)("Failed to read request: negative request size (%d)", buffer_size);
-      return false;
+      return false; // error already logged
     }
     log_debug(attach)("v2 request, data size = %d", buffer_size);
 
-    // Sanity check: max request size is 256K.
+    // Sanity checks: not empty, max request size is 256K.
+    if (buffer_size < 1) {
+      log_error(attach)("Failed to read request: empty");
+      return false;
+    }
     if (buffer_size > 256 * 1024) {
       log_error(attach)("Failed to read request: too big");
       return false;

@@ -256,7 +256,7 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool sc
   }
 
   // Squash the partially filled buckets together into the first one.
-  static_assert(NUMBUCKS >= 2, "must"); // If this isn't true then it'll mess up the squashing.
+  static_assert(NUMBUCKS >= 2); // If this isn't true then it'll mess up the squashing.
   Block** offset = &buckets[0][buckcnt[0]];
   for (int i = 1; i < NUMBUCKS; i++) {
     ::memmove(offset, buckets[i], buckcnt[i]*sizeof(Block*));
@@ -2489,13 +2489,11 @@ void PhaseChaitin::dump_frame() const {
       tty->print_cr("return address");
     } else if (reg >= begin_in_preserve) {
       // Preserved slots are present on x86
-      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word))
+      if (return_addr == OptoReg::add(reg, VMRegImpl::slots_per_word)) {
         tty->print_cr("saved fp register");
-      else if (return_addr == OptoReg::add(reg, 2*VMRegImpl::slots_per_word) &&
-               VerifyStackAtCalls)
-        tty->print_cr("<Majik cookie>   +VerifyStackAtCalls");
-      else
+      } else {
         tty->print_cr("in_preserve");
+      }
     } else if (stack_slot < fixed_slots) {
       tty->print("Fixed slot %d", OptoReg::reg2stack(reg));
       if (stack_slot == stack_increment_slot) {

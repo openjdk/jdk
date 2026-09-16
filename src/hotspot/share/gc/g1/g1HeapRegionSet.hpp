@@ -145,17 +145,17 @@ private:
   // This class is only initialized if there are multiple active nodes.
   class NodeInfo : public CHeapObj<mtGC> {
     G1NUMA* _numa;
-    uint*   _length_of_node;
+    uint*   _num_regions_on_node;
     uint    _num_nodes;
 
   public:
     NodeInfo();
     ~NodeInfo();
 
-    inline void increase_length(uint node_index);
-    inline void decrease_length(uint node_index);
+    inline void increase_num_regions(uint node_index);
+    inline void decrease_num_regions(uint node_index);
 
-    inline uint length(uint index) const;
+    inline uint num_regions_on_node(uint index) const;
 
     void clear();
 
@@ -169,15 +169,15 @@ private:
   // time. It helps to improve performance when adding several ordered items in a row.
   G1HeapRegion* _last;
 
-  NodeInfo*   _node_info;
+  NodeInfo* _node_info;
 
-  static uint _unrealistically_long_length;
+  static uint _unrealistically_large_num_regions;
 
   inline G1HeapRegion* remove_from_head_impl();
   inline G1HeapRegion* remove_from_tail_impl();
 
-  inline void increase_length(uint node_index);
-  inline void decrease_length(uint node_index);
+  inline void increase_num_regions(uint node_index);
+  inline void decrease_num_regions(uint node_index);
 
   // Common checks for adding a list.
   void add_list_common_start(G1FreeRegionList* from_list);
@@ -200,7 +200,7 @@ public:
   }
 #endif
 
-  static void set_unrealistically_long_length(uint len);
+  static void set_unrealistically_large_num_regions(uint num_regions);
 
   // Add hr to the list. The region should not be a member of another set.
   // Assumes that the list is ordered and will preserve that order. The order
@@ -235,7 +235,7 @@ public:
   virtual void verify();
 
   using G1HeapRegionSetBase::num_regions;
-  uint length(uint node_index) const;
+  uint num_regions_on_node(uint node_index) const;
 };
 
 // Iterator class that provides a convenient way to iterate over the

@@ -136,25 +136,6 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
     assert((sp_inc & (StackAlignmentInBytes-1)) == 0, "stack increment not aligned");
     movptr(Address(rsp, framesize - wordSize), sp_inc + framesize);
   }
-
-  if (VerifyStackAtCalls) { // Majik cookie to verify stack depth
-    framesize -= wordSize;
-    movptr(Address(rsp, framesize), (int32_t)0xbadb100d);
-  }
-
-#ifdef ASSERT
-  if (VerifyStackAtCalls) {
-    Label L;
-    push(rax);
-    mov(rax, rsp);
-    andptr(rax, StackAlignmentInBytes-1);
-    cmpptr(rax, StackAlignmentInBytes-wordSize);
-    pop(rax);
-    jcc(Assembler::equal, L);
-    STOP("Stack is not properly aligned!");
-    bind(L);
-  }
-#endif
 }
 
 void C2_MacroAssembler::entry_barrier() {

@@ -989,9 +989,9 @@ void HeapShared::start_scanning_for_oops() {
     if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                     UseCompressedOops ? p2i(CompressedOops::end()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
     }
 
     archive_subgraphs();
@@ -1764,7 +1764,7 @@ public:
         // Found a non-null flat field of type vk. Let's record vk.
         ValueKlass* vk = fd->flat_field_klass();
         add_flat_field_klass(_subgraph_info, vk);
-        if (vk->has_inlined_fields()) {
+        if (vk->has_flat_fields()) {
           // Scan the fields inside the flat field of type vk whose payload is at field_offset_in_obj.
           ValuePayloadContext field_vpc{vk, fd->field_offset_in_obj(_vpc)};
           FlatFieldKlassFinder finder(_subgraph_info, _obj, &field_vpc);
@@ -1817,7 +1817,7 @@ void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop o
 
         // Each element in fa may have different null flat fields, so we must scan
         // all elements to ensure discovery of all non-null flat fields.
-        if (elem_k->has_inlined_fields()) {
+        if (elem_k->has_flat_fields()) {
           ValuePayloadContext vpc{elem_k, fa->value_offset_as_int(i, fak->layout_helper())};
           FlatFieldKlassFinder finder(subgraph_info, orig_obj, &vpc);
           elem_k->do_nonstatic_fields(&finder);
@@ -1826,7 +1826,7 @@ void HeapShared::find_flat_field_klasses(KlassSubGraphInfo* subgraph_info, oop o
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    if (ik->has_inlined_fields()) {
+    if (ik->has_flat_fields()) {
       FlatFieldKlassFinder finder(subgraph_info, orig_obj);
       ik->do_nonstatic_fields(&finder);
     }

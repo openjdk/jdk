@@ -27,6 +27,7 @@
 
 #include "memory/heap.hpp"
 #include "oops/oop.hpp"
+#include "oops/oopHandle.hpp"
 #include "services/memoryUsage.hpp"
 #include "utilities/macros.hpp"
 
