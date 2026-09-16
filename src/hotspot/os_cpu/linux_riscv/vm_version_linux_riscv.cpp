@@ -341,6 +341,7 @@ void VM_Version::xuantie_features() {
   }
 
   ext_v.enable_feature();
+  ext_Zabha.enable_feature();
   ext_Zba.enable_feature();
   ext_Zbb.enable_feature();
   ext_Zbc.enable_feature();
@@ -361,7 +362,6 @@ void VM_Version::xuantie_features() {
   ext_Zvfh.enable_feature();
   ext_Zvkn.enable_feature();
   ext_Zvkg.enable_feature();
-  ext_Zabha.enable_feature();
 
 #ifndef PRODUCT
   ext_Zacas.enable_feature();
