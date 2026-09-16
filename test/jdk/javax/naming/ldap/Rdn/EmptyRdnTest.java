@@ -23,100 +23,119 @@
 
 /*
  * @test
- * @bug     8391649
- * @summary Rdn(String) and, transitively, LdapName(String) / LdapName.add(String)
- *          must reject an RDN string that contains no attributeTypeAndValue
- *          (an "empty RDN") by throwing InvalidNameException, per the RFC 2253
- *          grammar and the documented contract of Rdn.getType()/getValue()
- *          ("returns the ... type" / "returns the ... value", never an
- *          exception other than InvalidNameException at construction time).
- * @run main EmptyRdnTest
+ * @bug 8391649
+ * @summary LdapName and Rdn must reject an empty RDN component
+ * @run junit ${test.main.class}
  */
 
 import javax.naming.InvalidNameException;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
-import java.util.List;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmptyRdnTest {
 
-    private static int failures = 0;
+    @Test
+    void rejectsEmptyRdn() {
+        assertThrows(InvalidNameException.class, () -> new Rdn(""));
+    }
 
-    public static void main(String[] args) throws Exception {
+    @Test
+    void rejectsWhitespaceRdn() {
+        assertThrows(InvalidNameException.class, () -> new Rdn("   "));
+    }
 
-        expectInvalidNameException("new Rdn(\"\")", () -> new Rdn(""));
+    @Test
+    void rejectsTrailingComma() {
+        assertThrows(InvalidNameException.class,
+                () -> new LdapName("cn=x,"));
+    }
 
-        expectInvalidNameException("new Rdn(\"   \")", () -> new Rdn("   "));
+    @Test
+    void rejectsTrailingSemicolon() {
+        assertThrows(InvalidNameException.class,
+                () -> new LdapName("cn=x;"));
+    }
 
-        expectInvalidNameException("new LdapName(\"cn=x,\")", () -> new LdapName("cn=x,"));
-        expectInvalidNameException("new LdapName(\"cn=x;\")", () -> new LdapName("cn=x;"));
-        expectInvalidNameException("new LdapName(\"cn=a,ou=b,\")", () -> new LdapName("cn=a,ou=b,"));
+    @Test
+    void rejectsTrailingCommaInMultiRdnName() {
+        assertThrows(InvalidNameException.class,
+                () -> new LdapName("cn=a,ou=b,"));
+    }
 
-        expectInvalidNameException("LdapName.add(\"\")", () -> {
-            LdapName dn = new LdapName("dc=example,dc=com");
-            dn.add("");
-        });
+    @Test
+    void rejectsAddingEmptyRdn() throws InvalidNameException {
+        LdapName dn = new LdapName("dc=example,dc=com");
 
-        expectInvalidNameException("new LdapName(\"cn=a,,cn=b\")", () -> new LdapName("cn=a,,cn=b"));
+        assertThrows(InvalidNameException.class, () -> dn.add(""));
+        assertEquals(new LdapName("dc=example,dc=com"), dn);
+    }
 
-        checkValidRdn("cn=x");
-        checkValidRdn("cn=x+ou=y");
-        checkValidRdn("1.2.840.113549.1.9.1=someone@example.com");
-        checkValidRdn("cn=");           // empty *value* is legal: one entry, value ""
+    @Test
+    void rejectsEmptyIntermediateRdn() {
+        assertThrows(InvalidNameException.class,
+                () -> new LdapName("cn=a,,cn=b"));
+    }
 
+    @Test
+    void acceptsSingleValuedRdn() throws InvalidNameException {
+        Rdn rdn = new Rdn("cn=x");
+
+        assertEquals(1, rdn.size());
+        assertEquals("cn", rdn.getType());
+        assertEquals("x", rdn.getValue());
+    }
+
+    @Test
+    void acceptsMultiValuedRdn() throws InvalidNameException {
+        Rdn rdn = new Rdn("cn=x+ou=y");
+
+        assertEquals(2, rdn.size());
+        assertNotNull(rdn.getType());
+        assertNotNull(rdn.getValue());
+    }
+
+    @Test
+    void acceptsOidAttributeType() throws InvalidNameException {
+        Rdn rdn = new Rdn("1.2.840.113549.1.9.1=someone@example.com");
+
+        assertEquals(1, rdn.size());
+        assertEquals("1.2.840.113549.1.9.1", rdn.getType());
+        assertEquals("someone@example.com", rdn.getValue());
+    }
+
+    @Test
+    void acceptsEmptyAttributeValue() throws InvalidNameException {
+        Rdn rdn = new Rdn("cn=");
+
+        assertEquals(1, rdn.size());
+        assertEquals("cn", rdn.getType());
+        assertEquals("", rdn.getValue());
+    }
+
+    @Test
+    void acceptsMultiRdnName() throws InvalidNameException {
         LdapName dn = new LdapName("cn=a,ou=b,dc=c");
-        if (dn.size() != 3) {
-            fail("new LdapName(\"cn=a,ou=b,dc=c\") -> expected size 3, got " + dn.size());
-        }
-        List<Rdn> rdns = dn.getRdns();
-        for (Rdn r : rdns) {
-            if (r.size() == 0) {
-                fail("valid multi-RDN name produced an empty Rdn: " + dn);
-            }
-            r.getType();
-            r.getValue();
-        }
 
-        if (failures > 0) {
-            throw new RuntimeException(failures + " check(s) failed, see output above");
-        }
-        System.out.println("All checks passed.");
-    }
-
-    private static void checkValidRdn(String s) throws InvalidNameException {
-        Rdn r = new Rdn(s);
-        if (r.size() == 0) {
-            fail("new Rdn(\"" + s + "\") produced an empty Rdn (should be valid, size >= 1)");
-            return;
-        }
-        r.getType();
-        r.getValue();
-    }
-
-    private interface Thrower {
-        void run() throws Exception;
-    }
-
-    /**
-     * Runs {@code t}. Passes only if it throws exactly
-     * InvalidNameException. Fails (but does not abort the whole test
-     * run) if it throws nothing, or throws anything else -- most
-     * notably the IndexOutOfBoundsException this test guards against.
-     */
-    private static void expectInvalidNameException(String label, Thrower t) {
-        try {
-            t.run();
-            fail(label + " -> did not throw; expected InvalidNameException");
-        } catch (InvalidNameException e) {
-            System.out.println("OK: " + label + " -> InvalidNameException(\"" + e.getMessage() + "\")");
-        } catch (Throwable e) {
-            fail(label + " -> threw " + e.getClass().getName()
-                    + " (\"" + e.getMessage() + "\"), expected InvalidNameException");
+        assertEquals(3, dn.size());
+        for (Rdn rdn : dn.getRdns()) {
+            assertEquals(1, rdn.size());
+            assertNotNull(rdn.getType());
+            assertNotNull(rdn.getValue());
         }
     }
 
-    private static void fail(String message) {
-        failures++;
-        System.out.println("FAIL: " + message);
+    @Test
+    void acceptsEmptyLdapName() throws InvalidNameException {
+        LdapName dn = new LdapName("");
+
+        assertTrue(dn.isEmpty());
+        assertEquals(0, dn.size());
     }
 }
