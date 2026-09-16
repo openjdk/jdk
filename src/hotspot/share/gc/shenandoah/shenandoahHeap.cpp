@@ -2311,7 +2311,7 @@ uint ShenandoahHeap::max_workers() {
   return _max_workers;
 }
 
-uint ShenandoahHeap::eligible_workers() {
+uint ShenandoahHeap::eligible_workers() const {
   return control_thread()->concurrent_worker_count();
 }
 

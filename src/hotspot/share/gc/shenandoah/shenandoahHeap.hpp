@@ -299,7 +299,7 @@ public:
   // and not will perform any work until required (by an allocation stall, for instance).
   // This method returns the number of workers NOT in this reserve, i.e., workers able to work.
   // This value may increase, but never decrease, during a phase. It may decrease between phases.
-  uint eligible_workers();
+  uint eligible_workers() const;
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkerThreads* workers() const;

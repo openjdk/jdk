@@ -720,6 +720,35 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
   old_generation()->set_parsable(true);
 }
 
+
+class ShenandoahUpdateRefsTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
+  ShenandoahRegionIterator* _regions;
+  ShenandoahRegionChunkIterator* _chunks;
+  bool _do_chunks;
+public:
+  explicit ShenandoahUpdateRefsTaskAdapter(ShenandoahRegionIterator* regions,
+                                           ShenandoahRegionChunkIterator* chunks, bool do_chunks)
+    : _regions(regions), _chunks(chunks), _do_chunks(do_chunks) {}
+
+#ifdef ASSERT
+  void assert_empty() const override {
+    assert(_regions->remaining() == 0, "All regions should be processed here");
+    if (_do_chunks) {
+      assert(_chunks->remaining() == 0, "All chunks should be processed here");
+    }
+  }
+#endif
+
+  uint tasks() const override {
+    size_t total = _regions->remaining();
+    if (_do_chunks) {
+      total += _chunks->remaining();
+    }
+    return checked_cast<uint>(total);
+  }
+};
+
+
 class ShenandoahGenerationalUpdateHeapRefsTask : public WorkerTask {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.
@@ -727,6 +756,8 @@ private:
   ShenandoahGenerationalHeap* _heap;
   ShenandoahRegionIterator* _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
+  ShenandoahUpdateRefsTaskAdapter _tasks;
+  TaskTerminator _terminator;
 
 public:
   ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahGeneration* generation,
@@ -736,8 +767,11 @@ public:
           _generation(generation),
           _heap(ShenandoahGenerationalHeap::heap()),
           _regions(regions),
-          _work_chunks(work_chunks)
+          _work_chunks(work_chunks),
+          _tasks(_regions, _work_chunks, _generation->is_young()),
+          _terminator(_heap->workers()->active_workers(), &_tasks)
   {
+    assert(_generation->is_mark_complete(), "Expected complete marking");
     const bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
     log_debug(gc, remset)("Update refs, scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
   }
@@ -764,34 +798,45 @@ private:
 
   template<class T>
   void do_work(uint worker_id) {
-    T cl;
-
     if (worker_id == 0) {
       return_evac_reserves_to_mutators();
     }
 
+    T cl;
     bool do_regions = true;
     bool do_chunks = _generation->is_young();
+    bool did_work = false;
+    ShenandoahTerminatorTerminator tt(_heap, true);
 
     // We update references for global, mixed, and young collections.
-    assert(_generation->is_mark_complete(), "Expected complete marking");
     while (true) {
       if (_heap->check_cancelled_gc_and_yield(true)) {
         return;
       }
 
-      if (do_regions) {
-        do_regions = do_next_region(cl, worker_id);
-        continue;
+      did_work = false;
+      if (tt.can_work()) {
+        if (do_regions) {
+          if (do_next_region(cl, worker_id)) {
+            did_work = true;
+          } else {
+            do_regions = false;
+          }
+        }
+
+        if (!did_work && do_chunks) {
+          if (do_next_chunk(cl, worker_id)) {
+            did_work = true;
+          } else {
+            do_chunks = false;
+          }
+        }
       }
 
-      if (do_chunks) {
-        do_chunks = do_next_chunk(cl, worker_id);
-        continue;
-      }
-
-      if (!do_regions && !do_chunks) {
-        break;
+      if (!did_work) {
+        if (_terminator.offer_termination(&tt)) {
+          break;
+        }
       }
     }
   }
