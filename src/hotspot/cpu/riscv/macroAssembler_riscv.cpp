@@ -2887,6 +2887,19 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
 }
 
+// Split the address as follows:
+//
+//  38                 21 20                 9 8                 0
+// +---------------------+--------------------+-------------------+
+// |   upper30[29:12]    |   upper30[11:0]    |      lower9       |
+// +---------------------+--------------------+-------------------+
+//
+// lui + addi      materializes upper30
+// slli 9          shifts upper30 to addr[38:9]
+// addi/jalr/load  uses lower9 as its immediate
+//
+// The LUI immediate is adjusted when upper30[11] is set because ADDI
+// sign-extends its 12-bit immediate.
 static int patch_addr_in_movptr_sv39(address instruction_address, address target) {
   uintptr_t addr = (uintptr_t)target;
 

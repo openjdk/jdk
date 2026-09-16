@@ -254,8 +254,6 @@ public:
   enum RISCV_specific_constants {
     // Maximum sequence size, used by shared C1 code-buffer estimates.
     instruction_size            =    5 * NativeInstruction::instruction_size, // sv48: lui, lui, slli, add, jalr
-    instruction_size_sv39       =    4 * NativeInstruction::instruction_size, // lui, addi, slli, jalr
-    instruction_size_sv48       =    5 * NativeInstruction::instruction_size, // lui, lui, slli, add, jalr
   };
 
   static int insn_size() {
