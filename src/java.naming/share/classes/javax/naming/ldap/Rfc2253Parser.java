@@ -126,7 +126,7 @@ final class Rfc2253Parser {
             // RelativeDistinguishedName ::= SET SIZE (1..MAX) OF AttributeTypeAndValue
             if (rdn.numAttributes() == 0) {
                 throw new InvalidNameException(
-                "Invalid name: \"" + name + "\" (empty RDN)");
+                "no attribute type/value mapping present");
             }
 
             rdn.sort();
