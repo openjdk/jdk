@@ -61,6 +61,9 @@ public class Array extends Oop {
   // aligned 0 mod 8.  The arrayOop itself must be aligned at least this
   // strongly.
   private static boolean elementTypeShouldBeAligned(BasicType type) {
+    if (type == BasicType.T_FLAT_ELEMENT) {
+      return true;
+    }
     if (VM.getVM().isLP64()) {
       if (type == BasicType.T_OBJECT || type == BasicType.T_ARRAY) {
         return !VM.getVM().isCompressedOopsEnabled();
@@ -117,6 +120,7 @@ public class Array extends Oop {
   }
 
   public boolean isArray()             { return true; }
+  public boolean isFlatArray()         { return false; }
 
   public void iterateFields(OopVisitor visitor, boolean doVMFields) {
     super.iterateFields(visitor, doVMFields);
