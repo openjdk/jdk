@@ -98,8 +98,10 @@ bool NativeCall::set_destination_mt_safe(address dest) {
 
   address stub_addr = stub_address();
   assert(stub_addr != nullptr, "No stub?");
-  set_stub_address_destination_at(stub_addr, dest); // release
-  // optimize_call happens after we stored new address in addr stub.
+  set_stub_address_destination_at(stub_addr, dest);
+  // Release: the new stub destination must be visible before the jal/jalr
+  // patch in optimize_call becomes visible to concurrent threads.
+  OrderAccess::release();
   // patches jalr -> jal/jal -> jalr depending on dest
   optimize_call(dest, true);
 
@@ -113,16 +115,16 @@ void NativeCall::set_destination(address dest) {
   address stub_addr = stub_address();
   assert(stub_addr != nullptr, "No stub?");
   set_stub_address_destination_at(stub_addr, dest);
-  MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr); // patches auipc + ld to stub_addr
-  optimize_call(dest, false); // patches jalr -> jal/jal -> jalr depending on dest
+  // patches auipc + ld to stub_addr
+  MacroAssembler::pd_patch_instruction_size(call_addr, stub_addr);
+  // patches jalr -> jal/jal -> jalr depending on dest
+  optimize_call(dest, false);
 }
 
 void NativeCall::set_stub_address_destination_at(address dest, address value) {
   assert_cond(dest != nullptr);
   assert_cond(value != nullptr);
-
   set_data64_at(dest, (uint64_t)value);
-  OrderAccess::release();
 }
 
 address NativeCall::stub_address_destination_at(address src) {
