@@ -40,7 +40,7 @@ import static sun.security.pkcs11.wrapper.PKCS11Constants.*;
  *
  * @since x.x
  */
-public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
+public final class P11Tls12ExtendedMasterSecretGenerator extends KeyGeneratorSpi {
 
     // See RFC 5246, section 8.1 Computing the Master Secret
     private static final int TLS_MASTER_SECRET_LEN = 48;
@@ -48,17 +48,16 @@ public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
     private static final String MSG = "TlsExtendedMasterSecretGenerator must be "
             + "initialized using a TlsMasterSecretParameterSpec";
 
-    // token instance
     private final Token token;
 
     CK_VERSION ckVersion;
-    // mechanism id
     private long mechanism;
+    private byte[] sessionHash;
     @SuppressWarnings("deprecation")
     private TlsMasterSecretParameterSpec spec;
     private P11Key p11Key;
 
-    P11TlsExtendedMasterSecretGenerator(Token token, String algorithm, long mechanism)
+    P11Tls12ExtendedMasterSecretGenerator(Token token, String algorithm, long mechanism)
             throws PKCS11Exception {
         super();
         this.token = token;
@@ -115,6 +114,12 @@ public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
             // premaster secrets.
             ckVersion = null;
         }
+
+        sessionHash = spec.getExtendedMasterSecretSessionHash();
+        if (sessionHash.length == 0) {
+            throw new InvalidAlgorithmParameterException(
+                    "Extended Master Secret session hash missing");
+        }
     }
 
     protected void engineInit(int keysize, SecureRandom random) {
@@ -125,12 +130,6 @@ public final class P11TlsExtendedMasterSecretGenerator extends KeyGeneratorSpi {
         if (spec == null) {
             throw new IllegalStateException(
                     "TlsExtendedMasterSecretGenerator must be initialized");
-        }
-
-        byte[] sessionHash = spec.getExtendedMasterSecretSessionHash();
-        if (sessionHash.length == 0) {
-            throw new ProviderException(
-                    "Extended Master Secret session hash missing");
         }
 
         CK_MECHANISM ckMechanism = new CK_MECHANISM(

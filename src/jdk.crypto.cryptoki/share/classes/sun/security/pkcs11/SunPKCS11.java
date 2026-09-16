@@ -1462,7 +1462,7 @@ public final class SunPKCS11 extends AuthProvider {
                     return new P11TlsMasterSecretGenerator(
                         token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsExtendedMasterSecret") {
-                    return new P11TlsExtendedMasterSecretGenerator(
+                    return new P11Tls12ExtendedMasterSecretGenerator(
                             token, algorithm, mechanism);
                 } else if (algorithm == "SunTlsKeyMaterial"
                         || algorithm == "SunTls12KeyMaterial") {

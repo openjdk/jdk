@@ -945,7 +945,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         CK_TLS12_MASTER_KEY_DERIVE_PARAMS *p =
             (CK_TLS12_MASTER_KEY_DERIVE_PARAMS *)ckpMechanism->pParameter;
 
-        tls12CopyBackClientVersion(env, ckpMechanism, jMechanism,
+        copyBackClientVersion(env, ckpMechanism, jMechanism,
                 p->pVersion, CLASS_TLS12_MASTER_KEY_DERIVE_PARAMS);
         break;
     }
@@ -953,7 +953,7 @@ JNIEXPORT jlong JNICALL Java_sun_security_pkcs11_wrapper_PKCS11_C_1DeriveKey
         CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *p =
             (CK_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS *)ckpMechanism->pParameter;
 
-        tls12CopyBackClientVersion(env, ckpMechanism, jMechanism,
+        copyBackClientVersion(env, ckpMechanism, jMechanism,
                 p->pVersion, CLASS_TLS12_EXTENDED_MASTER_KEY_DERIVE_PARAMS);
         break;
     }
@@ -985,7 +985,7 @@ cleanup:
     return jKeyHandle ;
 }
 
-static void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
+void copyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
         CK_VERSION *ckVersion, const char *class_master_key_derive_params)
 {
     jclass jMasterKeyDeriveParamsClass, jMechanismClass, jVersionClass;
@@ -1055,21 +1055,6 @@ void ssl3CopyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism,
         copyBackClientVersion(env, ckpMechanism, jMechanism,
                 ckSSL3MasterKeyDeriveParams->pVersion,
                 CLASS_SSL3_MASTER_KEY_DERIVE_PARAMS);
-    }
-}
-
-/*
- * Copy back the client version information from the native
- * structure to the Java object. This is used for TLS 1.2
- * master secret derivation mechanisms that return the
- * negotiated client version through pVersion.
- */
-void tls12CopyBackClientVersion(JNIEnv *env, CK_MECHANISM_PTR ckpMechanism, jobject jMechanism,
-        CK_VERSION_PTR pVersion, const char *mechanismClass)
-{
-    if (pVersion != NULL_PTR) {
-        copyBackClientVersion(env, ckpMechanism, jMechanism,
-                pVersion, mechanismClass);
     }
 }
 

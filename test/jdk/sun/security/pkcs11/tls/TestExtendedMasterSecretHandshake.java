@@ -70,7 +70,7 @@ public class TestExtendedMasterSecretHandshake extends PKCS11Test {
 
         if (!shouldRun(p)) {
             throw new SkippedException(
-                    "Test skipped: SunTlsExtendedMasterSecret not supported by provider " + p.getName());
+                    "Test skipped: SunTls12ExtendedMasterSecret not supported by provider " + p.getName());
         }
 
         if (useExtendedMasterSecret) {
