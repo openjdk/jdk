@@ -1,8 +1,8 @@
-## CommonMark 0.22.0
+## CommonMark 0.29.0
 
 ### CommonMark License
 ```
-Copyright (c) 2015, Atlassian Pty Ltd
+Copyright (c) 2015, Robin Stocker
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

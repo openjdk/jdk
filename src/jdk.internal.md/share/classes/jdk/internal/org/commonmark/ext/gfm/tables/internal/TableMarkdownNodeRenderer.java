@@ -34,7 +34,6 @@ package jdk.internal.org.commonmark.ext.gfm.tables.internal;
 
 import jdk.internal.org.commonmark.ext.gfm.tables.*;
 import jdk.internal.org.commonmark.node.Node;
-import jdk.internal.org.commonmark.renderer.NodeRenderer;
 import jdk.internal.org.commonmark.renderer.markdown.MarkdownNodeRendererContext;
 import jdk.internal.org.commonmark.renderer.markdown.MarkdownWriter;
 import jdk.internal.org.commonmark.text.AsciiMatcher;
@@ -45,7 +44,7 @@ import java.util.List;
 /**
  * The Table node renderer that is needed for rendering GFM tables (GitHub Flavored Markdown) to text content.
  */
-public class TableMarkdownNodeRenderer extends TableNodeRenderer implements NodeRenderer {
+public class TableMarkdownNodeRenderer extends TableNodeRenderer {
     private final MarkdownWriter writer;
     private final MarkdownNodeRendererContext context;
 

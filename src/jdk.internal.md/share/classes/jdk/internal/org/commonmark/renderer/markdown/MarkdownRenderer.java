@@ -70,7 +70,7 @@ public class MarkdownRenderer implements Renderer {
 
             @Override
             public Set<Character> getSpecialCharacters() {
-                return Collections.emptySet();
+                return Set.of();
             }
         });
     }
@@ -162,18 +162,16 @@ public class MarkdownRenderer implements Renderer {
         private RendererContext(MarkdownWriter writer) {
             // Set fields that are used by interface
             this.writer = writer;
-            Set<Character> escapes = new HashSet<Character>();
+            Set<Character> escapes = new HashSet<>();
             for (MarkdownNodeRendererFactory factory : nodeRendererFactories) {
                 escapes.addAll(factory.getSpecialCharacters());
             }
             additionalTextEscapes = Collections.unmodifiableSet(escapes);
 
-            // The first node renderer for a node type "wins".
-            for (int i = nodeRendererFactories.size() - 1; i >= 0; i--) {
-                MarkdownNodeRendererFactory nodeRendererFactory = nodeRendererFactories.get(i);
+            for (var factory : nodeRendererFactories) {
                 // Pass in this as context here, which uses the fields set above
-                NodeRenderer nodeRenderer = nodeRendererFactory.create(this);
-                nodeRendererMap.add(nodeRenderer);
+                var renderer = factory.create(this);
+                nodeRendererMap.add(renderer);
             }
         }
 

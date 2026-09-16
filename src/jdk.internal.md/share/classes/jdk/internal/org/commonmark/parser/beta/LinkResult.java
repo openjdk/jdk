@@ -30,42 +30,53 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.renderer;
+package jdk.internal.org.commonmark.parser.beta;
 
+import jdk.internal.org.commonmark.internal.inline.LinkResultImpl;
 import jdk.internal.org.commonmark.node.Node;
 
-import java.util.Set;
-
 /**
- * A renderer for a set of node types.
+ * What to do with a link/image processed by {@link LinkProcessor}.
  */
-public interface NodeRenderer {
-
+public interface LinkResult {
     /**
-     * @return the types of nodes that this renderer handles
+     * Link not handled by processor.
      */
-    Set<Class<? extends Node>> getNodeTypes();
-
-    /**
-     * Render the specified node.
-     *
-     * @param node the node to render, will be an instance of one of {@link #getNodeTypes()}
-     */
-    void render(Node node);
-
-    /**
-     * Called before the root node is rendered, to do any initial processing at the start.
-     *
-     * @param rootNode the root (top-level) node
-     */
-    default void beforeRoot(Node rootNode) {
+    static LinkResult none() {
+        return null;
     }
 
     /**
-     * Called after the root node is rendered, to do any final processing at the end.
+     * Wrap the link text in a node. This is the normal behavior for links, e.g. for this:
+     * <pre><code>
+     * [my *text*](destination)
+     * </code></pre>
+     * The text is {@code my *text*}, a text node and emphasis. The text is wrapped in a
+     * {@link org.commonmark.node.Link} node, which means the text is added as child nodes to it.
      *
-     * @param rootNode the root (top-level) node
+     * @param node     the node to which the link text nodes will be added as child nodes
+     * @param position the position to continue parsing from
      */
-    default void afterRoot(Node rootNode) {
+    static LinkResult wrapTextIn(Node node, Position position) {
+        return new LinkResultImpl(LinkResultImpl.Type.WRAP, node, position);
     }
+
+    /**
+     * Replace the link with a node. E.g. for this:
+     * <pre><code>
+     * [^foo]
+     * </code></pre>
+     * The processor could decide to create a {@code FootnoteReference} node instead which replaces the link.
+     *
+     * @param node     the node to replace the link with
+     * @param position the position to continue parsing from
+     */
+    static LinkResult replaceWith(Node node, Position position) {
+        return new LinkResultImpl(LinkResultImpl.Type.REPLACE, node, position);
+    }
+
+    /**
+     * If a {@link LinkInfo#marker()} is present, include it in processing (i.e. treat it the same way as the brackets).
+     */
+    LinkResult includeMarker();
 }

@@ -30,19 +30,49 @@
  * should not be removed.
  */
 
-package jdk.internal.org.commonmark.internal.renderer.text;
+package jdk.internal.org.commonmark.internal.inline;
 
-import jdk.internal.org.commonmark.node.BulletList;
+import jdk.internal.org.commonmark.node.Node;
+import jdk.internal.org.commonmark.parser.beta.LinkResult;
+import jdk.internal.org.commonmark.parser.beta.Position;
 
-public class BulletListHolder extends ListHolder {
-    private final String marker;
-
-    public BulletListHolder(ListHolder parent, BulletList list) {
-        super(parent);
-        marker = list.getMarker();
+public class LinkResultImpl implements LinkResult {
+    @Override
+    public LinkResult includeMarker() {
+        includeMarker = true;
+        return this;
     }
 
-    public String getMarker() {
-        return marker;
+    public enum Type {
+        WRAP,
+        REPLACE
+    }
+
+    private final Type type;
+    private final Node node;
+    private final Position position;
+
+    private boolean includeMarker = false;
+
+    public LinkResultImpl(Type type, Node node, Position position) {
+        this.type = type;
+        this.node = node;
+        this.position = position;
+    }
+
+    public Type getType() {
+        return type;
+    }
+
+    public Node getNode() {
+        return node;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
+    public boolean isIncludeMarker() {
+        return includeMarker;
     }
 }

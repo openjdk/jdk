@@ -35,9 +35,10 @@ package jdk.internal.org.commonmark.internal.inline;
 import jdk.internal.org.commonmark.node.Code;
 import jdk.internal.org.commonmark.node.Text;
 import jdk.internal.org.commonmark.parser.SourceLines;
-import jdk.internal.org.commonmark.parser.beta.Position;
-import jdk.internal.org.commonmark.parser.beta.Scanner;
+import jdk.internal.org.commonmark.parser.beta.*;
 import jdk.internal.org.commonmark.text.Characters;
+
+import java.util.Set;
 
 /**
  * Attempt to parse backticks, returning either a backtick code span or a literal sequence of backticks.
@@ -78,5 +79,17 @@ public class BackticksInlineParser implements InlineContentParser {
         SourceLines source = scanner.getSource(start, afterOpening);
         Text text = new Text(source.getContent());
         return ParsedInline.of(text, afterOpening);
+    }
+
+    public static class Factory implements InlineContentParserFactory {
+        @Override
+        public Set<Character> getTriggerCharacters() {
+            return Set.of('`');
+        }
+
+        @Override
+        public InlineContentParser create() {
+            return new BackticksInlineParser();
+        }
     }
 }

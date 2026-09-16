@@ -41,9 +41,9 @@ package jdk.internal.org.commonmark.node;
  * They can be referenced anywhere else in the document to produce a link using <code>[foo]</code>. The definitions
  * themselves are usually not rendered in the final output.
  *
- * @see <a href="https://spec.commonmark.org/0.29/#link-reference-definition">Link reference definitions</a>
+ * @see <a href="https://spec.commonmark.org/0.31.2/#link-reference-definition">CommonMark Spec</a>
  */
-public class LinkReferenceDefinition extends Node {
+public class LinkReferenceDefinition extends Block {
 
     private String label;
     private String destination;

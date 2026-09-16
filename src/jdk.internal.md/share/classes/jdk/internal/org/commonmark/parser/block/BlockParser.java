@@ -33,9 +33,12 @@
 package jdk.internal.org.commonmark.parser.block;
 
 import jdk.internal.org.commonmark.node.Block;
+import jdk.internal.org.commonmark.node.DefinitionMap;
 import jdk.internal.org.commonmark.node.SourceSpan;
 import jdk.internal.org.commonmark.parser.InlineParser;
 import jdk.internal.org.commonmark.parser.SourceLine;
+
+import java.util.List;
 
 /**
  * Parser for a specific block node.
@@ -80,6 +83,12 @@ public interface BlockParser {
      * @since 0.16.0
      */
     void addSourceSpan(SourceSpan sourceSpan);
+
+    /**
+     * Return definitions parsed by this parser. The definitions returned here can later be accessed during inline
+     * parsing via {@link org.commonmark.parser.InlineParserContext#getDefinition}.
+     */
+    List<DefinitionMap<?>> getDefinitions();
 
     void closeBlock();
 

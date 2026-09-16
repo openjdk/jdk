@@ -33,7 +33,6 @@
 package jdk.internal.org.commonmark.node;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -50,7 +49,7 @@ public class SourceSpans {
     }
 
     public List<SourceSpan> getSourceSpans() {
-        return sourceSpans != null ? sourceSpans : Collections.<SourceSpan>emptyList();
+        return sourceSpans != null ? sourceSpans : List.of();
     }
 
     public void addAllFrom(Iterable<? extends Node> nodes) {
@@ -74,8 +73,8 @@ public class SourceSpans {
             int lastIndex = sourceSpans.size() - 1;
             SourceSpan a = sourceSpans.get(lastIndex);
             SourceSpan b = other.get(0);
-            if (a.getLineIndex() == b.getLineIndex() && a.getColumnIndex() + a.getLength() == b.getColumnIndex()) {
-                sourceSpans.set(lastIndex, SourceSpan.of(a.getLineIndex(), a.getColumnIndex(), a.getLength() + b.getLength()));
+            if (a.getInputIndex() + a.getLength() == b.getInputIndex()) {
+                sourceSpans.set(lastIndex, SourceSpan.of(a.getLineIndex(), a.getColumnIndex(), a.getInputIndex(), a.getLength() + b.getLength()));
                 sourceSpans.addAll(other.subList(1, other.size()));
             } else {
                 sourceSpans.addAll(other);

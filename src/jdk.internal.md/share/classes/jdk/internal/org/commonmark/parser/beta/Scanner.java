@@ -276,7 +276,7 @@ public class Scanner {
             SourceSpan newSourceSpan = null;
             SourceSpan sourceSpan = line.getSourceSpan();
             if (sourceSpan != null) {
-                newSourceSpan = SourceSpan.of(sourceSpan.getLineIndex(), sourceSpan.getColumnIndex() + begin.index, newContent.length());
+                newSourceSpan = sourceSpan.subSpan(begin.index, end.index);
             }
             return SourceLines.of(SourceLine.of(newContent, newSourceSpan));
         } else {
