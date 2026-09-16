@@ -4927,7 +4927,8 @@ address AOTCodeAddressTable::address_for_id(int idx) {
   } else
   if (id >= _c_str_base && id < (uint)(_c_str_base + _C_strings_count)) {
     result = address_for_C_string(id - _c_str_base);
-  } else {
+  }
+  if (result == nullptr) {
     fatal("Incorrect id %d for AOT Code Cache addresses table", id);
   }
   log_trace(aot, codecache)("Address " INTPTR_FORMAT " retrieved from AOT Code Cache address table for index '%u'",
