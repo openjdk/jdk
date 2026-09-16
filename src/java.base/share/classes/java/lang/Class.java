@@ -41,7 +41,6 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.GenericSignatureFormatError;
 import java.lang.reflect.InvocationTargetException;
@@ -1576,7 +1575,7 @@ public final class Class<T> implements java.io.Serializable,
                 }
             }
 
-            throw new InternalError("Enclosing method not found");
+            throw enclosingInfo.newResolutionError();
         }
     }
 
@@ -1647,13 +1646,12 @@ public final class Class<T> implements java.io.Serializable,
             }
             return descriptor;
         }
-    }
 
-    private static Class<?> toClass(Type o) {
-        if (o instanceof GenericArrayType gat)
-            return toClass(gat.getGenericComponentType()).arrayType();
-        return (Class<?>)o;
-     }
+        NoSuchMethodError newResolutionError() {
+            // Call getDescriptor to ensure we throw format error before resolution error
+            throw new NoSuchMethodError(enclosingClass.getName() + "." + name + getDescriptor());
+        }
+    }
 
     /**
      * If this {@code Class} object represents a local or anonymous
@@ -1698,7 +1696,7 @@ public final class Class<T> implements java.io.Serializable,
                 }
             }
 
-            throw new InternalError("Enclosing constructor not found");
+            throw enclosingInfo.newResolutionError();
         }
     }
 
