@@ -2502,8 +2502,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     }
 
     /*
-     * PKCS12 permitted first 24 bytes. The last entry is 18 bytes representing
-     * no authSafe content and no MacData.
+     * PKCS12 permitted first 24 bytes. The last entry represents no authSafe
+     * content and no MacData. It is 18 bytes with a definite-length outer
+     * SEQUENCE, or 20 bytes with an indefinite-length outer SEQUENCE and its
+     * 00 00 end-of-contents marker.
      *
      * 30 80 02 01 03 30 80 06 09 2A 86 48 86 F7 0D 01 07 01 A0 80 24 80 04 --
      * 30 82 -- -- 02 01 03 30 82 -- -- 06 09 2A 86 48 86 F7 0D 01 07 01 A0 8-
@@ -2572,23 +2574,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         long nextPeek = dataStream.readLong();
         long finalPeek;
         byte[] finalBytes = dataStream.readNBytes(Long.BYTES);
-        boolean result = false;
 
-        if (finalBytes.length == Long.BYTES || finalBytes.length == Short.BYTES) {
-            finalPeek = bytesToLong(finalBytes);
-            for (int i = 0; i < PKCS12_HEADER_PATTERNS.length; i++) {
-                if (PKCS12_HEADER_PATTERNS[i][0] ==
-                        (firstPeek & PKCS12_HEADER_MASKS[i][0]) &&
-                    (PKCS12_HEADER_PATTERNS[i][1] ==
-                        (nextPeek & PKCS12_HEADER_MASKS[i][1])) &&
-                    (PKCS12_HEADER_PATTERNS[i][2] ==
-                        (finalPeek & PKCS12_HEADER_MASKS[i][2]))) {
-                    result = true;
-                    break;
-                }
+        finalPeek = bytesToLong(finalBytes);
+        for (int i = 0; i < PKCS12_HEADER_PATTERNS.length; i++) {
+            if (PKCS12_HEADER_PATTERNS[i][0] ==
+                    (firstPeek & PKCS12_HEADER_MASKS[i][0]) &&
+                (PKCS12_HEADER_PATTERNS[i][1] ==
+                    (nextPeek & PKCS12_HEADER_MASKS[i][1])) &&
+                (PKCS12_HEADER_PATTERNS[i][2] ==
+                    (finalPeek & PKCS12_HEADER_MASKS[i][2]))) {
+                return true;
             }
         }
-        return result;
+        return false;
     }
 
     // The following methods are related to customizing

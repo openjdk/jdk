@@ -26,6 +26,7 @@
  * @bug 8326087
  * @summary Verify keystore loads when authSafe content is absent.
  * @modules java.base/sun.security.pkcs12
+ * @run junit EmptyAuthSafeTest
  */
 
 import java.io.ByteArrayInputStream;
@@ -34,8 +35,17 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.util.Base64;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import sun.security.pkcs12.PKCS12KeyStore;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class EmptyAuthSafeTest {
 
@@ -49,57 +59,58 @@ public class EmptyAuthSafeTest {
     // No authSafe content and no MacData
     private static final String ks2 = "MBACAQMwCwYJKoZIhvcNAQcB";
 
-    public static void main(String[] args) throws Exception {
+    // No authSafe content and no MacData, with indefinite-length PFX encoding
+    private static final String ks3 = "MIACAQMwCwYJKoZIhvcNAQcBAAA=";
 
-        assertLoadAndStore(ks1);
-
-        assertProbe(ks1);
-        assertProbe(ks2);
-
-        assertIsPasswordless(ks1, false);
-        assertIsPasswordless(ks2, true);
-    }
-
-    static void assertLoadAndStore(String data) throws Exception {
-        var bytes = Base64.getMimeDecoder().decode(data);
+    @Test
+    void loadAndStore() throws Exception {
+        var bytes = Base64.getMimeDecoder().decode(ks1);
         var ks = KeyStore.getInstance("PKCS12");
         ks.load(new ByteArrayInputStream(bytes), PASSWORD);
-        if (ks.size() != 0) {
-            throw new Exception("Expected no entries");
-        }
+        assertEquals(0, ks.size(), "Expected no entries");
+
         var baos = new ByteArrayOutputStream();
         ks.store(baos, PASSWORD);
-        var newBytes = baos.toByteArray();
-        var bais = new ByteArrayInputStream(newBytes);
-        ks.load(bais, PASSWORD);
-        if (ks.size() != 0) {
-            throw new Exception("Expected no entries");
-        }
+        ks.load(new ByteArrayInputStream(baos.toByteArray()), PASSWORD);
+        assertEquals(0, ks.size(), "Expected no entries after storing");
     }
 
-    private static void assertIsPasswordless(
-            String encoded, boolean expected) throws Exception {
-        Path keyStoreFile = Files.createTempFile(
-                Path.of(System.getProperty("test.classes")),
-                "empty-auth-safe-", ".p12");
-        Files.write(keyStoreFile, Base64.getMimeDecoder().decode(encoded));
+    @ParameterizedTest
+    @MethodSource("encodedKeyStores")
+    void probe(String encoded) throws Exception {
+        Path file = writeKeyStore(encoded);
 
-        boolean actual = PKCS12KeyStore.isPasswordless(keyStoreFile.toFile());
-        if (actual != expected) {
-            throw new Exception("Expected isPasswordless() to return "
-                    + expected + ", got " + actual);
-        }
+        KeyStore ks = KeyStore.getInstance(file.toFile(), PASSWORD);
+        assertTrue(ks.getType().equalsIgnoreCase("PKCS12"),
+                "Expected a PKCS12 keystore");
+        assertEquals(0, ks.size(), "Expected no entries");
     }
 
-    private static void assertProbe(String encoded) throws Exception {
+    @ParameterizedTest
+    @MethodSource("passwordlessKeyStores")
+    void isPasswordless(String encoded, boolean expected) throws Exception {
+        Path file = writeKeyStore(encoded);
+
+        assertEquals(expected, PKCS12KeyStore.isPasswordless(file.toFile()));
+    }
+
+    private static Path writeKeyStore(String encoded) throws Exception {
         Path file = Files.createTempFile(
                 Path.of(System.getProperty("test.classes")),
                 "empty-auth-safe-", ".p12");
         Files.write(file, Base64.getMimeDecoder().decode(encoded));
+        return file;
+    }
 
-        KeyStore ks = KeyStore.getInstance(file.toFile(), PASSWORD);
-        if (!ks.getType().equalsIgnoreCase("PKCS12") || ks.size() != 0) {
-            throw new Exception("PKCS12 keystore was not correctly probed");
-        }
+    private static Stream<String> encodedKeyStores() {
+        return Stream.of(ks1, ks2, ks3);
+    }
+
+    private static Stream<Arguments> passwordlessKeyStores() {
+        return Stream.of(
+                Arguments.of(ks1, false),
+                Arguments.of(ks2, true),
+                Arguments.of(ks3, true));
     }
 }
+
