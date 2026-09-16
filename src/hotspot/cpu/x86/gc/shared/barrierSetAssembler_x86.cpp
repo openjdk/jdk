@@ -529,8 +529,11 @@ void SaveLiveRegisters::initialize(BarrierStubC2* stub) {
     caller_saved.insert(OptoReg::as_OptoReg(r27->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r28->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r29->as_VMReg()));
+#ifndef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
     caller_saved.insert(OptoReg::as_OptoReg(r30->as_VMReg()));
     caller_saved.insert(OptoReg::as_OptoReg(r31->as_VMReg()));
+#endif
   }
 
   int gp_spill_size = 0;
