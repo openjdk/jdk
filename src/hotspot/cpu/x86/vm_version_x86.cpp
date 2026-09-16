@@ -101,8 +101,8 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
 #   define __ _masm->
     address start = __ pc();
     // EGPRs are call clobbered registers. Explicit clearing of r16 and the last volatile EGPR
-    // (r31 for non-Windows and r29 for Windows) during signal handling guarantees that 
-    // the preserved register values after signal handling were re-instantiated by the 
+    // (r31 for non-Windows and r29 for Windows) during signal handling guarantees that
+    // the preserved register values after signal handling were re-instantiated by the
     // operating system and not because they were not modified externally.
 
     bool save_apx = UseAPX;
