@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -814,9 +814,15 @@ invoker_completeInvokeRequest(jthread thread)
 
     if (!detached) {
         outStream_initReply(&out, id);
-        (void)outStream_writeValue(env, &out, tag, returnValue);
+        if (isObjectTag(tag)) {
+            (void)outStream_writeObjectTag(env, &out, returnValue.l);
+            (void)outStream_writeObjectRefPin(env, &out, returnValue.l);
+        } else {
+            (void)outStream_writeValue(env, &out, tag, returnValue);
+        }
         (void)outStream_writeObjectTag(env, &out, exc);
-        (void)outStream_writeObjectRef(env, &out, exc);
+        (void)outStream_writeObjectRefPin(env, &out, exc);
+        
         /*
          * Delete potentially saved global references for return value
          * and exception. This must be done before sending the reply or

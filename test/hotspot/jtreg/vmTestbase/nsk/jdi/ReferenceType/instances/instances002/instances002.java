@@ -189,7 +189,10 @@ public class instances002 extends HeapwalkingDebugger {
             for (Method method : methods) {
                 if (method.isConstructor()) {
                     for (int i = 0; i < createInstanceCount; i++) {
-                        objectReferences.add(classType.newInstance(breakpointEvent.thread(), method, new ArrayList<Value>(), 0));
+                        ObjectReference obj = classType.newInstance(breakpointEvent.thread(), method, new ArrayList<Value>(), 0);
+                        obj.disableCollection();
+                        objectReferences.add(obj);
+                        obj.enableCollection();
                     }
 
                     debuggee.resume();
