@@ -525,7 +525,7 @@ void ConstantPool::remove_unshareable_entries() {
       tag_at_put(cp_index, JVM_CONSTANT_Dynamic);
       break;
     case JVM_CONSTANT_Class:
-      remove_resolved_klass_if_non_deterministic(cp_index);
+      remove_resolved_klass_if_non_archivable(cp_index);
       break;
     default:
       break;
@@ -538,7 +538,7 @@ void ConstantPool::remove_unshareable_entries() {
   }
 }
 
-void ConstantPool::remove_resolved_klass_if_non_deterministic(int cp_index) {
+void ConstantPool::remove_resolved_klass_if_non_archivable(int cp_index) {
   assert(ArchiveBuilder::current()->is_in_buffer_space(this), "must be");
   assert(tag_at(cp_index).is_klass(), "must be resolved");
 
