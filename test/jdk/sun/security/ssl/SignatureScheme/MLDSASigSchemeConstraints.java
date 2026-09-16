@@ -24,24 +24,23 @@
 /*
  * @test
  * @bug 8381641
- * @summary Test when signature_algorithms permits ML-DSA handshake
- *          signatures but certificate-signature constraints accept
- *          or reject RSA signed and ML-DSA signed certificate chains
+ * @summary Test CertificateSignature and HandshakeSignature constraints for
+ *          ML-DSA certificate chains and CertificateVerify signatures
  * @library /javax/net/ssl/templates
  *          /test/lib
  *
  * @run main/othervm -Dtest.case=successRsaCertSig
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  * @run main/othervm -Dtest.case=failRsaCertSig
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  * @run main/othervm -Dtest.case=successMldsaCertSig
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  * @run main/othervm -Dtest.case=failMldsaCertSig
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  * @run main/othervm -Dtest.case=successHandshakeMldsa65Disabled
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  * @run main/othervm -Dtest.case=failHandshakeMldsa44Disabled
- *      MLDSACertSignSchemeConstraint
+ *      MLDSASigSchemeConstraints
  */
 
 import static jdk.test.lib.Asserts.assertEquals;
@@ -52,7 +51,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
-public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
+public class MLDSASigSchemeConstraints extends SSLSocketTemplate {
 
     private static final String TEST_CASE = System.getProperty("test.case");
 
@@ -136,10 +135,10 @@ public class MLDSACertSignSchemeConstraint extends SSLSocketTemplate {
         }
 
         try {
-            new MLDSACertSignSchemeConstraint().run();
+            new MLDSASigSchemeConstraints().run();
             if (expectFail) {
                 throw new RuntimeException(
-                        "Expected SSLHandshakeException was not thrown");
+                        "Expected SSLException was not thrown");
             }
         } catch (SSLException e) {
             if (!expectFail) {
