@@ -30,22 +30,20 @@ import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Preview;
-import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCImport;
+import com.sun.tools.javac.tree.JCTree.JCImportBase;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Names;
-
-import java.util.stream.StreamSupport;
 
 /**
  * A javac plugin that transforms classes annotated with
  * {@code @jdk.test.lib.valueclass.AsValueClass} into value classes when
  * {@code --enable-preview} is active.
  *
- * <p>The plugin hooks into the ENTER phase. After a compilation unit is
+ * <p>The plugin hooks into the PARSE phase. After a compilation unit is
  * parsed it walks the AST looking for class declarations whose modifier list
  * contains an {@code AsValueClass} annotation.
  * For each such class it adds the internal {@code VALUE_CLASS} modifier flag
@@ -63,8 +61,6 @@ import java.util.stream.StreamSupport;
  */
 public class ValueClassPlugin implements Plugin {
 
-    private static final String FULLY_QUALIFIED = "jdk.test.lib.valueclass.AsValueClass";
-
     @Override
     public String getName() {
         return "ValueClassPlugin";
@@ -76,50 +72,86 @@ public class ValueClassPlugin implements Plugin {
         task.addTaskListener(new TaskListener() {
             @Override
             public void finished(TaskEvent e) {
-                if (e.getKind() != TaskEvent.Kind.ENTER) {
-                    return;
-                }
+                if (e.getKind() != TaskEvent.Kind.PARSE) return;
 
                 Preview preview = Preview.instance(ctx);
-                if (!preview.isEnabled()) {
-                    return;
-                }
-
-                Symtab symtab = Symtab.instance(ctx);
-                Names names = Names.instance(ctx);
-                Log log = Log.instance(ctx);
-                var classes = StreamSupport.stream(symtab.getClassesForName(names.fromString(FULLY_QUALIFIED)).spliterator(), false).toList();
-                if (classes.size() != 1) {
-                    throw new IllegalStateException("Multiple " + FULLY_QUALIFIED + " candidates on classpath");
-                }
-                var intendedType = classes.getFirst().type;
+                if (!preview.isEnabled()) return;
 
                 JCCompilationUnit unit = (JCCompilationUnit) e.getCompilationUnit();
+                Imports imports = Imports.get(unit);
                 new TreeScanner() {
                     @Override
                     public void visitClassDef(JCClassDecl tree) {
                         boolean hasAnnotation = tree.mods.annotations.stream()
-                                .anyMatch(a -> a.annotationType.type == intendedType);
+                                .anyMatch(a ->
+                                    imports.isAsValueClassAnnotation(a.annotationType.toString()));
                         if (hasAnnotation) {
                             tree.mods.flags |= Flags.VALUE_CLASS;
                             tree.mods.flags &= ~Flags.IDENTITY_TYPE;
-                            tree.sym.flags_field |= Flags.VALUE_CLASS;
-                            tree.sym.flags_field &= ~Flags.IDENTITY_TYPE;
-
-                            var prevSource = log.useSource(unit.sourcefile);
-                            try {
-                                // Mark the source file as using a preview feature so
-                                // the class file gets minor version 0xFFFF, which the
-                                // JVM requires to recognize the class as a value class.
-                                preview.markUsesPreview(null);
-                            } finally {
-                                log.useSource(prevSource);
-                            }
+                            // Mark the source file as using a preview feature so
+                            // the class file gets minor version 0xFFFF, which the
+                            // JVM requires to recognize the class as a value class.
+                            preview.markUsesPreview(null);
                         }
                         super.visitClassDef(tree);
                     }
                 }.scan(unit);
             }
         });
+    }
+
+    private record Imports(String packageName, boolean fullyQualified,
+                           boolean packageStar, boolean otherClass) {
+        private static final String PACKAGE = "jdk.test.lib.valueclass";
+        private static final String CLASS = "AsValueClass";
+        private static final String FULLY_QUALIFIED = PACKAGE + "." + CLASS;
+        private static final String PACKAGE_STAR = PACKAGE + ".*";
+
+        static Imports get(JCCompilationUnit unit) {
+            String packageName = unit.getPackageName() == null ? "" : unit.getPackageName().toString();
+            boolean fullyQualified = false;
+            boolean packageStar = false;
+            boolean otherClass = false;
+
+            for (JCImportBase importBase : unit.getImports()) {
+                if (!(importBase instanceof JCImport importTree) || importTree.isStatic()) {
+                    // Only care about non-module, non-static imports
+                    continue;
+                }
+
+                String imported = importTree.qualid.toString();
+                if (imported.equals(FULLY_QUALIFIED)) {
+                    fullyQualified = true;
+                } else if (imported.equals(PACKAGE_STAR)) {
+                    packageStar = true;
+                } else if (imported.endsWith("." + CLASS)) {
+                    otherClass = true;
+                }
+            }
+
+            return new Imports(packageName, fullyQualified, packageStar, otherClass);
+        }
+
+        boolean isAsValueClassAnnotation(String annotationType) {
+            if (annotationType.equals(FULLY_QUALIFIED)) {
+                // Fully qualified use
+                return true;
+            }
+            if (!annotationType.equals(CLASS)) {
+                // Different annotation
+                return false;
+            }
+            if (otherClass) {
+                // Other annotation with same name
+                return false;
+            }
+            if (packageName.equals(PACKAGE)) {
+                // Same package
+                return true;
+            }
+
+            // Fully qualified import or package star import
+            return fullyQualified || packageStar;
+        }
     }
 }
