@@ -939,8 +939,6 @@ private:
 
   const ShenandoahHeap* _heap;
 
-  // How many chunks in a group?
-  const size_t _group_size;
   // Total chunks is HeapSizeWords / chunk_size_in_words()
   const size_t _total_chunks;
 
@@ -951,8 +949,6 @@ private:
   // No implicit copying: iterators should be passed by reference to capture the state
   NONCOPYABLE(ShenandoahRegionChunkIterator);
 
-  // Makes use of _heap.
-  size_t calc_regular_group_size();
   size_t calc_total_chunks();
 
 public:

@@ -844,10 +844,6 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
   }
 }
 
-size_t ShenandoahRegionChunkIterator::calc_regular_group_size() {
-  return _heap->num_regions() / 2;
-}
-
 size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
   return (_heap->num_regions() * ShenandoahHeapRegion::region_size_words()) / chunk_size_words();
 }
@@ -855,7 +851,6 @@ size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
 // Configure with a single group that spans the entire heap with equal-sized chunks of work.
 ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap) :
     _heap(heap),
-    _group_size(calc_regular_group_size()),
     _total_chunks(calc_total_chunks()),
     _index(0) {}
 
