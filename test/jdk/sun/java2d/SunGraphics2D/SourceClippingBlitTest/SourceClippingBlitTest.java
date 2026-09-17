@@ -60,6 +60,7 @@ public class SourceClippingBlitTest extends Canvas {
     static final int TESTH = 300;
     static final int IMAGEW = 50;
     static final int IMAGEH = 50;
+    static final int MARGIN = 1;
 
     static final Rectangle IMAGE_BOUNDS = new Rectangle(0, 0, IMAGEW, IMAGEH);
     static Robot robot;
@@ -228,13 +229,25 @@ public class SourceClippingBlitTest extends Canvas {
         newDstRect.translate(trX, trY);
         Rectangle.intersect(newDstRect, new Rectangle(0, 0, w, h), newDstRect);
 
+        Rectangle innerRect = new Rectangle(newDstRect);
+        innerRect.grow(-MARGIN, -MARGIN);
+
+        Rectangle outerRect = new Rectangle(newDstRect);
+        outerRect.grow(MARGIN, MARGIN);
+
         System.out.println("calculated dest rect:" + newDstRect);
+        System.out.println("calculated inner rect:" + innerRect);
+        System.out.println("calculated outer rect:" + outerRect);
 
         // we do implicit clipping of the destination surface
         // by only checking pixels within its bounds
-        for (int y = 2; y < h - 2; y++) {
-            for (int x = 2; x < w - 2; x++) {
+        for (int y = MARGIN; y < h - MARGIN; y++) {
+            for (int x = MARGIN; x < w - MARGIN; x++) {
                 int rgb = 0;
+                if (outerRect.contains(x, y) &&
+                    !innerRect.contains(x, y)) {
+                    continue;
+                }
                 if (newDstRect.contains(x, y)) {
                     rgb = Color.red.getRGB();
                 } else {
