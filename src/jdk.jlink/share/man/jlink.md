@@ -108,11 +108,10 @@ Developers are responsible for updating their custom runtime images.
 [`-p`]{#option-module-path} or `--module-path` *modulepath*
 :   Specifies the module path.
 
-    If this option is not specified, the JDK's `jmods` directory will be used as
-    the default module path. This directory contains the `java.base` module and
-    the other standard and JDK modules. If this option is specified but the
-    `java.base` module cannot be resolved from it, then the `jlink` command
-    appends the JDK's `jmods` directory to the module path.
+    If this option is not specified, the JDK's default module path will be used.
+    The default module path will always include the `java.base` module, either
+    resolved from packaged modules (JMODS) or the run-time image (JEP 493).
+    JDK external modules must always be specified using this option.
 
 [`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
