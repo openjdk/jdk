@@ -180,6 +180,7 @@ class ShenandoahHeap : public CollectedHeap {
 
 // ---------- Locks that guard important data structures in Heap
 //
+private:
   ShenandoahHeapLock _lock;
 
   // This is set and cleared by only the VMThread
@@ -207,6 +208,9 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
+// ---------- Initialization, termination, identification, printing routines
+//
+public:
   static ShenandoahHeap* heap();
 
   const char* name()          const override { return "Shenandoah"; }
@@ -476,7 +480,7 @@ public:
   inline bool cancelled_gc() const;
 
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
-  inline bool check_cancelled_gc_and_yield(bool sts_active = true);
+  inline bool check_cancelled_gc_and_yield();
 
   // Clears the cancellation
   inline void clear_cancelled_gc();
@@ -517,7 +521,7 @@ private:
   void concurrent_prepare_for_update_refs();
 
   // Turn off weak roots flag
-  void concurrent_final_roots();
+  void op_final_roots();
 
   virtual void update_heap_references(ShenandoahGeneration* generation);
   // Final update region states

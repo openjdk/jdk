@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/aotArtifactFinder.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cppstdlib/type_traits.hpp"
 #include "interpreter/bytecodes.hpp"
@@ -96,6 +97,11 @@ void ResolvedFieldEntry::assert_is_valid() const {
 #if INCLUDE_CDS
 void ResolvedFieldEntry::remove_unshareable_info() {
   *this = ResolvedFieldEntry(_cpool_index);
+}
+
+// Called from AOTArtifactFinder.
+void ResolvedFieldEntry::record_archivable_classes() {
+  AOTArtifactFinder::add_cached_class(_field_holder);
 }
 
 void ResolvedFieldEntry::mark_and_relocate() {

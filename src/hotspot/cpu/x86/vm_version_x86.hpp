@@ -454,7 +454,7 @@ protected:
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURES / BitsPerLong) + 1];
 
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURES);
 
     // Number of 8-byte elements in _bitmap.
     constexpr static int features_bitmap_element_count() {

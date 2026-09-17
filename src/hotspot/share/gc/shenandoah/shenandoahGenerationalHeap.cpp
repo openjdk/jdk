@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -46,7 +47,6 @@
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 #include "logging/log.hpp"
-#include "shenandoahElasticTask.hpp"
 #include "utilities/events.hpp"
 
 
@@ -162,8 +162,8 @@ void ShenandoahGenerationalHeap::start_idle_span() {
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) {
-    return false;
+  if (ShenandoahHeap::requires_barriers(obj)) {
+    return true;
   }
 
   if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
@@ -173,11 +173,6 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 
   if (is_in_old(obj)) {
     // Card marking barriers are required for objects in the old generation
-    return true;
-  }
-
-  if (has_forwarded_objects()) {
-    // Object may have pointers that need to be updated
     return true;
   }
 
@@ -822,10 +817,6 @@ private:
     });
   }
 
-  static bool needs_update(const ShenandoahHeapRegion* r) {
-    return r->is_active() && (!r->is_cset() || r->has_self_forwards());
-  }
-
   template<typename T>
   bool do_next_region(T& cl, uint worker_id) {
     ShenandoahHeapRegion* r = _regions->next();
@@ -834,7 +825,7 @@ private:
     }
 
     log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-    if (needs_update(r)) {
+    if (r->is_update_required()) {
       update_refs_in_region<T>(r, cl);
     }
     return true;
@@ -848,7 +839,7 @@ private:
     }
 
     ShenandoahHeapRegion* r = assignment._r;
-    if (needs_update(r) && r->is_old()) {
+    if (r->is_update_required() && r->is_old()) {
       update_refs_in_old_region<T>(assignment, r, cl, worker_id);
     }
     return true;
