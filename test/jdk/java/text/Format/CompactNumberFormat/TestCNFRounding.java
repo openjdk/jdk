@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8177552
+ * @bug 8177552 8392400
  * @summary Checks the rounding of formatted number in compact number formatting
  * @run junit/othervm TestCNFRounding
  */
@@ -31,8 +31,11 @@
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.FieldSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.List;
@@ -52,6 +55,15 @@ public class TestCNFRounding {
             RoundingMode.DOWN,
             RoundingMode.CEILING,
             RoundingMode.FLOOR);
+
+    private static final List<Arguments> BIG_DECIMAL_ROUNDING_ARGS = List.of(
+            // Basic + Negative
+            Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.HALF_UP),
+            Arguments.of(BigDecimal.valueOf(-21_534_567.20), "-21.53M", 2, RoundingMode.HALF_UP),
+            // RoundingMode UP/DOWN
+            Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.54M", 2, RoundingMode.UP),
+            Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.DOWN)
+    );
 
     Object[][] roundingData() {
         return new Object[][]{
@@ -163,6 +175,18 @@ public class TestCNFRounding {
         for (int index = 0; index < rModes.size(); index++) {
             testRoundingMode(number, expected[index], 2, rModes.get(index));
         }
+    }
+
+    // 8392400 exposes that the minimum fractional digits is applied to the result of
+    // the division operation which is calculated when applying the compact pattern.
+    // This causes premature rounding, and produces an incorrect value.
+    @ParameterizedTest
+    @FieldSource("BIG_DECIMAL_ROUNDING_ARGS")
+    void testBigDecimalRounding(BigDecimal num, String expected, int maxFrac, RoundingMode rm) {
+        var fmt = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
+        fmt.setMaximumFractionDigits(maxFrac);
+        fmt.setRoundingMode(rm);
+        assertEquals(expected, fmt.format(num));
     }
 
     private void testRoundingMode(Object number, String expected,
