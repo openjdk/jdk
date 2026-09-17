@@ -927,8 +927,14 @@ class ShenandoahRegionChunkIterator : public StackObj {
 private:
   static const size_t _clusters_in_chunk = 8;
   static size_t chunk_size_words() {
-    // The standard work assignment is 8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
-    return _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+    size_t max_size = ShenandoahHeapRegion::region_size_words();
+    // In default configuration, the standard work assignment is:
+    //      8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
+    size_t planned_size = _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+    if (planned_size > max_size) {
+      planned_size = max_size;
+    }
+    return planned_size;
   }
 
   const ShenandoahHeap* _heap;
