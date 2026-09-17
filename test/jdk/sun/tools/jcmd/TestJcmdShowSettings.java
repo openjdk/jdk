@@ -31,9 +31,17 @@
  * @run main/othervm -Xms64m -Xmx128m -XX:+UsePerfData TestJcmdShowSettings
  */
 
+import java.security.Security;
+
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class TestJcmdShowSettings {
+    private static final String SYSTEM_PROPERTY_NAME =
+            "TestJcmdShowSettings.currentSystemProperty";
+    private static final String SYSTEM_PROPERTY_VALUE = "systemProperty";
+    private static final String SECURITY_PROPERTY_NAME =
+            "TestJcmdShowSettings.currentSecurityProperty";
+    private static final String SECURITY_PROPERTY_VALUE = "securityProperty";
 
     public static void main(String[] args) throws Exception {
         testDefaultSettings();
@@ -80,11 +88,13 @@ public class TestJcmdShowSettings {
     }
 
     private static void testPropertySettings() throws Exception {
+        System.setProperty(SYSTEM_PROPERTY_NAME, SYSTEM_PROPERTY_VALUE);
         OutputAnalyzer output = JcmdBase.jcmd("VM.show_settings", "properties");
 
         output.shouldHaveExitValue(0);
         output.shouldContain("Property settings:");
         output.shouldContain("java.vm.name");
+        output.shouldContain(SYSTEM_PROPERTY_NAME + " = " + SYSTEM_PROPERTY_VALUE);
     }
 
     private static void testLocaleSettings() throws Exception {
@@ -116,10 +126,12 @@ public class TestJcmdShowSettings {
     }
 
     private static void testSecurityPropertiesSettings() throws Exception {
+        Security.setProperty(SECURITY_PROPERTY_NAME, SECURITY_PROPERTY_VALUE);
         OutputAnalyzer output = JcmdBase.jcmd("VM.show_settings", "security:properties");
 
         output.shouldHaveExitValue(0);
         output.shouldContain("Security properties:");
+        output.shouldContain(SECURITY_PROPERTY_NAME + "=" + SECURITY_PROPERTY_VALUE);
     }
 
     private static void testSecurityProvidersSettings() throws Exception {

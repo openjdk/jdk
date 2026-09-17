@@ -880,7 +880,8 @@ public:
   ShowSettingsDCmd(outputStream* output, bool heap) :
       DCmdWithParser(output, heap),
       _section("section",
-               "Optional -XshowSettings section. See 'java -X' for supported "
+               "Optional -XshowSettings section. Settings are queried when "
+               "the command runs; see 'java -X' for supported "
                "-XshowSettings sections.",
                "STRING", false, "all") {
     _dcmdparser.add_dcmd_argument(&_section);
@@ -889,8 +890,9 @@ public:
   static int num_arguments() { return 1; }
   static const char* name() { return "VM.show_settings"; }
   static const char* description() {
-    return "Print information similar to -XshowSettings e.g. 'VM.show_settings all'"
-           "See 'java -X' for supported -XshowSettings sections.";
+    return "Print effective VM configuration and settings queried at command "
+           "execution, e.g. 'VM.show_settings all'. See "
+           "'java -X' for supported -XshowSettings sections.";
   }
   static const char* impact() { return "Low"; }
 
