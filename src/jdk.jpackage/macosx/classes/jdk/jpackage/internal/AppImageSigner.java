@@ -42,6 +42,7 @@ import java.util.function.Predicate;
 import jdk.jpackage.internal.Codesign.CodesignException;
 import jdk.jpackage.internal.model.Application;
 import jdk.jpackage.internal.model.ApplicationLayout;
+import jdk.jpackage.internal.model.ApplicationLayout.Directory;
 import jdk.jpackage.internal.model.Launcher;
 import jdk.jpackage.internal.model.MacApplication;
 import jdk.jpackage.internal.model.RuntimeLayout;
@@ -173,7 +174,7 @@ final class AppImageSigner {
     }
 
     private static IOException handleCodesignException(MacApplication app, CodesignException ex) {
-        if (!app.contentDirSources().isEmpty()) {
+        if (app.filterUserContent(Directory.CONTENT_DIR).findAny().isPresent()) {
             // Additional content may cause signing error.
             Log.progressWarning(I18N.getString("message.codesign.failed.reason.app.content"));
         }

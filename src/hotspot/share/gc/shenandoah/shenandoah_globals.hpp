@@ -275,6 +275,7 @@
           "margin of error for the average cycle time and average "         \
           "allocation rate. Increasing this value will cause the "          \
           "heuristic to initiate more concurrent cycles." )                 \
+          range(0.319,3.291)                                                \
                                                                             \
   product(uintx, ShenandoahGuaranteedGCInterval, 5*60*1000, EXPERIMENTAL,   \
           "Many heuristics would guarantee a concurrent GC cycle at "       \

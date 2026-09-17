@@ -148,8 +148,8 @@ endef
 #   BIN store classes here
 #   MODULE Name of module being compiled. If set, classes are put in BIN/MODULE.
 #   CLASSPATH a list of additional entries to set as classpath to javac
-#   INCLUDES myapp.foo means will only compile java files in myapp.foo or any of its sub-packages.
-#   EXCLUDES myapp.foo means will do not compile java files in myapp.foo or any of its sub-packages.
+#   INCLUDES myapp/foo means will only compile java files in myapp.foo or any of its sub-packages.
+#   EXCLUDES myapp/foo means will do not compile java files in myapp.foo or any of its sub-packages.
 #   COPY .prp means copy all prp files to the corresponding package in BIN.
 #   COPY_FILES myapp/foo/setting.txt means copy this file over to the package myapp/foo
 #   CLEAN .properties means copy and clean all properties file to the corresponding package in BIN.

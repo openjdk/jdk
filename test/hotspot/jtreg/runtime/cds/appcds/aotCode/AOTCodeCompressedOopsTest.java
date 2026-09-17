@@ -51,7 +51,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, true, true);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);
@@ -62,7 +62,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, true, false);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);
@@ -73,7 +73,7 @@ public class AOTCodeCompressedOopsTest {
         {
             Tester t = new Tester();
             t.setHeapConfig(Tester.RunMode.ASSEMBLY, false, false);
-            t.runAOTAssemblyWorkflow();
+            t.runAOTTrainingAndAssemblyWorkflow();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, true);
             t.productionRun();
             t.setHeapConfig(Tester.RunMode.PRODUCTION, true, false);

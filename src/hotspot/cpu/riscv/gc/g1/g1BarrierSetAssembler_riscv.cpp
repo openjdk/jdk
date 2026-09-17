@@ -24,6 +24,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -118,13 +119,20 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
   // Iterate from start card to end card (inclusive).
   __ bind(loop);
   if (UseCondCardMark) {
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
     __ lbu(tmp, Address(start, 0));
-    static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
-    __ subi(tmp, tmp, G1CardTable::clean_card_val()); // Convert to clean_card_value() to a comparison
-                                                      // against zero to avoid use of an extra temp.
-    __ bnez(tmp, next);
+    __ test_bit(tmp, tmp, 0);                         // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp, next);                               // skip store if already non-clean
   }
 
+  // `sb zr` writes 0, which must be the dirty value.
   static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ sb(zr, Address(start, 0));
 
@@ -250,9 +258,22 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert(thread == xthread, "must be");
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg);
   // Does store cross heap regions?
-  __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
-  __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ beqz(tmp1, done);
+#if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ xorr(tmp1, store_addr, new_val);
+    __ lwu(tmp2, ExternalAddress(AOTRuntimeConstants::grain_shift_address()));
+    __ srl(tmp1, tmp1, tmp2);
+    __ beqz(tmp1, done);
+  } else
+#endif
+  {
+    __ xorr(tmp1, store_addr, new_val);                    // tmp1 := store address ^ new value
+    __ srli(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);  // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ beqz(tmp1, done);
+  }
 
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
@@ -264,14 +285,23 @@ static void generate_post_barrier(MacroAssembler* masm,
   Address card_table_address(xthread, G1ThreadLocalData::card_table_base_offset());
   __ ld(tmp2, card_table_address);                       // tmp2 := card table base address
   __ add(tmp1, tmp1, tmp2);                              // tmp1 := card address
+
   if (UseCondCardMark) {
-    static_assert((uint)G1CardTable::clean_card_val() == 0xff, "must be");
+    // All non-clean cards (dirty, to-cset, from-remset) have bit0 == 0.
+    static_assert((G1CardTable::g1_dirty_card & 1U) == 0
+               && (G1CardTable::g1_to_cset_card & 1U) == 0
+               && (G1CardTable::g1_from_remset_card & 1U) == 0,
+               "cards needing scan must have bit0 == 0");
+    // Clean card has bit0 == 1.
+    static_assert(((uint)G1CardTable::clean_card_val() & 1U) == 1,
+                  "clean card must have bit0 == 1");
     __ lbu(tmp2, Address(tmp1, 0));                      // tmp2 := card
-    __ subi(tmp2, tmp2, G1CardTable::clean_card_val());  // Convert to clean_card_value() to a comparison
-                                                         // against zero to avoid use of an extra temp.
-    __ bnez(tmp2, done);
+    __ test_bit(tmp2, tmp2, 0);                          // test bit0: clean has bit0 == 1, non-clean has bit0 == 0
+    __ beqz(tmp2, done);                                 // skip store if already non-clean
   }
-  static_assert((uint)G1CardTable::dirty_card_val() == 0, "must be to use zr");
+
+  // `sb zr` writes 0, which must be the dirty value.
+  static_assert(G1CardTable::dirty_card_val() == 0, "must be to use zr");
   __ sb(zr, Address(tmp1, 0));
 }
 

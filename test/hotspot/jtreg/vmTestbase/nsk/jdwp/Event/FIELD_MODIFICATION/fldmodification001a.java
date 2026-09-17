@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package nsk.jdwp.Event.FIELD_MODIFICATION;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import nsk.share.*;
 import nsk.share.jpda.*;
 import nsk.share.jdwp.*;
@@ -36,8 +37,8 @@ import java.io.*;
  */
 public class fldmodification001a {
 
-    static final int BREAKPOINT_LINE = 114;
-    static final int FIELD_MODIFICATION_LINE = 126;
+    static final int BREAKPOINT_LINE = 115;
+    static final int FIELD_MODIFICATION_LINE = 127;
 
     static ArgumentHandler argumentHandler = null;
     static Log log = null;
@@ -82,7 +83,7 @@ public class fldmodification001a {
     }
 
     // tested thread class
-    public static class TestedThreadClass extends Thread {
+    public static class TestedThreadClass extends ThreadWrapper {
 
         public TestedThreadClass(String name) {
             super(name);

@@ -47,11 +47,10 @@ const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const 
     }
   }
 
-  // TODO 8350865 Shouldn't this be encoded in helper methods of the type system (maybe_java_subtype_of() etc.?)
   // Similar to logic in CmpPNode::sub()
   bool unrelated_classes = false;
 
-  // Handle inline type arrays
+  // Handle value type arrays
   //
   // The super klass can be an exact non-array klass constant which is known to be not flat in array (e.g. Object)
   // while the sub klass could very well be flat in array:

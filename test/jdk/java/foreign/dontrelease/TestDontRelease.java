@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,10 @@
  * @test
  * @library ../ /test/lib
  * @modules java.base/jdk.internal.ref java.base/jdk.internal.foreign
- * @run testng/othervm/native --enable-native-access=ALL-UNNAMED TestDontRelease
+ * @run junit/othervm/native --enable-native-access=ALL-UNNAMED TestDontRelease
  */
 
 import jdk.internal.foreign.MemorySessionImpl;
-import org.testng.annotations.Test;
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
@@ -38,7 +37,9 @@ import java.lang.invoke.MethodHandle;
 
 import static java.lang.foreign.ValueLayout.ADDRESS;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
-import static org.testng.Assert.assertTrue;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Test;
 
 public class TestDontRelease extends NativeTestHelper  {
 

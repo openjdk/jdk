@@ -99,7 +99,7 @@
 #ifndef MAP_ANON_64K
   #define MAP_ANON_64K 0x400
 #else
-  STATIC_ASSERT(MAP_ANON_64K == 0x400);
+  static_assert(MAP_ANON_64K == 0x400);
 #endif
 #include <sys/resource.h>
 #include <sys/select.h>
@@ -1089,7 +1089,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   if (result == nullptr && eno == ENOENT) {
     const char* pointer_to_dot = strrchr(filename, '.');
     if (pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
-      STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
+      static_assert(sizeof(old_extension) >= sizeof(new_extension));
       char* tmp_path = os::strdup(filename);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
       os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
@@ -1897,7 +1897,11 @@ static bool checked_mprotect(char* addr, size_t size, int prot) {
     }
   }
 
-  assert(rc == true, "mprotect failed.");
+  if (!rc) {
+    // Reporting success via mprotect but failing to mprotect is a symptom of calling mprotect
+    // on SystemV-memory. It should not happen for mmap-mode.
+    assert(!g_multipage_support.can_use_64K_mmap_pages, "Should only happen in old-style shmat mode");
+  }
 
   return rc;
 }

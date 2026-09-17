@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @library /test/lib
  * @modules java.base/sun.nio.ch
  * @key randomness
- * @run testng/othervm TestAsyncSocketChannels
- * @run testng/othervm -Dsun.nio.ch.disableSynchronousRead=true TestAsyncSocketChannels
- * @run testng/othervm -Dsun.nio.ch.disableSynchronousRead=false TestAsyncSocketChannels
+ * @run junit/othervm TestAsyncSocketChannels
+ * @run junit/othervm -Dsun.nio.ch.disableSynchronousRead=true TestAsyncSocketChannels
+ * @run junit/othervm -Dsun.nio.ch.disableSynchronousRead=false TestAsyncSocketChannels
  */
 
 import java.io.IOException;
@@ -50,15 +50,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
-import org.testng.annotations.*;
 import static java.lang.System.out;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
-import static org.testng.Assert.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 /**
  * Tests consisting of buffer views with asynchronous NIO network channels.
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestAsyncSocketChannels extends AbstractChannelsTest {
 
     static final Class<IOException> IOE = IOException.class;
@@ -67,7 +71,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     static final Class<IllegalStateException> ISE = IllegalStateException.class;
 
     /** Tests that confined sessions are not supported. */
-    @Test(dataProvider = "confinedArenas")
+    @ParameterizedTest
+    @MethodSource("confinedArenas")
     public void testWithConfined(Supplier<Arena> arenaSupplier)
         throws Throwable
     {
@@ -92,13 +97,14 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             for (var ioOp : ioOps) {
                 out.println("testAsyncWithConfined - op");
                 var handler = new TestHandler();
-                expectThrows(IAE, () -> ioOp.accept(handler));
+                assertThrows(IAE, () -> ioOp.accept(handler));
             }
         }
     }
 
     /** Tests that I/O with a closed session throws a suitable exception. */
-    @Test(dataProvider = "sharedArenasAndTimeouts")
+    @ParameterizedTest
+    @MethodSource("sharedArenasAndTimeouts")
     public void testIOWithClosedSharedSession(Supplier<Arena> arenaSupplier, int timeout)
         throws Exception
     {
@@ -110,7 +116,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             ByteBuffer[] buffers = segmentBuffersOfSize(8, drop, 32);
             drop.close();
             {
-                assertCauses(expectThrows(EE, () -> connectedChannel.read(bb).get()), IOE, ISE);
+                assertCauses(assertThrows(EE, () -> connectedChannel.read(bb).get()), IOE, ISE);
             }
             {
                 var handler = new TestHandler<Integer>();
@@ -128,7 +134,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 handler.await().assertFailedWith(ISE).assertExceptionMessage("Already closed");
             }
             {
-                assertCauses(expectThrows(EE, () -> connectedChannel.write(bb).get()), IOE, ISE);
+                assertCauses(assertThrows(EE, () -> connectedChannel.write(bb).get()), IOE, ISE);
             }
             {
                 var handler = new TestHandler<Integer>();
@@ -149,7 +155,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
     }
 
     /** Tests basic I/O operations work with views over implicit and shared sessions. */
-    @Test(dataProvider = "sharedArenas")
+    @ParameterizedTest
+    @MethodSource("sharedArenas")
     public void testBasicIOWithSupportedSession(Supplier<Arena> arenaSupplier)
         throws Exception
     {
@@ -168,9 +175,9 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
             {   // Future variants
                 ByteBuffer bb1 = segment1.asByteBuffer();
                 ByteBuffer bb2 = segment2.asByteBuffer();
-                assertEquals((int)asc1.write(bb1).get(), 10);
-                assertEquals((int)asc2.read(bb2).get(), 10);
-                assertEquals(bb2.flip(), ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+                assertEquals(10, (int)asc1.write(bb1).get());
+                assertEquals(10, (int)asc2.read(bb2).get());
+                assertEquals(ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), bb2.flip());
             }
             {   // CompletionHandler variants
                 ByteBuffer bb1 = segment1.asByteBuffer();
@@ -181,7 +188,7 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 var readHandler = new TestHandler();
                 asc2.read(new ByteBuffer[]{bb2}, 0, 1, 30L, SECONDS, null, readHandler);
                 readHandler.await().assertCompleteWith(10L);
-                assertEquals(bb2.flip(), ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+                assertEquals(ByteBuffer.wrap(new byte[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}), bb2.flip());
             }
             {   // Gathering/Scattering variants
                 var writeBuffers = mixedBuffersOfSize(16, drop, 32);
@@ -193,13 +200,14 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
                 var readHandler = new TestHandler();
                 asc2.read(readBuffers, 0, 16, 30L, SECONDS, null, readHandler);
                 readHandler.await().assertCompleteWith(expectedCount);
-                assertEquals(flip(readBuffers), clear(writeBuffers));
+                assertArrayEquals(clear(writeBuffers), flip(readBuffers));
             }
         }
     }
 
     /** Tests that a session is not closeable when there is an outstanding read operation. */
-    @Test(dataProvider = "sharedArenasAndTimeouts")
+    @ParameterizedTest
+    @MethodSource("sharedArenasAndTimeouts")
     public void testCloseWithOutstandingRead(Supplier<Arena> arenaSupplier, int timeout)
         throws Throwable
     {
@@ -235,7 +243,8 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
 
     /** Tests that a session is not closeable when there is an outstanding write operation. */
     // Note: limited scenarios are checked, given the 5 sec sleep!
-    @Test(dataProvider = "sharedArenasAndTimeouts")
+    @ParameterizedTest
+    @MethodSource("sharedArenasAndTimeouts")
     public void testCloseWithOutstandingWrite(Supplier<Arena> arenaSupplier, int timeout)
          throws Throwable
     {
@@ -357,20 +366,20 @@ public class TestAsyncSocketChannels extends AbstractChannelsTest {
         }
 
         TestHandler assertCompleteWith(V value) {
-            assertEquals(result.longValue(), value.longValue());
-            assertEquals(throwable, null);
+            assertEquals(value.longValue(), result.longValue());
+            assertEquals(null, throwable);
             return this;
         }
 
         TestHandler assertFailedWith(Class<? extends Exception> expectedException) {
             assertTrue(expectedException.isInstance(throwable),
                        "Expected type:%s, got:%s".formatted(expectedException, throwable) );
-            assertEquals(result, null, "Unexpected result: " + result);
+            assertEquals(null, result, "Unexpected result: " + result);
             return this;
         }
 
         TestHandler assertExceptionMessage(String expectedMessage) {
-            assertEquals(throwable.getMessage(), expectedMessage);
+            assertEquals(expectedMessage, throwable.getMessage());
             return this;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,13 +26,11 @@
  * @library /test/lib
  * @build TestUpcallException
  *
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   --enable-native-access=ALL-UNNAMED
  *   TestUpcallException
  */
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
 
 import java.io.IOException;
 import java.lang.foreign.Arena;
@@ -43,16 +41,21 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestUpcallException extends UpcallTestHelper {
 
-    @Test(dataProvider = "exceptionCases")
+    @ParameterizedTest
+    @MethodSource("exceptionCases")
     public void testException(Class<?> target, boolean useSpec) throws InterruptedException, IOException {
         runInNewProcess(target, useSpec)
                 .shouldNotHaveExitValue(0)
                 .stderrShouldContain("Testing upcall exceptions");
     }
 
-    @DataProvider
     public static Object[][] exceptionCases() {
         return new Object[][]{
             { VoidUpcallRunner.class,    false },
