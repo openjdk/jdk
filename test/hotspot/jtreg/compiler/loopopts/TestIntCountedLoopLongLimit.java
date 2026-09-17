@@ -43,11 +43,13 @@ import static compiler.lib.generators.Generators.*;
 import static compiler.lib.template_framework.Template.*;
 
 /**
- * @test
+ * @test id=testIrAndDeopt
  * @bug 8336759
  * @summary test long limits in int counted loops are speculatively converted to int for counted loop
  * optimizations
  * @requires vm.compiler2.enabled
+ * @requires vm.opt.StressLongCountedLoop == null | vm.opt.StressLongCountedLoop != 0
+ * @requires vm.opt.PerMethodTrapLimit == null | vm.opt.PerMethodTrapLimit >= 5
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -55,6 +57,13 @@ import static compiler.lib.template_framework.Template.*;
  * ${test.main.class} testIr
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation
  * ${test.main.class} testDeoptimizations
+ */
+
+/**
+ * @test id=testTemplated
+ * @bug 8336759
+ * @requires vm.compiler2.enabled
+ * @library /test/lib /
  * @run driver/timeout=600 ${test.main.class} testTemplated
  * @run driver/timeout=600 ${test.main.class} testTemplatedStress
  */
@@ -70,11 +79,9 @@ public class TestIntCountedLoopLongLimit {
     public static void main(String[] args) throws Exception {
         switch (args.length > 0 ? args[0] : "") {
             case "testIr":
-                checkWhiteBoxPreconditions();
                 TestFramework.run();
                 break;
             case "testDeoptimizations":
-                checkWhiteBoxPreconditions();
                 testDeoptimizations();
                 break;
             case "testTemplated":
@@ -96,13 +103,6 @@ public class TestIntCountedLoopLongLimit {
                 break;
             default:
                 throw new IllegalArgumentException("Unknown test selection. Check @run commands");
-        }
-    }
-
-    private static void checkWhiteBoxPreconditions() {
-        if ((long) WhiteBox.getWhiteBox().getVMFlag("StressLongCountedLoop") != 0 ||
-                (long) WhiteBox.getWhiteBox().getVMFlag("PerMethodTrapLimit") < 5) {
-            throw new SkippedException("Must disable StressLongCountedLoop and have at least 5 PerMethodTrapLimit");
         }
     }
 
