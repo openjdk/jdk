@@ -531,6 +531,7 @@ class SerializeClosure;
   template(big_endian_name,                           "BIG_ENDIAN")                               \
   template(use_unaligned_access_name,                 "UNALIGNED_ACCESS")                         \
   template(data_cache_line_flush_size_name,           "DATA_CACHE_LINE_FLUSH_SIZE")               \
+  template(hash_code_mask_name,                       "HASH_CODE_MASK")                           \
   template(during_unsafe_access_name,                 "during_unsafe_access")                     \
   template(checkIndex_name,                           "checkIndex")                               \
   template(jfr_epoch_name,                            "jfr_epoch")                                \

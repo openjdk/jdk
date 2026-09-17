@@ -112,11 +112,21 @@ final class UnsafeConstants {
 
     static final int DATA_CACHE_LINE_FLUSH_SIZE;
 
+    /**
+     * The mask used to cut hashes to the hash field in the mark word.
+     *
+     * @implNote
+     * The actual value for this field is injected by the JVM.
+     */
+
+    static final int HASH_CODE_MASK;
+
     static {
         ADDRESS_SIZE0 = 0;
         PAGE_SIZE = 0;
         BIG_ENDIAN = false;
         UNALIGNED_ACCESS = false;
         DATA_CACHE_LINE_FLUSH_SIZE = 0;
+        HASH_CODE_MASK = 0;
     }
 }

@@ -1619,6 +1619,11 @@ public final class Unsafe {
      */
     public static boolean isWritebackEnabled() { return DATA_CACHE_LINE_FLUSH_SIZE != 0; }
 
+    /**
+     * Reports the mask used to fit hashcodes into the cache field of the mark word.
+     */
+    public int hashCodeMask() { return HASH_CODE_MASK; }
+
     //--- random trusted operations from JNI:
 
     /**
