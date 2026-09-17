@@ -27,8 +27,10 @@
  * @summary Test that stack banging when creating extended c2 frame doesn't crash
  * @enablePreview
  * @library /test/lib
- * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,TestStackOverflow::foo TestStackOverflow
+ * @run main/othervm -Xcomp -Xbatch -XX:-TieredCompilation -XX:CompileCommand=exclude,${test.main.class}::foo ${test.main.class}
  */
+
+package compiler.valhalla.valuetypes;
 
 import java.util.concurrent.ThreadLocalRandom;
 

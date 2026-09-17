@@ -2800,7 +2800,6 @@ CodeOffsets::Entries CompiledEntrySignature::c1_value_ro_entry_type() const {
   }
 }
 
-
 int CompiledEntrySignature::max_stack_slots_cc() {
   return UseShenandoahGC ? 64 : 128;
 }
