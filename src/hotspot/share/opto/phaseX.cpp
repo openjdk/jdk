@@ -2512,7 +2512,7 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   return nullptr;
 }
 
-void PhaseIterGVN::add_users_to_worklist(Node *n) const {
+void PhaseIterGVN::add_users_to_worklist(Node* n) const {
   add_users_to_worklist(n, _worklist);
 }
 
