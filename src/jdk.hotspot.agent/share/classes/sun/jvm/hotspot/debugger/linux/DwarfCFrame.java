@@ -26,12 +26,14 @@
 package sun.jvm.hotspot.debugger.linux;
 
 import sun.jvm.hotspot.debugger.Address;
+import sun.jvm.hotspot.debugger.DebuggerException;
 import sun.jvm.hotspot.debugger.ThreadProxy;
 import sun.jvm.hotspot.debugger.UnalignedAddressException;
 import sun.jvm.hotspot.debugger.UnmappedAddressException;
 import sun.jvm.hotspot.debugger.cdbg.CFrame;
 import sun.jvm.hotspot.debugger.cdbg.ClosestSymbol;
 import sun.jvm.hotspot.debugger.cdbg.basic.BasicCFrame;
+import sun.jvm.hotspot.debugger.linux.aarch64.AARCH64DwarfParser;
 import sun.jvm.hotspot.runtime.VM;
 
 public class DwarfCFrame extends BasicCFrame {
@@ -43,6 +45,7 @@ public class DwarfCFrame extends BasicCFrame {
     private LinuxDebugger linuxDbg;
     private DwarfParser dwarf;
     private boolean use1ByteBeforeToLookup;
+    private boolean hasNativeLibrary;
 
     /**
      * @return DwarfParser instance for the PC, null if native library relates to the pc not found.
@@ -53,8 +56,21 @@ public class DwarfCFrame extends BasicCFrame {
     protected static DwarfParser createDwarfParser(LinuxDebugger linuxDbg, Address pc) {
         Address libptr = linuxDbg.findLibPtrByAddress(pc);
         if (libptr != null) {
-            DwarfParser dwarf = new DwarfParser(libptr);
-            dwarf.processDwarf(pc);
+            DwarfParser dwarf = linuxDbg.getCPU().equals("aarch64") ? new AARCH64DwarfParser(libptr)
+                                                                    : new DwarfParser(libptr);
+            try {
+                dwarf.processDwarf(pc);
+            } catch (DebuggerException e) {
+                // DebuggerException might be thrown from unwinding signal trampoline
+                // (e.g. __restore_rt on AMD64) because it might have DW_CFA_def_cfa_expression
+                // DWARF instruction.
+                // However SA can ignore the case safely because it does not rely on DWARF,
+                // would restore register values from the stack directly.
+                // Thus DebuggerException would be rethrown if the pc is not in signal trampoline.
+                if (!linuxDbg.isSignalTrampoline(pc)) {
+                    throw e;
+                }
+            }
             return dwarf;
         }
         return null;
@@ -73,6 +89,7 @@ public class DwarfCFrame extends BasicCFrame {
         this.linuxDbg = linuxDbg;
         this.dwarf = dwarf;
         this.use1ByteBeforeToLookup = use1ByteBeforeToLookup;
+        this.hasNativeLibrary = linuxDbg.findLibPtrByAddress(pc) != null;
     }
 
     public Address sp() {
@@ -93,6 +110,10 @@ public class DwarfCFrame extends BasicCFrame {
 
     public DwarfParser dwarf() {
         return dwarf;
+    }
+
+    public boolean hasNativeLibrary() {
+        return hasNativeLibrary;
     }
 
     // override base class impl to avoid ELF parsing

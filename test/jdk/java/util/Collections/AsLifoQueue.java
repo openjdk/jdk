@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,10 @@
  * @bug     6301085 6192552 6365601
  * @summary Basic tests for asLifoQueue
  * @author  Martin Buchholz
+ * @library /test/lib
  */
 
+import jdk.test.lib.valueclass.VClass;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -72,6 +74,17 @@ public class AsLifoQueue {
         } catch (Throwable t) { unexpected(t); }
 
         THROWS(NullPointerException.class, () -> Collections.asLifoQueue(null));
+
+        try {
+            Deque<VClass> deq = new ArrayDeque<>();
+            Queue<VClass> q = Collections.asLifoQueue(deq);
+            check(q.add(new VClass(1, new int[] { 1 })));
+            check(q.add(new VClass(2, new int[] { 2 })));
+            equal(q.peek(), new VClass(2, new int[] { 2 }));
+            equal(q.remove(), new VClass(2, new int[] { 2 }));
+            equal(q.poll(), new VClass(1, new int[] { 1 }));
+            check(q.isEmpty());
+        } catch (Throwable t) { unexpected(t); }
     }
 
     //--------------------- Infrastructure ---------------------------

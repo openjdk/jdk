@@ -563,7 +563,7 @@ void Metaspace::print_compressed_class_space(outputStream* st) {
 
 // Given a prereserved space, use that to set up the compressed class space list.
 void Metaspace::initialize_class_space(ReservedSpace rs) {
-  STATIC_ASSERT(INCLUDE_CLASS_SPACE == 1);
+  static_assert(INCLUDE_CLASS_SPACE == 1);
   assert(rs.size() >= CompressedClassSpaceSize,
          "%zu != %zu", rs.size(), CompressedClassSpaceSize);
 
@@ -593,7 +593,8 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
                                                                                     optimize_for_zero_base));
 
   if (result == nullptr) {
-    // Fallback: reserve anywhere
+    // Fallback: we let the OS decide where to place the area, but align (overallocation-and-cut)
+    // to metaspace reserve alignment (16MB).
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), mtClass);
   }

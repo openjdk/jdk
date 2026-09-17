@@ -79,6 +79,9 @@
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if defined(_M_ARM64)
+#include CPU_HEADER(pauth)
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -124,6 +127,7 @@ static FILETIME process_creation_time;
 static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
+static HANDLE heap_file_handle = INVALID_HANDLE_VALUE;
 
 #if defined(_M_ARM64)
   #define __CPU__ aarch64
@@ -2006,6 +2010,21 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+  DWORD valueLength = bufferSize;
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  if (RegGetValueA(HKEY_LOCAL_MACHINE, subKey, valueName,
+                   RRF_RT_REG_SZ, nullptr, buffer, &valueLength) != ERROR_SUCCESS) {
+    buffer[0] = '\0';
+    return false;
+  }
+  return true;
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
 
@@ -2093,6 +2112,12 @@ void os::win32::print_windows_version(outputStream* st) {
 
   st->print(" Build %d", build_number);
   st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
+  // InstallationType (e.g. Server Core, Nano server)
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
+  }
   st->cr();
 }
 
@@ -2164,22 +2189,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-  if (status == ERROR_SUCCESS) {
-    DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
-    if (status != ERROR_SUCCESS) {
-        strncpy(buf, "## __CPU__", buflen);
-    } else {
-      if (size < buflen) {
-        buf[size] = '\0';
-      }
-    }
-    RegCloseKey(key);
-  } else {
-    // Put generic cpu info to return
+  DWORD size = (DWORD)buflen;
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "ProcessorNameString", RRF_RT_REG_SZ, nullptr, buf, &size);
+  if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
 }
@@ -2671,14 +2685,6 @@ LONG Handle_IDiv_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
-static inline void report_error(Thread* t, DWORD exception_code,
-                                address addr, void* siginfo, void* context) {
-  VMError::report_and_die(t, exception_code, addr, siginfo, context);
-
-  // If UseOSErrorReporting, this will return here and save the error file
-  // somewhere where we can find it in the minidump.
-}
-
 //-----------------------------------------------------------------------------
 JNIEXPORT
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
@@ -2750,9 +2756,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         // Fatal red zone violation.
         overflow_state->disable_stack_red_zone();
         tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        report_error(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
       }
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
       if (in_java) {
@@ -2789,9 +2794,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           address stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::IMPLICIT_NULL);
           if (stub != nullptr) return Handle_Exception(exceptionInfo, stub);
         }
-        report_error(t, exception_code, pc, exception_record,
-                      exceptionInfo->ContextRecord);
-        return EXCEPTION_CONTINUE_SEARCH;
+        VMError::report_and_die(t, exception_code, pc, exception_record,
+                                exceptionInfo->ContextRecord);
       }
 
       // Special care for fast JNI field accessors.
@@ -2803,9 +2807,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       }
 
       // Stack overflow or null pointer exception in native code.
-      report_error(t, exception_code, pc, exception_record,
-                   exceptionInfo->ContextRecord);
-      return EXCEPTION_CONTINUE_SEARCH;
+      VMError::report_and_die(t, exception_code, pc, exception_record,
+                              exceptionInfo->ContextRecord);
     } // /EXCEPTION_ACCESS_VIOLATION
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -2873,8 +2876,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
   if (should_report_error) {
-    report_error(t, exception_code, pc, exception_record,
-                 exceptionInfo->ContextRecord);
+    VMError::report_and_die(t, exception_code, pc, exception_record,
+                            exceptionInfo->ContextRecord);
   }
 
   return EXCEPTION_CONTINUE_SEARCH;
@@ -2894,8 +2897,8 @@ LONG WINAPI topLevelUnhandledExceptionFilter(struct _EXCEPTION_POINTERS* excepti
     Thread* thread = Thread::current_or_null_safe();
 
     if (exceptionCode != EXCEPTION_BREAKPOINT) {
-      report_error(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
-                  exceptionInfo->ContextRecord);
+      VMError::report_and_die(thread, exceptionCode, pc, exceptionInfo->ExceptionRecord,
+                              exceptionInfo->ContextRecord);
     }
   }
 
@@ -3252,6 +3255,20 @@ int os::create_file_for_heap(const char* dir) {
     warning("Problem opening file for heap (%s)", os::strerror(errno));
     return -1;
   }
+
+  guarantee(heap_file_handle == INVALID_HANDLE_VALUE,
+            "Heap backing file already exists");
+
+  HANDLE process = GetCurrentProcess();
+  HANDLE file_handle = (HANDLE)_get_osfhandle(fd);
+
+  if (!DuplicateHandle(process, file_handle, process, &heap_file_handle,
+                       0, FALSE, DUPLICATE_SAME_ACCESS)) {
+    warning("Could not retain handle to heap backing file (error %lu)", GetLastError());
+    ::close(fd);
+    return -1;
+  }
+
   return fd;
 }
 
@@ -4268,33 +4285,7 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-void getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return;
-  }
-
-  RegCloseKey(hKey);
-}
-
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);
@@ -6648,6 +6639,19 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   int count = 0;
   address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
+#if defined(_M_ARM64)
+    // On Windows/ARM64, when the CPU is using authenticated pointers, return
+    // addresses are signed.  Unfortunately, `StackWalk64()` does not strip the
+    // pointer signature, so we need to do this ourself.  Since stripping the
+    // signature is an idempotent operation, we don't need to guard this call
+    // based on whether pointer authentication is enabled.
+    address original = (address)stk.AddrPC.Offset;
+    address stripped = pauth_strip_pointer(original);
+    stk.AddrPC.Offset = (DWORD64)(uintptr_t)stripped;
+
+    // We updated the stack frame's PC, so keep the context's PC in sync.
+    ctx.Pc = stk.AddrPC.Offset;
+#endif
     intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
