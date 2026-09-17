@@ -113,7 +113,7 @@ void JfrFilterClassClosure::iterate_all_classes(GrowableArray<JfrInstrumentedCla
   // We, therefore, put these klasses directly into the classes_to_modify set.
   if (instrumented_klasses->is_nonempty()) {
     for (int i = 0; i < instrumented_klasses->length(); ++i) {
-      if (JfrKlassUnloading::is_unloaded(instrumented_klasses->at(i).trace_id())) {
+      if (JfrKlassUnloading::is_unloaded(instrumented_klasses->at(i).trace_id(), true)) {
         continue;
       }
       add(instrumented_klasses->at(i).instance_klass());

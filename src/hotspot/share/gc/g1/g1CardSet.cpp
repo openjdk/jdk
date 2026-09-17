@@ -189,7 +189,7 @@ const char* G1CardSetConfiguration::mem_object_type_name_str(uint index) {
 }
 
 void G1CardSetCoarsenStats::reset() {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(0);
     _coarsen_collision[i].store_relaxed(0);
@@ -197,7 +197,7 @@ void G1CardSetCoarsenStats::reset() {
 }
 
 void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed());
@@ -205,7 +205,7 @@ void G1CardSetCoarsenStats::set(G1CardSetCoarsenStats& other) {
 }
 
 void G1CardSetCoarsenStats::subtract_from(G1CardSetCoarsenStats& other) {
-  STATIC_ASSERT(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
+  static_assert(ARRAY_SIZE(_coarsen_from) == ARRAY_SIZE(_coarsen_collision));
   for (uint i = 0; i < ARRAY_SIZE(_coarsen_from); i++) {
     _coarsen_from[i].store_relaxed(other._coarsen_from[i].load_relaxed() - _coarsen_from[i].load_relaxed());
     _coarsen_collision[i].store_relaxed(other._coarsen_collision[i].load_relaxed() - _coarsen_collision[i].load_relaxed());

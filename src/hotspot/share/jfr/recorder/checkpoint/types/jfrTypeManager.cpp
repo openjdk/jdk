@@ -219,11 +219,11 @@ static bool register_static_type(JfrTypeId id, bool permit_cache, JfrSerializer*
     delete serializer;
     return false;
   }
+  SerializerRegistrationGuard guard;
   if (JfrRecorder::is_recording()) {
     JfrCheckpointWriter writer(Thread::current(), true, STATICS, JFR_THREADLOCAL);
     registration->invoke(writer);
   }
-  SerializerRegistrationGuard guard;
   assert(!types.in_list(registration), "invariant");
   DEBUG_ONLY(assert_not_registered_twice(id, types);)
   types.add(registration);
