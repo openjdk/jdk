@@ -163,6 +163,8 @@ public:
   static void enable_gc() NOT_CDS_JAVA_HEAP_RETURN;
   static void materialize_thread_object() NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_interned_string(oop string);
+  static void update_scratch_mirror_field(oop scratch_m, int field_offset, oop obj);
+  static void archive_updated_mirror_field(oop old_field_obj, oop new_field_obj);
   static void finalize_initialization(FileMapInfo* static_mapinfo) NOT_CDS_JAVA_HEAP_RETURN;
 
 private:

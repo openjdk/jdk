@@ -35,7 +35,7 @@
 
 // The malloc header, as well as the coming VMATree implementation, rely on MemTag
 // fitting into eight bits.
-STATIC_ASSERT(sizeof(MemTag) == sizeof(uint8_t));
+static_assert(sizeof(MemTag) == sizeof(uint8_t));
 
 void MallocHeader::print_block_on_error(outputStream* st, address bad_address, address block_address) const {
   assert(bad_address >= (address)this, "sanity");
