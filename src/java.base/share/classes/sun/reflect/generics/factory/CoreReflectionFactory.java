@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.reflect.generics.factory;
 
+import java.lang.classfile.Signature;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -36,8 +37,6 @@ import java.lang.reflect.WildcardType;
 
 import sun.reflect.generics.reflectiveObjects.*;
 import sun.reflect.generics.scope.Scope;
-import sun.reflect.generics.tree.FieldTypeSignature;
-
 
 /**
  * Factory for reflective generic type objects for use by
@@ -89,12 +88,12 @@ public class CoreReflectionFactory implements GenericsFactory {
     }
 
     public TypeVariable<?> makeTypeVariable(String name,
-                                            FieldTypeSignature[] bounds){
+                                            Signature[] bounds){
         return TypeVariableImpl.make(getDecl(), name, bounds, this);
     }
 
-    public WildcardType makeWildcard(FieldTypeSignature[] ubs,
-                                     FieldTypeSignature[] lbs) {
+    public WildcardType makeWildcard(Signature[] ubs,
+                                     Signature[] lbs) {
         return WildcardTypeImpl.make(ubs, lbs, this);
     }
 
@@ -127,15 +126,4 @@ public class CoreReflectionFactory implements GenericsFactory {
         else
             return GenericArrayTypeImpl.make(componentType);
     }
-
-    public Type makeByte(){return byte.class;}
-    public Type makeBool(){return boolean.class;}
-    public Type makeShort(){return short.class;}
-    public Type makeChar(){return char.class;}
-    public Type makeInt(){return int.class;}
-    public Type makeLong(){return long.class;}
-    public Type makeFloat(){return float.class;}
-    public Type makeDouble(){return double.class;}
-
-    public Type makeVoid(){return void.class;}
 }
