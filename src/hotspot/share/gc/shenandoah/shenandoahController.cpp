@@ -52,8 +52,9 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   const bool is_humongous = ShenandoahHeapRegion::requires_humongous(req.size());
   const GCCause::Cause cause = is_humongous ? GCCause::_shenandoah_humongous_allocation_failure : GCCause::_allocation_failure;
 
+  const double start = os::elapsedTime();
   const size_t req_byte = req.size() * HeapWordSize;
-  log_debug(gc)("Failed to allocate %s, " PROPERFMT, req.type_string(), PROPERFMTARGS(req_byte));
+  log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), current()->name());
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
 
   // This is the inner part of a larger retry loop, so just wait here
@@ -65,6 +66,8 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   if (!should_terminate()) {
     ml.wait();
   }
+  log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\", %.3fms",
+               PROPERFMTARGS(req_byte), current()->name(), (os::elapsedTime() - start) * MILLIUNITS);
 }
 
 void ShenandoahController::handle_alloc_failure_full() {
