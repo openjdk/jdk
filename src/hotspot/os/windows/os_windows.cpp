@@ -5722,7 +5722,7 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
     return nullptr;
   }
 
-  HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_WRITECOPY, 0, 0, nullptr); // *** (0,0) means size equals file size
+  HANDLE hMap = CreateFileMapping(hFile, nullptr, PAGE_WRITECOPY, 0, 0, nullptr);
   DWORD err = GetLastError();
   CloseHandle(hFile);
   char *res = nullptr;
