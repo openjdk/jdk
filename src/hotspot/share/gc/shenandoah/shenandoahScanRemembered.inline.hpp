@@ -390,10 +390,6 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
   }
 }
 
-inline bool ShenandoahRegionChunkIterator::has_next() const {
-  return _index.load_relaxed() < _total_chunks;
-}
-
 inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
   size_t chunk_size = chunk_size_words();
   size_t chunk_shift = log2i_exact(chunk_size);

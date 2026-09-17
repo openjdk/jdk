@@ -854,10 +854,6 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
     _total_chunks(calc_total_chunks()),
     _index(0) {}
 
-void ShenandoahRegionChunkIterator::reset() {
-  _index.store_relaxed(0);
-}
-
 ShenandoahReconstructRememberedSetTask::ShenandoahReconstructRememberedSetTask(ShenandoahRegionIterator* regions)
   : WorkerTask("Shenandoah Reset Bitmap")
   , _regions(regions) { }
