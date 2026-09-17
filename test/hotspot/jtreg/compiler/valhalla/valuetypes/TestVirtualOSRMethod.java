@@ -28,8 +28,10 @@
  * @enablePreview
  * @requires vm.continuations
  * @library /test/lib
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,TestVirtualOSRMethod::foo TestVirtualOSRMethod
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,${test.main.class}::foo ${test.main.class}
  */
+
+package compiler.valhalla.valuetypes;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
