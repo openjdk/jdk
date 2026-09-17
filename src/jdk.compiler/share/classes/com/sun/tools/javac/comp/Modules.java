@@ -689,15 +689,12 @@ public class Modules extends JCTree.Visitor {
             ListBuffer<ExportsDirective> exports = new ListBuffer<>();
             Set<String> seenPackages = new HashSet<>();
 
-            for (JavaFileObject clazz : fileManager.list(msym.classLocation, "", EnumSet.of(Kind.CLASS), true)) {
-                String binName = fileManager.inferBinaryName(msym.classLocation, clazz);
-                String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
-                if (seenPackages.add(pack)) {
-                    ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
-                    //TODO: opens?
-                    directives.add(d);
-                    exports.add(d);
-                }
+            findPackages(msym, msym.classLocation, EnumSet.of(Kind.CLASS),
+                         seenPackages, directives, exports);
+
+            if (msym.patchLocation != null) {
+                findPackages(msym, msym.patchLocation, EnumSet.of(Kind.CLASS, Kind.SOURCE),
+                             seenPackages, directives, exports);
             }
 
             msym.exports = exports.toList();
@@ -709,6 +706,23 @@ public class Modules extends JCTree.Visitor {
             throw new IllegalStateException(ex);
         }
     }
+        //where:
+        private void findPackages(ModuleSymbol msym,
+                                  Location location,
+                                  Set<Kind> fileObjectKinds,
+                                  Set<String> seenPackages,
+                                  ListBuffer<Directive> directives,
+                                  ListBuffer<ExportsDirective> exports) throws IOException {
+            for (JavaFileObject clazz : fileManager.list(location, "", fileObjectKinds, true)) {
+                String binName = fileManager.inferBinaryName(location, clazz);
+                String pack = binName.lastIndexOf('.') != (-1) ? binName.substring(0, binName.lastIndexOf('.')) : ""; //unnamed package????
+                if (seenPackages.add(pack)) {
+                    ExportsDirective d = new ExportsDirective(syms.enterPackage(msym, names.fromString(pack)), null);
+                    directives.add(d);
+                    exports.add(d);
+                }
+            }
+        }
 
     private void completeAutomaticModule(ModuleSymbol msym) throws CompletionFailure {
         ListBuffer<Directive> directives = new ListBuffer<>();
