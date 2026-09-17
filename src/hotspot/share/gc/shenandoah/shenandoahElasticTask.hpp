@@ -31,30 +31,59 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 
+/*
+ * The code here provides an abstraction over a coordinated termination
+ * protocol for a thread work group. Shenandoah uses this idiom to increase
+ * the number of workers during a concurrent gc phase when allocation
+ * stalls are experienced. All threads in the work group are 'active',
+ * however, only N threads will perform work (N = shHeap::eligible_workers).
+ * The remaining threads will immediately offer termination. These threads
+ * are woken periodically (per the termination protocol) to check for more
+ * work. If the N has increased (in response to an allocation failure), the
+ * reserved threads will withdraw their termination offer and begin claiming
+ * work.
+ */
+
+// This represents the outcome of an increment of work performed by the thread.
+// If it claimed any work, it DidWork. If the supply of work is exhausted, it
+// should return NoWork. If there is work remaining, but the thread cannot
+// perform it (LABs exhausted, for instance), then it should Retire.
 enum class ShenandoahWorkResult {
   DidWork, NoWork, Retire
 };
 
 template<bool Cancellable, typename WorkFn>
 void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
+  // The TerminatorTerminator is responsible for controlling when a thread
+  // should withdraw its termination offer and resume the loop here. This
+  // component is responsible for holding excess threads in reserve and holding
+  // down 'retired' threads.
   ShenandoahTerminatorTerminator tt(heap, Cancellable);
   SuspendibleThreadSetJoiner stsj(Cancellable);
   while (true) {
     if (Cancellable && heap->check_cancelled_gc_and_yield()) {
+      // The termination offer is withdrawn when a cycle cancellation is
+      // observed. The thread returns to the top of the loop here and exits.
       return;
     }
 
     if (tt.can_work()) {
+      // A thread can work if it is a member of the eligible thread set, there
+      // are tasks remaining, and it has not been 'retired'.
       const ShenandoahWorkResult result = work();
       if (result == ShenandoahWorkResult::DidWork) {
+        // This thread claimed work and believes there is more remaining.
         continue;
       }
 
       if (result == ShenandoahWorkResult::Retire) {
+        // This thread can no longer work, though there may be tasks remaining.
         tt.retire();
       }
     }
 
+    // Thread must leave the suspendible thread set while it waits for termination,
+    // or it may prevent safepoints from synchronizing.
     SuspendibleThreadSetLeaver stsl(Cancellable);
     if (terminator->offer_termination(&tt)) {
       break;
@@ -62,6 +91,8 @@ void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, W
   }
 }
 
+// A small helper class to set up the required components for the elastic loop.
+// The adapter should be an implementation of the TaskQueueSetSuper interface.
 template <typename Adapter>
 class ShenandoahElasticTask : public WorkerTask {
 protected:
