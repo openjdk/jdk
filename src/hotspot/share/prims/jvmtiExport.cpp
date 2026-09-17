@@ -2307,7 +2307,21 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
-      jobject field_jobject = jem.to_jobject(object());
+      Handle obj_h = object;
+#if 0
+      if (Arguments::is_valhalla_enabled()) {
+        bool is_ctor = method->is_object_constructor();
+        if (is_ctor && object() != nullptr && object()->is_inline()) {
+          inlineOop obj_copy = JvmtiEnvBase::clone_value_object(thread, object);
+          if (obj_copy == nullptr) {
+            vm_exit_out_of_memory(HeapWordSize * object()->size(), OOM_MALLOC_ERROR,
+              "unable to allocate a clone for larval value object");
+          }
+          obj_h = Handle(thread, obj_copy);
+        }
+      }
+#endif
+      jobject field_jobject = jem.to_jobject(obj_h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldAccess callback = env->callbacks()->FieldAccess;
       if (callback != nullptr) {
@@ -2479,7 +2493,21 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
       JvmtiEnv *env = ets->get_env();
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
-      jobject field_jobject = jem.to_jobject(object());
+      Handle obj_h = object;
+#if 0
+      if (Arguments::is_valhalla_enabled()) {
+        bool is_ctor = method->is_object_constructor();
+        if (is_ctor && object() != nullptr && object()->is_inline()) {
+          inlineOop obj_copy = JvmtiEnvBase::clone_value_object(thread, object);
+          if (obj_copy == nullptr) {
+            vm_exit_out_of_memory(HeapWordSize * object()->size(), OOM_MALLOC_ERROR,
+              "unable to allocate a clone for larval value object");
+          }
+          obj_h = Handle(thread, obj_copy);
+        }
+      }
+#endif
+      jobject field_jobject = jem.to_jobject(obj_h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldModification callback = env->callbacks()->FieldModification;
       if (callback != nullptr) {
