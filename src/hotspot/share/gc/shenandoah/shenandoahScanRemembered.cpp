@@ -30,6 +30,7 @@
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "logging/log.hpp"
 #include "runtime/threads.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 // A closure that takes an oop in the old generation and, if it's pointing
 // into the young generation, dirties the corresponding remembered set entry.

@@ -36,6 +36,7 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
   _rs->mark_card_as_dirty(p);
