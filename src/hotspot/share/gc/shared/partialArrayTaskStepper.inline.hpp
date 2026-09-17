@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,13 +31,9 @@
 #include "utilities/checkedCast.hpp"
 #include "utilities/debug.hpp"
 
-size_t PartialArrayTaskStepper::chunk_size() const {
-  return _chunk_size;
-}
-
 PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::start(size_t length) const {
-  size_t end = length % _chunk_size; // End of initial chunk.
+PartialArrayTaskStepper::start(size_t length, size_t chunk_size) const {
+  size_t end = length % chunk_size; // End of initial chunk.
   // If the initial chunk is the complete array, then don't need any partial
   // tasks.  Otherwise, start with just one partial task; see new task
   // calculation in next().
@@ -45,24 +41,24 @@ PartialArrayTaskStepper::start(size_t length) const {
 }
 
 PartialArrayTaskStepper::Step
-PartialArrayTaskStepper::next_impl(size_t length, Atomic<size_t>* index_addr) const {
+PartialArrayTaskStepper::next_impl(size_t length, size_t chunk_size, Atomic<size_t>* index_addr) const {
   // The start of the next task is in the state's index.
   // Atomically increment by the chunk size to claim the associated chunk.
   // Because we limit the number of enqueued tasks to being no more than the
   // number of remaining chunks to process, we can use an atomic add for the
   // claim, rather than a CAS loop.
-  size_t start = index_addr->fetch_then_add(_chunk_size, memory_order_relaxed);
+  size_t start = index_addr->fetch_then_add(chunk_size, memory_order_relaxed);
 
   assert(start < length, "invariant: start %zu, length %zu", start, length);
-  assert(((length - start) % _chunk_size) == 0,
+  assert(((length - start) % chunk_size) == 0,
          "invariant: start %zu, length %zu, chunk size %zu",
-         start, length, _chunk_size);
+         start, length, chunk_size);
 
   // Determine the number of new tasks to create.
   // Zero-based index for this partial task.  The initial task isn't counted.
-  uint task_num = checked_cast<uint>(start / _chunk_size);
+  uint task_num = checked_cast<uint>(start / chunk_size);
   // Number of tasks left to process, including this one.
-  uint remaining_tasks = checked_cast<uint>((length - start) / _chunk_size);
+  uint remaining_tasks = checked_cast<uint>((length - start) / chunk_size);
   assert(remaining_tasks > 0, "invariant");
   // Compute number of pending tasks, including this one.  The maximum number
   // of tasks is a function of task_num (N) and _task_fanout (F).
@@ -89,7 +85,7 @@ PartialArrayTaskStepper::next_impl(size_t length, Atomic<size_t>* index_addr) co
 
 PartialArrayTaskStepper::Step
 PartialArrayTaskStepper::next(PartialArrayState* state) const {
-  return next_impl(state->length(), state->index_addr());
+  return next_impl(state->length(), state->chunk_size(), state->index_addr());
 }
 
 #endif // SHARE_GC_SHARED_PARTIALARRAYTASKSTEPPER_INLINE_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,7 +148,7 @@ class ArrayTable implements Cloneable {
         if (table != null) {
             if (isArray()) {
                 Object[] array = (Object[])table;
-                for (int i = 0; i<array.length-1; i+=2) {
+                for (int i = 0; i < array.length-1; i += 2) {
                     if (array[i].equals(key)) {
                         value = array[i+1];
                         break;
@@ -184,7 +184,7 @@ class ArrayTable implements Cloneable {
         if (table != null) {
             if (isArray()) {
                 Object[] array = (Object[])table;
-                for (int i = 0; i<array.length-1; i+=2) {
+                for (int i = 0; i < array.length-1; i += 2) {
                     if (array[i].equals(key)) {
                         contains = true;
                         break;
@@ -203,7 +203,7 @@ class ArrayTable implements Cloneable {
      */
     public Object remove(Object key){
         Object value = null;
-        if (key==null) {
+        if (key == null) {
             return null;
         }
         if (table != null) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,14 +114,14 @@ public class FontFamily {
         }
 
         FileFont existingFont = null;
-        if (plain instanceof FileFont) {
-            existingFont = (FileFont)plain;
-        } else if (bold instanceof FileFont) {
-            existingFont = (FileFont)bold;
-        } else if (italic instanceof FileFont) {
-             existingFont = (FileFont)italic;
-        } else if (bolditalic instanceof FileFont) {
-             existingFont = (FileFont)bolditalic;
+        if (plain instanceof FileFont plainFF) {
+            existingFont = plainFF;
+        } else if (bold instanceof FileFont boldFF) {
+            existingFont = boldFF;
+        } else if (italic instanceof FileFont italicFF) {
+             existingFont = italicFF;
+        } else if (bolditalic instanceof FileFont boldItalicFF) {
+             existingFont = boldItalicFF;
         }
         // A family isn't created until there's a font.
         // So if we didn't find a file font it means this

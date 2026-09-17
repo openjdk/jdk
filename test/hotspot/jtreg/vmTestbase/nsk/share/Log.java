@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Vector;
-
 
 /**
  * This class helps to print test-execution trace messages.
@@ -144,25 +143,14 @@ public class Log {
 
     /////////////////////////////////////////////////////////////////
 
-    /**
-     * Create new Log's only with <code>Log(out)</code> or with
-     * <code>Log(out,argsHandler)</code> constructors.
-     *
-     * @deprecated  Extending test class with Log is obsolete.
-     */
-    @Deprecated
-    protected Log() {
-        // Don't log exceptions from this method. It would just add unnecessary logs.
-        loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
-    }
-
 
     /**
      * Incarnate new Log for the given <code>stream</code> and
      * for non-verbose mode.
      */
     public Log(PrintStream stream) {
-        this();
+        // Don't log exceptions from this method. It would just add unnecessary logs.
+        loggedExceptions.add("nsk.share.jdi.SerialExecutionDebugger.executeTests");
         out = stream;
     }
 
@@ -207,32 +195,6 @@ public class Log {
         exception.printStackTrace(pw);
         pw.close();
         return bos.toString();
-    }
-
-    /**
-     * Print <code>message</code> to the assigned output stream.
-     *
-     * @deprecated  Test ought to be quiet if log mode is non-verbose
-     *              and there is no errors found by the test. Methods
-     *              <code>display()</code> and <code>complain()</code>
-     *              are enough for testing purposes.
-     */
-    @Deprecated
-    public synchronized void println(String message) {
-        doPrint(message);
-    }
-
-    /**
-     * Print <code>message</code> to the assigned output stream,
-     * if log mode is <i>non</i>-verbose.
-     *
-     * @deprecated  Test ought to be quiet if log mode is non-verbose
-     *              and there is no errors found by the test. Methods
-     *              <code>display()</code> and <code>complain()</code>
-     *              are enough for testing purposes.
-     */
-    @Deprecated
-    public synchronized void comment(String message) {
     }
 
     /**
@@ -336,19 +298,6 @@ public class Log {
     }
 
     /////////////////////////////////////////////////////////////////
-
-    /**
-     * Redirect log to the given <code>stream</code>.
-     *
-     * @deprecated  This method is obsolete.
-     */
-    @Deprecated
-    protected synchronized void logTo(PrintStream stream) {
-        if (out != null) {
-            out.flush();
-        }
-        out = stream;
-    }
 
     /////////////////////////////////////////////////////////////////
 
@@ -520,12 +469,12 @@ public class Log {
         }
 
         /**
-         * Print message by invoking <code>Log.println()</code>.
+         * Print message by invoking <code>Log.display()</code>.
          *
-         * @see Log#println
+         * @see Log#display
          */
         public void println(String message) {
-            log.println(makeLogMessage(message));
+            log.display(makeLogMessage(message));
         }
 
         /**

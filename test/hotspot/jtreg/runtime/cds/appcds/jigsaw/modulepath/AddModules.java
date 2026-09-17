@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,8 +118,8 @@ public class AddModules {
                                   moduleDir.toString(), // --module-path
                                   MAIN_MODULE1) // -m
             .assertNormalExit(out -> {
-                out.shouldContain("[class,load] com.greetings.Main source: shared objects file")
-                   .shouldContain("[class,load] org.astro.World source: shared objects file");
+                out.shouldMatch("\\[class,load *\\] com\\.greetings\\.Main source: shared objects file")
+                   .shouldMatch("\\[class,load *\\] org\\.astro\\.World source: shared objects file");
             });
 
         // run the com.hello module with the archive with the --module-path
@@ -130,8 +130,8 @@ public class AddModules {
                                   moduleDir.toString(), // --module-path
                                   MAIN_MODULE2) // -m
             .assertNormalExit(out -> {
-                out.shouldContain("[class,load] com.hello.Main source: shared objects file")
-                   .shouldContain("[class,load] org.astro.World source: shared objects file");
+                out.shouldMatch("\\[class,load *\\] com\\.hello\\.Main source: shared objects file")
+                   .shouldMatch("\\[class,load *\\] org\\.astro\\.World source: shared objects file");
             });
     }
 }

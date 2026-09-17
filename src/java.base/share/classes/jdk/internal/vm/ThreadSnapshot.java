@@ -32,7 +32,7 @@ import jdk.internal.access.SharedSecrets;
 /**
  * Represents a snapshot of information about a Thread.
  */
-class ThreadSnapshot {
+public class ThreadSnapshot {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
     private static final ThreadLock[] EMPTY_LOCKS = new ThreadLock[0];
@@ -59,7 +59,7 @@ class ThreadSnapshot {
      * Take a snapshot of a Thread to get all information about the thread.
      * @return the snapshot or {@code null} if the thread is not alive
      */
-    static ThreadSnapshot of(Thread thread) {
+    public static ThreadSnapshot of(Thread thread) {
         ThreadSnapshot snapshot = thread.isAlive() ? create(thread) : null;
         if (snapshot == null) {
             return null; // thread not alive

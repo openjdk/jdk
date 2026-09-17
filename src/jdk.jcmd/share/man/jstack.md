@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -52,8 +52,7 @@ The `jstack` command prints Java stack traces of Java threads for a specified
 Java process. For each Java frame, the full class name, method name, byte code
 index (BCI), and line number, when available, are printed. C++ mangled names
 aren't demangled. To demangle C++ names, the output of this command can be
-piped to `c++filt`. When the specified process is running on a 64-bit JVM, you
-might need to specify the `-J-d64` option, for example: `jstack -J-d64` *pid*.
+piped to `c++filt`.
 
 **Note:**
 
@@ -63,6 +62,11 @@ Debugging Tools for Windows must be installed so that these tools work. The
 `PATH` environment variable needs to contain the location of the `jvm.dll` that
 is used by the target process, or the location from which the core dump file
 was produced.
+
+If the target JVM is started with an alternate temporary file location, `jstack` must
+use the same temporary file location for communication; this is true by default
+but see the [`-XX:AltTempDir`](./java.html#-XX_AltTempDir) option.
+
 
 ## Options for the jstack Command
 

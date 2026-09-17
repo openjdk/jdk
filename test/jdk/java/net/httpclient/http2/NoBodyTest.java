@@ -28,7 +28,7 @@
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.http2.Http2TestServer
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors
  *                     -Djdk.internal.httpclient.debug=true
- *                     NoBodyTest
+ *                     ${test.main.class}
  */
 
 import java.io.IOException;

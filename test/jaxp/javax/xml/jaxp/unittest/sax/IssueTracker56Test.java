@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,78 +23,50 @@
 
 package sax;
 
-import java.io.IOException;
-import java.io.StringReader;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.Attributes;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /*
  * @test
  * @bug 6809409
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.IssueTracker56Test
+ * @run junit/othervm sax.IssueTracker56Test
  * @summary Test SAXException has Cause.
  */
 public class IssueTracker56Test {
 
     @Test
-    public void testException() {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            SAXParser parser = spf.newSAXParser();
-            String xmlToParse = "<root>Issue 56: SAXException does not do the exception chaining properly</root>";
-            InputSource source = new InputSource(new StringReader(xmlToParse));
-            parser.parse(source, new MyHandler());
-        } catch (SAXException ex) {
-            System.out.println(ex.getCause());
-            if (ex.getCause() == null)
-                Assert.fail("failed chaining exception properly.");
-            // ex.printStackTrace(); //will not print out root cause without the
-            // fix
-        } catch (IOException ex) {
-            // shouldn't happen
-        } catch (ParserConfigurationException ex) {
-            // shouldn't happen
-        }
+    public void testException() throws Exception {
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        SAXParser parser = spf.newSAXParser();
+        String xmlToParse = "<root>Issue 56: SAXException does not do the exception chaining properly</root>";
+        InputSource source = new InputSource(new StringReader(xmlToParse));
+
+        SAXException ex = assertThrows(SAXException.class, () -> parser.parse(source, new MyHandler()));
+        assertNotNull(ex.getCause(), "failed chaining exception properly.");
     }
 
     @Test
     public void testWorkAround() throws Exception {
-        try {
-            SAXParserFactory spf = SAXParserFactory.newInstance();
-            SAXParser parser = spf.newSAXParser();
-            String xmlToParse = "<root>Issue 56: SAXException does not do the exception chaining properly</root>";
-            InputSource source = new InputSource(new StringReader(xmlToParse));
-            parser.parse(source, new MyHandler1());
-        } catch (SAXException ex) {
-            System.out.println(ex.getCause());
-            // ex.printStackTrace(); //will print out root cause
-        } catch (IOException ex) {
-            // shouldn't happen
-        } catch (ParserConfigurationException ex) {
-            // shouldn't happen
-        }
-
+        SAXParserFactory spf = SAXParserFactory.newInstance();
+        SAXParser parser = spf.newSAXParser();
+        String xmlToParse = "<root>Issue 56: SAXException does not do the exception chaining properly</root>";
+        InputSource source = new InputSource(new StringReader(xmlToParse));
+        assertThrows(SAXException.class, () -> parser.parse(source, new MyHandler1()));
     }
 
-    public class MyHandler extends DefaultHandler implements ErrorHandler {
-
-        public void startDocument() throws SAXException {
-        }
-
-        public void endDocument() throws SAXException {
-        }
-
+    public static class MyHandler extends DefaultHandler implements ErrorHandler {
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
             try {
                 System.out.println(uri);
@@ -104,23 +76,9 @@ public class IssueTracker56Test {
             }
 
         }
-
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-        }
-
-        public void characters(char ch[], int start, int length) throws SAXException {
-        }
-
     }
 
-    public class MyHandler1 extends DefaultHandler implements ErrorHandler {
-
-        public void startDocument() throws SAXException {
-        }
-
-        public void endDocument() throws SAXException {
-        }
-
+    public static class MyHandler1 extends DefaultHandler implements ErrorHandler {
         public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXExceptionExt {
             try {
                 System.out.println(uri);
@@ -130,12 +88,5 @@ public class IssueTracker56Test {
             }
 
         }
-
-        public void endElement(String uri, String localName, String qName) throws SAXException {
-        }
-
-        public void characters(char ch[], int start, int length) throws SAXException {
-        }
-
     }
 }

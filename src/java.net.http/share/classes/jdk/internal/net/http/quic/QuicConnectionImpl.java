@@ -428,7 +428,7 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
     }
 
     /**
-     * A {link QuicTimedEvent} used to interrupt the handshake
+     * A {@link QuicTimedEvent} used to interrupt the handshake
      * if no response to the first initial packet is received within
      * a reasonable delay (default is ~ 30s).
      * This avoids waiting more than 30s for ConnectionException
@@ -1756,6 +1756,10 @@ public class QuicConnectionImpl extends QuicConnection implements QuicPacketRece
 
     LocalConnIdManager localConnectionIdManager() {
         return localConnIdManager;
+    }
+
+    PeerConnIdManager peerConnectionIdManager() {
+        return peerConnIdManager;
     }
 
     /**

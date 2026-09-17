@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
  * @test
  * @bug 7068321
  * @summary Support TLS Server Name Indication (SNI) Extension in JSSE Server
- * @enablePreview
  * @run main/othervm SSLSocketSNISensitive PKIX www.example.com
  * @run main/othervm SSLSocketSNISensitive SunX509 www.example.com
  * @run main/othervm SSLSocketSNISensitive PKIX www.example.net

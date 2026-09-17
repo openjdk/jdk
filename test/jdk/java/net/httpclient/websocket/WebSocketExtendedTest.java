@@ -28,7 +28,7 @@
  *      -Djdk.internal.httpclient.websocket.debug=true
  *      -Djdk.internal.httpclient.debug=true
  *      -Djdk.httpclient.websocket.writeBufferSize=1024
- *      -Djdk.httpclient.websocket.intermediateBufferSize=2048 WebSocketExtendedTest
+ *      -Djdk.httpclient.websocket.intermediateBufferSize=2048 ${test.main.class}
  */
 
 import jdk.internal.net.http.websocket.Frame;

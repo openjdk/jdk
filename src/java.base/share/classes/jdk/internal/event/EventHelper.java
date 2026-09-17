@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,12 +67,13 @@ public final class EventHelper {
                                             int peerPort,
                                             String cipherSuite,
                                             String protocolVersion,
+                                            String namedGroup,
                                             long peerCertId) {
         assert securityLogger != null;
         String prepend = getDurationString(start);
         securityLogger.log(LOG_LEVEL, prepend +
-        " TLSHandshake: {0}:{1,number,#}, {2}, {3}, {4,number,#}",
-        peerHost, peerPort, protocolVersion, cipherSuite, peerCertId);
+        " TLSHandshake: {0}:{1,number,#}, {2}, {3}, {4}, {5,number,#}",
+        peerHost, peerPort, protocolVersion, cipherSuite, namedGroup, peerCertId);
     }
 
     public static void logSecurityPropertyEvent(String key,

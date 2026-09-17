@@ -372,14 +372,21 @@ public final class LauncherVerifier {
 
         TKit.assertTrue(entitlements.isPresent(), String.format("Check [%s] launcher is signed with entitlements", name));
 
+        String expectedEntitlementsOrigin;
+
         var customFile = Optional.ofNullable(cmd.getArgumentValue("--mac-entitlements")).map(Path::of);
-        if (customFile.isEmpty()) {
+        if (customFile.isPresent()) {
+            expectedEntitlementsOrigin = String.format("custom entitlements from [%s] file", customFile.get());
+        } else {
             // Try from the resource dir.
             var resourceDirFile = Optional.ofNullable(cmd.getArgumentValue("--resource-dir")).map(Path::of).map(resourceDir -> {
                 return resourceDir.resolve(cmd.name() + ".entitlements");
             }).filter(Files::exists);
             if (resourceDirFile.isPresent()) {
                 customFile = resourceDirFile;
+                expectedEntitlementsOrigin = "custom entitlements from the resource directory";
+            } else {
+                expectedEntitlementsOrigin = null;
             }
         }
 
@@ -388,11 +395,14 @@ public final class LauncherVerifier {
             expected = new PListReader(Files.readAllBytes(customFile.orElseThrow())).toMap(true);
         } else if (cmd.hasArgument("--mac-app-store")) {
             expected = DefaultEntitlements.APP_STORE;
+            expectedEntitlementsOrigin = "App Store entitlements";
         } else {
+            expectedEntitlementsOrigin = "default entitlements";
             expected = DefaultEntitlements.STANDARD;
         }
 
-        TKit.assertEquals(expected, entitlements.orElseThrow().toMap(true), String.format("Check [%s] launcher is signed with expected entitlements", name));
+        TKit.assertEquals(expected, entitlements.orElseThrow().toMap(true),
+                String.format("Check [%s] launcher is signed with %s", name, expectedEntitlementsOrigin));
     }
 
     private void executeLauncher(JPackageCommand cmd) throws IOException {

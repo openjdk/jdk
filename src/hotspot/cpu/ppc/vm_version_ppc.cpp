@@ -25,6 +25,7 @@
 
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "compiler/compilerDefinitions.inline.hpp"
 #include "compiler/disassembler.hpp"
 #include "jvm.h"
 #include "memory/resourceArea.hpp"
@@ -105,9 +106,12 @@ void VM_Version::initialize() {
 
   if (PowerArchitecturePPC64 >= 9) {
     // Performance is good since Power9.
-    if (FLAG_IS_DEFAULT(SuperwordUseVSX)) {
+    if (FLAG_IS_DEFAULT(SuperwordUseVSX) && CompilerConfig::is_c2_enabled()) {
       FLAG_SET_ERGO(SuperwordUseVSX, true);
     }
+  } else if (SuperwordUseVSX) {
+    warning("SuperwordUseVSX specified, but needs at least Power9.");
+    FLAG_SET_DEFAULT(SuperwordUseVSX, false);
   }
 
   MaxVectorSize = SuperwordUseVSX ? 16 : 8;
@@ -310,11 +314,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
-  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) {
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-
 #ifdef COMPILER2
   if (FLAG_IS_DEFAULT(UseSquareToLenIntrinsic)) {
     UseSquareToLenIntrinsic = true;
@@ -341,6 +340,15 @@ void VM_Version::initialize() {
   // This machine allows unaligned memory accesses
   if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, true);
+  }
+
+  if (ValueTypePassFieldsAsArgs) {
+    warning("ValueTypePassFieldsAsArgs is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypePassFieldsAsArgs, false);
+  }
+  if (ValueTypeReturnedAsFields) {
+    warning("ValueTypeReturnedAsFields is not supported on this CPU");
+    FLAG_SET_DEFAULT(ValueTypeReturnedAsFields, false);
   }
 
   check_virtualizations();
@@ -498,7 +506,7 @@ void VM_Version::determine_features() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
   _features = VM_Version::unknown_m;
 
   // Print the detection code.
@@ -554,7 +562,7 @@ void VM_Version::config_dscr() {
   a->blr();
 
   uint32_t *code_end = (uint32_t *)a->pc();
-  a->flush();
+  a->invalidate_icache();
 
   // Print the detection code.
   if (PrintAssembly) {

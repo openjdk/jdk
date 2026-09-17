@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,9 +32,10 @@ package gc.g1;
  * @library /test/lib /testlibrary /
  * @modules java.base/jdk.internal.misc
  *          java.management
+ * @enablePreview
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI gc.g1.TestEagerReclaimHumongousRegions
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -Xbootclasspath/a:. -XX:+WhiteBoxAPI --enable-preview gc.g1.TestEagerReclaimHumongousRegions
  */
 
 import java.util.ArrayList;
@@ -51,7 +52,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestEagerReclaimHumongousRegions {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
-    enum ObjectType { TYPE_ARRAY, OBJ_ARRAY }
+    enum ArrayType { TYPE_ARRAY, OBJ_ARRAY, FLAT_TYPE_ARRAY, FLAT_OBJ_ARRAY }
     enum ReferencePolicy { KEEP, DROP }
     enum AllocationTiming { BEFORE_MARK_START, AFTER_MARK_START}
 
@@ -84,19 +85,27 @@ public class TestEagerReclaimHumongousRegions {
      * @param phase The phase during concurrent mark to reach before triggering a young garbage collection.
      * @return Returns the stdout of the VM.
      */
-    private static String runHelperVM(List<String> args, ObjectType type, ReferencePolicy refPolicy, AllocationTiming timing, String phase) throws Exception {
+    private static String runHelperVM(List<String> args, ArrayType type, ReferencePolicy refPolicy, AllocationTiming timing, String phase) throws Exception {
 
-        boolean useTypeArray = (type == ObjectType.TYPE_ARRAY);
+        int arrayKind = type.ordinal();
         boolean keepReference = (refPolicy == ReferencePolicy.KEEP);
         boolean allocateAfter = (timing == AllocationTiming.AFTER_MARK_START);
 
-        args.add(TestEagerReclaimHumongousRegionsClearMarkBitsRunner.class.getName());
-        args.add(String.valueOf(useTypeArray));
-        args.add(String.valueOf(keepReference));
-        args.add(String.valueOf(allocateAfter));
-        args.add(phase);
-
-        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(args);
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx20M",
+                                                                    "-Xms20M",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+VerifyAfterGC",
+                                                                    "-Xbootclasspath/a:.",
+                                                                    "-Xlog:gc=debug,gc+humongous=debug",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-XX:+WhiteBoxAPI",
+                                                                    "--enable-preview",
+                                                                    TestEagerReclaimHumongousRegionsClearMarkBitsRunner.class.getName(),
+                                                                    String.valueOf(arrayKind),
+                                                                    String.valueOf(keepReference),
+                                                                    String.valueOf(allocateAfter),
+                                                                    phase);
 
         String log = output.getStdout();
         System.out.println(log);
@@ -109,7 +118,10 @@ public class TestEagerReclaimHumongousRegions {
                        "-Xmx20M",
                        "-Xms20m",
                        "-XX:+UnlockDiagnosticVMOptions",
+                       "-XX:+VerifyBeforeGC",
                        "-XX:+VerifyAfterGC",
+                       "-XX:+VerifyDuringGC",
+                       "-XX:+G1VerifyBitmaps",
                        "-Xbootclasspath/a:.",
                        "-Xlog:gc=debug,gc+humongous=debug",
                        "-XX:+UnlockDiagnosticVMOptions",
@@ -151,7 +163,7 @@ public class TestEagerReclaimHumongousRegions {
         Asserts.assertTrue(expected.reclaimed == reclaimed, "Wrong log output reclaiming humongous region");
     }
 
-    private static void runTest(ObjectType type,
+    private static void runTest(ArrayType type,
                                 ReferencePolicy refPolicy,
                                 AllocationTiming timing,
                                 String phase,
@@ -168,53 +180,77 @@ public class TestEagerReclaimHumongousRegions {
         verifyLog(jfrLog, timing, expected);
     }
 
-    public static void main(String[] args) throws Exception {
-        System.out.println("Tests checking eager reclaim for when the object is allocated before mark start.");
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+    private static void runTestNoRefsFor(ArrayType ot) throws Exception {
+        System.out.println("Tests checking eager reclaim for when the object of type " + ot + " is allocated before mark start.");
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
 
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
 
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_NOTCANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
-
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_NOTCANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
-
-        System.out.println("Tests checking eager reclaim for when the object is allocated after mark start.");
+        System.out.println("Tests checking eager reclaim for when the object of type " + ot + " is allocated after mark start.");
         // These must not be marked (as they were allocated after mark start), and they are always candidates. Reclamation depends on whether there is a reference.
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
 
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.TYPE_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+    }
 
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+    private static void runTestWithRefsFor(ArrayType ot) throws Exception {
+        System.out.println("Tests checking eager reclaim for when the object of type " + ot + " is allocated before mark start.");
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_NOTCANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
 
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
-        runTest(ObjectType.OBJ_ARRAY, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.MARKED_NOTCANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.MARKED_CANDIDATE_NOT_RECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.BEFORE_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+
+        System.out.println("Tests checking eager reclaim for when the object of type " + ot + " is allocated after mark start.");
+        // These must not be marked (as they were allocated after mark start), and they are always candidates. Reclamation depends on whether there is a reference.
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+        runTest(ot, ReferencePolicy.DROP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_RECLAIMED);
+
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.BEFORE_MARKING_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_REBUILD_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+        runTest(ot, ReferencePolicy.KEEP, AllocationTiming.AFTER_MARK_START, WB.G1_BEFORE_CLEANUP_COMPLETED, ExpectedState.NOTMARKED_CANDIDATE_NOTRECLAIMED);
+    }
+
+    public static void main(String[] args) throws Exception {
+        runTestNoRefsFor(ArrayType.TYPE_ARRAY);
+        runTestWithRefsFor(ArrayType.OBJ_ARRAY);
+        runTestNoRefsFor(ArrayType.FLAT_TYPE_ARRAY);
+        runTestWithRefsFor(ArrayType.FLAT_OBJ_ARRAY);
     }
 }
 
 class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
+    value class RefValue {
+        Object o;
+        RefValue() { o = null; }
+    }
+
+    value class IntValue {
+        int i;
+        IntValue() { i = 0; }
+    }
+
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final int SIZE = 1024 * 1024;
 
-    private static Object allocateHumongousObj(boolean useTypeArray) {
-        if (useTypeArray) {
-            return new int[SIZE];
-        } else {
-            return new Object[SIZE];
+    private static Object allocateHumongousObj(int type) {
+        switch (type) {
+          case 0: return new int[SIZE];
+          case 1: return new Object[SIZE];
+          case 2: return new IntValue[SIZE];
+          case 3: return new RefValue[SIZE];
+          default: throw new RuntimeException("Unknown object type " + type);
         }
     }
 
@@ -222,17 +258,17 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
         if (args.length != 4) {
             throw new Exception("Invalid number of arguments " + args.length);
         }
-        boolean useTypeArray = Boolean.parseBoolean(args[0]);
+        int arrayType = Integer.parseInt(args[0]);
         boolean keepReference = Boolean.parseBoolean(args[1]);
         boolean allocateAfter = Boolean.parseBoolean(args[2]);
         String phase = args[3];
 
-        System.out.println("useTypeArray: " + useTypeArray + " keepReference: " + keepReference + " allocateAfter " + allocateAfter + " phase: " + phase);
+        System.out.println("arrayType: " + arrayType + " keepReference: " + keepReference + " allocateAfter " + allocateAfter + " phase: " + phase);
         WB.fullGC();
 
         Object largeObj = null; // Allocated humongous object.
         if (!allocateAfter) {
-          largeObj = allocateHumongousObj(useTypeArray);
+          largeObj = allocateHumongousObj(arrayType);
         }
 
         WB.concurrentGCAcquireControl();
@@ -241,7 +277,7 @@ class TestEagerReclaimHumongousRegionsClearMarkBitsRunner {
         System.out.println("Phase " + phase + " reached");
 
         if (allocateAfter) {
-          largeObj = allocateHumongousObj(useTypeArray);
+          largeObj = allocateHumongousObj(arrayType);
         }
 
         if (!keepReference) {

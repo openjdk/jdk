@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,13 @@ void JfrKlassUnloading::clear() {
   get_unload_set_previous_epoch()->clear();
 }
 
-static void add_to_unloaded_klass_set(traceid klass_id) {
+void JfrKlassUnloading::add_to_unloaded_set(const Klass* k) {
+  assert(k != nullptr, "invariant");
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
+  assert(USED_ANY_EPOCH(k), "invariant");
   JfrCHeapTraceIdSet* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
-  unload_set->add(klass_id);
+  unload_set->add(JfrTraceId::load_raw(k));
 }
 
 #if INCLUDE_MANAGEMENT
@@ -99,8 +101,11 @@ bool JfrKlassUnloading::on_unload(const Klass* k) {
   if (IS_JDK_JFR_EVENT_SUBKLASS(k)) {
     ++event_klass_unloaded_count;
   }
-  add_to_unloaded_klass_set(JfrTraceId::load_raw(k));
-  return USED_THIS_EPOCH(k);
+  if (USED_ANY_EPOCH(k)) {
+    add_to_unloaded_set(k);
+    return true;
+  }
+  return false;
 }
 
 static inline bool is_unloaded(const JfrCHeapTraceIdSet* set, const traceid& id) {

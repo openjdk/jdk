@@ -698,7 +698,8 @@ void DefNewGeneration::handle_promotion_failure(oop old) {
 oop DefNewGeneration::copy_to_survivor_space(oop old) {
   assert(is_in_reserved(old) && !old->is_forwarded(),
          "shouldn't be scavenging this oop");
-  size_t s = old->size();
+  Klass* klass = old->klass();
+  size_t s = old->size_given_klass(klass);
   oop obj = nullptr;
 
   // Try allocating obj in to-space (unless too old)
@@ -725,7 +726,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   // Copy obj
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(old), cast_from_oop<HeapWord*>(obj), s);
 
-  ContinuationGCSupport::transform_stack_chunk(obj);
+  ContinuationGCSupport::transform_stack_chunk(obj, klass);
 
   if (!new_obj_is_tenured) {
     // Increment age if obj still in new generation
@@ -736,7 +737,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
   // Done, insert forward pointer to obj in this header
   old->forward_to(obj);
 
-  if (SerialStringDedup::is_candidate_from_evacuation(obj, new_obj_is_tenured)) {
+  if (SerialStringDedup::is_candidate_from_evacuation(obj, klass, new_obj_is_tenured)) {
     // Record old; request adds a new weak reference, which reference
     // processing expects to refer to a from-space object.
     _string_dedup_requests.add(old);

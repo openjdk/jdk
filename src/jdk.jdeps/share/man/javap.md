@@ -1,5 +1,5 @@
 ---
-# Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1994, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,8 @@ javap - disassemble one or more class files
 
 The `javap` command disassembles one or more class files. The output depends on
 the options used. When no options are used, the `javap` command prints the
-protected and public fields, and methods of the classes passed to it.
+package private, protected, and public fields and methods declared in the classes passed
+to it.
 
 The `javap` command isn't multirelease JAR aware. Using the class path form of
 the command results in viewing the base entry in all JAR files, multirelease or

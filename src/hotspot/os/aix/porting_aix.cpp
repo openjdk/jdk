@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2026 SAP SE. All rights reserved.
  * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,7 +96,7 @@ class fixed_strings {
       }
     }
     node* p = new node;
-    p->v = os::strdup_check_oom(s);
+    p->v = os::strdup_check_oom(s, mtInternal);
     p->next = first;
     first = p;
     return p->v;
@@ -424,6 +424,10 @@ int dladdr(void* addr, Dl_info* info) {
 
   return rc; // error: return 0 [sic]
 
+}
+
+int JVM_dladdr(void* addr, Dl_info* info) {
+  return dladdr(addr, info);
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -943,9 +947,9 @@ static const char* rtv_linkedin_libpath() {
   struct scnhdr the_scn;
   struct ldhdr the_ldr;
   constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
-  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
-  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
-  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
+  static_assert(sizeof(the_xcoff) == xcoffsz);
+  static_assert(sizeof(the_scn) == SCNHSZ);
+  static_assert(sizeof(the_ldr) == LDHDRSZ);
   // read the generic XCOFF header and analyze the substructures
   // to find the burned in libpath. In any case of error perform the assert
   if (nullptr == (f = fopen(buffer, "r")) ||

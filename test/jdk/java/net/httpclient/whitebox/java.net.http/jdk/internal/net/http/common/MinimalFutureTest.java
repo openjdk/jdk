@@ -27,10 +27,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MinimalFutureTest {
 
@@ -99,6 +105,32 @@ public class MinimalFutureTest {
         } finally {
             executor.shutdownNow();
         }
+    }
+
+    @Test
+    public void testCancel() {
+        AtomicInteger cancelCount = new AtomicInteger();
+        AtomicBoolean cancelled   = new AtomicBoolean();
+        Cancelable cancelable = mayInterruptIfRunning -> {
+            cancelCount.incrementAndGet();
+            if (mayInterruptIfRunning) {
+                cancelled.set(true);
+            }
+            return cancelled.get();
+        };
+        MinimalFuture<Object> future = new MinimalFuture<>(cancelable);
+        CompletableFuture<?> dependent = future.copy().whenComplete((x,t) ->
+                System.out.println("expected: " + t));
+        assertTrue(dependent.cancel(false));
+        assertTrue(dependent.isCancelled());
+        assertFalse(future.isCancelled());
+        assertFalse(cancelled.get());
+        assertEquals(1, cancelCount.get());
+        assertTrue(dependent.cancel(true));
+        assertTrue(dependent.isCancelled());
+        assertFalse(future.isCancelled());
+        assertTrue(cancelled.get());
+        assertEquals(2, cancelCount.get());
     }
 
     private static CompletableFuture<Object> otherFuture() {

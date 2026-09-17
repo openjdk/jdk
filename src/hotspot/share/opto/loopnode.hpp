@@ -43,7 +43,9 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class UnswitchCandidate;
 class LoopSelector;
+class ReachabilityFenceNode;
 class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
@@ -82,10 +84,10 @@ protected:
          LoopNestInnerLoop     = 1<<15,
          LoopNestLongOuterLoop = 1<<16,
          MultiversionFastLoop         = 1<<17,
-         MultiversionSlowLoop         = 2<<17,
+         MultiversionSlowLoop         = 2<<17, // 1<<18
          MultiversionDelayedSlowLoop  = 3<<17,
          MultiversionFlagsMask        = 3<<17,
-       };
+         FlatArrays            = 1<<19};
   char _unswitch_count;
   enum { _unswitch_max=3 };
 
@@ -108,6 +110,7 @@ public:
   bool is_subword_loop() const { return _loop_flags & SubwordLoop; }
   bool is_loop_nest_inner_loop() const { return _loop_flags & LoopNestInnerLoop; }
   bool is_loop_nest_outer_loop() const { return _loop_flags & LoopNestLongOuterLoop; }
+  bool is_flat_arrays() const { return _loop_flags & FlatArrays; }
 
   void mark_partial_peel_failed() { _loop_flags |= PartialPeelFailed; }
   void mark_was_slp() { _loop_flags |= WasSlpAnalyzed; }
@@ -121,6 +124,7 @@ public:
   void mark_subword_loop() { _loop_flags |= SubwordLoop; }
   void mark_loop_nest_inner_loop() { _loop_flags |= LoopNestInnerLoop; }
   void mark_loop_nest_outer_loop() { _loop_flags |= LoopNestLongOuterLoop; }
+  void mark_flat_arrays() { _loop_flags |= FlatArrays; }
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
@@ -662,6 +666,7 @@ public:
 
   Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;
+  Node_List* _reachability_fences; // List of reachability fences in this loop
   bool  _allow_optimizations;   // Allow loop optimizations
 
   IdealLoopTree(PhaseIdealLoop* phase, Node* head, Node* tail);
@@ -720,6 +725,9 @@ public:
   // Check for Node being a loop-breaking test
   Node *is_loop_exit(Node *iff) const;
 
+  // Return unique loop-exit projection or null if the loop has multiple exits.
+  IfFalseNode* unique_loop_exit_proj_or_null();
+
   // Remove simplistic dead code from loop body
   void DCE_loop_body();
 
@@ -734,6 +742,7 @@ public:
   // Return TRUE or FALSE if the loop should be unswitched -- clone
   // loop with an invariant test
   bool policy_unswitching( PhaseIdealLoop *phase ) const;
+  bool no_unswitch_candidate() const;
 
   // Micro-benchmark spamming.  Remove empty loops.
   bool do_remove_empty_loop( PhaseIdealLoop *phase );
@@ -825,6 +834,9 @@ public:
     return _head->as_Loop()->is_strip_mined() ? _parent : this;
   }
 
+  // Registers a reachability fence node in the loop.
+  void register_reachability_fence(ReachabilityFenceNode* rf);
+
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively
@@ -867,7 +879,6 @@ public:
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
-  friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
   Arena _arena; // For data whose lifetime is a single pass of loop optimizations
@@ -906,7 +917,7 @@ class PhaseIdealLoop : public PhaseTransform {
   void reallocate_preorders() {
     _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
-      _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, C->unique());
+      _preorders = REALLOC_RESOURCE_ARRAY(_preorders, _max_preorder, C->unique());
       _max_preorder = C->unique();
     }
     memset(_preorders, 0, sizeof(uint) * _max_preorder);
@@ -918,7 +929,7 @@ class PhaseIdealLoop : public PhaseTransform {
     _nesting.check(); // Check if a potential re-allocation in the resource arena is safe
     if ( _max_preorder < C->unique() ) {
       uint newsize = _max_preorder<<1;  // double size of array
-      _preorders = REALLOC_RESOURCE_ARRAY(uint, _preorders, _max_preorder, newsize);
+      _preorders = REALLOC_RESOURCE_ARRAY(_preorders, _max_preorder, newsize);
       memset(&_preorders[_max_preorder],0,sizeof(uint)*(newsize-_max_preorder));
       _max_preorder = newsize;
     }
@@ -1165,6 +1176,16 @@ public:
   void replace_node_and_forward_ctrl(Node* old_node, Node* new_node) {
     _igvn.replace_node(old_node, new_node);
     forward_ctrl(old_node, new_node);
+  }
+
+  void remove_dead_data_node(Node* dead) {
+    assert(dead->outcnt() == 0 && !dead->is_top(), "must be dead");
+    assert(!dead->is_CFG(), "not a data node");
+    Node* c = get_ctrl(dead);
+    IdealLoopTree* lpt = get_loop(c);
+    _loop_or_ctrl.map(dead->_idx, nullptr); // This node is useless
+    lpt->_body.yank(dead);
+    igvn().remove_dead_node(dead, PhaseIterGVN::NodeOrigin::Graph);
   }
 
 private:
@@ -1599,6 +1620,15 @@ public:
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
 
+  // Reachability Fence (RF) support.
+ private:
+  void insert_rf(Node* ctrl, Node* referent);
+  void replace_rf(Node* old_node, Node* new_node);
+  void remove_rf(ReachabilityFenceNode* rf);
+ public:
+  bool optimize_reachability_fences();
+  bool expand_reachability_fences();
+
  private:
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
@@ -1637,14 +1667,15 @@ public:
   // execute.
   void do_unswitching(IdealLoopTree* loop, Node_List& old_new);
 
-  IfNode* find_unswitch_candidate(const IdealLoopTree* loop) const;
+  IfNode* find_unswitch_candidates(const IdealLoopTree* loop, Node_List& flat_array_checks) const;
+  IfNode* find_unswitch_candidate_from_idoms(const IdealLoopTree* loop) const;
 
  private:
   static bool has_control_dependencies_from_predicates(LoopNode* head);
   static void revert_to_normal_loop(const LoopNode* loop_head);
 
   void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List& old_new,
-                                   const UnswitchedLoopSelector& unswitched_loop_selector);
+                                   const UnswitchCandidate& unswitch_candidate, const IfNode* loop_selector);
   void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new);
   static void increment_unswitch_counts(LoopNode* original_head, LoopNode* new_head);
   void remove_unswitch_candidate_from_loops(const Node_List& old_new, const UnswitchedLoopSelector& unswitched_loop_selector);
@@ -1652,6 +1683,7 @@ public:
   static void trace_loop_unswitching_count(IdealLoopTree* loop, LoopNode* original_head);
   static void trace_loop_unswitching_impossible(const LoopNode* original_head);
   static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
+                                            const UnswitchCandidate& unswitch_candidate,
                                             const LoopNode* original_head, const LoopNode* new_head);
   static void trace_loop_multiversioning_result(const LoopSelector& loop_selector,
                                                 const LoopNode* original_head, const LoopNode* new_head);
@@ -1843,7 +1875,9 @@ private:
   Node* place_outside_loop(Node* useblock, IdealLoopTree* loop) const;
   Node* try_move_store_before_loop(Node* n, Node *n_ctrl);
   void try_move_store_after_loop(Node* n);
+  void move_flat_array_check_out_of_loop(Node* n);
   bool identical_backtoback_ifs(Node *n);
+  bool flat_array_element_type_check(Node *n);
   bool can_split_if(Node *n_ctrl);
   bool cannot_split_division(const Node* n, const Node* region) const;
   static bool is_divisor_loop_phi(const Node* divisor, const Node* loop);
@@ -2034,6 +2068,8 @@ public:
 
   void pin_nodes_dependent_on(Node* ctrl, bool old_iff_is_rangecheck);
 
+  void collect_flat_array_checks(const IdealLoopTree* loop, Node_List& flat_array_checks) const;
+
   Node* ensure_node_and_inputs_are_above_pre_end(CountedLoopEndNode* pre_end, Node* node);
 
   Node* new_assertion_predicate_opaque_init(Node* entry_control, Node* init, Node* int_zero);
@@ -2079,7 +2115,6 @@ class CountedLoopConverter {
     bool is_valid() const { return _is_valid; }
     Node* incr() const { return _incr; }
 
-    // Optional truncation for: CHAR: (i+1)&0x7fff, BYTE: ((i+1)<<8)>>8, or SHORT: ((i+1)<<16)>>16
     Node* outer_trunc() const { return _outer_trunc; } // the outermost truncating node (either the & or the final >>)
     Node* inner_trunc() const { return _inner_trunc; } // the inner truncating node, if applicable (the << in a <</>> pair)
     const TypeInteger* trunc_type() const { return _trunc_type; }

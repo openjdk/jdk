@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,20 @@ import jdk.test.lib.security.TestTLSHandshake;
 
 /*
  * @test
- * @bug 8148188
+ * @bug 8148188 8301626
  * @summary Enhance the security libraries to record events of interest
  * @library /test/lib /test/jdk
  * @run main/othervm jdk.security.logging.TestTLSHandshakeLog LOGGING_ENABLED
  * @run main/othervm jdk.security.logging.TestTLSHandshakeLog LOGGING_DISABLED
  */
 public class TestTLSHandshakeLog {
+    record TLSConfig(String protocol, String cipherSuite, String namedGroup) {};
+
+    private static TLSConfig CONFIG =
+        new TLSConfig("TLSv1.2",
+                      "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                      "secp256r1");
+
     public static void main(String[] args) throws Exception {
         LogJvm l = new LogJvm(TLSHandshake.class, args);
         l.addExpected("FINE: X509Certificate: Alg:SHA256withRSA, Serial:" + TestTLSHandshake.CERT_SERIAL);
@@ -44,14 +51,19 @@ public class TestTLSHandshakeLog {
                 ", " + TestTLSHandshake.CERT_ID);
         l.addExpected("SunJSSE Test Serivce");
         l.addExpected("TLSHandshake:");
-        l.addExpected("TLSv1.2");
-        l.addExpected(TestTLSHandshake.CIPHER_SUITE +", " + TestTLSHandshake.CERT_ID);
+        l.addExpected(CONFIG.protocol());
+        l.addExpected(CONFIG.cipherSuite());
+        l.addExpected(CONFIG.namedGroup());
+        l.addExpected(Long.toString(TestTLSHandshake.CERT_ID));
         l.testExpected();
     }
 
     public static class TLSHandshake {
         public static void main(String[] args) throws Exception {
             TestTLSHandshake handshake = new TestTLSHandshake();
+            handshake.protocolVersion = CONFIG.protocol();
+            handshake.cipherSuite = CONFIG.cipherSuite();
+            handshake.namedGroup = CONFIG.namedGroup();
             handshake.run();
         }
     }

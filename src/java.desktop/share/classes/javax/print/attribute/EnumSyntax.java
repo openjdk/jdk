@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,6 +145,7 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      * semantics of enumeration values is the same object as this enumeration
      * value.
      */
+    @Override
     public Object clone() {
         return this;
     }
@@ -153,6 +154,7 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
      * Returns a hash code value for this enumeration value. The hash code is
      * just this enumeration value's integer value.
      */
+    @Override
     public int hashCode() {
         return value;
     }
@@ -160,6 +162,7 @@ public abstract class EnumSyntax implements Serializable, Cloneable {
     /**
      * Returns a string value corresponding to this enumeration value.
      */
+    @Override
     public String toString() {
 
         String[] theTable = getStringTable();

@@ -551,8 +551,7 @@ import java.util.function.Consumer;
  * upcall is typically executed in the context of a downcall method handle invocation.
  *
  * @implSpec
- * Implementations of this interface are immutable, thread-safe and
- * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
+ * Implementations of this interface are immutable, thread-safe.
  *
  * @since 22
  */
@@ -633,11 +632,8 @@ public sealed interface Linker permits AbstractLinker {
      *     <li>The invocation occurs in a thread {@code T} such that
      *         {@code A.isAccessibleBy(T) == true}.
      *         Otherwise, the invocation throws {@link WrongThreadException}; and</li>
-     *     <li>{@code A} is kept alive during the invocation. For instance,
-     *         if {@code A} has been obtained using a {@linkplain Arena#ofShared() shared arena},
-     *         any attempt to {@linkplain Arena#close() close} the arena while the
-     *         downcall method handle is still executing will result in an
-     *         {@link IllegalStateException}.</li>
+     *     <li>{@code A} is {@linkplain MemorySegment##keep-alive kept alive}
+     *         during the invocation.
      *</ul>
      * <p>
      * Moreover, if the provided function descriptor's return layout is an
@@ -833,7 +829,7 @@ public sealed interface Linker permits AbstractLinker {
          * <p>
          * Captured state can be stored in, or retrieved from the capture state segment by
          * constructing var handles from the {@linkplain #captureStateLayout capture state layout}.
-         * Some functions require this state the be initialized to a particular value before
+         * Some functions require this state to be initialized to a particular value before
          * invoking the downcall.
          * <p>
          * The following example demonstrates the use of this linker option:

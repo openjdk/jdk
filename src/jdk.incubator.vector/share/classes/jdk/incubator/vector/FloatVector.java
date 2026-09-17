@@ -49,7 +49,8 @@ import static jdk.incubator.vector.VectorOperators.*;
  * {@code float} values.
  */
 @SuppressWarnings("cast")  // warning: redundant cast
-public abstract class FloatVector extends AbstractVector<Float> {
+public abstract sealed class FloatVector extends AbstractVector<Float>
+         permits FloatVector64, FloatVector128, FloatVector256, FloatVector512, FloatVectorMax {
 
     FloatVector(float[] vec) {
         super(vec);
@@ -679,10 +680,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
     final
     FloatVector lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
         }
@@ -707,10 +705,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                                           VectorMask<Float> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0, m));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
         }
@@ -873,8 +868,6 @@ public abstract class FloatVector extends AbstractVector<Float> {
                     v0.bOp(v1, vm, (i, a, b) -> (float)Math.max(a, b));
             case VECTOR_OP_MIN: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (float)Math.min(a, b));
-            case VECTOR_OP_OR: return (v0, v1, vm) ->
-                    v0.bOp(v1, vm, (i, a, b) -> fromBits(toBits(a) | toBits(b)));
             case VECTOR_OP_ATAN2: return (v0, v1, vm) ->
                     v0.bOp(v1, vm, (i, a, b) -> (float) Math.atan2(a, b));
             case VECTOR_OP_POW: return (v0, v1, vm) ->
@@ -1872,6 +1865,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1920,6 +1914,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -2234,6 +2229,9 @@ public abstract class FloatVector extends AbstractVector<Float> {
         FloatVector that = (FloatVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
         IntVector filter = IntVector.broadcast((IntVector.IntSpecies) vspecies().asIntegral(), (int)origin);
         VectorMask<Float> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter).cast(vspecies());

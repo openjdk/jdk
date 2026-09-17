@@ -1,6 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
@@ -65,12 +66,11 @@ protected:
 };
 
 size_t ShenandoahGenerationalHeap::calculate_min_plab() {
-  return align_up(PLAB::min_size(), CardTable::card_size_in_words());
+  return PLAB::min_size();
 }
 
 size_t ShenandoahGenerationalHeap::calculate_max_plab() {
-  size_t MaxTLABSizeWords = ShenandoahHeapRegion::max_tlab_size_words();
-  return align_down(MaxTLABSizeWords, CardTable::card_size_in_words());
+  return ShenandoahHeapRegion::max_tlab_size_words();
 }
 
 // Returns size in bytes
@@ -86,8 +86,6 @@ ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy
   _regulator_thread(nullptr),
   _young_gen_memory_pool(nullptr),
   _old_gen_memory_pool(nullptr) {
-  assert(is_aligned(_min_plab_size, CardTable::card_size_in_words()), "min_plab_size must be aligned");
-  assert(is_aligned(_max_plab_size, CardTable::card_size_in_words()), "max_plab_size must be aligned");
 }
 
 void ShenandoahGenerationalHeap::initialize_generations() {
@@ -163,8 +161,8 @@ void ShenandoahGenerationalHeap::start_idle_span() {
 }
 
 bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
-  if (is_idle()) {
-    return false;
+  if (ShenandoahHeap::requires_barriers(obj)) {
+    return true;
   }
 
   if (is_concurrent_young_mark_in_progress() && is_in_young(obj) && !marking_context()->allocated_after_mark_start(obj)) {
@@ -174,11 +172,6 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 
   if (is_in_old(obj)) {
     // Card marking barriers are required for objects in the old generation
-    return true;
-  }
-
-  if (has_forwarded_objects()) {
-    // Object may have pointers that need to be updated
     return true;
   }
 
@@ -199,13 +192,6 @@ void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* 
 
 oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
   assert(thread == Thread::current(), "Expected thread parameter to be current thread.");
-  if (ShenandoahThreadLocalData::is_oom_during_evac(thread)) {
-    // This thread went through the OOM during evac protocol and it is safe to return
-    // the forward pointer. It must not attempt to evacuate anymore.
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
   ShenandoahHeapRegion* from_region = heap_region_containing(p);
   assert(!from_region->is_humongous(), "never evacuate humongous objects");
@@ -217,13 +203,10 @@ oop ShenandoahGenerationalHeap::evacuate_object(oop p, Thread* thread) {
     markWord mark = p->mark();
     if (mark.is_marked()) {
       // Already forwarded.
-      return ShenandoahBarrierSet::resolve_forwarded(p);
+      return ShenandoahForwarding::get_forwardee(p);
     }
 
-    if (mark.has_displaced_mark_helper()) {
-      // We don't want to deal with MT here just to ensure we read the right mark word.
-      // Skip the potential promotion attempt for this one.
-    } else if (age_census()->is_tenurable(from_region->age() + mark.age())) {
+    if (age_census()->is_tenurable(from_region->age() + mark.age())) {
       // If the object is tenurable, try to promote it
       oop result = try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(p, thread, from_region->age());
 
@@ -329,8 +312,23 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
     }
 
     control_thread()->handle_alloc_failure_evac(size);
-    oom_evac_handler()->handle_out_of_memory_during_evacuation();
-    return ShenandoahBarrierSet::resolve_forwarded(p);
+
+    // Install the self-forwarded bit so other evacuators/LRBs see the
+    // object as "already handled, do not try to evacuate". The CAS may
+    // fail if another thread concurrently installed a real forwardee or
+    // self-forwarded first.
+    markWord old_mark = p->mark();
+    if (old_mark.is_forwarded()) {
+      return ShenandoahForwarding::get_forwardee(p);
+    }
+    oop winner = ShenandoahForwarding::try_forward_to_self(p, old_mark);
+    if (winner == nullptr) {
+      // We own the self-forwarding. Flag the from-region so the degen/full
+      // GC entry drain knows to scan it for self_fwd bits to clear.
+      heap_region_containing(p)->set_has_self_forwards();
+      return p;
+    }
+    return winner;
   }
 
   if (ShenandoahEvacTracking) {
@@ -342,29 +340,26 @@ oop ShenandoahGenerationalHeap::try_evacuate_object(oop p, Thread* thread, uint 
   oop copy_val = cast_to_oop(copy);
 
   // Update the age of the evacuated object
-  if (TO_GENERATION == YOUNG_GENERATION && is_aging_cycle()) {
+  if (TO_GENERATION == YOUNG_GENERATION) {
     increase_object_age(copy_val, from_region_age + 1);
+  }
+
+  // Relativize stack chunks before publishing the copy. After the forwarding CAS,
+  // mutators can see the copy and thaw it via the fast path if flags == 0. We must
+  // relativize derived pointers and set gc_mode before that happens. Skip if the
+  // copy's mark word is already a forwarding pointer (another thread won the race
+  // and overwrote the original's header before we copied it).
+  if (!ShenandoahForwarding::is_forwarded(copy_val)) {
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
   }
 
   // Try to install the new forwarding pointer.
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
-
-    // This is necessary for virtual thread support. This uses the mark word without
-    // considering that it may now be a forwarding pointer (and could therefore crash).
-    // Secondarily, we do not want to spend cycles relativizing stack chunks for oops
-    // that lost the evacuation race (and will therefore not become visible). It is
-    // safe to do this on the public copy (this is also done during concurrent mark).
-    ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
     if (ShenandoahEvacTracking) {
       // Record that the evacuation succeeded
       evac_tracker()->end_evacuation(thread, size * HeapWordSize, FROM_GENERATION, TO_GENERATION);
-    }
-
-    if (TO_GENERATION == OLD_GENERATION) {
-      old_generation()->handle_evacuation(copy, size);
     }
   }  else {
     // Failed to evacuate. We need to deal with the object that is left behind. Since this
@@ -409,11 +404,14 @@ template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, Y
 template oop ShenandoahGenerationalHeap::try_evacuate_object<YOUNG_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 template oop ShenandoahGenerationalHeap::try_evacuate_object<OLD_GENERATION, OLD_GENERATION>(oop p, Thread* thread, uint from_region_age);
 
+// Call this function at the end of a GC cycle in order to establish proper sizes of young and old reserves,
+// setting the old-generation balance so that GC can perform the anticipated evacuations.
+//
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
 // mutator_xfer_limit, and any surplus is transferred to the young generation.  mutator_xfer_limit is
-// the maximum we're able to transfer from young to old.  This is called at the end of GC, as we prepare
-// for the idle span that precedes the next GC.
+// the maximum we're able to transfer from young to old. The mutator_xfer_limit constrains the transfer
+// of memory from young to old.  It does not limit young reserves.
 void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_xfer_limit,
                                                                 size_t old_trashed_regions, size_t young_trashed_regions) {
   shenandoah_assert_heaplocked();
@@ -465,11 +463,17 @@ void ShenandoahGenerationalHeap::compute_old_generation_balance(size_t mutator_x
                                   bound_on_old_reserve));
   assert(mutator_xfer_limit <= young_available,
          "Cannot transfer (%zu) memory that is not available (%zu)", mutator_xfer_limit, young_available);
-  // Young reserves are to be taken out of the mutator_xfer_limit.
-  if (young_reserve > mutator_xfer_limit) {
-    young_reserve = mutator_xfer_limit;
+
+  if (young_reserve > young_available) {
+    young_reserve = young_available;
   }
-  mutator_xfer_limit -= young_reserve;
+  // We allow young_reserve to exceed mutator_xfer_limit. Essentially, this means the GC is already behind the pace
+  // of mutator allocations, and we'll need to trigger the next GC as soon as possible.
+  if (mutator_xfer_limit > young_reserve) {
+    mutator_xfer_limit -= young_reserve;
+  } else {
+    mutator_xfer_limit = 0;
+  }
 
   // Decide how much old space we should reserve for a mixed collection
   size_t proposed_reserve_for_mixed = 0;
@@ -658,7 +662,7 @@ void ShenandoahGenerationalHeap::coalesce_and_fill_old_regions(bool concurrent) 
 
     void work(uint worker_id) override {
       ShenandoahWorkerTimingsTracker timer(_phase,
-                                           ShenandoahPhaseTimings::ScanClusters,
+                                           ShenandoahPhaseTimings::Work,
                                            worker_id, true);
       ShenandoahHeapRegion* region;
       while ((region = _regions.next()) != nullptr) {
@@ -710,10 +714,12 @@ public:
 
   void work(uint worker_id) override {
     if (CONCURRENT) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahConcurrentWorkerSession worker_session(worker_id);
-      ShenandoahSuspendibleThreadSetJoiner stsj;
+      SuspendibleThreadSetJoiner stsj;
       do_work<ShenandoahConcUpdateRefsClosure>(worker_id);
     } else {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::degen_gc_update_refs, ShenandoahPhaseTimings::Work, worker_id, true);
       ShenandoahParallelWorkerSession worker_session(worker_id);
       do_work<ShenandoahNonConcUpdateRefsClosure>(worker_id);
     }
@@ -964,7 +970,7 @@ public:
         // There have been allocations in this region since the start of the cycle.
         // Any objects new to this region must not assimilate elevated age.
         r->reset_age();
-      } else if (ShenandoahGenerationalHeap::heap()->is_aging_cycle()) {
+      } else {
         r->increment_age();
       }
     }
@@ -1009,7 +1015,7 @@ void ShenandoahGenerationalHeap::complete_concurrent_cycle() {
 
 void ShenandoahGenerationalHeap::entry_global_coalesce_and_fill() {
   const char* msg = "Coalescing and filling old regions";
-  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
+  ShenandoahConcurrentSubphase gc_phase(msg, ShenandoahPhaseTimings::conc_coalesce_and_fill);
 
   TraceCollectorStats tcs(monitoring_support()->concurrent_collection_counters());
   EventMark em("%s", msg);

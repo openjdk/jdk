@@ -24,14 +24,18 @@
  */
 package jdk.jpackage.internal;
 
+import static jdk.jpackage.internal.LinuxSystemEnvironment.isWithRequiredPackagesSearch;
+
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.SortedMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -39,24 +43,36 @@ import jdk.jpackage.internal.PackagingPipeline.PackageTaskID;
 import jdk.jpackage.internal.PackagingPipeline.PrimaryTaskID;
 import jdk.jpackage.internal.PackagingPipeline.TaskID;
 import jdk.jpackage.internal.model.ConfigException;
+import jdk.jpackage.internal.model.JPackageException;
+import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
 
 abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<PackagingPipeline.Builder> {
 
     LinuxPackager(BuildEnv env, T pkg, Path outputDir, LinuxSystemEnvironment sysEnv) {
         this.env = Objects.requireNonNull(env);
+        this.sysEnv = Objects.requireNonNull(sysEnv);
         this.pkg = Objects.requireNonNull(pkg);
         this.outputDir = Objects.requireNonNull(outputDir);
-        this.withRequiredPackagesLookup = sysEnv.soLookupAvailable() && sysEnv.nativePackageType().equals(pkg.type());
+        this.withRequiredPackagesLookup = isWithRequiredPackagesSearch(sysEnv, pkg);
+
+        var desktopIntegration = DesktopIntegration.create(env, pkg);
+
+        if (desktopIntegration instanceof DesktopIntegration di) {
+            cookedDesktopEntryFiles = di.cookedDesktopEntryFiles();
+        } else {
+            cookedDesktopEntryFiles = Collections.emptySortedMap();
+        }
 
         customActions = List.of(
-                DesktopIntegration.create(env, pkg),
+                desktopIntegration,
                 LinuxLaunchersAsServices.create(env, pkg));
     }
 
     enum LinuxPackageTaskID implements TaskID {
         INIT_REQUIRED_PACKAGES,
-        VERIFY_PACKAGE
+        VERIFY_PACKAGE,
+        VALIDATE_DESKTOP_ENTRY_FILES,
     }
 
     @Override
@@ -64,6 +80,11 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         pipelineBuilder
                 .task(PackageTaskID.CREATE_CONFIG_FILES)
                         .action(this::buildConfigFiles)
+                        .add()
+                .task(LinuxPackageTaskID.VALIDATE_DESKTOP_ENTRY_FILES)
+                        .addDependency(PackageTaskID.CREATE_CONFIG_FILES)
+                        .addDependent(PackageTaskID.CREATE_PACKAGE_FILE)
+                        .action(this::validateDesktopEntryFiles)
                         .add()
                 .task(LinuxPackageTaskID.INIT_REQUIRED_PACKAGES)
                         .addDependencies(PrimaryTaskID.BUILD_APPLICATION_IMAGE, PrimaryTaskID.COPY_APP_IMAGE)
@@ -78,6 +99,10 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
                 .task(PackageTaskID.CREATE_PACKAGE_FILE)
                         .action(this::buildPackage)
                         .add();
+
+        if (cookedDesktopEntryFiles.isEmpty()) {
+            pipelineBuilder.task(LinuxPackageTaskID.VALIDATE_DESKTOP_ENTRY_FILES).noaction();
+        }
     }
 
     protected final Path outputPackageFile() {
@@ -135,19 +160,21 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         final List<String> neededLibPackages;
         if (withRequiredPackagesLookup) {
             neededLibPackages = findRequiredPackages();
+            Log.trace("Runtime requires: %s", neededLibPackages);
         } else {
             neededLibPackages = Collections.emptyList();
-            Log.info(I18N.getString("warning.foreign-app-image"));
         }
+
+        Log.trace("Features of the package require: %s", caPackages);
 
         // Merge all package lists together.
         // Filter out empty names, sort and remove duplicates.
-        Stream.of(caPackages, neededLibPackages)
+        requiredPackages = Stream.of(caPackages, neededLibPackages)
                 .flatMap(List::stream)
                 .filter(Predicate.not(String::isEmpty))
-                .sorted().distinct().forEach(requiredPackages::add);
+                .sorted().distinct().toList();
 
-        Log.verbose(String.format("Required packages: %s", requiredPackages));
+        Log.trace("Required packages: %s", requiredPackages);
     }
 
     private List<String> findRequiredPackages() throws IOException {
@@ -156,28 +183,72 @@ abstract class LinuxPackager<T extends LinuxPackage> implements Consumer<Packagi
         return lookup.execute(env.appImageDir());
     }
 
+    private void validateDesktopEntryFiles() {
+
+        List<String> errorMessages = new ArrayList<>();
+
+        for (var e : cookedDesktopEntryFiles.entrySet()) {
+            var result = sysEnv.desktopEntryFileValidator().validate(e.getValue());
+            result.exitCode().ifPresent(exitCode -> {
+                if (exitCode != 0) {
+                    if (e.getKey() == pkg.app().mainLauncher().orElseThrow()) {
+                        errorMessages.add(I18N.format(
+                                "error.invalid-desktop-entry-file.main-launcher", e.getValue()));
+                    } else {
+                        errorMessages.add(I18N.format(
+                                "error.invalid-desktop-entry-file.add-launcher", e.getValue(), e.getKey().name()));
+                    }
+                }
+            });
+        }
+
+        if (errorMessages.isEmpty()) {
+            return;
+        }
+
+        var advice = I18N.format("error.invalid-desktop-entry-file.advice");
+
+        //
+        // Order exceptions such that in the error output they appear
+        // in the same order as error messages in the `errorMessages` list.
+        // Add a single advice entry to the error output.
+        //
+
+        throw Stream.concat(
+                Stream.of(errorMessages.getLast()).map(message -> {
+                    return new ConfigException(message, advice);
+                }),
+                errorMessages.stream().limit(errorMessages.size() - 1).map(JPackageException::new)
+        ).reduce((a, b) -> {
+            a.addSuppressed(b);
+            return a;
+        }).orElseThrow();
+    }
+
     private void verifyOutputPackage() {
         final List<? extends Exception> errors;
         try {
             errors = findErrorsInOutputPackage();
-        } catch (Exception ex) {
+        } catch (IOException ex) {
             // Ignore error as it is not critical. Just report it.
-            Log.verbose(ex);
+            Log.trace(ex);
             return;
         }
 
         for (var ex : errors) {
-            Log.verbose(ex.getLocalizedMessage());
+            Log.progressWarning(ex);
             if (ex instanceof ConfigException cfgEx) {
-                Log.verbose(cfgEx.getAdvice());
+                Log.progress(cfgEx.getAdvice());
             }
         }
     }
 
     protected final BuildEnv env;
+    private final LinuxSystemEnvironment sysEnv;
     protected final T pkg;
     protected final Path outputDir;
     private final boolean withRequiredPackagesLookup;
-    private final List<String> requiredPackages = new ArrayList<>();
-    private final List<ShellCustomAction> customActions;
+    private List<String> requiredPackages;
+    private final Collection<ShellCustomAction> customActions;
+    private final SortedMap<LinuxLauncher, Path> cookedDesktopEntryFiles;
 }

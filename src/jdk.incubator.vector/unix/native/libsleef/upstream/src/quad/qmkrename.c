@@ -1,4 +1,4 @@
-//   Copyright Naoki Shibata and contributors 2010 - 2021.
+//   Copyright Naoki Shibata and contributors 2010 - 2025.
 // Distributed under the Boost Software License, Version 1.0.
 //    (See accompanying file LICENSE.txt or copy at
 //          http://www.boost.org/LICENSE_1_0.txt)
@@ -231,7 +231,7 @@ int main(int argc, char **argv) {
           break;
         case 15:
           assert(funcList[i].ulp == -1);
-          printf("SLEEF_IMPORT SLEEF_CONST void Sleef_%sq%s%s%s(Sleef_quad *, %s);\n",
+          printf("SLEEF_IMPORT void Sleef_%sq%s%s%s(Sleef_quad *, %s);\n",
                  funcList[i].name, wqp,
                  isaub, isaname,
                  vargquadname);
@@ -338,3 +338,4 @@ int main(int argc, char **argv) {
 
   exit(0);
 }
+

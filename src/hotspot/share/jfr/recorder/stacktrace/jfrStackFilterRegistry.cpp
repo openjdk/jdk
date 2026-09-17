@@ -43,8 +43,8 @@ int64_t JfrStackFilterRegistry::add(jobjectArray classes, jobjectArray methods, 
   Symbol** method_names = JfrJavaSupport::symbol_array(methods, jt, &m_size, true);
   assert(method_names != nullptr, "invariant");
   if (c_size != m_size) {
-    FREE_C_HEAP_ARRAY(Symbol*, class_names);
-    FREE_C_HEAP_ARRAY(Symbol*, method_names);
+    FREE_C_HEAP_ARRAY(class_names);
+    FREE_C_HEAP_ARRAY(method_names);
     JfrJavaSupport::throw_internal_error("Method array size doesn't match class array size", jt);
     return STACK_FILTER_ERROR_CODE;
   }

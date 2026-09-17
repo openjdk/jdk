@@ -162,6 +162,7 @@ public class TestJFREvents {
         String memoryFailCountFld = "memoryFailCount";
         String memoryUsageFld = "memoryUsage";
         String swapMemoryUsageFld = "swapMemoryUsage";
+        String hostMemoryUsageFld = "hostMemoryUsage";
 
         DockerTestUtils.dockerRunJava(
                                       commonDockerOpts()
@@ -169,7 +170,8 @@ public class TestJFREvents {
             .shouldHaveExitValue(0)
             .shouldContain(memoryFailCountFld)
             .shouldContain(memoryUsageFld)
-            .shouldContain(swapMemoryUsageFld);
+            .shouldContain(swapMemoryUsageFld)
+            .shouldContain(hostMemoryUsageFld);
     }
 
     private static void testIOUsage() throws Exception {

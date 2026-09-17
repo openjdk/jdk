@@ -27,7 +27,7 @@
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters
  *        jdk.test.lib.net.SimpleSSLContext
  * @compile ../ReferenceTracker.java
- * @run junit/othervm -Djdk.internal.httpclient.debug=true H3BadHeadersTest
+ * @run junit/othervm -Djdk.internal.httpclient.debug=true ${test.main.class}
  * @summary this test verifies the behaviour of the HttpClient when presented
  *          with bad headers
  */

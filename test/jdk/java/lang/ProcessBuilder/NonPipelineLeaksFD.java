@@ -33,14 +33,6 @@ import java.io.*;
  */
 
 /*
- * @test id=VFORK
- * @summary Check that we don't accumulate leaked FDs in the parent process
- * @requires os.family == "linux"
- * @library /test/lib
- * @run main/othervm -Djdk.lang.Process.launchMechanism=vfork NonPipelineLeaksFD
- */
-
-/*
  * @test id=POSIX_SPAWN
  * @summary Check that we don't accumulate leaked FDs in the parent process
  * @requires os.family == "linux"

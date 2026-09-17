@@ -49,7 +49,7 @@
  * @run junit/othervm -Djdk.httpclient.HttpClient.log=ssl,requests,responses,errors,http3,quic:control
  *                     -Djdk.internal.httpclient.debug=false
  *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
- *                     H3StreamLimitReachedTest
+ *                     ${test.main.class}
  */
 
 /*
@@ -82,7 +82,7 @@
  *                     -Djdk.internal.httpclient.quic.maxBidiStreams=1
  *                     -Djdk.httpclient.http3.maxStreamLimitTimeout=0
  *                     -Djdk.httpclient.retryOnStreamlimit=9
- *                     H3StreamLimitReachedTest
+ *                     ${test.main.class}
  */
 
 import java.io.IOException;

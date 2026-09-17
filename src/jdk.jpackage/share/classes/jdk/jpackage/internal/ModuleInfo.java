@@ -56,13 +56,14 @@ record ModuleInfo(String name, Optional<String> version, Optional<String> mainCl
         // is linked in the runtime by simply analyzing the data
         // of `release` file.
 
+        var releaseFilePath = RuntimeReleaseFile.releaseFilePathInRuntime(cookedRuntime);
         try {
-            var cookedRuntimeModules = RuntimeReleaseFile.loadFromRuntime(cookedRuntime).getModules();
+            var cookedRuntimeModules = new RuntimeReleaseFile(releaseFilePath).getModules();
             if (!cookedRuntimeModules.contains(moduleName)) {
                 return Optional.empty();
             }
         } catch (Exception ex) {
-            Log.verbose(ex);
+            Log.trace(ex, "Failed to read modules from [%s]", releaseFilePath);
             return Optional.empty();
         }
 

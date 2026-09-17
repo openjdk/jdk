@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,7 @@
 
 package sax;
 
-import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.Assert;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
-import org.xml.sax.SAXException;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXNotRecognizedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
@@ -41,210 +32,135 @@ import org.xml.sax.helpers.ParserAdapter;
 import org.xml.sax.helpers.XMLFilterImpl;
 import org.xml.sax.helpers.XMLReaderFactory;
 
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/unittest
- * @run testng/othervm sax.DefaultHandler2Test
+ * @run junit/othervm sax.DefaultHandler2Test
  * @summary Test DefaultHandler2.
  */
 public class DefaultHandler2Test {
 
     @Test
-    public void testParse01() {
-        System.out.println("===in testParse01===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            SAXParserFactory saxFac = SAXParserFactory.newInstance();
-            System.out.println(saxFac.getFeature("http://xml.org/sax/features/use-locator2"));
+    public void testParse01() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        SAXParserFactory saxFac = SAXParserFactory.newInstance();
+        System.out.println(saxFac.getFeature("http://xml.org/sax/features/use-locator2"));
 
-            // set use-entity-resolver2 as FALSE to use EntityResolver firstly.
-            saxFac.setFeature("http://xml.org/sax/features/use-entity-resolver2", false);
-            saxFac.setValidating(true);
+        // set use-entity-resolver2 as FALSE to use EntityResolver firstly.
+        saxFac.setFeature("http://xml.org/sax/features/use-entity-resolver2", false);
+        saxFac.setValidating(true);
 
-            SAXParser parser = saxFac.newSAXParser();
-            parser.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        SAXParser parser = saxFac.newSAXParser();
+        parser.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
 
-            parser.parse(this.getClass().getResource("toys.xml").getFile(), handler);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            Assert.fail("ParserConfigurationException in testParse01()");
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse01()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse01()");
-        }
+        parser.parse(this.getClass().getResource("toys.xml").getFile(), handler);
     }
 
     @Test
-    public void testParse02() {
-        System.out.println("===in testParse02===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            SAXParserFactory saxFac = SAXParserFactory.newInstance();
-            System.out.println(saxFac.getFeature("http://xml.org/sax/features/use-locator2"));
+    public void testParse02() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        SAXParserFactory saxFac = SAXParserFactory.newInstance();
+        System.out.println(saxFac.getFeature("http://xml.org/sax/features/use-locator2"));
 
-            // Enable namespace parsing
-            System.out.println(saxFac.getFeature("http://xml.org/sax/features/namespaces"));
-            saxFac.setNamespaceAware(true);
+        // Enable namespace parsing
+        System.out.println(saxFac.getFeature("http://xml.org/sax/features/namespaces"));
+        saxFac.setNamespaceAware(true);
 
-            saxFac.setValidating(true);
-            SAXParser parser = saxFac.newSAXParser();
-            parser.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        saxFac.setValidating(true);
+        SAXParser parser = saxFac.newSAXParser();
+        parser.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
 
-            parser.parse(this.getClass().getResource("toys.xml").getFile(), handler);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            Assert.fail("ParserConfigurationException in testParse02()");
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse02()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse02()");
-        }
+        parser.parse(this.getClass().getResource("toys.xml").getFile(), handler);
     }
 
     @Test
-    public void testParse03() {
-        System.out.println("===in testParse03===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
+    public void testParse03() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
 
-            XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            xmlReader.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            System.out.println("XMLReader : " + xmlReader.getProperty("http://xml.org/sax/properties/declaration-handler"));
+        XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        xmlReader.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        System.out.println("XMLReader : " + xmlReader.getProperty("http://xml.org/sax/properties/declaration-handler"));
 
-            SAXParserFactory saxFac = SAXParserFactory.newInstance();
-            SAXParser parser = saxFac.newSAXParser();
-            parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            System.out.println("SAXParser : " + parser.getProperty("http://xml.org/sax/properties/declaration-handler"));
+        SAXParserFactory saxFac = SAXParserFactory.newInstance();
+        SAXParser parser = saxFac.newSAXParser();
+        parser.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        System.out.println("SAXParser : " + parser.getProperty("http://xml.org/sax/properties/declaration-handler"));
 
-            // From https://docs.oracle.com/javase/7/docs/api,
-            // ParserAdapter.setProperty() and ParserAdapter.getProperty() does
-            // not support any property currently.
-            try {
-                ParserAdapter adapter = new ParserAdapter(parser.getParser());
-                System.out.println("ParserAdapter : " + adapter.getProperty("http://xml.org/sax/properties/declaration-handler"));
-            } catch (SAXNotRecognizedException e) {
-                System.out.println("Expected  SAXNotRecognizedException since ParserAdapter.getProperty() does not support any property currently");
-            }
-            try {
-                ParserAdapter adapter = new ParserAdapter(parser.getParser());
-                adapter.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            } catch (SAXNotRecognizedException e) {
-                System.out.println("Expected  SAXNotRecognizedException since ParserAdapter.setProperty() does not support any property currently");
-            }
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse03()");
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            Assert.fail("ParserConfigurationException in testParse03()");
-        }
-
+        // From https://docs.oracle.com/javase/7/docs/api,
+        // ParserAdapter.setProperty() and ParserAdapter.getProperty() does
+        // not support any property currently.
+        ParserAdapter adapter = new ParserAdapter(parser.getParser());
+        assertThrows(SAXNotRecognizedException.class, () -> adapter.getProperty("http://xml.org/sax/properties/declaration-handler"));
+        assertThrows(SAXNotRecognizedException.class, () -> adapter.setProperty("http://xml.org/sax/properties/declaration-handler", handler));
     }
 
     @Test
-    public void testParse04() {
-        System.out.println("===in testParse04===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
-            xmlReader.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            xmlReader.setContentHandler(handler);
+    public void testParse04() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
+        xmlReader.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        xmlReader.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        xmlReader.setContentHandler(handler);
 
-            xmlReader.parse(this.getClass().getResource("toys.xml").getFile());
-
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse04()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse04()");
-        }
+        xmlReader.parse(this.getClass().getResource("toys.xml").getFile());
     }
 
     @Test
-    public void testParse05() {
-        System.out.println("===in testParse05===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
-            System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
-            filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            filterImpl.setContentHandler(handler);
+    public void testParse05() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
+        System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
+        filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        filterImpl.setContentHandler(handler);
 
-            filterImpl.parse(this.getClass().getResource("toys.xml").getFile());
-
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse05()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse05()");
-        }
+        filterImpl.parse(this.getClass().getResource("toys.xml").getFile());
     }
 
     @Test
-    public void testParse06() {
-        System.out.println("===in testParse06===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
-            System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
-            filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            filterImpl.setContentHandler(handler);
+    public void testParse06() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
+        System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
+        filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        filterImpl.setContentHandler(handler);
 
-            AssertJUnit.assertTrue(filterImpl.getProperty("http://xml.org/sax/properties/declaration-handler") instanceof DefaultHandler2);
+        assertInstanceOf(DefaultHandler2.class, filterImpl.getProperty("http://xml.org/sax/properties/declaration-handler"));
 
-            // filterImpl.setFeature("http://xml.org/sax/features/external-general-entities",
-            // false) ;
-            // filterImpl.setFeature("http://xml.org/sax/features/external-parameter-entities",
-            // false) ;
-            filterImpl.skippedEntity("name2");
+        // filterImpl.setFeature("http://xml.org/sax/features/external-general-entities",
+        // false) ;
+        // filterImpl.setFeature("http://xml.org/sax/features/external-parameter-entities",
+        // false) ;
+        filterImpl.skippedEntity("name2");
 
-            filterImpl.parse(this.getClass().getResource("toys.xml").getFile());
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse06()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse06()");
-        }
+        filterImpl.parse(this.getClass().getResource("toys.xml").getFile());
     }
 
     @Test
-    public void testParse07() {
-        System.out.println("===in testParse07===");
-        try {
-            DefaultHandler handler = new MyDefaultHandler2();
-            XMLReader xmlReader = XMLReaderFactory.createXMLReader();
-            XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
-            System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
-            filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
-            filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
-            filterImpl.setContentHandler(handler);
-            filterImpl.setErrorHandler(handler);
-            AssertJUnit.assertTrue(filterImpl.getProperty("http://xml.org/sax/properties/declaration-handler") instanceof DefaultHandler2);
+    public void testParse07() throws Exception {
+        DefaultHandler handler = new MyDefaultHandler2();
+        XMLReader xmlReader = XMLReaderFactory.createXMLReader();
+        XMLFilterImpl filterImpl = new XMLFilterImpl(xmlReader);
+        System.out.println(xmlReader.getFeature("http://xml.org/sax/features/namespaces"));
+        filterImpl.setProperty("http://xml.org/sax/properties/declaration-handler", handler);
+        filterImpl.setProperty("http://xml.org/sax/properties/lexical-handler", handler);
+        filterImpl.setContentHandler(handler);
+        filterImpl.setErrorHandler(handler);
+        assertInstanceOf(DefaultHandler2.class, filterImpl.getProperty("http://xml.org/sax/properties/declaration-handler"));
 
-            filterImpl.setFeature("http://apache.org/xml/features/continue-after-fatal-error", true);
-            filterImpl.parse(this.getClass().getResource("toys_error.xml").getFile());
-        } catch (SAXException e) {
-            e.printStackTrace();
-            Assert.fail("SAXException in testParse07()");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail("IOException in testParse07()");
-        }
+        filterImpl.setFeature("http://apache.org/xml/features/continue-after-fatal-error", true);
+        filterImpl.parse(this.getClass().getResource("toys_error.xml").getFile());
     }
 }

@@ -72,8 +72,8 @@ public:
   }
 
   ~JavaThreadRetireTLABs() {
-    static_assert(std::is_trivially_destructible<ThreadLocalAllocStats>::value, "must be");
-    FREE_C_HEAP_ARRAY(ThreadLocalAllocStats, _local_tlab_stats);
+    static_assert(std::is_trivially_destructible<ThreadLocalAllocStats>::value);
+    FREE_C_HEAP_ARRAY(_local_tlab_stats);
   }
 
   void do_work(uint worker_id) override {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,15 @@ import java.util.Locale;
  * architecture values.
  */
 public enum Architecture {
-    /*
-     * An unknown architecture not specifically named.
-     * The addrSize and ByteOrder values are those of the current architecture.
-     */
     AARCH64(64, ByteOrder.LITTLE_ENDIAN),
     ARM(32, ByteOrder.LITTLE_ENDIAN),
     LOONGARCH64(64, ByteOrder.LITTLE_ENDIAN),
     MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
     MIPS64EL(64, ByteOrder.LITTLE_ENDIAN),
+    /*
+     * An unknown architecture not specifically named.
+     * The addrSize and ByteOrder values are those of the current architecture.
+     */
     OTHER(is64bit() ? 64 : 32, ByteOrder.nativeOrder()),
     PPC(32, ByteOrder.BIG_ENDIAN),
     PPC64(64, ByteOrder.BIG_ENDIAN),

@@ -54,7 +54,7 @@ public @interface Period {
     /**
      * Returns the default setting value for a periodic setting.
      * <p>
-     * String representation of a positive {@code Long} value followed by an empty
+     * String representation of a positive {@code long} value followed by an empty
      * space and one of the following units:<br>
      * <br>
      * {@code "ns"} (nanoseconds)<br>

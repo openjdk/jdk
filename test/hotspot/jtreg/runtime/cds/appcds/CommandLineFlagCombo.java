@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 /*
  * @test CommandLineFlagCombo
  * @requires vm.cds.write.archived.java.heap
+ * @requires vm.gc.G1
  * @comment This test explicitly chooses the type of GC to be used by sub-processes. It may conflict with the GC type set
  * via the -vmoptions command line option of JTREG. vm.gc==null will help the test case to discard the explicitly passed
  * vm options.
@@ -55,7 +56,6 @@ public class CommandLineFlagCombo {
     private static final String[] testTable = {
         "-XX:+UseG1GC", "-XX:+UseSerialGC", "-XX:+UseParallelGC",
         "-XX:+UseLargePages", // may only take effect on machines with large-pages
-        "-XX:+UseCompressedClassPointers",
         "-XX:+UseCompressedOops",
         "-XX:ObjectAlignmentInBytes=16",
         "-XX:ObjectAlignmentInBytes=32",
@@ -123,7 +123,6 @@ public class CommandLineFlagCombo {
         if (Platform.is32bit())
         {
             if (testEntry.equals("-XX:+UseCompressedOops") ||
-                testEntry.equals("-XX:+UseCompressedClassPointers") ||
                 testEntry.contains("ObjectAlignmentInBytes") )
             {
                 System.out.println("Test case not applicable on 32-bit platforms");

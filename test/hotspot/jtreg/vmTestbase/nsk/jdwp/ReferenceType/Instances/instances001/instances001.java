@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@
  *     and exits too with the proper exit code.
  *
  * @requires vm.gc != "Z"
- * @requires !vm.graal.enabled
  * @library /vmTestbase /test/hotspot/jtreg/vmTestbase
  *          /test/lib
  * @run main/othervm/native

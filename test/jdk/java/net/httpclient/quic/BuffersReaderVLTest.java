@@ -39,7 +39,7 @@ import org.junit.jupiter.params.provider.MethodSource;
  * @test
  * @library /test/lib
  * @modules java.net.http/jdk.internal.net.http.quic
- * @run junit/othervm BuffersReaderVLTest
+ * @run junit/othervm ${test.main.class}
  * @summary Tests to check quic/util methods encode/decodeVariableLength methods
  *  work as expected.
  */

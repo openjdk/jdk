@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.awt.Window;
 import java.io.Serial;
 import java.lang.annotation.Native;
 
-import sun.awt.AppContext;
 import sun.awt.SunToolkit;
 
 /**
@@ -324,21 +323,14 @@ public class WindowEvent extends ComponentEvent {
      * WINDOW_LOST_FOCUS event, this is the Window that gained activation or
      * focus. For any other type of WindowEvent, or if the focus or activation
      * change occurs with a native application, with a Java application in a
-     * different VM or context, or with no other Window, null is returned.
+     * different VM, or with no other Window, null is returned.
      *
      * @return the other Window involved in the focus or activation change, or
      *         null
      * @since 1.4
      */
     public Window getOppositeWindow() {
-        if (opposite == null) {
-            return null;
-        }
-
-        return (SunToolkit.targetToAppContext(opposite) ==
-                AppContext.getAppContext())
-            ? opposite
-            : null;
+        return opposite;
     }
 
     /**

@@ -204,7 +204,7 @@ import javax.tools.StandardLocation;
  * </tbody>
  * </table>
  *
- * All of the non-{@code docllint:} strings listed above may also be used with the {@code -Xlint} command line flag.
+ * All of the non-{@code doclint:} strings listed above may also be used with the {@code -Xlint} command line flag.
  * The {@code -Xlint} flag also supports these strings not supported by {@code @SuppressWarnings}:
  *
  * <table class="striped">
@@ -259,6 +259,7 @@ module jdk.compiler {
     exports com.sun.tools.javac.resources to
         jdk.jshell;
     exports com.sun.tools.javac.code to
+        jdk.jdeps,
         jdk.javadoc,
         jdk.jshell;
     exports com.sun.tools.javac.comp to

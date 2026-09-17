@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import org.junit.jupiter.api.Test;
  *          java.net.http/jdk.internal.net.http.http3
  * @build EncoderDecoderConnector
  * @run junit/othervm -Djdk.internal.httpclient.qpack.log.level=EXTRA
- *                     EncoderDecoderConnectionTest
+ *                     ${test.main.class}
  */
 public class EncoderDecoderConnectionTest {
 

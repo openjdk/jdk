@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,8 @@
  * @run main/manual AlpnTest true
  * @run main/manual AlpnTest false
  */
+
+import jtreg.SkippedException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -97,6 +99,19 @@ public class AlpnTest extends ExtInteropTest {
                 clientCase.setProtocols(protocol);
                 clientCase.setCipherSuites(cipherSuite);
                 clientCase.setAppProtocols("h2");
+
+                testCases.add(
+                        new TestCase<ExtUseCase>(serverCase, clientCase));
+
+                serverCase = ExtUseCase.newInstance();
+                serverCase.setCertTuple(certTuple);
+                serverCase.setAppProtocols("http/1.1", "h2");
+
+                clientCase = ExtUseCase.newInstance();
+                clientCase.setCertTuple(certTuple);
+                clientCase.setProtocols(protocol);
+                clientCase.setCipherSuites(cipherSuite);
+                clientCase.setAppProtocols("h2", "http/1.1");
 
                 testCases.add(
                         new TestCase<ExtUseCase>(serverCase, clientCase));
@@ -171,6 +186,10 @@ public class AlpnTest extends ExtInteropTest {
         Boolean defaultJdkAsServer = Boolean.valueOf(args[0]);
 
         Set<JdkInfo> jdkInfos = Utils.jdkInfoList();
+        if (jdkInfos.isEmpty()) {
+            throw new SkippedException("No JDKs to test");
+        }
+
         for (JdkInfo jdkInfo : jdkInfos) {
             AlpnTest test = new AlpnTest(
                     defaultJdkAsServer ? JdkInfo.DEFAULT : jdkInfo,

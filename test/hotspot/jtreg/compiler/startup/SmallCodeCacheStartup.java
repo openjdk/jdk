@@ -52,8 +52,8 @@ public class SmallCodeCacheStartup {
         try {
             analyzer.shouldHaveExitValue(0);
         } catch (RuntimeException e) {
-            // Error occurred during initialization, did we run out of adapter space?
-            assertTrue(analyzer.getOutput().contains("VirtualMachineError: Out of space in CodeCache"),
+            // Error occurred during initialization
+            assertTrue(analyzer.getOutput().contains("CICompilerCount is too large"),
                     "Expected VirtualMachineError");
         }
 

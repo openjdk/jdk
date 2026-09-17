@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,6 @@ class klassVtable {
 //      from_interpreter_entry_point   -> i2cadapter
 class vtableEntry {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  public:
   // size in words
@@ -298,7 +297,7 @@ class klassItable {
   itableMethodEntry* method_entry(int i) { assert(0 <= i && i <= _size_method_table, "index out of bounds");
                                            return &((itableMethodEntry*)method_start())[i]; }
 
-  int size_offset_table()                { return _size_offset_table; }
+  int size_offset_table() const          { return _size_offset_table; }
 
   // Initialization
   void initialize_itable_and_check_constraints(TRAPS);

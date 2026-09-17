@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -25,7 +25,7 @@
 /*
  * @test
  * @requires vm.debug == true & vm.compiler2.enabled
- * @run main/othervm -Xbatch -XX:-TieredCompilation
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:-DisplayVMOutput
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+TraceIterativeGVN
  *                   compiler.debug.TraceIterativeGVN
  */

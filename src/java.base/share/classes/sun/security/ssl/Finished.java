@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,6 +433,7 @@ final class Finished {
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc);
             }
 
             // The handshake message has been delivered.
@@ -499,6 +500,7 @@ final class Finished {
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc);
             }
 
             // The handshake message has been delivered.
@@ -562,12 +564,12 @@ final class Finished {
 
                 // handshake context cleanup.
                 chc.handshakeFinished = true;
-                recordEvent(chc.conContext.conSession);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!chc.sslContext.isDTLS()) {
                     chc.conContext.finishHandshake();
                 }
+                recordEvent(chc);
             } else {
                 chc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -623,12 +625,12 @@ final class Finished {
 
                 // handshake context cleanup.
                 shc.handshakeFinished = true;
-                recordEvent(shc.conContext.conSession);
 
                 // May need to retransmit the last flight for DTLS.
                 if (!shc.sslContext.isDTLS()) {
                     shc.conContext.finishHandshake();
                 }
+                recordEvent(shc);
             } else {
                 shc.handshakeProducers.put(SSLHandshake.FINISHED.id,
                         SSLHandshake.FINISHED);
@@ -765,7 +767,7 @@ final class Finished {
             // handshake context cleanup.
             chc.handshakeFinished = true;
             chc.conContext.finishHandshake();
-            recordEvent(chc.conContext.conSession);
+            recordEvent(chc);
 
 
             // The handshake message has been delivered.
@@ -1164,7 +1166,7 @@ final class Finished {
             if (!shc.sslContext.isDTLS()) {
                 shc.conContext.finishHandshake();
             }
-            recordEvent(shc.conContext.conSession);
+            recordEvent(shc);
 
             //
             // produce
@@ -1174,9 +1176,10 @@ final class Finished {
         }
     }
 
-    private static void recordEvent(SSLSessionImpl session) {
+    private static void recordEvent(HandshakeContext hc) {
         TLSHandshakeEvent event = new TLSHandshakeEvent();
         if (event.shouldCommit() || EventHelper.isLoggingSecurity()) {
+            SSLSessionImpl session = hc.conContext.conSession;
             int hash = 0;
             try {
                 // use hash code for Id
@@ -1187,12 +1190,20 @@ final class Finished {
                  // not verified msg
             }
             long peerCertificateId = Integer.toUnsignedLong(hash);
+            String namedGroup = "N/A";
+            for (SSLCredentials cred : hc.handshakeCredentials) {
+                if (cred instanceof NamedGroupCredentials ngCred) {
+                    namedGroup = ngCred.getNamedGroup().name;
+                    break;
+                }
+            }
             if (event.shouldCommit()) {
                 event.peerHost = session.getPeerHost();
                 event.peerPort = session.getPeerPort();
                 event.cipherSuite = session.getCipherSuite();
                 event.protocolVersion = session.getProtocol();
                 event.certificateId = peerCertificateId;
+                event.namedGroup = namedGroup;
                 event.commit();
             }
             if (EventHelper.isLoggingSecurity()) {
@@ -1201,6 +1212,7 @@ final class Finished {
                                 session.getPeerPort(),
                                 session.getCipherSuite(),
                                 session.getProtocol(),
+                                namedGroup,
                                 peerCertificateId);
             }
         }

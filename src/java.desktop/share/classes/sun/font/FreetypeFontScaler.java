@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,9 @@ class FreetypeFontScaler extends FontScaler {
 
     public FreetypeFontScaler(Font2D font, int indexInCollection,
                      boolean supportsCJK, int filesize) {
-        int fonttype = TRUETYPE_FONT;
-        if (font instanceof Type1Font) {
-            fonttype = TYPE1_FONT;
-        }
+        int type = font instanceof Type1Font ? TYPE1_FONT : TRUETYPE_FONT;
         nativeScaler = initNativeScaler(font,
-                                        fonttype,
+                                        type,
                                         indexInCollection,
                                         supportsCJK,
                                         filesize);

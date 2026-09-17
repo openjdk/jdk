@@ -27,7 +27,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.test.lib.net.SimpleSSLContext jdk.httpclient.test.lib.common.TestUtil
  *        jdk.httpclient.test.lib.http2.Http2TestServer
- * @run junit/othervm/timeout=480 H3SimplePost
+ * @run junit/othervm/timeout=480 ${test.main.class}
  */
 // -Djdk.httpclient.HttpClient.log=requests,errors,quic
 // -Djdk.httpclient.quic.defaultMTU=64000

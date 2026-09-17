@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Intel Corporation. All rights reserved.
+ * Copyright (c) 2024, 2026, Intel Corporation. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -558,10 +558,16 @@ void montgomeryMultiplyAVX2(const Register aLimbs, const Register bLimbs, const 
 }
 
 address StubGenerator::generate_intpoly_montgomeryMult_P256() {
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_intpoly_montgomeryMult_P256_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   if (VM_Version::supports_avx512ifma() && VM_Version::supports_avx512vlbw()) {
@@ -620,6 +626,10 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
 
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
 
@@ -666,7 +676,7 @@ address StubGenerator::generate_intpoly_assign() {
   // KNOWN Lengths:
   //   MontgomeryIntPolynP256:  5 = 4 + 1
   //   IntegerPolynomial1305:   5 = 4 + 1
-  //   IntegerPolynomial25519: 10 = 8 + 2
+  //   IntegerPolynomial25519:  5 = 4 + 1
   //   IntegerPolynomialP256:  10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
   //   Curve25519OrderField:   10 = 8 + 2
@@ -680,10 +690,16 @@ address StubGenerator::generate_intpoly_assign() {
   //   P521OrderField:         19 = 8 + 8 + 2 + 1
   // Special Cases 5, 10, 14, 16, 19
 
-  __ align(CodeEntryAlignment);
   StubId stub_id = StubId::stubgen_intpoly_assign_id;
+  int entry_count = StubInfo::entry_count(stub_id);
+  assert(entry_count == 1, "sanity check");
+  address start = load_archive_data(stub_id);
+  if (start != nullptr) {
+    return start;
+  }
+  __ align(CodeEntryAlignment);
   StubCodeMark mark(this, stub_id);
-  address start = __ pc();
+  start = __ pc();
   __ enter();
 
   // Inputs
@@ -762,5 +778,24 @@ address StubGenerator::generate_intpoly_assign() {
   __ bind(L_Done);
   __ leave();
   __ ret(0);
+
+  // record the stub entry and end
+  store_archive_data(stub_id, start, __ pc());
+
   return start;
 }
+#undef __
+
+#if INCLUDE_CDS
+void StubGenerator::init_AOTAddressTable_poly_mont(GrowableArray<address>& external_addresses) {
+#define ADD(addr) external_addresses.append((address)(addr));
+  // use accessors to retrieve all correct addresses
+  ADD(shift_1L());
+  ADD(shift_1R());
+  ADD(p256_mask52());
+  ADD(mask_limb5());
+  ADD(modulus_p256());
+  ADD(modulus_p256(1));
+#undef ADD
+}
+#endif // INCLUDE_CDS

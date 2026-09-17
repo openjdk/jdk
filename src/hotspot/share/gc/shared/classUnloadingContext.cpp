@@ -54,7 +54,7 @@ ClassUnloadingContext::~ClassUnloadingContext() {
   for (uint i = 0; i < _num_nmethod_unlink_workers; ++i) {
     delete _unlinked_nmethods[i];
   }
-  FREE_C_HEAP_ARRAY(NMethodSet*, _unlinked_nmethods);
+  FREE_C_HEAP_ARRAY(_unlinked_nmethods);
 
   assert(_context == this, "context not set correctly");
   _context = nullptr;

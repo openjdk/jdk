@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/interpreterRuntime.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -65,6 +66,10 @@ VMEntryWrapper::~VMEntryWrapper() {
   if (VerifyStack) {
     InterfaceSupport::verify_stack();
   }
+  // Verify interpreter oopmap generation
+  if (GenerateOopMapALot) {
+    InterpreterRuntime::generate_oop_map_alot();
+  }
 }
 
 VMNativeEntryWrapper::VMNativeEntryWrapper() {
@@ -80,10 +85,17 @@ unsigned int InterfaceSupport::_fullgc_alot_counter   = 1;
 intx InterfaceSupport::_fullgc_alot_invocation = 0;
 
 void InterfaceSupport::gc_alot() {
-  Thread *thread = Thread::current();
+  Thread* thread = Thread::current();
   if (!thread->is_Java_thread()) return; // Avoid concurrent calls
+  JavaThread* current_thread = JavaThread::cast(thread);
+  // Do not request a GC in a critical section: garbage collectors in this state
+  // cannot complete a GC until all threads have left the JNI critical sections,
+  // and threads cannot leave while they are waiting for GC, thus deadlocking.
+  if (current_thread->in_critical()) return;
+  // A GC would try to acquire Heap_lock in the prologue. Do not try to acquire the
+  // lock recursively as this would cause a hang.
+  if (Heap_lock->owned_by_self()) return;
   // Check for new, not quite initialized thread. A thread in new mode cannot initiate a GC.
-  JavaThread *current_thread = JavaThread::cast(thread);
   if (current_thread->active_handles() == nullptr) return;
 
   // Short-circuit any possible re-entrant gc-a-lot attempt

@@ -156,7 +156,8 @@ public class VectorSupport {
         LT_BYTE      = 2,
         LT_SHORT     = 3,
         LT_INT       = 4,
-        LT_LONG      = 5;
+        LT_LONG      = 5,
+        LT_FLOAT16   = 6;
 
     /* ============================================================================ */
 

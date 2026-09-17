@@ -26,7 +26,7 @@
  * @build DummyWebSocketServer
  * @run junit/othervm
  *      -Djdk.internal.httpclient.websocket.debug=true
- *       Abort
+ *       ${test.main.class}
  */
 
 

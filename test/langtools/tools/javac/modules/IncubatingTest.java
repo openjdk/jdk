@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8171177 8187591
+ * @bug 8171177 8187591 8378950
  * @summary Verify that ModuleResolution attribute flags are honored.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -46,10 +46,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.ModuleResolutionAttribute;
 import java.lang.classfile.constantpool.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
 import toolbox.JavacTask;
 import toolbox.Task;
 import toolbox.Task.Expect;
@@ -242,6 +247,29 @@ public class IncubatingTest extends ModuleTestBase {
                 .outdir(testModuleClasses)
                 .files(findJavaFiles(testModuleSrc))
                 .run(Expect.SUCCESS);
+
+        //test with annotation processing
+        log = new JavacTask(tb)
+                .options("--module-path", classes.toString(),
+                         "-XDrawDiagnostics",
+                         "-Werror")
+                .outdir(testModuleClasses)
+                .files(findJavaFiles(testModuleSrc))
+                .processors(new ProcessorImpl())
+                .run(Expect.FAIL)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+
+        expected = Arrays.asList(
+                "- compiler.warn.incubating.modules: jdk.i",
+                "- compiler.err.warnings.and.werror",
+                "1 error",
+                "1 warning"
+        );
+
+        if (!expected.equals(log)) {
+            throw new AssertionError("Unexpected output: " + log);
+        }
     }
 
     private void copyJavaBase(Path targetDir) throws IOException {
@@ -268,6 +296,18 @@ public class IncubatingTest extends ModuleTestBase {
                 andThen(ClassTransform.endHandler(classBuilder -> classBuilder.with(modRAttr))));
         try (OutputStream out = Files.newOutputStream(classfile)) {
             out.write(newBytes);
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    private static class ProcessorImpl extends AbstractProcessor {
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            return false;
+        }
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
         }
     }
 }

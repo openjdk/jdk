@@ -25,16 +25,12 @@ package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
+import compiler.lib.ir_framework.driver.network.testvm.java.ApplicableIRRules;
 import compiler.lib.ir_framework.driver.network.testvm.java.IRRuleIds;
 import compiler.lib.ir_framework.shared.TestFormat;
-import compiler.lib.ir_framework.shared.TestFrameworkException;
-import compiler.lib.ir_framework.test.ApplicableIRRulesPrinter;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -55,73 +51,19 @@ public class ApplicableIRRulesParser {
      * Parse the Applicable IR rules passed as parameter and return a "test name" -> TestMethod map that contains an
      * entry for each method that needs to be IR matched on.
      */
-    public TestMethods parse(String applicableIRRules) {
-        createTestMethodMap(applicableIRRules, testClass);
+    public TestMethods parse(ApplicableIRRules applicableIRRules) {
+        createTestMethodMap(applicableIRRules);
         // We could have found format errors in @IR annotations. Report them now with an exception.
         TestFormat.throwIfAnyFailures();
         return new TestMethods(testMethods);
     }
 
-    /**
-     * Sets up a map testname -> TestMethod map. The TestMethod object will later be filled with the ideal and opto
-     * assembly output in {@link HotSpotPidFileParser}.
-     */
-    private void createTestMethodMap(String applicableIRRules, Class<?> testClass) {
-        Map<String, IRRuleIds> irRulesMap = parseApplicableIRRules(applicableIRRules);
-        createTestMethodsWithApplicableIRRules(testClass, irRulesMap);
-    }
-
-    /**
-     * Read the Applicable IR Rules emitted by the Test VM to decide if an @IR rule must be checked for a method.
-     */
-    private Map<String, IRRuleIds> parseApplicableIRRules(String applicableIRRules) {
-        Map<String, IRRuleIds> irRulesMap = new HashMap<>();
-        String[] applicableIRRulesLines = getApplicableIRRulesLines(applicableIRRules);
-        for (String s : applicableIRRulesLines) {
-            String line = s.trim();
-            String[] splitLine = line.split(",");
-            if (splitLine.length < 2) {
-                throw new TestFrameworkException("Invalid Applicable IR Rules format. No comma found: " + splitLine[0]);
-            }
-            String testName = splitLine[0];
-            IRRuleIds irRuleIds = parseIrRulesIds(splitLine);
-            irRulesMap.put(testName, irRuleIds);
-        }
-        return irRulesMap;
-    }
-
-    /**
-     * Parse the Applicable IR Rules lines without header, explanation line and footer and return them in an array.
-     */
-    private String[] getApplicableIRRulesLines(String applicableIRRules) {
-        if (applicableIRRules.isEmpty()) {
-            // Nothing to IR match.
-            return new String[0];
-        }
-        return applicableIRRules.split("\\R");
-    }
-
-    /**
-     * Parse rule indexes from a single line of the Applicable IR Rules in the format: <method,idx1,idx2,...>
-     */
-    private IRRuleIds parseIrRulesIds(String[] splitLine) {
-        List<Integer> irRuleIds = new ArrayList<>();
-        for (int i = 1; i < splitLine.length; i++) {
-            try {
-                irRuleIds.add(Integer.parseInt(splitLine[i]));
-            } catch (NumberFormatException e) {
-                throw new TestFrameworkException("Invalid Applicable IR Rules format. No number found: " + splitLine[i]);
-            }
-        }
-        return new IRRuleIds(irRuleIds);
-    }
-
-    private void createTestMethodsWithApplicableIRRules(Class<?> testClass, Map<String, IRRuleIds> irRulesMap) {
+    private void createTestMethodMap(ApplicableIRRules applicableIRRules) {
         for (Method m : testClass.getDeclaredMethods()) {
             IR[] irAnnos = m.getAnnotationsByType(IR.class);
             if (irAnnos.length > 0) {
                 // Validation of legal @IR attributes and placement of the annotation was already done in Test VM.
-                IRRuleIds irRuleIds = irRulesMap.get(m.getName());
+                IRRuleIds irRuleIds = applicableIRRules.ruleIds(m.getName());
                 validateIRRuleIds(m, irAnnos, irRuleIds);
                 if (hasAnyApplicableIRRules(irRuleIds)) {
                     testMethods.put(m.getName(), new TestMethod(m, irAnnos, irRuleIds));
@@ -131,10 +73,7 @@ public class ApplicableIRRulesParser {
     }
 
     private void validateIRRuleIds(Method m, IR[] irAnnos, IRRuleIds irRuleIds) {
-        TestFramework.check(irRuleIds != null, "Should find method name in validIrRulesMap for " + m);
-        TestFramework.check(!irRuleIds.isEmpty(), "Did not find any rule indices for " + m);
-        TestFramework.check((irRuleIds.first() >= 1 || irRuleIds.first() == ApplicableIRRulesPrinter.NO_RULES)
-                            && irRuleIds.last() <= irAnnos.length,
+        TestFramework.check((irRuleIds.isEmpty() || (irRuleIds.first() >= 1 && irRuleIds.last() <= irAnnos.length)),
                             "Invalid IR rule index found in validIrRulesMap for " + m);
     }
 
@@ -142,6 +81,6 @@ public class ApplicableIRRulesParser {
      * Does the list of IR rules contain any applicable IR rules for the given conditions?
      */
     private boolean hasAnyApplicableIRRules(IRRuleIds irRuleIds) {
-        return irRuleIds.first() != ApplicableIRRulesPrinter.NO_RULES;
+        return !irRuleIds.isEmpty();
     }
 }

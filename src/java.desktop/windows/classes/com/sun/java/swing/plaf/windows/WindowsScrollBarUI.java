@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 /**
  * Windows rendition of the component.
  */
-public final class WindowsScrollBarUI extends BasicScrollBarUI {
+public class WindowsScrollBarUI extends BasicScrollBarUI {
     private Grid thumbGrid;
     private Grid highlightGrid;
     private Dimension horizontalThumbSize;

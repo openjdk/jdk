@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,9 @@
 /*
  * @test
  * @summary A few edge cases where there's no class to be included in the dynamic archive.
- * @requires vm.cds & !vm.graal.enabled
+ * @requires vm.cds
  * @comment The test assumes that when "java -version" is executed, only a very limited number
  *          of classes are loaded, and all of those are loaded from the default shared archive.
- *
- *          However, when graal is used as the JIT, many extra classes are loaded during VM start-up.
- *          Some of those are loaded dynamically from jrt:/. Some classes are also defined by
- *          LambdaMetafactory. This causes complexity that cannot be easily handled by this test.
- *
- *          The VM code covered by this test can be sufficiently tested with C1/C2. So there's no need
- *          to bend over backwards to run this test with graal.
  *
  * @library /test/lib /test/hotspot/jtreg/runtime/cds/appcds /test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/test-classes
  * @build StrConcatApp

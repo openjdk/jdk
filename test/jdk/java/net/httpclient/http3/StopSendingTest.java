@@ -61,7 +61,7 @@ import org.junit.jupiter.api.Test;
  *        jdk.httpclient.test.lib.common.HttpServerAdapters
  * @compile ../ReferenceTracker.java
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
- *             -Djdk.httpclient.HttpClient.log=requests,responses,errors StopSendingTest
+ *             -Djdk.httpclient.HttpClient.log=requests,responses,errors ${test.main.class}
  */
 public class StopSendingTest implements HttpServerAdapters {
 

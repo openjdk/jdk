@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
  *          return the correct result for StandardSocketOptions.IP_MULTICAST_LOOP.
  *          The test sets a DatagramSocketImplFactory and needs to run in /othervm
  *          mode.
- * @run testng/othervm SetLoopbackOption
- * @run testng/othervm -Djava.net.preferIPv4Stack=true SetLoopbackOption
- * @run testng/othervm -Djava.net.preferIPv6Addresses=true SetLoopbackOption
+ * @run junit/othervm ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true ${test.main.class}
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true ${test.main.class}
  */
 
 import java.io.FileDescriptor;
@@ -52,10 +52,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
-
 import static java.lang.System.out;
+
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SetLoopbackOption {
 

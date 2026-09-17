@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,9 +621,9 @@ public final class ServiceLoader<S>
         Constructor<?> ctor = null;
         try {
             ctor = clazz.getConstructor();
-        } catch (NoSuchMethodException ex) {
+        } catch (NoSuchMethodException | LinkageError e) {
             String cn = clazz.getName();
-            fail(service, cn + " Unable to get public no-arg constructor", ex);
+            fail(service, cn + " Unable to get public no-arg constructor", e);
         }
         if (inExplicitModule(clazz))
             ctor.setAccessible(true);
@@ -1086,8 +1086,8 @@ public final class ServiceLoader<S>
             String cn = pending.next();
             try {
                 return Class.forName(cn, false, loader);
-            } catch (ClassNotFoundException x) {
-                fail(service, "Provider " + cn + " not found");
+            } catch (ClassNotFoundException | LinkageError e) {
+                fail(service, "Provider " + cn + " not found", e);
                 return null;
             }
         }

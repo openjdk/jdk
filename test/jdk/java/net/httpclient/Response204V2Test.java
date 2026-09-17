@@ -29,7 +29,7 @@
  *       ReferenceTracker jdk.httpclient.test.lib.common.HttpServerAdapters
  * @run junit/othervm -Djdk.internal.httpclient.debug=true
  *                     -Djdk.httpclient.HttpClient.log=requests,responses,errors
- *                     Response204V2Test
+ *                     ${test.main.class}
  * @summary Tests that streams are closed after receiving a 204 response.
  *          This test uses the OperationsTracker and will fail in
  *          teardown if the tracker reports that some HTTP/2 streams

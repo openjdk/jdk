@@ -22,6 +22,8 @@
  */
 package jdk.jpackage.internal.util;
 
+import jdk.jpackage.test.WindowsHelper;
+
 import static java.util.stream.Collectors.joining;
 import static jdk.jpackage.internal.util.CommandOutputControlTestUtils.isInterleave;
 import static jdk.jpackage.internal.util.function.ThrowingConsumer.toConsumer;
@@ -259,6 +261,20 @@ public class CommandOutputControlTest {
         assertEquals("Unexpected exit code 3 from executing the command <unknown>", ex.getMessage());
     }
 
+    @Test
+    public void test_Result_expectExitCode_unavailable() {
+        var result = CommandOutputControl.Result.build().noExitCode().create();
+
+        var ex = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+
+        assertNull(ex.getCause());
+        assertSame(result, ex.getResult());
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), ex.getMessage());
+    }
+
     @ParameterizedTest
     @MethodSource
     public void test_Result_toCharacterResult(ToCharacterResultTestSpec spec) throws IOException, InterruptedException {
@@ -349,6 +365,13 @@ public class CommandOutputControlTest {
 
         var getExitCodeEx = assertThrowsExactly(IllegalStateException.class, result::getExitCode);
         assertEquals(("Exit code is unavailable for timed-out command"), getExitCodeEx.getMessage());
+
+        // Verify UnavailableExitCodeException
+        var expectExitCodeEx = assertThrowsExactly(CommandOutputControl.UnavailableExitCodeException.class, () -> {
+            result.expectExitCode(0);
+        });
+        assertEquals(String.format("Exit code unavailable from executing the command %s",
+                result.execAttrs().printableCommandLine()), expectExitCodeEx.getMessage());
 
         // We want to check that the saved output contains only the text emitted before the "sleep" action.
         // It works for a subprocess, but in the case of a ToolProvider, sometimes the timing is such
@@ -867,15 +890,18 @@ public class CommandOutputControlTest {
 
         for (boolean toolProvider : BOOLEAN_VALUES) {
             for (var redirectStderr : withAndWithout(OutputControl.REDIRECT_STDERR)) {
-                for (var charset : withAndWithout(OutputControl.CHARSET_UTF16LE)) {
-                    var stdoutSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.US_ASCII, OutputStreams.STDOUT);
-                    var stderrSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.UTF_32LE, OutputStreams.STDERR);
-                    var outputControl = new HashSet<CommandOutputControlMutator>();
-                    redirectStderr.ifPresent(outputControl::add);
-                    charset.ifPresent(outputControl::add);
-                    outputControl.add(stdoutSink);
-                    outputControl.add(stderrSink);
-                    testCases.add(new CharsetTestSpec(toolProvider, new CommandOutputControlSpec(outputControl)));
+                for (var saveOutput : withAndWithout(OutputControl.SAVE_ALL)) {
+                    for (var charset : withAndWithout(OutputControl.CHARSET_UTF16LE)) {
+                        var stdoutSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.US_ASCII, OutputStreams.STDOUT);
+                        var stderrSink = new CharsetTestSpec.DumpOutputSink(StandardCharsets.UTF_32LE, OutputStreams.STDERR);
+                        var outputControl = new HashSet<CommandOutputControlMutator>();
+                        redirectStderr.ifPresent(outputControl::add);
+                        saveOutput.ifPresent(outputControl::add);
+                        charset.ifPresent(outputControl::add);
+                        outputControl.add(stdoutSink);
+                        outputControl.add(stderrSink);
+                        testCases.add(new CharsetTestSpec(toolProvider, new CommandOutputControlSpec(outputControl)));
+                    }
                 }
             }
         }
@@ -1004,7 +1030,7 @@ public class CommandOutputControlTest {
                     commandSeparator = " && ";
                 }
                 case POWERSHELL -> {
-                    commandline.addAll(List.of("powershell", "-NoProfile", "-Command"));
+                    commandline.addAll(List.of(WindowsHelper.PowerShellPath(), "-NoProfile", "-Command"));
                     commandSeparator = "; ";
                 }
                 default -> {
@@ -1176,7 +1202,7 @@ public class CommandOutputControlTest {
                     // It sends packets every second.
                     // To wait N seconds, it should send N+1 packets.
                     // The "timeout" command works only in a console.
-                    return String.format("(ping -n %d localhost > nul)", sleep.seconds() + 1);
+                    return String.format("(%%SystemRoot%%\\System32\\ping.exe -n %d localhost > nul)", sleep.seconds() + 1);
                 }
                 case POWERSHELL -> {
                     return "Start-Sleep -Seconds " + sleep.seconds();
@@ -1248,7 +1274,7 @@ public class CommandOutputControlTest {
 
         static <T extends CommandOutputControlMutator> Function<T, Set<T>> addToSet(Set<T> set) {
             return m -> {
-                return new SetBuilder<T>().add(set).add(m).create();
+                return SetBuilder.build(set).add(m).create();
             };
         }
     }
@@ -1708,37 +1734,46 @@ public class CommandOutputControlTest {
 
     record CharsetTestSpec(boolean toolProvider, CommandOutputControlSpec cocSpec) {
 
-        void test() throws IOException, InterruptedException {
-            if (cocSpec.outputControl().stream().noneMatch(DumpOutputSink.class::isInstance)) {
+        CharsetTestSpec(boolean toolProvider, CommandOutputControlSpec cocSpec) {
+            this.toolProvider = toolProvider;
+            this.cocSpec = Objects.requireNonNull(cocSpec);
+
+            // Sinks must be specified for stdout and stderr streams.
+            if (cocSpec.outputControl().stream().filter(DumpOutputSink.class::isInstance).count() != 2) {
                 throw new IllegalArgumentException();
             }
+        }
 
-            final var expectedString = "veni-vidi-vici";
+        void test() throws IOException, InterruptedException {
+
+            final var writeToStdout = "veni-vidi-vici";
+            final var writeToStderr = "iciv-idiv-inev";
 
             var coc = cocSpec.create().dumpOutput(true);
 
             CommandOutputControl.Executable exec;
             if (toolProvider) {
-                var tp = Command.createToolProvider(Stream.of(expectedString).<CommandAction>mapMulti((str, sink) -> {
-                    sink.accept(CommandAction.echoStdout(str));
-                    sink.accept(CommandAction.echoStderr(str));
-                }).toList());
+                var tp = Command.createToolProvider(List.of(
+                        CommandAction.echoStdout(writeToStdout),
+                        CommandAction.echoStderr(writeToStderr)
+                ));
                 exec = coc.createExecutable(tp);
             } else {
-                var cmdline = Command.createShellCommandLine(Stream.of(expectedString).map(str -> {
+                Function<String, byte[]> conv = str -> {
                     return (str + System.lineSeparator()).getBytes(coc.charset());
-                }).<CommandAction>mapMulti((bytes, sink) -> {
-                    sink.accept(CommandAction.writeStdout(bytes));
-                    sink.accept(CommandAction.writeStderr(bytes));
-                }).toList());
+                };
+                var cmdline = Command.createShellCommandLine(List.of(
+                        CommandAction.writeStdout(conv.apply(writeToStdout)),
+                        CommandAction.writeStderr(conv.apply(writeToStderr))
+                ));
                 exec = coc.createExecutable(new ProcessBuilder(cmdline));
             }
 
-            exec.execute();
+            final var execResult = exec.execute();
 
             for (var outputContolMutator : cocSpec.outputControl()) {
                 if (outputContolMutator instanceof DumpOutputSink sink) {
-                    var actual = sink.lines();
+                    var actual = sink.lines(coc);
                     List<String> expected;
                     if (cocSpec.redirectStderr()) {
                         switch (sink.streams()) {
@@ -1746,13 +1781,22 @@ public class CommandOutputControlTest {
                                 expected = List.of();
                             }
                             default -> {
-                                expected = List.of(expectedString, expectedString);
+                                expected = List.of(writeToStdout, writeToStderr);
                             }
                         }
                     } else {
-                        expected = List.of(expectedString);
+                        switch (sink.streams()) {
+                            case STDERR -> {
+                                expected = List.of(writeToStderr);
+                            }
+                            default -> {
+                                expected = List.of(writeToStdout);
+                            }
+                        }
                     }
                     assertEquals(expected, actual);
+                } else if (outputContolMutator == OutputControl.SAVE_ALL) {
+                    assertEquals(List.of(writeToStdout, writeToStderr), execResult.content());
                 }
             }
 
@@ -1769,8 +1813,8 @@ public class CommandOutputControlTest {
                 this(charset, new ByteArrayOutputStream(), streams);
             }
 
-            List<String> lines() {
-                var str = buffer.toString(charset);
+            List<String> lines(CommandOutputControl coc) {
+                var str = buffer.toString((coc.isSaveOutput() || coc.isSaveFirstLineOfOutput()) ? coc.charset() : charset);
                 return new BufferedReader(new StringReader(str)).lines().toList();
             }
 

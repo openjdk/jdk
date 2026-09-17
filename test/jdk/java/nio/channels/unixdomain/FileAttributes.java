@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,35 +21,34 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8252971
- * @library /test/lib
- * @run testng FileAttributes
+ * @run junit FileAttributes
  */
 
 import java.io.IOException;
 import java.io.File;
-import java.net.*;
-import java.nio.channels.*;
+import java.net.UnixDomainSocketAddress;
+import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.Arrays;
-import org.testng.annotations.Test;
-import org.testng.SkipException;
 
 import static java.net.StandardProtocolFamily.UNIX;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertThrows;
-import static org.testng.Assert.assertTrue;
+
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  */
 public class FileAttributes {
 
     @Test
-    public static void test() throws Exception {
+    public void test() throws Exception {
         checkSupported();
         Path path = null;
         try (var chan = SocketChannel.open(UNIX)) {
@@ -89,7 +88,7 @@ public class FileAttributes {
         try {
             SocketChannel.open(UNIX).close();
         } catch (UnsupportedOperationException e) {
-            throw new SkipException("Unix domain channels not supported");
+            Assumptions.assumeTrue(false, "Unix domain channels not supported");
         } catch (Exception e) {
             // continue test to see what problem is
         }

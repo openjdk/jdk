@@ -21,7 +21,6 @@
  * questions.
  */
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,20 +29,20 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.ProviderMismatchException;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
  * @test
@@ -55,47 +54,48 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class PathOps {
 
-    static FileSystem fs;
+    // create empty JAR file, testing doesn't require any contents
+    static Path emptyJar;
 
-    // This test uses a static file system since some ops tested on
-    // Path depend on the same underlying `fs` instance
     @BeforeAll
     static void setup() throws IOException {
-        // create empty JAR file, test doesn't require any contents
-        Path emptyJar = Utils.createJarFile("empty.jar");
-        fs = FileSystems.newFileSystem(emptyJar);
+        emptyJar = Utils.createJarFile("empty.jar");
     }
 
-    @AfterAll
-    static void cleanup() throws IOException {
-        fs.close();
-    }
-
+    // Ensure NPEs are thrown for null inputs on Path ops
     @Test
-    void nullPointerTest() {
-        Path path = fs.getPath("foo");
-        assertThrows(NullPointerException.class, () -> path.resolve((String) null));
-        assertThrows(NullPointerException.class, () -> path.relativize(null));
-        assertThrows(NullPointerException.class, () -> path.compareTo(null));
-        assertThrows(NullPointerException.class, () -> path.startsWith((Path) null));
-        assertThrows(NullPointerException.class, () -> path.endsWith((Path) null));
+    void nullPointerTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            Path path = fs.getPath("foo");
+            assertThrows(NullPointerException.class, () -> path.resolve((String) null));
+            assertThrows(NullPointerException.class, () -> path.relativize(null));
+            assertThrows(NullPointerException.class, () -> path.compareTo(null));
+            assertThrows(NullPointerException.class, () -> path.startsWith((Path) null));
+            assertThrows(NullPointerException.class, () -> path.endsWith((Path) null));
+        }
     }
 
+    // Ensure correct behavior when paths are provided by mismatched providers
     @Test
-    void mismatchedProvidersTest() {
-        Path path = fs.getPath("foo");
+    void mismatchedProvidersTest() throws IOException {
         Path other = Paths.get("foo");
-        assertThrows(ProviderMismatchException.class, () -> path.compareTo(other));
-        assertThrows(ProviderMismatchException.class, () -> path.resolve(other));
-        assertThrows(ProviderMismatchException.class, () -> path.relativize(other));
-        assertFalse(path.startsWith(other), "providerMismatched startsWith() returns true ");
-        assertFalse(path.endsWith(other), "providerMismatched endsWith() returns true ");
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            Path path = fs.getPath("foo");
+            assertThrows(ProviderMismatchException.class, () -> path.compareTo(other));
+            assertThrows(ProviderMismatchException.class, () -> path.resolve(other));
+            assertThrows(ProviderMismatchException.class, () -> path.relativize(other));
+            assertFalse(path.startsWith(other), "providerMismatched startsWith() returns true ");
+            assertFalse(path.endsWith(other), "providerMismatched endsWith() returns true ");
+        }
     }
 
+    // Ensure correct construction of paths when given sequence of strings
     @ParameterizedTest
     @MethodSource
-    void constructionTest(String first, String[] more, String expected) {
-        string(getPath(first, more), expected);
+    void constructionTest(String first, String[] more, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            string(fs.getPath(first, more), expected);
+        }
     }
 
     static Stream<Arguments> constructionTest() {
@@ -112,22 +112,29 @@ public class PathOps {
         );
     }
 
+    // Ensure proper root, parent, and name components
     @Test
-    void allComponentsTest() {
-        var path = getPath("/a/b/c");
-        root(path, "/");
-        parent(path, "/a/b");
-        name(path, "c");
+    void allComponentsTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("/a/b/c");
+            root(path, "/");
+            parent(path, "/a/b");
+            name(path, "c");
+        }
     }
 
+    // Ensure correct name count for root only and empty name
     @ParameterizedTest
     @MethodSource
-    void nameCountTest(String first, String root, String parent, String name, int nameCount) {
-        var path = getPath(first);
-        root(path, root);
-        parent(path, parent);
-        name(path, name);
-        nameCount(path, nameCount);
+    void nameCountTest(String first, String root, String parent, String name, int nameCount) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            root(path, root);
+            parent(path, parent);
+            name(path, name);
+            assertNotNull(path);
+            assertEquals(nameCount, path.getNameCount());
+        }
     }
 
     static Stream<Arguments> nameCountTest() {
@@ -139,13 +146,16 @@ public class PathOps {
         );
     }
 
+    // Ensure correct parent and name behavior for no root and name only
     @ParameterizedTest
     @MethodSource
-    void parentNameTest(String first, String root, String parent, String name) {
-        var path = getPath(first);
-        root(path, root);
-        parent(path, parent);
-        name(path, name);
+    void parentNameTest(String first, String root, String parent, String name) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            root(path, root);
+            parent(path, parent);
+            name(path, name);
+        }
     }
 
     static Stream<Arguments> parentNameTest() {
@@ -157,10 +167,16 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (positive) `startsWith` behavior
     @ParameterizedTest
     @MethodSource
-    void startsWithTest(String first, String prefix) {
-        starts(getPath(first), prefix);
+    void startsWithTest(String first, String prefix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            Path s = fs.getPath(prefix);
+            assertTrue(path.startsWith(s));
+        }
     }
 
     static Stream<Arguments> startsWithTest() {
@@ -180,10 +196,16 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (negative) `startsWith` behavior
     @ParameterizedTest
     @MethodSource
-    void notStartsWithTest(String first, String prefix) {
-        notStarts(getPath(first), prefix);
+    void notStartsWithTest(String first, String prefix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            Path s = fs.getPath(prefix);
+            assertFalse(path.startsWith(s));
+        }
     }
 
     static Stream<Arguments> notStartsWithTest() {
@@ -203,10 +225,16 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (positive) `endsWith` behavior
     @ParameterizedTest
     @MethodSource
-    void endsWithTest(String first, String suffix) {
-        ends(getPath(first), suffix);
+    void endsWithTest(String first, String suffix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            Path s = fs.getPath(suffix);
+            assertTrue(path.endsWith(s));
+        }
     }
 
     static Stream<Arguments> endsWithTest() {
@@ -231,10 +259,16 @@ public class PathOps {
         );
     }
 
+    // Ensure correct (negative) `endsWith` behavior
     @ParameterizedTest
     @MethodSource
-    void notEndsWithTest(String first, String suffix) {
-        notEnds(getPath(first), suffix);
+    void notEndsWithTest(String first, String suffix) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            Path s = fs.getPath(suffix);
+            assertFalse(path.endsWith(s));
+        }
     }
 
     static Stream<Arguments> notEndsWithTest() {
@@ -248,10 +282,15 @@ public class PathOps {
         );
     }
 
+    // Ensure `getName` returns correct String at index
     @ParameterizedTest
     @MethodSource
-    void elementTest(int index, String expected) {
-        element(getPath("a/b/c"), index, expected);
+    void elementTest(int index, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("a/b/c");
+            assertNotNull(path);
+            assertEquals(expected, path.getName(index).toString());
+        }
     }
 
     static Stream<Arguments> elementTest() {
@@ -262,22 +301,35 @@ public class PathOps {
         );
     }
 
+    // Ensure expected behavior for absolute paths
     @ParameterizedTest
     @ValueSource(strings = {"/", "/tmp"} )
-    void isAbsoluteTest(String first) {
-        absolute(getPath(first));
+    void isAbsoluteTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            assertTrue(path.isAbsolute());
+        }
     }
 
+    // Ensure expected behavior for non-absolute paths
     @ParameterizedTest
     @ValueSource(strings = {"tmp", ""} )
-    void notAbsoluteTest(String first) {
-        notAbsolute(getPath(first));
+    void notAbsoluteTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            assertFalse(path.isAbsolute());
+        }
     }
 
+    // Ensure correct append and replacement behavior for `resolve(String)`
     @ParameterizedTest
     @MethodSource
-    void resolveTest(String first, String other, String expected) {
-        resolve(getPath(first), other, expected);
+    void resolveTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            resolve(fs.getPath(first), other, expected);
+        }
     }
 
     static Stream<Arguments> resolveTest() {
@@ -298,10 +350,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct append and replacement behavior for `resolve(Path)`
     @ParameterizedTest
     @MethodSource
-    void resolvePathTest(String first, String other, String expected) {
-        resolvePath(getPath(first), other, expected);
+    void resolvePathTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            assertEquals(expected, path.resolve(fs.getPath(other)).toString());
+        }
     }
 
     static Stream<Arguments> resolvePathTest() {
@@ -322,10 +379,13 @@ public class PathOps {
         );
     }
 
+    // Ensure correct behavior for `resolveSibling`
     @ParameterizedTest
     @MethodSource
-    void resolveSiblingTest(String first, String other, String expected) {
-        resolveSibling(getPath(first), other, expected);
+    void resolveSiblingTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            resolveSibling(fs.getPath(first), other, expected);
+        }
     }
 
     static Stream<Arguments> resolveSiblingTest() {
@@ -345,18 +405,28 @@ public class PathOps {
         );
     }
 
+    // Checking `resolve` and `resolveSibling` behavior for empty path
     @Test
-    void resolveSiblingAndResolveTest() {
-        var path = getPath("");
-        resolveSibling(path, "foo", "foo");
-        resolveSibling(path, "/foo", "/foo");
-        resolve(path, "", "");
+    void resolveSiblingAndResolveTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("");
+            resolveSibling(path, "foo", "foo");
+            resolveSibling(path, "/foo", "/foo");
+            resolve(path, "", "");
+        }
     }
 
+    // Ensure correct behavior of `relativize`. i.e. Relative path should be
+    // produced between two given paths
     @ParameterizedTest
     @MethodSource
-    void relativizeTest(String first, String other, String expected) {
-        relativize(getPath(first), other, expected);
+    void relativizeTest(String first, String other, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            Path that = fs.getPath(other);
+            assertEquals(expected, path.relativize(that).toString());
+        }
     }
 
     static Stream<Arguments> relativizeTest() {
@@ -380,10 +450,15 @@ public class PathOps {
         );
     }
 
+    // Ensure correct behavior of `normalize`. i.e. redundant elements should be removed.
     @ParameterizedTest
     @MethodSource
-    void normalizeTest(String first, String expected) {
-        normalize(getPath(first), expected);
+    void normalizeTest(String first, String expected) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath(first);
+            assertNotNull(path);
+            assertEquals(expected, path.normalize().toString());
+        }
     }
 
     static Stream<Arguments> normalizeTest() {
@@ -409,10 +484,13 @@ public class PathOps {
         );
     }
 
+    // Check IPE is thrown for invalid path Strings
     @ParameterizedTest
     @MethodSource
-    void invalidTest(String first) {
-        assertThrows(InvalidPathException.class, () -> getPath(first));
+    void invalidTest(String first) throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            assertThrows(InvalidPathException.class, () -> fs.getPath(first));
+        }
     }
 
     static Stream<String> invalidTest() {
@@ -426,184 +504,65 @@ public class PathOps {
         );
     }
 
+    // Check that repeated forward slash is normalized correctly
     @Test
-    void normalizationTest() {
-        var path = getPath("//foo//bar");
-        string(path, "/foo/bar");
-        root(path, "/");
-        parent(path, "/foo");
-        name(path, "bar");
+    void normalizationTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("//foo//bar");
+            string(path, "/foo/bar");
+            root(path, "/");
+            parent(path, "/foo");
+            name(path, "bar");
+        }
     }
 
-    @Test
-    void isSameFileTest() {
-        isSameFile(getPath("/fileDoesNotExist"), "/fileDoesNotExist");
+    @Test // Check that identical paths refer to the same file
+    void isSameFileTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            var path = fs.getPath("/fileDoesNotExist");
+            assertNotNull(path);
+            assertTrue(Files.isSameFile(path, fs.getPath("/fileDoesNotExist")));
+        }
     }
 
+    // Regression test for 8139956: Ensure `relativize` of equivalent paths
+    // produces an empty path -> `getNameCount` returns 1
     @Test
-    void getNameCountTest() {
-        // 8139956
-        System.out.println("check getNameCount");
-        int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
-        assertEquals(1, nc, "getNameCount of empty path failed");
+    void getNameCountTest() throws IOException {
+        try (var fs = FileSystems.newFileSystem(emptyJar)) {
+            int nc = fs.getPath("/").relativize(fs.getPath("/")).getNameCount();
+            assertEquals(1, nc, "getNameCount of empty path failed");
+        }
     }
 
     // Utilities for testing
-
-    static void checkPath(Path path) {
-        assertNotNull(path, "path is null");
-    }
-
-    static void check(Object result, String expected) {
-        if (result == null) {
-            if (expected == null) return;
-        } else {
-            // compare string representations
-            if (expected != null && result.toString().equals(expected))
-                return;
-        }
-        fail();
-    }
-
-    static void check(Object result, boolean expected) {
-        check(result, Boolean.toString(expected));
-    }
-
-    static void check(Object result, int expected) {
-        check(result, Integer.toString(expected));
-    }
-
     static void root(Path path, String expected) {
-        System.out.println("check root");
-        checkPath(path);
-        check(path.getRoot(), expected);
+        assertNotNull(path);
+        assertEquals(expected, Objects.toString(path.getRoot(), null));
     }
 
     static void parent(Path path, String expected) {
-        System.out.println("check parent");
-        checkPath(path);
-        check(path.getParent(), expected);
+        assertNotNull(path);
+        assertEquals(expected, Objects.toString(path.getParent(), null));
     }
 
     static void name(Path path, String expected) {
-        System.out.println("check name");
-        checkPath(path);
-        check(path.getFileName(), expected);
-    }
-
-    static void nameCount(Path path, int expected) {
-        System.out.println("check nameCount");
-        checkPath(path);
-        check(path.getNameCount(), expected);
-    }
-
-    static void element(Path path, int index, String expected) {
-        System.out.format("check element %d\n", index);
-        checkPath(path);
-        check(path.getName(index), expected);
-    }
-
-    static void subpath(Path path, int startIndex, int endIndex, String expected) {
-        System.out.format("test subpath(%d,%d)\n", startIndex, endIndex);
-        checkPath(path);
-        check(path.subpath(startIndex, endIndex), expected);
-    }
-
-    static void starts(Path path, String prefix) {
-        System.out.format("test startsWith with %s\n", prefix);
-        checkPath(path);
-        Path s = fs.getPath(prefix);
-        check(path.startsWith(s), true);
-    }
-
-    static void notStarts(Path path, String prefix) {
-        System.out.format("test not startsWith with %s\n", prefix);
-        checkPath(path);
-        Path s = fs.getPath(prefix);
-        check(path.startsWith(s), false);
-    }
-
-    static void ends(Path path, String suffix) {
-        System.out.format("test endsWith %s\n", suffix);
-        checkPath(path);
-        Path s = fs.getPath(suffix);
-        check(path.endsWith(s), true);
-    }
-
-    static void notEnds(Path path, String suffix) {
-        System.out.format("test not endsWith %s\n", suffix);
-        checkPath(path);
-        Path s = fs.getPath(suffix);
-        check(path.endsWith(s), false);
-    }
-
-    static void absolute(Path path) {
-        System.out.println("check path is absolute");
-        checkPath(path);
-        check(path.isAbsolute(), true);
-    }
-
-    static void notAbsolute(Path path) {
-        System.out.println("check path is not absolute");
-        checkPath(path);
-        check(path.isAbsolute(), false);
+        assertNotNull(path);
+        assertEquals(expected, Objects.toString(path.getFileName(), null));
     }
 
     static void resolve(Path path, String other, String expected) {
-        System.out.format("test resolve %s\n", other);
-        checkPath(path);
-        check(path.resolve(other), expected);
-    }
-
-    static void resolvePath(Path path, String other, String expected) {
-        System.out.format("test resolve %s\n", other);
-        checkPath(path);
-        check(path.resolve(fs.getPath(other)), expected);
+        assertNotNull(path);
+        assertEquals(expected, path.resolve(other).toString());
     }
 
     static void resolveSibling(Path path, String other, String expected) {
-        System.out.format("test resolveSibling %s\n", other);
-        checkPath(path);
-        check(path.resolveSibling(other), expected);
-
-    }
-
-    static void relativize(Path path, String other, String expected) {
-        System.out.format("test relativize %s\n", other);
-        checkPath(path);
-        Path that = fs.getPath(other);
-        check(path.relativize(that), expected);
-
-    }
-
-    static void normalize(Path path, String expected) {
-        System.out.println("check normalized path");
-        checkPath(path);
-        check(path.normalize(), expected);
-
+        assertNotNull(path);
+        assertEquals(expected, path.resolveSibling(other).toString());
     }
 
     static void string(Path path, String expected) {
-        System.out.println("check string representation");
-        checkPath(path);
-        check(path, expected);
-    }
-
-    static void isSameFile(Path path, String target) {
-        try {
-            System.out.println("check two paths are same");
-            checkPath(path);
-            check(Files.isSameFile(path, fs.getPath(target)), true);
-        } catch (IOException ioe) {
-            fail();
-        }
-    }
-
-    static Path getPath(String s) {
-        return fs.getPath(s);
-    }
-
-    static Path getPath(String first, String... more) {
-        return fs.getPath(first, more);
+        assertNotNull(path);
+        assertEquals(expected, path.toString());
     }
 }

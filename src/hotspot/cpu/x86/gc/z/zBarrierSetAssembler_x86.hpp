@@ -167,9 +167,9 @@ public:
                                      ZLoadBarrierStubC2* stub) const;
   void generate_c2_store_barrier_stub(MacroAssembler* masm,
                                       ZStoreBarrierStubC2* stub) const;
-
-  virtual void try_resolve_weak_handle_in_c2(MacroAssembler* masm, Register obj, Label& slow_path);
 #endif // COMPILER2
+
+  virtual void try_peek_weak_handle_in_nmethod(MacroAssembler* masm, Register weak_handle, Register obj, Label& slow_path);
 
   void store_barrier_fast(MacroAssembler* masm,
                           Address ref_addr,
@@ -189,9 +189,13 @@ public:
                             Label& slow_path,
                             Label& slow_path_continuation) const;
 
-  void patch_barrier_relocation(address addr, int format);
+  void patch_barrier_relocation(address addr, int format, bool log = false);
 
   void patch_barriers();
+
+  void register_reloc_addresses(GrowableArray<address> &entries, int begin, int count);
+
+  void retrieve_reloc_addresses(address start, address end, GrowableArray<address> &entries);
 
   void check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error);
 };

@@ -25,7 +25,7 @@
  * @test
  * @bug 8276559
  * @summary HttpRequest[.Builder] API and behaviour checks
- * @run junit RequestBuilderTest
+ * @run junit ${test.main.class}
  */
 
 import java.net.URI;
@@ -202,11 +202,10 @@ public class RequestBuilderTest {
     public void testHeaders() {
         HttpRequest.Builder builder = newBuilder(uri);
 
-        String[] empty = new String[0];
-        assertThrows(IAE, () -> builder.headers(empty).build());
         assertThrows(IAE, () -> builder.headers("1").build());
         assertThrows(IAE, () -> builder.headers("1", "2", "3").build());
         assertThrows(IAE, () -> builder.headers("1", "2", "3", "4", "5").build());
+        assertEquals(0, builder.headers(new String[0]).build().headers().map().size());
         assertEquals(0, builder.build().headers().map().size());
 
         List<HttpRequest> requests = List.of(

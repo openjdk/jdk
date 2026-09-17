@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,25 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.UnaryOperator;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String key, List<Object> args) implements CannedArgument {
+public record CannedFormattedString(BiFunction<String, Object[], String> formatter, String format, List<Object> args) implements CannedArgument {
 
     public CannedFormattedString mapArgs(UnaryOperator<Object> mapper) {
-        return new CannedFormattedString(formatter, key, args.stream().map(mapper).toList());
+        return new CannedFormattedString(formatter, format, args.stream().map(mapper).toList());
     }
 
     public CannedFormattedString {
         Objects.requireNonNull(formatter);
-        Objects.requireNonNull(key);
+        Objects.requireNonNull(format);
         Objects.requireNonNull(args);
         args.forEach(Objects::requireNonNull);
     }
 
     @Override
     public String getValue() {
-        return formatter.apply(key, args.stream().map(arg -> {
+        return formatter.apply(format, args.stream().map(arg -> {
             if (arg instanceof CannedArgument cannedArg) {
                 return cannedArg.getValue();
             } else {
@@ -53,18 +54,69 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
         }).toArray());
     }
 
-    public CannedFormattedString addPrefix(String prefixKey) {
+    public CannedFormattedString addPrefix(String prefixFormat) {
         return new CannedFormattedString(
-                new AddPrefixFormatter(formatter), prefixKey, Stream.concat(Stream.of(key), args.stream()).toList());
+                new AddPrefixFormatter(formatter), prefixFormat, Stream.concat(Stream.of(format), args.stream()).toList());
     }
 
     @Override
     public String toString() {
         if (args.isEmpty()) {
-            return String.format("%s", key);
+            return String.format("%s", format);
         } else {
-            return String.format("%s+%s", key, args);
+            return String.format("%s+%s", format, args);
         }
+    }
+
+    public interface Spec {
+
+        String format();
+        List<Object> modelArgs();
+
+        public enum Formatter {
+            JPACKAGE_MAIN_STRING_BUNDLE,
+            MESSAGE_FORMAT,
+            ;
+        }
+
+        default Formatter formatter() {
+            return Formatter.JPACKAGE_MAIN_STRING_BUNDLE;
+        }
+
+        default CannedFormattedString asCannedFormattedString(Object ... args) {
+            if (args.length != modelArgs().size()) {
+                throw new IllegalArgumentException();
+            }
+
+            var format = Objects.requireNonNull(format());
+
+            return switch (Objects.requireNonNull(formatter())) {
+                case JPACKAGE_MAIN_STRING_BUNDLE -> {
+                    yield JPackageStringBundle.MAIN.cannedFormattedString(format, args);
+                }
+                case MESSAGE_FORMAT -> {
+                    yield CannedFormattedString.createFromMessageFormat(format, args);
+                }
+            };
+        }
+
+        default Pattern asPattern() {
+            var format = Objects.requireNonNull(format());
+            var args = Objects.requireNonNull(modelArgs()).toArray();
+
+            return switch (Objects.requireNonNull(formatter())) {
+                case JPACKAGE_MAIN_STRING_BUNDLE -> {
+                    yield JPackageStringBundle.MAIN.cannedFormattedStringAsPattern(format, args);
+                }
+                case MESSAGE_FORMAT -> {
+                    yield CannedMessageFormat.create(format, args).toPattern();
+                }
+            };
+        }
+    }
+
+    public static CannedFormattedString createFromMessageFormat(String messageFormatStr, Object... args) {
+        return new CannedFormattedString(MESSAGE_FORMAT_FORMATTER, messageFormatStr, List.of(args));
     }
 
     private record AddPrefixFormatter(BiFunction<String, Object[], String> formatter) implements BiFunction<String, Object[], String> {
@@ -79,4 +131,8 @@ public record CannedFormattedString(BiFunction<String, Object[], String> formatt
             return formatter.apply(format, new Object[] {str});
         }
     }
+
+    private static final BiFunction<String, Object[], String> MESSAGE_FORMAT_FORMATTER = (String format, Object[] args) -> {
+        return CannedMessageFormat.create(format, args).value();
+    };
 }

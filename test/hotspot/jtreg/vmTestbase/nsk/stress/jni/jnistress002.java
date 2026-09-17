@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,13 @@ package nsk.stress.jni;
 import nsk.share.Consts;
 import nsk.share.Debug;
 import nsk.share.test.StressOptions;
+import jdk.test.lib.thread.ThreadWrapper;
 import jdk.test.lib.Utils;
 
 import java.lang.reflect.Field;
 import java.util.Random;
 
-public class jnistress002 extends Thread {
+public class jnistress002 extends ThreadWrapper {
 
     /* Maximum number of iterations.    Ignored if <= 0L */
     static long numIteration = 0L;
@@ -246,8 +247,11 @@ public class jnistress002 extends Thread {
         garb = new GarbageGenerator[nGarb];
         for (i = 0; i < nJNI; i++)
             jniter[i] = new JNIter002(sync);
+        Thread[] jniterThreads = new Thread[nJNI];
+        for (i = 0; i < nJNI; i++)
+            jniterThreads[i] = jniter[i].getThread();
         for (i = 0; i < nInter; i++) {
-            irupt[i] = new Interrupter(jniter, sync);
+            irupt[i] = new Interrupter(jniterThreads, sync);
             irupt[i].setInterval(iruptInterval);
         }
         for (i = 0; i < nGarb; i++) {
@@ -423,7 +427,7 @@ class objectsJNI {
     }
 }
 
-class JNIter002 extends Thread {
+class JNIter002 extends ThreadWrapper {
 
     // The native method for testing JNI Object's calls
     public native objectsJNI[] jniobjects(String s, int i, long l,

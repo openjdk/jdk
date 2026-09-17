@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,9 @@ public class JDKMethodHandlesTestRunner {
     private static final String testPackageName = "test.java.lang.invoke";
 
     public static void test(String testClassName) throws Exception {
+        test(testClassName, true);
+    }
+    public static void test(String testClassName, boolean mainClassHasLambdas) throws Exception {
         String appJar = JarBuilder.build("MH", new File(classDir), null);
         String classList = testClassName + ".list";
         String archiveName = testClassName + ".jsa";
@@ -69,7 +72,7 @@ public class JDKMethodHandlesTestRunner {
                 public String[] vmArgs(RunMode runMode) {
                     if (runMode.isProductionRun()) {
                         return new String[] {
-                            "-Xlog:class+load,cds=debug",
+                            "-Xlog:class+load,cds=debug,aot+load",
                             verifyOpt,
                         };
                     } else {
@@ -90,8 +93,8 @@ public class JDKMethodHandlesTestRunner {
                 @Override
                 public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
                     out.shouldHaveExitValue(0);
-                    if (runMode.isProductionRun()) {
-                        out.shouldMatch(".class.load. test.java.lang.invoke." + testClassName +
+                    if (runMode.isProductionRun() && mainClassHasLambdas) {
+                        out.shouldMatch(".class.load.* test.java.lang.invoke." + testClassName +
                                         "[$][$]Lambda.*/0x.*source:.*shared.*objects.*file");
                     }
                 }

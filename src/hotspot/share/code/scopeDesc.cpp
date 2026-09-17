@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ ScopeDesc::ScopeDesc(const nmethod* code, PcDesc* pd, bool ignore_objects) {
   _reexecute     = pd->should_reexecute();
   _rethrow_exception = pd->rethrow_exception();
   _return_oop    = pd->return_oop();
+  _return_scalarized = pd->return_scalarized();
   _has_ea_local_in_scope = ignore_objects ? false : pd->has_ea_local_in_scope();
   _arg_escape    = ignore_objects ? false : pd->arg_escape();
   decode_body();
@@ -52,6 +53,7 @@ void ScopeDesc::initialize(const ScopeDesc* parent, int decode_offset) {
   _reexecute     = false; //reexecute only applies to the first scope
   _rethrow_exception = false;
   _return_oop    = false;
+  _return_scalarized = false;
   _has_ea_local_in_scope = parent->has_ea_local_in_scope();
   _arg_escape    = false;
   decode_body();
@@ -263,8 +265,8 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     }
   }
 
-#if COMPILER2_OR_JVMCI
-  if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != nullptr) {
+#ifdef COMPILER2
+  if (DoEscapeAnalysis && is_top() && _objects != nullptr) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ObjectValue* sv = (ObjectValue*) _objects->at(i);
@@ -278,7 +280,7 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
       st->cr();
     }
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }
 
 #endif
