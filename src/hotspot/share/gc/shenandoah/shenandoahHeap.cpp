@@ -2319,7 +2319,7 @@ uint ShenandoahHeap::max_workers() {
 }
 
 uint ShenandoahHeap::eligible_workers() const {
-  return control_thread()->concurrent_worker_count();
+  return checked_cast<uint>(control_thread()->concurrent_worker_count());
 }
 
 void ShenandoahHeap::stop() {
