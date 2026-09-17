@@ -24,8 +24,8 @@
  *
  */
 
-
 #include "classfile/systemDictionary.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
@@ -139,6 +139,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   }
 
   _heap->shenandoah_policy()->record_success_full(_heap->control_thread()->get_gc_id());
+
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
