@@ -659,9 +659,6 @@ public class Navigation {
         navigationBar.add(HtmlTree.DIV(HtmlStyles.subNav, subNavContent));
 
         navigationBar.add(MarkerComments.END_OF_TOP_NAVBAR);
-        navigationBar.add(HtmlTree.SPAN(HtmlStyles.skipNav)
-                .addUnchecked(Text.EMPTY)
-                .setId(HtmlIds.SKIP_NAVBAR_TOP));
 
         return navigationBar;
     }

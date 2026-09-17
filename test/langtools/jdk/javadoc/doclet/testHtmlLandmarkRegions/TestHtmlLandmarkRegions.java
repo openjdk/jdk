@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <header role="banner">
                     <nav role="navigation">""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
@@ -109,7 +109,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <header role="banner">
                     <nav role="navigation">""",
                 """
-                    <main role="main">
+                    <main role="main" id="skip-navbar-top">
                     <div class="header">
                     <h1 class="title">Document Title</h1>""",
                 """
@@ -148,7 +148,7 @@ public class TestHtmlLandmarkRegions extends JavadocTester {
                     <nav role="navigation">
                     """,
                 """
-                    <main role="main">A sample doc file""",
+                    <main role="main" id="skip-navbar-top">A sample doc file""",
                 """
                     <footer>""",
                 """
