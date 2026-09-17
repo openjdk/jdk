@@ -45,7 +45,7 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "runtime/thread.hpp"
+#include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
