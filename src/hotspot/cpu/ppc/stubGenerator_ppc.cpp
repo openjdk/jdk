@@ -3913,6 +3913,7 @@ class StubGenerator: public StubCodeGenerator {
 
     const uint32_t BASE = 65521;
     const uint32_t NMAX = 5552;
+    const uint32_t MAGIC = 0x80078071;
 
     Label L_nmax;
     Label L_nmax_loop;
@@ -3934,6 +3935,7 @@ class StubGenerator: public StubCodeGenerator {
     Register count = R10;
     Register tmp0  = R11;
     Register tmp1  = R12;
+    Register magic = R14;
 
     VectorRegister vdata    = VR0;
     VectorRegister vones    = VR1;
@@ -3944,13 +3946,15 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_const_optimized(base, BASE);
     __ load_const_optimized(nmax, NMAX);
+    __ load_const_optimized(magic, MAGIC);
 
     // load tables
     __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
 
     __ vspltisb(vones, 1);
 
-    __ lvsl(vweights, 0);
+    __ li(R0, 0);
+    __ lvsl(vweights, R0);
     __ vspltisb(vacc1, 15);
     __ vxor(vweights, vweights, vacc1);
     __ vaddubm(vweights, vweights, vones);
@@ -3985,18 +3989,18 @@ class StubGenerator: public StubCodeGenerator {
     __ bdnz(L_nmax_loop);
 
     // s1 = s1 % BASE
-    //    = s1 - (s1 / base) * base
-    __ divwu(tmp0, s1, base);
-    __ mullw(tmp1, tmp0, base);
-    __ subf_(s1, tmp1, s1);
+    __ mulhwu(tmp0, s1, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s1, tmp1, s1);
 
     // s2 = s2 % BASE
-    //    = s2 - (s2 / base) * base
-    __ divwu(tmp0, s2, base);
-    __ mullw(tmp1, tmp0, base);
-    __ subf_(s2, tmp1, s2);
+    __ mulhwu(tmp0, s2, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s2, tmp1, s2);
 
-    __ subf_(len, nmax, len);
+    __ subf(len, nmax, len);
 
     __ cmpw(CR0, len, nmax);
     __ bge(CR0, L_nmax);
@@ -4022,29 +4026,30 @@ class StubGenerator: public StubCodeGenerator {
 
     __ cmpwi(CR0, len, 0);
     __ beq(CR0, L_do_mod);
+    __ mtctr(len);
     __ bind(L_by1_loop);
 
     __ lbz(tmp0, 0, buf);
     __ addi(buf, buf, 1);
     __ add(s1, s1, tmp0);
     __ add(s2, s2, s1);
-    __ addi(len, len, -1);
 
-    __ cmpwi(CR0, len, 0);
-    __ bne(CR0, L_by1_loop);
+    __ bdnz(L_by1_loop);
 
     // final reduction
     __ bind(L_do_mod);
 
     // s1 = s1 % base
-    __ divwu(tmp0, s1, base);
-    __ mullw(tmp1, tmp0, base);
-    __ subf_(s1, tmp1, s1);
+    __ mulhwu(tmp0, s1, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s1, tmp1, s1);
 
     // s2 = s2 % base
-    __ divwu(tmp0, s2, base);
-    __ mullw(tmp1, tmp0, base);
-    __ subf_(s2, tmp1, s2);
+    __ mulhwu(tmp0, s2, magic);
+    __ srwi(tmp1, tmp0, 15);
+    __ mullw(tmp1, tmp1, base);
+    __ subf(s2, tmp1, s2);
 
     // combine
     __ bind(L_combine);
@@ -4116,10 +4121,10 @@ class StubGenerator: public StubCodeGenerator {
     __ vmsumubm(vacc1, vdata, vones, vacc1);
 
     // reduce 4 lanes into 1 scalar
-    // 1. vacc1 = rotate vacc2 by 8 bytes
-    //    vacc1 = {L2, L3, L0, L1}
-    // 2. add lanes together; vacc2 = vacc2 + vacc1
-    //    vacc2 = {L0+L2, L1+L3, L2+L0, L3+L1}
+    // 1. vacc2 = rotate vacc1 by 8 bytes
+    //    vacc2 = {L2, L3, L0, L1}
+    // 2. add lanes together; vacc1 = vacc1 + vacc2
+    //    vacc1 = {L0+L2, L1+L3, L2+L0, L3+L1}
     __ vsldoi(vacc2, vacc1, vacc1, 8);
     __ vadduwm(vacc1, vacc1, vacc2);
 
