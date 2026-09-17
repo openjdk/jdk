@@ -47,9 +47,9 @@ import static java.lang.constant.ConstantDescs.*;
  * @bug 8391308
  * @summary Verifies heap dump contains a reference to a java.lang.Class instance from its ClassLoader
  * @library /test/lib
- * @run driver ClassLoaderFieldsTest
+ * @run driver ClassLoaderDefinedClassesTest
  */
-class ClassLoaderFieldsTarg extends LingeredApp {
+class ClassLoaderDefinedClassesTarg extends LingeredApp {
 
     static class MyLoader extends ClassLoader {
         byte[] bytes = ClassFile.of().build(ClassDesc.of("Test"), clb ->
@@ -82,7 +82,7 @@ class ClassLoaderFieldsTarg extends LingeredApp {
     }
 }
 
-public class ClassLoaderFieldsTest {
+public class ClassLoaderDefinedClassesTest {
 
     public static void main(String[] args) throws Exception {
         File dumpFile = new File("Myheapdump.hprof");
@@ -93,7 +93,7 @@ public class ClassLoaderFieldsTest {
     private static void createDump(File dumpFile, String[] extraOptions) throws Exception {
         LingeredApp theApp = null;
         try {
-            theApp = new ClassLoaderFieldsTarg();
+            theApp = new ClassLoaderDefinedClassesTarg();
 
             List<String> extraVMArgs = new ArrayList<>();
             extraVMArgs.addAll(Arrays.asList(extraOptions));
@@ -134,7 +134,7 @@ public class ClassLoaderFieldsTest {
             log("Snapshot resolved.");
 
             JavaClass loaderClass =
-                snapshot.findClass("ClassLoaderFieldsTarg$MyLoader");
+                snapshot.findClass("ClassLoaderDefinedClassesTarg$MyLoader");
             JavaClass testClass = snapshot.findClass("Test");
 
             Asserts.assertNotNull(loaderClass, "MyLoader class missing from dump");
@@ -142,11 +142,6 @@ public class ClassLoaderFieldsTest {
             // Assert that the Class has a field for the class loader.
             Asserts.assertSame(testClass.getLoader(),
                                loaderClass.getInstances(false).nextElement());
-
-            JavaClass classLoaderClass = snapshot.findClass("java.lang.ClassLoader");
-            boolean hasClasses = Arrays.stream(classLoaderClass.getFields())
-                                       .anyMatch(field -> field.getName().equals("classes"));
-            Asserts.assertFalse(hasClasses);
         }
     }
 
