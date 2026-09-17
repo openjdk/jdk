@@ -146,4 +146,28 @@ class TestReturnValueArgument {
         ValueHolder returnedHolder = new Returner().returnArgument(holder);
         globalIdObj = returnedHolder.obj;
     }
+
+    @Test
+    // Return holder passed as argument, do not force a global escape. In the
+    // cases whether the holder is passed and returned in the same form (both
+    // scalarized or both buffered), we expect C2 to exploit the bytecode escape
+    // analyzer's ability to detect the argument as "local" and "returned" and
+    // optimize away the lock and unlock operations implementing the
+    // synchronized block.
+    // Currently C2 does not exploit bytecode escape analyzer information for
+    // returned arguments with mismatched buffer/scalar representations.
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "true", "ValueTypeReturnedAsFields", "true"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    @IR(applyIfAnd = {"ValueTypePassFieldsAsArgs", "false", "ValueTypeReturnedAsFields", "false"},
+        failOn = {IRNode.FAST_LOCK, IRNode.FAST_UNLOCK})
+    static void testReturnHolderWithoutEscape(int val) {
+        IdentityObject obj = new IdentityObject();
+        ValueHolder holder = new ValueHolder(obj);
+        synchronized (obj) {
+            obj.val = val;
+        }
+        returnArgument(holder);
+    }
+
 }
