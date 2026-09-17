@@ -1486,9 +1486,8 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
           if (n->outcnt() == 0) {   // Input also goes dead?
             if (!n->is_Con())
               nstack.push(n);       // Clear it out as well
-          } else if (n->outcnt() == 1 &&
-                     n->has_special_unique_user()) {
-            igvn->add_users_to_worklist( n );
+          } else if (n->outcnt() == 1 && n->has_special_unique_user()) {
+            igvn->add_users_to_worklist(n);
           } else if (n->outcnt() <= 2 && n->is_Store()) {
             // Push store's uses on worklist to enable folding optimization for
             // store/store and store/load to the same address.

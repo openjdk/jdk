@@ -3615,8 +3615,8 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
         igvn->_worklist.push( old );
       break;
     case 1:
-      if( old->is_Store() || old->has_special_unique_user() )
-        igvn->add_users_to_worklist( old );
+      if (old->is_Store() || old->has_special_unique_user())
+        igvn->add_users_to_worklist(old);
       break;
     case 2:
       if( old->is_Store() )
