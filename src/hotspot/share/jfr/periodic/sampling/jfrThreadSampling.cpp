@@ -62,12 +62,7 @@ static inline void send_safepoint_latency_event(const JfrSampleRequest& request,
   if (event.should_commit()) {
     event.set_threadState(_thread_in_Java);
     jt->jfr_thread_local()->set_cached_stack_trace_id(sid);
-    // Always attribute a safepoint latency event to the JavaThread's JVM identity,
-    // rather than to its mounted virtual thread, if any. A safepoint poll belongs
-    // to the machine thread that executes the poll instruction.
-    JfrThreadLocal::impersonate(jt, JfrThreadLocal::jvm_thread_id(jt));
     event.commit();
-    JfrThreadLocal::stop_impersonating(jt);
     jt->jfr_thread_local()->clear_cached_stack_trace();
   }
 }
@@ -301,7 +296,7 @@ static void impersonate_if_needed(Thread* current, JavaThread* jt, traceid tid, 
   assert(current != nullptr, "invariant");
   assert(jt != nullptr, "invariant");
 
-  if (current != jt || (JfrThreadLocal::is_vthread(jt) && !in_continuation)) {
+  if (current != jt || (!in_continuation && JfrThreadLocal::is_vthread(jt))) {
     JfrThreadLocal::impersonate(current, tid);
   }
   assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
@@ -407,7 +402,8 @@ static void drain_enqueued_cpu_time_requests(const JfrTicks& now, JfrThreadLocal
   assert(queue.is_empty(), "invariant");
   tl->set_has_cpu_time_jfr_requests(false);
   if (queue.lost_samples() > 0) {
-    const traceid tid = JfrThreadLocal::thread_id(jt);
+    // Lost samples belong to the platform thread that owns the queue.
+    const traceid tid = JfrThreadLocal::jvm_thread_id(jt);
     JfrThreadLocal::impersonate(current, tid);
     assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
     JfrCPUTimeThreadSampling::send_lost_event(now, queue.get_and_reset_lost_samples());

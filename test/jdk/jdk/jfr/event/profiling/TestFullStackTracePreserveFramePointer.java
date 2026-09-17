@@ -31,7 +31,7 @@ import jdk.test.lib.jfr.EventNames;
  * @requires vm.opt.DeoptimizeALot != true
  * @library /test/lib
  * @build jdk.jfr.event.profiling.StackTraceTestMatrix
- * @run main/othervm -XX:CompileCommand=compileonly,jdk.test.lib.jfr.RecurseThread::recurse* -XX:+PreserveFramePointer jdk.jfr.event.profiling.TestFullStackTracePreserveFramePointer
+ * @run main/othervm -XX:CompileCommand=compileonly,jdk.test.lib.jfr.RecurseThread::recurse* -XX:+PreserveFramePointer ${test.main.class}
  */
 public class TestFullStackTracePreserveFramePointer {
 
