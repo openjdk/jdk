@@ -26,6 +26,7 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
@@ -37,12 +38,14 @@
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/events.hpp"
 
@@ -453,7 +456,7 @@ void ShenandoahDegenGC::op_update_roots() {
 void ShenandoahDegenGC::op_cleanup_complete() {
   ShenandoahGCPhase phase(ShenandoahPhaseTimings::degen_gc_cleanup_complete);
 
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   // If we are degenerating for old mark only, we need to check that there are no accidental
   // young pointers in SATB queues. If so, we need to filter them before we perform cleanups,
