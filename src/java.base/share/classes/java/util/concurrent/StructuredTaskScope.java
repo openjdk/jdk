@@ -97,8 +97,8 @@ import java.util.function.UnaryOperator;
  *
  * <p> To ensure correct usage, the following restrictions are enforced:
  * <ul>
- * <li> The {@code fork} methods and the {@link #join()} and {@link #close()} methods may
- * only be invoked by the <em>owner thread</em> (the thread that opened the {@code
+ * <li> The {@code fork} methods, the {@link #join()} method and {@link #close()} method
+ * may only be invoked by the <em>owner thread</em> (the thread that opened the {@code
  * StructuredTaskScope}).
  * <li> The {@code join()} method must be invoked to get the outcome after forking
  * subtasks (the {@code close} method throws an exception after closing if the owner
@@ -149,12 +149,11 @@ import java.util.function.UnaryOperator;
  * more advanced or custom policy is required. A {@code Joiner} that returns a
  * non-{@code null} result may remove the need for <i>bookkeeping</i> and the need to keep
  * a reference to {@code Subtask} objects returned by the {@link #fork(Callable)} method.
-
- * <p> Now consider another example where a main task splits into two subtasks. In this
- * example, each subtask produces a {@code String} result with the main task interested
- * in the successful outcome of either subtask. The example uses {@link
- * Joiner#anySuccessfulOrThrow() Joiner.anySuccessfulOrThrow()} to create a {@code Joiner}
- * that produces the result of any subtask that completes successfully.
+ *
+ * <p> Now consider an example where a main task splits into two subtasks and where the
+ * main task is interested in the successful outcome of either subtask. The example uses
+ * {@link Joiner#anySuccessfulOrThrow() Joiner.anySuccessfulOrThrow()} to create a
+ * {@code Joiner} that produces the result of any subtask that completes successfully.
  * {@snippet lang=java :
  *    // @link substring="anySuccessfulOrThrow()" target="Joiner#anySuccessfulOrThrow()" :
  *    try (var scope = StructuredTaskScope.open(Joiner.<String>anySuccessfulOrThrow())) {
@@ -170,17 +169,16 @@ import java.util.function.UnaryOperator;
  *    } // close
  * }
  *
- * <p> In the example, the task forks the two subtasks, then waits in the {@code
- * join()} method for either subtask to complete successfully or for both subtasks to fail.
- * If one of the subtasks completes successfully then the {@code Joiner} causes the other
- * subtask to be cancelled (this will interrupt the thread executing the subtask), and
- * the {@code join()} method returns the result of the successful subtask. Cancelling the
- * other subtask avoids the task waiting for a result that it doesn't care about. If
- * both subtasks fail then the {@code join()} method throws {@link ExecutionException} with
- * the exception from one of the subtasks as the {@linkplain Throwable#getCause() cause}.
- * {@link Joiner#anySuccessfulOrThrow(Function) Joiner.anySuccessfulOrThrow(Function)} can
- * be used with a function that produces an exception other than {@code ExecutionException}
- * to throw when all subtasks fail.
+ * <p> The main task waits in the {@code join()} method for either subtask to complete
+ * successfully or for both subtasks to fail. If one of the subtasks completes successfully,
+ * then the {@code Joiner} causes the other subtask to be cancelled (this will interrupt
+ * the thread executing the subtask), and the {@code join()} method returns the result of
+ * the successful subtask. Cancelling the other subtask avoids the task waiting for a
+ * result that it doesn't care about. If both subtasks fail, then the {@code join()} method
+ * throws {@link ExecutionException} with the exception from one of the subtasks as the
+ * {@linkplain Throwable#getCause() cause}. {@link Joiner#anySuccessfulOrThrow(Function)
+ * Joiner.anySuccessfulOrThrow(Function)} can be used with a function that produces an
+ * exception other than {@code ExecutionException} to throw when all subtasks fail.
  *
  * <h2>Configuration</h2>
  *
