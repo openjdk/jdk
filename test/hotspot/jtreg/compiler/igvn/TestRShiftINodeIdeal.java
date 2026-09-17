@@ -35,7 +35,7 @@ package compiler.igvn;
  *                   -XX:CompileCommand=dontinline,${test.main.class}$X::<init>
  *                   -XX:VerifyIterativeGVN=1110
  *                   ${test.main.class}
- * @run driver ${test.main.class}
+ * @run main ${test.main.class}
  */
 public class TestRShiftINodeIdeal {
     static class X {
