@@ -36,6 +36,7 @@ import org.junit.jupiter.params.provider.FieldSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
 import java.util.List;
@@ -56,13 +57,18 @@ public class TestCNFRounding {
             RoundingMode.CEILING,
             RoundingMode.FLOOR);
 
-    private static final List<Arguments> BIG_DECIMAL_ROUNDING_ARGS = List.of(
-            // Basic + Negative
+    private static final List<Arguments> BIG_NUMBER_ROUNDING_ARGS = List.of(
+            // Basic BigDecimal input
             Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.HALF_UP),
             Arguments.of(BigDecimal.valueOf(-21_534_567.20), "-21.53M", 2, RoundingMode.HALF_UP),
             // RoundingMode UP/DOWN
             Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.54M", 2, RoundingMode.UP),
-            Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.DOWN)
+            Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.DOWN),
+            // BigInteger path that forces BigDecimal division.
+            // Need to supply a BI whose underlying value exceeds what 64 bit long supports and whose
+            // division result would produce a fraction. LONG.MAX_VALUE +- 1 works.
+            Arguments.of(new BigInteger("9223372036854775808"), "9223372.04T", 2, RoundingMode.HALF_UP),
+            Arguments.of(new BigInteger("-9223372036854775809"), "-9223372.04T", 2, RoundingMode.HALF_UP)
     );
 
     Object[][] roundingData() {
@@ -181,8 +187,8 @@ public class TestCNFRounding {
     // the division operation which is calculated when applying the compact pattern.
     // This causes premature rounding, and produces an incorrect value.
     @ParameterizedTest
-    @FieldSource("BIG_DECIMAL_ROUNDING_ARGS")
-    void testBigDecimalRounding(BigDecimal num, String expected, int maxFrac, RoundingMode rm) {
+    @FieldSource("BIG_NUMBER_ROUNDING_ARGS")
+    void testBigNumberRounding(Number num, String expected, int maxFrac, RoundingMode rm) {
         var fmt = NumberFormat.getCompactNumberInstance(Locale.US, NumberFormat.Style.SHORT);
         fmt.setMaximumFractionDigits(maxFrac);
         fmt.setRoundingMode(rm);

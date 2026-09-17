@@ -921,10 +921,10 @@ public final class CompactNumberFormat extends NumberFormat {
                 decimalFormat.setDigitList(number, isNegative, 0);
             } else {
                 // To avoid truncation of fractional part store the value in
-                // BigDecimal and follow BigDecimal path instead of
-                // BigInteger path
+                // BigDecimal and follow BigDecimal path instead of BigInteger path.
+                // This division can be performed exactly, because the divisor is a power of ten.
                 BigDecimal nDecimal = new BigDecimal(number)
-                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                        .divide(new BigDecimal(divisor.toString()));
                 decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
             }
             val = decimalFormat.getDigitList().getDouble();
