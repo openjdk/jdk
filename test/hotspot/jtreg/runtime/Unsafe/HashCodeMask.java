@@ -41,9 +41,9 @@ public class HashCodeMask {
         while ((n & 1) == 1) {
             n >>>= 1;
         }
-        if (n == 0) {
+        if (n == 0 && hashCodeMask > 0) {
             return;
         }
-        throw new RuntimeException("Expected hashCodeMask to be a power of two minus 1, actual hashCodeMask:" + hashCodeMask);
+        throw new RuntimeException("Expected hashCodeMask to be a power of two minus 1, and non-zero, actual hashCodeMask:" + hashCodeMask);
     }
 }
