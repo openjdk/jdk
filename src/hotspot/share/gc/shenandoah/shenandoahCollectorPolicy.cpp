@@ -166,7 +166,7 @@ bool ShenandoahCollectorPolicy::is_requested_gc(GCCause::Cause cause) {
 }
 
 bool ShenandoahCollectorPolicy::should_run_full_gc(GCCause::Cause cause) {
-  if (cause == GCCause::_shenandoah_upgrade_to_full_gc || cause == GCCause::_shenandoah_humongous_allocation_failure) {
+  if (cause == GCCause::_shenandoah_upgrade_to_full_gc) {
     return true;
   }
   return is_explicit_gc(cause) ? !ExplicitGCInvokesConcurrent : !ShenandoahImplicitGCInvokesConcurrent;
@@ -305,7 +305,7 @@ void ShenandoahCollectorPolicy::print_gc_stats(outputStream* out) const {
     if (stall_count > 0) {
       const auto phase = static_cast<ShenandoahController::ShenandoahCollectorPhase>(c);
       const char* desc = ShenandoahController::collector_phase_to_string(phase);
-      out->print_cr("    %5zu happened at %s", stall_count, desc);
+      out->print_cr("  %5zu happened at %s", stall_count, desc);
     }
   }
   out->cr();
