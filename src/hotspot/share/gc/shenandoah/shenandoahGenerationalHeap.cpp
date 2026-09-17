@@ -771,7 +771,7 @@ private:
       assert(update_watermark >= r->bottom(), "sanity");
 
       log_debug(gc)("Update refs worker " UINT32_FORMAT ", looking at region %zu", worker_id, r->index());
-      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
+      if (r->is_update_required()) {
         if (r->is_young()) {
           _heap->marked_object_oop_iterate(r, &cl, update_watermark);
         } else if (r->is_old()) {
@@ -824,7 +824,7 @@ private:
     while (!_heap->check_cancelled_gc_and_yield() && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
-      if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {
+      if (r->is_update_required() && r->is_old()) {
         // allocations into old (i.e., promotions or evacuations) do _not_ update references
         // when they copy, so we move the UWM up for each such allocation.
         HeapWord* start_of_range = r->bottom() + assignment._chunk_offset;

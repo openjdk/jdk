@@ -2550,7 +2550,7 @@ private:
       // must also have the references in these objects be updated.
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
-      if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
+      if (r->is_update_required()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
       if (_heap->check_cancelled_gc_and_yield()) {
