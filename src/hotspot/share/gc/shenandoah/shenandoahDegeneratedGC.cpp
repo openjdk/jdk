@@ -464,9 +464,11 @@ void ShenandoahDegenGC::op_cleanup_complete() {
   // and the condition is similar to propagate_gc_state_to_all_threads().
   if (heap->is_concurrent_old_mark_in_progress() && !heap->is_concurrent_young_mark_in_progress()) {
     ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
+    bool old_val = satb_qs.get_filter_out_young();
     satb_qs.set_filter_out_young(true);
     ShenandoahFlushSATB flush_satb(satb_qs);
     Threads::threads_do(&flush_satb);
+    satb_qs.set_filter_out_young(old_val);
   }
 
   heap->recycle_trash();
