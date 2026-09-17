@@ -51,6 +51,12 @@ public class TestParallelIvInIntCountedLoop {
                 "-XX:StressLongCountedLoop=0", // Don't convert int counted loops to long ones
                 "-XX:PerMethodTrapLimit=100" // allow slow-path loop limit checks
         );
+        TestFramework.runWithFlags(
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:StressLongCountedLoop=0",
+                "-XX:PerMethodTrapLimit=100",
+                "-XX:LoopMaxUnroll=0" // the peeled case needs unrolling off
+        );
     }
 
     /*
@@ -395,7 +401,7 @@ public class TestParallelIvInIntCountedLoop {
     //   => C2 removes the variable as it is not used any more
     //   => C2 finds a trivial CountedLoop and removes it as well
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
     private static int testIntCountedLoopWithDoubledIv(int stop) {
         int a = 0, prev = -1;
         for (int i = 0; i < stop; i++) {
@@ -413,7 +419,7 @@ public class TestParallelIvInIntCountedLoop {
     }
 
     @Test
-    @IR(failOn = { IRNode.COUNTED_LOOP })
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
     private static int testIntCountedLoopWithDoubledIvAndNegativeStride(int stop) {
         int a = 0, prev = 5;
         for (int i = 0; i > stop; i -= 5) {
@@ -428,5 +434,29 @@ public class TestParallelIvInIntCountedLoop {
     private static void runTestIntCountedLoopWithDoubledIvAndNegativeStride() {
         int s = RNG.nextInt(2, 1024);
         Asserts.assertEQ(10 - Math.ceilDiv(s, 5) * 5, testIntCountedLoopWithDoubledIvAndNegativeStride(-s));
+    }
+
+    // prev does not lag the counter on entry in the original code, but it does after the loop is peeled
+    // (unrolling is off: otherwise the loop is split into pre/main/post and the post loop remains)
+    @Test
+    @IR(applyIf = { "LoopMaxUnroll", "0" }, failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvAfterPeeling(int stop, boolean flag) {
+        int a = 0, prev = 0;
+        for (int i = 0; i < stop; i++) {
+            if (flag) {
+                break;
+            }
+            a = prev;
+            prev = i;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvAfterPeeling")
+    private static void runTestIntCountedLoopWithDoubledIvAfterPeeling() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(0, testIntCountedLoopWithDoubledIvAfterPeeling(s, true));
+        Asserts.assertEQ(s - 2, testIntCountedLoopWithDoubledIvAfterPeeling(s, false));
     }
 }
