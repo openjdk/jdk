@@ -96,7 +96,7 @@ class fixed_strings {
       }
     }
     node* p = new node;
-    p->v = os::strdup_check_oom(s);
+    p->v = os::strdup_check_oom(s, mtInternal);
     p->next = first;
     first = p;
     return p->v;

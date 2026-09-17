@@ -251,6 +251,8 @@ class VM_Version : public Abstract_VM_Version {
                                                                                                           \
   /* Atomic compare-and-swap (CAS) instructions */                                                        \
   decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Byte and Halfword Atomic Memory instructions */                                                      \
+  decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
