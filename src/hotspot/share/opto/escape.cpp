@@ -1629,7 +1629,7 @@ void ConnectionGraph::add_proj(Node* n, Unique_Node_List* delayed_worklist) {
   } else if (n->as_Proj()->_con >= TypeFunc::Parms && n->in(0)->is_Call() && n->bottom_type()->isa_ptr()) {
     CallNode* call = n->in(0)->as_Call();
     assert(call->tf()->returns_value_type_as_fields(), "");
-    if (n->as_Proj()->_con == TypeFunc::Parms || !returns_an_argument(call)) {
+    if (n->as_Proj()->_con == TypeFunc::Parms || !returns_an_argument(call) || has_incompatible_argument_return(call)) {
       // either:
       // - not an argument returned
       // - the returned buffer for a returned scalarized argument
@@ -2266,8 +2266,7 @@ public:
   }
 };
 
-// Determine whether any arguments are returned.
-bool ConnectionGraph::returns_an_argument(CallNode* call) {
+bool ConnectionGraph::returns_an_argument(const CallNode* call) {
   ciMethod* meth = call->as_CallJava()->method();
   BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
   if (call_analyzer == nullptr) {
@@ -2275,7 +2274,24 @@ bool ConnectionGraph::returns_an_argument(CallNode* call) {
   }
 
   const TypeTuple* d = call->tf()->domain_sig();
-  bool ret_arg = false;
+  for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
+    const Type* t = d->field_at(i);
+    if (t->isa_ptr() != nullptr &&
+        call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool ConnectionGraph::has_incompatible_argument_return(const CallNode* call) {
+  ciMethod* meth = call->as_CallJava()->method();
+  BCEscapeAnalyzer* call_analyzer = meth->get_bcea();
+  if (call_analyzer == nullptr) {
+    return true;
+  }
+
+  const TypeTuple* d = call->tf()->domain_sig();
   int arg_num = 0;
   for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
     const Type* t = d->field_at(i);
@@ -2283,19 +2299,18 @@ bool ConnectionGraph::returns_an_argument(CallNode* call) {
         call_analyzer->is_arg_returned(i - TypeFunc::Parms)) {
       const bool scalarized_arg = meth->is_scalarized_arg(arg_num);
       if (scalarized_arg && !compatible_return(call->as_CallJava(), i)) {
-        return false;
+        return true;
       }
       if (call->tf()->returns_value_type_as_fields() != scalarized_arg) {
-        return false;
+        return true;
       }
-      ret_arg = true;
     }
     if (t != Type::HALF) {
       arg_num++;
     }
   }
   assert(arg_num == meth->signature()->count() + (meth->is_static() ? 0 : 1), "inconsistent argument count");
-  return ret_arg;
+  return false;
 }
 
 void ConnectionGraph::add_call_node(CallNode* call) {
@@ -2412,7 +2427,7 @@ void ConnectionGraph::add_call_node(CallNode* call) {
         // For scalarized argument/return: process_call_arguments() adds an edge between a call projection for a field
         // and the argument input to the call for that field. An edge is added between the projection for the returned
         // buffer and the call.
-        if (returns_an_argument(call) && !call->tf()->returns_value_type_as_fields()) {
+        if (returns_an_argument(call) && !has_incompatible_argument_return(call) && !call->tf()->returns_value_type_as_fields()) {
           // returns non scalarized argument
           add_local_var(call, PointsToNode::ArgEscape);
         } else {
@@ -2621,8 +2636,9 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
         break; // Boxing methods do not modify any oops.
       }
       BCEscapeAnalyzer* call_analyzer = (meth !=nullptr) ? meth->get_bcea() : nullptr;
-      // fall-through if not a Java method or no analyzer information
-      if (call_analyzer != nullptr) {
+      // Fall-through if not a Java method, no analyzer information, or
+      // incompatible argument returns.
+      if (call_analyzer != nullptr && !has_incompatible_argument_return(call)) {
         PointsToNode* call_ptn = ptnode_adr(call->_idx);
         bool ret_arg = returns_an_argument(call);
         for (DomainIterator di(call->as_CallJava()); di.has_next(); di.next()) {

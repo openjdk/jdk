@@ -372,7 +372,9 @@ private:
   // Compute the escape state for arguments to a call.
   void process_call_arguments(CallNode *call);
 
-  bool returns_an_argument(CallNode* call);
+  bool returns_an_argument(const CallNode* call);
+
+  bool has_incompatible_argument_return(const CallNode* call);
 
   // Add PointsToNode node corresponding to a call
   void add_call_node(CallNode* call);
