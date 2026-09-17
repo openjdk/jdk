@@ -292,16 +292,6 @@ static bool compute_top_frame(const JfrSampleRequest& request, frame& top_frame,
   return true;
 }
 
-static void impersonate_if_needed(Thread* current, JavaThread* jt, traceid tid, bool in_continuation) {
-  assert(current != nullptr, "invariant");
-  assert(jt != nullptr, "invariant");
-
-  if (current != jt || (!in_continuation && JfrThreadLocal::is_vthread(jt))) {
-    JfrThreadLocal::impersonate(current, tid);
-  }
-  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
-}
-
 static void record_thread_in_java(const JfrSampleRequest& request, const JfrTicks& now, const JfrThreadLocal* tl, JavaThread* jt, Thread* current) {
   assert(jt != nullptr, "invariant");
   assert(tl != nullptr, "invariant");
@@ -326,7 +316,8 @@ static void record_thread_in_java(const JfrSampleRequest& request, const JfrTick
   }
   assert(sid != 0, "invariant");
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
-  impersonate_if_needed(current, jt, tid, in_continuation);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
   send_sample_event<EventExecutionSample>(request._sample_ticks, now, sid, tid);
   if (current == jt) {
     send_safepoint_latency_event(request, now, sid, jt);
@@ -344,7 +335,8 @@ static void record_cpu_time_thread(const JfrCPUTimeSampleRequest& request, const
   bool could_compute_top_frame = compute_top_frame(request._request, top_frame, in_continuation, jt, biased);
 
   const traceid tid = in_continuation ? tl->vthread_id_with_epoch_update(jt) : JfrThreadLocal::jvm_thread_id(jt);
-  impersonate_if_needed(current, jt, tid, in_continuation);
+  JfrThreadLocal::impersonate(current, tid);
+  assert(JfrThreadLocal::thread_id(current) == tid, "invariant");
 
   if (!could_compute_top_frame) {
     JfrCPUTimeThreadSampling::send_empty_event(request._request._sample_ticks, request._cpu_time_period);

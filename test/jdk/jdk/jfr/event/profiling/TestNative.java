@@ -24,8 +24,8 @@
 package jdk.jfr.event.profiling;
 
 import java.time.Duration;
+import java.util.concurrent.atomic.AtomicReference;
 
-import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.Asserts;
@@ -49,8 +49,14 @@ public class TestNative {
     public static void main(String[] args) throws Exception {
         Thread target = new Thread(TestNative::nativeMethod, "Native Sample Target");
         target.setDaemon(true);
+        AtomicReference<Throwable> failure = new AtomicReference<>();
         try (RecordingStream rs = new RecordingStream()) {
             rs.enable(NATIVE_EVENT).withPeriod(Duration.ofMillis(1));
+            rs.onError(t -> {
+                failure.compareAndSet(null, t);
+                alive = false;
+                rs.close();
+            });
             rs.onEvent(NATIVE_EVENT, e -> {
                 long sampledThreadId = Events.assertField(e, "sampledThread.javaThreadId").getValue();
                 if (sampledThreadId != target.threadId()) {
@@ -64,6 +70,11 @@ public class TestNative {
             });
             target.start();
             rs.start();
+        } finally {
+            alive = false;
+        }
+        if (failure.get() != null) {
+            throw new RuntimeException("Native sample validation failed", failure.get());
         }
 
     }
