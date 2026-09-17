@@ -26,7 +26,6 @@
  * @test
  * @summary Use AOT cache from different directory between training and production
  * @bug 8376576
- * @requires vm.cds
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
  * @build AOTCacheOtherDirectoryTest
@@ -59,6 +58,7 @@ public class AOTCacheOtherDirectoryTest {
         Path destDir = Files.createDirectory(Paths.get(targetDirName));
         Path destPath = destDir.resolve(jarName);
         Files.move(srcPath, destPath, REPLACE_EXISTING);
+        final String realPath = destPath.toRealPath().toUri().toURL().getPath();
 
         // Dump archive in root directory first
         SimpleCDSAppTester.of(targetDirName + File.separator + aotCacheName)
@@ -75,6 +75,7 @@ public class AOTCacheOtherDirectoryTest {
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         OutputAnalyzer output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
         output.shouldHaveExitValue(0);
+        output.shouldContain("CodeSource = " + realPath);
 
         // At runtime, run from /target so the classpath is different but use the same JAR
         String[] cmdLine2 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
@@ -85,12 +86,13 @@ public class AOTCacheOtherDirectoryTest {
         pb.directory(destDir.toFile());
         output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
         output.shouldHaveExitValue(0);
+        output.shouldContain("CodeSource = " + realPath);
     }
 }
 
 class AOTCacheOtherDirectoryApp {
     public static void main(String[] args) {
         String path = AOTCacheOtherDirectoryApp.class.getProtectionDomain().getCodeSource().getLocation().getPath();
-        System.out.println(path);
+        System.out.println("CodeSource = " + path);
     }
 }
