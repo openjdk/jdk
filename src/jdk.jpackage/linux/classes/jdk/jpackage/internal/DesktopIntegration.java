@@ -34,12 +34,16 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.imageio.ImageIO;
 import javax.xml.stream.XMLStreamException;
@@ -50,7 +54,6 @@ import jdk.jpackage.internal.model.LinuxLauncher;
 import jdk.jpackage.internal.model.LinuxPackage;
 import jdk.jpackage.internal.model.Package;
 import jdk.jpackage.internal.util.CompositeProxy;
-import jdk.jpackage.internal.util.Enquoter;
 import jdk.jpackage.internal.util.PathUtils;
 import jdk.jpackage.internal.util.XmlUtils;
 
@@ -138,6 +141,21 @@ final class DesktopIntegration extends ShellCustomAction {
                 (LinuxLauncher) pkg.app().mainLauncher().orElseThrow());
     }
 
+    SortedMap<LinuxLauncher, Path> cookedDesktopEntryFiles() {
+        return unfold().flatMap(v -> {
+            return v.desktopFile.stream().map(InstallableFile::srcPath).map(path -> {
+                return Map.entry(v.launcher, path);
+            });
+        }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> {
+            throw new IllegalStateException();
+        }, () -> {
+            // The main launcher first; additional launchers follow, sorted by name.
+            return new TreeMap<>(Comparator.<LinuxLauncher>comparingInt(launcher -> {
+                return launcher == pkg.app().mainLauncher().orElseThrow() ? 0 : 1;
+            }).thenComparing(LinuxLauncher::name));
+        }));
+    }
+
     @Override
     List<String> requiredPackages() {
         return Stream.of(List.of(this), nestedIntegrations).flatMap(
@@ -220,12 +238,12 @@ final class DesktopIntegration extends ShellCustomAction {
         var installedLayout = pkg.asInstalledPackageApplicationLayout().orElseThrow();
 
         Map<String, String> data = new HashMap<>();
-        data.put("APPLICATION_NAME", launcher.name());
-        data.put("APPLICATION_DESCRIPTION", launcher.description());
+        data.put("APPLICATION_NAME", DesktopEntry.NAME.formatDesktopFileEntryValue(launcher.name()));
+        data.put("APPLICATION_DESCRIPTION", DesktopEntry.COMMENT.formatDesktopFileEntryValue(launcher.description()));
         data.put("APPLICATION_ICON", iconFile.map(
-                f -> f.installPath().toString()).orElse(null));
-        data.put("DEPLOY_BUNDLE_CATEGORY", pkg.menuGroupName());
-        data.put("APPLICATION_LAUNCHER", Enquoter.forPropertyValues().applyTo(
+                f -> DesktopEntry.ICON.formatDesktopFileEntryValue(f.installPath().toString())).orElse(null));
+        data.put("DEPLOY_BUNDLE_CATEGORY", DesktopEntry.CATEGORIES.formatDesktopFileEntryValue(pkg.menuGroupName()));
+        data.put("APPLICATION_LAUNCHER", DesktopEntry.EXEC.formatDesktopFileEntryValue(
                 installedLayout.launchersDirectory().resolve(launcher.executableNameWithSuffix()).toString()));
         data.put("STARTUP_DIRECTORY", launcher.shortcut()
                 .flatMap(LauncherShortcut::startupDirectory)
@@ -241,11 +259,13 @@ final class DesktopIntegration extends ShellCustomAction {
                             throw new AssertionError();
                         }
                     }
-                }).map(str -> {
-                    return "Path=" + str;
-                }).orElse(null));
+                }).map(Path::toString).map(DesktopEntry.PATH::formatDesktopFileEntry).orElse(null));
 
         return data;
+    }
+
+    private Stream<DesktopIntegration> unfold() {
+        return Stream.concat(Stream.of(this), nestedIntegrations.stream().flatMap(DesktopIntegration::unfold));
     }
 
     /**
@@ -413,7 +433,17 @@ final class DesktopIntegration extends ShellCustomAction {
 
     private void saveDesktopFile(Map<String, String> data) throws IOException {
         List<String> mimeTypes = getMimeTypeNamesFromFileAssociations();
-        data.put("DESKTOP_MIMES", "MimeType=" + String.join(";", mimeTypes));
+        // Don't write an empty "MimeType" desktop entry.
+        // To pass validation with the older desktop-file-validate command,
+        // the value must end with a semicolon (;).
+        // If the list is empty, the value of the entry becomes a semicolon
+        // and barely passes validation with a newer desktop-file-validate command;
+        // it emits a non-fatal error:
+        //
+        // (error: (will be fatal in the future): value ";" for key "MimeType" in group "Desktop Entry" contains value "" which is an invalid MIME type: "" does not contain a subtype).
+        //
+        data.put("DESKTOP_MIMES", mimeTypes.isEmpty() ? null
+                : DesktopEntry.MIME_TYPE.formatDesktopFileEntry(String.join(";", mimeTypes)));
 
         // prepare desktop shortcut
         desktopFileResource

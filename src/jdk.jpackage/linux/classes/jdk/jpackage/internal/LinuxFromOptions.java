@@ -36,6 +36,7 @@ import static jdk.jpackage.internal.cli.StandardOption.LINUX_PACKAGE_NAME;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RELEASE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_RPM_LICENSE_TYPE;
 import static jdk.jpackage.internal.cli.StandardOption.LINUX_SHORTCUT_HINT;
+import static jdk.jpackage.internal.cli.StandardOption.TEMP_ROOT;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_DEB;
 import static jdk.jpackage.internal.model.StandardPackageType.LINUX_RPM;
 
@@ -126,7 +127,11 @@ final class LinuxFromOptions {
 
         LINUX_PACKAGE_DEPENDENCIES.ifPresentIn(options, pkgBuilder::additionalDependencies);
         LINUX_APP_CATEGORY.ifPresentIn(options, pkgBuilder::category);
-        LINUX_MENU_GROUP.ifPresentIn(options, pkgBuilder::menuGroupName);
+        LINUX_MENU_GROUP.ifPresentIn(options, v -> {
+            pkgBuilder.menuGroupName(v)
+                    .probeMenuGroupNameFile(TEMP_ROOT.getFrom(options).resolve("desktop-file-validate/probe.desktop"));
+            pkgBuilder.desktopEntryFileValidator(sysEnv.desktopEntryFileValidator());
+        });
         LINUX_RELEASE.ifPresentIn(options, pkgBuilder::release);
         LINUX_PACKAGE_NAME.ifPresentIn(options, pkgBuilder::literalName);
 

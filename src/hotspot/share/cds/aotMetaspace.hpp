@@ -119,9 +119,9 @@ public:
 
   static bool preimage_static_archive_dumped() NOT_CDS_RETURN_(false);
 
-  static void unrecoverable_loading_error(const char* message = "unrecoverable error");
+  [[noreturn]] static void unrecoverable_loading_error(const char* message = "unrecoverable error");
   static void report_loading_error(const char* format, ...) ATTRIBUTE_PRINTF(1, 0);
-  static void unrecoverable_writing_error(const char* message = nullptr);
+  [[noreturn]] static void unrecoverable_writing_error(const char* message = nullptr);
   static void writing_error(const char* message = nullptr);
 
   static void make_method_handle_intrinsics_shareable() NOT_CDS_RETURN;

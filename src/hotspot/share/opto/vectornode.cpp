@@ -1281,6 +1281,10 @@ Node* VectorNode::make_scalar(Compile* c, int vopc, BasicType bt, Node* control,
       return new AndINode(in1, in2);
     case Op_AndL:
       return new AndLNode(in1, in2);
+    case Op_DivI:
+      return new DivINode(control, in1, in2);
+    case Op_DivL:
+      return new DivLNode(control, in1, in2);
     case Op_DivF:
       return new DivFNode(control, in1, in2);
     case Op_DivD:
@@ -2431,8 +2435,13 @@ Node* VectorMaskCastNode::Identity(PhaseGVN* phase) {
   // If the types of the input and output nodes in a VectorMaskCast chain are
   // exactly the same, the intermediate VectorMaskCast nodes can be eliminated.
   Node* n = VectorNode::uncast_mask(this);
-  if (vect_type()->eq(n->bottom_type())) {
-      return n;
+  // A chain can also end up converting between different mask types, in which
+  // case it must be kept, so the types have to be compared below.
+  //
+  // Types are hash-consed, so a pointer comparison is enough. It also tolerates
+  // the chain ending at a `Top` node on a dead path.
+  if (vect_type() == n->bottom_type()) {
+    return n;
   }
   return this;
 }
@@ -2875,6 +2884,13 @@ Node* XorVNode::Ideal_XorV_to_VectorBitwiseBlend(PhaseGVN* phase, bool can_resha
   } else if (inner_xor->in(2) == a) {
     b = inner_xor->in(1);
   } else {
+    return nullptr;
+  }
+
+  // Dead code can leave TOP on the inputs. TOP is a unique node, so the
+  // identity checks above match it spuriously, and VectorBitwiseBlendNode
+  // requires all of its inputs to be vectors.
+  if (a->is_top() || b->is_top() || sel->is_top()) {
     return nullptr;
   }
 
