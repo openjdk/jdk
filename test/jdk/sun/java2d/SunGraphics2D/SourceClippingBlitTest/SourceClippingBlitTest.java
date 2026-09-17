@@ -27,10 +27,9 @@
  * @bug 6244574 6258142 6395165 6588884
  * @summary Tests that source is clipped correctly when blitting
  * different types of images to the screen
- * @run main/othervm SourceClippingBlitTest
+ * @run main SourceClippingBlitTest
  */
 
-import javax.imageio.ImageIO;
 import java.awt.AWTException;
 import java.awt.Canvas;
 import java.awt.Color;
@@ -53,6 +52,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
 import java.io.File;
 import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class SourceClippingBlitTest extends Canvas {
     static final int TESTW = 300;
