@@ -2308,7 +2308,7 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
       Handle obj_h = object;
-#if 0
+
       if (Arguments::is_valhalla_enabled()) {
         bool is_ctor = method->is_object_constructor();
         if (is_ctor && object() != nullptr && object()->is_inline()) {
@@ -2320,7 +2320,6 @@ void JvmtiExport::post_field_access(JavaThread *thread, Method* method,
           obj_h = Handle(thread, obj_copy);
         }
       }
-#endif
       jobject field_jobject = jem.to_jobject(obj_h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldAccess callback = env->callbacks()->FieldAccess;
@@ -2494,7 +2493,7 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
       JvmtiLocationEventMark jem(thread, mh, location);
       jclass field_jclass = jem.to_jclass(field_klass);
       Handle obj_h = object;
-#if 0
+
       if (Arguments::is_valhalla_enabled()) {
         bool is_ctor = method->is_object_constructor();
         if (is_ctor && object() != nullptr && object()->is_inline()) {
@@ -2506,7 +2505,6 @@ void JvmtiExport::post_field_modification(JavaThread *thread, Method* method,
           obj_h = Handle(thread, obj_copy);
         }
       }
-#endif
       jobject field_jobject = jem.to_jobject(obj_h());
       JVMTI_JAVA_THREAD_EVENT_CALLBACK_BLOCK(thread)
       jvmtiEventFieldModification callback = env->callbacks()->FieldModification;
