@@ -46,7 +46,7 @@ import static jdk.internal.constant.ConstantUtils.validateMemberName;
  *
  * @since 12
  */
-public final class DynamicCallSiteDesc implements BootstrapMethodHook {
+public final class DynamicCallSiteDesc implements ConstantDescs.CallSiteBootstrapMethodHook {
 
     private final DirectMethodHandleDesc bootstrapMethod;
     private final ConstantDesc[] bootstrapArgs;
@@ -210,17 +210,8 @@ public final class DynamicCallSiteDesc implements BootstrapMethodHook {
      * Returns a {@link DirectMethodHandleDesc} describing the bootstrap method for
      * the {@code invokedynamic}.
      *
-     * @implSpec
-     * The {@code DynamicCallSiteDesc} class must support an invocation
-     * referencing the method with signature {@code MethodHandleDesc
-     * bootstrapMethod()} to support linking from pre-existing binaries.
-     *
-     * @implNote
-     * An implementation of {@code DynamicCallSiteDesc} in Java may declare a
-     * non-exported supertype declaring the method above to support reference
-     * to that method (JLS {@jls 13.4.12}).
-     *
      * @return the bootstrap method for the {@code invokedynamic}
+     * @since 28
      */
     @Override
     public DirectMethodHandleDesc bootstrapMethod() { return bootstrapMethod; }
@@ -300,8 +291,4 @@ public final class DynamicCallSiteDesc implements BootstrapMethodHook {
                              Stream.of(bootstrapArgs).map(Object::toString).collect(joining(",")),
                              invocationType.displayDescriptor());
     }
-}
-
-sealed interface BootstrapMethodHook {
-    MethodHandleDesc bootstrapMethod();
 }
