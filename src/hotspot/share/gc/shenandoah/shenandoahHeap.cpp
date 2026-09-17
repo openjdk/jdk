@@ -1155,7 +1155,7 @@ private:
         break;
       }
 
-      if (_sh->check_cancelled_gc_and_yield(true)) {
+      if (_sh->check_cancelled_gc_and_yield()) {
         break;
       }
     }
@@ -2553,7 +2553,7 @@ private:
       if ((r->is_active() && !r->is_cset()) || r->has_self_forwards()) {
         _heap->marked_object_oop_iterate(r, &cl, update_watermark);
       }
-      if (_heap->check_cancelled_gc_and_yield(true)) {
+      if (_heap->check_cancelled_gc_and_yield()) {
         return;
       }
       r = _regions->next();

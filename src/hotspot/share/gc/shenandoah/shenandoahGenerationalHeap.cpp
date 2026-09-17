@@ -797,7 +797,7 @@ private:
         }
       }
 
-      if (_heap->check_cancelled_gc_and_yield(true)) {
+      if (_heap->check_cancelled_gc_and_yield()) {
         return;
       }
 
@@ -821,7 +821,7 @@ private:
     ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
 
-    while (!_heap->check_cancelled_gc_and_yield(true) && _work_chunks->next(&assignment)) {
+    while (!_heap->check_cancelled_gc_and_yield() && _work_chunks->next(&assignment)) {
       // Keep grabbing next work chunk to process until finished, or asked to yield
       ShenandoahHeapRegion* r = assignment._r;
       if (r->is_active() && (!r->is_cset() || r->has_self_forwards()) && r->is_old()) {

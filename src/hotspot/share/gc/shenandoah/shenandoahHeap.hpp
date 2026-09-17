@@ -453,7 +453,7 @@ public:
   inline bool cancelled_gc() const;
 
   // Used by workers in the GC cycle to detect cancellation and honor STS requirements
-  inline bool check_cancelled_gc_and_yield(bool sts_active = true);
+  inline bool check_cancelled_gc_and_yield();
 
   // Clears the cancellation
   inline void clear_cancelled_gc();
