@@ -27,7 +27,7 @@
  * @bug 6244574 6258142 6395165 6588884
  * @summary Tests that source is clipped correctly when blitting
  * different types of images to the screen
- * @run main/othervm -Dsun.java2d.uiScale=1 SourceClippingBlitTest
+ * @run main/othervm SourceClippingBlitTest
  */
 
 import javax.imageio.ImageIO;
