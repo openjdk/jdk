@@ -2138,6 +2138,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
             bailout("store to an uninitialized nullable non-atomic flat field");
             return;
           }
+          if (value_klass->is_empty()) {
+            // Needs an explicit null check because below code does not perform any actual store if there are no fields
+            null_check(obj);
+          }
 
           // Store the subfields when field is a nullable non-atomic field
           Value object_null = append(new Constant(objectNull));
