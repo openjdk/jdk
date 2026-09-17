@@ -460,15 +460,12 @@ void ShenandoahDegenGC::op_cleanup_complete() {
 
   // If we are degenerating for old mark only, we need to check that there are no accidental
   // young pointers in SATB queues. If so, we need to filter them before we perform cleanups,
-  // otherwise they would dangle. This is similar to what ShenandoahConcurrentGC::op_update_thread_roots do,
-  // and the condition is similar to propagate_gc_state_to_all_threads().
+  // otherwise they would dangle.
   if (heap->is_concurrent_old_mark_in_progress() && !heap->is_concurrent_young_mark_in_progress()) {
     ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
-    bool old_val = satb_qs.get_filter_out_young();
-    satb_qs.set_filter_out_young(true);
+    assert(satb_qs.get_filter_out_young(), "Must be");
     ShenandoahFlushSATB flush_satb(satb_qs);
     Threads::threads_do(&flush_satb);
-    satb_qs.set_filter_out_young(old_val);
   }
 
   heap->recycle_trash();
