@@ -4563,6 +4563,26 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   return true;
 }
 
+// If (n2 - n1) is a constant, return it in *offset.
+static bool is_constant_difference(Node* n2, Node* n1, jint* offset) {
+  jint off = 0;
+  if (n2->Opcode() == Op_AddI && n2->in(2)->Opcode() == Op_ConI) {
+    off = java_add(off, n2->in(2)->get_int());
+    n2 = n2->in(1);
+  }
+  if (n1->Opcode() == Op_AddI && n1->in(2)->Opcode() == Op_ConI) {
+    off = java_subtract(off, n1->in(2)->get_int());
+    n1 = n1->in(1);
+  }
+  if (n2->Opcode() == Op_ConI && n1->Opcode() == Op_ConI) {
+    off = java_add(off, java_subtract(n2->get_int(), n1->get_int()));
+  } else if (n2->uncast() != n1->uncast()) {
+    return false;
+  }
+  *offset = off;
+  return true;
+}
+
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
 // This optimization looks for patterns similar to:
@@ -4625,20 +4645,14 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     PhiNode* phi2 = out->as_Phi();
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
     // Look for an index that repeats the trip counter one iteration late:
-    //    int prev = -1;     for (int iv = 0;    iv < limit; iv++) { use(prev); prev = iv; }
-    //    int prev = init-1; for (int iv = init; iv < limit; iv++) { use(prev); prev = iv; }
-    bool lagging_index = false;
-    if (phi2->region() == loop->_head && (incr2 == phi ||
-          (incr2->Opcode() == Op_AddI && incr2->in(1) == phi && incr2->in(2)->is_Con()))) {
-      jint back_con = incr2 == phi ? 0 : incr2->in(2)->get_int();
-      jint offset = java_subtract(back_con, checked_cast<jint>(stride_con));
-      Node* start2 = phi2->in(LoopNode::EntryControl);
-      if (start2->Opcode() == Op_ConI && init->Opcode() == Op_ConI) {
-        lagging_index = start2->get_int() == java_add(init->get_int(), offset);
-      } else if (start2->Opcode() == Op_AddI && start2->in(1) == init && start2->in(2)->Opcode() == Op_ConI) {
-        lagging_index = start2->in(2)->get_int() == offset;
-      }
-    }
+    //    int prev = init + const_offset - const_stride;
+    //    for (int iv = init; iv != limit; iv += const_stride) { use(prev); prev = iv + const_offset; }
+    jint next_off = 0; // At the end of the iteration prev == iv + next_off?
+    jint init_off = 0; // Before the first iteration prev == iv + init_off?
+    bool lagging_index = phi2->region() == loop->_head &&
+        is_constant_difference(incr2, phi, &next_off) &&
+        is_constant_difference(phi2->in(LoopNode::EntryControl), init, &init_off) &&
+        init_off == java_subtract(next_off, checked_cast<jint>(stride_con));
     // Look for induction variables of the form:  X += constant
     bool no_parallel_index = phi2->region() != loop->_head ||
         incr2->req() != 3 ||
