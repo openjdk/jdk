@@ -364,6 +364,7 @@ void VM_Version::xuantie_features() {
   ext_Zvkg.enable_feature();
 
 #ifndef PRODUCT
+  ext_Ziccid.enable_feature();
   ext_Zacas.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicond.enable_feature();
