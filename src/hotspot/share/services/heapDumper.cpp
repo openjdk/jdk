@@ -2180,13 +2180,13 @@ class HeapObjectDumper : public ObjectClosure {
   AbstractDumpWriter* writer()                  { return _writer; }
   UnmountedVThreadDumper* _vthread_dumper;
   FlatObjectDumper* _flat_dumper;
-  bool _skip_filler_objects;
+  bool _should_skip_filler;
 
   DumperClassCacheTable _class_cache;
 
  public:
-  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool skip_filler_objects)
-    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _skip_filler_objects(skip_filler_objects) {}
+  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool should_skip_filler)
+    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _should_skip_filler(should_skip_filler) {}
 
   // called for each object in the heap
   void do_object(oop o);
@@ -2200,7 +2200,7 @@ void HeapObjectDumper::do_object(oop o) {
     }
   }
 
-  if (_skip_filler_objects && CollectedHeap::is_filler_object(o)) {
+  if (_should_skip_filler && CollectedHeap::is_filler_object(o)) {
     return;
   }
 
@@ -2750,8 +2750,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    bool skip_filler_objects = _gc_before_heap_dump;
-    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, skip_filler_objects);
+    bool should_skip_filler = _gc_before_heap_dump;
+    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, should_skip_filler);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {
