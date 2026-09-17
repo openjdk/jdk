@@ -165,6 +165,7 @@ class ShenandoahHeap : public CollectedHeap {
 
 // ---------- Locks that guard important data structures in Heap
 //
+private:
   ShenandoahHeapLock _lock;
 
   // This is set and cleared by only the VMThread
@@ -192,6 +193,9 @@ public:
 
   ShenandoahHeuristics* heuristics();
 
+// ---------- Initialization, termination, identification, printing routines
+//
+public:
   static ShenandoahHeap* heap();
 
   const char* name()          const override { return "Shenandoah"; }
