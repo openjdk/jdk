@@ -248,9 +248,10 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           assert(p > left, "Should have processed into interior of dirty range");
         }
       }
-      // Either p >= left, or p points to a refArray.  In both cases, the BODY code below needs to (at least partially) scan
+      // Either p >= left, or p points to an Array.  In both cases, the BODY code below needs to (at least partially) scan
       // the object p.  In the case that object p is a refArray, the BODY will only scan the portion of p that overlaps
-      // this range of dirty cards.
+      // this range (represented by mr) of dirty cards. We will also scan the portion of p that overlaps this range of
+      // dirty cards if p is a primitive array, but there are no pointers to be scanned in that case.
 
       size_t i = 0;
       HeapWord* last_p = nullptr;
