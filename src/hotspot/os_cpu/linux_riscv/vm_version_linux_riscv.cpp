@@ -359,7 +359,6 @@ void VM_Version::xuantie_features() {
   ext_Zic64b.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zihintpause.enable_feature();
-  ext_Ztso.enable_feature();
   ext_Zvbb.enable_feature();
   ext_Zvbc.enable_feature();
   ext_Zvfh.enable_feature();
