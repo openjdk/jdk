@@ -919,12 +919,11 @@ struct ShenandoahRegionChunk {
 // that are assigned one at a time to worker threads. (Here, we use the terms `assignments` and `chunks`
 // interchangeably.) Note that the effort required to scan a range of memory is not necessarily a linear
 // function of the size of the range.  Some memory ranges hold only a small number of live objects.
-// Some ranges hold primarily primitive (non-pointer) data.  We start with larger chunk sizes because larger chunks
-// reduce coordination overhead.  We expect that the GC worker threads that receive more difficult assignments
-// will work longer on those chunks.  Meanwhile, other worker threads will repeatedly accept and complete multiple
-// easier chunks.
+// Some ranges hold primarily primitive (non-pointer) data.
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
+  // The number of clusters in a chunk is chosen empirically: larger values would require less synchronization at the risk
+  // of less even distribution of work between cooperating worker threads.
   static const size_t _clusters_in_chunk = 8;
   static size_t chunk_size_words() {
     size_t max_size = ShenandoahHeapRegion::region_size_words();
@@ -939,7 +938,9 @@ private:
 
   const ShenandoahHeap* _heap;
 
-  // Total chunks is HeapSizeWords / chunk_size_in_words()
+  const size_t _chunk_size;
+  const size_t _chunk_shift;
+  // Total chunks is HeapSizeWords / chunk_size_words()
   const size_t _total_chunks;
 
   shenandoah_padding(0);

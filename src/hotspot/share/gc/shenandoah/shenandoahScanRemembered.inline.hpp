@@ -36,7 +36,6 @@
 #include "logging/log.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.hpp"
-#include "utilities/powerOfTwo.hpp"
 
 void ShenandoahScanRemembered::mark_card_as_dirty(HeapWord* p) const {
   _rs->mark_card_as_dirty(p);
@@ -96,7 +95,7 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
 
   // The region we will scan is the half-open interval [start_addr, end_addr),
   // and lies entirely within a single region.
-  const ShenandoahHeapRegion* region = ShenandoahHeap::heap()->heap_region_containing(start_addr);
+  const ShenandoahHeapRegion* region = heap->heap_region_containing(start_addr);
   assert(region->contains(end_addr - 1), "Slice shouldn't cross regions");
 
   // This code may have implicit assumptions of examining only old gen regions.
@@ -393,17 +392,14 @@ ShenandoahScanRemembered::process_region_slice(ShenandoahHeapRegion *region, siz
 }
 
 inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *assignment) {
-  size_t chunk_size = chunk_size_words();
-  size_t chunk_shift = log2i_exact(chunk_size);
-
   while (true) {
     size_t cur_index = _index.load_relaxed();
     if (cur_index >= _total_chunks) {
       break;
     }
 
-    size_t global_offset = cur_index << chunk_shift;
-    size_t region_offset = global_offset &  ShenandoahHeapRegion::region_size_words_mask();
+    size_t global_offset = cur_index << _chunk_shift;
+    size_t region_offset = global_offset & ShenandoahHeapRegion::region_size_words_mask();
     size_t region_index  = global_offset >> ShenandoahHeapRegion::region_size_words_shift();
 
     // Region affiliations will not change from OLD while we are scanning remembered set. Regions change from old only at
@@ -416,7 +412,7 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
       if (_index.compare_set(cur_index, cur_index + 1, memory_order_relaxed)) {
         assignment->_r = _heap->get_region(region_index);
         assignment->_chunk_offset = region_offset;
-        assignment->_chunk_size = chunk_size;
+        assignment->_chunk_size = _chunk_size;
         return true;
       }
     } else {
@@ -425,13 +421,13 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
              _heap->region_affiliation(region_index) != OLD_GENERATION) {
         region_index++;
       }
-      size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> chunk_shift;
+      size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> _chunk_shift;
       // Multiple worker threads may be running this same loop. If some other thread overwrites _index before I do,
       // compare_set() will fail, but I don't care as long as the value of _index is updated by someone.
       _index.compare_set(cur_index, skip_index, memory_order_relaxed);
     }
   }
-  // We break if cur_index is greater than _total_chunks.  All scanning is done.
+  // We break if cur_index is greater than or equal to _total_chunks.  All scanning is done.
   return false;
 }
 

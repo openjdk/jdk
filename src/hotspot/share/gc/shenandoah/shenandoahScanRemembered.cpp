@@ -573,7 +573,7 @@ bool ShenandoahScanRemembered::verify_registration(HeapWord* address, Shenandoah
     }
   } else {
     // This is a mixed evacuation or a global collect: rely on mark bits to identify which objects need to be properly registered
-    assert(!ShenandoahHeap::heap()->is_concurrent_old_mark_in_progress(), "Cannot rely on mark context here.");
+    assert(!heap->is_concurrent_old_mark_in_progress(), "Cannot rely on mark context here.");
     // If the object reaching or spanning the end of this card's memory is marked, then last_offset for this card
     // should represent this object.  Otherwise, last_offset is a don't care.
     ShenandoahHeapRegion* region = heap->heap_region_containing(base_addr + offset);
@@ -846,12 +846,14 @@ void ShenandoahScanRememberedTask::do_work(uint worker_id) {
 }
 
 size_t ShenandoahRegionChunkIterator::calc_total_chunks() {
-  return (_heap->num_regions() * ShenandoahHeapRegion::region_size_words()) / chunk_size_words();
+  return (_heap->num_regions() * ShenandoahHeapRegion::region_size_words()) / _chunk_size;
 }
 
 // Configure with a single group that spans the entire heap with equal-sized chunks of work.
 ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* heap) :
     _heap(heap),
+    _chunk_size(chunk_size_words()),
+    _chunk_shift(log2i_exact(_chunk_size)),
     _total_chunks(calc_total_chunks()),
     _index(0) {}
 
