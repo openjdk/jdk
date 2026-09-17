@@ -87,13 +87,11 @@ void Annotations::print_value_on(outputStream* st) const {
   st->print("Annotations(" PTR_FORMAT ")", p2i(this));
 }
 
-#define BULLET  " - "
-
 #ifndef PRODUCT
 void Annotations::print_on(outputStream* st) const {
-  st->print(BULLET"class_annotations            "); class_annotations()->print_value_on(st);
-  st->print(BULLET"fields_annotations           "); fields_annotations()->print_value_on(st);
-  st->print(BULLET"class_type_annotations       "); class_type_annotations()->print_value_on(st);
-  st->print(BULLET"fields_type_annotations      "); fields_type_annotations()->print_value_on(st);
+  st->print(" - class_annotations            "); class_annotations()->print_value_on(st);
+  st->print(" - fields_annotations           "); fields_annotations()->print_value_on(st);
+  st->print(" - class_type_annotations       "); class_type_annotations()->print_value_on(st);
+  st->print(" - fields_type_annotations      "); fields_type_annotations()->print_value_on(st);
 }
 #endif // PRODUCT

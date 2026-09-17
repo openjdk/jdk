@@ -133,6 +133,6 @@ private:
 };
 
 // See similar requirement for oopDesc.
-static_assert(std::is_trivially_default_constructible<typeArrayOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<typeArrayOopDesc>::value);
 
 #endif // SHARE_OOPS_TYPEARRAYOOP_HPP
