@@ -406,9 +406,14 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
     size_t region_offset = global_offset &  ShenandoahHeapRegion::region_size_words_mask();
     size_t region_index  = global_offset >> ShenandoahHeapRegion::region_size_words_shift();
 
+    // Region affiliations will not change from OLD while we are scanning remembered set. Regions change from old only at
+    // end of marking, for immediate garbage, or at end of update-refs, for old regions that are emptied by mixed evacuation.
+    // Likewise, regions will not change to OLD while we are scanning remembered set. Changing to old happens during evacuation
+    // for regions that are promoted in place or for regions that were previously unaffiliated (and empty) into which old
+    // evacuations or promotions are copied.
     if (_heap->region_affiliation(region_index) == OLD_GENERATION) {
       // Passable candidate, try to claim it.
-      if (_index.compare_set(cur_index, cur_index + 1)) {
+      if (_index.compare_set(cur_index, cur_index + 1, memory_order_relaxed)) {
         assignment->_r = _heap->get_region(region_index);
         assignment->_chunk_offset = region_offset;
         assignment->_chunk_size = chunk_size;
