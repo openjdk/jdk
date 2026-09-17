@@ -324,7 +324,7 @@ inline bool ShenandoahBarrierSet::need_bulk_update(HeapWord* ary) const {
   if (r->is_gc_alloc_region()) {
     return true;
   }
-  return ary < r->get_update_watermark();  
+  return ary < r->get_update_watermark();
 }
 
 template <bool IS_GENERATIONAL, typename T>
