@@ -1345,11 +1345,14 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
 
   // 1) size > 0 — strict positive check (size = 0 is valid per spec but deopt is acceptable)
   Node* casted_size = insert_non_negative_check(*this, size, BoolTest::gt, bt);
+  if (casted_size == nullptr) {
+    // Size is known to be always negative during compilation and the IR graph so far constructed is good so return success
+    return true;
+  }
 
   // 2) length >= 0 — non-negative check
   Node* casted_length = insert_non_negative_check(*this, length, BoolTest::ge, bt);
-
-  if (stopped()) {
+  if (casted_length == nullptr) {
     return true;
   }
 
@@ -1385,9 +1388,9 @@ bool LibraryCallKit::inline_preconditions_checkFromIndexSize(BasicType bt) {
 //
 // In total, we have 4 checks:
 //     1) length         >= 0         (non-negative guard)
-//     2) from          u<  length    (range check, RCE-hoistable)
-//     3) to - from - 1 u<  length    (range check, RCE-hoistable)
-//     4) to - 1        u<  length    (range check, RCE-hoistable)
+//     2) from          u<  length    (range check, RCE-hoistable, encodes from >= 0 && from < length)
+//     3) to - from - 1 u<  length    (range check, RCE-hoistable, encodes from < to)
+//     4) to - 1        u<  length    (range check, RCE-hoistable, encodes to >= 1 && to <= length)
 //
 // All range checks use strict `u<` and avoid `u<=` which RCE doesn't recognize natively.
 //
@@ -1409,8 +1412,8 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
 
   // 1) length >= 0 — non-negative guard
   Node* casted_length = insert_non_negative_check(*this, length, BoolTest::ge, bt);
-
-  if (stopped()) {
+  if (casted_length == nullptr) {
+    // Length is known to be always negative during compilation and the IR graph so far constructed is good so return success
     return true;
   }
 
@@ -1435,7 +1438,18 @@ bool LibraryCallKit::inline_preconditions_checkFromToIndex(BasicType bt) {
     return true;
   }
 
+  // All validated, but we might as well improve the type on `to`
+  const TypeInteger* to_type = _gvn.type(to)->is_integer(bt);
+  jlong hi_length = _gvn.type(casted_length)->is_integer(bt)->hi_as_long();
+  Node* casted_to = _gvn.transform(ConstraintCastNode::make_cast_for_basic_type(
+      control(), to, TypeInteger::make(
+        MAX2((jlong)1, to_type->lo_as_long()), // from = to = 0 would've caused deopt, so to must be at least 1
+        MIN2(hi_length, to_type->hi_as_long()),
+        Type::WidenMax, bt),
+      ConstraintCastNode::DependencyType::FloatingNarrowing, bt));
+
   replace_in_map(from, casted_from);
+  replace_in_map(to, casted_to);
   replace_in_map(length, casted_length);
 
   set_result(casted_from);

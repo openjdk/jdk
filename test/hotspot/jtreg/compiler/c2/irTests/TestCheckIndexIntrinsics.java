@@ -596,7 +596,8 @@ public class TestCheckIndexIntrinsics {
                 { 1, max, max },
                 { max, 1, max },
                 { max, max, max },
-                { max / 2 + 1, max / 2 + 1, max }
+                { max / 2 + 1, max / 2 + 1, max },
+                { max, min, max }
         };
 
         for (long[] input : inputs) {
