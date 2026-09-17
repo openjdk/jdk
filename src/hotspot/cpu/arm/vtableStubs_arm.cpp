@@ -72,7 +72,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   const Register tmp = Rtemp; // Rtemp OK, should be free at call sites
 
@@ -141,7 +141,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index, bool caller_is_c1)
   }
 #endif
 
-  assert(VtableStub::receiver_location() == R0->as_VMReg(), "receiver expected in R0");
+  assert(SharedRuntime::name_for_receiver() == R0->as_VMReg(), "receiver expected in R0");
 
   // R0-R3 / R0-R7 registers hold the arguments and cannot be spoiled
   const Register Rclass  = R4;

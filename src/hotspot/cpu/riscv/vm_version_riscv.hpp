@@ -354,7 +354,7 @@ private:
     };
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
     // Number of 8-byte elements in _features_bitmap.
     constexpr static int element_count() {
