@@ -28,8 +28,8 @@ package compiler.igvn;
  * @bug 8385093
  * @summary Test that IGVN revisits RShiftI when a LoadUS is down to one output in
  *          (LoadUS(...) << 16) >> 16 sign extension pattern.
- * @requires vm.debug == true & vm.compiler2.enabled
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions
  *                   -Xcomp
  *                   -XX:CompileCommand=compileonly,${test.main.class}$Z::f
  *                   -XX:CompileCommand=dontinline,${test.main.class}$X::<init>
