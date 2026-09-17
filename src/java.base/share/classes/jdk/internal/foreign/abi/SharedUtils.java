@@ -390,6 +390,27 @@ public final class SharedUtils {
                 : chunkOffset;
     }
 
+    @ForceInline
+    public static Arena newBoundedArena(long size) {
+        return BoundedArena.of(size);
+    }
+
+    public static record BoundedArena(Arena delegate, SegmentAllocator allocator) implements Arena {
+        @ForceInline  @Override
+        public MemorySegment allocate(long byteSize, long byteAlignment) { return allocator.allocate(byteSize, byteAlignment); }
+        @ForceInline @Override
+        public Scope scope() { return delegate.scope(); }
+        @ForceInline @Override
+        public void close() { delegate.close(); }
+
+        @ForceInline
+        static Arena of(long size) {
+            final Arena arena = Arena.ofConfined();
+            final SegmentAllocator allocator = SegmentAllocator.slicingAllocator(arena.allocate(size));
+            return new BoundedArena(arena, allocator);
+        }
+    }
+
     public static Arena newEmptyArena() {
         return new Arena() {
             final Arena arena = Arena.ofConfined();
