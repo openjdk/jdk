@@ -31,7 +31,7 @@
 
 class FlatArrayKlass;
 
-// A flatArrayOop points to a flat array containing inline types (no indirection).
+// A flatArrayOop points to a flat array containing value types (no indirection).
 // It may include embedded oops in its elements.
 
 class flatArrayOopDesc : public objArrayOopDesc {
@@ -78,6 +78,6 @@ class flatArrayOopDesc : public objArrayOopDesc {
 };
 
 // See similar requirement for oopDesc.
-static_assert(std::is_trivially_default_constructible<flatArrayOopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<flatArrayOopDesc>::value);
 
 #endif // SHARE_VM_OOPS_FLATARRAYOOP_HPP

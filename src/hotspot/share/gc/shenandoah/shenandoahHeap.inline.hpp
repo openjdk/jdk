@@ -37,6 +37,7 @@
 #include "gc/shared/threadLocalAllocBuffer.inline.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.inline.hpp"
@@ -431,6 +432,18 @@ inline void ShenandoahHeap::set_affiliation(ShenandoahHeapRegion* r, ShenandoahA
 
 inline ShenandoahAffiliation ShenandoahHeap::region_affiliation(size_t index) const {
   return (ShenandoahAffiliation) AtomicAccess::load(_affiliations + index);
+}
+
+inline bool ShenandoahHeap::is_region_young(size_t index) const {
+  return region_affiliation(index) == YOUNG_GENERATION;
+}
+
+inline bool ShenandoahHeap::is_region_old(size_t index) const {
+  return region_affiliation(index) == OLD_GENERATION;
+}
+
+inline bool ShenandoahHeap::is_region_free(size_t index) const {
+  return region_affiliation(index) == FREE;
 }
 
 inline bool ShenandoahHeap::requires_marking(const void* entry) const {

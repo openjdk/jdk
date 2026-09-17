@@ -477,8 +477,8 @@ class Address {
   // Verify the value is trivially destructible regardless of mode, so our
   // destructor can also be trivial, and so our assignment operator doesn't
   // need to destruct the old value before copying over it.
-  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
-  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+  static_assert(std::is_trivially_destructible<Literal>::value);
+  static_assert(std::is_trivially_destructible<Nonliteral>::value);
 
   Address& operator=(const Address& a) {
     _mode = a._mode;
@@ -1023,11 +1023,14 @@ public:
   INSN(smc, 0b000, 0, 0b11);
   INSN(brk, 0b001, 0, 0b00);
   INSN(hlt, 0b010, 0, 0b00);
-  INSN(dcps1, 0b101, 0, 0b01);
-  INSN(dcps2, 0b101, 0, 0b10);
-  INSN(dcps3, 0b101, 0, 0b11);
 
 #undef INSN
+
+  // Reserved
+  void udf(uint16_t imm) {
+    starti;
+    f(0, 31, 16), f(imm, 15, 0);
+  }
 
   // System
   void system(int op0, int op1, int CRn, int CRm, int op2,

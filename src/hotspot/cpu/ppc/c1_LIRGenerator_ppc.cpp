@@ -32,14 +32,15 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "vmreg_ppc.inline.hpp"
+
 #include <stdint.h>
 
 #ifdef ASSERT
@@ -353,7 +354,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
   }
 
   CodeStub* throw_ie_stub =
-      x->maybe_inlinetype() ?
+      x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id, obj.result(), state_for(x)) :
       nullptr;
 
@@ -844,7 +845,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   LIR_Opr tmp2 = FrameMap::R6_oop_opr;
   LIR_Opr tmp3 = FrameMap::R7_oop_opr;
   LIR_Opr tmp4 = FrameMap::R8_oop_opr;
-  new_instance(reg, x->klass(), x->is_unresolved(), !x->is_unresolved() && x->klass()->is_inlinetype(),
+  new_instance(reg, x->klass(), x->is_unresolved(), !x->is_unresolved() && x->klass()->is_value_klass(),
                tmp1, tmp2, tmp3, tmp4, klass_reg, info);
 
   // Must prevent reordering of stores for object initialization

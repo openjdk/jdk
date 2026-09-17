@@ -1,8 +1,8 @@
-# Prototype implementations of HashMaps using inline classes for the table entries.
+# Prototype implementations of HashMaps using value classes for the table entries.
 
    **NOTE: The implementations have NOT been optimized or tuned.**
 
-## HashMap uses Open Addressing to store all entries in a table of inline classes
+## HashMap uses Open Addressing to store all entries in a table of value classes
 The hash of the key is used as the first index into the table.
 If there is a collision, double hashing (with a static offset) is used to probe subsequent locations for available storage.
 The Robin Hood hashing variation on insertion is used to reduce worst case lookup times.
@@ -14,7 +14,7 @@ Typical storage usage for a table near its load factor is 22 bytes per entry.
 Inserting entries into the HashMap may resize the table but otherwise does
 not use any additional memory on each get or put.
 
-## XHashMap stores the initial entry in a table of inline classes
+## XHashMap stores the initial entry in a table of value classes
 The hash of the key is used as the first index into the table.
 If there is a collision, subsequent entries add the familiar link list of Nodes.
 On key removal, direct entries in the table are replaced by the first linked node;

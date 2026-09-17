@@ -163,6 +163,8 @@ public:
   static void enable_gc() NOT_CDS_JAVA_HEAP_RETURN;
   static void materialize_thread_object() NOT_CDS_JAVA_HEAP_RETURN;
   static void archive_interned_string(oop string);
+  static void update_scratch_mirror_field(oop scratch_m, int field_offset, oop obj);
+  static void archive_updated_mirror_field(oop old_field_obj, oop new_field_obj);
   static void finalize_initialization(FileMapInfo* static_mapinfo) NOT_CDS_JAVA_HEAP_RETURN;
 
 private:
@@ -365,14 +367,14 @@ private:
   };
 
   class OopFieldPusher;
-  class InlineKlassFinder;
+  class ValueKlassFinder;
   using PendingOopStack = GrowableArrayCHeap<PendingOop, mtClassShared>;
 
   static PendingOop _object_being_archived;
   static bool walk_one_object(PendingOopStack* stack, int level, KlassSubGraphInfo* subgraph_info,
                               oop orig_obj, oop referrer);
-  static void find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj);
-  static void add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k);
+  static void find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj);
+  static void add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k);
 
   static void reset_archived_object_states(TRAPS);
   static void ensure_determinism(TRAPS);

@@ -422,6 +422,22 @@ void HeapShared::archive_interned_string(oop string) {
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
 }
 
+void HeapShared::update_scratch_mirror_field(oop scratch_m, int field_offset, oop new_field_obj) {
+  archive_updated_mirror_field(scratch_m->obj_field(field_offset), new_field_obj);
+  scratch_m->obj_field_put(field_offset, new_field_obj);
+}
+
+// It's possible for a scratch mirror to be scanned before one of its oop fields (such as acmp_maps) is
+// updated. When this happens, we must ensure that the new oop is also archived.
+void HeapShared::archive_updated_mirror_field(oop old_field_obj, oop new_field_obj) {
+  if (old_field_obj != new_field_obj) {
+    assert(old_field_obj == nullptr, "cannot update a non-null oop field that might have already been scanned");
+    assert(new_field_obj != nullptr, "must be");
+    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, new_field_obj);
+    assert(success, "mirror field must be archivable");
+  }
+}
+
 void HeapShared::finalize_initialization(FileMapInfo* static_mapinfo) {
   if (HeapShared::is_loading()) {
     if (HeapShared::is_loading_streaming_mode()) {
@@ -446,7 +462,7 @@ void HeapShared::make_archived_object_cache_gc_safe() {
 
   // Copy all CachedOopInfo into a new table using a different hashing algorithm
   archived_object_cache()->iterate_all([&] (OopHandle oh, CachedOopInfo info) {
-      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_inline_klass()) {
+      if (Arguments::is_valhalla_enabled() && oh.resolve()->klass()->is_value_klass()) {
         // After make_archived_object_cache_gc_safe() returns,
         // _archived_object_cache->get() is called only from the (future) AOT code
         // compiler to access heap oops referenced by AOT-compiled method.
@@ -812,13 +828,12 @@ bool HeapShared::is_archivable_hidden_klass(InstanceKlass* ik) {
     (is_lambda_form_klass(ik) || is_lambda_proxy_klass(ik) || is_string_concat_klass(ik));
 }
 
-
 void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   ik->set_has_aot_initialized_mirror();
 
   oop orig_mirror;
   if (RegeneratedClasses::is_regenerated_object(ik)) {
-    assert(!ik->is_inline_klass(), "not supported");
+    assert(!ik->is_value_klass(), "not supported");
     InstanceKlass* orig_ik = RegeneratedClasses::get_original_object(ik);
     precond(orig_ik->is_initialized());
     orig_mirror = orig_ik->java_mirror();
@@ -843,11 +858,7 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
             // to null and it will be recreated at runtime.
             field_obj = nullptr;
           }
-          m->obj_field_put(offset, field_obj);
-          if (field_obj != nullptr) {
-            bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, field_obj);
-            assert(success, "sanity");
-          }
+          update_scratch_mirror_field(m, offset, field_obj);
         }
         break;
       case T_BOOLEAN:
@@ -882,19 +893,14 @@ void HeapShared::copy_and_rescan_aot_inited_mirror(InstanceKlass* ik) {
   }
 
   oop class_data = java_lang_Class::class_data(orig_mirror);
+  archive_updated_mirror_field(java_lang_Class::class_data(m), class_data);
   java_lang_Class::set_class_data(m, class_data);
-  if (class_data != nullptr) {
-    bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, class_data);
-    assert(success, "sanity");
-  }
 
-  if (ik->is_inline_klass()) {
-    InlineKlass* ilk = InlineKlass::cast(ik);
-    if (ilk->supports_nullable_layouts()) {
-      oop null_reset_value = ilk->null_reset_value();
-      m->obj_field_put(ilk->null_reset_value_offset(), null_reset_value);
-      bool success = archive_reachable_objects_from(1, _dump_time_special_subgraph, null_reset_value);
-      assert(success, "sanity");
+  if (ik->is_value_klass()) {
+    ValueKlass* vk = ValueKlass::cast(ik);
+    if (vk->supports_nullable_layouts()) {
+      oop null_reset_value = vk->null_reset_value();
+      update_scratch_mirror_field(m, vk->null_reset_value_offset(), null_reset_value);
     }
   }
 
@@ -918,7 +924,7 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
       // For valhalla, the prototype header is the same as markWord::prototype();
       scratch_m->set_mark(markWord::prototype().copy_set_hash(src_hash));
     }
-    assert(scratch_m->mark().is_unlocked(), "sanity");
+    assert(scratch_m->mark().is_lock_neutral(), "sanity");
 
     DEBUG_ONLY(intptr_t archived_hash = scratch_m->identity_hash());
     assert(src_hash == archived_hash, "Different hash codes: original " INTPTR_FORMAT ", archived " INTPTR_FORMAT, src_hash, archived_hash);
@@ -930,14 +936,18 @@ void HeapShared::copy_java_mirror(oop orig_mirror, oop scratch_m) {
 
     if (ik->has_acmp_maps_offset()) {
       int maps_offset = ik->acmp_maps_offset();
-      oop maps = orig_mirror->obj_field(maps_offset);
-      scratch_m->obj_field_put(maps_offset, maps);
+      update_scratch_mirror_field(scratch_m, maps_offset, orig_mirror->obj_field(maps_offset));
     }
   }
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
-    java_lang_Class::set_module(scratch_m, java_lang_Class::module(orig_mirror));
-    java_lang_Class::set_protection_domain(scratch_m, java_lang_Class::protection_domain(orig_mirror));
+    oop module = java_lang_Class::module(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::module(scratch_m), module);
+    java_lang_Class::set_module(scratch_m, module);
+
+    oop pd = java_lang_Class::protection_domain(orig_mirror);
+    archive_updated_mirror_field(java_lang_Class::protection_domain(scratch_m), pd);
+    java_lang_Class::set_protection_domain(scratch_m, pd);
   }
 }
 
@@ -988,9 +998,9 @@ void HeapShared::start_scanning_for_oops() {
     if (HeapShared::is_writing_mapping_mode() && (UseG1GC || UseCompressedOops)) {
       aot_log_info(aot)("Heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                     UseCompressedOops ? p2i(CompressedOops::begin()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().start()),
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                     UseCompressedOops ? p2i(CompressedOops::end()) :
-                                        p2i((address)G1CollectedHeap::heap()->reserved().end()));
+                    G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
     }
 
     archive_subgraphs();
@@ -1743,8 +1753,8 @@ void HeapShared::init_box_classes(TRAPS) {
   }
 }
 
-// Used by HeapShared::find_inline_classes().
-class HeapShared::InlineKlassFinder : public FieldClosure {
+// Used by HeapShared::find_value_classes().
+class HeapShared::ValueKlassFinder : public FieldClosure {
   KlassSubGraphInfo* _subgraph_info;
   InstanceKlass* _ik;
   address _obj;
@@ -1754,12 +1764,12 @@ public:
   //     (b) an element of a flattened array, or
   //     (c) a flattened field embedded inside a heap object.
   // For (a), obj is the same as the address of the heap object.
-  // For (b) and (c), obj points to InlineKlass::cast(_ik)->payload_offset() bytes below
+  // For (b) and (c), obj points to ValueKlass::cast(_ik)->payload_offset() bytes below
   // the payload.
-  InlineKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
+  ValueKlassFinder(KlassSubGraphInfo* subgraph_info, InstanceKlass* ik, address obj)
     : _subgraph_info(subgraph_info), _ik(ik), _obj(obj) {
     precond(obj != nullptr);
-    precond(ik->has_inlined_fields());
+    precond(ik->has_flat_fields());
   }
 
   // This function is called on every field of _ik.
@@ -1769,16 +1779,16 @@ public:
       precond(_ik == fd->field_holder());
 
       // The type of this flattened field
-      InlineKlass* vk = _ik->get_inline_type_field_klass(fd->index());
+      ValueKlass* vk = _ik->get_value_type_field_klass(fd->index());
 
       // The "logical address" of this flattened field
       address field_addr = _obj + fd->offset() - vk->payload_offset();
 
-      if (fd->is_null_free_inline_type() || !vk->is_payload_marked_as_null(field_addr)) {
+      if (fd->is_null_free_value_type() || !vk->is_payload_marked_as_null(field_addr)) {
         // Found a non-null flattened instance of vk. Let's record vk.
-        add_inline_class(_subgraph_info, vk);
-        if (vk->has_inlined_fields()) {
-          InlineKlassFinder finder(_subgraph_info, vk, field_addr);
+        add_value_class(_subgraph_info, vk);
+        if (vk->has_flat_fields()) {
+          ValueKlassFinder finder(_subgraph_info, vk, field_addr);
           finder.find();
         }
       }
@@ -1790,7 +1800,7 @@ public:
   }
 };
 
-void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass* k) {
+void HeapShared::add_value_class(KlassSubGraphInfo* subgraph_info, ValueKlass* k) {
   subgraph_info->add_subgraph_object_klass(k);
   if (InstanceKlass::cast(k)->is_enum_subclass()
       || (subgraph_info == _dump_time_special_subgraph)) {
@@ -1798,8 +1808,8 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
   }
 }
 
-// Recursively scan for any InlineKlass K that has least one non-null flattened instance
-// inside orig_obj. K should be recorded with add_inline_class().
+// Recursively scan for any ValueKlass K that has least one non-null flattened instance
+// inside orig_obj. K should be recorded with add_value_class().
 //
 // Reason for doing this:
 //
@@ -1813,32 +1823,32 @@ void HeapShared::add_inline_class(KlassSubGraphInfo* subgraph_info, InlineKlass*
 // If only a single instance of Line is archived, HeapShared::archive_object() would
 // have never visited a (non-flattened) instance of Point, but we must store Point in
 // AOT-initialized state. This function finds Point.
-void HeapShared::find_inline_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
+void HeapShared::find_value_classes(KlassSubGraphInfo* subgraph_info, oop orig_obj) {
   Klass* klass = orig_obj->klass();
 
   if (klass->is_flatArray_klass()) {
     FlatArrayKlass* fak = FlatArrayKlass::cast(klass);
     precond(orig_obj->is_flatArray());
     flatArrayOop fa = oop_cast<flatArrayOop>(orig_obj);
-    InlineKlass* elem_k = fak->element_klass();
+    ValueKlass* elem_k = fak->element_klass();
     bool added = false;
     for (int i = 0; i < fa->length(); i++) {
       if (fak->is_null_free_array_klass() || !fa->obj_at_is_null(i)) {
         if (!added) {
-          add_inline_class(subgraph_info, elem_k);
+          add_value_class(subgraph_info, elem_k);
         }
-        if (elem_k->has_inlined_fields()) {
+        if (elem_k->has_flat_fields()) {
           // "logical address" of the i-th array element.
           address elem = static_cast<address>(fa->value_at_addr(i, fak->layout_helper())) - elem_k->payload_offset();
-          InlineKlassFinder finder(subgraph_info, elem_k, elem);
+          ValueKlassFinder finder(subgraph_info, elem_k, elem);
           finder.find();
         }
       }
     }
   } else if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
-    if (ik->has_inlined_fields()) {
-      InlineKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
+    if (ik->has_flat_fields()) {
+      ValueKlassFinder finder(subgraph_info, ik, cast_from_oop<address>(orig_obj));
       finder.find();
     }
   }
@@ -1979,7 +1989,7 @@ bool HeapShared::walk_one_object(PendingOopStack* stack, int level, KlassSubGrap
     orig_obj->oop_iterate(&pusher);
   }
 
-  find_inline_classes(subgraph_info, orig_obj);
+  find_value_classes(subgraph_info, orig_obj);
 
   if (CDSConfig::is_dumping_aot_linked_classes()) {
     // The enum klasses are archived with aot-initialized mirror.
