@@ -818,6 +818,7 @@ VectorNode* VectorNode::make(int vopc, Node* n1, Node* n2, const TypeVect* vt, b
   case Op_LShiftVS: return new LShiftVSNode(n1, n2, vt, is_var_shift);
   case Op_LShiftVI: return new LShiftVINode(n1, n2, vt, is_var_shift);
   case Op_LShiftVL: return new LShiftVLNode(n1, n2, vt, is_var_shift);
+  case Op_VectorWideningShiftLeft: return new VectorWideningShiftLeftNode(n1, n2, vt);
 
   case Op_RShiftVB: return new RShiftVBNode(n1, n2, vt, is_var_shift);
   case Op_RShiftVS: return new RShiftVSNode(n1, n2, vt, is_var_shift);
@@ -965,6 +966,7 @@ bool VectorNode::is_vector_shift(int opc) {
   case Op_LShiftVS:
   case Op_LShiftVI:
   case Op_LShiftVL:
+  case Op_VectorWideningShiftLeft:
   case Op_RShiftVB:
   case Op_RShiftVS:
   case Op_RShiftVI:
@@ -2394,6 +2396,62 @@ Node* ShiftVNode::Identity(PhaseGVN* phase) {
     return in(1);
   }
   return this;
+}
+
+Node* ShiftVNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  const int opc = Opcode();
+  if (opc != Op_LShiftVS && opc != Op_LShiftVI && opc != Op_LShiftVL) {
+    return nullptr;
+  }
+
+  Node* shift_count = in(2);
+  if (!is_vshift_cnt(shift_count)) {
+    return nullptr;
+  }
+  const TypeInt* shift_type = phase->find_int_type(shift_count->in(1));
+  if (shift_type == nullptr || !shift_type->is_con()) {
+    return nullptr;
+  }
+
+  Node* cast = in(1);
+  if (cast->Opcode() == Op_VectorUnbox) {
+    Node* obj = static_cast<VectorUnboxNode*>(cast)->obj()->uncast();
+    if (obj->Opcode() == Op_VectorBox) {
+      cast = obj->in(VectorBoxNode::Value);
+    }
+  }
+
+  const BasicType dst_bt = vect_type()->element_basic_type();
+  BasicType src_bt = T_ILLEGAL;
+  switch (cast->Opcode()) {
+    case Op_VectorUCastB2X:
+      src_bt = T_BYTE;
+      break;
+    case Op_VectorUCastS2X:
+      src_bt = T_SHORT;
+      break;
+    case Op_VectorUCastI2X:
+      src_bt = T_INT;
+      break;
+    default:
+      return nullptr;
+  }
+
+  if ((src_bt == T_BYTE  && dst_bt != T_SHORT) ||
+      (src_bt == T_SHORT && dst_bt != T_INT)   ||
+      (src_bt == T_INT   && dst_bt != T_LONG)  ||
+      !Type::equals(cast->bottom_type(), bottom_type())) {
+    return nullptr;
+  }
+
+  const int shift = shift_type->get_con();
+  const int dst_bits = type2aelembytes(dst_bt) * BitsPerByte;
+  if ((shift & (dst_bits - 1)) >= 32 ||
+      !Matcher::match_rule_supported_vector(Op_VectorWideningShiftLeft, length(), dst_bt)) {
+    return nullptr;
+  }
+
+  return new VectorWideningShiftLeftNode(cast->in(1), shift_count, vect_type());
 }
 
 Node* VectorMaskGenNode::make(Node* length, BasicType mask_bt) {

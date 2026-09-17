@@ -2492,6 +2492,21 @@ public class IRNode {
         machOnlyNameRegex(RISCV_VAND_NOTL_VX_MASKED, "vand_notL_vx_masked");
     }
 
+    public static final String RISCV_VWSLL_B2S_VI = PREFIX + "RISCV_VWSLL_B2S_VI" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VWSLL_B2S_VI, "vwsllBtoS_vi");
+    }
+
+    public static final String RISCV_VWSLL_S2I_VI = PREFIX + "RISCV_VWSLL_S2I_VI" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VWSLL_S2I_VI, "vwsllStoI_vi");
+    }
+
+    public static final String RISCV_VWSLL_I2L_VI = PREFIX + "RISCV_VWSLL_I2L_VI" + POSTFIX;
+    static {
+        machOnlyNameRegex(RISCV_VWSLL_I2L_VI, "vwsllItoL_vi");
+    }
+
     public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
         vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
