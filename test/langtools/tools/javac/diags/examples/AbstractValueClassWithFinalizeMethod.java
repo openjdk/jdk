@@ -27,6 +27,6 @@
 // key: compiler.warn.has.been.deprecated.for.removal
 // options: --enable-preview  -source ${jdk.version}
 
-abstract value class AbstractValueWithFinalizeMethod {
+abstract value class AbstractValueClassWithFinalizeMethod {
     protected void finalize() throws Throwable { }
 }
