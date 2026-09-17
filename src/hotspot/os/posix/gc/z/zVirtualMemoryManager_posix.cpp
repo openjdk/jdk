@@ -30,6 +30,12 @@
 
 #include <sys/mman.h>
 
+#ifndef MAP_NORESERVE
+  // FreeBSD never implemented it and dropped the name in 11; its
+  // <sys/mman.h> keeps the bit as MAP_RESERVED0040.
+  #define MAP_NORESERVE 0
+#endif
+
 void ZVirtualMemoryReserver::pd_register_callbacks(ZVirtualMemoryRegistry* registry) {
   // Does nothing
 }

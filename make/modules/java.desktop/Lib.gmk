@@ -52,6 +52,19 @@ ifeq ($(ENABLE_JSOUND), true)
         -DUSE_PLATFORM_MIDI_IN=TRUE \
         #
 
+    # The only unix backend in the tree is the ALSA one, and it lives in
+    # src/java.desktop/linux.  The BSDs have no backend here yet -- NetBSD
+    # has audio(4) and FreeBSD has OSS -- so build the shared part alone.
+    ifeq ($(call isTargetOs, bsd), true)
+      LIBJSOUND_CFLAGS := \
+          -DX_PLATFORM=X_$(OPENJDK_TARGET_OS_UPPERCASE) \
+          -DUSE_PORTS=FALSE \
+          -DUSE_DAUDIO=FALSE \
+          -DUSE_PLATFORM_MIDI_OUT=FALSE \
+          -DUSE_PLATFORM_MIDI_IN=FALSE \
+          #
+    endif
+
     LIBJSOUND_LINK_TYPE := C
     ifeq ($(call isTargetOs, macosx), true)
       LIBJSOUND_LINK_TYPE := C++

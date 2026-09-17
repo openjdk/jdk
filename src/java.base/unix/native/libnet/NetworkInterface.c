@@ -38,7 +38,15 @@
 #endif
 
 #if defined(_ALLBSD_SOURCE)
+#if defined(__NetBSD__)
+// NetBSD has no <net/ethernet.h>; struct ether_addr lives in <net/if_ether.h>.
+#include <net/if_ether.h>
+#elif defined(__OpenBSD__)
+// OpenBSD has neither; it keeps struct ether_addr in <netinet/if_ether.h>.
+#include <netinet/if_ether.h>
+#else
 #include <net/ethernet.h>
+#endif
 #include <net/if_dl.h>
 #include <ifaddrs.h>
 #endif

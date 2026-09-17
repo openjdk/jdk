@@ -114,6 +114,18 @@ public class BsdDebuggerLocal extends DebuggerBase implements BsdDebugger {
                                 throws DebuggerException;
     public static native int  getAddressSize() ;
 
+    /**
+     * Demangling is done by the C++ runtime that libsaproc is linked
+     * against.  macosx's libsaproc is not linked against one, and its
+     * symbols come back with the extra leading underscore Mach-O adds, so
+     * it answers false here and demangle() is never reached.
+     */
+    public boolean canDemangle() {
+        return !isDarwin;
+    }
+
+    public native String demangle(String sym);
+
     // Note on Bsd threads are really processes. When target process is
     // attached by a serviceability agent thread, only that thread can do
     // ptrace operations on the target. This is because from kernel's point

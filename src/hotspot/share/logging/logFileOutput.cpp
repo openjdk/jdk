@@ -86,7 +86,7 @@ LogFileOutput::~LogFileOutput() {
 static size_t parse_value(const char* value_str) {
   char* end;
   unsigned long long value = strtoull(value_str, &end, 10);
-  if (!isdigit(*value_str) || end != value_str + strlen(value_str) || value >= SIZE_MAX) {
+  if (!isdigit((unsigned char)*value_str) || end != value_str + strlen(value_str) || value >= SIZE_MAX) {
     return SIZE_MAX;
   }
   return value;

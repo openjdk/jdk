@@ -310,7 +310,8 @@ const char* StringUtils::strstr_nocase(const char* haystack, const char* needle)
       if (haystack[i + j] == '\0') {
         return nullptr; // hit end of haystack, abort
       }
-      if (tolower(haystack[i + j]) != tolower(needle[j])) {
+      if (tolower((unsigned char)haystack[i + j]) !=
+          tolower((unsigned char)needle[j])) {
         matches = false;
         break; // abort, try next i
       }

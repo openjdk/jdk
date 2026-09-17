@@ -1385,7 +1385,7 @@ is_a_nested_class(char *outer_sig, int outer_sig_len, char *sig, int sep)
     /* Walk past any digits, if we reach the end, must be pure anonymous */
     inner = sig + outer_sig_len;
 #if 1 /* We want to return local classes */
-    while ( *inner && isdigit(*inner) ) {
+    while ( *inner && isdigit((unsigned char)*inner) ) {
         inner++;
     }
     /* But anonymous class names can't be trusted. */

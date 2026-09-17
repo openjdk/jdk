@@ -28,7 +28,12 @@
 
 #include "java_awt_event_InputEvent.h"
 
-#ifndef _AIX
+/*
+ * The screencast is done through the xdg-desktop-portal and PipeWire, which
+ * are Wayland's; neither AIX nor the BSDs run them.  Both take the stubs
+ * below instead.
+ */
+#if !defined(_AIX) && !defined(_ALLBSD_SOURCE)
 #include "screencast_pipewire.h"
 
 #include "screencast_portal.h"

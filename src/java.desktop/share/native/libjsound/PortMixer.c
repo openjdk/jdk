@@ -349,10 +349,10 @@ int PORT_AddControl(void* creatorV, void* control) {
 JNIEXPORT void JNICALL Java_com_sun_media_sound_PortMixer_nGetControls
   (JNIEnv *env, jclass cls, jlong id, jint portIndex, jobject vector) {
 
+#if USE_PORTS == TRUE
     ControlCreatorJNI creator;
     jclass vectorClass;
 
-#if USE_PORTS == TRUE
     if (id != 0) {
         memset(&creator, 0, sizeof(ControlCreatorJNI));
         creator.creator.newBooleanControl  = &PORT_NewBooleanControl;

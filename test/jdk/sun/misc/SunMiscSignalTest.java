@@ -131,12 +131,22 @@ public class SunMiscSignalTest {
 
         Object[][] posixNonOSXSignals = {
                 {"BUS",  IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
-                {"INFO", IsSupported.NO, CanRegister.NO, CanRaise.NO, Invoked.NO},
         };
 
         Object[][] posixOSXSignals = {
                 {"BUS",  IsSupported.YES, CanRegister.NO, CanRaise.NO, Invoked.NO},
+        };
+
+        // SIGINFO is a BSD signal, and macOS is one BSD among several: it is
+        // there on NetBSD, FreeBSD, OpenBSD and DragonFly too, and the JDK
+        // supports it on all of them.  SIGBUS is the one that really is
+        // macOS-specific, in that it alone refuses to be registered.
+        Object[][] infoSignal = {
                 {"INFO", IsSupported.YES, CanRegister.YES, CanRaise.YES, invokedXrs},
+        };
+
+        Object[][] noInfoSignal = {
+                {"INFO", IsSupported.NO, CanRegister.NO, CanRaise.NO, Invoked.NO},
         };
 
         Object[][] windowsSignals = {
@@ -163,7 +173,8 @@ public class SunMiscSignalTest {
         };
 
         Object[][] combinedPosixSignals = concatArrays(posixSignals,
-                                                       (Platform.isOSX() ? posixOSXSignals : posixNonOSXSignals));
+                                                       (Platform.isOSX() ? posixOSXSignals : posixNonOSXSignals),
+                                                       ((Platform.isOSX() || Platform.isBsd()) ? infoSignal : noInfoSignal));
         return concatArrays(commonSignals, (Platform.isWindows() ? windowsSignals : combinedPosixSignals));
     }
 

@@ -30,13 +30,16 @@
  */
 
 import java.io.*;
+import java.util.stream.Stream;
 
 public class Zombies {
 
-    static final String os = System.getProperty("os.name");
-
-    static final String TrueCommand = os.contains("OS X")?
-        "/usr/bin/true" : "/bin/true";
+    // Where true(1) lives is not something to guess at by operating system
+    // name: Linux has it in /bin, macOS and every BSD in /usr/bin.  Look.
+    static final String TrueCommand = Stream.of("/bin/true", "/usr/bin/true")
+        .filter(p -> new File(p).canExecute())
+        .findFirst()
+        .orElse("/bin/true");
 
     public static void main(String[] args) throws Throwable {
         if (! new File("/usr/bin/perl").canExecute() ||
