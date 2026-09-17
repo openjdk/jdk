@@ -619,6 +619,13 @@ static jobject sAccessibilityClass = NULL;
                 if (nsActionName != nil) {
                     [fActions setObject:action forKey:nsActionName];
                     [fActionSelectors addObject:[sActionSelectors objectForKey:nsActionName]];
+                } else if (count == 1) {
+                    // If no mapping exists and it's the sole action, default
+                    // to "press" (click). In JButtons where the language is
+                    // not English the accessible action description we receive
+                    // is localized, so we can't assume it's "click"
+                    [fActions setObject:action forKey:NSAccessibilityPressAction];
+                    [fActionSelectors addObject:[sActionSelectors objectForKey:NSAccessibilityPressAction]];
                 }
             }
             [action release];

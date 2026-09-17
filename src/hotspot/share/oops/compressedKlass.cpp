@@ -188,11 +188,7 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 
   calc_lowest_highest_narrow_klass_id();
 
-  // This has already been checked for SharedBaseAddress and if this fails, it's a bug in the allocation code.
-  if (!set_klass_decode_mode()) {
-    fatal("base=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-          p2i(_base), _shift);
-  }
+  initialize_pd();
 
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
@@ -245,12 +241,9 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
     // a cacheline size.
     _base = addr;
 
+    const int log2_len_to_cover = log2i_ceil(len);
     const int log_cacheline = exact_log2(DEFAULT_CACHE_LINE_SIZE);
-    int s = max_shift();
-    while (s > log_cacheline && ((size_t)nth_bit(narrow_klass_pointer_bits() + s - 1) > len)) {
-      s--;
-    }
-    _shift = s;
+    _shift = MAX2(log_cacheline, log2_len_to_cover - narrow_klass_pointer_bits());
 
   } else {
 
@@ -299,20 +292,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
 
   calc_lowest_highest_narrow_klass_id();
 
-  // Initialize JIT-specific decoding settings
-  if (!set_klass_decode_mode()) {
-
-    // Give fatal error if this is a specified address
-    if (CompressedClassSpaceBaseAddress == (size_t)_base) {
-      vm_exit_during_initialization(
-            err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-                    CompressedClassSpaceBaseAddress, _shift));
-    } else {
-      // If this fails, it's a bug in the allocation code.
-      fatal("CompressedClassSpaceBaseAddress=" PTR_FORMAT " given with shift %d, cannot be used to encode class pointers",
-            p2i(_base), _shift);
-    }
-  }
+  initialize_pd();
 
   DEBUG_ONLY(sanity_check_after_initialization();)
 }
@@ -334,15 +314,12 @@ void CompressedKlassPointers::print_mode(outputStream* st) {
   }
 }
 
-// On AIX, we cannot mprotect archive space or class space since they are reserved with SystemV shm.
-static constexpr bool can_mprotect_archive_space = NOT_AIX(true) AIX_ONLY(false);
-
 // Protect a zone a the start of the encoding range
 void CompressedKlassPointers::establish_protection_zone(address addr, size_t size) {
   assert(_protection_zone_size == 0, "just once");
   assert(addr == base(), "Protection zone not at start of encoding range?");
   assert(size > 0 && is_aligned(size, os::vm_page_size()), "Protection zone not page sized");
-  const bool rc = can_mprotect_archive_space && os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
+  const bool rc = os::protect_memory((char*)addr, size, os::MEM_PROT_NONE, false);
   log_info(metaspace)("%s Narrow Klass Protection zone " RANGEFMT,
       (rc ? "Established" : "FAILED to establish "),
       RANGEFMTARGS(addr, size));

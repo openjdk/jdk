@@ -68,6 +68,18 @@
  *      TestLargeArrayInit
  */
 
+/*
+ * @test id=compressed-oops-off
+ * @summary Verify zero-initialization completeness for large arrays with compressed oops disabled
+ * @requires vm.gc.Shenandoah
+ * @library /test/lib
+ *
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions -Xmx512m -Xms512m
+ *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
+ *      -XX:-UseCompressedOops
+ *      TestLargeArrayInit
+ */
+
 /**
  *
  * Allocates large byte[], int[], long[], and Object[] arrays whose sizes span

@@ -58,7 +58,7 @@ enum class vmIntrinsicID;
     } \
   } else if (vmflag) { \
     if (!FLAG_IS_DEFAULT(vmflag)) { \
-      warning(#feature_id warning_msg); \
+      warning(warning_msg); \
     } \
     FLAG_SET_DEFAULT(vmflag, false); \
   }
@@ -67,7 +67,6 @@ enum class vmIntrinsicID;
 
 class Abstract_VM_Version: AllStatic {
   friend class VMStructs;
-  friend class JVMCIVMStructs;
 
  protected:
   static const char*  _s_vm_release;

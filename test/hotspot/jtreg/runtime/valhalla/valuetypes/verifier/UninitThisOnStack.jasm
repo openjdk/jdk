@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+class UninitThisOnStack {
+    @Strict int f;
+
+    UninitThisOnStack() {
+        // Replace locals slot 0 with int -1 instead of uninitializedThis
+        // while uninitializedThis is on the stack
+        if (3 != 0) {
+            f = 4;
+        } else {
+            f = 4;
+        }
+        super();
+    }
+}
+*/
+
+identity class UninitThisOnStack version 72:65535
+{
+  strict Field f:I;
+
+  Method "<init>":"()V"
+    stack 4 locals 1
+  {
+    aload_0;
+    dup;
+    iconst_4;
+    iconst_m1;
+    istore_0;
+    iconst_3;
+    ifeq ELSE;
+    putfield Field f:"I";
+    goto ENDIF;
+  ELSE: stack_frame_type full;
+      locals_map int;
+      stack_map this, this, int;
+    putfield Field f:"I";
+  ENDIF: stack_frame_type early_larval;
+      unset_fields;
+      frame_type stack1;
+        stack_map this;
+    invokespecial Method java/lang/Object."<init>":"()V";
+    iconst_1;
+    ifeq ELSE2;
+    nop;
+    goto ENDIF2;
+  ELSE2: stack_frame_type full;
+      locals_map int;
+      stack_map;
+    nop;
+  ENDIF2: stack_frame_type same;
+    return;
+  }
+}

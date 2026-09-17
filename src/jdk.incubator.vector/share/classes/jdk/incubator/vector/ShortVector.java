@@ -2021,6 +2021,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2052,6 +2053,7 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
                 m = compare(LT, (short) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2370,6 +2372,9 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
         ShortVector that = (ShortVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         ShortVector iotaVector = (ShortVector) iotaShuffle().toBitsVector();
         ShortVector filter = broadcast((short)origin);
         VectorMask<Short> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);
@@ -4146,22 +4151,14 @@ public abstract sealed class ShortVector extends AbstractVector<Short>
 
     /**
      * {@inheritDoc} <!--workaround-->
-     *
-     * @implNote This method always throws
-     * {@code UnsupportedOperationException}, because there is no floating
-     * point type of the same size as {@code short}.  The return type
-     * of this method is arbitrarily designated as
-     * {@code Vector<?>}.  Future versions of this API may change the return
-     * type if additional floating point types become available.
      */
     @ForceInline
     @Override
     public final
-    Vector<?>
+    Float16Vector
     viewAsFloatingLanes() {
         LaneType flt = LaneType.SHORT.asFloating();
-        // asFloating() will throw UnsupportedOperationException for the unsupported type short
-        throw new AssertionError("Cannot reach here");
+        return (Float16Vector) asVectorRaw(flt);
     }
 
     // ================================================

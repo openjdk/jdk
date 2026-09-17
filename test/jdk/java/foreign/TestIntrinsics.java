@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @run testng/othervm/native
+ * @run junit/othervm/native
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
@@ -39,13 +39,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 import java.lang.foreign.MemoryLayout;
-import org.testng.annotations.*;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.invoke.MethodType.methodType;
 import static java.lang.foreign.ValueLayout.JAVA_CHAR;
-import static org.testng.Assert.assertEquals;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestIntrinsics extends NativeTestHelper {
 
     static final Linker abi = Linker.nativeLinker();
@@ -57,14 +61,14 @@ public class TestIntrinsics extends NativeTestHelper {
         void run() throws Throwable;
     }
 
-    @Test(dataProvider = "tests")
+    @ParameterizedTest
+    @MethodSource("tests")
     public void testIntrinsics(RunnableX test) throws Throwable {
         for (int i = 0; i < 20_000; i++) {
             test.run();
         }
     }
 
-    @DataProvider
     public Object[][] tests() {
         List<RunnableX> testsList = new ArrayList<>();
 
@@ -74,7 +78,7 @@ public class TestIntrinsics extends NativeTestHelper {
 
         AddTest tests = (mh, expectedResult, args) -> testsList.add(() -> {
             Object actual = mh.invokeWithArguments(args);
-            assertEquals(actual, expectedResult);
+            assertEquals(expectedResult, actual);
         });
 
         interface AddIdentity {

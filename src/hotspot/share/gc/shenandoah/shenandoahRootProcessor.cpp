@@ -49,7 +49,7 @@ uint ShenandoahJavaThreadsIterator::claim() {
 }
 
 void ShenandoahJavaThreadsIterator::threads_do(ThreadClosure* cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Threads, worker_id);
   for (uint i = claim(); i < _length; i = claim()) {
     for (uint t = i; t < MIN2(_length, i + _stride); t++) {
       cl->do_thread(thread_at(t));
@@ -63,13 +63,13 @@ ShenandoahThreadRoots::ShenandoahThreadRoots(ShenandoahPhaseTimings::Phase phase
   _threads_claim_token_scope() {}
 
 void ShenandoahThreadRoots::oops_do(OopClosure* oops_cl, NMethodClosure* code_cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Threads, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_oops_do(_is_par, oops_cl, code_cl);
 }
 
 void ShenandoahThreadRoots::threads_do(ThreadClosure* tc, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::ThreadRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::Threads, worker_id);
   ResourceMark rm;
   Threads::possibly_parallel_threads_do(_is_par, tc);
 }
@@ -78,7 +78,7 @@ ShenandoahCodeCacheRoots::ShenandoahCodeCacheRoots(ShenandoahPhaseTimings::Phase
 }
 
 void ShenandoahCodeCacheRoots::nmethods_do(NMethodClosure* nmethod_cl, uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+  ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
   _coderoots_iterator.possibly_parallel_nmethods_do(nmethod_cl);
 }
 
@@ -153,7 +153,7 @@ void ShenandoahConcurrentRootScanner::roots_do(OopClosure* oops, uint worker_id)
     _cld_roots.cld_do(&clds_cl, worker_id);
 
     {
-      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCacheRoots, worker_id);
+      ShenandoahWorkerTimingsTracker timer(_phase, ShenandoahPhaseTimings::CodeCache, worker_id);
       NMethodToOopClosure nmethods(oops, !NMethodToOopClosure::FixRelocations);
       _codecache_snapshot->parallel_nmethods_do(&nmethods);
     }

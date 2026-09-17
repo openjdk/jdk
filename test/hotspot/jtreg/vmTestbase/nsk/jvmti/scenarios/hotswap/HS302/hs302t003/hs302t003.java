@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,13 +61,13 @@ public class hs302t003  extends RedefineAgent {
         MyClass cls = new MyClass();
         try {
             cls.setName("SOME NAME");
-            log.println(" cls.toString() "+cls.toString());
+            log.display(" cls.toString() "+cls.toString());
         } catch(Exception exp) {
             if (cls.toString().equals("Default") && isRedefined() ) {
                 pass =true;
-                log.println(" Passed ..");
+                log.display(" Passed ..");
             } else {
-                log.println(" Failed ..");
+                log.display(" Failed ..");
             }
             return pass;
         }

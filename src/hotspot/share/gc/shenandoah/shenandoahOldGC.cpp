@@ -84,6 +84,10 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   auto heap = ShenandoahGenerationalHeap::heap();
   assert(!_old_generation->is_doing_mixed_evacuations(), "Should not start an old gc with pending mixed evacuations");
   assert(!_old_generation->is_preparing_for_mark(), "Old regions need to be parsable during concurrent mark.");
+  heap->release_injected_pins();
+
+  SHENANDOAH_EVENT_MESSAGE(msg, _generation->type(), "Concurrent GC", "");
+  ShenandoahConcurrentPhase gc_phase(msg, ShenandoahPhaseTimings::conc_gc, /* log_heap_usage = */ true);
 
   // Enable preemption of old generation mark.
   _allow_preemption.set();
@@ -134,7 +138,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  heap->concurrent_final_roots();
+  entry_final_roots();
 
   // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
   // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to

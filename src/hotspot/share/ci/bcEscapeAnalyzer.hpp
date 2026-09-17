@@ -84,6 +84,7 @@ class BCEscapeAnalyzer : public ArenaObj {
   void set_method_escape(ArgumentMap vars);
   void set_global_escape(ArgumentMap vars, bool merge = false);
   void set_modified(ArgumentMap vars, int offs, int size);
+  void set_modified_any_offset(ArgumentMap vars);
 
   bool is_recursive_call(ciMethod* callee);
   void invoke(StateInfo &state, Bytecodes::Code code, ciMethod* target, ciKlass* holder);
@@ -151,6 +152,12 @@ class BCEscapeAnalyzer : public ArenaObj {
 
   // Copy dependencies from this analysis into "deps"
   void copy_dependencies(Dependencies *deps);
+
+  // Returns true if the datasize computation for iterate_blocks would
+  // overflow, i.e. the allocation size exceeds what can be represented.
+  // On success, sets datasize to the computed allocation size in bytes.
+  // Extracted as a public static method for testability (JDK-8216486).
+  static bool datasize_overflow(uint numblocks, uint stkSize, uint numLocals, size_t& datasize);
 
 #ifndef PRODUCT
   // dump escape information

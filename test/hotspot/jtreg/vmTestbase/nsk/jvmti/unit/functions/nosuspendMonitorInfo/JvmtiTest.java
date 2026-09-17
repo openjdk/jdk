@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 package nsk.jvmti.unit.functions.nosuspendMonitorInfo;
 
+import jdk.test.lib.thread.ThreadWrapper;
 import java.io.PrintStream;
 
 public class JvmtiTest {
@@ -74,14 +75,14 @@ public class JvmtiTest {
             runn.start();
             try {
                 CheckMonitorInfo(thr,lock1, 1);
-                CheckMonitorInfo(runn,lock1, 0);
+                CheckMonitorInfo(runn.getThread(),lock1, 0);
                 lock1.wait();
             } catch (Throwable e) {
                 out.println(e);
                 return 2;
             }
             CheckMonitorInfo(thr,lock1,1);
-            CheckMonitorInfo(runn,lock1,0);
+            CheckMonitorInfo(runn.getThread(),lock1,0);
         }
 
         while (!lock1held) {
@@ -93,7 +94,7 @@ public class JvmtiTest {
             CheckMonitorInfo(thr,lock2,1);
             lock2.notifyAll();
             CheckMonitorInfo(thr,lock2,1);
-            CheckMonitorInfo(runn,lock2,0);
+            CheckMonitorInfo(runn.getThread(),lock2,0);
         }
 
         while (!lock1held) {
@@ -103,11 +104,11 @@ public class JvmtiTest {
         synchronized (lock2) {
             lock1held = false;
             CheckMonitorInfo(thr,lock2,1);
-            CheckMonitorInfo(runn,lock2,1);
-            CheckMonitorInfo(runn,lock1,1);
+            CheckMonitorInfo(runn.getThread(),lock2,1);
+            CheckMonitorInfo(runn.getThread(),lock1,1);
             lock2.notifyAll();
             CheckMonitorInfo(thr,lock2,1);
-            CheckMonitorInfo(runn,lock2,0);
+            CheckMonitorInfo(runn.getThread(),lock2,0);
         }
 
         try {
@@ -120,7 +121,7 @@ public class JvmtiTest {
     }
 }
 
-class JvmtiTesta extends Thread {
+class JvmtiTesta extends ThreadWrapper {
     public void run() {
         synchronized (JvmtiTest.lock1) {
 

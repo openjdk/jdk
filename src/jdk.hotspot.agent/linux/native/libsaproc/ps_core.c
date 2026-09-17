@@ -298,7 +298,7 @@ static bool core_handle_note(struct ps_prochandle* ph, ELF_PHDR* note_phdr) {
             ph->core->vdso_addr = auxv->a_un.a_val;
 #ifdef __aarch64__
           } else if (auxv->a_type == AT_HWCAP) {
-            ph->pac_enabled = auxv->a_un.a_val & HWCAP_PACA;
+            ph->pac_enabled = (auxv->a_un.a_val & HWCAP_PACA) == HWCAP_PACA;
 #endif
           }
           auxv++;

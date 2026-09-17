@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,16 @@ import com.sun.jdi.event.ModificationWatchpointEvent;
  * The mirror for a value in the target VM.
  * This interface is the root of a
  * value hierarchy encompassing primitive values and object values.
+ *
+ * <div class="preview-block">
+ *      <div class="preview-comment">
+ * The Java Debug Interface (JDI) supports debugging of programs that use
+ * {@linkplain Class#isValue() value objects}. A value object is an instance of a
+ * value class, declared with the value modifier. The JDI
+ * {@code com.sun.jdi.Value} interface is used to mirror a value in the target VM.
+ * That value may be a value object or an identity object.
+ *      </div>
+ * </div>
  * <P>
  * Some examples of where values may be accessed:
  * <BLOCKQUOTE><TABLE role="presentation">

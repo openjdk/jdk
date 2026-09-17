@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/oopCast.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 
@@ -93,6 +94,18 @@
 //     initialization; this string is never changed during -Xshare:dump.
 // [D] Simple caches whose value doesn't matter.
 // [E] Other cases (see comments in-line below).
+//
+// LIMITATION:
+//
+// CDSHeapVerifier can only check for problems with object identity. In the example above,
+// if the Bar type has identity, the program's correctness requires that the identity
+// of Foo.bar and Bar.bar to be equal. This requirement can be checked by CDSHeapVerifier.
+//
+// However, if Bar does not have identity (e.g., it's a value class, or is a primitive type),
+// the program's correctness no longer requires that the identity of Foo.bar and Bar.bar
+// to be equal (since they don't have an identity anymore). While the program's
+// correctness may still have certain assumptions about Foo.bar and Bar.bar (such as the
+// internal fields of these two values), such assumptions cannot be checked by CDSHeapVerifier.
 
 CDSHeapVerifier::CDSHeapVerifier() : _archived_objs(0), _problems(0)
 {
@@ -293,6 +306,14 @@ public:
         }
       }
 
+      if (!field_type->is_identity_class()) {
+        // See comment of LIMITATION above
+        // Any concrete value class will have a field ".null_reset" which holds an
+        // all-zero instance of the value class so it will not change between
+        // dump time and runtime.
+        return;
+      }
+
       if (fd->is_final() && java_lang_String::is_instance(static_obj_field) && fd->has_initial_value()) {
         // This field looks like like this in the Java source:
         //    static final SOME_STRING = "a string literal";
@@ -484,8 +505,8 @@ int CDSHeapVerifier::trace_to_root(outputStream* st, oop orig_obj, oop orig_fiel
       TraceFields clo(orig_obj, orig_field, st);
       InstanceKlass::cast(k)->do_nonstatic_fields(&clo);
     } else {
-      assert(orig_obj->is_objArray(), "must be");
-      objArrayOop array = (objArrayOop)orig_obj;
+      assert(orig_obj->is_refArray(), "must be");
+      refArrayOop array = oop_cast<refArrayOop>(orig_obj);
       for (int i = 0; i < array->length(); i++) {
         if (array->obj_at(i) == orig_field) {
           st->print(" @[%d]", i);

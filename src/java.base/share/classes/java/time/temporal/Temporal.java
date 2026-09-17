@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -392,8 +392,8 @@ public interface Temporal extends TemporalAccessor {
      * The second is to use {@link TemporalUnit#between(Temporal, Temporal)}:
      * <pre>
      *   // these two lines are equivalent
-     *   temporal = start.until(end, unit);
-     *   temporal = unit.between(start, end);
+     *   amount = start.until(end, unit);
+     *   amount = unit.between(start, end);
      * </pre>
      * The choice should be made based on which makes the code more readable.
      * <p>

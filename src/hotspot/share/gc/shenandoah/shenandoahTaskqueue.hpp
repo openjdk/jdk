@@ -49,16 +49,25 @@ public:
   TASKQUEUE_STATS_ONLY(using taskqueue_t::stats;)
 
   // Push task t into the queue. Returns true on success.
-  inline bool push(E t);
+  ALWAYSINLINE
+  bool push(E t);
 
   // Attempt to pop from the queue. Returns true on success.
-  inline bool pop(E &t);
+  ALWAYSINLINE
+  bool pop(E &t);
 
   inline void clear();
 
   inline bool is_empty()        const {
     return _buf_empty && taskqueue_t::is_empty();
   }
+
+  NOINLINE
+  void pop_more_overflow();
+
+  inline size_t full_size();
+
+  inline size_t capacity() const;
 
 private:
   bool _buf_empty;
@@ -158,8 +167,8 @@ private:
   static const uintptr_t weak_extract_mask      = 1 << 1;
   static const uintptr_t chunk_pow_extract_mask = ~right_n_bits(oop_bits);
 
-  static const int chunk_range_mask = right_n_bits(chunk_bits);
-  static const int pow_range_mask   = right_n_bits(pow_bits);
+  static const int chunk_range_mask = right_n_bits<int>(chunk_bits);
+  static const int pow_range_mask   = right_n_bits<int>(pow_bits);
 
   inline oop decode_oop(uintptr_t val) const {
     STATIC_ASSERT(oop_shift == 0);
@@ -249,7 +258,7 @@ public:
   }
 
   static int chunk_size() {
-    return nth_bit(chunk_bits);
+    return nth_bit<int>(chunk_bits);
   }
 };
 #else
@@ -303,56 +312,11 @@ public:
 typedef BufferedOverflowTaskQueue<ShenandoahMarkTask, mtGC> ShenandoahBufferedOverflowTaskQueue;
 typedef Padded<ShenandoahBufferedOverflowTaskQueue> ShenandoahObjToScanQueue;
 
-template <class T, MemTag MT>
-class ParallelClaimableQueueSet: public GenericTaskQueueSet<T, MT> {
-private:
-  shenandoah_padding(0);
-  Atomic<jint>      _claimed_index;
-  shenandoah_padding(1);
-
-  DEBUG_ONLY(uint   _reserved;  )
-
+class ShenandoahObjToScanQueueSet: public GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC> {
 public:
-  using GenericTaskQueueSet<T, MT>::size;
+  ShenandoahObjToScanQueueSet(int n) : GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
 
-public:
-  ParallelClaimableQueueSet(int n) : GenericTaskQueueSet<T, MT>(n), _claimed_index(0) {
-    DEBUG_ONLY(_reserved = 0; )
-  }
-
-  void clear_claimed() { _claimed_index.store_relaxed(0); }
-  T*   claim_next();
-
-  // reserve queues that not for parallel claiming
-  void reserve(uint n) {
-    assert(n <= size(), "Sanity");
-    _claimed_index.store_relaxed((jint)n);
-    DEBUG_ONLY(_reserved = n;)
-  }
-
-  DEBUG_ONLY(uint get_reserved() const { return (uint)_reserved; })
-};
-
-template <class T, MemTag MT>
-T* ParallelClaimableQueueSet<T, MT>::claim_next() {
-  jint size = (jint)GenericTaskQueueSet<T, MT>::size();
-
-  if (_claimed_index.load_relaxed() >= size) {
-    return nullptr;
-  }
-
-  jint index = _claimed_index.add_then_fetch(1, memory_order_relaxed);
-
-  if (index <= size) {
-    return GenericTaskQueueSet<T, MT>::queue((uint)index - 1);
-  } else {
-    return nullptr;
-  }
-}
-
-class ShenandoahObjToScanQueueSet: public ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC> {
-public:
-  ShenandoahObjToScanQueueSet(int n) : ParallelClaimableQueueSet<ShenandoahObjToScanQueue, mtGC>(n) {}
+  void rebalance(size_t target_queues);
 
   bool is_empty();
   void clear();

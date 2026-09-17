@@ -827,12 +827,6 @@ public final class HSS extends SignatureSpi {
                 } catch (InvalidKeyException e) {
                     throw new InvalidKeySpecException(e);
                 }
-            } else if (keySpec instanceof RawKeySpec rawSpec) {
-                try {
-                    return new HSSPublicKey(rawSpec.getKeyArr(), false);
-                } catch (InvalidKeyException e) {
-                    throw new InvalidKeySpecException(e);
-                }
             }
             throw new InvalidKeySpecException("Unrecognized KeySpec");
         }
@@ -866,17 +860,27 @@ public final class HSS extends SignatureSpi {
             if (key == null) {
                 throw new InvalidKeyException("key cannot be null");
             }
+            if (!(key instanceof PublicKey)) {
+                throw new InvalidKeyException("Only support public key");
+            }
             PublicKey pKey;
             try {
                 // Check if key originates from this factory
                 if (key instanceof HSSPublicKey) {
                     return key;
                 }
-                // Convert key to spec
-                X509EncodedKeySpec x509EncodedKeySpec
-                        = engineGetKeySpec(key, X509EncodedKeySpec.class);
-                // Create key from spec, and return it
-                pKey = engineGeneratePublic(x509EncodedKeySpec);
+                String format = key.getFormat();
+                if ("X.509".equalsIgnoreCase(format)) {
+                    // Convert key to spec
+                    X509EncodedKeySpec x509EncodedKeySpec
+                            = engineGetKeySpec(key, X509EncodedKeySpec.class);
+                    // Create key from spec, and return it
+                    pKey = engineGeneratePublic(x509EncodedKeySpec);
+                } else if ("RAW".equalsIgnoreCase(format)) {
+                    pKey = new HSSPublicKey(key.getEncoded(), false);
+                } else {
+                    throw new InvalidKeyException("Unknown format " + format);
+                }
             } catch (InvalidKeySpecException e) {
                 throw new InvalidKeyException(e);
             }

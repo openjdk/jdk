@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/orderAccess.hpp"
 #include "runtime/os.hpp"
 #include "utilities/vmError.hpp"
 
@@ -425,6 +426,15 @@ void ShenandoahAsserts::assert_marked_strong(void *interior_loc, oop obj, const 
   }
 }
 
+void ShenandoahAsserts::assert_bitmap_clear_above_top(ShenandoahHeapRegion* region) {
+  ShenandoahMarkingContext* const ctx = ShenandoahHeap::heap()->marking_context();
+  const HeapWord* top_bitmap = ctx->top_bitmap(region);
+  // Make sure that top is loaded before any of the marks from the bitmap are loaded. If another
+  // thread has cleared the bitmap we must not allow any stale reads.
+  OrderAccess::loadload();
+  assert(ctx->is_bitmap_range_within_region_clear(top_bitmap, region->end()), "Bitmap above top_bitmap() must be clear");
+}
+
 void ShenandoahAsserts::assert_mark_complete(HeapWord* obj, const char* file, int line) {
   const ShenandoahHeap* heap = ShenandoahHeap::heap();
   const ShenandoahHeapRegion* region = heap->heap_region_containing(obj);
@@ -462,6 +472,17 @@ void ShenandoahAsserts::assert_not_in_cset_loc(void* interior_loc, const char* f
   if (heap->in_collection_set_loc(interior_loc)) {
     print_failure(_safe_unknown, nullptr, interior_loc, nullptr, "Shenandoah assert_not_in_cset_loc failed",
                   "Interior location should not be in collection set",
+                  file, line);
+  }
+}
+
+void ShenandoahAsserts::assert_in_young(void* interior_loc, oop obj, const char* file, int line) {
+  assert_correct(interior_loc, obj, file, line);
+
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  if (!heap->heap_region_containing(obj)->is_young()) {
+    print_failure(_safe_all, obj, interior_loc, nullptr, "Shenandoah assert_in_young failed",
+                  "Object should be in young region",
                   file, line);
   }
 }

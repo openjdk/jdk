@@ -3705,7 +3705,7 @@ CCerror (context_type *context, char *format, ...)
 static void
 CCout_of_memory(context_type *context)
 {
-    int n = print_CCerror_info(context);
+    print_CCerror_info(context);
     context->err_code = CC_OutOfMemory;
     longjmp(context->jump_buffer, 1);
 }

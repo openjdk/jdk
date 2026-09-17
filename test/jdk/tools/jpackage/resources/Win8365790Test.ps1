@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,9 @@ namespace Stuff {
 Add-Type @type
 
 Set-PSDebug -Trace 2
+
+# Ensure system directories are on the PATH for the child process.
+$env:Path = "$env:SystemRoot\System32;$env:SystemRoot;$env:Path"
 
 # Launch the target executable.
 # `-NoNewWindow` parameter will attach the started process to the existing console.

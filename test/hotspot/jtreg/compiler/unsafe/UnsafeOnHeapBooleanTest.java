@@ -46,7 +46,7 @@ public class UnsafeOnHeapBooleanTest {
             Field staticVField = UnsafeOnHeapBooleanTest.class.getDeclaredField("static_v");
             Object base = UNSAFE.staticFieldBase(staticVField);
             long offset = UNSAFE.staticFieldOffset(staticVField);
-            UNSAFE.putShort(base, offset, (short)0x0204);
+            UNSAFE.putShort(base, offset, (short)0x03FF);
 
             // Read two bytes from the static field
             // UnsafeOnHeapBooleanTest.static_v (as booleans).

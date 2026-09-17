@@ -41,7 +41,6 @@ class Array: public MetaspaceObj {
   friend class ArchiveBuilder;
   friend class MetadataFactory;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class MethodHandleCompiler;           // special case
   friend class WhiteBox;
   friend class FieldInfoStream;

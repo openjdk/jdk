@@ -36,6 +36,7 @@ import jdk.test.lib.jfr.Events;
  * @test id=dfsonly
  * @summary Tests that DFS works with a small stack
  * @library /test/lib /test/jdk
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -Xmx2g -XX:VMThreadStackSize=512 jdk.jfr.event.oldobject.TestDFSWithSmallStack dfsonly
@@ -45,6 +46,7 @@ import jdk.test.lib.jfr.Events;
  * @test id=bfsdfs
  * @summary Tests that DFS works with a small stack
  * @library /test/lib /test/jdk
+ * @requires vm.flagless
  * @requires vm.hasJFR
  * @modules jdk.jfr/jdk.jfr.internal.test
  * @run main/othervm -Xmx2g -XX:VMThreadStackSize=512 jdk.jfr.event.oldobject.TestDFSWithSmallStack bfsdfs

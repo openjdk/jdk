@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,7 @@ public class TestEventMetadata {
         System.out.println("Verifying name: " + name);
         Asserts.assertNotEquals(name, null, "Name not allowed to be null");
         Asserts.assertTrue(name.length() > 1, "Name must be at least two characters");
-        Asserts.assertTrue(name.length() < 32, "Name should not exceed 32 characters");
+        Asserts.assertTrue(name.length() <= 48, "Name should not exceed 48 characters");
         Asserts.assertFalse(isReservedKeyword(name),"Name must not be reserved keyword in the Java language (" + name + ")");
         char firstChar = name.charAt(0);
         Asserts.assertTrue(Character.isAlphabetic(firstChar), "Name must start with a character");

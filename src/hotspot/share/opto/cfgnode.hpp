@@ -30,6 +30,7 @@
 #include "opto/opcodes.hpp"
 #include "opto/predicates_enums.hpp"
 #include "opto/type.hpp"
+#include "runtime/arguments.hpp"
 
 // Portions of code courtesy of Clifford Click
 
@@ -231,12 +232,14 @@ public:
     }
     return uin;
   }
+  Node* unique_constant_input_recursive(PhaseGVN* phase);
 
   // Check for a simple dead loop.
   enum LoopSafety { Safe = 0, Unsafe, UnsafeLoop };
   LoopSafety simple_data_loop_check(Node *in) const;
   // Is it unsafe data loop? It becomes a dead loop if this phi node removed.
   bool is_unsafe_data_reference(Node *in) const;
+  bool is_dead_phi();
   int is_diamond_phi() const;
   bool try_clean_memory_phi(PhaseIterGVN* igvn);
   virtual int Opcode() const;
@@ -256,6 +259,13 @@ public:
            inst_offset() == offset &&
            type()->higher_equal(tp);
   }
+
+  bool can_be_value_type() const {
+    return Arguments::is_valhalla_enabled() && _type->isa_instptr() && _type->is_instptr()->can_be_value_type();
+  }
+
+  Node* try_push_value_types_down(PhaseGVN* phase, bool can_reshape);
+  DEBUG_ONLY(bool can_push_value_types_down(PhaseGVN* phase);)
 
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node* Identity(PhaseGVN* phase);
@@ -468,6 +478,8 @@ public:
   // Returns null is it couldn't improve the type.
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
+  bool is_flat_array_check(PhaseTransform* phase, Node** array = nullptr);
+
   AssertionPredicateType assertion_predicate_type() const {
     return _assertion_predicate_type;
   }
@@ -477,6 +489,7 @@ public:
 #endif
 
   bool same_condition(const Node* dom, PhaseIterGVN* igvn) const;
+  void mark_projections_unsafe_for_fold_compare() const;
 };
 
 class RangeCheckNode : public IfNode {
@@ -756,6 +769,7 @@ class BlackholeNode : public MultiNode {
 public:
   BlackholeNode(Node* ctrl) : MultiNode(1) {
     init_req(TypeFunc::Control, ctrl);
+    init_class_id(Class_Blackhole);
   }
   virtual int   Opcode() const;
   virtual uint ideal_reg() const { return 0; } // not matched in the AD file

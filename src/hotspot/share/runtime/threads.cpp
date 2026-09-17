@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -107,10 +107,6 @@
 #include "utilities/events.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
-#if INCLUDE_JVMCI
-#include "jvmci/jvmci.hpp"
-#include "jvmci/jvmciEnv.hpp"
-#endif
 #ifdef COMPILER2
 #include "opto/idealGraphPrinter.hpp"
 #include "runtime/hotCodeCollector.hpp"
@@ -418,6 +414,7 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_ArrayIndexOutOfBoundsException(), CHECK);
   initialize_class(vmSymbols::java_lang_StackOverflowError(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalMonitorStateException(), CHECK);
+  initialize_class(vmSymbols::java_lang_IdentityException(), CHECK);
   initialize_class(vmSymbols::java_lang_IllegalArgumentException(), CHECK);
   initialize_class(vmSymbols::java_lang_InternalError(), CHECK);
 }
@@ -555,15 +552,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize global data structures and create system classes in heap
   vm_init_globals();
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    JavaThread::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtJVMCI);
-    memset(JavaThread::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
-  } else {
-    JavaThread::_jvmci_old_thread_counters = nullptr;
-  }
-#endif // INCLUDE_JVMCI
-
   // Initialize OopStorage for threadObj
   JavaThread::_thread_oop_storage = OopStorageSet::create_strong("Thread OopStorage", mtThread);
 
@@ -679,7 +667,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // is initially computed. See Abstract_VM_Version::vm_info_string().
   // This update must happen before we initialize the java classes, but
   // after any initialization logic that might modify the flags.
-  Arguments::update_vm_info_property(VM_Version::vm_info_string());
+  const char* vm_info_str = VM_Version::vm_info_string();
+  Arguments::update_vm_info_property(vm_info_str);
+  FREE_C_HEAP_ARRAY(vm_info_str);
 
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
@@ -763,31 +753,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   MonitorDeflationThread::initialize();
 
   // initialize compiler(s)
-#if defined(COMPILER1) || COMPILER2_OR_JVMCI
-  bool init_compilation = true;
-#if INCLUDE_JVMCI
-  bool force_JVMCI_initialization = false;
-  if (EnableJVMCI) {
-    // Initialize JVMCI eagerly when it is explicitly requested.
-    // Or when JVMCILibDumpJNIConfig or JVMCIPrintProperties is enabled.
-    force_JVMCI_initialization = EagerJVMCI || JVMCIPrintProperties || JVMCILibDumpJNIConfig;
-    if (!force_JVMCI_initialization && UseJVMCICompiler && !UseJVMCINativeLibrary && (!UseInterpreter || !BackgroundCompilation)) {
-      // Force initialization of jarjvmci otherwise requests for blocking
-      // compilations will not actually block until jarjvmci is initialized.
-      force_JVMCI_initialization = true;
-    }
-    if (JVMCIPrintProperties || JVMCILibDumpJNIConfig) {
-      // Both JVMCILibDumpJNIConfig and JVMCIPrintProperties exit the VM
-      // so compilation should be disabled. This prevents dumping or
-      // printing from happening more than once.
-      init_compilation = false;
-    }
-  }
-#endif
-  if (init_compilation) {
-    CompileBroker::compilation_init(CHECK_JNI_ERR);
-  }
-#endif
+#if COMPILER1_OR_COMPILER2
+  CompileBroker::compilation_init(CHECK_JNI_ERR);
+#endif // COMPILER1_OR_COMPILER2
 
   if (CDSConfig::is_using_aot_linked_classes()) {
     SystemDictionary::restore_archived_method_handle_intrinsics();
@@ -818,9 +786,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (CDSConfig::is_using_aot_linked_classes()) {
     AOTLinkedClassBulkLoader::init_non_javabase_classes(THREAD);
   }
-#ifndef PRODUCT
-  HeapShared::initialize_test_class_from_archive(THREAD);
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_2();)
 
@@ -862,12 +827,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Notify JVMTI agents that VM initialization is complete - nop if no agents.
   JvmtiExport::post_vm_initialized();
-
-#if INCLUDE_JVMCI
-  if (force_JVMCI_initialization) {
-    JVMCI::initialize_compiler_in_create_vm(CHECK_JNI_ERR);
-  }
-#endif
 
   JFR_ONLY(Jfr::on_create_vm_3();)
 
@@ -1060,12 +1019,6 @@ void Threads::destroy_vm() {
   // wait_until_not_protected() above.
   delete thread;
 
-#if INCLUDE_JVMCI
-  if (JVMCICounterSize > 0) {
-    FREE_C_HEAP_ARRAY(JavaThread::_jvmci_old_thread_counters);
-  }
-#endif
-
   LogConfiguration::finalize();
 }
 
@@ -1087,6 +1040,7 @@ jboolean Threads::is_supported_jni_version(jint version) {
   if (version == JNI_VERSION_20) return JNI_TRUE;
   if (version == JNI_VERSION_21) return JNI_TRUE;
   if (version == JNI_VERSION_24) return JNI_TRUE;
+  if (version == JNI_VERSION_28) return JNI_TRUE;
   return JNI_FALSE;
 }
 
@@ -1375,10 +1329,14 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   char buf[32];
   st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
+  const char* vm_info_str = VM_Version::vm_info_string();
   st->print_cr("Full thread dump %s (%s %s)",
                VM_Version::vm_name(),
                VM_Version::vm_release(),
-               VM_Version::vm_info_string());
+               vm_info_str);
+  FREE_C_HEAP_ARRAY(vm_info_str);
+
+
   JDK_Version::current().to_string(buf, sizeof(buf));
   const char* runtime_name = JDK_Version::runtime_name() != nullptr ?
                              JDK_Version::runtime_name() : "";
@@ -1411,7 +1369,7 @@ void Threads::print_on(outputStream* st, bool print_stacks,
     p->print_on(st, print_extended_info);
     if (print_stacks) {
       if (internal_format) {
-        p->trace_stack();
+        p->trace_stack_on(st);
       } else {
         p->print_stack_on(st);
         if (p->is_vthread_mounted()) {

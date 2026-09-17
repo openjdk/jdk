@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,8 +66,8 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor14
  * @since 23
  */
-@SupportedSourceVersion(RELEASE_27)
-@PreviewFeature(feature=PreviewFeature.Feature.LANGUAGE_MODEL, reflective=true)
+@SupportedSourceVersion(RELEASE_28)
+@PreviewFeature(feature=PreviewFeature.Feature.PREVIEW_SUPPORT, reflective=true)
 public class TypeKindVisitorPreview<R, P> extends TypeKindVisitor14<R, P> {
     /**
      * Constructor for concrete subclasses to call; uses {@code null}

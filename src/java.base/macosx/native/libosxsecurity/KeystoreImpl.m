@@ -64,24 +64,9 @@ errOut:
 
 static jlong getModDateFromItem(JNIEnv *env, SecKeychainItemRef inItem)
 {
-    OSStatus status;
-    SecKeychainAttribute itemAttrs[] = { { kSecModDateItemAttr, 0, NULL } };
-    SecKeychainAttributeList attrList = { sizeof(itemAttrs) / sizeof(itemAttrs[0]), itemAttrs };
-    jlong returnValue = 0;
-
-    status = SecKeychainItemCopyContent(inItem, NULL, &attrList, NULL, NULL);
-
-    if(status) {
-        // This is almost always missing, so don't dump an error.
-        // cssmPerror("getModDateFromItem: SecKeychainItemCopyContent", status);
-        goto errOut;
-    }
-
-    memcpy(&returnValue, itemAttrs[0].data, itemAttrs[0].length);
-
-errOut:
-    SecKeychainItemFreeContent(&attrList, NULL);
-    return returnValue;
+    // SecKeychainItemCopyContent on kSecModDateItemAttr fails
+    // with errSecNoSuchAttr: The attribute does not exist.
+    return 0;
 }
 
 static void setLabelForItem(NSString *inLabel, SecKeychainItemRef inItem)

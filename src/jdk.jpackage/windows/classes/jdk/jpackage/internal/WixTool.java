@@ -30,6 +30,7 @@ import static java.util.stream.Collectors.toSet;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.List;
@@ -125,6 +126,7 @@ public enum WixTool {
                         .collect(toSet());
                 if (sameVersionTools.equals(Set.of(Candle3)) || sameVersionTools.equals(Set.of(Light3))) {
                     // There is only one tool from WiX v3 toolset of some version available. Discard it.
+                    Log.trace("Discard [%s]: incomplete", sameVersionLookupResults.getFirst().info());
                     return false;
                 } else {
                     return true;
@@ -178,6 +180,11 @@ public enum WixTool {
             });
         });
 
+        Log.trace("Using %s WiX Toolkit v%s", toolset.getType(), toolset.getVersion());
+        toolset.getType().getTools().stream().sorted().forEach(tool -> {
+            Log.trace("%s: %s", tool, toolset.getToolPath(tool));
+        });
+
         return toolset;
     }
 
@@ -198,6 +205,12 @@ public enum WixTool {
         static Optional<ToolLookupResult> lookup(WixTool tool, Optional<Path> lookupDir) {
             Objects.requireNonNull(tool);
             Objects.requireNonNull(lookupDir);
+
+            lookupDir.ifPresentOrElse(theLookupDir -> {
+                Log.trace("Look up for %s in [%s] directory", tool.toolFileName, theLookupDir);
+            }, () -> {
+                Log.trace("Look up for %s in the PATH", tool.toolFileName);
+            });
 
             final Path toolPath = lookupDir.map(p -> {
                 return p.resolve(tool.toolFileName);
@@ -256,7 +269,7 @@ public enum WixTool {
                     // Detect FIPS mode
                     var fips = false;
                     try {
-                        final var result = Executor.of(toolPath.toString(), "-?").setQuiet(true).saveOutput(true).execute();
+                        final var result = Executor.of(toolPath.toString(), "-?").quiet().saveOutput(true).execute();
                         final var exitCode = result.getExitCode();
                         if (exitCode != 0 /* 308 */) {
                             final var output = result.getOutput();
@@ -265,12 +278,18 @@ public enum WixTool {
                             }
                         }
                     } catch (IOException ex) {
+                        Log.trace(ex, "Failed to execute [%s] command with '-?' option to detect FIPS mode. Assume FIPS=false", toolPath);
                     }
                     info = new DefaultCandleInfo(info, fips);
                 }
 
+                Log.trace("Found [%s]", info);
+
                 return Optional.of(new ToolLookupResult(tool, info));
             } else {
+                if (parsedVersion.find().isPresent()) {
+                    Log.trace("Discard [%s]: failed validation", new DefaultToolInfo(toolPath, parsedVersion.get()));
+                }
                 return Optional.empty();
             }
         }
@@ -294,7 +313,14 @@ public enum WixTool {
 
     private static Optional<Path> getEnvVariableAsPath(String envVar) {
         Objects.requireNonNull(envVar);
-        return Optional.ofNullable(Globals.instance().system().getenv(envVar)).flatMap(PathUtils::asPath);
+        return Optional.ofNullable(Globals.instance().system().getenv(envVar)).map(v -> {
+            try {
+                return Path.of(v);
+            } catch (InvalidPathException ex) {
+                Log.trace(ex, "The value of environment variable '%s' [%s] is not a path", envVar, v);
+                return null;
+            }
+        });
     }
 
     private static List<Path> findWixCurrentInstallDirs() {
@@ -318,6 +344,7 @@ public enum WixTool {
             try (var paths = Files.walk(path, 1)) {
                 return paths.toList();
             } catch (IOException ex) {
+                Log.trace(ex, "Can not get a listing of [%s] directory", path);
                 return List.<Path>of();
             }
         }).flatMap(List::stream)

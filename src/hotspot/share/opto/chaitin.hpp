@@ -353,7 +353,8 @@ public:
     return _names.at(idx);
   }
 
-  uint live_range_id(const Node *node) const {
+  uint live_range_id(const Node* node) const {
+    precond(node != nullptr);
     return _names.at(node->_idx);
   }
 

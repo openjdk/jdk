@@ -2005,6 +2005,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2036,6 +2037,7 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
                 m = compare(LT, (int) 0, m);
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m);
@@ -2354,6 +2356,9 @@ public abstract sealed class IntVector extends AbstractVector<Integer>
         IntVector that = (IntVector) w;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
+        if ((-2 & part) != 0) {
+            throw wrongPartForSlice(part);
+        }
         IntVector iotaVector = (IntVector) iotaShuffle().toBitsVector();
         IntVector filter = broadcast((int)origin);
         VectorMask<Integer> blendMask = iotaVector.compare((part == 0) ? VectorOperators.GE : VectorOperators.LT, filter);

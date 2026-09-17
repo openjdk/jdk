@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,15 @@
 #define SHARE_GC_G1_G1HEAPREGIONTYPE_HPP
 
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #define hrt_assert_is_valid(tag) \
   assert(is_valid((tag)), "invalid HR type: %u", (uint) (tag))
 
 class G1HeapRegionType {
-friend class VMStructs;
+  friend class VMStructs;
 
-private:
   // We encode the value of the heap region type so the generation can be
   // determined quickly. The tag is split into two parts:
   //
@@ -73,20 +73,21 @@ private:
     OldTag                = OldMask
   } Tag;
 
-  volatile Tag _tag;
+  Atomic<Tag> _tag;
 
   static bool is_valid(Tag tag);
 
   Tag get() const {
-    hrt_assert_is_valid(_tag);
-    return _tag;
+    Tag result = _tag.load_relaxed();
+    hrt_assert_is_valid(result);
+    return result;
   }
 
   // Sets the type to 'tag'.
   void set(Tag tag) {
     hrt_assert_is_valid(tag);
-    hrt_assert_is_valid(_tag);
-    _tag = tag;
+    hrt_assert_is_valid(_tag.load_relaxed());
+    _tag.store_relaxed(tag);
   }
 
   // Sets the type to 'tag', expecting the type to be 'before'. This
@@ -95,13 +96,12 @@ private:
   void set_from(Tag tag, Tag before) {
     hrt_assert_is_valid(tag);
     hrt_assert_is_valid(before);
-    hrt_assert_is_valid(_tag);
-    assert(_tag == before, "HR tag: %u, expected: %u new tag; %u", _tag, before, tag);
-    _tag = tag;
+    assert(get() == before, "HR tag: %u, expected: %u new tag; %u", get(), before, tag);
+    _tag.store_relaxed(tag);
   }
 
   // Private constructor used for static constants
-  G1HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(_tag); }
+  G1HeapRegionType(Tag t) : _tag(t) { hrt_assert_is_valid(t); }
 
 public:
   // Queries
@@ -159,7 +159,15 @@ public:
   const char* get_short_str() const;
   G1HeapRegionTraceType::Type get_trace_type();
 
-  G1HeapRegionType() : _tag(FreeTag) { hrt_assert_is_valid(_tag); }
+  G1HeapRegionType() : G1HeapRegionType(FreeTag) { }
+
+  G1HeapRegionType(const G1HeapRegionType& other) : G1HeapRegionType(other.get()) { }
+  G1HeapRegionType& operator=(const G1HeapRegionType& other) {
+    if (this != &other) {
+      set(other.get());
+    }
+    return *this;
+  }
 
   static const G1HeapRegionType Eden;
   static const G1HeapRegionType Survivor;

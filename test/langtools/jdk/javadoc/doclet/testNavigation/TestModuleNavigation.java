@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,11 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../search.html">Search</a></li>
                     <li><a href="../help-doc.html#module">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    </ul>""");
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents</div>
+                    """);
 
         checkOutput("overview-tree.html", true,
                 """
@@ -147,7 +151,11 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="search.html">Search</a></li>
                     <li class="nav-bar-cell1-rev">Help</li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    </ul>""");
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents</div>
+                    """);
 
         checkOutput("m/p1/package-summary.html", true,
                 """
@@ -160,7 +168,11 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#package">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    </ul>""");
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents</div>
+                    """);
 
         checkOutput("m/p1/A.html", true,
                 """
@@ -173,7 +185,17 @@ public class TestModuleNavigation extends JavadocTester {
                     <li><a href="../../search.html">Search</a></li>
                     <li><a href="../../help-doc.html#class">Help</a></li>
                     <li><button id="theme-button" aria-label="Select Theme" title="Select Theme"></button></li>
-                    </ul>""");
+                    </ul>""",
+                """
+                    <nav role="navigation" class="toc" aria-label="Table of contents">
+                    <div class="toc-header">Contents&nbsp;<input type="text" class="filter-input" di\
+                    sabled title="Filter contents (type .)" placeholder="Filter contents (type .)" a\
+                    ria-label="Filter table of contents" autocomplete="off" spellcheck="false"><inpu\
+                    t type="reset" class="reset-filter" disabled tabindex="-1" value="Reset">&nbsp;<\
+                    button class="toc-sort-toggle" id="toc-lexical-order-toggle"><img src="../../res\
+                    ource-files/sort-a-z.svg" alt="Sort member details in lexicographical order"></b\
+                    utton></div>
+                    """);
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -236,7 +236,7 @@ void PhaseCFG::schedule_pinned_nodes(VectorSet &visited) {
       }
 
       // process all inputs that are non null
-      for (int i = node->req()-1; i >= 0; --i) {
+      for (int i = node->len()-1; i >= 0; --i) {
         if (node->in(i) != nullptr) {
           spstack.push(node->in(i));
         }
@@ -595,7 +595,7 @@ private:
   };
 
   GrowableArray<DefUsePair> _queue;
-  GrowableArray<MergeMemNode*> _worklist_visited; // visited mergemem nodes
+  Unique_Node_List _worklist_visited; // visited mergemem nodes
 
   bool already_enqueued(Node* def_mem, PhiNode* use_phi) const {
     // def_mem is one of the inputs of use_phi and at least one input of use_phi is
@@ -635,9 +635,11 @@ public:
   void push(Node* def_mem_state, Node* use_mem_state) {
     if (use_mem_state->is_MergeMem()) {
       // Be sure we don't get into combinatorial problems.
-      if (!_worklist_visited.append_if_missing(use_mem_state->as_MergeMem())) {
-        return; // already on work list; do not repeat
+      if (_worklist_visited.member(use_mem_state)) {
+        // already on work list; do not repeat
+        return;
       }
+      _worklist_visited.push(use_mem_state);
     } else if (use_mem_state->is_Phi()) {
       // A Phi could have the same mem as input multiple times. If that's the case, we don't need to enqueue it
       // more than once. We otherwise allow phis to be repeated; they can merge two relevant states.
@@ -1407,7 +1409,7 @@ bool PhaseCFG::is_cheaper_block(Block* LCA, Node* self, uint target_latency,
                                 int cand_cnt, bool in_latency) {
   if (StressGCM) {
     // Should be randomly accepted in stress mode
-    return C->randomized_select(cand_cnt);
+    return C->stress().randomized_select(cand_cnt);
   }
 
   const double delta = 1 + PROB_UNLIKELY_MAG(4);
@@ -1594,6 +1596,9 @@ void PhaseCFG::schedule_late(VectorSet &visited, Node_Stack &stack) {
         early->add_inst(self);
         continue;
         break;
+      case Op_CastI2N:
+        early->add_inst(self);
+        continue;
       case Op_CheckCastPP: {
         // Don't move CheckCastPP nodes away from their input, if the input
         // is a rawptr (5071820).

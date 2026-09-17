@@ -288,7 +288,6 @@ public class TestStylesheet extends JavadocTester {
                 "field-summary",
                 "member-details",
                 "method-details",
-                "method-summary",
                 // the following provide the ability to optionally override components of the
                 // memberSignature structure
                 "name",

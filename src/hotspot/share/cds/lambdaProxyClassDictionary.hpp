@@ -269,6 +269,7 @@ class LambdaProxyClassDictionary : public OffsetCompactHashtable<
 private:
   class CleanupDumpTimeLambdaProxyClassTable;
   static DumpTimeLambdaProxyClassDictionary* _dumptime_table;
+  static LambdaProxyClassDictionary _runtime_table_for_dumping;
   static LambdaProxyClassDictionary _runtime_static_table; // for static CDS archive
   static LambdaProxyClassDictionary _runtime_dynamic_table; // for dynamic CDS archive
 
@@ -319,7 +320,9 @@ public:
   }
 
   static void serialize(SerializeClosure* soc, bool is_static_archive) {
-    if (is_static_archive) {
+    if (soc->writing()) {
+      _runtime_table_for_dumping.serialize_header(soc);
+    } else if (is_static_archive) {
       _runtime_static_table.serialize_header(soc);
     } else {
       _runtime_dynamic_table.serialize_header(soc);

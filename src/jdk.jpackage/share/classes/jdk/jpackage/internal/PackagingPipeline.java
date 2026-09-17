@@ -378,21 +378,21 @@ final class PackagingPipeline {
             private <T extends Application, U extends AppImageLayout> TaskBuilder logAppImageAction(ActionRole role, String keyId, Function<AppImageBuildEnv<T, U>, Object[]> formatArgsSupplier) {
                 Objects.requireNonNull(keyId);
                 return appImageAction(role, (AppImageBuildEnv<T, U> env) -> {
-                    Log.verbose(I18N.format(keyId, formatArgsSupplier.apply(env)));
+                    Log.progress(I18N.format(keyId, formatArgsSupplier.apply(env)));
                 });
             }
 
             private <T extends Package, U extends AppImageLayout> TaskBuilder logPackageAction(ActionRole role, String keyId, Function<PackageBuildEnv<T, U>, Object[]> formatArgsSupplier) {
                 Objects.requireNonNull(keyId);
                 return packageAction(role, (PackageBuildEnv<T, U> env) -> {
-                    Log.verbose(I18N.format(keyId, formatArgsSupplier.apply(env)));
+                    Log.progress(I18N.format(keyId, formatArgsSupplier.apply(env)));
                 });
             }
 
             private TaskBuilder logAction(ActionRole role, String keyId, Supplier<Object[]> formatArgsSupplier) {
                 Objects.requireNonNull(keyId);
                 return action(role, () -> {
-                    Log.verbose(I18N.format(keyId, formatArgsSupplier.get()));
+                    Log.progress(I18N.format(keyId, formatArgsSupplier.get()));
                 });
             }
 

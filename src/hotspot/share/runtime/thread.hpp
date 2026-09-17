@@ -111,7 +111,6 @@ class Thread: public ThreadShadow {
   friend class VMError;
   friend class VMErrorCallbackMark;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class JavaThread;
  private:
 
@@ -667,5 +666,29 @@ inline Thread* Thread::current_or_null_safe() {
   }
   return nullptr;
 }
+
+// A SkipGCALot object is used to elide the usual effect of gc-a-lot
+// over a section of execution by a thread.
+class SkipGCALot : public StackObj {
+  private:
+   bool _saved;
+   Thread* _t;
+
+  public:
+#ifdef ASSERT
+    SkipGCALot(Thread* t) : _t(t) {
+      _saved = _t->skip_gcalot();
+      _t->set_skip_gcalot(true);
+    }
+
+    ~SkipGCALot() {
+      assert(_t->skip_gcalot(), "Save-restore protocol invariant");
+      _t->set_skip_gcalot(_saved);
+    }
+#else
+    SkipGCALot(Thread* t) { }
+    ~SkipGCALot() { }
+#endif
+};
 
 #endif // SHARE_RUNTIME_THREAD_HPP
