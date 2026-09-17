@@ -2766,48 +2766,51 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 #endif
 
   int ratio_shift = exact_log2(ProfileCaptureRatio);
-  uint64_t threshold = (UCONST64(1) << 32) >> ratio_shift;
+  auto threshold = (UCONST64(1) << 32) >> ratio_shift;
 
   assert(threshold > 0, "must be");
 
   ProfileStub *counter_stub
     = ProfileCaptureRatio > 1 ? new ProfileStub() : nullptr;
 
-  Register dest = as_reg(dest_opr);
-  auto type = dest_opr->type();
+  Register dest = dest_opr->as_pointer_register();
 
   address md_base_address =
     md_opr->type() == T_METADATA ? (address)md_opr->as_constant_ptr()->as_metadata()
                                  : (address)md_opr->as_constant_ptr()->as_pointer();
+  LIR_Opr counter_address_opr
+    = md_offset_opr->is_constant()
+      ? new LIR_Address(md_reg, md_offset_opr->as_constant_ptr()->as_jint(), dest_opr->type())
+      : new LIR_Address(md_reg, md_offset_opr, dest_opr->type());
+
   uintptr_t counter_contents = md_offset_opr->is_constant()
     ? *(uintptr_t*)(md_base_address + md_offset_opr->as_constant_ptr()->as_jint())
     : 0;
 
-  Address counter_address
-    = (md_offset_opr->is_constant()
-       ? Address(md_reg->as_pointer_register(),
-                 md_offset_opr->as_constant_ptr()->as_jint())
-       : Address(md_reg->as_pointer_register(),
-                 as_reg(md_offset_opr)));
-
-  LIR_Opr counter_address_opr = nullptr;
-
   // Insert a runtime check iff the counter is zero at the time we
   // generate this code.
-  const bool load_dest_early = counter_stub != nullptr && counter_contents == 0;
+  const bool load_dest_early = counter_contents == 0;
   if (load_dest_early) {
     const2reg(md_opr, md_reg, lir_patch_none, nullptr);
-    // Fix up any out-of-range offsets.
-    counter_address_opr
-      = adjust_mdo_address(md_reg, md_opr, md_offset_opr, dest_opr->type());
+    counter_address_opr = adjust_mdo_address(md_reg, md_opr, md_offset_opr,
+                                             dest_opr->type());
+    mem2reg(counter_address_opr, dest_opr,
+            dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
   }
 
-  auto lambda = [type, counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
+  if (md_offset_opr->is_constant() &&
+      __ legitimize_address_requires_lea(Address(noreg, md_offset_opr->as_constant_ptr()->as_jint()),
+                                         type2aelembytes(dest_opr->type()))) {
+    asm("nop");
+  }
+
+
+  auto lambda = [counter_stub, overflow_stub, freq_opr, dest_opr, dest, ratio_shift, step,
                  md_reg, md_opr, md_offset_opr, counter_address_opr, load_dest_early]
     (LIR_Assembler* ce, LIR_Op* op) {
 
     auto masm = [ce]() { return ce->masm(); };
-    auto adjusted_counter_address = counter_address_opr;
+    LIR_Opr counter_address = counter_address_opr;
 
     if (counter_stub != nullptr)  __ bind(*counter_stub->entry());
 
@@ -2815,9 +2818,9 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
 
     if (!load_dest_early) {
       ce->const2reg(md_opr, md_reg, lir_patch_none, nullptr);
-      // Fix up any out-of-range offsets.
-      adjusted_counter_address = adjust_mdo_address(md_reg, md_opr, md_offset_opr, dest_opr->type());
-      ce->mem2reg(dest_opr, adjusted_counter_address,
+      counter_address = ce->adjust_mdo_address(md_reg, md_opr, md_offset_opr,
+                                           dest_opr->type());
+      ce->mem2reg(counter_address, dest_opr,
                   dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
     }
 
@@ -2827,16 +2830,17 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
       if (ProfileCaptureRatio > 1) {
         __ lsl(inc, inc, ratio_shift);
       }
-      __ load(dest, adjusted_counter_address, type);
       __ add(dest, dest, inc);
-      __ store(dest, adjusted_counter_address, type);
+      ce->reg2mem(dest_opr, counter_address,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
       if (ProfileCaptureRatio > 1) {
         __ lsr(inc, inc, ratio_shift);
       }
     } else {
       intptr_t inc = step->as_constant_ptr()->as_jint_bits() * ProfileCaptureRatio;
       __ increment(dest, inc);
-      __ store(dest, adjusted_counter_address, type);
+      ce->reg2mem(dest_opr, counter_address,
+                  dest_opr->type(), lir_patch_none, nullptr, /*wide*/false);
     }
 
     if (overflow_stub != nullptr) {
@@ -2891,7 +2895,6 @@ void LIR_Assembler::increment_profile_ctr(LIR_Opr step, LIR_Opr dest_opr, LIR_Op
     if (load_dest_early) {
       // Insert a runtime check iff the counter is zero at the time we
       // generate this code.
-      __ load(dest, counter_address, type);
       __ cbz(dest, *counter_stub->entry());
     } else {
       __ block_comment("Counter is already non-zero");
