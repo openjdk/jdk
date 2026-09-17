@@ -458,9 +458,9 @@ void ShenandoahDegenGC::op_cleanup_complete() {
 
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
-  // If young filtering is set up, we need to act on it now. This covers the accidental
-  // young pointers in SATB queues that got there if old marking was still running.
-  // These young pointers would dangle once we perform the cleanup.
+  // If we are degenerating for old mark only, we need to check that there are no accidental
+  // young pointers in SATB queues. If so, we need to filter them before we perform cleanups,
+  // otherwise they would dangle.
   ShenandoahSATBMarkQueueSet& satb_qs = ShenandoahBarrierSet::satb_mark_queue_set();
   if (heap->is_concurrent_old_mark_in_progress() && !heap->is_concurrent_young_mark_in_progress()) {
     assert(satb_qs.get_filter_out_young(), "Must be");
