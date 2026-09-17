@@ -2274,6 +2274,10 @@ void G1CMTask::unregister_partial_array_splitter() {
 }
 
 bool G1CMTask::should_exit_termination(size_t tasks) {
+  if (tasks > 0) {
+    return true;
+  }
+
   if (!regular_clock_call()) {
     return true;
   }
