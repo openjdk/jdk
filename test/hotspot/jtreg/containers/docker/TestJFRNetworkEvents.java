@@ -61,7 +61,7 @@ public class TestJFRNetworkEvents {
 
     private static void runTest(String event) throws Exception {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "JfrNetwork")
-        .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+        .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
         .addJavaOpts("-cp", "/test-classes/")
         .addDockerOpts("--hostname", JfrNetwork.HOST_NAME)
         .addClassOptions(event);

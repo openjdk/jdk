@@ -49,7 +49,7 @@ public class TestSystemMetrics {
             Common.logNewTestCase("Test SystemMetrics");
             DockerRunOptions opts =
                     new DockerRunOptions(imageName, "/jdk/bin/java", "jdk.test.lib.containers.cgroup.MetricsTester");
-            opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+            opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
             opts.addDockerOpts("--memory=256m");
             opts.addJavaOpts("-cp", "/test-classes/");
             opts.addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");

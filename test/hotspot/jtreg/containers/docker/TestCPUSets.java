@@ -118,7 +118,7 @@ public class TestCPUSets {
     private static DockerRunOptions commonOpts() {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java",
                                                      "PrintContainerInfo");
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
         Common.addWhiteBoxOpts(opts);
         return opts;

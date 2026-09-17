@@ -264,7 +264,7 @@ public class TestJFREvents {
 
     private static DockerRunOptions commonDockerOpts() {
         return new DockerRunOptions(imageName, "/jdk/bin/java", "JfrReporter")
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/");
     }
 

@@ -220,7 +220,7 @@ public class TestJcmdWithSideCar {
 
     private static DockerRunOptions commonDockerOpts(String className) {
         return new DockerRunOptions(IMAGE_NAME, "/jdk/bin/java", className)
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addJavaOpts("-cp", "/test-classes/");
     }
 

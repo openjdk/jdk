@@ -89,7 +89,7 @@ public class Common {
     public static DockerRunOptions newOpts(String imageName, String testClass) {
         DockerRunOptions opts =
             new DockerRunOptions(imageName, "/jdk/bin/java", testClass);
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         opts.addJavaOpts("-Xlog:os+container=trace", "-cp", "/test-classes/");
         return opts;
     }

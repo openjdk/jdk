@@ -73,7 +73,7 @@ public class DockerBasicTest {
         DockerRunOptions opts =
             new DockerRunOptions(imageNameAndTag, "/jdk/bin/java", "HelloDocker")
             .addJavaOpts("-cp", "/test-classes/")
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
 
         DockerTestUtils.dockerRunJava(opts)
             .shouldHaveExitValue(0)

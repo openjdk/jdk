@@ -59,7 +59,7 @@ public class TestUseContainerSupport {
         DockerRunOptions opts =
                 new DockerRunOptions(imageName, "/jdk/bin/java", "CheckUseContainerSupport");
         opts.addClassOptions(Boolean.valueOf(useContainerSupport).toString());
-        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+        opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
         if (useContainerSupport) {
             opts.addJavaOpts("-XX:+UseContainerSupport");
         } else {

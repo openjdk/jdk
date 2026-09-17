@@ -123,7 +123,7 @@ public class TestJFRWithJMX {
     static ProcessBuilder buildDockerJavaProcess(String containerName) throws Exception {
         DockerRunOptions opts = new DockerRunOptions(imageName, "/jdk/bin/java", "EventProducer")
             .addDockerOpts("--name", containerName)
-            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/")
+            .addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z")
             .addDockerOpts("--hostname", "jmx-jfr-test")
             .addDockerOpts("-p", "" + PORT + ":" + PORT)
             .addJavaOpts("-cp", "/test-classes/")
