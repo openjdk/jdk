@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,8 +110,7 @@ public class BindingSpecializer {
     private static final ClassDesc CD_AddressLayout = referenceClassDesc(AddressLayout.class);
     private static final ClassDesc CD_ForceInline = referenceClassDesc(ForceInline.class);
 
-    private static final MethodTypeDesc MTD_NEW_BOUNDED_ARENA = MethodTypeDesc.of(CD_Arena, CD_long);
-    private static final MethodTypeDesc MTD_NEW_EMPTY_ARENA = MethodTypeDesc.of(CD_Arena);
+    private static final MethodTypeDesc MTD_NEW_ARENA = MethodTypeDesc.of(CD_Arena);
     private static final MethodTypeDesc MTD_SCOPE = MethodTypeDesc.of(CD_MemorySegment_Scope);
     private static final MethodTypeDesc MTD_SESSION_IMPL = MethodTypeDesc.of(CD_MemorySessionImpl);
     private static final MethodTypeDesc MTD_CLOSE = MTD_void;
@@ -295,10 +294,9 @@ public class BindingSpecializer {
 
         // create a Binding.Context for this call
         if (callingSequence.allocationSize() != 0) {
-            cb.loadConstant(callingSequence.allocationSize())
-              .invokestatic(CD_SharedUtils, "newBoundedArena", MTD_NEW_BOUNDED_ARENA);
+            cb.invokestatic(CD_Arena, "ofConfined", MTD_NEW_ARENA, true);
         } else if (callingSequence.forUpcall() && anyArgNeedsScope()) {
-            cb.invokestatic(CD_SharedUtils, "newEmptyArena", MTD_NEW_EMPTY_ARENA);
+            cb.invokestatic(CD_SharedUtils, "newEmptyArena", MTD_NEW_ARENA);
         } else {
             cb.getstatic(CD_SharedUtils, "DUMMY_ARENA", CD_Arena);
         }

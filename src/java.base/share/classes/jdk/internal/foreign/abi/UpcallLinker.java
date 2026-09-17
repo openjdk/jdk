@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ public class UpcallLinker {
 
     private static Object invokeInterpBindings(MethodHandle leaf, Object[] lowLevelArgs, InvocationData invData) throws Throwable {
         Arena allocator = invData.callingSequence.allocationSize() != 0
-                ? SharedUtils.newBoundedArena(invData.callingSequence.allocationSize())
+                ? Arena.ofConfined()
                 : SharedUtils.newEmptyArena();
         try (allocator) {
             /// Invoke interpreter, got array of high-level arguments back
