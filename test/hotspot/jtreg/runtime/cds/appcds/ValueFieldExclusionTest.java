@@ -23,9 +23,9 @@
  */
 
 /*
- * @test id=inline
+ * @test id=flattened
  * @bug 8384756
- * @summary A class should be excluded if the type of one of its inlined fields is excluded.
+ * @summary A class should be excluded if the type of one of its flattened fields is excluded.
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation
@@ -38,7 +38,7 @@
 
 /* @test id=static
  * @bug 8384756
- * @summary A class should be excluded if the type of one of its inlined fields is excluded.
+ * @summary A class should be excluded if the type of one of its null-restricted static fields is excluded.
  * @requires vm.cds
  * @library /test/lib
  * @modules java.base/jdk.internal.vm.annotation

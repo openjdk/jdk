@@ -688,8 +688,8 @@ void G1ConcurrentMark::set_concurrency(uint active_tasks) {
   // Need to update the three data structures below according to the
   // number of active threads for this phase.
   _terminator.reset_for_reuse(active_tasks);
-  _first_overflow_barrier_sync.set_n_workers(active_tasks);
-  _second_overflow_barrier_sync.set_n_workers(active_tasks);
+  _first_overflow_barrier_sync.set_num_workers(active_tasks);
+  _second_overflow_barrier_sync.set_num_workers(active_tasks);
 }
 
 void G1ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurrent) {
@@ -838,10 +838,10 @@ private:
   bool _suspendible; // If the task is suspendible, workers must join the STS.
 
 public:
-  G1ClearBitMapTask(G1ConcurrentMark* cm, uint n_workers, bool suspendible) :
+  G1ClearBitMapTask(G1ConcurrentMark* cm, uint num_workers, bool suspendible) :
     WorkerTask("G1 Clear Bitmap"),
     _cl(cm, suspendible),
-    _hr_claimer(n_workers),
+    _hr_claimer(num_workers),
     _suspendible(suspendible)
   { }
 
@@ -941,11 +941,11 @@ public:
     // The work done per region is very small, therefore we choose this magic number to cap the number
     // of threads used when there are few regions.
     const double regions_per_thread = 1000;
-    return _claimer.n_regions() / regions_per_thread;
+    return _claimer.num_regions() / regions_per_thread;
   }
 
   void set_max_workers(uint max_workers) override {
-    _claimer.set_n_workers(max_workers);
+    _claimer.set_num_workers(max_workers);
   }
 
   void do_work(uint worker_id) override {
@@ -3224,9 +3224,9 @@ void G1PrintRegionLivenessInfoClosure::log_card_set_group_add_total(G1CardSetGro
                           G1PPRL_BYTE_FORMAT
                           G1PPRL_TYPE_H_FORMAT,
                           group->group_id(),
-                          group->length(),
-                          group->length() > 0 ? group->gc_efficiency() : 0.0,
-                          group->length() > 0 ? group->liveness_percent() : 0.0,
+                          group->num_regions(),
+                          group->num_regions() > 0 ? group->gc_efficiency() : 0.0,
+                          group->num_regions() > 0 ? group->liveness_percent() : 0.0,
                           group->card_set()->mem_size(),
                           type);
   _total_remset_bytes += group->card_set()->mem_size();

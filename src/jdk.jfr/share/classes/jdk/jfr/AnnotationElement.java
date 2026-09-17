@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package jdk.jfr;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -148,7 +149,8 @@ public final class AnnotationElement {
             if (object == null) {
                 throw new IllegalArgumentException("No method in annotation interface " + annotationType.getName() + " matching name " + fieldName);
             }
-            Class<?> fieldType = object.getClass();
+            object = safeObject(object);
+            Class<?> fieldType = method.getReturnType();
 
             if (fieldType == Class.class) {
                 throw new IllegalArgumentException("Annotation value for " + fieldName + " can't be class");
@@ -156,8 +158,9 @@ public final class AnnotationElement {
             if (object instanceof Enum) {
                 throw new IllegalArgumentException("Annotation value for " + fieldName + " can't be enum");
             }
-            if (!fieldType.equals(object.getClass())) {
-                throw new IllegalArgumentException("Return type of annotation " + fieldType.getName() + " must match type of object" + object.getClass());
+            Class<?> objectType = Utils.unboxType(object.getClass());
+            if (objectType != fieldType) {
+                throw new IllegalArgumentException("Return type of annotation " + fieldType.getName() + " must match type of object " + objectType.getName());
             }
 
             if (fieldType.isArray()) {
@@ -172,7 +175,6 @@ public final class AnnotationElement {
                     }
                 }
             } else {
-                fieldType = Utils.unboxType(object.getClass());
                 checkType(fieldType);
             }
             if (nameSet!= null) {
@@ -245,7 +247,7 @@ public final class AnnotationElement {
      * @return list of values, not {@code null}
      */
     public List<Object> getValues() {
-        return annotationValues;
+        return safeList(annotationValues);
     }
 
     /**
@@ -294,7 +296,7 @@ public final class AnnotationElement {
         Objects.requireNonNull(name, "name");
         int index = type.indexOf(name);
         if (index != -1) {
-            return annotationValues.get(index);
+            return safeObject(annotationValues.get(index));
         }
         StringJoiner valueNames = new StringJoiner(",", "[", "]");
         for (ValueDescriptor v : type.getFields()) {
@@ -383,5 +385,36 @@ public final class AnnotationElement {
     // package private
     boolean isInBoot() {
         return inBootClassLoader;
+    }
+
+    private static Object safeObject(Object object) {
+        return object.getClass().isArray() ? safeArray(object) : object;
+    }
+
+    private static Object safeArray(Object source) {
+        Class<?> type = source.getClass().getComponentType();
+        int length = Array.getLength(source);
+        if (length == 0) {
+            return source;
+        }
+        Object result = Array.newInstance(type, length);
+        System.arraycopy(source, 0, result, 0, length);
+        return result;
+    }
+
+    // Assumes list is created by List.copyOf(...);
+    private static List<Object> safeList(List<Object> list) {
+        if (list.isEmpty()) {
+            return list;
+        }
+        if (list.size() == 1) {
+            Object element = list.get(0);
+            return element.getClass().isArray() ? List.of(safeObject(element)) : list;
+        }
+        List<Object> result = new ArrayList<>(list.size());
+        for (Object element : list) {
+            result.add(safeObject(element));
+        }
+        return List.copyOf(result);
     }
 }

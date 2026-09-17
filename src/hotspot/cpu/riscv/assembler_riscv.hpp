@@ -243,8 +243,8 @@ class Address {
   // Verify the value is trivially destructible regardless of mode, so our
   // destructor can also be trivial, and so our assignment operator doesn't
   // need to destruct the old value before copying over it.
-  static_assert(std::is_trivially_destructible<Literal>::value, "must be");
-  static_assert(std::is_trivially_destructible<Nonliteral>::value, "must be");
+  static_assert(std::is_trivially_destructible<Literal>::value);
+  static_assert(std::is_trivially_destructible<Nonliteral>::value);
 
   Address& operator=(const Address& a) {
     _mode = a._mode;
@@ -2831,6 +2831,8 @@ enum Nf {
   INSN(maxu,      0b0110011, 0b111, 0b0000101);
   INSN(min,       0b0110011, 0b100, 0b0000101);
   INSN(minu,      0b0110011, 0b101, 0b0000101);
+  INSN(clmul,     0b0110011, 0b001, 0b0000101);
+  INSN(clmulh,    0b0110011, 0b011, 0b0000101);
 
 #undef INSN
 
