@@ -37,7 +37,7 @@
  * @build ${test.main.class}
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 TestUnknownAddress
- * @run driver/timeout=1500 ${test.main.class}
+ * @run driver/timeout=480 ${test.main.class}
  */
 
 import java.lang.reflect.*;

@@ -36,7 +36,7 @@
  *                 JavacBenchApp$ClassFile
  *                 JavacBenchApp$FileManager
  *                 JavacBenchApp$SourceFile
- * @run driver/timeout=1500 ${test.main.class}
+ * @run driver/timeout=480 ${test.main.class}
  */
 
 import java.util.ArrayList;
