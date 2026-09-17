@@ -2565,6 +2565,58 @@ LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
   return EXCEPTION_CONTINUE_EXECUTION;
 }
 
+static LONG handle_recoverable_stack_overflow(JavaThread* thread,
+                                              struct _EXCEPTION_POINTERS* exceptionInfo,
+                                              address pc, address addr,
+                                              bool in_java, bool in_vm) {
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+
+  // If the overflow occurred in the reserved zone, allow the method with
+  // the @ReservedStackAccess annotation to finish using that zone.  This
+  // block mimics the code in Posix::handle_stack_overflow().
+  if (in_java && !thread->is_vthread_mounted() && overflow_state->in_stack_reserved_zone(addr)) {
+    frame fr;
+    if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
+      assert(fr.is_java_frame(), "Must be a Java frame");
+      frame activation = SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+      if (activation.sp() != nullptr) {
+        overflow_state->disable_stack_reserved_zone();
+        if (activation.is_interpreted_frame()) {
+          overflow_state->set_reserved_stack_activation(
+              (address)(activation.fp() + frame::interpreter_frame_initial_sp_offset));
+        } else {
+          overflow_state->set_reserved_stack_activation((address)activation.unextended_sp());
+        }
+        return EXCEPTION_CONTINUE_EXECUTION;
+      }
+    }
+  }
+
+  assert(overflow_state->in_stack_yellow_reserved_zone(addr),
+         "Expected yellow or reserved zone address");
+  assert(!in_vm, "Undersized StackShadowPages");
+  overflow_state->disable_stack_yellow_reserved_zone();
+  return in_java
+      ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(
+                                            thread, pc, SharedRuntime::STACK_OVERFLOW))
+      : EXCEPTION_CONTINUE_EXECUTION;
+}
+
+[[noreturn]]
+static void handle_unrecoverable_stack_overflow(JavaThread* thread,
+                                                DWORD exception_code,
+                                                address pc,
+                                                PEXCEPTION_RECORD exception_record,
+                                                struct _EXCEPTION_POINTERS* exceptionInfo) {
+  StackOverflow* overflow_state = thread->stack_overflow_state();
+  if (!overflow_state->stack_guard_zone_unused()) {
+    overflow_state->disable_stack_red_zone();
+  }
+  tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
+  VMError::report_and_die(thread, exception_code, pc, exception_record,
+                          exceptionInfo->ContextRecord);
+}
+
 // According to Windows API documentation, an illegal instruction sequence should generate
 // the 0xC000001C exception code. However, real world experience shows that occasionnaly
 // the execution of an illegal instruction can generate the exception code 0xC000001E. This
@@ -2718,55 +2770,46 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
     bool in_native = thread->thread_state() == _thread_in_native;
     bool in_vm = thread->thread_state() == _thread_in_vm;
 
-    // Handle potential stack overflows up front.
+    // HotSpot protects its stack guard zones with PAGE_NOACCESS, so a stack
+    // bang into one of them normally raises EXCEPTION_ACCESS_VIOLATION.
+    // However, Windows processes the access through its PAGE_GUARD-based
+    // stack-growth machinery first, thus raising EXCEPTION_STACK_OVERFLOW when
+    // it can no longer grow the stack, even though that same page also has the
+    // PAGE_NOACCESS attribute.
     if (exception_code == EXCEPTION_STACK_OVERFLOW) {
+      address addr = (address)exception_record->ExceptionInformation[1];
       StackOverflow* overflow_state = thread->stack_overflow_state();
-      if (overflow_state->stack_guards_enabled()) {
-        if (in_java) {
-          frame fr;
-          if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
-            assert(fr.is_java_frame(), "Must be a Java frame");
-            SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
-          }
-        }
-        // Yellow zone violation.  The o/s has unprotected the first yellow
-        // zone page for us.  Note:  must call disable_stack_yellow_zone to
-        // update the enabled status, even if the zone contains only one page.
-        assert(!in_vm, "Undersized StackShadowPages");
-        overflow_state->disable_stack_yellow_reserved_zone();
-        // If not in java code, return and hope for the best.
-        return in_java
-            ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
-            :  EXCEPTION_CONTINUE_EXECUTION;
-      } else {
-        // Fatal red zone violation.
-        overflow_state->disable_stack_red_zone();
-        tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        VMError::report_and_die(t, exception_code, pc, exception_record,
-                                exceptionInfo->ContextRecord);
+
+      if (overflow_state->stack_guards_enabled() &&
+          overflow_state->in_stack_yellow_reserved_zone(addr)) {
+        // The exact faulting page depends on the generated stack-bang sequence;
+        // for instance, a compiled prologue may issue just one probe, large
+        // frames may probe page by page, and native wrappers may have their own
+        // banging patterns.  So we deliberately do not constrain the valid
+        // addresses that we might observe here.
+        return handle_recoverable_stack_overflow(thread, exceptionInfo, pc, addr,
+                                                 in_java, in_vm);
       }
+
+      handle_unrecoverable_stack_overflow(thread, exception_code, pc,
+                                          exception_record, exceptionInfo);
     } else if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
       // Decide the next steps based on the address that caused the exception.
       address addr = (address) exception_record->ExceptionInformation[1];
       StackOverflow* overflow_state = thread->stack_overflow_state();
       if (overflow_state->in_stack_yellow_reserved_zone(addr)) {
-        assert(!in_vm, "Undersized StackShadowPages");
-        overflow_state->disable_stack_yellow_reserved_zone();
-        return in_java
-            ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
-            : EXCEPTION_CONTINUE_EXECUTION;
-      } else if (overflow_state->in_stack_red_zone(addr)) {
-        overflow_state->disable_stack_red_zone();
-        tty->print_raw_cr("An unrecoverable stack overflow has occurred.");
-        VMError::report_and_die(t, exception_code, pc, exception_record,
-                                exceptionInfo->ContextRecord);
+        return handle_recoverable_stack_overflow(thread, exceptionInfo, pc, addr,
+                                                 in_java, in_vm);
+      }
+
+      if (overflow_state->in_stack_red_zone(addr)) {
+        handle_unrecoverable_stack_overflow(thread, exception_code, pc,
+                                            exception_record, exceptionInfo);
       }
 
       if (in_java) {
-        // Either stack overflow or null pointer exception.
-        // Check for safepoint polling and implicit null
-        // We only expect null pointers in the stubs (vtable)
-        // the rest are checked explicitly now.
+        // Handle access violations from safepoint polling, incremental stack
+        // commitment, and implicit null checks.
         CodeBlob* cb = CodeCache::find_blob(pc);
         if (cb != nullptr) {
           if (SafepointMechanism::is_poll_address(addr)) {
@@ -2799,7 +2842,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         return Handle_Exception(exceptionInfo, slowcase_pc);
       }
 
-      // Stack overflow or null pointer exception in native code.
+      // Unrecognized access violation in VM or native code.
       VMError::report_and_die(t, exception_code, pc, exception_record,
                               exceptionInfo->ContextRecord);
     } // /EXCEPTION_ACCESS_VIOLATION
