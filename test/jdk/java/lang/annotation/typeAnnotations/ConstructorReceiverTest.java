@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,14 @@
  * @bug 8023651 8044629
  * @summary Test that the receiver annotations and the return annotations of
  *          constructors behave correctly.
- * @run testng ConstructorReceiverTest
+ * @run junit ConstructorReceiverTest
  */
 
 import java.lang.annotation.*;
 import java.lang.reflect.*;
-import java.util.Arrays;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 public class ConstructorReceiverTest {
     public static final Integer EMPTY_ANNOTATED_TYPE =  Integer.valueOf(-1);
@@ -65,10 +63,10 @@ public class ConstructorReceiverTest {
     };
 
 
-    @DataProvider
-    public Object[][] data() { return TESTS; }
+    public static Object[][] data() { return TESTS; }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("data")
     public void testAnnotatedReciver(Class<?> toTest, Class<?> ctorParamType,
             Integer returnVal, Integer receiverVal) throws NoSuchMethodException {
         Constructor c;
@@ -87,12 +85,10 @@ public class ConstructorReceiverTest {
 
         // check that getType() matches the receiver (which can be parameterized)
         if (annotatedReceiverType.getType() instanceof ParameterizedType) {
-            assertEquals(((ParameterizedType) annotatedReceiverType.getType()).getRawType(),
-                    ctorParamType,
+            assertEquals(ctorParamType, ((ParameterizedType) annotatedReceiverType.getType()).getRawType(),
                     "getType() doesn't match receiver type: " + ctorParamType);
         } else {
-            assertEquals(annotatedReceiverType.getType(),
-                    ctorParamType,
+            assertEquals(ctorParamType, annotatedReceiverType.getType(),
                     "getType() doesn't match receiver type: " + ctorParamType);
         }
 
@@ -100,19 +96,20 @@ public class ConstructorReceiverTest {
 
         // Some Constructors have no annotations on but in theory can have a receiver
         if (receiverVal.equals(EMPTY_ANNOTATED_TYPE)) {
-            assertEquals(receiverAnnotations.length, 0, "expecting an empty annotated type for: " + c);
+            assertEquals(0, receiverAnnotations.length, "expecting an empty annotated type for: " + c);
             return;
         }
 
         // The rest should have annotations
-        assertEquals(receiverAnnotations.length, 1, "expecting a 1 element array. Looking at 'length': ");
-        assertEquals(((Annot)receiverAnnotations[0]).value(), receiverVal.intValue(), " wrong annotation found. Found " +
+        assertEquals(1, receiverAnnotations.length, "expecting a 1 element array. Looking at 'length': ");
+        assertEquals(receiverVal.intValue(), ((Annot)receiverAnnotations[0]).value(), " wrong annotation found. Found " +
                 receiverAnnotations[0] +
                 " should find @Annot with value=" +
                 receiverVal);
     }
 
-    @Test(dataProvider = "data")
+    @ParameterizedTest
+    @MethodSource("data")
     public void testAnnotatedReturn(Class<?> toTest, Class<?> ctorParamType,
             Integer returnVal, Integer receiverVal) throws NoSuchMethodException {
         Constructor c;
@@ -124,8 +121,8 @@ public class ConstructorReceiverTest {
         AnnotatedType annotatedReturnType = c.getAnnotatedReturnType();
         Annotation[] returnAnnotations = annotatedReturnType.getAnnotations();
 
-        assertEquals(returnAnnotations.length, 1, "expecting a 1 element array. Looking at 'length': ");
-        assertEquals(((Annot)returnAnnotations[0]).value(), returnVal.intValue(), " wrong annotation found. Found " +
+        assertEquals(1, returnAnnotations.length, "expecting a 1 element array. Looking at 'length': ");
+        assertEquals(returnVal.intValue(), ((Annot)returnAnnotations[0]).value(), " wrong annotation found. Found " +
                 returnAnnotations[0] +
                 " should find @Annot with value=" +
                 returnVal);
