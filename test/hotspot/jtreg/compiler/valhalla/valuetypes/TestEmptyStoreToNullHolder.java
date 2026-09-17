@@ -50,7 +50,7 @@ public class TestEmptyStoreToNullHolder {
         try {
             test(null);
             throw new RuntimeException("No NullPointerException thrown!");
-        } catch (NullPointerException expected) { 
+        } catch (NullPointerException expected) {
             // Expected
         }
     }
