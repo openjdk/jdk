@@ -79,6 +79,18 @@ class TestReturnValueArgument {
         return holder;
     }
 
+    static class BaseReturner {
+        native ValueHolder returnArgument(ValueHolder holder);
+    }
+
+    static final class Returner extends BaseReturner {
+        @DontInline
+        @Override
+        ValueHolder returnArgument(ValueHolder holder) {
+            return holder;
+        }
+    }
+
     // Return holder passed as argument. Because the IdentityObject held by it
     // is then stored globally, its synchronization should not be removed.
     // Depending on the values of the ValueTypePassFieldsAsArgs and
@@ -115,5 +127,23 @@ class TestReturnValueArgument {
         ValueHolder holder = new ValueHolder(obj);
         Object holderAsObject = returnAsObject(holder);
         globalObj = holderAsObject;
+    }
+
+    // Return holder via a non-static override of a native method, which
+    // naturally inhibits scalarization of the holder as argument, but allows it
+    // to be scalarized on return. Because the IdentityObject held by it is then
+    // stored globally, its synchronization should not be removed.
+    @Test
+    @Arguments(values = {Argument.NUMBER_42})
+    @IR(counts = {IRNode.FAST_LOCK, "> 0",
+                  IRNode.FAST_UNLOCK, "> 0"})
+    static void testReturnHolderViaNativeSuperclassAndEscapeIdentityObject(int val) {
+        IdentityObject obj = new IdentityObject();
+        synchronized (obj) {
+            obj.val = val;
+        }
+        ValueHolder holder = new ValueHolder(obj);
+        ValueHolder returnedHolder = new Returner().returnArgument(holder);
+        globalIdObj = returnedHolder.obj;
     }
 }
