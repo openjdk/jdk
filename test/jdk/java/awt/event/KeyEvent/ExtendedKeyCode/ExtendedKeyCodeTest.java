@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,12 @@ public class ExtendedKeyCodeTest {
 
         frame.setVisible(true);
         robot.waitForIdle();
+        robot.delay(1000);
 
         robot.keyPress(KeyEvent.VK_D);
         robot.keyRelease(KeyEvent.VK_D);
         robot.waitForIdle();
+        robot.delay(100);
 
         frame.dispose();
 
@@ -92,10 +94,12 @@ public class ExtendedKeyCodeTest {
 
         frame.setVisible(true);
         robot.waitForIdle();
+        robot.delay(1000);
 
         robot.keyPress(KeyEvent.VK_LEFT);
         robot.keyRelease(KeyEvent.VK_LEFT);
         robot.waitForIdle();
+        robot.delay(100);
         frame.dispose();
 
         if (!setExtendedKeyCode) {
