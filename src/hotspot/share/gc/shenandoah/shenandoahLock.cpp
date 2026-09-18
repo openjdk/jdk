@@ -89,61 +89,19 @@ void ShenandoahLock::yield_or_sleep(int &yields) {
   }
 }
 
-ShenandoahSimpleLock::ShenandoahSimpleLock() {
+ShenandoahSimpleLock::ShenandoahSimpleLock() : _owner(nullptr) {
   assert(os::mutex_init_done(), "Too early!");
 }
 
 void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
+  assert(_owner.load_relaxed() != Thread::current(), "lock already owned by current thread");
   _lock.lock();
+  assert(_owner.load_relaxed() == nullptr, "lock already owned by another thread");
+  _owner.store_relaxed(Thread::current());
 }
 
 void ShenandoahSimpleLock::unlock() {
+  assert(_owner.load_relaxed() == Thread::current(), "lock not owned by current thread");
+  _owner.store_relaxed(nullptr);
   _lock.unlock();
 }
-
-template<typename Lock>
-ShenandoahReentrantLock<Lock>::ShenandoahReentrantLock() :
-  Lock(), _owner(nullptr), _count(0) {
-}
-
-template<typename Lock>
-ShenandoahReentrantLock<Lock>::~ShenandoahReentrantLock() {
-  assert(_count == 0, "Unbalance");
-}
-
-template<typename Lock>
-void ShenandoahReentrantLock<Lock>::lock(bool allow_block_for_safepoint) {
-  Thread* const thread = Thread::current();
-  Thread* const owner = _owner.load_relaxed();
-
-  if (owner != thread) {
-    Lock::lock(allow_block_for_safepoint);
-    _owner.store_relaxed(thread);
-  }
-
-  _count++;
-}
-
-template<typename Lock>
-void ShenandoahReentrantLock<Lock>::unlock() {
-  assert(owned_by_self(), "Invalid owner");
-  assert(_count > 0, "Invalid count");
-
-  _count--;
-
-  if (_count == 0) {
-    _owner.store_relaxed((Thread*)nullptr);
-    Lock::unlock();
-  }
-}
-
-template<typename Lock>
-bool ShenandoahReentrantLock<Lock>::owned_by_self() const {
-  Thread* const thread = Thread::current();
-  Thread* const owner = _owner.load_relaxed();
-  return owner == thread;
-}
-
-// Explicit template instantiation
-template class ShenandoahReentrantLock<ShenandoahSimpleLock>;
-template class ShenandoahReentrantLock<ShenandoahLock>;

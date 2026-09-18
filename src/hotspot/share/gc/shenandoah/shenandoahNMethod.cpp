@@ -326,7 +326,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     assert(!data->has_patchable_jumps(), "Must not have patchable jumps");
     // Prevent updating a nmethod while concurrent iteration is in progress.
     wait_until_concurrent_iteration_done();
-    ShenandoahNMethodLocker data_locker(data->lock());
+    ShenandoahNMethodLocker data_locker(data->lock(), !data->lock()->owned_by_self());
     data->update();
   } else {
     // New nmethod, not yet executing. We can safely append it to the list,
@@ -339,7 +339,7 @@ void ShenandoahNMethodTable::register_nmethod(nmethod* nm) {
     ShenandoahLocker locker(&_lock);
     log_register_nmethod(nm);
     append(data);
-    ShenandoahNMethodLocker data_locker(data->lock());
+    ShenandoahNMethodLocker data_locker(data->lock(), !data->lock()->owned_by_self());
     {
       ICacheInvalidationContext icic;
       ShenandoahNMethod::handle_jumps(nm, &icic);

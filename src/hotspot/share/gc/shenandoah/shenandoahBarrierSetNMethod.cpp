@@ -50,7 +50,8 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
 
   ShenandoahNMethodLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
   assert(lock != nullptr, "Must be");
-  ShenandoahNMethodLocker locker(lock);
+  ShenandoahNMethodLocker locker(lock, !lock->owned_by_self());
+
 
   if (!is_armed(nm)) {
     // Some other thread managed to complete while we were waiting for lock.
