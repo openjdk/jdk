@@ -485,7 +485,7 @@ bool ShenandoahHeapRegion::oop_coalesce_and_fill(bool cancellable, bool do_card_
       assert(next_marked_obj <= t, "next marked object cannot exceed top");
       size_t fill_size = next_marked_obj - obj_addr;
       assert(fill_size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
-      ShenandoahHeap::fill_with_object(obj_addr, fill_size);
+      ShenandoahHeap::fill_with_object(obj_addr, fill_size, !is_pinned());
       if (do_card_table_updates) {
         heap->old_generation()->card_scan()->coalesce_objects(obj_addr, fill_size);
       } else {
