@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -24,7 +24,7 @@
 
 /*
  * @test
- * @bug 8318671
+ * @bug 8318671 8380669
  * @summary Tests various ways to call memstat
  * @library /test/lib /
  *
@@ -41,17 +41,17 @@ public class MemStatTest {
         ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
+                .shouldContain("CompileCommand: MemStat *.* uint MemStat = 1"); // should be registered
         // collect explicit
         ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,collect", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 1"); // should be registered
+                .shouldContain("CompileCommand: MemStat *.* uint MemStat = 1"); // should be registered
         // print explicit
         ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,print", "-version")
                 .shouldHaveExitValue(0)
                 .shouldNotContain("CompileCommand: An error occurred during parsing")
-                .shouldContain("CompileCommand: MemStat *.* uintx MemStat = 2");
+                .shouldContain("CompileCommand: MemStat *.* uint MemStat = 2");
         // invalid suboption
         ProcessTools.executeTestJava("-XX:CompileCommand=MemStat,*.*,invalid", "-version")
                 .shouldNotHaveExitValue(0)
