@@ -841,7 +841,7 @@ public final class CompactNumberFormat extends NumberFormat {
             }
 
             // Perform this division exactly, so that the quotient is not inaccurately rounded.
-            // For example, 22,550 / 1,000 should become 22.55 and not 22. It is safe to perform exact
+            // For example, 7,800 / 1,000 should become 7.8 and not 8. It is safe to perform exact
             // division because the divisor is a power of ten, thus the result is always terminating.
             number = number.divide(new BigDecimal(divisor.toString()));
             decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
