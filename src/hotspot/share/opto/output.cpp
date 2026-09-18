@@ -3433,7 +3433,8 @@ int PhaseOutput::bang_size_in_bytes() const {
   int extra_arg_size = 0;
   if (C->needs_stack_repair()) {
     // Account for required stack extension conservatively
-    extra_arg_size = CompiledEntrySignature::max_stack_slots_cc() * VMRegImpl::stack_slot_size;
+    extra_arg_size = MIN2(CompiledEntrySignature::max_stack_slots_cc() * VMRegImpl::stack_slot_size,
+                          C->method()->get_sig_cc()->length() * wordSize);
     assert(extra_arg_size < (int)os::vm_page_size(), "assumption is it adds at most one page");
   }
   return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes() + extra_arg_size, C->interpreter_frame_size());
