@@ -136,18 +136,20 @@ class LayoutKindHelper : AllStatic {
 // The different layouts available for a particular Klass
 struct LayoutDescriptions {
   constexpr static int NoValue = -1; // Unsupported layouts are assigned this value
+
   int _payload_alignment; // Alignment required for payload
   int _non_atomic_alignment; // Alignment requirement for the non-atomic layouts
   int _payload_offset;
   int _null_marker_offset;
   // Size of each LayoutKind. For atomic layouts, the size also acts as alignment.
   int _sizes[static_cast<size_t>(LayoutKind::COUNT)]; // REFERENCE has no size, so we remove 1
+
   LayoutDescriptions()
-  : _payload_alignment(NoValue),
-    _non_atomic_alignment(NoValue),
-    _payload_offset(NoValue),
-    _null_marker_offset(NoValue),
-    _sizes() {
+    : _payload_alignment(NoValue),
+      _non_atomic_alignment(NoValue),
+      _payload_offset(NoValue),
+      _null_marker_offset(NoValue),
+      _sizes() {
     set_size_in_bytes_of(LayoutKind::REFERENCE, heapOopSize);
     set_size_in_bytes_of(LayoutKind::BUFFERED, NoValue);
     set_size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, NoValue);

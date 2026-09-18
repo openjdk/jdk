@@ -879,7 +879,7 @@ public:
           if (fd->field_flags().has_null_marker()) {
             for (int i = 0; i < _indent + 1; i++) _st->print("  ");
             _st->print_cr(" - [null_marker] @%d %s",
-                          field_offset_in_obj + vk->layouts().null_marker_offset(),
+                          field_offset_in_obj + vk->layouts().null_marker_offset_in_payload(),
                           is_null ? "Field marked as null" : "Field marked as non-null");
           }
         } else {

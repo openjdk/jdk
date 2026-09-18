@@ -187,14 +187,11 @@ class ValueKlass: public InstanceKlass {
     return const_cast<const Members&>(vk->members());
   }
 
-public:
-  LayoutDescriptions& layouts() {
-    return members().layouts();
-  }
+ public:
 
-  const LayoutDescriptions& layouts() const {
-    return members().layouts();
-  }
+  LayoutDescriptions& layouts() { return members().layouts(); }
+  const LayoutDescriptions& layouts() const { return members().layouts(); }
+  void set_layouts(const LayoutDescriptions& other) { members().layouts() = other; }
 
   bool is_empty_value_type() const   { return _misc_flags.is_empty_value_type(); }
   void set_is_empty_value_type()     { _misc_flags.set_is_empty_value_type(true); }
@@ -224,10 +221,6 @@ public:
     return offset;
   }
   void set_null_reset_value_offset(int offset)                { members()._null_reset_value_offset = offset; }
-
-  void set_layouts(LayoutDescriptions& other) {
-    members().layouts() = other;
-  }
 
   int fast_acmp_offset() const                                { return members()._fast_acmp_offset; }
   void set_fast_acmp_offset(int offset)                       { members()._fast_acmp_offset = offset; }
