@@ -494,8 +494,8 @@
           "instructions.")                                                  \
                                                                             \
   develop(bool, StressRecompilation, false,                                 \
-          "Recompile each compiled method without subsuming loads "         \
-          "or escape analysis.")                                            \
+          "Recompile each compiled method while progressively disabling "   \
+          "selected optimizations.")                                        \
                                                                             \
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
           "Don't do implicit null checks if NPE's in a method exceeds "     \

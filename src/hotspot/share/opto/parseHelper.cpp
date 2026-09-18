@@ -321,7 +321,7 @@ void Parse::do_new() {
 
   // Keep track of whether opportunities exist for StringBuilder
   // optimizations.
-  if (OptimizeStringConcat &&
+  if (C->do_stringopts() &&
       (klass == C->env()->StringBuilder_klass() ||
        klass == C->env()->StringBuffer_klass())) {
     C->set_has_stringbuilder(true);
