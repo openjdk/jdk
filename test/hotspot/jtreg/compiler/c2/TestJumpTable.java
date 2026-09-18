@@ -37,6 +37,9 @@
  * @run main/othervm -XX:CompileCommand=dontinline,compiler.c2.TestJumpTable::test*
  *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+StressIGVN
  *                   compiler.c2.TestJumpTable
+ * @run main/othervm -XX:CompileCommand=dontinline,compiler.c2.TestJumpTable::test*
+ *                   -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:-TieredCompilation -XX:+Force32BitJumpTable
+ *                   compiler.c2.TestJumpTable
  */
 
 package compiler.c2;
