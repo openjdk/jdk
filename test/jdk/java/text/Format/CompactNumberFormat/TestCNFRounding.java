@@ -66,7 +66,7 @@ public class TestCNFRounding {
             Arguments.of(BigDecimal.valueOf(21_534_567.20), "21.53M", 2, RoundingMode.DOWN),
             // BigInteger path that forces BigDecimal division.
             // Need to supply a BI whose underlying value exceeds what 64 bit long supports and whose
-            // division result would produce a fraction. LONG.MAX_VALUE +- 1 works.
+            // division result would produce a fraction. LONG.MAX/MIN_VALUE +- 1 works.
             Arguments.of(new BigInteger("9223372036854775808"), "9223372.04T", 2, RoundingMode.HALF_UP),
             Arguments.of(new BigInteger("-9223372036854775809"), "-9223372.04T", 2, RoundingMode.HALF_UP)
     );
