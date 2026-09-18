@@ -2139,7 +2139,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
             return;
           }
           if (value_klass->is_empty()) {
-            // Needs an explicit null check because below code does not perform any actual store if there are no fields
+            // Needs an explicit null check because the code below does not emit a store that performs an implicit null check for empty classes.
             null_check(obj);
           }
 
