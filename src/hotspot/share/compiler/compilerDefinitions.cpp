@@ -246,58 +246,63 @@ void CompilerConfig::set_legacy_emulation_flags() {
 
 
 void CompilerConfig::set_compilation_policy_flags() {
-  if (is_tiered()) {
-    // Increase the code cache size - tiered compiles a lot more.
+  if (is_c1_profiling()) {
+    // Increase the code cache size
     if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
       FLAG_SET_ERGO(ReservedCodeCacheSize,
                     MIN2(CODE_CACHE_DEFAULT_LIMIT, ReservedCodeCacheSize * 5));
     }
-    // Enable SegmentedCodeCache if tiered compilation is enabled, ReservedCodeCacheSize >= 240M
-    // and the code cache contains at least 8 pages (segmentation disables advantage of huge pages).
+    // Enable SegmentedCodeCache if tiered compilation is enabled or C1 profiling is enabled. Also
+    // require that ReservedCodeCacheSize >= 240M and the code cache contains at least 8 pages
+    // (segmentation disables advantage of huge pages).
     if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M &&
         8 * CodeCache::page_size() <= ReservedCodeCacheSize) {
       FLAG_SET_ERGO(SegmentedCodeCache, true);
     }
-    if (Arguments::is_compiler_only()) { // -Xcomp
-      // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
-      // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
-      // compile a level 4 (C2) and then continue executing it.
-      if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
-        FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
-      }
-      if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
-        FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
-      }
+  }
+  if (is_tiered() && Arguments::is_compiler_only()) { // -Xcomp
+    // Be much more aggressive in tiered mode with -Xcomp and exercise C2 more.
+    // We will first compile a level 3 version (C1 with full profiling), then do one invocation of it and
+    // compile a level 4 (C2) and then continue executing it.
+    if (FLAG_IS_DEFAULT(Tier3InvokeNotifyFreqLog)) {
+      FLAG_SET_CMDLINE(Tier3InvokeNotifyFreqLog, 0);
+    }
+    if (FLAG_IS_DEFAULT(Tier4InvocationThreshold)) {
+      FLAG_SET_CMDLINE(Tier4InvocationThreshold, 0);
     }
   }
 
 #ifdef COMPILER2
-  if (HotCodeHeap && !is_c2_enabled()) {
-    warning("HotCodeHeap disabled because C2 is disabled.");
-    FLAG_SET_ERGO(HotCodeHeap, false);
-    FLAG_SET_ERGO(HotCodeHeapSize, 0);
-  } else if (HotCodeHeap) {
-    if (FLAG_IS_DEFAULT(SegmentedCodeCache)) {
-      FLAG_SET_ERGO(SegmentedCodeCache, true);
-    } else if (!SegmentedCodeCache) {
-      vm_exit_during_initialization("HotCodeHeap requires SegmentedCodeCache enabled");
-    }
-
-    if (FLAG_IS_DEFAULT(NMethodRelocation)) {
-      FLAG_SET_ERGO(NMethodRelocation, true);
-    } else if (!NMethodRelocation) {
-      vm_exit_during_initialization("HotCodeHeap requires NMethodRelocation enabled");
-    }
-
+  // If HotCodeHeap is enabled with an invalid configuration, throw an error and exit.
+  // Otherwise, enable required flags if possible or disable HotCodeHeap if not.
+  if (HotCodeHeap) {
     if (HotCodeMinSamplingMs > HotCodeMaxSamplingMs) {
-      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs");
+      vm_exit_during_initialization("HotCodeMinSamplingMs cannot be larger than HotCodeMaxSamplingMs.");
+    }
+
+    const char* warn = nullptr;
+    if (!is_c2_enabled()) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because C2 is disabled.";
+    } else if (!SegmentedCodeCache && !FLAG_IS_DEFAULT(SegmentedCodeCache)) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because SegmentedCodeCache is disabled.";
+    } else if (!NMethodRelocation && !FLAG_IS_DEFAULT(NMethodRelocation)) {
+      warn = "HotCodeHeap disabled and HotCodeHeapSize zeroed because NMethodRelocation is disabled.";
+    }
+
+    if (warn != nullptr) {
+      warning("%s", warn);
+      FLAG_SET_ERGO(HotCodeHeap, false);
+      FLAG_SET_ERGO(HotCodeHeapSize, 0);
+    } else {
+      FLAG_SET_ERGO_IF_DEFAULT(SegmentedCodeCache, true);
+      FLAG_SET_ERGO_IF_DEFAULT(NMethodRelocation, true);
     }
   } else if (HotCodeHeapSize > 0) {
-    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled");
+    vm_exit_during_initialization("HotCodeHeapSize requires HotCodeHeap enabled.");
   }
 #else
   if (HotCodeHeapSize > 0) {
-    vm_exit_during_initialization("HotCodeHeapSize requires C2 present");
+    vm_exit_during_initialization("HotCodeHeapSize requires C2 present.");
   }
 #endif // COMPILER2
 
