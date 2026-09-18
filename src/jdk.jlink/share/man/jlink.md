@@ -108,11 +108,10 @@ Developers are responsible for updating their custom runtime images.
 [`-p`]{#option-module-path} or `--module-path` *modulepath*
 :   Specifies the module path.
 
-    If this option is not specified, then the default module path is
-    `$JAVA_HOME/jmods`. This directory contains the `java.base` module and the
-    other standard and JDK modules. If this option is specified but the
-    `java.base` module cannot be resolved from it, then the `jlink` command
-    appends `$JAVA_HOME/jmods` to the module path.
+    If this option is not specified, the JDK's default module path will be used.
+    The default module path will always include the `java.base` module, either
+    resolved from packaged modules (JMODS) or the run-time image (JEP 493).
+    JDK external modules must always be specified using this option.
 
 [`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
@@ -226,6 +225,14 @@ Options
 
 Description
 :   Strips debug information from the output image.
+
+    Source-file names, source-debug extensions, line numbers, and local-variable
+    information are removed from class files. Consequently, stack traces for
+    affected classes omit source-file names and line numbers, and debuggers lose
+    source-line and local-variable information. On supported platforms, native
+    debug symbols are also stripped. External debug-symbol files and directories,
+    such as `.pdb`, `.map`, `.dSYM`, `.debuginfo`, and `.diz`, are excluded from
+    the output image.
 
 ### Plugin `generate-cds-archive`
 
