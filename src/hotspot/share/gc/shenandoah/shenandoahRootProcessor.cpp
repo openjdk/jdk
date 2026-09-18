@@ -215,7 +215,6 @@ ShenandoahRootAdjuster::ShenandoahRootAdjuster(uint n_workers, ShenandoahPhaseTi
 
 void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   NMethodToOopClosure code_blob_cl(oops, NMethodToOopClosure::FixRelocations);
-  ShenandoahNMethodAndDisarmClosure nmethods_and_disarm_Cl(oops);
   CLDToOopClosure adjust_cld_closure(oops, ClassLoaderData::_claim_strong);
 
   // Process light-weight/limited parallel roots then
@@ -224,7 +223,7 @@ void ShenandoahRootAdjuster::roots_do(uint worker_id, OopClosure* oops) {
   _cld_roots.cld_do(&adjust_cld_closure, worker_id);
 
   // Process heavy-weight/fully parallel roots the last
-  _code_roots.nmethods_do(&nmethods_and_disarm_Cl, worker_id);
+  _code_roots.nmethods_do(&code_blob_cl, worker_id);
   _thread_roots.oops_do(oops, nullptr, worker_id);
 }
 
@@ -255,7 +254,7 @@ public:
     }
     ShenandoahNMethod* const snm = ShenandoahNMethod::gc_data(nm);
     assert(snm != nullptr, "Sanity");
-    snm->oops_do(_oops, false /*fix_relocations*/);
+    snm->oops_do(_oops, /* fix_relocations = */ false, /* icic = */ nullptr);
   }
 };
 

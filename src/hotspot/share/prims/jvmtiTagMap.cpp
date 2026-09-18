@@ -1349,7 +1349,7 @@ void IterateThroughHeapObjectClosure::visit_object(const JvmtiHeapwalkObject& ob
 
   // If the object has flat fields, report them as heap objects.
   if (obj.klass()->is_instance_klass()) {
-    if (InstanceKlass::cast(obj.klass())->has_inlined_fields()) {
+    if (InstanceKlass::cast(obj.klass())->has_flat_fields()) {
       visit_flat_fields(obj);
       // check if iteration has been halted
       if (is_iteration_aborted()) {
@@ -1376,13 +1376,12 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
 
     int field_offset = field->field_offset();
     if (obj.is_flat()) {
-      // the object is inlined, its fields are stored without the header
+      // the object is flattened, its fields are stored without the header
       field_offset += obj.offset() - obj.value_klass()->payload_offset();
     }
     // check for possible nulls
     if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
-      address payload = cast_from_oop<address>(obj.obj()) + field_offset;
-      if (field->value_klass()->is_payload_marked_as_null(payload)) {
+      if (field->value_klass()->is_payload_marked_as_null(obj.obj(), field_offset)) {
         continue;
       }
     }
@@ -3109,15 +3108,14 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     int slot = field->field_index();
     int field_offset = field->field_offset();
     if (o.is_flat()) {
-      // the object is inlined, its fields are stored without the header
+      // the object is flattened, its fields are stored without the header
       field_offset += o.offset() - o.value_klass()->payload_offset();
     }
     if (!is_primitive_field_type(type)) {
       if (field->is_flat()) {
         // check for possible nulls
         if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
-          address payload = cast_from_oop<address>(o.obj()) + field_offset;
-          if (field->value_klass()->is_payload_marked_as_null(payload)) {
+          if (field->value_klass()->is_payload_marked_as_null(o.obj(), field_offset)) {
             continue;
           }
         }

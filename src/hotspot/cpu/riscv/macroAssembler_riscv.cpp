@@ -845,7 +845,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
 
   bind(tagged);
   // Test for jweak tag.
-  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  static_assert(JNIHandles::TypeTag::weak_global == 0b1);
   test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::weak_global));
   bnez(tmp1, weak_tagged);
 
@@ -872,7 +872,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    static_assert(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     test_bit(tmp1, value, exact_log2(JNIHandles::TypeTag::global)); // Test for global tag.
     bnez(tmp1, valid_global_tag);
@@ -3050,8 +3050,8 @@ void MacroAssembler::pop_CPU_state(bool restore_vectors, int vector_size_in_byte
 }
 
 static int patch_offset_in_jal(address branch, int64_t offset) {
-  assert(Assembler::is_simm21(offset) && ((offset % 2) == 0),
-         "offset (%ld) is too large to be patched in one jal instruction!\n", offset);
+  guarantee(Assembler::is_simm21(offset) && ((offset % 2) == 0),
+            "offset (%ld) is too large to be patched in one jal instruction!", offset);
   Assembler::patch(branch, 31, 31, (offset >> 20) & 0x1);                       // offset[20]    ==> branch[31]
   Assembler::patch(branch, 30, 21, (offset >> 1)  & 0x3ff);                     // offset[10:1]  ==> branch[30:21]
   Assembler::patch(branch, 20, 20, (offset >> 11) & 0x1);                       // offset[11]    ==> branch[20]
@@ -3060,8 +3060,8 @@ static int patch_offset_in_jal(address branch, int64_t offset) {
 }
 
 static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
-  assert(Assembler::is_simm13(offset) && ((offset % 2) == 0),
-         "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!\n", offset);
+  guarantee(Assembler::is_simm13(offset) && ((offset % 2) == 0),
+            "offset (%ld) is too large to be patched in one beq/bge/bgeu/blt/bltu/bne instruction!", offset);
   Assembler::patch(branch, 31, 31, (offset >> 12) & 0x1);                       // offset[12]    ==> branch[31]
   Assembler::patch(branch, 30, 25, (offset >> 5)  & 0x3f);                      // offset[10:5]  ==> branch[30:25]
   Assembler::patch(branch, 7,  7,  (offset >> 11) & 0x1);                       // offset[11]    ==> branch[7]
@@ -3768,7 +3768,7 @@ void MacroAssembler::cmp_klass_bne(Register obj, Register klass,
 }
 
 // Move an oop into a register.
-void MacroAssembler::movoop(Register dst, jobject obj) {
+void MacroAssembler::movoop(Register dst, jobject obj, Register tmp) {
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_oop_index(obj);
@@ -3784,7 +3784,7 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
   RelocationHolder rspec = oop_Relocation::spec(oop_index);
 
   if (BarrierSet::barrier_set()->barrier_set_assembler()->supports_instruction_patching()) {
-    movptr(dst, Address((address)obj, rspec));
+    movptr(dst, Address((address)obj, rspec), tmp);
   } else {
     address dummy = address(uintptr_t(pc()) & -wordSize); // A nearby aligned address
     ld(dst, Address(dummy, rspec));
@@ -3792,7 +3792,7 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
 }
 
 // Move a metadata address into a register.
-void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
+void MacroAssembler::mov_metadata(Register dst, Metadata* obj, Register tmp) {
   assert((uintptr_t)obj < (1ull << 48), "48-bit overflow in metadata");
   int oop_index;
   if (obj == nullptr) {
@@ -3801,7 +3801,7 @@ void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
     oop_index = oop_recorder()->find_index(obj);
   }
   RelocationHolder rspec = metadata_Relocation::spec(oop_index);
-  movptr(dst, Address((address)obj, rspec));
+  movptr(dst, Address((address)obj, rspec), tmp);
 }
 
 void MacroAssembler::value_field_layout_info(Register holder_klass, Register index, Register layout_info) {

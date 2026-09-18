@@ -1035,13 +1035,15 @@ class CallStubImpl {
 
  public:
   // Size of call trampoline stub.
+  // This doesn't need to be accurate to the byte, but it
+  // must be larger than or equal to the real size of the stub.
   static uint size_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return MacroAssembler::max_reloc_call_address_stub_size();
   }
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return 5; // trampoline_stub_Relocation and its packed data, plus a safety margin
   }
 };
 
@@ -1311,8 +1313,6 @@ bool unnecessary_release(const Node *barrier)
   return false;
 }
 
-constexpr uint64_t MAJIK_DWORD = 0xabbaabbaabbaabbaull;
-
 // predicate controlling translation of CAS
 //
 // returns true if CAS needs to use an acquiring load otherwise false
@@ -1505,11 +1505,6 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print("sd  ra, [sp, #%d]\n\t", framesize - wordSize);
   if (PreserveFramePointer) { st->print("add fp, sp, #%d\n\t", framesize); }
 
-  if (VerifyStackAtCalls) {
-    st->print("mv  t2, %ld\n\t", MAJIK_DWORD);
-    st->print("sd  t2, [sp, #%d]\n\t", framesize - 3 * wordSize);
-  }
-
   if (C->stub_function() == nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
@@ -1528,13 +1523,6 @@ void MachPrologNode::emit(C2_MacroAssembler *masm, PhaseRegAlloc *ra_) const {
   Compile* C = ra_->C;
 
   __ verified_entry(C, 0);
-
-  if (VerifyStackAtCalls) {
-    // n.b. frame size includes space for return pc and fp
-    const long framesize = C->output()->frame_size_in_bytes();
-    __ mv(t2, MAJIK_DWORD);
-    __ sd(t2, Address(sp, framesize - 3 * wordSize));
-  }
 
   if (C->stub_function() == nullptr) {
     __ entry_barrier();
@@ -2381,9 +2369,9 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con);
+        __ movoop(dst_reg, (jobject)con, t0);
       } else if (rtype == relocInfo::metadata_type) {
-        __ mov_metadata(dst_reg, (Metadata*)con);
+        __ mov_metadata(dst_reg, (Metadata*)con, t0);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         __ mv(dst_reg, $src$$constant);
@@ -2532,18 +2520,7 @@ encode %{
     __ post_call_nop();
   %}
 
-  enc_class riscv_enc_call_epilog() %{
-    if (VerifyStackAtCalls) {
-      // Check that stack depth is unchanged: find majik cookie on stack
-      int framesize = ra_->reg2offset_unchecked(OptoReg::add(ra_->_matcher._old_SP, -3 * VMRegImpl::slots_per_word));
-      Label stack_ok;
-      __ ld(t1, Address(sp, framesize));
-      __ mv(t2, MAJIK_DWORD);
-      __ beq(t2, t1, stack_ok);
-      __ stop("MAJIK_DWORD not found");
-      __ bind(stack_ok);
-    }
-  %}
+  enc_class riscv_enc_call_epilog() %{ %}
 
   enc_class riscv_enc_java_to_runtime(method meth) %{
     Assembler::IncompressibleScope scope(masm); // Fixed length: see ret_addr_offset

@@ -33,13 +33,19 @@
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
+#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
+#include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
+#include "runtime/atomicAccess.hpp"
+#include "runtime/icache.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;
 int ShenandoahCodeRoots::_disarmed_value = 1;
@@ -56,40 +62,6 @@ void ShenandoahCodeRoots::register_nmethod(nmethod* nm) {
 void ShenandoahCodeRoots::unregister_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
   _nmethod_table->unregister_nmethod(nm);
-}
-
-void ShenandoahCodeRoots::arm_nmethods() {
-  BarrierSet::barrier_set()->barrier_set_nmethod()->arm_all_nmethods();
-}
-
-class ShenandoahDisarmNMethodClosure : public NMethodClosure {
-public:
-  virtual void do_nmethod(nmethod* nm) {
-    ShenandoahNMethod::disarm_nmethod(nm);
-  }
-};
-
-class ShenandoahDisarmNMethodsTask : public WorkerTask {
-private:
-  ShenandoahDisarmNMethodClosure      _cl;
-  ShenandoahConcurrentNMethodIterator _iterator;
-
-public:
-  ShenandoahDisarmNMethodsTask() :
-    WorkerTask("Shenandoah Disarm NMethods"),
-    _iterator(ShenandoahCodeRoots::table()) {
-    assert(SafepointSynchronize::is_at_safepoint(), "Only at a safepoint");
-  }
-
-  virtual void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    _iterator.nmethods_do(&_cl);
-  }
-};
-
-void ShenandoahCodeRoots::disarm_nmethods() {
-  ShenandoahDisarmNMethodsTask task;
-  ShenandoahHeap::heap()->workers()->run_task(&task);
 }
 
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
@@ -121,7 +93,8 @@ public:
 
       // Heal oops
       if (_bs->is_armed(nm)) {
-        ShenandoahNMethod::heal_nmethod_metadata(nm_data);
+        ICacheInvalidationContext icic;
+        ShenandoahNMethod::heal_nmethod_metadata(nm_data, &icic);
         // Must remain armed to complete remaining work in nmethod entry barrier
         assert(_bs->is_armed(nm), "Should remain armed");
       }
