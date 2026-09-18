@@ -3513,7 +3513,7 @@ void MacroAssembler::vpermd(XMMRegister dst,  XMMRegister nds, AddressLiteral sr
 
 void MacroAssembler::clear_jobject_tag(Register possibly_non_local) {
   const int32_t inverted_mask = ~static_cast<int32_t>(JNIHandles::tag_mask);
-  STATIC_ASSERT(inverted_mask == -4); // otherwise check this code
+  static_assert(inverted_mask == -4); // otherwise check this code
   // The inverted mask is sign-extended
   andptr(possibly_non_local, inverted_mask);
 }

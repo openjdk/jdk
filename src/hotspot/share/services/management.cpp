@@ -1699,7 +1699,7 @@ void ThreadTimesClosure::do_thread(Thread* thread) {
   ResourceMark rm; // thread->name() uses ResourceArea
 
   assert(thread->name() != nullptr, "All threads should have a name");
-  _names_chars[_count] = os::strdup_check_oom(thread->name());
+  _names_chars[_count] = os::strdup_check_oom(thread->name(), mtServiceability);
   _times->long_at_put(_count, os::is_thread_cpu_time_supported() ?
                         os::thread_cpu_time(thread) : -1);
   _count++;
