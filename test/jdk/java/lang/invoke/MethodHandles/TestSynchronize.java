@@ -23,6 +23,8 @@
 
 /*
  * @test
+ * @enablePreview
+ * @run junit/othervm -Xverify:all TestSynchronize
  * @run junit/othervm -Xverify:all -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=-1 TestSynchronize
  */
 
@@ -140,5 +142,17 @@ public class TestSynchronize {
         Object result = mh.invokeExact(lock, arr);
         assertEquals(arr, result);
         assertFalse(Thread.holdsLock(lock));
+    }
+
+    @Test
+    public void testIdentityException() {
+        MethodHandle mh = MethodHandles.synchronize(MH_payload);
+
+        value class Value {}
+
+        Object lock = new Value();
+        assertThrows(IdentityException.class, () -> {
+            mh.invokeExact(lock, lock);
+        });
     }
 }
