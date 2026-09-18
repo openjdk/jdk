@@ -218,7 +218,7 @@ void SubstitutabilityCheckStub::emit_code(LIR_Assembler* ce) {
   __ bctrl();
   ce->add_call_info_here(_info);
   ce->verify_oop_map(_info);
-  // Result is in R3_RET (_scratch_reg)
+  // Result is in R3_RET (_stub_result_reg)
   __ b(_continuation);
 }
 
