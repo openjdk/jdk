@@ -268,12 +268,4 @@ public class Sockets {
 
         throw new IllegalArgumentException("unknown socket type");
     }
-
-    private static void checkValueType(Object value, Class<?> type) {
-        if (!type.isAssignableFrom(value.getClass())) {
-            String s = "Found: " + value.getClass().toString() + " Expected: "
-                        + type.toString();
-            throw new IllegalArgumentException(s);
-        }
-    }
 }
