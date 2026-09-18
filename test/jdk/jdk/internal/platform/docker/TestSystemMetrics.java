@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestSystemMetrics {
             Common.logNewTestCase("Test SystemMetrics");
             DockerRunOptions opts =
                     new DockerRunOptions(imageName, "/jdk/bin/java", "jdk.test.lib.containers.cgroup.MetricsTester");
-            opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/");
+            opts.addDockerOpts("--volume", Utils.TEST_CLASSES + ":/test-classes/:z");
             opts.addDockerOpts("--memory=256m");
             opts.addJavaOpts("-cp", "/test-classes/");
             opts.addJavaOpts("--add-exports", "java.base/jdk.internal.platform=ALL-UNNAMED");
