@@ -255,7 +255,7 @@ public class SubINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.MAX})
-    // Checks that SubI keeps a precise range when the entire difference
+    // Checks that SubI keeps a precise range when the entire sub
     // range underflows.
     public int test22(int x) {
         int value = Integer.MIN_VALUE - ((x & 1) | 2);
@@ -264,7 +264,7 @@ public class SubINodeIdealizationTests {
 
     @Test
     @IR(failOn = {IRNode.MIN})
-    // Checks that SubI keeps a precise range when the entire difference
+    // Checks that SubI keeps a precise range when the entire sub
     // range overflows.
     public int test23(int x) {
         int value = Integer.MAX_VALUE - (x | -2);
