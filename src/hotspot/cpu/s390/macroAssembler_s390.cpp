@@ -5016,7 +5016,7 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 // Fill words with a non-zero value.
 void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp, VectorRegister Vtmp) {
   assert_different_registers(base, cnt, value, tmp);
-  NearLabel loop, loop_end;
+  NearLabel loop, loop_end, scalar_copy;
 
   BLOCK_COMMENT("fill_words {");
 
@@ -5026,15 +5026,24 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
   // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
   // TODO: Can i get the vector register here through C2
   z_vlvgp(Vtmp, value, value);
-  z_srag(tmp, cnt, 1);     // tmp = cnt / 2, sets CC
-  z_bre(loop_end);         // skip pair loop if cnt < 2
+  z_srag(tmp, cnt, 2);     // tmp = cnt / 4, sets CC
+  z_bre(scalar_copy);         // skip vector loop if cnt < 4
 
   bind(loop);
-  z_vst(Vtmp, Address(base,0));
+  z_vst(Vtmp, Address(base, 0));
+  z_vst(Vtmp, Address(base, 16));
   //z_stg(value, 0, base);
   //z_stg(value, 8, base);
-  z_la(base, 16, base);
+  z_la(base, 32, base);
   z_brctg(tmp, loop);      // 64-bit decrement-and-branch
+
+  bind(scalar_copy);
+
+  z_tmll(cnt, 2);
+  branch_optimized(Assembler::bcondAllZero, loop_end);
+
+  z_vst(Vtmp, Address(base, 0));
+  z_la(base, 16, base);
 
   bind(loop_end);
 
