@@ -84,7 +84,7 @@ void HdrSeq::add(double val) {
   }
   int bucket = exponent - MagMinimum;
 
-  // Rescale v from [0.5, 1) to [0, 1) to fit into the sub buckets.
+  // Rescale v from [0.5, 1) to [0, 1) to fit into the sub-buckets.
   int sub_bucket = (int) ((v - 0.5) * 2.0 * ValBuckets);
 
   // Defensively saturate for product bits
