@@ -25,8 +25,8 @@
 #include "gc/shenandoah/shenandoahWeightedSeq.hpp"
 #include "memory/allocation.hpp"
 
-#include <cmath>
 #include <cfloat>
+#include <cmath>
 
 ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
 : _size(size),
@@ -49,6 +49,7 @@ ShenandoahWeightedSeq::ShenandoahWeightedSeq(uint size)
   _y_intercept(0.0),
   _residual_sd(0.0),
   _slope_se(0.0) {
+  assert(size > 0, "Sanity");
 }
 
 ShenandoahWeightedSeq::~ShenandoahWeightedSeq() {

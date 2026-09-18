@@ -30,7 +30,7 @@
 // Provides a weighted sequence of x, y pairs. Various statistical properties
 // such as weighted mean, standard deviation, the line of best fit and the
 // residual deviation (deviation about the line of best fit) are available.
-// These attributes are maintained incrementally as we expect this structure
+// These attributes are maintained on sample adds, as we expect this structure
 // to be read more often than it is written.
 class ShenandoahWeightedSeq {
 
