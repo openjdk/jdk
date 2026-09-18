@@ -144,7 +144,7 @@
   void sve_compare(PRegister pd, BasicType bt, PRegister pg,
                    FloatRegister zn, FloatRegister zm, Condition cond);
 
-  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, PRegister ptmp);
+  void sve_vmask_lasttrue(Register dst, BasicType bt, PRegister src, FloatRegister vtmp);
 
   // Vector cast
   void neon_vector_extend(FloatRegister dst, BasicType dst_bt, unsigned dst_vlen_in_bytes,
