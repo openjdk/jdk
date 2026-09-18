@@ -81,6 +81,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
       fi
 
       if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+        BASIC_LDFLAGS_JVM_ONLY="$BASIC_LDFLAGS_JVM_ONLY -Wl,--gc-sections -Wl,--undefined=_ZTV8Metadata"
         BASIC_LDFLAGS_JDK_ONLY="$BASIC_LDFLAGS_JDK_ONLY -Wl,--gc-sections"
       fi
     fi

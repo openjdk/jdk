@@ -696,6 +696,34 @@ public:
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+// Vector divide byte
+class DivVBNode : public VectorNode {
+public:
+  DivVBNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide short
+class DivVSNode : public VectorNode {
+public:
+  DivVSNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide int
+class DivVINode : public VectorNode {
+public:
+  DivVINode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
+// Vector divide long
+class DivVLNode : public VectorNode {
+public:
+  DivVLNode(Node* in1, Node* in2, const TypeVect* vt) : VectorNode(in1, in2, vt) {}
+  virtual int Opcode() const;
+};
+
 // Vector divide half float
 class DivVHFNode : public VectorNode {
 public:
@@ -1786,6 +1814,25 @@ class VectorTestNode : public CmpNode {
     return Node::cmp(n) && _predicate == ((VectorTestNode&)n)._predicate;
   }
 };
+
+// Vector slice operation with constant index. Slices a segment of adjacent lanes,
+// starting at a given origin lane in the current vector, and continuing (as needed)
+// into an immediately following vector.
+class VectorSliceNode : public VectorNode {
+ public:
+  VectorSliceNode(Node* vec1, Node* vec2, Node* origin, const TypeVect* vt)
+    : VectorNode(vec1, vec2, origin, vt) {
+    assert(origin->is_Con(), "origin must be a constant");
+  }
+
+  virtual int Opcode() const;
+  Node* vec1() const { return in(1); }
+  Node* vec2() const { return in(2); }
+  Node* origin() const { return in(3); }
+  virtual Node* Identity(PhaseGVN* phase);
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 
 // Blend two vectors based on a vector mask. For each lane, select the value
 // from the first input vector (vec1) if the corresponding mask lane is set,

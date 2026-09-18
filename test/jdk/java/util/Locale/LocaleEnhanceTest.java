@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @test
  * @bug 6875847 6992272 7002320 7015500 7023613 7032820 7033504 7004603
  *      7044019 8008577 8176853 8255086 8263202 8287868 8174269 8369452
- *      8369590 8387185 8387253
+ *      8369590 8387185 8387253 8387455
  * @summary test API changes to Locale
  * @modules jdk.localedata
  * @run junit/othervm -esa LocaleEnhanceTest
@@ -498,6 +498,23 @@ public class LocaleEnhanceTest {
                 // private use only language tag is preserved (no extra "und")
                 {"x-elmer", "x-elmer"},
                 {"x-lvariant-JP", "x-lvariant-JP"},
+                // Legacy locale cases
+                // no/NO/NY case is normalized during `toLanguageTag`
+                // ja/JP/JP & th/TH/TH case is normalized during `forLanguageTag`
+                // Script prevents the legacy conversions
+                {"no-Latn-NO-x-lvariant-NY",
+                        "no-Latn-NO-x-lvariant-NY"},
+                {"ja-Jpan-JP-x-lvariant-JP",
+                        "ja-Jpan-JP-x-lvariant-JP"},
+                {"th-Thai-TH-x-lvariant-TH",
+                        "th-Thai-TH-x-lvariant-TH"},
+                // Unexpected extensions prevent the legacy conversions
+                {"no-NO-a-foo-x-lvariant-NY",
+                        "no-NO-a-foo-x-lvariant-NY"},
+                {"ja-JP-a-foo-x-lvariant-JP",
+                        "ja-JP-a-foo-x-lvariant-JP"},
+                {"th-TH-a-foo-x-lvariant-TH",
+                        "th-TH-a-foo-x-lvariant-TH"},
         };
         for (String[] test : tests1) {
             Locale locale = Locale.forLanguageTag(test[0]);
@@ -728,6 +745,34 @@ public class LocaleEnhanceTest {
         assertEquals("nn-NO", locale.toLanguageTag(), "no_NO_NY languagetag");
         assertEquals("nn", locale.getLanguage(), "no_NO_NY language");
         assertEquals("", locale.getVariant(), "no_NO_NY variant");
+
+        // Legacy locales that stripped their compatibility extensions are invalid
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.of("ja", "JP", "JP").stripExtensions()));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.of("th", "TH", "TH").stripExtensions()));
+
+        // Legacy locales without the correct Unicode locale extension value are invalid
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("ja-JP-u-ca-foobar-x-lvariant-JP")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("th-TH-u-nu-foobar-x-lvariant-TH")));
+
+        // Legacy locales with additional extensions are invalid
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("no-NO-a-foo-x-lvariant-NY")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("ja-JP-a-foo-x-lvariant-JP")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("th-TH-a-foo-x-lvariant-TH")));
+
+        // Legacy locales with non-empty script are invalid
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("ja-Jpan-JP-u-ca-japanese-x-lvariant-JP")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("th-Thai-TH-u-nu-thai-x-lvariant-TH")));
+        assertThrows(IllformedLocaleException.class,
+                () -> new Builder().setLocale(Locale.forLanguageTag("no-Latn-NO-x-lvariant-NY")));
 
         // non-canonical, non-legacy locales are invalid
         assertThrows(IllformedLocaleException.class,

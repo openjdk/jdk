@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
@@ -128,6 +129,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   _generation->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
 
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
+
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);
     heap->propagate_gc_state_to_all_threads();
@@ -136,6 +140,7 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
+  heap->release_injected_pins();
 
   // A full GC may be entered directly, or as an upgrade from a failed
   // degenerated GC. In the latter case, self-forwarded objects may be

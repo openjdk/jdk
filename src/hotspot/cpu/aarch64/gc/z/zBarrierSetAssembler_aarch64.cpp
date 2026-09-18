@@ -22,6 +22,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "code/codeBlob.hpp"
 #include "code/vmreg.inline.hpp"
 #include "gc/z/zAddress.hpp"
@@ -1351,6 +1352,7 @@ void ZBarrierSetAssembler::try_peek_weak_handle_in_nmethod(MacroAssembler* masm,
 }
 
 void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register tmp1, Register tmp2, Label& error) {
+  assert_different_registers(obj, tmp1, tmp2);
   // C1 calls verfy_oop in the middle of barriers, before they have been uncolored
   // and after being colored. Therefore, we must deal with colored oops as well.
   Label done;
@@ -1385,15 +1387,25 @@ void ZBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Registe
   __ bind(check_oop);
 
   // make sure klass is 'reasonable', which is not zero.
-  __ load_klass(tmp1, obj);  // get klass
-  __ tst(tmp1, tmp1);
-  __ br(Assembler::EQ, error); // if klass is null it is broken
+  __ load_narrow_klass(tmp1, obj); // get narrow klass
+  __ cbz(tmp1, error);      // if klass is null it is broken
 
   __ bind(check_zaddress);
   // Check if the oop is in the right area of memory
-  __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
-  __ andr(tmp1, tmp1, obj);
-  __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+#if INCLUDE_CDS
+  if (AOTCodeCache::is_on_for_dump()) {
+    __ lea(tmp1, ExternalAddress(AOTRuntimeConstants::verify_oop_mask_address()));
+    __ ldr(tmp1, Address(tmp1));
+    __ andr(tmp1, tmp1, obj);
+    __ lea(obj, ExternalAddress(AOTRuntimeConstants::verify_oop_bits_address()));
+    __ ldr(obj, Address(obj));
+  } else
+#endif
+  {
+    __ mov(tmp1, (intptr_t) Universe::verify_oop_mask());
+    __ andr(tmp1, tmp1, obj);
+    __ mov(obj, (intptr_t) Universe::verify_oop_bits());
+  }
   __ cmp(tmp1, obj);
   __ br(Assembler::NE, error);
 

@@ -30,7 +30,7 @@ America/Dawson MST
 America/Dawson_Creek MST
 America/Denver MST MDT
 America/Detroit EST EDT
-America/Edmonton MST MDT
+America/Edmonton CST
 America/El_Salvador CST CDT
 America/Fort_Nelson MST
 America/Glace_Bay AST ADT
@@ -86,7 +86,7 @@ America/Tegucigalpa CST CDT
 America/Thule AST ADT
 America/Tijuana PST PDT
 America/Toronto EST EDT
-America/Vancouver PST PDT
+America/Vancouver MST
 America/Whitehorse MST
 America/Winnipeg CST CDT
 America/Yakutat AKST AKDT

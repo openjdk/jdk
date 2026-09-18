@@ -58,16 +58,15 @@ public:
     address i_addr = (address)&i;
     bool found_i_addr = false;
 
-    // stack grows downward
+    // Stack grows downward.
     address stack_top = stack_end + stack_size;
-    bool found_stack_top = false;
     {
       MemTracker::NmtVirtualMemoryLocker vml;
+      // For thread stacks, this historically named API visits resident ranges.
+      // Not all committed pages have to be resident.
       VirtualMemoryTracker::Instance::tree()->visit_committed_regions(rgn_found, [&](const VirtualMemoryRegion& rgn) {
-        if (rgn.base() + rgn.size() == stack_top) {
-          EXPECT_TRUE(rgn.size() <= stack_size);
-          found_stack_top = true;
-        }
+        EXPECT_GE(rgn.base(), stack_end);
+        EXPECT_LE(rgn.end(), stack_top);
         if (i_addr < stack_top && i_addr >= rgn.base()) {
           found_i_addr = true;
         }
@@ -76,10 +75,9 @@ public:
       });
     }
 
-    // stack and guard pages may be contiguous as one region
+    // Stack and guard pages may be contiguous as one region.
     ASSERT_TRUE(i >= 1);
     ASSERT_TRUE(found_i_addr);
-    ASSERT_TRUE(found_stack_top);
   }
 
   static const int PAGE_CONTAINED_IN_RANGE_TAG = -1;

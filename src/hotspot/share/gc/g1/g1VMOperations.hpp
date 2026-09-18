@@ -48,7 +48,7 @@ class VM_G1TryInitiateConcMark : public VM_GC_Collect_Operation {
   bool _transient_failure;
   bool _mark_in_progress;
   bool _cycle_already_in_progress;
-  bool _whitebox_attached;
+  bool _whitebox_controlled;
   // The concurrent start pause may be cancelled for some reasons. Keep track of
   // this.
   bool _gc_succeeded;
@@ -63,14 +63,16 @@ public:
   bool transient_failure() const { return _transient_failure; }
   bool mark_in_progress() const { return _mark_in_progress; }
   bool cycle_already_in_progress() const { return _cycle_already_in_progress; }
-  bool whitebox_attached() const { return _whitebox_attached; }
+  bool whitebox_controlled() const { return _whitebox_controlled; }
   bool gc_succeeded() const { return _gc_succeeded && VM_GC_Operation::gc_succeeded(); }
 };
 
 class VM_G1CollectForAllocation : public VM_CollectForAllocation {
+  const uint _node_index;
 
 public:
-  VM_G1CollectForAllocation(size_t word_size,
+  VM_G1CollectForAllocation(uint node_index,
+                            size_t word_size,
                             uint gc_count_before,
                             GCCause::Cause gc_cause);
   virtual VMOp_Type type() const { return VMOp_G1CollectForAllocation; }

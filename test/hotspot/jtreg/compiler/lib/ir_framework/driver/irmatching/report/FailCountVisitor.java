@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,11 @@
 
 package compiler.lib.ir_framework.driver.irmatching.report;
 
-import compiler.lib.ir_framework.CompilePhase;
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.CheckAttributeType;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.CountsConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.FailOnConstraintFailure;
-import compiler.lib.ir_framework.driver.irmatching.visitor.AcceptChildren;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.IRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompilableIRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irmethod.NotCompiledIRMethodMatchResult;
+import compiler.lib.ir_framework.driver.irmatching.irrule.IRRuleMatchResult;
 import compiler.lib.ir_framework.driver.irmatching.visitor.MatchResultVisitor;
-
-import java.lang.reflect.Method;
 
 /**
  * Visitor to collect the number of IR method and IR rule failures.
@@ -40,54 +36,36 @@ class FailCountVisitor implements MatchResultVisitor {
     private int irMethodCount;
     private int irRuleCount;
 
-    @Override
-    public void visitTestClass(AcceptChildren acceptChildren) {
-        acceptChildren.accept(this);
-    }
 
     @Override
-    public void visitIRMethod(AcceptChildren acceptChildren, Method method, int failedIRRules) {
+    public void enter(IRMethodMatchResult result) {
         irMethodCount++;
-        acceptChildren.accept(this);
     }
 
+    /**
+     * We directly override this method to stop visiting compile phase IR rule sub results.
+     */
     @Override
-    public void visitIRRule(AcceptChildren acceptChildren, int irRuleId, IR irAnno) {
+    public void visit(IRRuleMatchResult result) {
         irRuleCount++;
-        // Do not need to visit compile phase IR rules
     }
 
     @Override
-    public void visitMethodNotCompiled(Method method, int failedIRRules) {
+    public void visitLeaf(NotCompiledIRMethodMatchResult result) {
         irMethodCount++;
-        irRuleCount += failedIRRules;
+        irRuleCount += result.irRuleCount();
     }
 
     @Override
-    public void visitMethodNotCompilable(Method method, int failedIRRules) {
+    public void visitLeaf(NotCompilableIRMethodMatchResult result) {
         irMethodCount++;
     }
 
-    public int getIrRuleCount() {
+    public int irRuleCount() {
         return irRuleCount;
     }
 
-    public int getIrMethodCount() {
+    public int irMethodCount() {
         return irMethodCount;
     }
-
-    @Override
-    public void visitCompilePhaseIRRule(AcceptChildren acceptChildren, CompilePhase compilePhase, String compilationOutput) {}
-
-    @Override
-    public void visitNoCompilePhaseCompilation(CompilePhase compilePhase) {}
-
-    @Override
-    public void visitCheckAttribute(AcceptChildren acceptChildren, CheckAttributeType checkAttributeType) {}
-
-    @Override
-    public void visitFailOnConstraint(FailOnConstraintFailure failOnConstraintFailure) {}
-
-    @Override
-    public void visitCountsConstraint(CountsConstraintFailure countsConstraintFailure) {}
 }

@@ -52,6 +52,11 @@ import java.util.HashMap;
  * This applies to the boxed floating types, as well as arrays of floating arrays. With
  * {@link Verify#checkEQWithRawBits} we compare the raw bits, and so different NaN encodings are not equal.
  * Note: {@link MemorySegment} data is always compared with raw bits.
+ *
+ * <p>
+ * The same NaN handling applies to {@code Float16}: both the scalar {@code Float16} box and the
+ * {@code Float16Vector} lanes (whose {@code short} carrier bits encode Float16 values) are compared
+ * with the selected NaN mode rather than as raw {@code short}s.
  */
 public final class Verify {
     private final boolean isFloatCheckWithRawBits;
@@ -455,7 +460,56 @@ public final class Verify {
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException("Could not invoke toArray on " + ca.getName(), e);
         }
+        // A Float16Vector carries its lanes in a short[], but those short bits encode Float16
+        // values rather than plain shorts. Comparing them as a raw short[] would treat distinct
+        // NaN encodings as unequal, even in the non-raw mode. Compare them with Float16 NaN
+        // semantics instead.
+        if (va instanceof short[] sa && vb instanceof short[] sb && isFloat16VectorClass(ca)) {
+            checkEQForFloat16Carrier(sa, sb, field + ".toArray", aParent, bParent);
+            return;
+        }
         checkEQdispatch(va, vb, field + ".toArray", aParent, bParent);
+    }
+
+    private static boolean isFloat16VectorClass(Class<?> c) {
+        // The concrete classes (Float16Vector64/128/256/512/Max) all extend Float16Vector.
+        for (Class<?> k = c; k != null; k = k.getSuperclass()) {
+            if (k.getName().equals("jdk.incubator.vector.Float16Vector")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Compare the {@code short[]} carriers of two {@code Float16Vector}s. The short bits encode
+     * Float16 values, so in the non-raw mode we canonicalize NaN by widening each lane to float
+     * via {@link Float#float16ToFloat}, and then reuse the float canonicalization. In the raw mode we
+     * compare the carrier bits directly, so distinct NaN encodings are not equal. See {@link #isFloatEQ}.
+     */
+    private void checkEQForFloat16Carrier(short[] a, short[] b, String field, Object aParent, Object bParent) {
+        if (a.length != b.length) {
+            System.err.println("ERROR: Equality matching failed: length mismatch: " + a.length + " vs " + b.length);
+            print(a, b, field, aParent, bParent);
+            throw new VerifyException("Float16 array length mismatch.");
+        }
+
+        for (int i = 0; i < a.length; i++) {
+            if (!isFloat16EQ(a[i], b[i])) {
+                System.err.println("ERROR: Equality matching failed: value mismatch at " + i + ": " + a[i] + " vs " + b[i] + ". check raw: " + isFloatCheckWithRawBits);
+                print(a, b, field, aParent, bParent);
+                throw new VerifyException("Float16 array value mismatch " + a[i] + " vs " + b[i]);
+            }
+        }
+    }
+
+    /**
+     * For Float16 we widen each lane to float, which is exact and lossless and maps every NaN encoding
+     * to the canonical float NaN, and then reuse the float canonicalization.
+     */
+    private boolean isFloat16EQ(short a, short b) {
+        return isFloatCheckWithRawBits ? a == b
+                                       : Float.floatToIntBits(Float.float16ToFloat(a)) == Float.floatToIntBits(Float.float16ToFloat(b));
     }
 
     private static boolean isFloat16Class(Class<?> c) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,11 +76,15 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
 
         memset(&addr, 0, sizeof(addr));
         addr.sun_family = AF_UNIX;
-        /* strncpy is safe because addr.sun_path was zero-initialized before. */
-        strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
+        if (strlen(p) >= sizeof(addr.sun_path)) {
+            JNU_ThrowIOException(env, "Socket file path too long");
+        } else {
+            /* strncpy is safe because addr.sun_path was zero-initialized before. */
+            strncpy(addr.sun_path, p, sizeof(addr.sun_path) - 1);
 
-        if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-            err = errno;
+            if (connect(fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+                err = errno;
+            }
         }
 
         if (isCopy) {
@@ -255,4 +259,31 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
         }
 
     } while (remaining > 0);
+}
+
+/*
+ * Class:     sun_tools_attach_VirtualMachineImpl
+ * Method:    validateSocketFileLength
+ * Signature: (Ljava/lang/String;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_validateSocketFileLength
+  (JNIEnv *env, jclass cls, jstring path)
+{
+    jboolean isCopy;
+    const char* p = GetStringPlatformChars(env, path, &isCopy);
+    if (p == NULL) {
+        JNU_ThrowIOException(env, "Socket file path is null");
+        return JNI_FALSE;
+    }
+
+    size_t pathLength = strlen(p);
+
+    if (isCopy) {
+        JNU_ReleaseStringPlatformChars(env, path, p);
+    }
+
+    struct sockaddr_un addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sun_family = AF_UNIX;
+    return pathLength < sizeof(addr.sun_path);
 }
