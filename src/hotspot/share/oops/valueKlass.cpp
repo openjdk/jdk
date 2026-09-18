@@ -513,19 +513,17 @@ void ValueKlass::remove_unshareable_info() {
 
 #endif // CDS
 
-#define BULLET  " - "
-
 void ValueKlass::print_on(outputStream* st) const {
   InstanceKlass::print_on(st);
   members().print_on(st);
-  st->print_cr(BULLET"---- LayoutKinds:");
+  st->print_cr(" - ---- LayoutKinds:");
   auto print_layout_kind = [&](LayoutKind lk) {
     if (layouts().has_a(lk)) {
-      st->print_cr(BULLET"%s layout: %d/%d",
+      st->print_cr(" - %s layout: %d/%d",
                    LayoutKindHelper::layout_kind_as_string(lk),
                    layouts().size_in_bytes_of(lk), layouts().alignment_of(lk));
     } else {
-      st->print_cr(BULLET"%s layout: -/-",
+      st->print_cr(" - %s layout: -/-",
                    LayoutKindHelper::layout_kind_as_string(lk));
     }
   };
@@ -549,32 +547,30 @@ void ValueKlass::oop_verify_on(oop obj, outputStream* st) {
 }
 
 void ValueKlass::Members::print_on(outputStream* st) const {
-  st->print_cr(BULLET"---- value type members:");
-  st->print(BULLET"extended signature registers:      ");
+  st->print_cr(" - ---- value type members:");
+  st->print(" - extended signature registers:      ");
   InstanceKlass::print_array_on(st, _extended_sig, [](outputStream* ost, SigEntry pair){
     pair.print_on(ost);
   });
-  st->print(BULLET"return registers:                  ");
+  st->print(" - return registers:                  ");
   InstanceKlass::print_array_on(st, _return_regs, [](outputStream* ost, VMRegPair pair) {
     pair.print_on(ost);
   });
-  st->print_cr(BULLET"pack handler:                      " PTR_FORMAT, p2i(_pack_handler));
-  st->print_cr(BULLET"pack handler (jobject):            " PTR_FORMAT, p2i(_pack_handler_jobject));
-  st->print_cr(BULLET"unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
-  st->print_cr(BULLET"null reset offset:                 %d", _null_reset_value_offset);
-  st->print_cr(BULLET"payload offset:                    %d", layouts().payload_offset());
-  st->print_cr(BULLET"payload size (bytes):              %d", layouts().size_in_bytes_of(LayoutKind::BUFFERED));
-  st->print_cr(BULLET"payload alignment:                 %d", layouts().payload_alignment());
-  st->print_cr(BULLET"null-free non-atomic size (bytes): %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT));
-  st->print_cr(BULLET"null-free non-atomic alignment:    %d", layouts().has_non_atomic_alignment() ? layouts().non_atomic_alignment() : -1);
-  st->print_cr(BULLET"null-free atomic size (bytes):     %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT));
-  st->print_cr(BULLET"nullable atomic size (bytes):      %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT));
-  st->print_cr(BULLET"nullable non-atomic size (bytes):  %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT));
-  st->print_cr(BULLET"null marker offset:                %d", layouts().null_marker_offset());
-  st->print_cr(BULLET"fast acmp offset:                  %d", _fast_acmp_offset);
-  st->print_cr(BULLET"fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
-  st->print_cr(BULLET"fast hashcode offset:              %d", _fast_hashcode_offset);
-  st->print_cr(BULLET"fast hashcode shift:               %d", _fast_hashcode_shift);
+  st->print_cr(" - pack handler:                      " PTR_FORMAT, p2i(_pack_handler));
+  st->print_cr(" - pack handler (jobject):            " PTR_FORMAT, p2i(_pack_handler_jobject));
+  st->print_cr(" - unpack handler:                    " PTR_FORMAT, p2i(_unpack_handler));
+  st->print_cr(" - null reset offset:                 %d", _null_reset_value_offset);
+  st->print_cr(" - payload offset:                    %d", layouts().payload_offset());
+  st->print_cr(" - payload size (bytes):              %d", layouts().size_in_bytes_of(LayoutKind::BUFFERED));
+  st->print_cr(" - payload alignment:                 %d", layouts().payload_alignment());
+  st->print_cr(" - null-free non-atomic size (bytes): %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_NON_ATOMIC_FLAT));
+  st->print_cr(" - null-free non-atomic alignment:    %d", layouts().has_non_atomic_alignment() ? layouts().non_atomic_alignment() : -1);
+  st->print_cr(" - null-free atomic size (bytes):     %d", layouts().size_in_bytes_of(LayoutKind::NULL_FREE_ATOMIC_FLAT));
+  st->print_cr(" - nullable atomic size (bytes):      %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_ATOMIC_FLAT));
+  st->print_cr(" - nullable non-atomic size (bytes):  %d", layouts().size_in_bytes_of(LayoutKind::NULLABLE_NON_ATOMIC_FLAT));
+  st->print_cr(" - null marker offset:                %d", layouts().null_marker_offset());
+  st->print_cr(" - fast acmp offset:                  %d", _fast_acmp_offset);
+  st->print_cr(" - fast acmp mask:                    " INT64_FORMAT_X_0, _fast_acmp_mask);
+  st->print_cr(" - fast hashcode offset:              %d", _fast_hashcode_offset);
+  st->print_cr(" - fast hashcode shift:               %d", _fast_hashcode_shift);
 }
-
-#undef BULLET

@@ -5922,7 +5922,7 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
@@ -5959,7 +5959,7 @@ bool TypeInstKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool
 }
 
 template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_instance(const T1* this_one, const T2* other) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
@@ -5974,7 +5974,7 @@ bool TypeInstKlassPtr::is_same_java_type_as_helper(const TypeKlassPtr* other) co
 }
 
 template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
@@ -6412,7 +6412,7 @@ const Type* TypeAryKlassPtr::xjoin(const Type* t) const {
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
 
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
@@ -6456,7 +6456,7 @@ bool TypeAryKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool 
 }
 
 template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_array(const T1* this_one, const T2* other) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
 
   int dummy;
   bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
@@ -6488,7 +6488,7 @@ bool TypeAryKlassPtr::is_same_java_type_as_helper(const TypeKlassPtr* other) con
 }
 
 template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_array(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
   }

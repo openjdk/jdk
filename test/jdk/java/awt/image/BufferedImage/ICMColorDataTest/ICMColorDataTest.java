@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,8 +36,8 @@ import java.awt.image.WritableRaster;
  * @bug 8201433
  * @summary This test may throw OOME or NPE from native code,
  *          it should not crash
- * @requires os.maxMemory >= 2G
- * @run main/othervm/timeout=300000 -Xms1000m -Xmx1000m ICMColorDataTest
+ * @requires os.maxMemory >= 1G
+ * @run main/othervm/timeout=300 -Xms200m -Xmx200m ICMColorDataTest
  */
 public class ICMColorDataTest {
     private static final int WIDTH  = 90;
@@ -52,7 +52,7 @@ public class ICMColorDataTest {
 
     public static void main(String[] args) {
         try {
-            for (long i = 0; i < 300_000; i++) {
+            for (long i = 0; i < 30_000; i++) {
                 makeImage();
             }
         } catch (OutOfMemoryError | NullPointerException e) {

@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -1273,8 +1274,7 @@ void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int 
     if (field.is_flat()) {
       // check for possible nulls
       if (field.is_flat_nullable()) {
-        address payload = cast_from_oop<address>(o) + field_offset;
-        if (field.value_klass()->is_payload_marked_as_null(payload)) {
+        if (field.value_klass()->is_payload_marked_as_null(o, field_offset)) {
           writer->write_objectID(nullptr);
           continue;
         }
@@ -2179,12 +2179,13 @@ class HeapObjectDumper : public ObjectClosure {
   AbstractDumpWriter* writer()                  { return _writer; }
   UnmountedVThreadDumper* _vthread_dumper;
   FlatObjectDumper* _flat_dumper;
+  bool _skip_filler_objects;
 
   DumperClassCacheTable _class_cache;
 
  public:
-  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper)
-    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper) {}
+  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool skip_filler_objects)
+    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _skip_filler_objects(skip_filler_objects) {}
 
   // called for each object in the heap
   void do_object(oop o);
@@ -2196,6 +2197,10 @@ void HeapObjectDumper::do_object(oop o) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
+  }
+
+  if (_skip_filler_objects && CollectedHeap::is_filler_object(o)) {
+    return;
   }
 
   if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
@@ -2744,7 +2749,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper);
+    bool skip_filler_objects = _gc_before_heap_dump;
+    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, skip_filler_objects);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {
