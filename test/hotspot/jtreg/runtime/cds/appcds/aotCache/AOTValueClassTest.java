@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test archived value classes
- * @bug 8389233
+ * @bug 8389233 8392352
  * @requires vm.cds.write.archived.java.heap
  * @requires vm.cds.supports.aot.class.linking
  * @requires vm.debug
