@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,12 +300,7 @@ public class IntegerDivValueTests {
     }
 
     @Test
-    //@IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
-    // This results in a series of nodes due to DivLNode::Ideal and in particular transform_long_divide, which operates on non-constant divisors.
-    // transform_long_divide splits up the division into multiple other nodes, such as MulHiLNode, which does not have a good Value() implemantion.
-    // When JDK-8366815 is fixed, these rules should be reenabled
-    // Alternatively, a better MulHiLNode::Value() implemantion should also lead to constant folding
-    @IR(counts = {IRNode.RSHIFT_L, "> 0", IRNode.ADD_L, "> 0", IRNode.AND_L, "> 0"}, failOn = {IRNode.DIV})
+    @IR(failOn = {IRNode.DIV, IRNode.URSHIFT, IRNode.RSHIFT, IRNode.MUL, IRNode.ADD, IRNode.SUB, IRNode.AND})
     public long testLongRange(long in) {
         long a = (in & 7L) + 16L;
         return a / 12L; // [16, 23] / 12 is constant 1
