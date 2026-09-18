@@ -1035,13 +1035,15 @@ class CallStubImpl {
 
  public:
   // Size of call trampoline stub.
+  // This doesn't need to be accurate to the byte, but it
+  // must be larger than or equal to the real size of the stub.
   static uint size_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return MacroAssembler::max_reloc_call_address_stub_size();
   }
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return 5; // trampoline_stub_Relocation and its packed data, plus a safety margin
   }
 };
 
