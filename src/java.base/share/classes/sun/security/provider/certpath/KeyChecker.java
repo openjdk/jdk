@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,11 +85,11 @@ class KeyChecker extends PKIXCertPathChecker {
     @Override
     public Set<String> getSupportedExtensions() {
         if (supportedExts == null) {
-            supportedExts = HashSet.newHashSet(3);
-            supportedExts.add(KeyUsage_Id.toString());
-            supportedExts.add(ExtendedKeyUsage_Id.toString());
-            supportedExts.add(SubjectAlternativeName_Id.toString());
-            supportedExts = Collections.unmodifiableSet(supportedExts);
+            supportedExts = Set.of(
+                    KeyUsage_Id.toString(),
+                    ExtendedKeyUsage_Id.toString(),
+                    SubjectAlternativeName_Id.toString()
+            );
         }
         return supportedExts;
     }
