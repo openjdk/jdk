@@ -33,8 +33,8 @@ import java.security.spec.NamedParameterSpec;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 import javax.crypto.KeyAgreement;
@@ -433,33 +433,8 @@ enum NamedGroup {
         return "UNDEFINED-NAMED-GROUP(" + id + ")";
     }
 
-    public static List<NamedGroup> namesOf(String[] namedGroups) {
-        if (namedGroups == null) {
-            return null;
-        }
-
-        if (namedGroups.length == 0) {
-            return List.of();
-        }
-
-        List<NamedGroup> ngs = new ArrayList<>(namedGroups.length);
-        for (String ss : namedGroups) {
-            NamedGroup ng = NamedGroup.nameOf(ss);
-            if (ng == null || !ng.isAvailable) {
-                if (SSLLogger.isOn() &&
-                        SSLLogger.isOn(SSLLogger.Opt.HANDSHAKE_VERBOSE)) {
-                    SSLLogger.finest(
-                            "Ignore the named group (" + ss
-                                    + "), unsupported or unavailable");
-                }
-
-                continue;
-            }
-
-            ngs.add(ng);
-        }
-
-        return Collections.unmodifiableList(ngs);
+    static String[] namesOf(List<NamedGroup> groups) {
+        return groups.stream().map(ng -> ng.name).toArray(String[]::new);
     }
 
     // Is there any supported group permitted by the constraints?
@@ -917,6 +892,25 @@ enum NamedGroup {
                 }
                 namedGroups = defaultNames;
             }
+        }
+
+        // Returns all supported named groups for the specified protocols and
+        // cipher suites. Default named groups are returned first.
+        static List<NamedGroup> getSupportedGroups(List<ProtocolVersion> protocols,
+                List<CipherSuite> cipherSuites) {
+
+            LinkedHashSet<NamedGroup> supportedGroups = new LinkedHashSet<>();
+            supportedGroups.addAll(Arrays.asList(defaultGroups));
+            supportedGroups.addAll(Arrays.asList(NamedGroup.values()));
+
+            return supportedGroups.stream()
+                    .filter(ng -> ng.isAvailable(protocols))
+                    .filter(ng -> ng.isSupported(cipherSuites))
+                    .filter(ng -> SSLConfiguration.enableFFDHE ||
+                            ng.spec != NamedGroupSpec.NAMED_GROUP_FFDHE)
+                    .filter(ng -> ng.isPermitted(
+                            SSLAlgorithmConstraints.DEFAULT))
+                    .toList();
         }
 
         // Avoid the group lookup for default and customized groups.
