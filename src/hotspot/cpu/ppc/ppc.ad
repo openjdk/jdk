@@ -5688,9 +5688,11 @@ instruct loadConNKlass(iRegNdst dst, immNKlass src) %{
 
   format %{ "LOAD $dst, $src" %}
   ins_encode %{
-    // Notify OOP recorder (don't need the relocation).
-    AddressLiteral md = __ constant_metadata_address((Klass*)$src$$constant);
-    narrowKlass Csrc = CompressedKlassPointers::encode((Klass*)md.value());
+    if (!ra_->C->output()->in_scratch_emit_size()) {
+      // Notify OOP recorder (don't need the relocation).
+      __ constant_metadata_address((Klass*)$src$$constant);
+    }
+    narrowKlass Csrc = CompressedKlassPointers::encode((Klass*)$src$$constant);
     __ load_const_optimized($dst$$Register, Csrc, R0);
   %}
   ins_pipe(pipe_class_default);
