@@ -653,16 +653,50 @@ class NativeGeneralJump: public NativeInstruction {
 };
 
 class NativePostCallNop: public NativeInstruction {
+
+  // Post-call NOPs are encoded as CLFI R0, imm32 (RIL-a format, 6 bytes):
+  //
+  //   Bit  |0       7|8   11|12  15|16                      47|
+  //        +---------+------+------+--------------------------+
+  //        |  0xC2   |  R1  | 0xF  |         I2 (imm32)       |
+  //        +---------+------+------+--------------------------+
+  //        | opcode1 | 0x0  |op2=F |  oopmap_slot[31:24]      |
+  //        |         |(R0)  |      |  | cb_offset[23:0]       |
+  //
+  //   Byte 0 = 0xC2  (opcode1, from CLFI_ZOPC bits 47..40)
+  //   Byte 1 = 0x0F  (R1=R0=0x0 in bits 39..36; opcode2=0xF in bits 35..32)
+  //   Bytes 2..5 = imm32 payload
+  //
+  // CLFI sets only the condition code — no GPR is written.
+  // The R1 field is fixed to R0 (encoding 0), allowing check() to
+  // recognize the instruction by testing only the first two bytes.
+
 public:
-  enum z_specific_constants {
-    // The check reads a 2-byte nop instruction. Since s390 nop is 2 bytes (BCR instruction),
-    // we can safely read it in a single stage without risk of out-of-bounds access.
-    // The nop instruction is checked by is_nop() which reads a short (2 bytes).
-    first_check_size = 2
+
+  enum z_pcn_constants {
+    // Only the first 2 bytes are needed to identify the instruction.
+    // This avoids an out-of-bounds read if the return address is at a
+    // page boundary (same rationale as x86 first_check_size).
+    first_check_size    = 2,
+    instruction_size    = 6,  // CLFI is a 6-byte RIL-a instruction
+    displacement_offset = 2   // imm32 payload starts at byte 2
   };
-  bool check() const { return is_nop(); }
-  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
-  bool patch(int32_t oopmap_slot, int32_t cb_offset) { Unimplemented(); return false; }
+
+  bool check() const { return Assembler::is_post_call_nop(addr_at(0)); }
+
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
+    // s390 is big-endian; read the 4-byte imm32 at byte offset 2.
+    // Use uint32_t to avoid signed integer arithmetic on the raw bit pattern.
+    uint32_t data = *(uint32_t*) addr_at(displacement_offset);
+    if (data == 0) {
+      return false; // no payload encoded yet
+    }
+    cb_offset   = (int32_t)(data & 0xffffff);
+    oopmap_slot = (int32_t)(data >> 24);       // top 8 bits, no masking needed
+    return true;
+  }
+
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
