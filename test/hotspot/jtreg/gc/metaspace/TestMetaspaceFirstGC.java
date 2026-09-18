@@ -27,10 +27,12 @@
  * @summary Verify that the first metaspace GC is triggered when metaspace reaches the MetaspaceSize threshold
  * @requires vm.hasJFR
  * @library /test/lib
- * @run main/othervm -Xms200m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC
- * @run main/othervm -Xms200m -XX:MetaspaceSize=10m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 10m
- * @run main/othervm -Xms200m -XX:MetaspaceSize=50m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 50m
- * @run main/othervm -Xms200m -XX:MetaspaceSize=99m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 99m
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms200m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms200m -XX:MetaspaceSize=10m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 10m
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms200m -XX:MetaspaceSize=50m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 50m
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xms200m -XX:MetaspaceSize=99m -XX:StartFlightRecording:name=startup TestMetaspaceFirstGC 99m
  */
 
 import java.lang.management.ManagementFactory;
@@ -40,6 +42,7 @@ import java.lang.reflect.Proxy;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -53,11 +56,14 @@ import jdk.jfr.consumer.RecordingFile;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.whitebox.WhiteBox;
 import jtreg.SkippedException;
 
 public class TestMetaspaceFirstGC {
 
     private static int classCounter = 0;
+    // kept alive so no collection can unload them before the threshold is reached
+    private static final List<ClassLoader> loaders = new ArrayList<>();
 
     // Counted down from the JFR stream when a collection with cause "Metadata GC Threshold"
     // arrives, so the event is already in hand when loading stops.
@@ -78,18 +84,6 @@ public class TestMetaspaceFirstGC {
             expectedSize = parseSize(args[0]);
         }
 
-        long committedAtStart = ManagementFactory.getMemoryPoolMXBeans().stream()
-            .filter(p -> p.getName().equals("Metaspace"))
-            .mapToLong(p -> p.getUsage().getCommitted())
-            .findFirst()
-            .orElseThrow(() -> new RuntimeException("Metaspace pool not found"));
-        System.out.println("Metaspace committed at start: " + committedAtStart);
-        if (expectedSize > 0 && committedAtStart >= expectedSize) {
-            // the first metadata GC already happened during VM startup, nothing left to observe
-            throw new SkippedException("metaspace committed at start (" + committedAtStart
-                + ") already at MetaspaceSize (" + expectedSize + ")");
-        }
-
         List<RecordedEvent> events;
         try (RecordingStream rs = new RecordingStream()) {
             rs.enable(EventNames.GarbageCollection);
@@ -99,9 +93,28 @@ public class TestMetaspaceFirstGC {
                 }
             });
             rs.startAsync();
+            Instant loadingStart = Instant.now();
+            long tolerance = 5 * 1024 * 1024;
+            long initialThreshold = WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
+            System.out.println("Initial metaspace GC threshold: " + initialThreshold);
+            if (expectedSize > 0) {
+                if (initialThreshold > expectedSize + tolerance) {
+                    // the threshold was already moved before loading started
+                    throw new SkippedException("threshold already at " + initialThreshold
+                        + ", above MetaspaceSize " + expectedSize);
+                }
+                Asserts.assertLessThanOrEqual(Math.abs(initialThreshold - expectedSize), tolerance,
+                    "initial threshold (" + initialThreshold + ") should be close to MetaspaceSize (" + expectedSize + ")");
+            } else {
+                // No explicit MetaspaceSize, check default range (~12MB to ~20MB per tuning guide)
+                Asserts.assertGreaterThan(initialThreshold, 11_500_000L, "default threshold (" + initialThreshold + ") too small");
+                Asserts.assertLessThan(initialThreshold, 22_500_000L, "default threshold (" + initialThreshold + ") too large");
+            }
+
 
             // Load classes until a metaspace-triggered GC happens
             loadClassesUntilGC(50000);
+            loaders.clear();
             rs.stop();
 
             // The startup recording has run since VM start, so it holds the GC's "Before GC"
@@ -112,7 +125,7 @@ public class TestMetaspaceFirstGC {
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("startup recording not found"));
             startup.stop();
-            Path dump = Path.of("metaspace-first-gc.jfr");
+            Path dump = Path.of("metaspace-first-gc-" + (expectedSize > 0 ? args[0] : "default") + ".jfr");
             startup.dump(dump);
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
@@ -161,33 +174,45 @@ public class TestMetaspaceFirstGC {
             System.out.println("MetaspaceSummary: committed=" + committed + " gcThreshold=" + gcThreshold);
 
             // committed should be reasonably close to gcThreshold
-            long tolerance = 5 * 1024 * 1024; // 5MB tolerance
             Asserts.assertLessThanOrEqual(Math.abs(committed - gcThreshold), tolerance,
                 "committed (" + committed + ") should be close to gcThreshold (" + gcThreshold + ")");
-            // The threshold at which the first metadata GC was requested. A concurrent collector
-            // expands it and keeps allocating during the GC, the earliest change keeps the original value.
-            long firstThreshold = gcThreshold;
+            // The metadata GC was requested at the threshold in effect when it started. That is
+            // the old value of the first threshold change at or after the GC start. Any change
+            // between the start of loading and the GC came from another collection's
+            // compute_new_size and can only have raised the threshold.
+            RecordedEvent metadataGc = null;
             for (RecordedEvent event : events) {
-                if (event.getEventType().getName().equals(EventNames.MetaspaceGCThreshold)) {
-                    firstThreshold = event.getLong("oldValue");
-                    System.out.println("First threshold change: " + firstThreshold + " -> "
-                        + event.getLong("newValue") + " by " + event.getString("updater"));
+                if (event.getEventType().getName().equals(EventNames.GarbageCollection)
+                        && event.getString("cause").equals("Metadata GC Threshold")
+                        && event.getStartTime().isAfter(loadingStart)) {
+                    metadataGc = event;
                     break;
                 }
             }
-
-            // If explicit MetaspaceSize given, the first GC must have been triggered at it
-            if (expectedSize > 0) {
-                Asserts.assertLessThanOrEqual(Math.abs(firstThreshold - expectedSize), tolerance,
-                    "first threshold (" + firstThreshold + ") should be close to MetaspaceSize (" + expectedSize + ")");
-                System.out.println("first threshold matches expected MetaspaceSize=" + expectedSize);
+            Asserts.assertNotNull(metadataGc, "no metadata GC after loading started");
+            long thresholdAtGc = -1;
+            int changesBefore = 0;
+            for (RecordedEvent event : events) {
+                if (!event.getEventType().getName().equals(EventNames.MetaspaceGCThreshold)
+                        || !event.getStartTime().isAfter(loadingStart)) {
+                    continue;
+                }
+                if (event.getStartTime().isBefore(metadataGc.getStartTime())) {
+                    changesBefore++;
+                    System.out.println("Threshold changed before the metadata GC: " + event.getLong("oldValue")
+                        + " -> " + event.getLong("newValue") + " by " + event.getString("updater"));
+                } else if (thresholdAtGc < 0) {
+                    thresholdAtGc = event.getLong("oldValue");
+                }
+            }
+            Asserts.assertNotEquals(thresholdAtGc, -1L, "no threshold change after the metadata GC");
+            System.out.println("Metadata GC requested at threshold " + thresholdAtGc);
+            if (changesBefore == 0) {
+                Asserts.assertEquals(thresholdAtGc, initialThreshold,
+                    "the first metadata GC should have been requested at the initial threshold");
             } else {
-                // No explicit MetaspaceSize, check default range (~12MB to ~20MB per tuning guide)
-                Asserts.assertGreaterThan(firstThreshold, 11_500_000L,
-                    "default threshold (" + firstThreshold + ") too small");
-                Asserts.assertLessThan(firstThreshold, 22_500_000L,
-                    "default threshold (" + firstThreshold + ") too large");
-                System.out.println("first threshold in expected default range");
+                Asserts.assertGreaterThanOrEqual(thresholdAtGc, initialThreshold,
+                    "the threshold can only be raised before the first metadata GC");
             }
 
             System.out.println("PASSED");
@@ -214,6 +239,7 @@ public class TestMetaspaceFirstGC {
         try {
             String jarUrl = "file:" + (classCounter++) + ".jar";
             URLClassLoader cl = new URLClassLoader(new URL[]{new URL(jarUrl)});
+            loaders.add(cl);
             Proxy.newProxyInstance(cl, new Class[]{Dummy.class}, new DummyHandler());
         } catch (Exception e) {
             throw new RuntimeException(e);
