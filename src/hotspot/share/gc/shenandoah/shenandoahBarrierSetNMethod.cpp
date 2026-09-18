@@ -31,13 +31,12 @@
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
 #include "gc/shenandoah/shenandoahStackChunkGCData.hpp"
 #include "gc/shenandoah/shenandoahStackWatermark.hpp"
-#include "gc/shenandoah/shenandoahThreadLocalData.hpp"
-#include "memory/iterator.hpp"
-#include "memory/resourceArea.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/thread.hpp"
 #include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {

@@ -24,7 +24,6 @@
  */
 
 #include "code/nmethod.hpp"
-#include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -33,19 +32,14 @@
 #include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahNMethod.inline.hpp"
-#include "gc/shenandoah/shenandoahStackWatermark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "memory/iterator.hpp"
-#include "memory/resourceArea.hpp"
-#include "memory/universe.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/powerOfTwo.hpp"
 
 ShenandoahNMethodTable* ShenandoahCodeRoots::_nmethod_table;
 int ShenandoahCodeRoots::_disarmed_value = 1;

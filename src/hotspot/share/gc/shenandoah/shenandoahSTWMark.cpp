@@ -30,7 +30,6 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahCodeRoots.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"

@@ -24,7 +24,6 @@
 
 #include "code/codeCache.hpp"
 #include "gc/shared/gc_globals.hpp"
-#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
