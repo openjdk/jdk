@@ -7703,7 +7703,7 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
-     * Creates a synchronizing method handle that executes the give {@code body}
+     * Creates a synchronizing method handle that executes the given {@code body}
      * handle while synchronizing on a lock object passed as the first argument.
      * <p>
      * The returned method handle behaves similar to the following notional code:
@@ -7714,6 +7714,12 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *     }
      * }
      * }
+     * <p>
+     * The returned method handle will throw an {@link IdentityException} if the object
+     * passed as the lock object is not an {@link java.util.Objects#hasIdentity(Object) identity object}.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original body method handle was.
      *
      * @param body body of the synchronized block
      * @return the synchronizing method handle
