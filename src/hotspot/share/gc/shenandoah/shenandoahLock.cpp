@@ -91,13 +91,19 @@ void ShenandoahLock::yield_or_sleep(int &yields) {
 
 ShenandoahSimpleLock::ShenandoahSimpleLock() {
   assert(os::mutex_init_done(), "Too early!");
+  DEBUG_ONLY(_owner.store_relaxed(nullptr);)
 }
 
 void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
+  assert(_owner.load_relaxed() != Thread::current(), "lock already owned by current thread");
   _lock.lock();
+  assert(_owner.load_relaxed() == nullptr, "lock already owned by another thread");
+  DEBUG_ONLY(_owner.store_relaxed(Thread::current());)
 }
 
 void ShenandoahSimpleLock::unlock() {
+  assert(_owner.load_relaxed() == Thread::current(), "lock not owned by current thread");
+  DEBUG_ONLY(_owner.store_relaxed(nullptr);)
   _lock.unlock();
 }
 

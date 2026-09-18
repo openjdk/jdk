@@ -90,14 +90,14 @@ public:
 class ShenandoahCompiledICProtectionBehaviour : public CompiledICProtectionBehaviour {
 public:
   virtual bool lock(nmethod* nm) {
-    ShenandoahNMethodLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
+    ShenandoahSimpleLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->lock();
     return true;
   }
 
   virtual void unlock(nmethod* nm) {
-    ShenandoahNMethodLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
+    ShenandoahSimpleLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     lock->unlock();
   }
@@ -107,7 +107,7 @@ public:
       return true;
     }
 
-    ShenandoahNMethodLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
+    ShenandoahSimpleLock* const lock = ShenandoahNMethod::ic_lock_for_nmethod(nm);
     assert(lock != nullptr, "Not yet registered?");
     return lock->owned_by_self();
   }

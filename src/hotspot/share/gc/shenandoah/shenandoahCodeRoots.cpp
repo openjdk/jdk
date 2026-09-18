@@ -92,7 +92,7 @@ public:
     }
 
     // Clear compiled ICs and exception caches
-    ShenandoahNMethodLocker locker(nm_data->ic_lock());
+    ShenandoahSimpleLocker locker(nm_data->ic_lock());
     nm->unload_nmethod_caches(_unloading_occurred);
   }
 };

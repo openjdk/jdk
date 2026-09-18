@@ -39,7 +39,7 @@ ShenandoahNMethodLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
-ShenandoahNMethodLock* ShenandoahNMethod::ic_lock() {
+ShenandoahSimpleLock* ShenandoahNMethod::ic_lock() {
   return &_ic_lock;
 }
 
@@ -98,7 +98,7 @@ ShenandoahNMethodLock* ShenandoahNMethod::lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->lock();
 }
 
-ShenandoahNMethodLock* ShenandoahNMethod::ic_lock_for_nmethod(nmethod* nm) {
+ShenandoahSimpleLock* ShenandoahNMethod::ic_lock_for_nmethod(nmethod* nm) {
   return gc_data(nm)->ic_lock();
 }
 
