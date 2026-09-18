@@ -154,7 +154,7 @@ template <LogTagType T0, LogTagType T1 = LogTag::__NO_TAG, LogTagType T2 = LogTa
 class LogTagSetMapping : public AllStatic {
 private:
   // Verify number of logging tags does not exceed maximum supported.
-  STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
+  static_assert(GuardTag == LogTag::__NO_TAG);
   static LogTagSet _tagset;
 
 public:
