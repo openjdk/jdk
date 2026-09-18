@@ -18643,15 +18643,13 @@ instruct ReplHF_imm(vec dst, immH con, rRegI rtmp) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct ReplHF_reg(vec dst, regF src, rRegI rtmp) %{
+instruct ReplHF_reg(vec dst, regF src) %{
   predicate(VM_Version::supports_avx512_fp16() && Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (Replicate src));
-  effect(TEMP rtmp);
-  format %{ "replicateHF $dst, $src \t! using $rtmp as TEMP" %}
+  format %{ "replicateHF $dst, $src" %}
   ins_encode %{
     int vlen_enc = vector_length_encoding(this);
-    __ evmovw($rtmp$$Register, $src$$XMMRegister);
-    __ evpbroadcastw($dst$$XMMRegister, $rtmp$$Register, vlen_enc);
+    __ vpbroadcastw($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
   %}
   ins_pipe( pipe_slow );
 %}
