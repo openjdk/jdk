@@ -100,16 +100,21 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
   address clear_apx_test_state() {
 #   define __ _masm->
     address start = __ pc();
-    // EGPRs are call clobbered registers, Explicit clearing of r16 and r31 during signal
-    // handling guarantees that preserved register values post signal handling were
-    // re-instantiated by operating system and not because they were not modified externally.
+    // EGPRs are call clobbered registers. Explicit clearing of r16 and the last volatile EGPR
+    // (r31 for non-Windows and r29 for Windows) during signal handling guarantees that
+    // the preserved register values after signal handling were re-instantiated by the
+    // operating system and not because they were not modified externally.
 
     bool save_apx = UseAPX;
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     // EGPR state save/restoration.
     __ mov64(r16, 0L);
+#ifdef _WINDOWS
+    __ mov64(r29, 0L);
+#else
     __ mov64(r31, 0L);
+#endif
     UseAPX = save_apx;
     VM_Version::clean_cpuFeatures();
     __ ret(0);
@@ -442,7 +447,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_apx_cpuFeatures();
     UseAPX = true;
     __ mov64(r16, VM_Version::egpr_test_value());
+#ifdef _WINDOWS
+    __ mov64(r29, VM_Version::egpr_test_value());
+#else
     __ mov64(r31, VM_Version::egpr_test_value());
+#endif
     __ xorl(rsi, rsi);
     VM_Version::set_cpuinfo_segv_addr_apx(__ pc());
     // Generate SEGV
@@ -451,7 +460,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     VM_Version::set_cpuinfo_cont_addr_apx(__ pc());
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::apx_save_offset())));
     __ movq(Address(rsi, 0), r16);
+#ifdef _WINDOWS
+    __ movq(Address(rsi, 8), r29);
+#else
     __ movq(Address(rsi, 8), r31);
+#endif
 
     //
     // Query CPUID 0xD.19 for APX XSAVE offset

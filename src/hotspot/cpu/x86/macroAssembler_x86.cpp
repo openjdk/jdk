@@ -3627,7 +3627,12 @@ RegSet MacroAssembler::call_clobbered_gp_registers() {
 #endif
   regs += RegSet::range(r8, r11);
   if (UseAPX) {
+#ifdef _WINDOWS
+    // On Windows, r30 and r31 are nonvolatile per the x64 ABI.
+    regs += RegSet::range(r16, r29);
+#else
     regs += RegSet::range(r16, as_Register(Register::number_of_registers - 1));
+#endif
   }
   return regs;
 }

@@ -76,7 +76,10 @@ public class CallArranger {
         new VMStorage[] { rax, rdx },
         new VMStorage[] { xmm0, xmm1 },
         2,
-        new VMStorage[] { r10, r11 },
+        new VMStorage[] { r10, r11,
+                          // APX EGPRs r16-r31 are caller-saved.
+                          r16, r17, r18, r19, r20, r21, r22, r23,
+                          r24, r25, r26, r27, r28, r29, r30, r31 },
         new VMStorage[] { xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
                           xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
                           xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },

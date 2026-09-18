@@ -678,7 +678,8 @@ protected:
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
 
     // Space to save apx registers after signal handle
-    jlong        apx_save[2]; // Save r16 and r31
+    jlong        apx_save[2]; // Save r16 and the last volatile EGPR
+                              // (r29 on Windows, r31 on non-Windows)
 
     // cpuid function 0xD, subleaf 19 (APX extended state)
     uint32_t          apx_xstate_size;          // EAX: size of APX state (128)

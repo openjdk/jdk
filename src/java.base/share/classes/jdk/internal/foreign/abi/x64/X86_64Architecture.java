@@ -93,6 +93,23 @@ public final class X86_64Architecture implements Architecture {
         public static final VMStorage r13 = integerRegister(13, "r13");
         public static final VMStorage r14 = integerRegister(14, "r14");
         public static final VMStorage r15 = integerRegister(15, "r15");
+        // APX enxtended GPRs (EGPRs)
+        public static final VMStorage r16 = integerRegister(16, "r16");
+        public static final VMStorage r17 = integerRegister(17, "r17");
+        public static final VMStorage r18 = integerRegister(18, "r18");
+        public static final VMStorage r19 = integerRegister(19, "r19");
+        public static final VMStorage r20 = integerRegister(20, "r20");
+        public static final VMStorage r21 = integerRegister(21, "r21");
+        public static final VMStorage r22 = integerRegister(22, "r22");
+        public static final VMStorage r23 = integerRegister(23, "r23");
+        public static final VMStorage r24 = integerRegister(24, "r24");
+        public static final VMStorage r25 = integerRegister(25, "r25");
+        public static final VMStorage r26 = integerRegister(26, "r26");
+        public static final VMStorage r27 = integerRegister(27, "r27");
+        public static final VMStorage r28 = integerRegister(28, "r28");
+        public static final VMStorage r29 = integerRegister(29, "r29");
+        public static final VMStorage r30 = integerRegister(30, "r30");
+        public static final VMStorage r31 = integerRegister(31, "r31");
 
         public static final VMStorage xmm0 = vectorRegister(0, "xmm0");
         public static final VMStorage xmm1 = vectorRegister(1, "xmm1");
