@@ -186,3 +186,10 @@ TEST_VM(ShenandoahNumberSeq, large_value) {
   EXPECT_EQ(seq.maximum(), max_dirty_scan_obj_cnt);
   EXPECT_EQ(seq.percentile(100), max_dirty_scan_obj_cnt);
 }
+
+TEST_VM(ShenandoahNumberSeq, null_hdr) {
+  HdrSeq empty;
+  empty.clear();
+  EXPECT_EQ(empty.percentile(0), 0);
+  EXPECT_EQ(empty.percentile(50), 0);
+}
