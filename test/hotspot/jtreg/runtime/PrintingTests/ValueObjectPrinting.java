@@ -172,7 +172,7 @@ public class ValueObjectPrinting {
         }
 
         // In fieldDescriptor::field_offset_in_obj(), vpc->klass() is not the same as this->field_holder()
-        // when printing CarPair::car1::make: this field is declared in Vehicle, but vpc->klass() is Car.
+        // when printing CarPair::car1::length: this field is declared in Vehicle, but vpc->klass() is Car.
         {
             test(new CarPair(10, 3, 20, 4), (s) -> {
                     checkMatch(s, "car1.*\n.*length.* 10.*\n.*numWheels.* 3 ");
