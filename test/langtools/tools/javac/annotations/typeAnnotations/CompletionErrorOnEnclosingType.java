@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8337998
+ * @bug 8337998 8370800
  * @summary CompletionFailure in getEnclosingType attaching type annotations
  * @library /tools/javac/lib /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -36,6 +36,17 @@ import toolbox.Task.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Set;
+
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.tools.Diagnostic;
 
 public class CompletionErrorOnEnclosingType {
     ToolBox tb = new ToolBox();
@@ -43,9 +54,13 @@ public class CompletionErrorOnEnclosingType {
     public static void main(String... args) throws Exception {
         CompletionErrorOnEnclosingType t = new CompletionErrorOnEnclosingType();
         t.testMissingEnclosingType();
+        t.testAnnotationProcessing();
     }
 
-    void testMissingEnclosingType() throws Exception {
+    Path src;
+    Path out;
+
+    void setup() throws Exception {
         String annoSrc =
                 """
                 import static java.lang.annotation.ElementType.TYPE_USE;
@@ -57,6 +72,7 @@ public class CompletionErrorOnEnclosingType {
 
                 class B {
                   private @Anno A<String> a;
+                  private @Anno A<String> f() { return null; };
                 }
                 """;
         String cSrc =
@@ -67,29 +83,114 @@ public class CompletionErrorOnEnclosingType {
                 """;
 
         Path base = Paths.get(".");
-        Path src = base.resolve("src");
+        src = base.resolve("src");
         tb.createDirectories(src);
         tb.writeJavaFiles(src, annoSrc, cSrc);
-        Path out = base.resolve("out");
+        out = base.resolve("out");
         tb.createDirectories(out);
         new JavacTask(tb).outdir(out).files(tb.findJavaFiles(src)).run();
+    }
 
-        // now if we remove A.class there will be an error but javac should not crash
+    void testMissingEnclosingType() throws Exception {
+        setup();
+
+        // Missing references through fields and methods are not reported as errors,
+        // because those symbols aren't completed here.
         tb.deleteFiles(out.resolve("A.class"));
+        new JavacTask(tb)
+                .outdir(out)
+                .classpath(out)
+                .options("-XDrawDiagnostics")
+                .files(src.resolve("C.java"))
+                .run(Expect.SUCCESS)
+                .writeAll()
+                .getOutputLines(Task.OutputKind.DIRECT);
+    }
+
+    @SupportedAnnotationTypes("*")
+    public static class Processor extends AbstractProcessor {
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latestSupported();
+        }
+
+        boolean first = true;
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (!first) {
+                return false;
+            }
+            Element te = processingEnv.getElementUtils().getTypeElement("B");
+            for (var f : ElementFilter.fieldsIn(te.getEnclosedElements())) {
+                TypeMirror t = f.asType();
+                processingEnv
+                        .getMessager()
+                        .printMessage(
+                                Diagnostic.Kind.NOTE,
+                                "%s (%s) has annotations [%s]"
+                                        .formatted(f, t, t.getAnnotationMirrors()));
+            }
+            for (var m : ElementFilter.methodsIn(te.getEnclosedElements())) {
+                TypeMirror t = m.getReturnType();
+                processingEnv
+                        .getMessager()
+                        .printMessage(
+                                Diagnostic.Kind.NOTE,
+                                "%s (%s) has annotations [%s]"
+                                        .formatted(m, t, t.getAnnotationMirrors()));
+            }
+            first = false;
+            return false;
+        }
+    }
+
+    void testAnnotationProcessing() throws Exception {
+        setup();
+
         List<String> log =
                 new JavacTask(tb)
                         .outdir(out)
                         .classpath(out)
                         .options("-XDrawDiagnostics")
                         .files(src.resolve("C.java"))
-                        .run(Expect.FAIL)
+                        .processors(new Processor())
+                        .run(Expect.SUCCESS)
                         .writeAll()
                         .getOutputLines(Task.OutputKind.DIRECT);
 
         var expectedOutput =
                 List.of(
-                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, a,"
+                        "- compiler.note.proc.messager: a (@Anno A<java.lang.String>) has"
+                            + " annotations [@Anno]",
+                        "- compiler.note.proc.messager: f() (@Anno A<java.lang.String>) has"
+                            + " annotations [@Anno]");
+        if (!expectedOutput.equals(log)) {
+            throw new Exception("expected output not found: " + log);
+        }
+
+        // now if we remove A.class there will be an error and the annotations won't be available
+        // but javac should not crash
+        tb.deleteFiles(out.resolve("A.class"));
+
+        log =
+                new JavacTask(tb)
+                        .outdir(out)
+                        .classpath(out)
+                        .options("-XDrawDiagnostics")
+                        .files(src.resolve("C.java"))
+                        .processors(new Processor())
+                        .run(Expect.FAIL)
+                        .writeAll()
+                        .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedOutput =
+                List.of(
+                        "B.class:-:-: compiler.err.cant.attach.type.annotations: @Anno, B, f,"
                             + " (compiler.misc.class.file.not.found: A)",
+                        "- compiler.note.proc.messager: a (A<java.lang.String>) has annotations []",
+                        "- compiler.note.proc.messager: f() (A<java.lang.String>) has annotations"
+                            + " []",
                         "1 error");
         if (!expectedOutput.equals(log)) {
             throw new Exception("expected output not found: " + log);
