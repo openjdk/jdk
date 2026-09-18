@@ -158,10 +158,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
-class GCTracer;
-class Klass;
-class nmethod;
-enum class VerifyOption : uint;
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif

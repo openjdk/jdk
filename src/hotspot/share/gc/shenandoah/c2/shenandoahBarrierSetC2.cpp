@@ -38,16 +38,26 @@
 #include "oops/accessDecorators.hpp"
 #include "oops/arrayOop.hpp"
 #include "opto/arraycopynode.hpp"
+#include "opto/block.hpp"
+#include "opto/callnode.hpp"
+#include "opto/compile.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/macro.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/node.hpp"
+#include "opto/opcodes.hpp"
+#include "opto/optoreg.hpp"
 #include "opto/output.hpp"
+#include "opto/phaseX.hpp"
+#include "opto/regmask.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/subnode.hpp"
+#include "opto/type.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
-
-class PhaseRegAlloc;
 
 ShenandoahBarrierSetC2State::ShenandoahBarrierSetC2State(Arena* comp_arena) :
     BarrierSetC2State(comp_arena),

@@ -28,11 +28,11 @@
 
 #include "gc/shenandoah/shenandoahMarkBitMap.hpp"
 #include "memory/allocation.hpp"
+#include "memory/memRegion.hpp"
 #include "nmt/memTag.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class MemRegion;
 class ShenandoahHeapRegion;
 
 /**

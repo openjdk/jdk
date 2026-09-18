@@ -59,9 +59,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-class HeapWordImpl;
-class Thread;
-
 // A closure that takes an oop in the old generation and, if it's pointing
 // into the young generation, dirties the corresponding remembered set entry.
 class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {

@@ -51,7 +51,6 @@
 #include "utilities/ostream.hpp"
 
 class BoolObjectClosure;
-class Metadata;
 
 void print_raw_memory(ShenandoahMessageBuffer &msg, void* loc) {
   // Be extra safe. Only access data that is guaranteed to be safe:

@@ -74,7 +74,6 @@ class ShenandoahCollectionSet;
 class ShenandoahCollectorPolicy;
 class ShenandoahConcurrentMark;
 class ShenandoahFreeSet;
-
 class ShenandoahFullGC;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
@@ -95,7 +94,6 @@ class ShenandoahYoungGeneration;
 class Thread;
 class ThreadClosure;
 enum class VerifyOption : uint;
-
 class VMStructs;
 class WorkerThreads;
 

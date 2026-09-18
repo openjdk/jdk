@@ -28,6 +28,7 @@
 #include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 // Applies the given closure to all regions with the given affiliation

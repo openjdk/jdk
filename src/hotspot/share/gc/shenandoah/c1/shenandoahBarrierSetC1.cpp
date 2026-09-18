@@ -24,6 +24,10 @@
  *
  */
 
+#include "c1/c1_Decorators.hpp"
+#include "c1/c1_Defs.hpp"
+#include "c1/c1_LIRGenerator.hpp"
+#include "c1/c1_Runtime1.hpp"
 #include "code/codeBlob.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
@@ -35,9 +39,6 @@
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "runtime/stubInfo.hpp"
 #include "utilities/sizes.hpp"
-
-class OopMapSet;
-class StubAssembler;
 
 #ifdef ASSERT
 #define __ gen->lir(__FILE__, __LINE__)->

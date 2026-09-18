@@ -77,9 +77,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 
-class Metadata;
-enum class VerifyOption : uint;
-
 // Avoid name collision on verify_oop (defined in macroAssembler_arm.hpp)
 #ifdef verify_oop
 #undef verify_oop

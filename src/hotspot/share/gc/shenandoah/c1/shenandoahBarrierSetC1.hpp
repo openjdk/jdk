@@ -27,6 +27,9 @@
 #define SHARE_GC_SHENANDOAH_C1_SHENANDOAHBARRIERSETC1_HPP
 
 #include "c1/c1_CodeStubs.hpp"
+#include "c1/c1_Compilation.hpp"
+#include "c1/c1_FrameMap.hpp"
+#include "c1/c1_LIR.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "oops/accessDecorators.hpp"
 #include "utilities/debug.hpp"

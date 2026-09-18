@@ -31,7 +31,7 @@
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-template <typename T> class GrowableArray;
+template <typename> class GrowableArray;
 class PreservedMarks;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeap;

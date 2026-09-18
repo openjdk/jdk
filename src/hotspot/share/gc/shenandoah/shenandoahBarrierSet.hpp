@@ -29,13 +29,13 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shenandoah/shenandoahSATBMarkQueueSet.hpp"
+#include "memory/memRegion.hpp"
 #include "oops/accessBackend.hpp"
 #include "oops/accessDecorators.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class JavaThread;
-class MemRegion;
 class outputStream;
 class ShenandoahBarrierSetAssembler;
 class ShenandoahCardTable;

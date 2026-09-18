@@ -25,8 +25,10 @@
 #ifndef SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 #define SHARE_GC_SHENANDOAH_C2_SHENANDOAHBARRIERSETC2_HPP
 
+#include "asm/assembler.hpp"
 #include "asm/register.hpp"
 #include "gc/shared/c2/barrierSetC2.hpp"
+#include "opto/machnode.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -36,7 +38,6 @@ class CodeBuffer;
 class Compile;
 class GraphKit;
 template <typename> class GrowableArray;
-class Label;
 class MacroAssembler;
 class Node;
 class outputStream;
