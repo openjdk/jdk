@@ -21,13 +21,15 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
@@ -42,6 +44,7 @@ import java.awt.event.MouseEvent;
  * @bug 4356202
  * @summary Tests that getLocationOnScreen returns valid value(WindowMaker
  *          only).
+ * @run main/othervm -Dsun.java2d.uiScale=1 GetScreenLocTest
  */
 
 public class GetScreenLocTest {
@@ -65,6 +68,7 @@ public class GetScreenLocTest {
 
     private static void test() throws Exception {
         robot = new Robot();
+        robot.setAutoDelay(100);
         bigPause();
 
         EventQueue.invokeAndWait(() -> {
@@ -86,21 +90,24 @@ public class GetScreenLocTest {
     }
     private static void createAndShowGUI() {
         bigFrame = new Frame();
-        bigFrame.setUndecorated(true);
         bigFrame.setSize(200, 200);
         bigFrame.setLocationRelativeTo(null);
         bigFrame.setVisible(true);
         smallFrame = new Frame();
-        smallFrame.setUndecorated(true);
-        smallFrame.setLayout(new BorderLayout());
+        smallFrame.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(5, 5, 5, 5);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
         smallFrame.setSize(120, 150);
-        smallFrame.setLocationRelativeTo(null);
 
         canvas = new MyCanvas();
-        smallFrame.add(canvas, BorderLayout.CENTER);
+        smallFrame.add(canvas, c);
 
         canvas.addMouseListener(new MouseAdapter() {
             public void mousePressed(MouseEvent e) {
+                System.out.println("Received mouse press at:" + e);
                 switch(state) {
                     case 0: // the first event should be (0,0)
                         if (e.getX() != 0 || e.getY() != 0) {
@@ -118,10 +125,14 @@ public class GetScreenLocTest {
                         break;
                     case 2: // this should never happen
                         System.out.println("state 2: wrong location " + e);
+                        throw new RuntimeException("Received invalid" +
+                            " mouse event");
                 }
             }
         });
         smallFrame.pack();
+        smallFrame.setLocationRelativeTo(null);
+        smallFrame.setAlwaysOnTop(true);
         smallFrame.setVisible(true);
     }
 
