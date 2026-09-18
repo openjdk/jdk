@@ -912,7 +912,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                     if ((n = b.next) == null) {
                         if (b.key == null) // empty
                             break outer;
-                        else if (b.val == null)
+                        else if (b.val == null) // deleted concurrently; retry
                             break;
                         else
                             return b;
@@ -1029,7 +1029,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         result = null;
                         break outer;
                     }
-                    else if (b.val == null)
+                    else if (b.val == null) // deleted concurrently; retry
                         break;
                     else {
                         result = b;
@@ -1050,7 +1050,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         result = null;
                         break outer;
                     }
-                    else if (b.val == null)
+                    else if (b.val == null) // deleted concurrently; retry
                         break;
                     else {
                         result = b;
