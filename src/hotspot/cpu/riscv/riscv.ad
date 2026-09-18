@@ -1035,13 +1035,15 @@ class CallStubImpl {
 
  public:
   // Size of call trampoline stub.
+  // This doesn't need to be accurate to the byte, but it
+  // must be larger than or equal to the real size of the stub.
   static uint size_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return MacroAssembler::max_reloc_call_address_stub_size();
   }
 
   // number of relocations needed by a call trampoline stub
   static uint reloc_call_trampoline() {
-    return 0; // no call trampolines on this platform
+    return 5; // trampoline_stub_Relocation and its packed data, plus a safety margin
   }
 };
 
@@ -2367,9 +2369,9 @@ encode %{
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
       if (rtype == relocInfo::oop_type) {
-        __ movoop(dst_reg, (jobject)con);
+        __ movoop(dst_reg, (jobject)con, t0);
       } else if (rtype == relocInfo::metadata_type) {
-        __ mov_metadata(dst_reg, (Metadata*)con);
+        __ mov_metadata(dst_reg, (Metadata*)con, t0);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
         __ mv(dst_reg, $src$$constant);
