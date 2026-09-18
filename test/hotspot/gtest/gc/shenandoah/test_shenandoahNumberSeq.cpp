@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -96,8 +96,7 @@ TEST_VM_F(BasicShenandoahNumberSeqTest, maximum_test) {
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, minimum_test) {
-  // Magnitude of 0 cannot be expressed as a power of 2.
-  EXPECT_EQ(1.1641532182693481e-10, seq1.percentile(0));
+  EXPECT_EQ(0, seq1.percentile(0));
 }
 
 TEST_VM_F(BasicShenandoahNumberSeqTest, percentile_test) {
@@ -130,6 +129,7 @@ TEST_VM_F(BasicShenandoahNumberSeqTest, clear_test) {
 
   EXPECT_EQ(test.num(), 0);
   EXPECT_EQ(test.sum(), 0);
+  EXPECT_EQ(test.minimum(), 0);
   EXPECT_EQ(test.maximum(), 0);
   EXPECT_EQ(test.avg(), 0);
   EXPECT_EQ(test.sd(), 0);
@@ -150,7 +150,7 @@ TEST_VM_F(ShenandoahNumberSeqMergeTest, merge_test) {
   merged.add(seq2);
 
   EXPECT_EQ(merged.num(), seq3.num());
-
+  EXPECT_EQ(merged.minimum(), seq3.minimum());
   EXPECT_EQ(merged.maximum(), seq3.maximum());
   EXPECT_EQ(merged.percentile(0), seq3.percentile(0));
   for (int i = 0; i <= 100; i += 10) {
@@ -162,4 +162,27 @@ TEST_VM_F(ShenandoahNumberSeqMergeTest, merge_test) {
   // These are not implemented
   EXPECT_TRUE(isnan(merged.davg()));
   EXPECT_TRUE(isnan(merged.dvariance()));
+}
+
+TEST_VM(ShenandoahNumberSeq, percentile_within_bounds) {
+  HdrSeq seq;
+  const double min_value = 0.1;
+  const double max_value = 100;
+  seq.add(min_value);
+  seq.add(max_value);
+
+  for (int i = 0; i <= 100; i += 10) {
+    EXPECT_GE(seq.percentile(i), min_value) << "at percentile " << i;
+    EXPECT_LE(seq.percentile(i), max_value) << "at percentile " << i;
+  }
+}
+
+TEST_VM(ShenandoahNumberSeq, large_value) {
+  HdrSeq seq;
+  // Largest real input. 4 MiB chunk / 8 byte min object
+  const double max_dirty_scan_obj_cnt = 524288;
+  seq.add(1); // Widen [min, max] so clamping doesn't return the max
+  seq.add(max_dirty_scan_obj_cnt);
+  EXPECT_EQ(seq.maximum(), max_dirty_scan_obj_cnt);
+  EXPECT_EQ(seq.percentile(100), max_dirty_scan_obj_cnt);
 }

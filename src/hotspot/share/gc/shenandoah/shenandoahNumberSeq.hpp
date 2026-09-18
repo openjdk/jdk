@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,10 +41,12 @@ class HdrSeq: public NumberSeq {
 private:
   enum PrivateConstants {
     ValBuckets = 64,
-    MagBuckets = 48,
+    MagBuckets = 56,
     MagMinimum = -32
   };
   int** _hdr;
+  double _minimum;
+  void allocate_hdr();
 
 public:
   HdrSeq();
@@ -51,6 +54,7 @@ public:
 
   virtual void add(double val);
   void add(const HdrSeq& other);
+  double minimum() const;
   double percentile(double level) const;
   void clear();
 };

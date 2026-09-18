@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2018, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,19 @@
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
 
+#include <cfloat>
 #include <cmath>
 
-HdrSeq::HdrSeq() {
-  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
-  for (int c = 0; c < MagBuckets; c++) {
-    _hdr[c] = nullptr;
-  }
+HdrSeq::HdrSeq() :
+  _hdr(nullptr),
+  _minimum(DBL_MAX) {
 }
 
 HdrSeq::~HdrSeq() {
+  if (_hdr == nullptr) {
+    return;
+  }
+
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
@@ -47,10 +50,25 @@ HdrSeq::~HdrSeq() {
   FREE_C_HEAP_ARRAY(_hdr);
 }
 
+void HdrSeq::allocate_hdr() {
+  if (_hdr == nullptr) {
+    _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
+    for (int c = 0; c < MagBuckets; c++) {
+      _hdr[c] = nullptr;
+    }
+  }
+}
+
 void HdrSeq::add(double val) {
+  allocate_hdr();
+
   if (val < 0) {
     assert (false, "value (%8.2f) is not negative", val);
     val = 0;
+  }
+
+  if (val < _minimum) {
+    _minimum = val;
   }
 
   NumberSeq::add(val);
@@ -101,7 +119,19 @@ void HdrSeq::add(double val) {
   b[sub_bucket]++;
 }
 
+double HdrSeq::minimum() const {
+  return num() == 0 ? 0 : _minimum;
+}
+
 double HdrSeq::percentile(double level) const {
+  if (level == 0) {
+    return minimum();
+  }
+
+  if (_hdr == nullptr) {
+    return maximum();
+  }
+
   // target should be non-zero to find the first sample
   int target = MAX2(1, (int) (level * num() / 100));
   int cnt = 0;
@@ -110,7 +140,8 @@ double HdrSeq::percentile(double level) const {
       for (int val = 0; val < ValBuckets; val++) {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
-          return std::ldexp((((double) val / ValBuckets) / 2.0 + 0.5), MagMinimum + mag);
+          double value = std::ldexp(((double) val / ValBuckets) / 2.0 + 0.5, MagMinimum + mag);
+          return clamp(value, minimum(), maximum());
         }
       }
     }
@@ -123,6 +154,8 @@ void HdrSeq::add(const HdrSeq& other) {
     // Other sequence is empty, return
     return;
   }
+
+  allocate_hdr();
 
   for (int mag = 0; mag < MagBuckets; mag++) {
     int* other_bucket = other._hdr[mag];
@@ -151,6 +184,7 @@ void HdrSeq::add(const HdrSeq& other) {
   // dealing with decayed average/variance, which we do not
   // know how to compute yet.
   _last = other._last;
+  _minimum = MIN2(_minimum, other._minimum);
   _maximum = MAX2(_maximum, other._maximum);
   _sum += other._sum;
   _sum_of_squares += other._sum_of_squares;
@@ -162,6 +196,10 @@ void HdrSeq::add(const HdrSeq& other) {
 }
 
 void HdrSeq::clear() {
+  if (_hdr == nullptr) {
+    return;
+  }
+
   // Clear the storage
   for (int mag = 0; mag < MagBuckets; mag++) {
     int* bucket = _hdr[mag];
@@ -174,6 +212,7 @@ void HdrSeq::clear() {
 
   // Clear other fields too
   _last = 0;
+  _minimum = DBL_MAX;
   _maximum = 0;
   _sum = 0;
   _sum_of_squares = 0;
