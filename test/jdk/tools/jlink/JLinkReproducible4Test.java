@@ -37,7 +37,7 @@ import jdk.test.lib.util.FileUtils;
  *          jdk.httpserver
  * @library /test/lib
  * @build jdk.test.lib.util.FileUtils
- * @run main JLinkReproducible4Test
+ * @run main/othervm JLinkReproducible4Test
  */
 public class JLinkReproducible4Test {
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
