@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,22 +45,19 @@ struct JfrCPUTimeSampleRequest {
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
 // Designed to be only used under lock and read linearly
 class JfrCPUTimeTraceQueue {
-
-  // the default queue capacity, scaled if the sampling period is smaller than 10ms
-  // when the thread is started
-  static const u4 CPU_TIME_QUEUE_CAPACITY = 500;
-
+ private:
   JfrCPUTimeSampleRequest* _data;
-  volatile u4 _capacity;
+  u4 _capacity;
   // next unfilled index
-  volatile u4 _head;
+  u4 _head;
 
   volatile u4 _lost_samples;
   volatile u4 _lost_samples_due_to_queue_full;
 
   static const u4 CPU_TIME_QUEUE_INITIAL_CAPACITY = 20;
   static const u4 CPU_TIME_QUEUE_MAX_CAPACITY     = 2000;
-public:
+
+ public:
   JfrCPUTimeTraceQueue(u4 capacity);
 
   ~JfrCPUTimeTraceQueue();
@@ -69,16 +67,14 @@ public:
 
   JfrCPUTimeSampleRequest& at(u4 index);
 
-  u4 size() const;
+  u4 size() const { return _head; }
 
-  void set_size(u4 size);
-
-  u4 capacity() const;
+  u4 capacity() const { return _capacity; }
 
   // deletes all samples in the queue
   void set_capacity(u4 capacity);
 
-  bool is_empty() const;
+  bool is_empty() const { return _head == 0; }
 
   u4 lost_samples() const;
 
