@@ -1129,8 +1129,7 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
   IfNode* iff_hash_would_be_zero = kit->create_and_map_if(kit->control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
 
   region->add_req(kit->IfTrue(iff_hash_would_be_zero));
-  Node* class_hashcode_masked = kit->AndI(klass_hash_con, hash_mask_con);
-  phi_result->add_req(class_hashcode_masked);
+  phi_result->add_req(klass_hash_con);
 
   region->add_req(kit->IfFalse(iff_hash_would_be_zero));
   phi_result->add_req(result);

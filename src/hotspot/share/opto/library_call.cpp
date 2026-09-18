@@ -5548,8 +5548,8 @@ Node* LibraryCallKit::get_hashcode_from_header(Node* header, RegionNode* unset_r
   Node* hash_val = _gvn.transform(new AndINode(hshifted_header, hash_mask));
 
   Node* no_hash_val = _gvn.intcon(markWord::no_hash);
-  Node* chk_assigned = _gvn.transform(new CmpINode( hash_val, no_hash_val));
-  Node* test_assigned = _gvn.transform(new BoolNode( chk_assigned, BoolTest::eq));
+  Node* chk_assigned = _gvn.transform(new CmpINode(hash_val, no_hash_val));
+  Node* test_assigned = _gvn.transform(new BoolNode(chk_assigned, BoolTest::eq));
 
   generate_slow_guard(test_assigned, unset_region);
 
@@ -5741,8 +5741,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             Node* bol_hash_would_be_zero = BoolCmpI(masked_result, BoolTest::eq, zerocon(T_INT));
             IfNode* iff_hash_would_be_zero = create_and_map_if(control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
             avoid_zero_hash_region->init_req(1, IfTrue(iff_hash_would_be_zero));
-            Node* class_hashcode_masked = AndI(result_empty, hash_mask_con);
-            actual_result_for_real->init_req(1, class_hashcode_masked);
+            actual_result_for_real->init_req(1, result_empty);
 
             avoid_zero_hash_region->init_req(2, IfFalse(iff_hash_would_be_zero));
             actual_result_for_real->init_req(2, masked_result);
