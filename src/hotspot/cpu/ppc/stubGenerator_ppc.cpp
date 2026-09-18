@@ -3728,7 +3728,6 @@ class StubGenerator: public StubCodeGenerator {
 
     const uint32_t BASE = 65521;
     const uint32_t NMAX = 5552;
-    const uint32_t MAGIC = 0x80078071;
 
     Label L_nmax;
     Label L_nmax_loop;
@@ -3750,7 +3749,7 @@ class StubGenerator: public StubCodeGenerator {
     Register count = R10;
     Register tmp0  = R11;
     Register tmp1  = R12;
-    Register magic = R14;
+    Register magic = R2;
 
     VectorRegister vdata    = VR0;
     VectorRegister vones    = VR1;
@@ -3761,7 +3760,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_const_optimized(base, BASE);
     __ load_const_optimized(nmax, NMAX);
-    __ load_const_optimized(magic, MAGIC);
+    __ load_const_optimized(magic, (uint32_t)0x80078071);
 
     // load tables
     __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
@@ -3796,6 +3795,7 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_const_optimized(count, (int)(NMAX / 16));
     __ mtctr(count);
+    __ align(32);
     __ bind(L_nmax_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
@@ -3826,6 +3826,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi(CR0, len, 16);
     __ blt(CR0, L_by1);
 
+    __ align(32);
     __ bind(L_by16_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
@@ -3842,6 +3843,7 @@ class StubGenerator: public StubCodeGenerator {
     __ cmpwi(CR0, len, 0);
     __ beq(CR0, L_do_mod);
     __ mtctr(len);
+    __ align(32);
     __ bind(L_by1_loop);
 
     __ lbz(tmp0, 0, buf);
