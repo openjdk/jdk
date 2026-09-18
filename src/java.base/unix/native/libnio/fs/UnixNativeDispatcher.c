@@ -1206,28 +1206,41 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwuid(JNIEnv* env, jclass this, jint uid
 {
     jbyteArray result = NULL;
     int buflen;
-    char* pwbuf;
+    int retry;
 
-    /* allocate buffer for password record */
+    /* initial size of buffer for password record */
     buflen = (int)sysconf(_SC_GETPW_R_SIZE_MAX);
     if (buflen == -1)
         buflen = ENT_BUF_SIZE;
-    pwbuf = (char*)malloc(buflen);
-    if (pwbuf == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "native heap");
-    } else {
+
+    do {
         struct passwd pwent;
         struct passwd* p = NULL;
         int res = 0;
 
-        errno = 0;
-        RESTARTABLE(getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen, &p), res);
+        char* pwbuf = (char*)malloc(buflen);
+        if (pwbuf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "native heap");
+            return NULL;
+        }
 
+        /* POSIX reentrant lookups report errors via the return value, not errno */
+        res = getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen, &p);
+
+        retry = 0;
         if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
             /* not found or error */
-            if (errno == 0)
-                errno = ENOENT;
-            throwUnixException(env, errno);
+            if (res == EINTR) {
+                /* interrupted - repeat the call */
+                retry = 1;
+            } else if (res == ERANGE) {
+                /* insufficient buffer size so need larger buffer */
+                buflen += ENT_BUF_SIZE;
+                retry = 1;
+            } else {
+                /* lookup by uid: not found is treated as an error */
+                throwUnixException(env, res != 0 ? res : ENOENT);
+            }
         } else {
             jsize len = strlen(p->pw_name);
             result = (*env)->NewByteArray(env, len);
@@ -1235,8 +1248,10 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwuid(JNIEnv* env, jclass this, jint uid
                 (*env)->SetByteArrayRegion(env, result, 0, len, (jbyte*)(p->pw_name));
             }
         }
+
         free(pwbuf);
-    }
+
+    } while (retry);
 
     return result;
 }
@@ -1265,20 +1280,22 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrgid(JNIEnv* env, jclass this, jint gid
             return NULL;
         }
 
-        errno = 0;
-        RESTARTABLE(getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen, &g), res);
+        /* POSIX reentrant lookups report errors via the return value, not errno */
+        res = getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen, &g);
 
         retry = 0;
         if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
             /* not found or error */
-            if (errno == ERANGE) {
+            if (res == EINTR) {
+                /* interrupted - repeat the call */
+                retry = 1;
+            } else if (res == ERANGE) {
                 /* insufficient buffer size so need larger buffer */
                 buflen += ENT_BUF_SIZE;
                 retry = 1;
             } else {
-                if (errno == 0)
-                    errno = ENOENT;
-                throwUnixException(env, errno);
+                /* lookup by gid: not found is treated as an error */
+                throwUnixException(env, res != 0 ? res : ENOENT);
             }
         } else {
             jsize len = strlen(g->gr_name);
@@ -1300,37 +1317,51 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0(JNIEnv* env, jclass this,
     jlong nameAddress)
 {
     jint uid = -1;
-    int buflen;
-    char* pwbuf;
+    int buflen, retry;
 
-    /* allocate buffer for password record */
+    /* initial size of buffer for password record */
     buflen = (int)sysconf(_SC_GETPW_R_SIZE_MAX);
     if (buflen == -1)
         buflen = ENT_BUF_SIZE;
-    pwbuf = (char*)malloc(buflen);
-    if (pwbuf == NULL) {
-        JNU_ThrowOutOfMemoryError(env, "native heap");
-    } else {
+
+    do {
         struct passwd pwent;
         struct passwd* p = NULL;
         int res = 0;
+        char* pwbuf;
         const char* name = (const char*)jlong_to_ptr(nameAddress);
 
-        errno = 0;
-        RESTARTABLE(getpwnam_r(name, &pwent, pwbuf, (size_t)buflen, &p), res);
+        pwbuf = (char*)malloc(buflen);
+        if (pwbuf == NULL) {
+            JNU_ThrowOutOfMemoryError(env, "native heap");
+            return -1;
+        }
 
+        /* POSIX reentrant lookups report errors via the return value, not errno */
+        res = getpwnam_r(name, &pwent, pwbuf, (size_t)buflen, &p);
+
+        retry = 0;
         if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
             /* not found or error */
-            if (errno != 0 && errno != ENOENT && errno != ESRCH &&
-                errno != EBADF && errno != EPERM)
-            {
-                throwUnixException(env, errno);
+            if (res == EINTR) {
+                /* interrupted - repeat the call */
+                retry = 1;
+            } else if (res == ERANGE) {
+                /* insufficient buffer size so need larger buffer */
+                buflen += ENT_BUF_SIZE;
+                retry = 1;
+            } else if (res != 0 && res != ENOENT && res != ESRCH &&
+                       res != EBADF && res != EPERM) {
+                throwUnixException(env, res);
             }
+            /* res == 0 or a tolerated not-found code: leave uid == -1 */
         } else {
             uid = p->pw_uid;
         }
+
         free(pwbuf);
-    }
+
+    } while (retry);
 
     return uid;
 }
@@ -1360,23 +1391,24 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
             return -1;
         }
 
-        errno = 0;
-        RESTARTABLE(getgrnam_r(name, &grent, grbuf, (size_t)buflen, &g), res);
+        /* POSIX reentrant lookups report errors via the return value, not errno */
+        res = getgrnam_r(name, &grent, grbuf, (size_t)buflen, &g);
 
         retry = 0;
         if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
             /* not found or error */
-            if (errno != 0 && errno != ENOENT && errno != ESRCH &&
-                errno != EBADF && errno != EPERM)
-            {
-                if (errno == ERANGE) {
-                    /* insufficient buffer size so need larger buffer */
-                    buflen += ENT_BUF_SIZE;
-                    retry = 1;
-                } else {
-                    throwUnixException(env, errno);
-                }
+            if (res == EINTR) {
+                /* interrupted - repeat the call */
+                retry = 1;
+            } else if (res == ERANGE) {
+                /* insufficient buffer size so need larger buffer */
+                buflen += ENT_BUF_SIZE;
+                retry = 1;
+            } else if (res != 0 && res != ENOENT && res != ESRCH &&
+                       res != EBADF && res != EPERM) {
+                throwUnixException(env, res);
             }
+            /* res == 0 or a tolerated not-found code: leave gid == -1 */
         } else {
             gid = g->gr_gid;
         }
