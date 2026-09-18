@@ -79,26 +79,12 @@ class OopMapCache;
 class InterpreterOopMap;
 class PackageEntry;
 class ModuleEntry;
+class ValueKlass;
 
-// This is used in iterators below.
+// FieldClosure is used to visit fields of an InstanceKlass.
 class FieldClosure: public StackObj {
-public:
-  virtual void do_field(fieldDescriptor* fd) = 0;
-};
-
-// Print fields.
-// If "obj" argument to constructor is null, prints fields as if they are static fields,
-// otherwise prints non-static fields. It is possible to print non-static fields the same
-// way as static fields when no oops are available, such as when debug printing classes.
-class FieldPrinter: public FieldClosure {
-   oop _obj;
-   outputStream* _st;
-   int _indent;
-   int _base_offset;
  public:
-   FieldPrinter(outputStream* st, oop obj = nullptr, int indent = 0, int base_offset = 0) :
-                 _obj(obj), _st(st), _indent(indent), _base_offset(base_offset) {}
-   void do_field(fieldDescriptor* fd);
+  virtual void do_field(fieldDescriptor* fd) = 0;
 };
 
 // Describes where oops are located in instances of this klass.
@@ -142,6 +128,8 @@ class OopMapBlock {
 struct JvmtiCachedClassFileData;
 
 class ValueFieldLayoutInfo : public MetaspaceObj {
+  friend class VMStructs;
+
   ValueKlass* _klass;
   LayoutKind _kind;
   int _null_marker_offset; // null marker offset for this field, relative to the beginning of the current container
@@ -384,8 +372,8 @@ class InstanceKlass: public Klass {
   bool has_localvariable_table() const     { return _misc_flags.has_localvariable_table(); }
   void set_has_localvariable_table(bool b) { _misc_flags.set_has_localvariable_table(b); }
 
-  bool has_inlined_fields() const { return _misc_flags.has_inlined_fields(); }
-  void set_has_inlined_fields()   { _misc_flags.set_has_inlined_fields(true); }
+  bool has_flat_fields() const { return _misc_flags.has_flat_fields(); }
+  void set_has_flat_fields()   { _misc_flags.set_has_flat_fields(true); }
 
   bool has_null_restricted_static_fields() const { return _misc_flags.has_null_restricted_static_fields(); }
   void set_has_null_restricted_static_fields()   { _misc_flags.set_has_null_restricted_static_fields(true); }
@@ -1303,9 +1291,7 @@ public:
   void print_class_flags(outputStream* st) const;
 
   void oop_print_value_on(oop obj, outputStream* st) override;
-
-  void oop_print_on      (oop obj, outputStream* st) override { oop_print_on(obj, st, 0, 0); }
-  void oop_print_on      (oop obj, outputStream* st, int indent = 0, int base_offset = 0);
+  void oop_print_on      (oop obj, outputStream* st) override;
 
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose = false);

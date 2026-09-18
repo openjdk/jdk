@@ -100,7 +100,7 @@ DEBUG_ONLY(size_t Test_log_prefix_prefixer(char* buf, size_t len);)
 // The empty prefix, used when there's no prefix defined.
 template <LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag = LogTag::__NO_TAG>
 struct LogPrefix : public AllStatic {
-  STATIC_ASSERT(GuardTag == LogTag::__NO_TAG);
+  static_assert(GuardTag == LogTag::__NO_TAG);
   static size_t prefix(char* buf, size_t len) {
     return 0;
   }

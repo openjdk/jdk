@@ -251,12 +251,14 @@ class VM_Version : public Abstract_VM_Version {
                                                                                                           \
   /* Atomic compare-and-swap (CAS) instructions */                                                        \
   decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
+  /* Byte and Halfword Atomic Memory instructions */                                                      \
+  decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
   decl(Zbb         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbb))                                    \
   /* Zbc Carry-less multiplication */                                                                     \
-  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
+  decl(Zbc         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbc))                                    \
   /* Bitmanip instructions for Cryptography */                                                            \
   decl(Zbkb        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZbkb))                                   \
   /* Zbs Single-bit instructions */                                                                       \
@@ -356,7 +358,7 @@ private:
     };
    private:
     uint64_t _features_bitmap[(MAX_CPU_FEATURE_INDEX / BitsPerLong) + 1];
-    STATIC_ASSERT(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
+    static_assert(sizeof(_features_bitmap) * BitsPerByte >= MAX_CPU_FEATURE_INDEX);
 
     // Number of 8-byte elements in _features_bitmap.
     constexpr static int element_count() {

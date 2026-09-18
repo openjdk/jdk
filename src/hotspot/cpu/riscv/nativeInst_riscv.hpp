@@ -133,25 +133,24 @@ class NativeCall: private NativeInstruction {
   address instruction_address() const      { return addr_at(0); }
   address next_instruction_address() const { return addr_at(NativeCall::instruction_size); }
   address return_address() const           { return addr_at(NativeCall::instruction_size); }
+  // return target address of the reloc call, read from its address stub
   address destination() const;
-  address reloc_destination();
 
   void verify_alignment() {} // do nothing on riscv
   void verify();
   void print();
 
-  void set_destination(address dest) { Unimplemented(); }
+  // patch the address stub and link the reloc call to it
+  void set_destination(address dest);
   // patch stub to target address of the reloc call
   bool set_destination_mt_safe(address dest);
-  // patch reloc call to stub address
-  bool reloc_set_destination(address dest);
 
   static bool is_at(address addr);
   static bool is_call_before(address return_address);
 
  private:
-  // return stub address, without checking stub address in locs
-  address stub_address();
+  // return the address stub of the reloc call, nullptr if there is none yet
+  address stub_address() const;
   // set target address at stub
   static void set_stub_address_destination_at(address dest, address value);
   // return target address at stub
