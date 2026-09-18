@@ -787,7 +787,33 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn):
 
   for (int c = 0; c < concats.length(); c++) {
     StringConcat* sc = concats.at(c);
+
+    // Skip string concat optimization if the estimated node expansion
+    // would exceed the node budget. Each argument can generate up to
+    // estimated_nodes_per_concat_arg nodes; the extra "+ 1" reserves one
+    // argument's worth of headroom for the fixed per-concat overhead (the
+    // StringBuilder allocation elision, array setup and toString replacement)
+    // that is not attributable to any single argument. Without it a concat
+    // with zero arguments would get a budget of 0 yet still create nodes.
+    uint estimated_nodes = ((uint)sc->num_arguments() + 1) * estimated_nodes_per_concat_arg;
+    if (C->live_nodes() + estimated_nodes > C->max_node_limit() - NodeLimitFudgeFactor) {
+      continue;
+    }
+
+    // Assert to verify that a replacement did not create
+    // more than the estimated number of nodes.
+#ifdef ASSERT
+    uint nodes_before = C->live_nodes();
+#endif
+
     replace_string_concat(sc);
+
+#ifdef ASSERT
+    uint nodes_created = C->live_nodes() - nodes_before;
+    assert(nodes_created <= estimated_nodes,
+          "StringConcat node expansion estimate exceeded: estimated max %u, created %u",
+          estimated_nodes, nodes_created);
+#endif
   }
 
   remove_dead_nodes();
