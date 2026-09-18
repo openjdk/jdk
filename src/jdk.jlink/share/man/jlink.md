@@ -106,12 +106,16 @@ Developers are responsible for updating their custom runtime images.
     options; see [jlink Plug-ins].
 
 [`-p`]{#option-module-path} or `--module-path` *modulepath*
-:   Specifies the module path.
+:   A ":"-separated list of elements (";" on Windows), each of which is a file
+    path to a module or a directory containing modules. Each module is either a
+    modular JAR file, a JMOD file, or an exploded-module directory.
 
-    If this option is not specified, the JDK's default module path will be used.
-    The default module path will always include the `java.base` module, either
-    resolved from packaged modules (JMODS) or the run-time image (JEP 493).
-    JDK external modules must always be specified using this option.
+    If the specified module path does not contain java.base, it is prepended to
+    the default module path. The default module path contains the standard and
+    JDK modules provided by the JDK running jlink.
+
+    For cross-platform linking, the specified module path must contain all
+    target-platform modules required to create the image, including java.base.
 
 [`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
