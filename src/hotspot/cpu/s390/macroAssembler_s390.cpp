@@ -64,6 +64,8 @@
 #include "opto/output.hpp"
 #endif
 
+long fubar = 0;
+
 #include <ucontext.h>
 
 #define BLOCK_COMMENT(str) block_comment(str)
@@ -5012,19 +5014,25 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 }
 
 // Fill words with a non-zero value.
-void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp) {
+void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp, VectorRegister Vtmp) {
   assert_different_registers(base, cnt, value, tmp);
   NearLabel loop, loop_end;
 
   BLOCK_COMMENT("fill_words {");
 
+  load_const_optimized(tmp, (uintptr_t)&fubar);
+  z_agsi(0, tmp, 1);
+
   // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
-  z_srag(tmp, cnt, 1);    // tmp = cnt / 2, sets CC
+  // TODO: Can i get the vector register here through C2
+  z_vlvgp(Vtmp, value, value);
+  z_srag(tmp, cnt, 1);     // tmp = cnt / 2, sets CC
   z_bre(loop_end);         // skip pair loop if cnt < 2
 
   bind(loop);
-  z_stg(value, 0, base);
-  z_stg(value, 8, base);
+  z_vst(Vtmp, Address(base,0));
+  //z_stg(value, 0, base);
+  //z_stg(value, 8, base);
   z_la(base, 16, base);
   z_brctg(tmp, loop);      // 64-bit decrement-and-branch
 
