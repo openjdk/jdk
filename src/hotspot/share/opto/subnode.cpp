@@ -337,8 +337,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   return nullptr;
 }
 
-//------------------------------sub--------------------------------------------
-// A subtract node differences it's two inputs.
+// A subtract node computes the difference of its two inputs.
 const Type* SubINode::sub(const Type* t1, const Type* t2) const {
   const TypeInt* range0 = t1->is_int();
   const TypeInt* range1 = t2->is_int();
