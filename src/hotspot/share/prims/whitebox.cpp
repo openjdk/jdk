@@ -1361,7 +1361,7 @@ WB_END
 
 WB_ENTRY(jboolean, WB_IsLockedVMFlag(JNIEnv* env, jobject o, jstring name))
   const JVMFlag* flag = getVMFlag(thread, env, name);
-  return (flag != nullptr) && flag->is_unlocked();
+  return (flag != nullptr) && !flag->is_unlocked();
 WB_END
 
 WB_ENTRY(jobject, WB_GetBooleanVMFlag(JNIEnv* env, jobject o, jstring name))
