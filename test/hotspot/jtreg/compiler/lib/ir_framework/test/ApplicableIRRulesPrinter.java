@@ -121,6 +121,7 @@ public class ApplicableIRRulesPrinter {
         "svebitperm",
         "fphp",
         "asimdhp",
+        "asimddp",
         // RISCV64
         "rvv",
         "zbkb",

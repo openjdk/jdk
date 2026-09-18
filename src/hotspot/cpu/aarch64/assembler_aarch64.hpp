@@ -4377,11 +4377,12 @@ public:
 #undef INSN
 
 // SVE 4-way vector dot product
-#define INSN(NAME, is_unsigned)                                      \
-  void NAME(FloatRegister Zda, FloatRegister Zn, FloatRegister Zm) { \
-    starti;                                                          \
-    f(0b01000100100, 31, 21), rf(Zm, 16), f(0b00000, 15, 11);        \
-    f(is_unsigned, 10), rf(Zn, 5), rf(Zda, 0);                       \
+#define INSN(NAME, is_unsigned)                                                         \
+  void NAME(FloatRegister Zda, SIMD_RegVariant T, FloatRegister Zn, FloatRegister Zm) { \
+    starti;                                                                             \
+    assert(T == S || T == D, "invalid size");                                           \
+    f(0b01000100, 31, 24), f(T, 23, 22), f(0, 21), rf(Zm, 16), f(0b00000, 15, 11);      \
+    f(is_unsigned, 10), rf(Zn, 5), rf(Zda, 0);                                          \
   }
 
   INSN(sve_sdot, /* is_unsigned */ false);

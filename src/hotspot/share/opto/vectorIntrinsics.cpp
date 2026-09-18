@@ -3025,12 +3025,6 @@ bool LibraryCallKit::inline_vector_dot() {
     return false;
   }
 
-  if (!arch_supports_vector(Op_VectorReinterpret, from_num_elem, from_elem_bt, VecMaskNotUsed)) {
-    log_if_needed("  ** not supported: opc=%s vlen=%d etype=%s ismask=no",
-                    NodeClassNames[Op_VectorReinterpret], from_num_elem, type2name(from_elem_bt));
-    return false;
-  }
-
   Node* opd1 = unbox_vector(argument(7), from_vbox_type, from_elem_bt, from_num_elem);
   if (opd1 == nullptr) {
     log_if_needed("  ** unbox failed v1=%s",
@@ -3053,6 +3047,7 @@ bool LibraryCallKit::inline_vector_dot() {
   const TypeVect* vt = TypeVect::make(to_elem_bt, to_num_elem);
   Node* node = gvn().transform(VectorNode::make(op, opd1, opd2, opd3, vt));
   set_result(box_vector(node, to_vbox_type, to_elem_bt, to_num_elem));
+  C->set_max_vector_size(MAX2(C->max_vector_size(), (uint)(to_num_elem * type2aelembytes(to_elem_bt))));
 
   return true;
 }

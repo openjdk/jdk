@@ -2640,9 +2640,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      * @param acc vector to accumulate result into
      * @return new vector of accumulated dot product
      *
-     * @throws IllegalArgumentException if the species of v differs from the species of this vector
-     * @throws IllegalArgumentException if the shape of this vector differs from the shape of the acc vector
-     * @throws IllegalArgumentException if the acc vector element type is not int
+     * @throws IllegalArgumentException if {@code v} differs in species,
+     *         {@code acc} differs in shape, or {@code acc} is not an {@code int} vector
      */
     @ForceInline
     public final IntVector dot(Vector<Byte> v, Vector<Integer> acc) {
@@ -2688,9 +2687,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
      * @param acc vector to accumulate result into
      * @return new vector of accumulated dot product
      *
-     * @throws IllegalArgumentException if the species of v differs from the species of this vector
-     * @throws IllegalArgumentException if the shape of this vector differs from the shape of the acc vector
-     * @throws IllegalArgumentException if the acc vector element type is not int
+     * @throws IllegalArgumentException if {@code v} differs in species,
+     *         {@code acc} differs in shape, or {@code acc} is not an {@code int} vector
      */
     @ForceInline
     public final IntVector dotUnsigned(Vector<Byte> v, Vector<Integer> acc) {
