@@ -25,8 +25,8 @@
 
 package jdk.net;
 
-import java.io.IOError;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.DatagramSocket;
 import java.net.MulticastSocket;
 import java.net.ServerSocket;
@@ -263,7 +263,7 @@ public class Sockets {
                 }
             }
         } catch (IOException e) {
-            throw new IOError(e);
+            throw new UncheckedIOException(e);
         }
 
         throw new IllegalArgumentException("unknown socket type");
