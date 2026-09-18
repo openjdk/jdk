@@ -29,6 +29,12 @@
  *          and keys cancelled while a selection operation is in progress.
  */
 
+/* @test
+ * @requires (os.family != "windows")
+ * @build SelectorUtils
+ * @run main/othervm -Djava.nio.channels.spi.SelectorProvider=sun.nio.ch.PollSelectorProvider RegisterDuringSelect
+ */
+
 import java.io.IOException;
 import java.nio.channels.Pipe;
 import java.nio.channels.SelectionKey;
