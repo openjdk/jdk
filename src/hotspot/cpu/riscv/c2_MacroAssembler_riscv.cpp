@@ -3071,8 +3071,14 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
     case Op_MaxReductionV:
       vredmax_vs(tmp, src2, tmp, vm);
       break;
+    case Op_UMaxReductionV:
+      vredmaxu_vs(tmp, src2, tmp, vm);
+      break;
     case Op_MinReductionV:
       vredmin_vs(tmp, src2, tmp, vm);
+      break;
+    case Op_UMinReductionV:
+      vredminu_vs(tmp, src2, tmp, vm);
       break;
     default:
       ShouldNotReachHere();
