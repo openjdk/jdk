@@ -191,7 +191,6 @@ public:
   bool has_reinterpret_variant(const Type* vt) const;
 };
 
-// Analyze a MemNode to try to prove that it is independent from other memory accesses
 class AccessAnalyzer : StackObj {
 private:
   PhaseGVN* const _phase;
@@ -203,6 +202,7 @@ private:
   AllocateNode* _alloc;
   const TypePtr* _adr_type;
   int _alias_idx;
+  Node* const _adr;
 
 public:
   AccessAnalyzer(PhaseGVN* phase, MemNode* n);
@@ -226,8 +226,9 @@ public:
     // - 'mem' is nullptr otherwise.
     Node* mem;
   };
-
+  // Analyze a MemNode to try to prove that it is independent from other memory accesses
   AccessIndependence detect_access_independence(Node* other) const;
+  bool store_fully_covers(const StoreNode* other) const;
 };
 
 //------------------------------LoadNode---------------------------------------
