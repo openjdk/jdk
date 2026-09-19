@@ -4571,6 +4571,26 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   return true;
 }
 
+// If (n2 - n1) is a constant, return it in *offset.
+static bool is_constant_difference(Node* n2, Node* n1, jint* offset) {
+  jint off = 0;
+  if (n2->Opcode() == Op_AddI && n2->in(2)->Opcode() == Op_ConI) {
+    off = java_add(off, n2->in(2)->get_int());
+    n2 = n2->in(1);
+  }
+  if (n1->Opcode() == Op_AddI && n1->in(2)->Opcode() == Op_ConI) {
+    off = java_subtract(off, n1->in(2)->get_int());
+    n1 = n1->in(1);
+  }
+  if (n2->Opcode() == Op_ConI && n1->Opcode() == Op_ConI) {
+    off = java_add(off, java_subtract(n2->get_int(), n1->get_int()));
+  } else if (n2->uncast() != n1->uncast()) {
+    return false;
+  }
+  *offset = off;
+  return true;
+}
+
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
 // This optimization looks for patterns similar to:
@@ -4632,17 +4652,28 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     PhiNode* phi2 = out->as_Phi();
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
+    // Look for an index that repeats the trip counter one iteration late:
+    //    int prev = init + const_offset - const_stride;
+    //    for (int iv = init; iv != limit; iv += const_stride) { use(prev); prev = iv + const_offset; }
+    jint next_off = 0; // At the end of the iteration prev == iv + next_off?
+    jint init_off = 0; // Before the first iteration prev == iv + init_off?
+    bool lagging_index = phi2->region() == loop->_head &&
+        is_constant_difference(incr2, phi, &next_off) &&
+        is_constant_difference(phi2->in(LoopNode::EntryControl), init, &init_off) &&
+        init_off == java_subtract(next_off, checked_cast<jint>(stride_con));
     // Look for induction variables of the form:  X += constant
-    if (phi2->region() != loop->_head ||
+    bool no_parallel_index = phi2->region() != loop->_head ||
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con()) {
+        !incr2->in(2)->is_Con();
+
+    if (!lagging_index && no_parallel_index) {
       continue;
     }
 
-    if (incr2->in(1)->is_ConstraintCast() &&
+    if (!no_parallel_index && incr2->in(1)->is_ConstraintCast() &&
         !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
       // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
       continue;
@@ -4655,8 +4686,8 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     Node* init2 = phi2->in(LoopNode::EntryControl);
 
     // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
+    BasicType stride_con2_bt = lagging_index || incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = lagging_index ? stride_con : incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_jint (or min_jlong, respectively) and
