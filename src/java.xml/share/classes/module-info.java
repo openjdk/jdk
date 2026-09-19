@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import java.net.URI;
 
 /**
  * Defines the Java APIs for XML Processing (JAXP).
@@ -197,6 +199,14 @@
  * </li>
  * </ul>
  *
+ * If more than one property affects an aspect of operation, all properties must
+ * permit the operation in order for it to proceed. For example, both the
+ * <a href="#RES_ACCESS">Resource Access</a> property
+ * and <a href="javax/xml/XMLConstants.html#EAP">External Access Properties</a> (EAPs) must
+ * be set to allow in order for a direct fetch of an external resource to be
+ * carried out. For more details, refer to the
+ * <a href="#JC_PROCESS">External Resource Resolution Process</a>.
+ * <p>
  * Using the {@link javax.xml.catalog.CatalogFeatures CatalogFeatures}' RESOLVE
  * property as an example, the following illustrates how these rules are applied:
  * <ul>
@@ -403,10 +413,7 @@
  *
  * <ul>
  * <li><a href="#JDKCATALOG">JDK built-in Catalog</a>
- *      <ul>
- *      <li><a href="#JC_PROCESS">External Resource Resolution Process with the built-in Catalog</a></li>
- *      </ul>
- * </li>
+ * <li><a href="#JC_PROCESS">External Resource Resolution Process</a></li>
  * <li><a href="#IN_ISFP">Implementation Specific Properties</a>
  *      <ul>
  *      <li><a href="#Processor">Processor Support</a></li>
@@ -511,23 +518,60 @@
  * <p>
  * The catalog is loaded once when the first JAXP processor factory is created.
  *
- * <h3 id="JC_PROCESS">External Resource Resolution Process with the built-in Catalog</h3>
- * The JDK creates a {@link javax.xml.catalog.CatalogResolver CatalogResolver}
- * with the built-in catalog when needed. This CatalogResolver is used as the
- * default external resource resolver.
+ * <h2 id="JC_PROCESS">External Resource Resolution Process</h2>
  * <p>
- * XML processors may use resolvers (such as {@link org.xml.sax.EntityResolver EntityResolver},
- * {@link javax.xml.stream.XMLResolver XMLResolver}, and {@link javax.xml.catalog.CatalogResolver CatalogResolver})
- * to handle external references. In the absence of the user-defined resolvers,
- * the JDK XML processors fall back to the default CatalogResolver to attempt to
- * find a resolution before making a connection to fetch the resources. The fall-back
- * also takes place if a user-defined resolver exists but allows the process to
- * continue when unable to resolve the resource.
+ * The XML processor resolves external resources using the following steps:
+ * <ul>
+ *   <li><b>User-defined resolver</b>, such as {@link org.xml.sax.EntityResolver EntityResolver},
+ *       {@link javax.xml.stream.XMLResolver XMLResolver}, if registered on the XML factory</li>
+ *   <li><b>{@link javax.xml.catalog.CatalogResolver CatalogResolver}</b> if registered or
+ *       if a catalog file is provided</li>
+ *   <li><b>The JDK Built-in Catalog</b></li>
+ *   <li><b>Direct fetch</b></li>
+ * </ul>
+ *
  * <p>
- * If the default CatalogResolver is unable to locate a resource, it may signal
- * the XML processors to continue processing, or skip the resource, or
- * throw a CatalogException. The behavior is configured with the
- * <a href="#JDKCATALOG_RESOLVE">{@code jdk.xml.jdkcatalog.resolve}</a> property.
+ * If a resolver or catalog successfully resolves the resource, the process ends.
+ * Otherwise, the XML processor evaluates the signal returned to decide whether
+ * to continue, ignore, or reject the resource.
+ * <p>
+ * It continues to the next step if:
+ * <ul>
+ *   <li><b>User-defined resolver</b> returns {@code null}</li>
+ *   <li><b>{@link javax.xml.catalog.CatalogResolver CatalogResolver}</b> returns {@code null}
+ *   and the {@link javax.xml.catalog.CatalogFeatures.Feature#RESOLVE RESOLVE} feature
+ *   is set to {@code continue}
+ *   </li>
+ *   <li><b>The JDK Built-in Catalog</b> returns {@code null} and its Resolve property
+ *   <a href="#JDKCATALOG_RESOLVE">{@code jdk.xml.jdkcatalog.resolve}</a> is set to {@code continue}</li>
+ * </ul>
+ * <div style="padding-left: 1.5em;">
+ * The XML processor then will attempt a direct fetch if the resource is allowed
+ * by the Resource Access property <a href="#RES_ACCESS">{@code jdk.xml.resource.access}</a> and
+ * the <a href="javax/xml/XMLConstants.html#EAP">External Access Properties</a>.
+ * </div>
+ * <p>
+ * It ignores the resource and returns an empty source if:
+ * <ul>
+ *   <li><b>User-defined resolver</b> returns an empty source</li>
+ *   <li><b>{@link javax.xml.catalog.CatalogResolver CatalogResolver}</b> returns an empty source
+ *   and the {@link javax.xml.catalog.CatalogFeatures.Feature#RESOLVE RESOLVE} feature
+ *   is set to {@code ignore}
+ *   </li>
+ * </ul>
+ *
+ * It terminates and throws an exception if:
+ * <ul>
+ *   <li><b>User-defined resolver</b> throws an exception</li>
+ *   <li><b>{@link javax.xml.catalog.CatalogResolver CatalogResolver}</b> returns {@code null},
+ *   the {@link javax.xml.catalog.CatalogFeatures.Feature#RESOLVE RESOLVE} feature
+ *   is {@code strict}
+ *   </li>
+ *   <li>The resource is not allowed by Resource Access property
+ *   <a href="#RES_ACCESS">{@code jdk.xml.resource.access}</a> or
+ *   <a href="javax/xml/XMLConstants.html#EAP">External Access Properties</a>
+ *   </li>
+ * </ul>
  *
  * <h2 id="IN_ISFP">Implementation Specific Properties</h2>
  * In addition to the standard <a href="#Conf_Properties">JAXP Properties</a>,
@@ -871,7 +915,7 @@
  * <td>Determines whether extension functions in the Transform API are to be allowed.
  * The extension functions in the XPath API are not affected by this property.
  * </td>
- * <td style="text-align:center" rowspan="5">yes</td>
+ * <td style="text-align:center" rowspan="6">yes</td>
  * <td style="text-align:center" rowspan="3">Boolean</td>
  * <td>
  * true or false. True indicates that extension functions are allowed; False otherwise.
@@ -994,6 +1038,109 @@
  * <td style="text-align:center"><a href="#Processor">Method 1</a></td>
  * <td style="text-align:center">22</td>
  * </tr>
+ * <tr>
+ * <td id="RES_ACCESS">{@systemProperty jdk.xml.resource.access}</td>
+ * <td>Defines allowed network access to external resources by specifying a list
+ * of URI patterns, each following the syntax: <br><br>
+ * {@code scheme:[/][host][:port]/[path pattern]}<br><br>
+ * Except where this specification explicitly extends or overrides the syntax or
+ * semantics defined by the {@link java.net.URI URI} class, such as the support for wildcard
+ * patterns, the definitions of {@link java.net.URI URI} apply.<br><br>
+ * Where:
+ * <ul>
+ *     <li><b>Component Syntax</b>: A resource access entry is either:
+ *     <ul>
+ *         <li>
+ *             An exact-match URI, where the scheme, host, port, and path components
+ *             must conform to the syntax requirements of the {@link java.net.URI URI}
+ *             class and the URI is interpreted as a hierarchical URI.
+ *         </li>
+ *         <li>
+ *             A wildcard URI pattern, where the URI syntax is extended to allow
+ *             the wildcard {@code *} in the components explicitly defined by this specification.
+ *             The wildcard matching rules for each supported component are described below.
+ *         </li>
+ *     </ul>
+ *     For both forms, the scheme and host are case-insensitive, while the path is case-sensitive.
+ *     </li>
+ *     <li><b>scheme</b>: The URI scheme. Unless the entire pattern is the single wildcard {@code *},
+ *     the scheme must be one of the supported schemes (http, https, ftp, file, or jrt).
+ *     </li>
+ *     <li><b>jar</b>: jar URIs are matched against the URI of the underlying JAR file
+ *     using the corresponding rule pattern. For example, the rule pattern
+ *     {@code file:/tmp/foo.jar} permits access to {@code jar:file:/tmp/foo.jar!/dtds/test.dtd}.
+ *
+ *     Permission to access the JAR file automatically grants access to all entries within
+ *     that JAR; entry-level restrictions are not supported.
+ *     </li>
+ *     <li><b>/ (slash)</b>: The slash following the scheme may appear one to three times.
+ *     Two slashes (//) indicate the start of an authority (for example, http://example.com).
+ *     One or three slashes (/ or ///) indicate the start of a local resource path
+ *     (for example, {@code file:/foo/bar.dtd, file:///foo/bar.dtd}).
+ *     </li>
+ *     <li><b>host</b>: Optional. A domain name, IPv4 address, IPv6 literal, or supported
+ *     wildcard pattern. The wildcard {@code *} denotes any host. A leading wildcard followed
+ *     by a domain, such as {@code*.example.com}, matches all subdomains of {@code example.com}.
+ *     For network schemes, the host component must not be empty.</li>
+ *     <li><b>IPv6 Literals</b>: IPv6 literals must be enclosed in square brackets,
+ *     as defined by {@link java.net.URI URI}, for example {@code https://[2001:db8::6]}</li>
+ *     <li><b>port</b>: Optional. A decimal port number, as per the URI standard,
+ *     to indicate only the specified port is permitted. If specified,
+ *     it can not be empty. {@code http://example.com:}, for example, is illegal. </li>
+ *     <li><b>path pattern</b>: Optional. Specifies a resource path. Wildcard {@code *}
+ *     may be used in the path to match any sequence (e.g., {@code /foo/*} matches
+ *     all resources under {@code /foo/}). For local schemes, paths are typically
+ *     absolute (e.g., {@code file:/dtds/*}). To match all resources under a directory,
+ *     the wildcard {@code *} must be added. Without it, the path is treated as
+ *     a literal file or directory. </li>
+ *     <li><b>entire pattern</b>: can be a wildcard {@code *} or empty "", which
+ *     represents all access or no access permitted respectively. </li>
+ *     <li><b>wildcard</b>: The wildcard {@code *} may be used only in the forms
+ *     explicitly defined by this specification:
+ *     <ul>
+ *         <li>as the entire pattern ({@code *});</li>
+ *         <li>as the entire host component ({@code http://*});</li>
+ *         <li>as a leading wildcard in the host component ({@code http://*.example.com});</li>
+ *         <li>as the final path segment ({@code file:/foo/*}).</li>
+ *     </ul>
+ *     Any other occurrence of * is treated as a literal character and does not perform wildcard matching.
+ *     </li>
+ * </ul>
+ * Example:
+ * {@snippet :
+ *     jdk.xml.resource.access = https://*.sun.com, http://www.w3.org, https://127.0.0.1, file:/dtds/, jrt:*, file:/tmp/foo.jar
+ * }
+ * This configuration permits access to:
+ * <ul>
+ *     <li>https access to any subdomain of sun.com, e.g. java.sun.com</li>
+ *     <li>Resources from specific domain as listed in the example, w3.org, 127.0.0.1</li>
+ *     <li>All local resources under the dtds directory</li>
+ *     <li>Resources from the Java runtime image</li>
+ *     <li>Resources inside a jar file {@code /tmp/foo.jar}</li>
+ * </ul>
+ * The following configuration permits all access:<br>
+ * {@code jdk.xml.resource.access = *}<br>
+ * The following configuration permits no access:<br>
+ * {@code jdk.xml.resource.access = ""}
+ *
+ * </td>
+ * <td style="text-align:center">String</td>
+ * <td>
+ * A comma-separated list of URL patterns, * (wildcard), or "" (empty string).
+ * </td>
+ * <td style="text-align:center">{@code *}</td>
+ * <td style="text-align:center">{@code *}</td>
+ * <td style="text-align:center">No <a href="#Note8">[8]</a></td>
+ * <td style="text-align:center">
+ *     <a href="#DOM">DOM</a><br>
+ *     <a href="#SAX">SAX</a><br>
+ *     <a href="#StAX">StAX</a><br>
+ *     <a href="#Validation">Validation</a><br>
+ *     <a href="#Transform">Transform</a>
+ * </td>
+ * <td style="text-align:center"><a href="#Processor">Method 1</a></td>
+ * <td style="text-align:center">27</td>
+ * </tr>
  * </tbody>
  * </table>
  * <p id="Note1">
@@ -1037,6 +1184,11 @@
  * These three properties control whether DTDs as a whole shall be processed. When
  * they are set to deny or ignore, other properties that regulate a part or an
  * aspect of DTD shall have no effect.
+ * <p id="Note8">
+ * <b>[8]</b> In the current release, the state of the {@code jdk.xml.resource.access}
+ * property does not change when {@link javax.xml.XMLConstants#FEATURE_SECURE_PROCESSING FEATURE_SECURE_PROCESSING}
+ * (FSP) is enabled. In future releases, it will transition to a restrictive setting
+ * when FSP is enabled.
  *
  * <h3 id="IN_Legacy">Legacy Property Names (deprecated)</h3>
  * JDK releases prior to JDK 17 support the use of URI style prefix for properties.

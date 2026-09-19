@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2026, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -93,7 +93,7 @@ import org.xml.sax.InputSource;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @LastModified: May 2025
+ * @LastModified: July 2026
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
@@ -1361,20 +1361,15 @@ public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 
         if (external) {
             staxInputSource = resolveEntityAsPerStax(externalEntity.entityLocation);
-            /** xxx:  Waiting from the EG
-             * //simply return if there was entity resolver registered and application
-             * //returns either XMLStreamReader or XMLEventReader.
-             * if(staxInputSource.hasXMLStreamOrXMLEventReader()) return ;
-             */
             xmlInputSource = staxInputSource.getXMLInputSource() ;
             if (!fISCreatedByResolver) {
-                String accessError = SecuritySupport.checkAccess(expandedSystemId,
-                        fAccessExternalDTD, JdkConstants.ACCESS_EXTERNAL_ALL);
+                String accessError = SecuritySupport.checkAccess(expandedSystemId, fSecurityManager,
+                    XMLConstants.ACCESS_EXTERNAL_DTD, fAccessExternalDTD);
                 if (accessError != null) {
-                    fErrorReporter.reportError(this.getEntityScanner(),XMLMessageFormatter.XML_DOMAIN,
-                            "AccessExternalEntity",
-                            new Object[] { SecuritySupport.sanitizePath(expandedSystemId), accessError },
-                            XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                    fErrorReporter.reportError(this.getEntityScanner(), XMLMessageFormatter.XML_DOMAIN,
+                        "AccessExternalEntity",
+                        new Object[]{SecuritySupport.sanitizePath(expandedSystemId), accessError},
+                        XMLErrorReporter.SEVERITY_FATAL_ERROR);
                 }
             }
         }
