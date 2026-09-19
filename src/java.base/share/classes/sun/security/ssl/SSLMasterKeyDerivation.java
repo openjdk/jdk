@@ -121,7 +121,11 @@ enum SSLMasterKeyDerivation implements SSLKeyDerivationGenerator {
             TlsMasterSecretParameterSpec spec;
             if (context.handshakeSession.useExtendedMasterSecret) {
                 // reset to use the extended master secret algorithm
-                masterAlg = "SunTlsExtendedMasterSecret";
+                if (protocolVersion.id == ProtocolVersion.TLS12.id) {
+                    masterAlg = "SunTls12ExtendedMasterSecret";
+                } else {
+                    masterAlg = "SunTlsExtendedMasterSecret";
+                }
 
                 // For the session hash, use the handshake messages up to and
                 // including the ClientKeyExchange message.
