@@ -244,6 +244,7 @@ public class TestInheritFD {
 
         ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
             "-Xlog:gc:\"" + logPath + "\"",
+            "-Dtest.timeout.factor=" + Utils.TIMEOUT_FACTOR,
             "-Dtest.jdk=" + getProperty("test.jdk"),
             VMStartedWithLogging.class.getName(),
             logPath);
@@ -267,6 +268,7 @@ public class TestInheritFD {
         public static void main(String[] args) throws IOException, InterruptedException {
             System.out.println(SECOND_VM_PID_PREFIX + ProcessHandle.current().pid());
             ProcessBuilder pb = createLimitedTestJavaProcessBuilder(
+                "-Dtest.timeout.factor=" + Utils.TIMEOUT_FACTOR,
                 "-Dtest.jdk=" + getProperty("test.jdk"),
                 VMShouldNotInheritFileDescriptors.class.getName(),
                 args[0],
