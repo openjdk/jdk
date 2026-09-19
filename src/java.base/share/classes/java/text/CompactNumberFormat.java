@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -839,7 +839,11 @@ public final class CompactNumberFormat extends NumberFormat {
             if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
-            number = number.divide(new BigDecimal(divisor.toString()), getRoundingMode());
+
+            // Perform this division exactly, so that the quotient is not inaccurately rounded.
+            // For example, 7,800 / 1,000 should become 7.8 and not 8. It is safe to perform exact
+            // division because the divisor is a power of ten, thus the result is always terminating.
+            number = number.divide(new BigDecimal(divisor.toString()));
             decimalFormat.setDigitList(number, isNegative, getMaximumFractionDigits());
             val = decimalFormat.getDigitList().getDouble();
             String prefix = getAffix(false, true, isNegative, compactDataIndex, val);
@@ -917,10 +921,10 @@ public final class CompactNumberFormat extends NumberFormat {
                 decimalFormat.setDigitList(number, isNegative, 0);
             } else {
                 // To avoid truncation of fractional part store the value in
-                // BigDecimal and follow BigDecimal path instead of
-                // BigInteger path
+                // BigDecimal and follow BigDecimal path instead of BigInteger path.
+                // This division can be performed exactly, because the divisor is a power of ten.
                 BigDecimal nDecimal = new BigDecimal(number)
-                        .divide(new BigDecimal(divisor.toString()), getRoundingMode());
+                        .divide(new BigDecimal(divisor.toString()));
                 decimalFormat.setDigitList(nDecimal, isNegative, getMaximumFractionDigits());
             }
             val = decimalFormat.getDigitList().getDouble();
