@@ -95,6 +95,14 @@ int PhaseChaitin::yank(Node *old, Block *current_block, Node_List *value, Node_L
 }
 
 #ifdef ASSERT
+static bool is_vector_const_initializer(const Node* node) {
+  if (!node->is_Mach()) {
+    return false;
+  }
+
+  return Matcher::vector_is_same_const_value(node->as_Mach(), node->as_Mach());
+}
+
 static bool expected_yanked_node(Node *old, Node *orig_old) {
   // This code is expected only next original nodes:
   // - load from constant table node which may have next data input nodes:
@@ -118,6 +126,8 @@ static bool expected_yanked_node(Node *old, Node *orig_old) {
     return true;
   } else if (old->is_MachConstantBase()) {
     return (orig_old->is_Con() && orig_old->is_MachConstant());
+  } else if (is_vector_const_initializer(old)) {
+    return true;
   }
   return false;
 }
@@ -744,15 +754,25 @@ void PhaseChaitin::post_allocate_copy_removal() {
         // then 'n' is a useless copy.  Do not update the register->node
         // mapping so 'n' will go dead.
         if (!register_contains_value(val, nreg, n_regs, value)) {
-          // Update the mapping: record new Node defined by the register
-          regnd.map(nreg,n);
-          // Update mapping for defined *value*, which is the defined
-          // Node after skipping all copies.
-          value.map(nreg,val);
-          for (int l = 1; l < n_regs; l++) {
-            OptoReg::Name nreg_lo = OptoReg::add(nreg,-l);
-            regnd.map(nreg_lo, n );
-            value.map(nreg_lo,val);
+          MachNode* m_val = val->isa_Mach();
+          MachNode* m_value = (value[nreg] != nullptr) ? value[nreg]->isa_Mach() : nullptr;
+          if (m_val != nullptr &&
+              m_value != nullptr &&
+              register_contains_value(value[nreg], nreg, n_regs, value) &&
+              register_contains_value(regnd[nreg], nreg, n_regs, regnd) &&
+              Matcher::vector_is_same_const_value(m_val, m_value)) {
+            j -= replace_and_yank_if_dead(n, nreg, block, value, regnd);
+          } else {
+            // Update the mapping: record new Node defined by the register
+            regnd.map(nreg,n);
+            // Update mapping for defined *value*, which is the defined
+            // Node after skipping all copies.
+            value.map(nreg,val);
+            for (int l = 1; l < n_regs; l++) {
+              OptoReg::Name nreg_lo = OptoReg::add(nreg,-l);
+              regnd.map(nreg_lo, n );
+              value.map(nreg_lo,val);
+            }
           }
         } else if (n->is_Copy()) {
           // Note: vector can't be constant and can't be copy of calee.
