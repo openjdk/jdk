@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 
 #include "memory/allocation.hpp"
 #include "memory/metaspace/chunklevel.hpp"
-#include "runtime/os.hpp" // For os::random
+#include "gtestRandom.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -49,9 +49,9 @@ class Range : public StackObj {
 
   static Td random_uncapped_offset() {
     if (sizeof(Td) > 4) {
-      return (Td)((uint64_t)os::random() * os::random());
+      return (Td)((uint64_t)GtestRandom::random() * GtestRandom::random());
     } else {
-      return (Td)os::random();
+      return (Td)GtestRandom::random();
     }
   }
 

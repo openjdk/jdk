@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021 SAP SE. All rights reserved.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,10 +24,10 @@
  */
 
 #include "memory/arena.hpp"
-#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "unittest.hpp"
+#include "gtestRandom.hpp"
 #include "testutils.hpp"
 
 #define ASSERT_CONTAINS(ar, p) ASSERT_TRUE(ar.contains(p))
@@ -235,10 +235,10 @@ TEST_VM(Arena, random_allocs) {
 
   // Allocate
   for (int i = 0; i < num_allocs; i ++) {
-    size_t size = os::random() % (avg_alloc_size * 2); // Note: size==0 is okay; we want to test that too
+    size_t size = GtestRandom::random() % (avg_alloc_size * 2); // Note: size==0 is okay; we want to test that too
     size_t alignment = 0;
     void* p = nullptr;
-    if (os::random() % 2) { // randomly switch between Amalloc and AmallocWords
+    if (GtestRandom::random() % 2) { // randomly switch between Amalloc and AmallocWords
       p = ar.Amalloc(size);
       alignment = BytesPerLong;
     } else {
@@ -266,7 +266,7 @@ TEST_VM(Arena, random_allocs) {
 
   // realloc all of them
   for (int i = 0; i < num_allocs; i ++) {
-    size_t new_size = os::random() % (avg_alloc_size * 2);  // Note: 0 is possible and should work
+    size_t new_size = GtestRandom::random() % (avg_alloc_size * 2);  // Note: 0 is possible and should work
     void* p2 = ar.Arealloc(ptrs[i], sizes[i], new_size);
     if (new_size > 0) {
       ASSERT_NOT_NULL(p2);
@@ -292,7 +292,7 @@ TEST_VM(Arena, random_allocs) {
 
   // Randomly free a bunch of allocations.
   for (int i = 0; i < num_allocs; i ++) {
-    if (os::random() % 10 == 0) {
+    if (GtestRandom::random() % 10 == 0) {
       ar.Afree(ptrs[i], sizes[i]);
       // In debug builds the freed space should be filled the space with badResourceValue
       DEBUG_ONLY(ASSERT_RANGE_IS_MARKED_WITH(ptrs[i], sizes[i], badResourceValue));
@@ -353,13 +353,13 @@ TEST_VM(Arena, Arena_grows_large_unaligned) {
 
 static size_t random_arena_chunk_size() {
   // Return with a 50% rate a standard size, otherwise some random size
-  if (os::random() % 10 < 5) {
+  if (GtestRandom::random() % 10 < 5) {
     static const size_t standard_sizes[4] = {
         Chunk::tiny_size, Chunk::init_size, Chunk::size, Chunk::medium_size
     };
-    return standard_sizes[os::random() % 4];
+    return standard_sizes[GtestRandom::random() % 4];
   }
-  return ARENA_ALIGN(os::random() % 1024);
+  return ARENA_ALIGN(GtestRandom::random() % 1024);
 }
 
 TEST_VM(Arena, different_chunk_sizes) {

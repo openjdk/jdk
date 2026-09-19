@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, SAP and/or its affiliates.
  *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -24,7 +24,7 @@
  */
 
 #include "memory/allocation.hpp"
-#include "runtime/os.hpp"
+#include "gtestRandom.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ostream.hpp"
 #include "unittest.hpp"
@@ -81,8 +81,8 @@ public:
 static void set_or_clear_random_range(BitMap& bm, SimpleFakeBitmap& fbm, int beg, int end) {
   int range = end - beg;
   if (range > 0) {
-    int from = os::random() % range;
-    int to = os::random() % range;
+    int from = GtestRandom::random() % range;
+    int to = GtestRandom::random() % range;
     if (from > to) {
       int s = from;
       from = to;
@@ -90,7 +90,7 @@ static void set_or_clear_random_range(BitMap& bm, SimpleFakeBitmap& fbm, int beg
     }
     from += beg;
     to += beg;
-    if ((os::random() % 10) > 5) {
+    if ((GtestRandom::random() % 10) > 5) {
       bm.set_range(from, to);
       fbm.set_range(from, to);
     } else {
