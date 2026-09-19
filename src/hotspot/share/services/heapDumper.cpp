@@ -2207,6 +2207,10 @@ void HeapObjectDumper::do_object(oop o) {
     return;
   }
 
+  if (CollectedHeap::is_filler_object(o)) {
+    return;
+  }
+
   if (o->is_instance()) {
     DumperFlatObjectList flat_fields(_flat_dumper);
     // create a HPROF_GC_INSTANCE record for each object
