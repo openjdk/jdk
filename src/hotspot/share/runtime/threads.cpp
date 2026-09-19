@@ -35,6 +35,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerThread.hpp"
 #include "compiler/compileTask.hpp"
@@ -813,6 +814,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     // startup with the proper message that CodeCache size is too small.
     initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
   }
+
+  // Pre-load AOT compiled methods
+  AOTCodeCache::preload_code(CHECK_JNI_ERR);
 
   if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();

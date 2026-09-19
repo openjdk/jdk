@@ -24,6 +24,7 @@
 
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmIntrinsics.hpp"
+#include "code/aotCodeCache.hpp"
 #include "compiler/compilationMemoryStatistic.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "jfr/support/jfrIntrinsics.hpp"
@@ -106,7 +107,7 @@ bool C2Compiler::init_c2_runtime() {
   return OptoRuntime::generate(thread->env());
 }
 
-void C2Compiler::initialize() {
+void C2Compiler::initialize(bool is_aot_comp_thread) {
   assert(!CompilerConfig::is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.
@@ -124,8 +125,15 @@ void C2Compiler::initialize() {
 
 void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
-
   CompilationMemoryStatisticMark cmsm(directive);
+  CompileTask* task = env->task();
+  if (task->is_aot_load()) {
+    assert(install_code, "AOT code loading requires install_code");
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
+    // We want to go quickly through AOT code load requests
+    // instead of spending time on normal compilation.
+    return;
+  }
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
@@ -134,7 +142,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
-
+  bool for_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_preload || (ClassInitBarrierMode > 0), "sanity");
   while (!env->failing()) {
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
@@ -145,6 +154,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
+                    for_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 
