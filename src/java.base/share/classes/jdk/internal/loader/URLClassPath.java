@@ -77,6 +77,7 @@ public class URLClassPath {
     private static final boolean JAR_CHECKING_ENABLED;
     private static final boolean DISABLE_CP_URL_CHECK;
     private static final boolean DEBUG_CP_URL_CHECK;
+    private static final boolean VERIFY_SIGNED_JAR;
 
     static {
         Properties props = System.getProperties();
@@ -95,6 +96,8 @@ public class URLClassPath {
         // the check is not disabled).
         p = props.getProperty("jdk.net.URLClassPath.showIgnoredClassPathEntries");
         DEBUG_CP_URL_CHECK = p != null ? p.equals("true") || p.isEmpty() : false;
+        p = props.getProperty("jdk.verifySignedJar");
+        VERIFY_SIGNED_JAR = p != null ? p.equals("true") || p.isEmpty() : false;
     }
 
     /* Search path of URLs passed to the constructor or by calls to addURL.
@@ -685,7 +688,7 @@ public class URLClassPath {
                 if (!p.exists()) {
                     throw new FileNotFoundException(p.getPath());
                 }
-                return checkJar(new JarFile(new File(p.getPath()), true, ZipFile.OPEN_READ,
+                return checkJar(new JarFile(new File(p.getPath()), VERIFY_SIGNED_JAR, ZipFile.OPEN_READ,
                         JarFile.runtimeVersion()));
             }
             @SuppressWarnings("deprecation")
