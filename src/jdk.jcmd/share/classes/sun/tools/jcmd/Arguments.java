@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,11 @@
 package sun.tools.jcmd;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 class Arguments {
     private boolean listProcesses = false;
@@ -35,12 +38,18 @@ class Arguments {
     private boolean showUsage     = false;
     private String  command       = null;
     private String  processString = null;
+    private boolean forceCore = false;
+    private String libDirs = null;
+    private String revivalCachePath = null;
 
     public boolean isListProcesses() { return listProcesses; }
     public boolean isListCounters() { return listCounters; }
     public boolean isShowUsage() { return showUsage; }
     public String getCommand() { return command; }
     public String getProcessString() { return processString; }
+    public boolean isForceCore() { return forceCore; }
+    public String getLibDirs() { return libDirs; }
+    public String getRevivalCachePath() { return revivalCachePath; }
 
     public Arguments(String[] args) {
         if (args.length == 0 || args[0].equals("-l")) {
@@ -50,19 +59,41 @@ class Arguments {
             return;
         }
 
-        if (args[0].equals("-?") ||
-            args[0].equals("-h") ||
-            args[0].equals("--help") ||
-            // -help: legacy.
-            args[0].equals("-help")) {
-            showUsage = true;
-            return;
+        int i = 0;
+        while (i < args.length) {
+            if (args[i].equals("-?") ||
+                args[i].equals("-h") ||
+                args[i].equals("--help") ||
+                // -help: legacy.
+                args[i].equals("-help")) {
+                showUsage = true;
+                return;
+            } else if (args[i].equals("-c")) {
+                forceCore = true;
+            } else if (args[i].equals("-L")) {
+                i++;
+                if (libDirs == null) {
+                    libDirs = args[i];
+                } else {
+                    libDirs = libDirs + File.pathSeparatorChar + args[i];
+                }
+            } else if (args[i].equals("-R")) {
+                i++;
+                revivalCachePath = args[i];
+            } else {
+                // Not a known argument, move on to read process string/pid.
+                break;
+            }
+            i++;
         }
-
-        processString = args[0];
+        if (i >= args.length - 1) {
+            throw new IllegalArgumentException("Incomplete arguments, process ID, name or dump filename required.");
+        }
+        // Remaining arguments: process string or pid, and command.
+        processString = args[i++];
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 1; i < args.length; i++) {
+        for (; i < args.length; i++) {
             if (args[i].equals("-f")) {
                 if (args.length == i + 1) {
                     throw new IllegalArgumentException(
@@ -109,6 +140,7 @@ class Arguments {
 
     public static void usage() {
         System.out.println("Usage: jcmd <pid | main class> <command ...|PerfCounter.print|-f file>");
+        System.out.println("   or: jcmd [ -c ] [ -L LIB_PATH ] [ -R CACHE_PATH] <corefile> <command... | -f file>");
         System.out.println("   or: jcmd -l                                                    ");
         System.out.println("   or: jcmd -h                                                    ");
         System.out.println("                                                                  ");
@@ -117,8 +149,22 @@ class Arguments {
         System.out.println("  If the pid is 0, commands will be sent to all Java processes.   ");
         System.out.println("  The main class argument will be used to match (either partially ");
         System.out.println("  or fully) the class used to start Java.                         ");
+        System.out.println("                                                                  ");
         System.out.println("  If no options are given, lists Java processes (same as -l).     ");
         System.out.println("                                                                  ");
+        System.out.println(
+"""
+  Using a core file (Linux) or MiniDump (Windows) for post-mortem analysis:
+    -c  forces reading a core file, only required in case of a clash with a live process name.
+    -L  LIB_PATH must be given if the core file originates from another system, or the
+            JDK at the path in the core has changed.
+            LIB_PATH must name a directory containing a copy of the same JDK that the corefile originated from.
+            When analyzing a corefile a corefile.revival cache directory is
+            created.  -L is not required once the cache is created.
+
+    -R  CACHE_PATH should be specified when the core file is in a read-only location, to give a path
+            where cache files may be stored.  This must be specified on subsequent invocations.
+""");
         System.out.println("  PerfCounter.print display the counters exposed by this process  ");
         System.out.println("  -f  read and execute commands from the file                     ");
         System.out.println("  -l  list JVM processes on the local machine                     ");

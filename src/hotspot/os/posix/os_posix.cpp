@@ -100,9 +100,11 @@
 /* Input/Output types for mincore(2) */
 typedef LINUX_ONLY(unsigned) char mincore_vec_t;
 
-static jlong initial_time_count = 0;
+static jlong _initial_time_count = 0;
 
 static int clock_tics_per_sec = 100;
+
+static uint64_t _initial_time_date = 0;
 
 // Platform minimum stack allowed
 size_t os::_os_min_stack_allowed = PTHREAD_STACK_MIN;
@@ -1461,7 +1463,10 @@ void os::Posix::init(void) {
     }
   }
 
-  initial_time_count = javaTimeNanos();
+  if (!Thread::is_revived()) {
+   _initial_time_count = javaTimeNanos();
+   _initial_time_date = (uint64_t) time(nullptr);
+  }
 }
 
 void os::Posix::init_2(void) {
@@ -1647,7 +1652,7 @@ double os::elapsedTime() {
 }
 
 jlong os::elapsed_counter() {
-  return os::javaTimeNanos() - initial_time_count;
+  return os::javaTimeNanos() - _initial_time_count;
 }
 
 jlong os::elapsed_frequency() {
@@ -1663,6 +1668,14 @@ double os::elapsed_process_cpu_time() {
   } else {
     return -1;
   }
+}
+
+jlong os::initial_time_count() {
+  return _initial_time_count;
+}
+
+uint64_t os::initial_time_date() {
+  return _initial_time_date;
 }
 
 // Return the real, user, and system times in seconds from an
