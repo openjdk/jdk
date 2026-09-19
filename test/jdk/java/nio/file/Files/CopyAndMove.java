@@ -898,7 +898,8 @@ public class CopyAndMove {
             createFile(target);
             try {
                 Files.copy(source, target, REPLACE_EXISTING);
-                throw new RuntimeException("AccessDeniedException not thrown");
+                if (!Platform.isRoot())
+                    throw new RuntimeException("AccessDeniedException not thrown");
             } catch (AccessDeniedException expected) {
             }
             if (!Files.exists(target))
