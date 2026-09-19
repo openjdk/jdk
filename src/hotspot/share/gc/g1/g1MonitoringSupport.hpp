@@ -232,11 +232,15 @@ protected:
                     const char* end_message,
                     bool all_memory_pools_affected = true);
   ~G1MonitoringScope();
+  void set_all_memory_pools_affected();
 };
 
 class G1YoungGCMonitoringScope : public G1MonitoringScope {
 public:
   G1YoungGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool all_memory_pools_affected);
+  void set_all_memory_pools_affected() {
+    G1MonitoringScope::set_all_memory_pools_affected();
+  }
 };
 
 class G1FullGCMonitoringScope : public G1MonitoringScope {

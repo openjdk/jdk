@@ -1158,6 +1158,13 @@ void G1YoungCollector::collect() {
     }
     post_evacuate_collection_set(jtm.evacuation_info(), &per_thread_states);
 
+    const bool has_eagerly_reclaimed_humongous_objects =
+      phase_times()->sum_thread_work_items(G1GCPhaseTimes::EagerlyReclaimHumongousObjects,
+                                           G1GCPhaseTimes::EagerlyReclaimNumReclaimed) != 0;
+    if (has_eagerly_reclaimed_humongous_objects) {
+      ms.set_all_memory_pools_affected();
+    }
+
     // Refine the type of a concurrent mark operation now that we did the
     // evacuation, eventually aborting it.
     _concurrent_operation_is_full_mark = policy()->concurrent_operation_is_full_mark("Revise IHOP", _allocation_word_size);
