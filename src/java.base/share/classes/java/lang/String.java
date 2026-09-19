@@ -53,6 +53,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.Preconditions;
 import jdk.internal.vm.annotation.ForceInline;
@@ -5254,6 +5255,10 @@ public final class String
 
     byte[] value() {
         return value;
+    }
+
+    MemorySegment asReadOnlyMemorySegment() {
+        return SegmentFactories.fromArrayReadOnly(value);
     }
 
     boolean isLatin1() {
