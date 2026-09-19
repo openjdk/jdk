@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,19 @@
  *
  */
 
-#ifndef SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP
-#define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP
+#ifndef SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP
+#define SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP
 
-#include "gc/g1/g1CollectionSetCandidates.hpp"
-
-#include "gc/g1/g1CardSetGroup.inline.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 
 template<typename Func>
-void G1CollectionSetCandidates::iterate_regions(Func&& f) const {
-  _from_marking_groups.iterate(f);
-
-  _retained_groups.iterate(f);
+void G1CardSetGroupList::iterate(Func&& f) const {
+  for (G1CardSetGroup* group : _groups) {
+    for (G1CardSetGroupItem ci : *group) {
+      G1HeapRegion* r = ci._r;
+      f(r);
+    }
+  }
 }
 
-#endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_INLINE_HPP */
+#endif /* SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP */
