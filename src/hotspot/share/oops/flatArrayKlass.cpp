@@ -161,7 +161,7 @@ oop FlatArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
 
 jint FlatArrayKlass::array_layout_helper(ValueKlass* vk, LayoutKind lk) {
   BasicType etype = T_FLAT_ELEMENT;
-  int esize = log2i_exact(round_up_power_of_2(vk->layout_size_in_bytes(lk)));
+  int esize = log2i_exact(round_up_power_of_2(vk->layouts().size_in_bytes_of(lk)));
   int hsize = arrayOopDesc::base_offset_in_bytes(etype);
   bool null_free = !LayoutKindHelper::is_nullable_flat(lk);
   int lh = Klass::array_layout_helper(_lh_array_tag_flat_value, null_free, hsize, etype, esize);
