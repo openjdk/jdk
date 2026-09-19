@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
+ * @bug 8392709
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -52,7 +53,7 @@ public class TestFileChannelEvents {
             List<IOEvent> expectedEvents = new ArrayList<>();
             try (RandomAccessFile rf = new RandomAccessFile(tmp, "rw"); FileChannel ch = rf.getChannel();) {
                 recording.enable(IOEvent.EVENT_FILE_FORCE).withThreshold(Duration.ofMillis(0));
-                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+                recording.disable(IOEvent.EVENT_FILE_READ);
                 recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
@@ -85,6 +86,8 @@ public class TestFileChannelEvents {
 
                 // reset file
                 ch.position(0);
+
+                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
 
                 // test read(ByteBuffer)
                 bufA.clear();
