@@ -36,7 +36,7 @@
  * 6345469 6988218 6693451 7006761 8140212 8143282 8158482 8176029 8184706
  * 8194667 8197462 8184692 8221431 8224789 8228352 8230829 8236034 8235812
  * 8216332 8214245 8237599 8241055 8247546 8258259 8037397 8269753 8276694
- * 8280403 8264160 8281315 8305107
+ * 8280403 8264160 8281315 8305107 8384082
  * @library /test/lib
  * @library /lib/testlibrary/java/lang
  * @build jdk.test.lib.RandomFactory
@@ -444,6 +444,43 @@ public class RegExTest {
         twoFindIndexes(input, matcher, 3, 6);
     }
 
+    @Test
+    public static void unicodeWordBoundsTestUnicodeCharacterClass() {
+        String spaces = "  ";
+        String wordChar = "a";
+        String nsm = "\u030a";
+
+        assert (Character.getType('\u030a') == Character.NON_SPACING_MARK);
+
+        Pattern pattern = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS);
+        Matcher matcher = pattern.matcher("");
+        // S=other B=word character N=non spacing mark .=word boundary
+        // SS.BB.SS
+        String input = spaces + wordChar + wordChar + spaces;
+        twoFindIndexes(input, matcher, 2, 4);
+        // SS.BBN.SS
+        input = spaces + wordChar +wordChar + nsm + spaces;
+        twoFindIndexes(input, matcher, 2, 5);
+        // SS.BN.SS
+        input = spaces + wordChar + nsm + spaces;
+        twoFindIndexes(input, matcher, 2, 4);
+        // SS.BNN.SS
+        input = spaces + wordChar + nsm + nsm + spaces;
+        twoFindIndexes(input, matcher, 2, 5);
+        // SS.NBB.SS
+        input = spaces + nsm + wordChar + wordChar + spaces;
+        twoFindIndexes(input, matcher, 2, 5);
+        // SS.BNB.SS
+        input = spaces + wordChar + nsm + wordChar + spaces;
+        twoFindIndexes(input, matcher, 2, 5);
+        // SS.NN.SS
+        input = spaces + nsm + nsm + spaces;
+        twoFindIndexes(input, matcher, 2, 4);
+        // SS.NBBN.SS
+        input = spaces + nsm + wordChar + wordChar + nsm + spaces;
+        twoFindIndexes(input, matcher, 2, 6);
+    }
+
     private static void twoFindIndexes(String input, Matcher matcher, int a,
                                        int b)
     {
@@ -452,6 +489,92 @@ public class RegExTest {
         assertEquals(matcher.start(), a);
         matcher.find();
         assertEquals(matcher.start(), b);
+    }
+
+    // This test is for 8384082
+    // Check to see if word boundary construct properly handles unicode
+    // non spacing marks after surrogate pairs
+    @Test
+    public static void unicodeWordBoundsTestSurrogatePairUnicodeCharacterClass() {
+        String spaces = "  ";
+        String baseChar = "\uD835\uDC00";
+        String nsm = "\u030a";
+
+        assert (Character.getType('\u030a') == Character.NON_SPACING_MARK);
+
+        Pattern pattern = Pattern.compile("\\b", Pattern.UNICODE_CHARACTER_CLASS);
+        Matcher matcher = pattern.matcher("");
+        // S=other B=character N=non spacing mark .=word boundary
+        // SS.BBBB.SS
+        String input = spaces + baseChar + baseChar + spaces;
+        findIndices(input, matcher, List.of(2, 6));
+        // SS.BBBBN.SS
+        input = spaces + baseChar + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of(2, 7));
+        // SS.BBN.SS
+        input = spaces + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of(2, 5));
+        // SS.BBNN.SS
+        input = spaces + baseChar + nsm + nsm + spaces;
+        findIndices(input, matcher, List.of(2, 6));
+        // SS.NBBBB.SS
+        input = spaces + nsm + baseChar + baseChar + spaces;
+        findIndices(input, matcher, List.of(2, 7));
+        // SS.BBNBB.SS
+        input = spaces + baseChar + nsm + baseChar + spaces;
+        findIndices(input, matcher, List.of(2, 7));
+        // SS.NN.SS
+        input = spaces + nsm + nsm + spaces;
+        findIndices(input, matcher, List.of(2, 4));
+        // SS.NBBBBN.SS
+        input = spaces + nsm + baseChar + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of(2, 8));
+    }
+
+    @Test
+    public static void unicodeWordBoundsTestSurrogatePair() {
+        String spaces = "  ";
+        String baseChar = "\uD835\uDC00";
+        String nsm = "\u030a";
+
+        assert (Character.getType('\u030a') == Character.NON_SPACING_MARK);
+
+        Pattern pattern = Pattern.compile("\\b");
+        Matcher matcher = pattern.matcher("");
+        // S=other B=character N=non spacing mark .=word boundary
+        // SSBBBBSS
+        String input = spaces + baseChar + baseChar + spaces;
+        findIndices(input, matcher, List.of());
+        // SSBBBBNSS
+        input = spaces + baseChar + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of());
+        // SSBBNSS
+        input = spaces + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of());
+        // SSBBNNSS
+        input = spaces + baseChar + nsm + nsm + spaces;
+        findIndices(input, matcher, List.of());
+        // SSNBBBBSS
+        input = spaces + nsm + baseChar + baseChar + spaces;
+        findIndices(input, matcher, List.of());
+        // SSBBNBBSS
+        input = spaces + baseChar + nsm + baseChar + spaces;
+        findIndices(input, matcher, List.of());
+        // SSNNSS
+        input = spaces + nsm + nsm + spaces;
+        findIndices(input, matcher, List.of());
+        // SSNBBBBNSS
+        input = spaces + nsm + baseChar + baseChar + nsm + spaces;
+        findIndices(input, matcher, List.of());
+    }
+
+    private static void findIndices(String input, Matcher matcher, List<Integer> expected) {
+        matcher.reset(input);
+        List<Integer> indices = new ArrayList<>();
+        while (matcher.find()) {
+            indices.add(matcher.start());
+        }
+        assertEquals(indices, expected);
     }
 
     // This test is for 6284152
