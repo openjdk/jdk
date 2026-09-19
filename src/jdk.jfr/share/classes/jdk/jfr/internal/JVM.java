@@ -294,6 +294,14 @@ public final class JVM {
     public static native void setCPUPeriod(long periodNanos);
 
     /**
+     * Enables or disables recording of native stack frames
+     * by the CPU time sampler.
+     *
+     * @param enabled whether to record native stack frames
+     */
+    public static native void setCPUNativeStackTrace(boolean enabled);
+
+    /**
      * Sets the file where data should be written.
      *
      * Requires that JFR has been started with {@link JVMSupport#createJFR()}

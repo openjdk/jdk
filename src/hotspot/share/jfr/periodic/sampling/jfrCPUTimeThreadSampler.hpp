@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2025 SAP SE. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +36,14 @@ class JavaThread;
 #include "jfr/utilities/jfrTypes.hpp"
 
 struct JfrCPUTimeSampleRequest {
+  static const u4 MAX_NATIVE_FRAMES = 128;
+
   JfrSampleRequest _request;
   Tickspan _cpu_time_period;
+  address _native_pcs[MAX_NATIVE_FRAMES];
+  u4 _native_pc_count;
 
-  JfrCPUTimeSampleRequest() {}
+  JfrCPUTimeSampleRequest() : _native_pc_count(0) {}
 };
 
 // Fixed size async-signal-safe SPSC linear queue backed by an array.
@@ -123,11 +128,10 @@ class JfrCPUTimeThreadSampling : public JfrCHeapObj {
 
   void update_run_state(JfrCPUSamplerThrottle& throttle);
 
-  static void set_rate(JfrCPUSamplerThrottle& throttle);
-
  public:
   static void set_rate(double rate);
   static void set_period(u8 nanos);
+  static void set_native_stack_enabled(bool enabled);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
@@ -157,6 +161,7 @@ private:
  public:
   static void set_rate(double rate);
   static void set_period(u8 nanos);
+  static void set_native_stack_enabled(bool enabled);
 
   static void on_javathread_create(JavaThread* thread);
   static void on_javathread_terminate(JavaThread* thread);
