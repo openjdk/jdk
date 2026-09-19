@@ -331,7 +331,7 @@ public:
     : _heap(heap), _cancellable(cancellable), _retired(false) { }
 
   void retire();
-  bool can_work() const;
+  bool can_work() const override;
   bool should_exit_termination(size_t tasks) override;
 };
 
