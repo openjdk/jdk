@@ -51,8 +51,8 @@ public class SetSoLinger {
         IPSupport.throwSkippedExceptionIfNonOperational();
         int actual;
         try (ServerSocket ss = new ServerSocket()) {
-            InetSocketAddress socketAddress = new InetSocketAddress(InetAddress.getLocalHost(), 0);
-            ss.bind(socketAddress);
+            InetSocketAddress addr = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
+            ss.bind(addr);
             // initiate the connection
             try (Socket s = new Socket(ss.getInetAddress(), ss.getLocalPort());
                  Socket accepted = ss.accept()) {
