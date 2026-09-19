@@ -372,7 +372,7 @@ public final class Collectors {
      *
      * @since 28
      */
-    public Collector<CharSequence, ?, String> joining(ListFormat format) {
+    public static Collector<CharSequence, ?, String> joining(ListFormat format) {
         Objects.requireNonNull(format, "format");
         return collectingAndThen(
                 mapping(String::valueOf, toList()),
