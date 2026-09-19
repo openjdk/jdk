@@ -482,6 +482,7 @@ void ShenandoahBarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj
 void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                      Register start, Register count, Register tmp) {
   assert(ShenandoahCardBarrier, "Did you mean to enable ShenandoahCardBarrier?");
+  assert_different_registers(start, count, tmp);
 
   Label L_loop, L_done;
   const Register end = count;
@@ -491,7 +492,7 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 
   // end = start + count << LogBytesPerHeapOop
   // last element address to make inclusive
-  __ shadd(end, count, start, tmp, LogBytesPerHeapOop);
+  __ shadd(end, count, start, LogBytesPerHeapOop);
   __ subi(end, end, BytesPerHeapOop);
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());

@@ -1485,7 +1485,8 @@ public:
   void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
   // shift left by shamt and add
-  void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
