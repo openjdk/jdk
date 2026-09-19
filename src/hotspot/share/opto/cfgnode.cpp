@@ -34,6 +34,7 @@
 #include "opto/convertnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
+#include "opto/memnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/narrowptrnode.hpp"
@@ -45,6 +46,7 @@
 #include "opto/subnode.hpp"
 #include "opto/valuetypenode.hpp"
 #include "opto/vectornode.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/vmError.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -1603,7 +1605,7 @@ Node* PhiNode::Identity(PhaseGVN* phase) {
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
       Node* u = phi_reg->fast_out(i);
       assert(!u->is_Phi() || u->in(0) == phi_reg, "broken Phi/Region subgraph");
-      if (u->is_Phi() && u->req() == phi_len && can_be_replaced_by(u->as_Phi())) {
+      if (u->is_Phi() && u->req() == phi_len && can_be_replaced_by(phase, u->as_Phi())) {
         return u;
       }
     }
@@ -2231,44 +2233,110 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
   return false;
 }
 
-// Check if splitting a bot memory Phi through a parent MergeMem may lead to
-// non-termination. For more details, see comments at the call site in
-// PhiNode::Ideal.
-bool PhiNode::is_split_through_mergemem_terminating() const {
-  ResourceMark rm;
-  VectorSet visited;
-  GrowableArray<const Node*> worklist;
-  worklist.push(this);
-  visited.set(this->_idx);
-  auto maybe_add_to_worklist = [&](Node* input) {
-    if (input != nullptr &&
-        (input->is_MergeMem() || input->is_memory_phi()) &&
-        !visited.test_set(input->_idx)) {
-      worklist.push(input);
-      assert(input->adr_type() == TypePtr::BOTTOM,
-          "should only visit bottom memory");
+// Fix all cases when this bottom memory Phi has MergeMem inputs
+Node* PhiNode::split_through_mergemem(PhaseIterGVN& igvn) {
+  assert(type() == Type::MEMORY, "must be a memory Phi");
+  assert(adr_type() == TypePtr::BOTTOM, "must be a bottom memory Phi");
+
+  bool need_splitting = false;
+  bool need_process = false;
+  for (uint input_idx = 1; input_idx < req(); input_idx++) {
+    MergeMemNode* input = in(input_idx)->isa_MergeMem();
+    if (input == nullptr) {
+      continue;
     }
-  };
-  while (worklist.length() > 0) {
-    const Node* n = worklist.pop();
-    if (n->is_MergeMem()) {
-      Node* input = n->as_MergeMem()->base_memory();
-      if (input == this) {
-        return false;
+
+    need_process = true;
+    for (MergeMemStream mms(input); mms.next_non_empty();) {
+      if (mms.at_base_memory()) {
+        continue;
       }
-      maybe_add_to_worklist(input);
-    } else {
-      assert(n->is_memory_phi(), "invariant");
-      for (uint i = PhiNode::Input; i < n->req(); i++) {
-        Node* input = n->in(i);
-        if (input == this) {
-          return false;
-        }
-        maybe_add_to_worklist(input);
+
+      if (_excluded_idx == nullptr || !_excluded_idx->contains(mms.alias_idx())) {
+        need_splitting = true;
+        break;
+      }
+    }
+
+    if (need_splitting) {
+      break;
+    }
+  }
+
+  if (!need_process) {
+    return nullptr;
+  }
+
+  // If a MergeMem input of this bottom memory Phi has non-empty inputs only at alias classes which
+  // has been excluded from this Phi, then we can ignore all those non-empty inputs, rewire this
+  // Phi directly to the base memory of that MergeMem input
+  if (!need_splitting) {
+    for (uint input_idx = 1; input_idx < req(); input_idx++) {
+      MergeMemNode* input = in(input_idx)->isa_MergeMem();
+      if (input == nullptr) {
+        continue;
+      }
+      set_req_X(input_idx, input->base_memory(), &igvn);
+    }
+    return this;
+  }
+
+  // Split this Phi through its MergeMem inputs
+  // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
+  //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
+  PhiNode* new_base = (PhiNode*) clone();
+  // Must eagerly register phis, since they participate in loops.
+  igvn.register_new_node_with_optimizer(new_base);
+
+  // Record the alias indices that are newly split
+  ResourceMark rm;
+  ResourceBitMap new_excluded_idx(igvn.C->num_alias_types());
+  if (_excluded_idx != nullptr) {
+    _excluded_idx->copy_into(new_excluded_idx);
+  }
+
+  MergeMemNode* result = MergeMemNode::make(new_base);
+  for (uint input_idx = 1; input_idx < req(); input_idx++) {
+    MergeMemNode* input = in(input_idx)->isa_MergeMem();
+    if (input == nullptr) {
+      continue;
+    }
+
+    // TODO revisit this with JDK-8247216
+    // Put 'input' on the worklist because it might be modified by MergeMemStream::iteration_setup
+    igvn.record_for_igvn(input);
+
+    for (MergeMemStream mms(result, input); mms.next_non_empty2();) {
+      // If we have not seen this slice yet, make a phi for it.
+      bool made_new_phi = false;
+      if (mms.is_empty()) {
+        Node* new_phi = new_base->slice_memory(mms.adr_type(igvn.C));
+        made_new_phi = true;
+        igvn.register_new_node_with_optimizer(new_phi);
+        mms.set_memory(new_phi);
+      }
+      Node* phi = mms.memory();
+      assert(made_new_phi || phi->in(input_idx) == input, "replace the i-th merge by a slice");
+      phi->set_req_X(input_idx, mms.memory2(), &igvn);
+      new_excluded_idx.set_bit(mms.alias_idx());
+    }
+  }
+  new_base->_excluded_idx = ExcludedAliasIdx::make(igvn.C, new_excluded_idx);
+
+  // Distribute all self-loops
+  for (MergeMemStream mms(result); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    for (uint i = 1; i < req(); i++) {
+      if (phi->in(i) == this) {
+        phi->set_req_X(i, phi, &igvn);
       }
     }
   }
-  return true;
+
+  // We could immediately transform the new Phi nodes here, but that can result in creating an
+  // excessive number of new nodes within a single IGVN iteration. We have put the Phi nodes on the
+  // IGVN worklist, so they are transformed later on in any case.
+  return result;
 }
 
 // Is one of the inputs a Cast that has not been processed by igvn yet?
@@ -2612,191 +2680,30 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // It would make the parser's memory-merge logic sick.)
   // (MergeMemNode is not dead_loop_safe - need to check for dead loop.)
   if (progress == nullptr && can_reshape && type() == Type::MEMORY) {
+    PhaseIterGVN* igvn = phase->is_IterGVN();
+    assert(igvn != nullptr, "must be during IGVN");
 
-    // See if this Phi should be sliced. Determine the merge width of input
-    // MergeMems and check if there is a direct loop to self, as illustrated
-    // below.
-    //
-    //               +-------------+
-    //               |             |
-    // (base_memory) v             |
-    //              MergeMem       |
-    //                 |           |
-    //                 v           |
-    //                Phi (this)   |
-    //                 |           |
-    //                 +-----------+
-    //
-    // Generally, there are issues with non-termination with such circularity
-    // (see comment further below). However, if there is a direct loop to self,
-    // splitting the Phi through the MergeMem will result in the below.
-    //
-    //               +---+
-    //               |   |
-    //               v   |
-    //              Phi  |
-    //               |\  |
-    //               | +-+
-    // (base_memory) v
-    //              MergeMem
-    //
-    // This split breaks the circularity and consequently does not lead to
-    // non-termination.
-    uint merge_width = 0;
-    // TODO revisit this with JDK-8247216
-    bool mergemem_only = true;
-    bool split_always_terminates = false; // Is splitting guaranteed to terminate?
-    for( uint i=1; i<req(); ++i ) {// For all paths in
-      Node *ii = in(i);
-      // TOP inputs should not be counted as safe inputs because if the
-      // Phi references itself through all other inputs then splitting the
-      // Phi through memory merges would create dead loop at later stage.
-      if (ii == top) {
-        return progress; // Delay optimization until graph is cleaned.
+    if (const TypePtr* at = adr_type(); at == TypePtr::BOTTOM) {
+      progress = split_through_mergemem(*igvn);
+      if (progress != nullptr && progress != this) {
+        return progress;
       }
-      if (ii->is_MergeMem()) {
-        MergeMemNode* n = ii->as_MergeMem();
-        merge_width = MAX2(merge_width, n->req());
-        if (n->base_memory() == this) {
-          split_always_terminates = true;
+    } else {
+      // Patch the existing phi to select an input from the merge:
+      // Phi:AT1(...MergeMem(m0, m1, m2)...) into
+      //     Phi:AT1(...m1...)
+      int alias_idx = igvn->C->get_alias_index(at);
+      for (uint input_idx = 1; input_idx < req(); input_idx++) {
+        MergeMemNode* input = in(input_idx)->isa_MergeMem();
+        if (input == nullptr) {
+          continue;
         }
-      } else {
-        mergemem_only = false;
+
+        set_req_X(input_idx, input->memory_at(alias_idx), igvn);
+        progress = this;
       }
     }
 
-    // There are cases with circular dependencies between bottom Phis
-    // and MergeMems. Below is a minimal example.
-    //
-    //               +------------+
-    //               |            |
-    // (base_memory) v            |
-    //              MergeMem      |
-    //                 |          |
-    //                 v          |
-    //                Phi (this)  |
-    //                 |          |
-    //                 v          |
-    //                Phi         |
-    //                 |          |
-    //                 +----------+
-    //
-    // Here, we cannot break the circularity through a self-loop as there
-    // are two Phis involved. Repeatedly splitting the Phis through the
-    // MergeMem leads to non-termination. We check for non-termination below.
-    // Only check for non-termination if necessary.
-    if (!mergemem_only && !split_always_terminates && adr_type() == TypePtr::BOTTOM &&
-        merge_width > Compile::AliasIdxRaw) {
-      split_always_terminates = is_split_through_mergemem_terminating();
-    }
-
-    if (merge_width > Compile::AliasIdxRaw) {
-      // found at least one non-empty MergeMem
-      const TypePtr* at = adr_type();
-      if (at != TypePtr::BOTTOM) {
-        // Patch the existing phi to select an input from the merge:
-        // Phi:AT1(...MergeMem(m0, m1, m2)...) into
-        //     Phi:AT1(...m1...)
-        int alias_idx = phase->C->get_alias_index(at);
-        for (uint i=1; i<req(); ++i) {
-          Node *ii = in(i);
-          if (ii->is_MergeMem()) {
-            MergeMemNode* n = ii->as_MergeMem();
-            // compress paths and change unreachable cycles to TOP
-            // If not, we can update the input infinitely along a MergeMem cycle
-            // Equivalent code is in MemNode::Ideal_common
-            Node *m  = phase->transform(n);
-            if (outcnt() == 0) {  // Above transform() may kill us!
-              return top;
-            }
-            // If transformed to a MergeMem, get the desired slice
-            // Otherwise the returned node represents memory for every slice
-            Node *new_mem = (m->is_MergeMem()) ?
-                             m->as_MergeMem()->memory_at(alias_idx) : m;
-            // Update input if it is progress over what we have now
-            if (new_mem != ii) {
-              set_req_X(i, new_mem, phase->is_IterGVN());
-              progress = this;
-            }
-          }
-        }
-      } else if (mergemem_only || split_always_terminates) {
-        // If all inputs reference this phi (directly or through data nodes) -
-        // it is a dead loop.
-        bool saw_safe_input = false;
-        for (uint j = 1; j < req(); ++j) {
-          Node* n = in(j);
-          if (n->is_MergeMem()) {
-            MergeMemNode* mm = n->as_MergeMem();
-            if (mm->base_memory() == this || mm->base_memory() == mm->empty_memory()) {
-              // Skip this input if it references back to this phi or if the memory path is dead
-              continue;
-            }
-          }
-          if (!is_unsafe_data_reference(n)) {
-            saw_safe_input = true; // found safe input
-            break;
-          }
-        }
-        if (!saw_safe_input) {
-          // There is a dead loop: All inputs are either dead or reference back to this phi
-          return top;
-        }
-
-        // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
-        //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
-        PhaseIterGVN* igvn = phase->is_IterGVN();
-        assert(igvn != nullptr, "sanity check");
-        PhiNode* new_base = (PhiNode*) clone();
-        // Must eagerly register phis, since they participate in loops.
-        igvn->register_new_node_with_optimizer(new_base);
-
-        MergeMemNode* result = MergeMemNode::make(new_base);
-        for (uint i = 1; i < req(); ++i) {
-          Node *ii = in(i);
-          if (ii->is_MergeMem()) {
-            MergeMemNode* n = ii->as_MergeMem();
-            if (igvn) {
-              // TODO revisit this with JDK-8247216
-              // Put 'n' on the worklist because it might be modified by MergeMemStream::iteration_setup
-              igvn->_worklist.push(n);
-            }
-            for (MergeMemStream mms(result, n); mms.next_non_empty2(); ) {
-              // If we have not seen this slice yet, make a phi for it.
-              bool made_new_phi = false;
-              if (mms.is_empty()) {
-                Node* new_phi = new_base->slice_memory(mms.adr_type(phase->C));
-                made_new_phi = true;
-                igvn->register_new_node_with_optimizer(new_phi);
-                mms.set_memory(new_phi);
-              }
-              Node* phi = mms.memory();
-              assert(made_new_phi || phi->in(i) == n, "replace the i-th merge by a slice");
-              phi->set_req_X(i, mms.memory2(), phase);
-            }
-          }
-        }
-        // Distribute all self-loops.
-        { // (Extra braces to hide mms.)
-          for (MergeMemStream mms(result); mms.next_non_empty(); ) {
-            Node* phi = mms.memory();
-            for (uint i = 1; i < req(); ++i) {
-              if (phi->in(i) == this) {
-                phi->set_req_X(i, phi, phase);
-              }
-            }
-          }
-        }
-
-        // We could immediately transform the new Phi nodes here, but that can
-        // result in creating an excessive number of new nodes within a single
-        // IGVN iteration. We have put the Phi nodes on the IGVN worklist, so
-        // they are transformed later on in any case.
-
-        // Replace self with the result.
-        return result;
-      }
-    }
     //
     // Other optimizations on the memory chain
     //
@@ -2935,7 +2842,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     for (DUIterator_Fast imax, i = phi_reg->fast_outs(imax); i < imax; i++) {
       Node* u = phi_reg->fast_out(i);
       assert(!u->is_Phi() || (u->in(0) == phi_reg && u->req() == phi_len), "broken Phi/Region subgraph");
-      if (u->is_Phi() && u->as_Phi()->can_be_replaced_by(this)) {
+      if (u->is_Phi() && u->as_Phi()->can_be_replaced_by(phase, this)) {
         igvn->_worklist.push(u);
       }
     }
@@ -3383,9 +3290,15 @@ const TypeTuple* PhiNode::collect_types(PhaseGVN* phase) const {
   return TypeTuple::make(types.length(), flds);
 }
 
-bool PhiNode::can_be_replaced_by(const PhiNode* other) const {
-  return type() == Type::MEMORY && other->type() == Type::MEMORY && adr_type() != TypePtr::BOTTOM &&
-    other->adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other);
+bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
+  const TypePtr* at = adr_type();
+  return type() == Type::MEMORY && other->type() == Type::MEMORY && at != TypePtr::BOTTOM &&
+         other->adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other) &&
+         // Normally, the alias class corresponding to 'at' not being in '_exclude_idx' does not
+         // imply that it is contained in the bottom memory Phi 'other'. However, since 'this' and
+         // 'other' have the same inputs, either both represent the memory state of 'at', or
+         // neither does, both cases allow replacing 'this' with 'other'.
+         (other->_excluded_idx == nullptr || !other->_excluded_idx->contains(phase->C->get_alias_index(at)));
 }
 
 Node* PhiNode::clone_through_phi(Node* root_phi, const Type* t, uint c, PhaseIterGVN* igvn) {
