@@ -3113,9 +3113,24 @@ public class IRNode {
         machOnlyNameRegex(X86_SCONV_HF2L, "convHF2L_reg_reg");
     }
 
+    public static final String X86_SCONV_HF2F = PREFIX + "X86_SCONV_HF2F" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_SCONV_HF2F, "convHF2F_reg_reg");
+    }
+
     public static final String X86_VCAST_HF2X = PREFIX + "X86_VCAST_HF2X" + POSTFIX;
     static {
         machOnlyNameRegex(X86_VCAST_HF2X, "castHFtoX_reg_evex");
+    }
+
+    public static final String X86_VCAST_HF2B_AVX10_2 = PREFIX + "X86_VCAST_HF2B_AVX10_2" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCAST_HF2B_AVX10_2, "castHFtoB_reg_avx10_2");
+    }
+
+    public static final String X86_VCONV_HF2F = PREFIX + "X86_VCONV_HF2F" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_VCONV_HF2F, "vconvHF2F_reg_(reg|mem)");
     }
 
     public static final String XOR = PREFIX + "XOR" + POSTFIX;

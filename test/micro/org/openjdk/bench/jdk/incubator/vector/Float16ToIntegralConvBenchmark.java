@@ -31,7 +31,9 @@ import static java.lang.Float.*;
 
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Fork(jvmArgs = {"--add-modules=jdk.incubator.vector"})
+@Fork(value = 3, jvmArgs = {"--add-modules=jdk.incubator.vector"})
+@Warmup(iterations = 3, time = 3)
+@Measurement(iterations = 5, time = 5)
 public class Float16ToIntegralConvBenchmark {
     @Param({"1024", "2048"})
     int size;
@@ -57,7 +59,7 @@ public class Float16ToIntegralConvBenchmark {
         IntStream.range(0, size).forEach(
             i -> {
                 if ((i % 100) == 0) {
-                    fp16inp[i] = float16ToRawShortBits(specialValues[i % specialValues.length]);
+                    fp16inp[i] = float16ToRawShortBits(specialValues[(i / 100) % specialValues.length]);
                 }
             }
         );

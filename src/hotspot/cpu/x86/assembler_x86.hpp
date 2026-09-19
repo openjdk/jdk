@@ -1305,6 +1305,7 @@ private:
   // Convert Packed Halffloat to Packed integral values
   void evcvttph2dq(XMMRegister dst, XMMRegister src, int vector_len);
   void evcvttph2qq(XMMRegister dst, XMMRegister src, int vector_len);
+  void evcvttph2ibs(XMMRegister dst, XMMRegister src, int vector_len);
 
   // Convert Packed Signed Doubleword Integers to Packed Single-Precision Floating-Point Value
   void cvtdq2ps(XMMRegister dst, XMMRegister src);
