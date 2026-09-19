@@ -159,6 +159,9 @@ protected:
 
  public:
   static void initialize_chunk_pool();
+#ifdef ASSERT
+  static void suspend_chunk_pool_cleaning(bool suspend);
+#endif
 
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
