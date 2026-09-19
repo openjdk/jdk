@@ -1049,8 +1049,11 @@ public:
   }
   // check if transform created new nodes that need _ctrl recorded
   Node *get_late_ctrl( Node *n, Node *early );
+  Node *deepest_ctrl_of_inputs(Node *n, Node *early, uint start);
+  Node *get_early_ctrl_of_data_inputs(Node *n);
   Node *get_early_ctrl( Node *n );
   Node *get_early_ctrl_for_expensive(Node *n, Node* earliest);
+  void hoist_expensive_node(Node *n);
   void set_early_ctrl(Node* n, bool update_body);
   void set_subtree_ctrl(Node* n, bool update_body);
   void set_ctrl( Node *n, Node *ctrl ) {
