@@ -1543,11 +1543,15 @@ public:
   }
 
   // vector pseudo instructions
-  // rotate vector register left with shift bits, 32-bit version
+  // Rotate 32-bit vector elements left. The caller must configure SEW=32.
   inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
-    vsrl_vi(tmp_vr, vd, 32 - shift);
-    vsll_vi(vd, vd, shift);
-    vor_vv(vd, vd, tmp_vr);
+    if (UseZvbb) {
+      vror_vi(vd, vd, 32 - shift);
+    } else {
+      vsrl_vi(tmp_vr, vd, 32 - shift);
+      vsll_vi(vd, vd, shift);
+      vor_vv(vd, vd, tmp_vr);
+    }
   }
 
   inline void vl1r_v(VectorRegister vd, Register rs) {
