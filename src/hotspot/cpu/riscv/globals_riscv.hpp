@@ -120,6 +120,7 @@ define_pd_global(bool, ValueTypeReturnedAsFields, false);
   product(bool, UseZicond, false, DIAGNOSTIC, "Use Zicond instructions")         \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
+  product(bool, UseZawrs, false, EXPERIMENTAL, "Use Zawrs instructions")         \
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZvbb, false, DIAGNOSTIC, "Use Zvbb instructions")             \
   product(bool, UseZvbc, false, DIAGNOSTIC, "Use Zvbc instructions")             \
