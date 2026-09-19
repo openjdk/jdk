@@ -55,8 +55,8 @@ public class SetSoLinger {
             ss.bind(socketAddress);
             // initiate the connection
             try (Socket s = new Socket(ss.getInetAddress(), ss.getLocalPort());
-                 // accept the connection
                  Socket accepted = ss.accept()) {
+
                 // configure a high linger value
                 System.out.println("setting linger to " + LARGE_LINGER + " for socket " + accepted);
                 accepted.setSoLinger(true, LARGE_LINGER);
