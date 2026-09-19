@@ -31,7 +31,6 @@
  * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=adaptive
  *      TestDynamicSoftMaxHeapSize
  *
@@ -45,7 +44,6 @@
  * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=aggressive
  *      TestDynamicSoftMaxHeapSize
  *
@@ -59,7 +57,6 @@
  * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=compact
  *      TestDynamicSoftMaxHeapSize
  *
@@ -73,7 +70,6 @@
  * @run main/othervm -Xms100m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -Xlog:gc=info -Dtarget=10000
  *      -XX:ShenandoahGCMode=satb
- *      -XX:+ShenandoahDegeneratedGC
  *      -XX:ShenandoahGCHeuristics=static
  *      TestDynamicSoftMaxHeapSize
  *
@@ -86,13 +82,6 @@
  *
  * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:+ShenandoahDegeneratedGC
- *      -Dtarget=10000
- *      TestDynamicSoftMaxHeapSize
- *
- * @run main/othervm -Xms16m -Xmx512m -XX:+UnlockDiagnosticVMOptions -XX:+UnlockExperimentalVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=passive
- *      -XX:-ShenandoahDegeneratedGC
  *      -Dtarget=10000
  *      TestDynamicSoftMaxHeapSize
  */

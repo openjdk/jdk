@@ -23,50 +23,24 @@
  */
 
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "unittest.hpp"
+#include "utilities/ostream.hpp"
 
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_sanity) {
-  ShenandoahCollectorPolicy policy;
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
-}
+using ::testing::HasSubstr;
 
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_no_upgrade) {
+TEST_VM(ShenandoahCollectorPolicyTest, track_allocation_stalls) {
   ShenandoahCollectorPolicy policy;
-  policy.record_degenerated(true, true, true);
-  policy.record_degenerated(true, true, true);
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
-}
-
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_upgrade) {
-  ShenandoahCollectorPolicy policy;
-  policy.record_degenerated(true, true, false);
-  policy.record_degenerated(true, true, false);
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), true);
-}
-
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset_progress) {
-  ShenandoahCollectorPolicy policy;
-  policy.record_degenerated(true, true, false);
-  policy.record_degenerated(true, true, true);
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 2UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
-}
-
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_full_reset) {
-  ShenandoahCollectorPolicy policy;
-  policy.record_degenerated(true, true, false);
-  policy.record_success_full();
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
-}
-
-TEST(ShenandoahCollectorPolicyTest, track_degen_cycles_reset) {
-  ShenandoahCollectorPolicy policy;
-  policy.record_degenerated(true, true, false);
-  policy.record_success_concurrent(true, true);
-  EXPECT_EQ(policy.consecutive_degenerated_gc_count(), 0UL);
-  EXPECT_EQ(policy.should_upgrade_degenerated_gc(), false);
+  for (int i = 0; i < ShenandoahController::PHASE_LIMIT; ++i) {
+    policy.record_allocation_stall(static_cast<ShenandoahController::ShenandoahCollectorPhase>(i));
+  }
+  stringStream ss;
+  policy.print_gc_stats(&ss);
+  ASSERT_THAT(ss.base(), HasSubstr("6 Stalls"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Outside of Cycle"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Initializing"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Roots"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Mark"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Evacuation"));
+  ASSERT_THAT(ss.base(), HasSubstr("1 happened at Update References"));
 }

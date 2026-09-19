@@ -44,8 +44,6 @@ public:
 
   bool should_unload_classes() override;
 
-  bool should_degenerate_cycle() override;
-
   void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set,
                                              RegionData* data, size_t data_size,
                                              size_t free) override;
