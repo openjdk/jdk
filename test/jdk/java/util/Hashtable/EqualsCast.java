@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,10 @@
  * @summary Hashtable was less robust to extension that it could have been
  *          because the equals and Hashcode methods used internals
  *          unnecessarily.  (java.security.Provider tickled this sensitivity.)
+ * @library /test/lib
  */
+
+import jdk.test.lib.valueclass.VClass;
 
 import java.security.Provider;
 import java.util.Map;
@@ -36,7 +39,9 @@ public class EqualsCast {
     public static void main(String[] args) throws Exception {
         Map m1 = new MyProvider("foo", 69, "baz");
         Map m2 = new MyProvider("foo", 69, "baz");
-        m1.equals(m2);
+        if (!m1.equals(m2)) {
+            throw new RuntimeException("Provider maps are not equal");
+        }
     }
 }
 
@@ -48,6 +53,7 @@ class MyProvider extends Provider {
         super(name, version, info);
         this.name = name;
         put("Signature.sigalg", "sigimpl");
+        put(new VClass(1, new int[] { 1 }), new VClass(2, new int[] { 2 }));
     }
 
     public String getName() {
