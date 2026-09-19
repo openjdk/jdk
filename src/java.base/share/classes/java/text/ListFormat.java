@@ -32,8 +32,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
@@ -288,7 +286,7 @@ public final class ListFormat extends Format {
      * n = 1: {0}
      * n = 2: parsed pattern for "two"
      * n = 3: parsed pattern for "three"
-     * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
+     * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{n-1}end_between{n}(end_after)
      * }
      * As an example, the following table shows a pattern array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
@@ -374,27 +372,14 @@ public final class ListFormat extends Format {
      *              is thrown.
      * @throws IllegalArgumentException if the length of {@code input} is zero.
      * @throws NullPointerException if {@code input} is null.
+     *
+     * @see java.util.stream.Collectors#joining(ListFormat)
      */
     public String format(List<String> input) {
         Objects.requireNonNull(input);
 
         return format(input, StringBufFactory.of(),
                 DontCareFieldPosition.INSTANCE).toString();
-    }
-
-    /**
-     * {@return a {@code Collector} that concatenates the input elements into a
-     * string with the patterns of this {@code ListFormat}, in encounter order}
-     *
-     * <p>The returned Collector requires at least one input element.
-     * It will throw {@link IllegalArgumentException} if there are no input elements.
-     *
-     * @since 28
-     */
-    public Collector<CharSequence, ?, String> toCollector() {
-        return Collectors.collectingAndThen(
-                Collectors.mapping(String::valueOf, Collectors.toList()),
-                this::format);
     }
 
     /**

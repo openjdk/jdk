@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package java.util.stream;
 
+import java.text.ListFormat;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.ArrayList;
@@ -354,10 +355,28 @@ public final class Collectors {
      * @param delimiter the delimiter to be used between each element
      * @return A {@code Collector} which concatenates CharSequence elements,
      * separated by the specified delimiter, in encounter order
-     * @see java.text.ListFormat#toCollector
      */
     public static Collector<CharSequence, ?, String> joining(CharSequence delimiter) {
         return joining(delimiter, "", "");
+    }
+
+    /**
+     * {@return a {@code Collector} that concatenates the input elements into a
+     * string with the patterns of the specified {@link ListFormat}, in encounter order}
+     *
+     * <p>The returned Collector requires at least one input element.
+     * It will throw {@link IllegalArgumentException} if there are no input elements.
+     *
+     * @param format an instance of {@code ListFormat} to use for concatenation
+     * @throws NullPointerException if format is null
+     *
+     * @since 28
+     */
+    public Collector<CharSequence, ?, String> joining(ListFormat format) {
+        Objects.requireNonNull(format, "format");
+        return collectingAndThen(
+                mapping(String::valueOf, toList()),
+                format::format);
     }
 
     /**
