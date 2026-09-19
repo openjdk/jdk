@@ -40,9 +40,7 @@ G1HeapTransition::Data::Data(G1CollectedHeap* g1_heap) :
   uint node_count = G1NUMA::numa()->num_active_nodes();
 
   if (node_count > 1) {
-    LogTarget(Debug, gc, heap, numa) lt;
-
-    if (lt.is_enabled()) {
+    if (const LogTarget(Debug, gc, heap, numa) lt; lt.is_enabled()) {
       _num_eden_regions_per_node = NEW_C_HEAP_ARRAY(uint, node_count, mtGC);
       _num_survivor_regions_per_node = NEW_C_HEAP_ARRAY(uint, node_count, mtGC);
 
@@ -103,9 +101,7 @@ public:
 
 static void log_regions(const char* msg, size_t num_before, size_t num_after, size_t capacity,
                         uint* num_per_node_before, uint* num_per_node_after) {
-  LogTarget(Info, gc, heap) lt;
-
-  if (lt.is_enabled()) {
+  if (const LogTarget(Info, gc, heap) lt; lt.is_enabled()) {
     LogStream ls(lt);
 
     ls.print("%s regions: %zu->%zu(%zu)",

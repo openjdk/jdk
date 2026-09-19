@@ -659,8 +659,7 @@ static void log_release_transitions(uintx releasing,
                                     uintx old_allocated,
                                     const OopStorage* owner,
                                     const void* block) {
-  LogTarget(Trace, oopstorage, blocks) lt;
-  if (lt.is_enabled()) {
+  if (const LogTarget(Trace, oopstorage, blocks) lt; lt.is_enabled()) {
     LogStream ls(lt);
     if (is_full_bitmask(old_allocated)) {
       ls.print_cr("%s: block not full " PTR_FORMAT, owner->name(), p2i(block));
