@@ -39,11 +39,11 @@ public class TestWindowsStackYellowPages {
 
     public static void main(String[] args) throws Exception {
         ProcessTools.executeTestJava("-XX:+PrintFlagsFinal", "-version")
-                    .shouldMatch(FLAG + "[ ]+=[ ]+3")
+                    .shouldMatch(FLAG + "[ ]+=[ ]+2")
                     .shouldHaveExitValue(0);
 
-        ProcessTools.executeTestJava("-XX:" + FLAG + "=2", "-version")
-                    .shouldContain(FLAG + "=2 is outside the allowed range")
+        ProcessTools.executeTestJava("-XX:" + FLAG + "=1", "-version")
+                    .shouldContain(FLAG + "=1 is outside the allowed range")
                     .shouldNotHaveExitValue(0);
     }
 }

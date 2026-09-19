@@ -53,7 +53,7 @@ define_pd_global(uint, CodeEntryAlignment,       16);
 define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineSmallCode,          1000);
 
-#define DEFAULT_STACK_YELLOW_PAGES (NOT_WINDOWS(2) WINDOWS_ONLY(3))
+#define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
 #define DEFAULT_STACK_RESERVED_PAGES (NOT_WINDOWS(1) WINDOWS_ONLY(0))
 
