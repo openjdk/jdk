@@ -25,7 +25,7 @@
  * @test TestFinalizableValues
  * @library /test/lib
  * @enablePreview
- * @compile TestFinalizableValues.java
+ * @compile MyVal.jcod MyAbstractVal.jcod TestFinalizableValues.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestFinalizableValues
  */
@@ -43,39 +43,24 @@ public class TestFinalizableValues {
 
     static WhiteBox WB = WhiteBox.getWhiteBox();
 
+    /*
+     * MyVal and MyAbstractVal are supplied as MyVal.jcod and MyAbstractVal.jcod: both are
+     * classes that javac can no longer produce from source since JDK-8339188 forbids a
+     * value class from declaring a method that overrides Object::finalize. See the
+     * jcod files for the source they were generated from.
+     */
     public static class TestHelper {
-        static boolean finalizer1WasCalled = false;
-        static boolean finalizer2WasCalled = false;
-
-        static value class MyVal {
-            static volatile boolean finalizerWasCalled = false;
-            int i = 0;
-
-            @SuppressWarnings("deprecation")
-            protected void finalize() {
-                finalizerWasCalled = true;
-            }
-        }
-
-        static abstract value class MyAbstractVal {
-            int i = 0;
-
-            @SuppressWarnings("deprecation")
-            protected void finalize() {
-                finalizer1WasCalled = true;
-            }
-        }
-
         static value class MyVal2 extends MyAbstractVal {}
 
         static class MyId extends MyAbstractVal {}
 
         static class MyId2 extends MyAbstractVal {
+            static boolean finalizerWasCalled = false;
             int i = 0;
 
             @SuppressWarnings("deprecation")
             protected void finalize() {
-                finalizer2WasCalled = true;
+                finalizerWasCalled = true;
             }
         }
 
@@ -101,14 +86,14 @@ public class TestFinalizableValues {
                     Thread.currentThread().interrupt();
                 }
             }
-            if (finalizer1WasCalled != expectFinalizer1) {
+            if (MyAbstractVal.finalizerWasCalled != expectFinalizer1) {
                 throw new RuntimeException("Finalizer1 was "
-                                           + (finalizer1WasCalled ? "" : "not ")
+                                           + (MyAbstractVal.finalizerWasCalled ? "" : "not ")
                                            + "executed");
             }
-            if (finalizer2WasCalled != expectFinalizer2) {
+            if (MyId2.finalizerWasCalled != expectFinalizer2) {
                 throw new RuntimeException("Finalizer2 was "
-                                           + (finalizer2WasCalled ? "" : "not ")
+                                           + (MyId2.finalizerWasCalled ? "" : "not ")
                                            + "executed");
             }
         }
@@ -122,7 +107,7 @@ public class TestFinalizableValues {
         Collections.addAll(argsList, "-XX:+IgnoreUnrecognizedVMOptions");
         Collections.addAll(argsList, "-XX:+TraceFinalizerRegistration");
         Collections.addAll(argsList, "TestFinalizableValues$TestHelper");
-        Collections.addAll(argsList, "TestFinalizableValues$TestHelper$" + classname);
+        Collections.addAll(argsList, classname);
         Collections.addAll(argsList, args);
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(argsList);
         OutputAnalyzer out = new OutputAnalyzer(pb.start());
@@ -137,8 +122,8 @@ public class TestFinalizableValues {
     }
     public static void main(String[] args) throws IOException {
         test("MyVal", false, "false", "false");
-        test("MyVal2", false, "false", "false");
-        test("MyId", false, "false", "false");
-        test("MyId2", true, "false", "true");
+        test("TestFinalizableValues$TestHelper$MyVal2", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId", false, "false", "false");
+        test("TestFinalizableValues$TestHelper$MyId2", true, "false", "true");
     }
 }
