@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -868,7 +868,8 @@ public class SSLParameters {
      * This method returns the most recent value passed to
      * {@link #setNamedGroups} if that method has been called and otherwise
      * returns the default named groups for connection populated objects,
-     * or {@code null} for pre-populated objects.
+     * or {@code null} for pre-populated objects. Any prefixed asterisk
+     * is retained.
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
@@ -916,6 +917,13 @@ public class SSLParameters {
      * array and the underlying provider-specific default named groups.
      * See {@link #getNamedGroups} for specific details on how the
      * parameters are used in SSL/TLS/DTLS connections.
+     * <p>
+     * In TLS 1.3, the ClientHello message can include a list of pre-calculated
+     * key shares. If a group name is prefixed with an asterisk ("*"), a key
+     * share for the named group will be included in the message. If none
+     * of the names have the prefix or these names are not available, the
+     * implementation determines which key shares to include in the message.
+     * The prefix is ignored on the server side.
      *
      * @apiNote
      * Note that a provider may not have been updated to support this method
@@ -931,8 +939,9 @@ public class SSLParameters {
      *        SSL/TLS/DTLS connections.
      * @spec security/standard-names.html Java Security Standard Algorithm Names
      * @throws IllegalArgumentException if any element in the
-     *        {@code namedGroups} array is a duplicate, {@code null} or
-     *        {@linkplain String#isBlank() blank}.
+     *        {@code namedGroups} array is a duplicate, {@code null},
+     *        {@linkplain String#isBlank() blank}, or starts with two
+     *        asterisks ("**").
      *
      * @see #getNamedGroups
      *
@@ -945,11 +954,22 @@ public class SSLParameters {
             tempGroups = namedGroups.clone();
             Set<String> groupsSet = new HashSet<>();
             for (String namedGroup : tempGroups) {
-                if (namedGroup == null || namedGroup.isBlank()) {
+                if (namedGroup == null) {
                     throw new IllegalArgumentException(
-                        "An element of namedGroups is null or blank");
+                        "An element of namedGroups is null");
                 }
-
+                // Avoid "name" and "*name" both specified.
+                if (namedGroup.startsWith("*")) {
+                    namedGroup = namedGroup.substring(1);
+                    if (namedGroup.startsWith("*")) {
+                        throw new IllegalArgumentException(
+                                "Multiple asterisks");
+                    }
+                }
+                if (namedGroup.isBlank()) {
+                    throw new IllegalArgumentException(
+                            "An element of namedGroups is blank");
+                }
                 if (groupsSet.contains(namedGroup)) {
                     throw new IllegalArgumentException(
                         "Duplicate element of namedGroups: " + namedGroup);

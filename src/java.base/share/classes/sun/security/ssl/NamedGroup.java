@@ -49,6 +49,7 @@ import sun.security.util.CurveDB;
  * required functions (e.g. encoding/decoding).
  */
 enum NamedGroup {
+
     // Elliptic Curves (RFC 4492)
     //
     // See sun.security.util.CurveDB for the OIDs
@@ -261,6 +262,24 @@ enum NamedGroup {
             ProtocolVersion.PROTOCOLS_TO_12,
             null);
 
+    record PreferredGroup(boolean preferred, NamedGroup ng) {
+        @Override
+        public String toString() {
+            return (preferred ? "*" : "") + ng.name;
+        }
+        static PreferredGroup of(String name) {
+            boolean preferred;
+            if (name.startsWith("*")) {
+                preferred = true;
+                name = name.substring(1);
+            } else {
+                preferred = false;
+            }
+            NamedGroup ng = nameOf(name);
+            return ng == null ? null : new PreferredGroup(preferred, ng);
+        }
+    }
+
     final int id;               // hash + signature
     final String name;          // literal name
     final NamedGroupSpec spec;  // group type
@@ -467,10 +486,10 @@ enum NamedGroup {
             AlgorithmConstraints constraints, NamedGroupSpec type) {
 
         boolean hasFFDHEGroups = false;
-        for (NamedGroup namedGroup :
+        for (PreferredGroup preferredGroup :
                 SupportedGroups.getGroupsFromConfig(sslConfig)) {
-            if (namedGroup.isAvailable && namedGroup.spec == type) {
-                if (namedGroup.isPermitted(constraints)) {
+            if (preferredGroup.ng.isAvailable && preferredGroup.ng.spec == type) {
+                if (preferredGroup.ng.isPermitted(constraints)) {
                     return true;
                 }
 
@@ -504,8 +523,8 @@ enum NamedGroup {
     // Is the named group supported?
     static boolean isEnabled(SSLConfiguration sslConfig,
                              NamedGroup namedGroup) {
-        for (NamedGroup ng : SupportedGroups.getGroupsFromConfig(sslConfig)) {
-            if (namedGroup.equals(ng)) {
+        for (PreferredGroup pg : SupportedGroups.getGroupsFromConfig(sslConfig)) {
+            if (namedGroup.equals(pg.ng)) {
                 return true;
             }
         }
@@ -519,14 +538,13 @@ enum NamedGroup {
             SSLConfiguration sslConfig,
             ProtocolVersion negotiatedProtocol,
             AlgorithmConstraints constraints, NamedGroupSpec[] types) {
-        for (NamedGroup ng : SupportedGroups.getGroupsFromConfig(sslConfig)) {
-            if (ng.isAvailable && NamedGroupSpec.arrayContains(types, ng.spec)
-                    && ng.isAvailable(negotiatedProtocol)
-                    && ng.isPermitted(constraints)) {
-                return ng;
+        for (PreferredGroup pg : SupportedGroups.getGroupsFromConfig(sslConfig)) {
+            if (pg.ng.isAvailable && NamedGroupSpec.arrayContains(types, pg.ng.spec)
+                    && pg.ng.isAvailable(negotiatedProtocol)
+                    && pg.ng.isPermitted(constraints)) {
+                return pg.ng;
             }
         }
-
         return null;
     }
 
@@ -862,25 +880,25 @@ enum NamedGroup {
     static final class SupportedGroups {
 
         // Default named groups.
-        private static final NamedGroup[] defaultGroups = new NamedGroup[]{
+        private static final PreferredGroup[] defaultGroups = new PreferredGroup[]{
                 // Hybrid key agreement
-                X25519MLKEM768,
+                new PreferredGroup(true, X25519MLKEM768),
 
                 // Primary XDH (RFC 7748) curves
-                X25519,
+                new PreferredGroup(true, X25519),
 
                 // Primary NIST Suite B curves
-                SECP256_R1,
-                SECP384_R1,
-                SECP521_R1,
+                new PreferredGroup(false, SECP256_R1),
+                new PreferredGroup(false, SECP384_R1),
+                new PreferredGroup(false, SECP521_R1),
 
                 // Secondary XDH curves
-                X448,
+                new PreferredGroup(false, X448),
 
                 // FFDHE (RFC 7919)
-                FFDHE_2048,
-                FFDHE_3072,
-                FFDHE_4096
+                new PreferredGroup(false, FFDHE_2048),
+                new PreferredGroup(false, FFDHE_3072),
+                new PreferredGroup(false, FFDHE_4096)
         };
 
         // Filter default groups names against default constraints.
@@ -888,12 +906,12 @@ enum NamedGroup {
         // "java -XshowSettings:security:tls" command.
         private static final String[] defaultNames = Arrays.stream(
                         defaultGroups)
-                .filter(ng -> ng.isAvailable)
-                .filter(ng -> ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
-                .map(ng -> ng.name)
+                .filter(pg -> pg.ng.isAvailable)
+                .filter(pg -> pg.ng.isPermitted(SSLAlgorithmConstraints.DEFAULT))
+                .map(pg -> pg.toString())
                 .toArray(String[]::new);
 
-        private static final NamedGroup[] customizedGroups =
+        private static final PreferredGroup[] customizedGroups =
                 getCustomizedNamedGroups();
 
         // Note: user-passed groups are not being filtered against default
@@ -901,7 +919,7 @@ enum NamedGroup {
         private static final String[] customizedNames =
                 customizedGroups == null ?
                         null : Arrays.stream(customizedGroups)
-                        .map(ng -> ng.name)
+                        .map(pg -> pg.toString())
                         .toArray(String[]::new);
 
         // Named group names for SSLConfiguration.
@@ -920,27 +938,28 @@ enum NamedGroup {
         }
 
         // Avoid the group lookup for default and customized groups.
-        static NamedGroup[] getGroupsFromConfig(SSLConfiguration sslConfig) {
+        static PreferredGroup[] getGroupsFromConfig(SSLConfiguration sslConfig) {
             if (sslConfig.namedGroups == defaultNames) {
                 return defaultGroups;
             } else if (sslConfig.namedGroups == customizedNames) {
                 return customizedGroups;
             } else {
                 return Arrays.stream(sslConfig.namedGroups)
-                        .map(NamedGroup::nameOf)
+                        .map(PreferredGroup::of)
                         .filter(Objects::nonNull)
-                        .toArray(NamedGroup[]::new);
+                        .toArray(PreferredGroup[]::new);
             }
         }
 
         // The value of the System Property defines a list of enabled named
-        // groups in preference order, separated with comma.  For example:
+        // groups in preference order and optionally what key shares should be
+        // sent in CH, separated with comma.  For example:
         //
-        //      jdk.tls.namedGroups="secp521r1, secp256r1, ffdhe2048"
+        //      jdk.tls.namedGroups="*secp521r1, secp256r1, ffdhe2048"
         //
         // If the System Property is not defined or the value is empty, the
         // default groups and preferences will be used.
-        private static NamedGroup[] getCustomizedNamedGroups() {
+        static PreferredGroup[] getCustomizedNamedGroups() {
             String property = System.getProperty("jdk.tls.namedGroups");
 
             if (property != null && !property.isEmpty()) {
@@ -952,12 +971,17 @@ enum NamedGroup {
             }
 
             if (property != null && !property.isEmpty()) {
-                NamedGroup[] ret = Arrays.stream(property.split(","))
-                        .map(String::trim)
-                        .map(NamedGroup::nameOf)
-                        .filter(Objects::nonNull)
-                        .filter(ng -> ng.isAvailable)
-                        .toArray(NamedGroup[]::new);
+                List<PreferredGroup> list = new ArrayList<>();
+                for (String s : property.split(",")) {
+                    String name = s.trim();
+                    PreferredGroup pg = PreferredGroup.of(name);
+                    if (pg != null) {
+                        if (pg.ng.isAvailable) {
+                            list.add(pg);
+                        }
+                    }
+                }
+                PreferredGroup[] ret = list.toArray(new PreferredGroup[0]);
 
                 if (ret.length == 0) {
                     throw new IllegalArgumentException(
@@ -965,10 +989,8 @@ enum NamedGroup {
                                     property
                                     + ") contains no supported named groups");
                 }
-
                 return ret;
             }
-
             return null;
         }
     }
