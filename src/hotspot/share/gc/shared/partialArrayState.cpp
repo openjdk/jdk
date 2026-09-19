@@ -100,7 +100,7 @@ void PartialArrayStateAllocator::release(PartialArrayState* state) {
   } else {
     OrderAccess::acquire();
     // Don't need to call destructor; can't if not destructible.
-    static_assert(!std::is_destructible<PartialArrayState>::value, "expected");
+    static_assert(!std::is_destructible<PartialArrayState>::value);
     _free_list = ::new (state) FreeListEntry(_free_list);
   }
 }

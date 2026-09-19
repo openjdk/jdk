@@ -61,7 +61,6 @@
 #include "oops/cpCache.hpp"
 #include "oops/fieldInfo.hpp"
 #include "oops/flatArrayKlass.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.hpp"
@@ -80,6 +79,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.hpp"
+#include "oops/valueKlass.hpp"
 #include "prims/jvmtiAgentThread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -191,6 +191,7 @@
   nonstatic_field(ResolvedMethodEntry,         _cpool_index,                                  u2)                                    \
   nonstatic_field(ConstantPoolCache,           _resolved_indy_entries,                        Array<ResolvedIndyEntry>*)             \
   nonstatic_field(ResolvedIndyEntry,           _cpool_index,                                  u2)                                    \
+  nonstatic_field(ValueFieldLayoutInfo,        _klass,                                        ValueKlass*)                           \
   volatile_nonstatic_field(InstanceKlass,      _array_klasses,                                ObjArrayKlass*)                        \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -220,6 +221,11 @@
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _access_flags,                                 AccessFlags)                           \
+  nonstatic_field(InstanceKlass,               _value_field_layout_info_array,                Array<ValueFieldLayoutInfo>*)          \
+  nonstatic_field(InstanceKlass,               _adr_value_klass_members,                      address)                               \
+  nonstatic_field(ValueKlass::Members,         _payload_offset,                               int)                                   \
+  nonstatic_field(ValueKlass::Members,         _null_marker_offset,                           int)                                   \
+  nonstatic_field(Klass,                       _kind,                                         const Klass::KlassKind)                \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
   nonstatic_field(Klass,                       _secondary_super_cache,                        Klass*)                                \
   nonstatic_field(Klass,                       _secondary_supers,                             Array<Klass*>*)                        \
@@ -661,7 +667,6 @@
   /* Monitors */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  volatile_nonstatic_field(ObjectMonitor,      _metadata,                                     uintptr_t)                             \
   unchecked_nonstatic_field(ObjectMonitor,     _object,                                       sizeof(void *)) /* NOTE: no type */    \
   volatile_nonstatic_field(ObjectMonitor,      _owner,                                        int64_t)                               \
   volatile_nonstatic_field(ObjectMonitor,      _next_om,                                      ObjectMonitor*)                        \
@@ -729,6 +734,7 @@
   unchecked_nonstatic_field(Array<ResolvedMethodEntry>,_data,                                 sizeof(ResolvedMethodEntry))           \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>,  _data,                                 sizeof(ResolvedIndyEntry))             \
   unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
+  unchecked_nonstatic_field(Array<ValueFieldLayoutInfo>,_data,                                sizeof(ValueFieldLayoutInfo))          \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -935,7 +941,7 @@
              declare_type(FlatArrayKlass, ArrayKlass)                     \
              declare_type(RefArrayKlass, ArrayKlass)                      \
       declare_type(InstanceKlass, Klass)                                  \
-        declare_type(InlineKlass, InstanceKlass)                          \
+        declare_type(ValueKlass, InstanceKlass)                           \
         declare_type(InstanceClassLoaderKlass, InstanceKlass)             \
         declare_type(InstanceMirrorKlass, InstanceKlass)                  \
         declare_type(InstanceRefKlass, InstanceKlass)                     \
@@ -947,6 +953,9 @@
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
     declare_type(Annotations, MetaspaceObj)                               \
+    declare_type(ValueFieldLayoutInfo, MetaspaceObj)                      \
+                                                                          \
+  declare_toplevel_type(ValueKlass::Members)                              \
                                                                           \
   declare_toplevel_type(narrowKlass)                                      \
                                                                           \
@@ -1190,6 +1199,7 @@
    declare_integer_type(AOTCompressedPointers::narrowPtr)                 \
    declare_integer_type(Bytecodes::Code)                                  \
    declare_integer_type(InstanceKlass::ClassState)                        \
+   declare_integer_type(Klass::KlassKind)                                 \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \
    declare_integer_type(Location::Type)                                   \
@@ -1206,6 +1216,7 @@
             declare_type(Array<ResolvedMethodEntry>, MetaspaceObj)        \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
             declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
+            declare_type(Array<ValueFieldLayoutInfo>, MetaspaceObj)       \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \
@@ -1481,6 +1492,22 @@
   declare_constant(InstanceKlass::fully_initialized)                      \
   declare_constant(InstanceKlass::initialization_error)                   \
                                                                           \
+  /************************/                                              \
+  /* Klass KlassKind enum */                                              \
+  /************************/                                              \
+                                                                          \
+  declare_constant(Klass::KlassKind::InstanceKlassKind)                   \
+  declare_constant(Klass::KlassKind::ValueKlassKind)                      \
+  declare_constant(Klass::KlassKind::InstanceRefKlassKind)                \
+  declare_constant(Klass::KlassKind::InstanceMirrorKlassKind)             \
+  declare_constant(Klass::KlassKind::InstanceClassLoaderKlassKind)        \
+  declare_constant(Klass::KlassKind::InstanceStackChunkKlassKind)         \
+  declare_constant(Klass::KlassKind::TypeArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::ObjArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::RefArrayKlassKind)                   \
+  declare_constant(Klass::KlassKind::FlatArrayKlassKind)                  \
+  declare_constant(Klass::KlassKind::UnknownKlassKind)                    \
+                                                                          \
   /*********************************/                                     \
   /* Symbol* - symbol max length */                                       \
   /*********************************/                                     \
@@ -1519,7 +1546,7 @@
   declare_constant(FieldInfo::FieldFlags::_ff_generic)                    \
   declare_constant(FieldInfo::FieldFlags::_ff_stable)                     \
   declare_constant(FieldInfo::FieldFlags::_ff_contended)                  \
-  declare_constant(FieldInfo::FieldFlags::_ff_null_free_inline_type)      \
+  declare_constant(FieldInfo::FieldFlags::_ff_null_free_value_type)       \
   declare_constant(FieldInfo::FieldFlags::_ff_flat)                       \
   declare_constant(FieldInfo::FieldFlags::_ff_null_marker)                \
                                                                           \
@@ -1815,8 +1842,8 @@
   declare_constant(markWord::hash_mask)                                   \
   declare_constant(markWord::hash_mask_in_place)                          \
                                                                           \
-  declare_constant(markWord::locked_value)                                \
-  declare_constant(markWord::unlocked_value)                              \
+  declare_constant(markWord::fast_locked_value)                           \
+  declare_constant(markWord::lock_neutral_value)                          \
   declare_constant(markWord::monitor_value)                               \
   declare_constant(markWord::marked_value)                                \
                                                                           \
@@ -2108,7 +2135,7 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
   }
   if (strstr(typeName, " const") == typeName + len - 6) {
-    char * s = os::strdup_check_oom(typeName);
+    char * s = os::strdup_check_oom(typeName, mtInternal);
     s[len - 6] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {

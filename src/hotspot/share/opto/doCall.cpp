@@ -40,12 +40,12 @@
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/graphKit.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
@@ -170,6 +170,21 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
         cg_intrinsic = cg;
         cg = nullptr;
       } else if (IncrementalInline && should_delay_vector_inlining(callee, jvms)) {
+        if (IncrementalInlineVector && allow_inline) {
+          // Try to incrementally inline fallback implementation if intrinsification attempt fails.
+          CallGenerator* fallback_cg;
+          {
+            InlinePrinterSuspendScope guard(C->inline_printer());
+            fallback_cg = call_generator(callee, vtable_index, call_does_dispatch, jvms,
+                                         true /*allow_inline*/, prof_factor,
+                                         speculative_receiver_type, false /*allow_intrinsics*/);
+          }
+          if (fallback_cg != nullptr && fallback_cg->is_parse()) {
+            return CallGenerator::for_vector_late_inline(callee, cg, fallback_cg);
+          }
+          // Fallback not inlineable by regular heuristics; fall through.
+        }
+        // Don't try to inline fallback implementation.
         return CallGenerator::for_late_inline(callee, cg);
       } else {
         return cg;
@@ -835,22 +850,22 @@ void Parse::do_call() {
     if (!rtype->is_void()) {
       Node* retnode = peek();
       const Type* rettype = gvn().type(retnode);
-      if (!cg->method()->return_value_is_larval() && !retnode->is_InlineType() && rettype->is_inlinetypeptr()) {
-        retnode = InlineTypeNode::make_from_oop(this, retnode, rettype->inline_klass());
+      if (!cg->method()->return_value_is_larval() && !retnode->is_ValueType() && rettype->is_valueklassptr()) {
+        retnode = ValueTypeNode::make_from_oop(this, retnode, rettype->value_klass());
         dec_sp(1);
         push(retnode);
       }
     }
 
     if (cg->method()->receiver_maybe_larval() && receiver != nullptr &&
-        !receiver->is_InlineType() && gvn().type(receiver)->is_inlinetypeptr()) {
-      InlineTypeNode* non_larval = InlineTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->inline_klass());
+        !receiver->is_ValueType() && gvn().type(receiver)->is_valueklassptr()) {
+      ValueTypeNode* non_larval = ValueTypeNode::make_from_oop(this, receiver, gvn().type(receiver)->value_klass());
       // Relinquish the oop input, we will delay the allocation to the point it is needed, see the
-      // comments in InlineTypeNode::Ideal for more details
+      // comments in ValueTypeNode::Ideal for more details
       non_larval = non_larval->clone_if_required(&gvn(), nullptr);
       non_larval->set_oop(gvn(), null());
       non_larval->set_is_buffered(gvn(), false);
-      non_larval = gvn().transform(non_larval)->as_InlineType();
+      non_larval = gvn().transform(non_larval)->as_ValueType();
       map()->replace_edge(receiver, non_larval);
     }
   }

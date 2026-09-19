@@ -24,7 +24,7 @@
 
 /**
 * @test
-* @bug 8346236 8381617
+* @bug 8346236 8381617 8391717
 * @summary Auto-vectorization support for various Float16 operations
 * @modules jdk.incubator.vector
 * @library /test/lib /
@@ -238,8 +238,10 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16() {
         for (int i = 0; i < LEN; ++i) {
@@ -260,8 +262,10 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16ScalarMixedConstants() {
         for (int i = 0; i < LEN; ++i) {
@@ -283,8 +287,10 @@ public class TestFloat16VectorOperations {
     @Test
     @Warmup(50)
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureOr = {"avx512_fp16", "true", "zvfh", "true"})
     @IR(counts = {IRNode.FMA_VHF, " >0 "},
+        applyIf = {"UseFMA", "true"},
         applyIfCPUFeatureAnd = {"fphp", "true", "asimdhp", "true"})
     public void vectorFmaFloat16MixedConstants() {
         short input3 = floatToFloat16(3.0f);

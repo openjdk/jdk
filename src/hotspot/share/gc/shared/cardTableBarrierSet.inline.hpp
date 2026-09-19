@@ -30,10 +30,10 @@
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "oops/compressedOops.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/layoutKind.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "utilities/debug.hpp"
 
 template <DecoratorSet decorators, typename T>
@@ -173,7 +173,7 @@ inline void CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
   precond(src.klass() == dst.klass());
 
-  const InlineKlass* md = src.klass();
+  const ValueKlass* md = src.klass();
   if (!md->contains_oops()) {
     // If we do not have oops in the flat array, we can just do a raw copy.
     Raw::value_copy(src, dst);
@@ -214,7 +214,7 @@ value_copy_in_heap(const ValuePayload& src, const ValuePayload& dst) {
 template <DecoratorSet decorators, typename BarrierSetT>
 inline void CardTableBarrierSet::AccessBarrier<decorators, BarrierSetT>::
 value_store_null_in_heap(const ValuePayload& dst) {
-  const InlineKlass* md = dst.klass();
+  const ValueKlass* md = dst.klass();
   if (!md->contains_oops()) {
     // If we do not have oops in the flat array, we can just do a raw clear.
     Raw::value_store_null(dst);
