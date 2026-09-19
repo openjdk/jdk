@@ -163,7 +163,7 @@ public class VerifyAccess {
         //   return c.getModifiers();
         // But what we need for JVM access checks are the actual bits from the class header.
         // ...But arrays and primitives are synthesized with their own odd flags:
-        if (c.isArray() || c.isPrimitive())
+        if (!c.isClassOrInterface())
             return c.getModifiers();
         return Reflection.getClassAccessFlags(c);
     }

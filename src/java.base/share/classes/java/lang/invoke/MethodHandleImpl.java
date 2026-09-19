@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1054,8 +1054,7 @@ abstract class MethodHandleImpl {
             // it needs to be ensured the handles or interface instances are kept safe and are not passed
             // from the boot layer to untrusted code.
             if (hostClass == null
-                ||    (hostClass.isArray() ||
-                       hostClass.isPrimitive() ||
+                ||    (!hostClass.isClassOrInterface() ||
                        hostClass.getName().startsWith("java.lang.invoke."))) {
                 throw new InternalError();  // does not happen, and should not anyway
             }
