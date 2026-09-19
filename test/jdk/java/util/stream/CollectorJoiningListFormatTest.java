@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class CollectorJoiningListFormatTest {
     @Test
     void joiningListFormat() {
+        assertThrows(NullPointerException.class, () -> Collectors.joining((ListFormat)null));
         ListFormat format = ListFormat.getInstance(Locale.ENGLISH, ListFormat.Type.STANDARD, ListFormat.Style.FULL);
         Collector<CharSequence, ?, String> collector = Collectors.joining(format);
         assertThrows(IllegalArgumentException.class, () -> Stream.<CharSequence>empty().collect(collector));
