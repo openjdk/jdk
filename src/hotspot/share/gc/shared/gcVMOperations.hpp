@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHARED_GCVMOPERATIONS_HPP
 #define SHARE_GC_SHARED_GCVMOPERATIONS_HPP
 
+#include "gc/shared/allocationRequest.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "memory/metaspace.hpp"
@@ -43,6 +44,7 @@
 //          VM_SerialGCCollect
 //          VM_ParallelGCCollect
 //          VM_CollectForAllocation
+//            VM_G1CollectForAllocation
 //            VM_SerialCollectForAllocation
 //            VM_ParallelCollectForAllocation
 //          VM_CollectForMetadataAllocation
@@ -199,11 +201,11 @@ class VM_GC_HeapInspection : public VM_GC_Service_Operation {
 
 class VM_CollectForAllocation : public VM_GC_Collect_Operation {
  protected:
-  size_t    _word_size; // Size of object to be allocated (in number of words)
+  const AllocationRequest _request;
   HeapWord* _result;    // Allocation result (null if allocation failed)
 
  public:
-  VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause);
+  VM_CollectForAllocation(AllocationRequest request, uint gc_count_before, GCCause::Cause cause);
 
   HeapWord* result() const {
     return _result;

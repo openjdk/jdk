@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1AllocRegion.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
+#include "gc/shared/allocationRequest.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
 
@@ -114,14 +115,13 @@ public:
   // Allocate blocks of memory during mutator time.
 
   // Attempt allocation in the current alloc region.
-  inline HeapWord* attempt_allocation(uint node_index,
+  inline HeapWord* attempt_allocation(AllocationRequest request,
                                       size_t min_word_size,
-                                      size_t desired_word_size,
                                       size_t* actual_word_size);
 
   // This is to be called when holding an appropriate lock. It first tries in the
   // current allocation region, and then attempts an allocation using a new region.
-  inline HeapWord* attempt_allocation_locked(uint node_index, size_t word_size);
+  inline HeapWord* attempt_allocation_locked(AllocationRequest request);
 
   size_t unsafe_max_tlab_alloc();
   size_t used_in_alloc_regions();

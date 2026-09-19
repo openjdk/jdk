@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,16 +33,14 @@
 VM_ParallelCollectForAllocation::VM_ParallelCollectForAllocation(size_t word_size,
                                                                  bool is_tlab,
                                                                  uint gc_count) :
-  VM_CollectForAllocation(word_size, gc_count, GCCause::_allocation_failure),
-  _is_tlab(is_tlab) {
-  assert(word_size != 0, "An allocation should always be requested with this operation.");
-}
+  VM_CollectForAllocation(AllocationRequest::for_allocation(word_size), gc_count, GCCause::_allocation_failure),
+  _is_tlab(is_tlab) {}
 
 void VM_ParallelCollectForAllocation::doit() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
   GCCauseSetter gccs(heap, _gc_cause);
-  _result = heap->satisfy_failed_allocation(_word_size, _is_tlab);
+  _result = heap->satisfy_failed_allocation(_request.word_size(), _is_tlab);
 }
 
 static bool is_cause_full(GCCause::Cause cause) {
