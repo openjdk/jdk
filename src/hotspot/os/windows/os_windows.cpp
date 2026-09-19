@@ -5157,9 +5157,9 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  char* native_file1 = os::strdup_check_oom(file1);
+  char* native_file1 = os::strdup_check_oom(file1, mtInternal);
   native_file1 = os::native_path(native_file1);
-  char* native_file2 = os::strdup_check_oom(file2);
+  char* native_file2 = os::strdup_check_oom(file2, mtInternal);
   native_file2 = os::native_path(native_file2);
   if (strcmp(native_file1, native_file2) == 0) {
     os::free(native_file1);
