@@ -211,7 +211,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.compareAndSet$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -220,7 +220,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.compareAndExchange$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -229,7 +229,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.compareAndExchange$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -238,7 +238,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.compareAndExchange$Type$Release(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -247,7 +247,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.weakCompareAndSet$Type$Plain(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -256,7 +256,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.weakCompareAndSet$Type$(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -265,7 +265,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.weakCompareAndSet$Type$Acquire(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -274,7 +274,7 @@ final class VarHandle$InputType$s {
             FieldInstanceReadWrite handle = (FieldInstanceReadWrite)ob;
             return UNSAFE.weakCompareAndSet$Type$Release(Objects.requireNonNull(handle.receiverType.cast(holder)),
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -579,7 +579,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndSet$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -589,7 +589,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -598,7 +598,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$Acquire(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -607,7 +607,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.compareAndExchange$Type$Release(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -616,7 +616,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Plain(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -625,7 +625,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -634,7 +634,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Acquire(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
@@ -643,7 +643,7 @@ final class VarHandle$InputType$s {
             FieldStaticReadWrite handle = (FieldStaticReadWrite) ob.onStaticFieldAccess(true);
             return UNSAFE.weakCompareAndSet$Type$Release(handle.base,
                                                handle.fieldOffset{#if[FlatValue]?, handle.layout}{#if[Object]?, handle.fieldType},
-                                               {#if[Object]?checkCast(handle, expected):expected},
+                                               {#if[Object]?handle.fieldType.cast(expected):expected},
                                                {#if[Object]?checkCast(handle, value):value});
         }
 
