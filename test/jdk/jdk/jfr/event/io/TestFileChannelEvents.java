@@ -40,7 +40,7 @@ import jdk.test.lib.jfr.Events;
 
 /**
  * @test
- * @bug 8392709
+ * @bug 8199712 8392709
  * @requires vm.flagless
  * @requires vm.hasJFR
  * @library /test/lib /test/jdk
@@ -53,7 +53,7 @@ public class TestFileChannelEvents {
             List<IOEvent> expectedEvents = new ArrayList<>();
             try (RandomAccessFile rf = new RandomAccessFile(tmp, "rw"); FileChannel ch = rf.getChannel();) {
                 recording.enable(IOEvent.EVENT_FILE_FORCE).withThreshold(Duration.ofMillis(0));
-                recording.disable(IOEvent.EVENT_FILE_READ);
+                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
                 recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
                 recording.start();
 
@@ -87,8 +87,6 @@ public class TestFileChannelEvents {
                 // reset file
                 ch.position(0);
 
-                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
-
                 // test read(ByteBuffer)
                 bufA.clear();
                 size = ch.read(bufA);
@@ -118,6 +116,44 @@ public class TestFileChannelEvents {
                 recording.stop();
                 List<RecordedEvent> events = Events.fromRecording(recording);
                 IOHelper.verifyEqualsInOrder(events, expectedEvents);
+            }
+        }
+        testNoInterference(tmp);
+    }
+
+    private static void testNoInterference(File file) throws Throwable {
+        try (RandomAccessFile rf = new RandomAccessFile(file, "rw");
+             FileChannel ch = rf.getChannel()) {
+            ByteBuffer buffer = ByteBuffer.allocateDirect(10);
+            buffer.put("1234567890".getBytes());
+            buffer.flip();
+
+            // FileWrite should work independently of FileRead.
+            try (Recording recording = new Recording()) {
+                recording.disable(IOEvent.EVENT_FILE_READ);
+                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                long size = ch.write(buffer, 0);
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileWriteEvent(size, file)));
+            }
+
+            buffer.clear();
+
+            // FileRead should work independently of FileWrite.
+            try (Recording recording = new Recording()) {
+                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+                recording.disable(IOEvent.EVENT_FILE_WRITE);
+                recording.start();
+
+                long size = ch.read(buffer, 0);
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileReadEvent(size, file)));
             }
         }
     }
