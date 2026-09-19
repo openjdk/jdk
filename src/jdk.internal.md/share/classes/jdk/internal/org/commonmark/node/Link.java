@@ -50,7 +50,7 @@ package jdk.internal.org.commonmark.node;
  * Note that the text in the link can contain inline formatting, so it could also contain an {@link Image} or
  * {@link Emphasis}, etc.
  *
- * @see <a href="http://spec.commonmark.org/0.26/#links">CommonMark Spec for links</a>
+ * @see <a href="http://spec.commonmark.org/0.31.2/#links">CommonMark Spec</a>
  */
 public class Link extends Node {
 
@@ -78,6 +78,9 @@ public class Link extends Node {
         this.destination = destination;
     }
 
+    /**
+     * @return the title or null
+     */
     public String getTitle() {
         return title;
     }
