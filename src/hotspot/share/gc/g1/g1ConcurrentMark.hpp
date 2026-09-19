@@ -922,7 +922,7 @@ public:
 
   // From TerminatorTerminator. It determines whether this task should
   // exit the termination protocol after it's entered it.
-  virtual bool should_exit_termination();
+  virtual bool should_exit_termination(size_t tasks);
 
   // Resets the local region fields after a task has finished scanning a
   // region; or when they have become stale as a result of the region

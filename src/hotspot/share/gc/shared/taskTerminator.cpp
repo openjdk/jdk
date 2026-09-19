@@ -103,7 +103,10 @@ void TaskTerminator::reset_for_reuse(uint n_threads) {
 }
 
 bool TaskTerminator::exit_termination(size_t tasks, TerminatorTerminator* terminator) {
-  return tasks > 0 || (terminator != nullptr && terminator->should_exit_termination());
+  if (terminator != nullptr) {
+    return terminator->should_exit_termination(tasks);
+  }
+  return tasks > 0;
 }
 
 size_t TaskTerminator::tasks_in_queue_set() const {
@@ -126,6 +129,10 @@ void TaskTerminator::prepare_for_return(Thread* this_thread, size_t tasks) {
       _blocker.notify();
     }
   }
+}
+
+static bool can_work(TerminatorTerminator* terminator) {
+  return terminator == nullptr || terminator->can_work();
 }
 
 bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
@@ -151,35 +158,38 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
   }
 
   for (;;) {
-    if (_spin_master == nullptr) {
-      _spin_master = the_thread;
-      DelayContext delay_context;
+    if (can_work(terminator)) {
+      if (_spin_master == nullptr) {
+        _spin_master = the_thread;
+        DelayContext delay_context;
 
-      while (!delay_context.needs_sleep()) {
-        size_t tasks;
-        bool should_exit_termination;
-        {
-          MutexUnlocker y(&_blocker, Mutex::_no_safepoint_check_flag);
-          delay_context.do_step();
-          // Intentionally read the number of tasks outside the mutex since this
-          // is potentially a long operation making the locked section long.
-          tasks = tasks_in_queue_set();
-          should_exit_termination = exit_termination(tasks, terminator);
+        while (!delay_context.needs_sleep()) {
+          size_t tasks;
+          bool should_exit_termination;
+          {
+            MutexUnlocker y(&_blocker, Mutex::_no_safepoint_check_flag);
+            delay_context.do_step();
+            // Intentionally read the number of tasks outside the mutex since this
+            // is potentially a long operation making the locked section long.
+            tasks = tasks_in_queue_set();
+            should_exit_termination = exit_termination(tasks, terminator);
+          }
+          // Immediately check exit conditions after re-acquiring the lock.
+          if (_offered_termination == _n_threads) {
+            prepare_for_return(the_thread);
+            assert_queue_set_empty();
+            return true;
+          } else if (should_exit_termination) {
+            prepare_for_return(the_thread, tasks);
+            _offered_termination--;
+            return false;
+          }
         }
-        // Immediately check exit conditions after re-acquiring the lock.
-        if (_offered_termination == _n_threads) {
-          prepare_for_return(the_thread);
-          assert_queue_set_empty();
-          return true;
-        } else if (should_exit_termination) {
-          prepare_for_return(the_thread, tasks);
-          _offered_termination--;
-          return false;
-        }
+        // Give up spin master before sleeping.
+        _spin_master = nullptr;
       }
-      // Give up spin master before sleeping.
-      _spin_master = nullptr;
     }
+
     bool timed_out = x.wait(WorkStealingSleepMillis);
 
     // Immediately check exit conditions after re-acquiring the lock.
@@ -187,18 +197,20 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
       prepare_for_return(the_thread);
       assert_queue_set_empty();
       return true;
-    } else if (!timed_out) {
+    }
+
+    if (!timed_out && can_work(terminator)) {
       // We were woken up. Don't bother waking up more tasks.
       prepare_for_return(the_thread, 0);
       _offered_termination--;
       return false;
-    } else {
-      size_t tasks = tasks_in_queue_set();
-      if (exit_termination(tasks, terminator)) {
-        prepare_for_return(the_thread, tasks);
-        _offered_termination--;
-        return false;
-      }
+    }
+
+    size_t tasks = tasks_in_queue_set();
+    if (exit_termination(tasks, terminator)) {
+      prepare_for_return(the_thread, tasks);
+      _offered_termination--;
+      return false;
     }
   }
 }

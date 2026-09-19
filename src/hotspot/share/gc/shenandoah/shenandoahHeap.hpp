@@ -29,6 +29,7 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/markBitMap.hpp"
+#include "gc/shared/taskqueue.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 #include "gc/shenandoah/shenandoahAllocRate.hpp"
@@ -106,9 +107,23 @@ public:
   // This is multi-thread-safe.
   inline ShenandoahHeapRegion* next();
 
-  // This is *not* MT safe. However, in the absence of multithreaded access, it
-  // can be used to determine if there is more work to do.
-  bool has_next() const;
+  // Return the number of regions yet to be visited. Note that this is
+  // an upper bound in a multi-threaded context. That is, it is a stale
+  // estimate.
+  inline size_t remaining() const;
+};
+
+class ShenandoahRegionIteratorTaskAdapter : public TaskQueueSetSuperImpl<mtGC> {
+  ShenandoahRegionIterator* _regions;
+public:
+  explicit ShenandoahRegionIteratorTaskAdapter(ShenandoahRegionIterator* regions)
+    : _regions(regions) {}
+
+#ifdef ASSERT
+  void assert_empty() const override;
+#endif
+
+  uint tasks() const override;
 };
 
 class ShenandoahHeapRegionClosure : public StackObj {
@@ -146,7 +161,7 @@ public:
 };
 
 // Shenandoah GC is low-pause concurrent GC that uses a load reference barrier
-// for concurent evacuation and a snapshot-at-the-beginning write barrier for
+// for concurrent evacuation and a snapshot-at-the-beginning write barrier for
 // concurrent marking. See ShenandoahControlThread for GC cycle structure.
 //
 class ShenandoahHeap : public CollectedHeap {
@@ -281,6 +296,14 @@ private:
 
 public:
   uint max_workers();
+
+  // This is NOT the same as workers()->active_workers(). For concurrent worker elasticity,
+  // Shenandoah will start mark, evac and update reference phases with the maximum number of
+  // workers "active" in the pool. However, a subset of these workers will be held in reserve
+  // and not will perform any work until required (by an allocation stall, for instance).
+  // This method returns the number of workers NOT in this reserve, i.e., workers able to work.
+  // This value may increase, but never decrease, during a phase. It may decrease between phases.
+  uint eligible_workers() const;
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
 
   WorkerThreads* workers() const;

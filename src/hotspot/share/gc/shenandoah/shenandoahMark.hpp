@@ -46,8 +46,7 @@ protected:
   ShenandoahObjToScanQueueSet* const _old_gen_task_queues;
   bool const _string_dedup;
 
-protected:
-  ShenandoahMark(ShenandoahGeneration* generation);
+  explicit ShenandoahMark(ShenandoahGeneration* generation);
 
 public:
   template<class T, ShenandoahGenerationType GENERATION, bool REDIRTY>

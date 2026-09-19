@@ -30,7 +30,6 @@
 #include "gc/shenandoah/shenandoahGenerationalHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
-#include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "nmt/memTracker.hpp"
 #include "runtime/atomicAccess.hpp"
@@ -135,7 +134,7 @@ void ShenandoahCollectionSet::clear() {
   _live = 0;
 
   _region_count = 0;
-  _current_index.store_relaxed(0);
+  clear_current_index();
 
   _young_bytes_to_evacuate = 0;
   _young_bytes_to_promote = 0;
@@ -161,6 +160,7 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::claim_next() {
       assert(cur >= old, "Always move forward");
       if (cur == old) {
         // Successfully moved the claim index, this is our region.
+        _claimed.add_then_fetch(1UL, memory_order_relaxed);
         return _heap->get_region(index);
       } else {
         // Somebody else moved the claim index, restart from there.
@@ -180,6 +180,7 @@ ShenandoahHeapRegion* ShenandoahCollectionSet::next() {
   for (size_t index = _current_index.load_relaxed(); index < max; index++) {
     if (is_in(index)) {
       _current_index.store_relaxed(index + 1);
+      _claimed.add_then_fetch(1UL, memory_order_relaxed);
       return _heap->get_region(index);
     }
   }
@@ -237,4 +238,15 @@ void ShenandoahCollectionSet::summarize(size_t total_garbage, size_t immediate_g
                   PROPERFMTARGS(young_evac_bytes), PROPERFMTARGS(promote_evac_bytes), PROPERFMTARGS(old_evac_bytes), PROPERFMTARGS(total_evac_bytes));
     }
   }
+}
+
+
+#ifdef ASSERT
+void ShenandoahCsetTaskAdapter::assert_empty() const {
+  // Okay for some regions to not be evacuated when there are evacuation failures
+}
+#endif
+
+uint ShenandoahCsetTaskAdapter::tasks() const {
+  return checked_cast<uint>(_collection_set->remaining());
 }

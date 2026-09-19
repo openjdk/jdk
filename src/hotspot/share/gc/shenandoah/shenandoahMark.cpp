@@ -24,9 +24,9 @@
  */
 
 
-
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -57,7 +57,6 @@ ShenandoahMark::ShenandoahMark(ShenandoahGeneration* generation) :
 
 template <ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, StringDedup::Requests* const req) {
-  ShenandoahObjToScanQueueSet* queues = task_queues();
   ShenandoahObjToScanQueue* q = get_queue(w);
   ShenandoahObjToScanQueue* old_q = get_old_queue(w);
   ShenandoahReferenceProcessor *rp = _generation->ref_processor();
@@ -118,7 +117,7 @@ void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, Shena
 
 template <class T, class OT, ShenandoahGenerationType GENERATION, bool CANCELLABLE, bool STRING_DEDUP>
 void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint worker_id, TaskTerminator *terminator, StringDedup::Requests* const req) {
-  uintx stride = ShenandoahMarkLoopStride;
+  const uintx stride = ShenandoahMarkLoopStride;
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   ShenandoahObjToScanQueueSet* queues = task_queues();
@@ -131,19 +130,16 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
 
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
+  shenandoah_elastic_loop<CANCELLABLE>(heap, terminator, [&]{
+    uint work = 0;
+    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
 
-  while (true) {
-    if (CANCELLABLE && heap->check_cancelled_gc_and_yield()) {
-      return;
-    }
     while (satb_mq_set.completed_buffers_num() > 0) {
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
 
-    uint work = 0;
     for (uint i = 0; i < stride; i++) {
-      if (q->pop(t) ||
-          queues->steal(worker_id, t)) {
+      if (q->pop(t) || queues->steal(worker_id, t)) {
         do_task<T, OT, GENERATION, STRING_DEDUP>(q, cl, live_data, req, &t, worker_id);
         work++;
       } else {
@@ -151,12 +147,6 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
       }
     }
 
-    if (work == 0) {
-      // No work encountered in current stride, try to terminate.
-      // Need to leave the STS here otherwise it might block safepoints.
-      SuspendibleThreadSetLeaver stsl(CANCELLABLE);
-      ShenandoahTerminatorTerminator tt(heap);
-      if (terminator->offer_termination(&tt)) return;
-    }
-  }
+    return work == 0 ? ShenandoahWorkResult::NoWork : ShenandoahWorkResult::DidWork;
+  });
 }

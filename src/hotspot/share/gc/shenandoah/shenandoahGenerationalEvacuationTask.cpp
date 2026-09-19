@@ -47,88 +47,69 @@ public:
   }
 };
 
+static void maybe_log_region(const ShenandoahHeapRegion* r) {
+  // This is true for every region we take action for, whether it is being evacuated or promoted in place
+  assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
+  if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
+    LogStream ls(lt);
+    ls.print_cr("GenerationalEvacuationTask, looking at %s region %zu, (age: %d) [%s, %s, %s]",
+                r->is_old()? "old": r->is_young()? "young": "free", r->index(), r->age(),
+                r->is_active()? "active": "inactive",
+                r->is_humongous()? (r->is_humongous_start()? "humongous_start": "humongous_continuation"): "regular",
+                r->is_cset()? "cset": "not-cset");
+  }
+}
+
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
                                                                            ShenandoahGeneration* generation,
                                                                            ShenandoahRegionIterator* iterator,
                                                                            bool only_promote_regions) :
-  WorkerTask("Shenandoah Evacuation"),
-  _heap(heap),
+  ShenandoahElasticTask(heap, ShenandoahCsetTaskAdapter(heap->collection_set()), "Shenandoah Evacuation"),
   _generation(generation),
   _regions(iterator),
   _collection_set(_heap->collection_set()),
   _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
+  assert(_only_promote_regions == _heap->collection_set()->is_empty(), "Collection set must be empty iff only promoting regions");
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
-  ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id, true);
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
-  SuspendibleThreadSetJoiner stsj;
-  do_work();
-}
-
-void ShenandoahGenerationalEvacuationTask::do_work() {
-  if (_only_promote_regions) {
-    assert(_heap->collection_set()->is_empty(), "Should not have a collection set here");
-    promote_regions();
-  } else {
-    assert(!_heap->collection_set()->is_empty(), "Should have a collection set here");
-    evacuate_and_promote_regions();
-  }
-}
-
-void log_region(const ShenandoahHeapRegion* r, LogStream* ls) {
-  ls->print_cr("GenerationalEvacuationTask, looking at %s region %zu, (age: %d) [%s, %s, %s]",
-              r->is_old()? "old": r->is_young()? "young": "free", r->index(), r->age(),
-              r->is_active()? "active": "inactive",
-              r->is_humongous()? (r->is_humongous_start()? "humongous_start": "humongous_continuation"): "regular",
-              r->is_cset()? "cset": "not-cset");
-}
-
-void ShenandoahGenerationalEvacuationTask::promote_regions() {
-
-  ShenandoahInPlacePromoter promoter(_heap);
-  ShenandoahHeapRegion* r;
-  while ((r = _regions->next()) != nullptr) {
-    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
-      LogStream ls(lt);
-      log_region(r, &ls);
+  const auto heap = ShenandoahGenerationalHeap::cast(_heap);
+  ShenandoahConcurrentEvacuator cl(heap);
+  ShenandoahInPlacePromoter promoter(heap);
+  bool canEvacuate = true;
+  elastic_loop<true>([&]{
+    ShenandoahHeapRegion* r = nullptr;
+    if (canEvacuate && !_only_promote_regions) {
+      // Take evacuation work first
+      r = _collection_set->claim_next();
     }
 
-    promoter.maybe_promote_region(r);
-
-    if (_heap->check_cancelled_gc_and_yield()) {
-      break;
+    if (r != nullptr) {
+      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
+                                           ShenandoahPhaseTimings::Work,
+                                           worker_id, true);
+      maybe_log_region(r);
+      _heap->marked_object_iterate(r, &cl);
+      if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
+        canEvacuate = false;
+      }
+      return ShenandoahWorkResult::DidWork;
     }
-  }
+
+    // No evac work left, or this thread is out of LAB space for evacuations, or we
+    // are just running in place promotions
+    r = _regions->next();
+    if (r != nullptr) {
+      if (promoter.maybe_promote_region(r)) {
+        maybe_log_region(r);
+      }
+      return ShenandoahWorkResult::DidWork;
+    }
+
+    // Retire this thread so it stays down, even though the collection set may not be empty
+    return ShenandoahWorkResult::Retire;
+  });
 }
-
-void ShenandoahGenerationalEvacuationTask::evacuate_and_promote_regions() {
-  ShenandoahConcurrentEvacuator cl(_heap);
-  ShenandoahHeapRegion* r;
-
-  while ((r = _collection_set->claim_next()) != nullptr) {
-    if (LogTarget(Debug, gc) lt; lt.is_enabled()) {
-      LogStream ls(lt);
-      log_region(r, &ls);
-    }
-
-    assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
-    _heap->marked_object_iterate(r, &cl);
-
-    if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
-      // No more evacuations for this thread, but it may yet complete in-place promotions
-      break;
-    }
-
-    if (_heap->check_cancelled_gc_and_yield()) {
-      // GC is cancelled (vm is stopping), no further work
-      assert(_heap->is_stopping(), "Can only stop evacuation for shutdown");
-      return;
-    }
-  }
-
-  promote_regions();
-}
-

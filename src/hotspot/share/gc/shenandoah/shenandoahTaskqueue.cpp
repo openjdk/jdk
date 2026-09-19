@@ -31,8 +31,7 @@
 #include "utilities/stack.inline.hpp"
 
 void ShenandoahObjToScanQueueSet::clear() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     q->clear();
@@ -40,8 +39,7 @@ void ShenandoahObjToScanQueueSet::clear() {
 }
 
 bool ShenandoahObjToScanQueueSet::is_empty() {
-  uint size = GenericTaskQueueSet<ShenandoahObjToScanQueue, mtGC>::size();
-  for (uint index = 0; index < size; index ++) {
+  for (uint index = 0, num_queues = size(); index < num_queues; ++index) {
     ShenandoahObjToScanQueue* q = queue(index);
     assert(q != nullptr, "Sanity");
     if (!q->is_empty()) {
@@ -153,6 +151,24 @@ void ShenandoahObjToScanQueueSet::rebalance(size_t target_queues) {
 #endif
 }
 
-bool ShenandoahTerminatorTerminator::should_exit_termination() {
-  return _heap->cancelled_gc();
+void ShenandoahTerminatorTerminator::retire() {
+  _retired = true;
+}
+
+bool ShenandoahTerminatorTerminator::can_work() const {
+  // Can work if the thread cannot be cancelled (i.e., STW worker) or the thread has not been retired,
+  // and it is not being held in reserve.
+  return !_cancellable || (!_retired && WorkerThread::worker_id() < _heap->control_thread()->concurrent_worker_count());
+}
+
+// Return true means: withdraw offer to terminate, go back and look for work.
+bool ShenandoahTerminatorTerminator::should_exit_termination(size_t tasks) {
+  if (_heap->cancelled_gc()) {
+    // If GC is cancelled, every worker will see the cancellation in the work loop and exit the work loop.
+    return true;
+  }
+
+  // Else, true if there are tasks _and_ this worker is allowed to work. In this way we can keep
+  // reserved or retired workers idle.
+  return tasks > 0 && can_work();
 }

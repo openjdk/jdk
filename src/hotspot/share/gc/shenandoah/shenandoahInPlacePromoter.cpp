@@ -141,7 +141,7 @@ void ShenandoahInPlacePromotionPlanner::complete_planning() const {
   _collector_regions.update_free_set(ShenandoahFreeSetPartitionId::Collector);
 }
 
-void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
+bool ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) const {
   if (r->is_regular_or_regular_pinned() && (r->get_top_before_promote() != nullptr)) {
     // This region was scheduled for promotion. The promotion must be completed.
     // The 'always_tenure' override flag set by WB.fullGC() is not carried over
@@ -149,7 +149,7 @@ void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) co
     // it when we made the plan for this region, that plan is authoritative.
     assert(r->is_young() && r->is_active(), "Region scheduled for promotion must still be young and active");
     promote(r);
-    return;
+    return true;
   }
 
   if (r->is_young() && r->is_active() && r->is_humongous_start() && _heap->is_tenurable(r)) {
@@ -167,8 +167,10 @@ void ShenandoahInPlacePromoter::maybe_promote_region(ShenandoahHeapRegion* r) co
     oop obj = cast_to_oop(r->bottom());
     if (!obj->is_typeArray()) {
       promote_humongous(r);
+      return true;
     }
   }
+  return false;
 }
 
 // When we promote a region in place, we can continue to use the established marking context to guide subsequent remembered

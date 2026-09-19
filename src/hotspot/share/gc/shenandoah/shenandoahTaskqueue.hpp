@@ -323,11 +323,16 @@ public:
 };
 
 class ShenandoahTerminatorTerminator : public TerminatorTerminator {
-private:
   ShenandoahHeap* _heap;
+  bool _cancellable;
+  bool _retired;
 public:
-  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap) : _heap(heap) { }
-  virtual bool should_exit_termination();
+  ShenandoahTerminatorTerminator(ShenandoahHeap* const heap, bool cancellable)
+    : _heap(heap), _cancellable(cancellable), _retired(false) { }
+
+  void retire();
+  bool can_work() const override;
+  bool should_exit_termination(size_t tasks) override;
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHTASKQUEUE_HPP

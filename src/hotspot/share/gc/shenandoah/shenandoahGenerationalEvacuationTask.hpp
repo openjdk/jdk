@@ -25,19 +25,18 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
 
-#include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/shenandoahCollectionSet.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 
 class ShenandoahGeneration;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
-class ShenandoahCollectionSet;
+
 
 // Unlike ShenandoahEvacuationTask, this iterates over all regions rather than just the collection set.
-// This is needed in order to promote humongous start regions if age() >= tenure threshold.
-class ShenandoahGenerationalEvacuationTask : public WorkerTask {
-private:
-  ShenandoahGenerationalHeap* const _heap;
+// This is needed in order to promote regions if age() >= tenure threshold.
+class ShenandoahGenerationalEvacuationTask : public ShenandoahElasticTask<ShenandoahCsetTaskAdapter> {
   ShenandoahGeneration* const _generation;
   ShenandoahRegionIterator* _regions;
   ShenandoahCollectionSet* _collection_set;
@@ -49,10 +48,6 @@ public:
                                        ShenandoahRegionIterator* iterator,
                                        bool only_promote_regions);
   void work(uint worker_id) override;
-private:
-  void do_work();
-  void promote_regions();
-  void evacuate_and_promote_regions();
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALEVACUATIONTASK_HPP
