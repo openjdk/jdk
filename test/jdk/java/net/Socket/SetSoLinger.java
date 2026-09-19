@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4151834
+ * @bug 4151834 8392732
  * @summary Test Socket.setSoLinger
  * @library /test/lib
  * @build jdk.test.lib.Platform jdk.test.lib.net.IPSupport
