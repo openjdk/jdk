@@ -229,8 +229,8 @@ public class TagletWriter {
         }
 
         Content output = getOutputInstance();
-        tagletManager.checkTags(element, utils.getBlockTags(element));
-        tagletManager.checkTags(element, utils.getFullBody(element));
+        tagletManager.checkTags(element, utils.getBlockTags(element), false);
+        tagletManager.checkTags(element, utils.getFullBody(element), true);
         for (Taglet taglet : taglets) {
             if (utils.isTypeElement(element) && taglet instanceof ParamTaglet) {
                 // The type parameters and state components are documented in a special
@@ -290,7 +290,7 @@ public class TagletWriter {
         CommentHelper ch = configuration.utils.getCommentHelper(holder);
         final String inlineTagName = ch.getTagName(inlineTag);
         Taglet t = inlineTags.get(inlineTagName);
-        if (t == null) {
+        if (t == null || !isEnabled(t) || !isAllowed(t, holder)) {
             return null;
         }
 
@@ -448,6 +448,30 @@ public class TagletWriter {
             return pe.toString(); // "Unnamed package" or similar
         }
         return resources.getText("doclet.package") + " " + utils.getFullyQualifiedName(pe);
+    }
+
+    private boolean isEnabled(Taglet taglet) {
+        return !(taglet instanceof SimpleTaglet st) || st.isEnabled();
+    }
+
+    private boolean isAllowed(Taglet taglet, Element holder) {
+        // TODO: location checking for inline tags has traditionally been sketchy.
+        // Bypass check for legacy taglets for the time being in order not to break things.
+        if (!(taglet instanceof SimpleTaglet)) {
+            return true;
+        }
+        return switch (holder.getKind()) {
+            case CONSTRUCTOR -> taglet.inConstructor();
+            case METHOD -> taglet.inMethod();
+            case ENUM_CONSTANT, FIELD -> taglet.inField();
+            case ANNOTATION_TYPE, INTERFACE, CLASS, ENUM, RECORD -> taglet.inType();
+            case MODULE -> taglet.inModule();
+            case PACKAGE -> taglet.inPackage();
+            case OTHER -> holder instanceof DocletElement de && de.getSubKind() == DocletElement.Kind.DOCFILE
+                    ? taglet.inPackage()
+                    : taglet.inOverview();
+            default -> throw new IllegalArgumentException("Unknown element: " + holder);
+        };
     }
 
     Content tagList(List<Content> items) {

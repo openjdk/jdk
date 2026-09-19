@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package jdk.javadoc.internal.doclets.formats.html.taglets;
 
+import java.util.Objects;
 import java.util.Set;
 
 import javax.lang.model.element.Element;
@@ -63,18 +64,14 @@ public class BaseTaglet implements Taglet {
         this(config, tagKind.tagName, tagKind, inline, sites);
     }
 
-    protected BaseTaglet(HtmlConfiguration config, String name, boolean inline, Set<Location> sites) {
-        this(config, name, inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG, inline, sites);
-    }
-
-    private BaseTaglet(HtmlConfiguration config, String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+    protected BaseTaglet(HtmlConfiguration config, String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
         this.config = config;
         this.messages = config.getMessages();
         this.resources = config.getDocResources();
         this.utils = config.utils;
 
-        this.name = name;
-        this.tagKind = tagKind;
+        this.name = Objects.requireNonNull(name);
+        this.tagKind = Objects.requireNonNull(tagKind);
         this.inline = inline;
         this.sites = sites;
     }
