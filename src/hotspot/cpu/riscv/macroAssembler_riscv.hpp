@@ -1426,6 +1426,9 @@ public:
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
                            Register table0, Register table3);
+  void kernel_crc32_zbc_fold(Register crc, Register buf, Register len,
+              Register table0, Register table1, Register table2, Register table3,
+              Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
   void kernel_crc32_vclmul_fold(Register crc, Register buf, Register len,
               Register table0, Register table1, Register table2, Register table3,
               Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
