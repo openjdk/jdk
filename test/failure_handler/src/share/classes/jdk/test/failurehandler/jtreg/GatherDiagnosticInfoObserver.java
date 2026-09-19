@@ -90,8 +90,8 @@ public class GatherDiagnosticInfoObserver implements Harness.Observer {
             List<Path> coreFiles;
             try (Stream<Path> paths = Files.walk(workDir)) {
                 coreFiles = paths.filter(Files::isRegularFile)
-                        .filter(f -> (f.getFileName().toString().contains("core")
-                                || f.getFileName().toString().contains("mdmp")))
+                        .filter(f -> (f.getFileName().toString().startsWith("core.")
+                                || f.getFileName().toString().endsWith(".mdmp")))
                         .toList();
             }
             gatherCoreInfo(workDir, name, coreFiles, log, gathererFactory.getCoreInfoGatherer());
