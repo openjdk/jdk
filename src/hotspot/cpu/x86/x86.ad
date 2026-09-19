@@ -22086,6 +22086,19 @@ instruct castHFtoX_reg_evex(vec dst, vec src, vec xtmp1, vec xtmp2, kReg ktmp1, 
   ins_pipe( pipe_slow );
 %}
 
+instruct castHFtoB_reg_avx10_2(vec dst, vec src) %{
+  predicate(VM_Version::supports_avx10_2() &&
+            Matcher::vector_element_basic_type(n) == T_BYTE);
+  match(Set dst (VectorCastF2X (VectorCastHF2F src)));
+  format %{ "vector_cast_hf2b_avx10_2 $dst, $src\t!" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    int vlen_enc = vector_length_encoding(vlen * type2aelembytes(T_INT));
+    __ vector_castHF2B_avx10_2($dst$$XMMRegister, $src$$XMMRegister, vlen_enc);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
 instruct vcastFtoD_reg(vec dst, vec src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastF2X src));
