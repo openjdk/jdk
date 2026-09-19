@@ -38,12 +38,14 @@ public class TestDuplicateBackedge {
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:LoopMaxUnroll=1");
         TestFramework.runWithFlags("-XX:LoopMaxUnroll=1", "-XX:-DuplicateBackedge");
+        TestFramework.runWithFlags("-XX:LoopMaxUnroll=1", "-XX:LoopPeeling=0");
     }
 
     @Test
-    @IR(applyIf = { "DuplicateBackedge", "true" }, counts = {IRNode.LOOP, "1", IRNode.COUNTED_LOOP, "1" })
+    @IR(applyIfAnd = { "DuplicateBackedge", "true", "LoopPeeling", ">0" }, counts = {IRNode.LOOP, "1", IRNode.COUNTED_LOOP, "1" })
     @IR(applyIf = { "DuplicateBackedge", "false" }, counts = { IRNode.LOOP, "1" })
     @IR(applyIf = { "DuplicateBackedge", "false" }, failOn = { IRNode.COUNTED_LOOP})
+    @IR(applyIfAnd = { "DuplicateBackedge", "false", "LoopPeeling", "=0" }, counts = {IRNode.LOOP, "2" })
     public static float test() {
         float res = 1;
         for (int i = 1;;) {
