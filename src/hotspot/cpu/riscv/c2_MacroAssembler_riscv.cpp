@@ -2183,6 +2183,121 @@ void C2_MacroAssembler::enc_cmove_fp_cmp_fp(int cmpFlag,
   }
 }
 
+static void vshift_left(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src,
+                        int shift, Register tmp) {
+  if (shift < BitsPerInt) {
+    masm->vsll_vi(dst, src, shift);
+  } else {
+    assert(shift == BitsPerInt, "unexpected shift amount");
+    masm->mv(tmp, shift);
+    masm->vsll_vx(dst, src, tmp);
+  }
+}
+
+static void vshift_right(C2_MacroAssembler* masm, VectorRegister dst, VectorRegister src,
+                         int shift, Register tmp) {
+  if (shift < BitsPerInt) {
+    masm->vsrl_vi(dst, src, shift);
+  } else {
+    assert(shift == BitsPerInt, "unexpected shift amount");
+    masm->mv(tmp, shift);
+    masm->vsrl_vx(dst, src, tmp);
+  }
+}
+
+static void parallel_suffix_v(C2_MacroAssembler* masm, VectorRegister dst,
+                              VectorRegister src, VectorRegister tmp,
+                              Register shift_tmp, bool is_int) {
+  const int rounds = is_int ? 5 : 6;
+
+  masm->vmv_v_v(dst, src);
+  for (int j = 0; j < rounds; j++) {
+    vshift_left(masm, tmp, dst, 1 << j, shift_tmp);
+    masm->vxor_vv(dst, dst, tmp);
+  }
+}
+
+void C2_MacroAssembler::compress_bits_v(VectorRegister dst, VectorRegister src,
+                                        VectorRegister mask, VectorRegister src_tmp,
+                                        VectorRegister mask_tmp, VectorRegister tmp1,
+                                        VectorRegister tmp2, Register tmp,
+                                        BasicType bt, uint vector_length) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int rounds = is_int ? 5 : 6;
+
+  vsetvli_helper(bt, vector_length);
+  vand_vv(dst, src, mask);
+  vmv_v_v(mask_tmp, mask);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1, tmp);
+
+  for (int j = 0; j < rounds; j++) {
+    const int shift = 1 << j;
+    parallel_suffix_v(this, tmp2, tmp1, src_tmp, tmp, is_int);
+    vand_vv(src_tmp, tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, src_tmp);
+    vshift_right(this, tmp2, src_tmp, shift, tmp);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+
+    vand_vv(tmp2, dst, src_tmp);
+    vxor_vv(dst, dst, tmp2);
+    vshift_right(this, tmp2, tmp2, shift, tmp);
+    vor_vv(dst, dst, tmp2);
+  }
+}
+
+void C2_MacroAssembler::expand_bits_v(VectorRegister dst, VectorRegister src,
+                                      VectorRegister mask, VectorRegister src_tmp,
+                                      VectorRegister mask_tmp,
+                                      VectorRegister mask_move1,
+                                      VectorRegister mask_move2,
+                                      VectorRegister mask_move3,
+                                      VectorRegister mask_move4,
+                                      VectorRegister mask_move5,
+                                      VectorRegister mask_move6,
+                                      VectorRegister tmp1, VectorRegister tmp2,
+                                      Register tmp, BasicType bt,
+                                      uint vector_length) {
+  assert(bt == T_INT || bt == T_LONG, "unsupported element type");
+  const bool is_int = bt == T_INT;
+  const int rounds = is_int ? 5 : 6;
+  VectorRegister mask_moves[6] = {
+    mask_move1, mask_move2, mask_move3, mask_move4, mask_move5, mask_move6
+  };
+
+  vsetvli_helper(bt, vector_length);
+  vmv_v_v(src_tmp, src);
+  vmv_v_v(mask_tmp, mask);
+  vmv_v_v(dst, mask_tmp);
+  vnot_v(tmp1, mask_tmp);
+  vshift_left(this, tmp1, tmp1, 1, tmp);
+
+  for (int j = 0; j < rounds; j++) {
+    const int shift = 1 << j;
+    parallel_suffix_v(this, tmp2, tmp1, mask_moves[j], tmp, is_int);
+    vand_vv(mask_moves[j], tmp2, mask_tmp);
+    vnot_v(tmp2, tmp2);
+    vand_vv(tmp1, tmp1, tmp2);
+
+    vxor_vv(mask_tmp, mask_tmp, mask_moves[j]);
+    vshift_right(this, tmp2, mask_moves[j], shift, tmp);
+    vor_vv(mask_tmp, mask_tmp, tmp2);
+  }
+
+  for (int j = rounds - 1; j >= 0; j--) {
+    const int shift = 1 << j;
+    vshift_left(this, tmp2, src_tmp, shift, tmp);
+    vxor_vv(tmp2, tmp2, src_tmp);
+    vand_vv(tmp2, tmp2, mask_moves[j]);
+    vxor_vv(src_tmp, src_tmp, tmp2);
+  }
+  vand_vv(dst, src_tmp, dst);
+}
+
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp(FloatRegister dst, FloatRegister src1, FloatRegister src2,
                                   FLOAT_TYPE ft, bool is_min) {
