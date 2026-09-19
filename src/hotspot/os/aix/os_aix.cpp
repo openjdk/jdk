@@ -450,7 +450,7 @@ static void query_multipage_support() {
         if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
           const int en = errno;
           ::shmctl(shmid, IPC_RMID, nullptr); // As early as possible!
-          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", errno);
+          log_warning(pagesize)("shmctl(SHM_PAGESIZE) failed with errno=%d", en);
         } else {
           // Attach and double check pageisze.
           void* p = ::shmat(shmid, nullptr, 0);
