@@ -38,6 +38,7 @@ class BarrierSetNMethod;
 // Use ShenandoahReentrantLock as ShenandoahNMethodLock
 typedef ShenandoahReentrantLock<ShenandoahSimpleLock> ShenandoahNMethodLock;
 typedef ShenandoahLocker<ShenandoahNMethodLock>       ShenandoahNMethodLocker;
+typedef ShenandoahLocker<ShenandoahSimpleLock>        ShenandoahSimpleLocker;
 
 struct ShenandoahPatchableJump {
   int32_t _rel_pc;
@@ -60,7 +61,7 @@ private:
   bool                    _has_non_immed_oops;
   bool                    _unregistered;
   ShenandoahNMethodLock   _lock;
-  ShenandoahNMethodLock   _ic_lock;
+  ShenandoahSimpleLock    _ic_lock;
 
 public:
   ShenandoahNMethod(nmethod *nm);
@@ -83,7 +84,7 @@ public:
 
   inline nmethod* nm() const;
   inline ShenandoahNMethodLock* lock();
-  inline ShenandoahNMethodLock* ic_lock();
+  inline ShenandoahSimpleLock* ic_lock();
   inline void oops_do(OopClosure* oops, bool fix_relocations, ICacheInvalidationContext* icic);
   // Update oops when the nmethod is re-registered
   void update();
@@ -92,7 +93,7 @@ public:
 
   static ShenandoahNMethod* for_nmethod(nmethod* nm);
   static inline ShenandoahNMethodLock* lock_for_nmethod(nmethod* nm);
-  static inline ShenandoahNMethodLock* ic_lock_for_nmethod(nmethod* nm);
+  static inline ShenandoahSimpleLock* ic_lock_for_nmethod(nmethod* nm);
 
   static void handle_oops(nmethod* nm, ICacheInvalidationContext* icic);
   static void handle_jumps(nmethod* nm, ICacheInvalidationContext* icic);
