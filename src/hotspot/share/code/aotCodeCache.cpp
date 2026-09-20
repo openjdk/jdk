@@ -255,12 +255,7 @@ void AOTCodeCache::enable_caching() {
     disable_caching();
     return;
   }
-#if defined(RISCV64)
-  // RISC-V does not support code caching yet.
-  FLAG_SET_ERGO(AOTCodeCaching, false);
-#else
   FLAG_SET_ERGO_IF_DEFAULT(AOTCodeCaching, true);
-#endif
   FLAG_SET_ERGO_IF_DEFAULT(AOTStubCaching, true);
   FLAG_SET_ERGO_IF_DEFAULT(AOTAdapterCaching, true);
 #endif

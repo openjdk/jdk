@@ -1833,8 +1833,7 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   const VectorRegister v_coeffs = v6;
   const VectorRegister v_tmp    = v8;
 
-  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31()
-                           + sizeof(jint);
+  const address adr_pows31 = StubRoutines::riscv::arrays_hashcode_powers_of_31();
   Label VEC_LOOP, DONE, SCALAR_TAIL, SCALAR_TAIL_LOOP;
 
   // NB: at this point (a) 'result' already has some value,
@@ -1844,6 +1843,9 @@ void C2_MacroAssembler::arrays_hashcode_v(Register ary, Register cnt, Register r
   beqz(t0, SCALAR_TAIL);
 
   la(t1, ExternalAddress(adr_pows31));
+  // Keep the relocation target at the registered stub entry, then skip the
+  // first element when loading the vector coefficients.
+  addi(t1, t1, sizeof(jint));
   lw(pow31_highest, Address(t1, -1 * sizeof(jint)));
 
   vsetvli(consumed, cnt, Assembler::e32, Assembler::m2);

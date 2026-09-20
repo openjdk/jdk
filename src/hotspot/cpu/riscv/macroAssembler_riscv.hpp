@@ -517,6 +517,7 @@ class MacroAssembler: public Assembler {
   }
 
   static int patch_oop(address insn_addr, address o);
+  static int patch_metadata(address insn_addr, address metadata);
 
   static address get_target_of_li32(address insn_addr);
   static int patch_imm_in_li32(address branch, int32_t target);
@@ -850,15 +851,17 @@ class MacroAssembler: public Assembler {
   void double_blt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
   void double_bgt(FloatRegister Rs1, FloatRegister Rs2, Label &l, bool is_far = false, bool is_unordered = false);
 
-private:
+public:
   // The signed 20-bit upper imm can materialize at most negative 0xF...F80000000, two G.
   // The following signed 12-bit imm can at max subtract 0x800, two K, from that previously loaded two G.
-  bool is_valid_32bit_offset(int64_t x) {
+  // Also used when patching an auipc pair, so that emit and patch agree on the reachable range.
+  static bool is_valid_32bit_offset(int64_t x) {
     constexpr int64_t twoG = (2 * G);
     constexpr int64_t twoK = (2 * K);
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
+private:
   // Ensure that the auipc can reach the destination at x from anywhere within
   // the code cache so that if it is relocated we know it will still reach.
   bool is_32bit_offset_from_codecache(int64_t x) {

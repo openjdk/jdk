@@ -3071,6 +3071,10 @@ static int patch_offset_in_conditional_branch(address branch, int64_t offset) {
 
 static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   const int PC_RELATIVE_INSTRUCTION_NUM = 2;                                    // auipc, addi/jalr/load
+  // The auipc pair can only encode a 32-bit pc-relative offset. Check the same
+  // range the emitters check, otherwise the high bits would be silently dropped.
+  guarantee(MacroAssembler::is_valid_32bit_offset(offset),
+            "offset " INT64_FORMAT " out of range for auipc", offset);
   Assembler::patch(branch, 31, 12, ((offset + 0x800) >> 12) & 0xfffff);         // Auipc.          offset[31:12]  ==> branch[31:12]
   Assembler::patch(branch + 4, 31, 20, offset & 0xfff);                         // Addi/Jalr/Load. offset[11:0]   ==> branch[31:20]
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
@@ -3255,6 +3259,24 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   return -1;
 }
 
+int MacroAssembler::patch_metadata(address insn_addr, address metadata) {
+  // Metadata is either a narrow klass (32 bits, materialized by set_narrow_klass()
+  // with li32) or a full 48-bit pointer (materialized by mov_metadata() with movptr).
+  if (MacroAssembler::is_li32_at(insn_addr)) {
+    // Move narrow klass
+    Metadata* value = reinterpret_cast<Metadata*>(metadata);
+    assert(value != nullptr && value->is_klass(), "narrow metadata must be a klass");
+    narrowKlass nk = CompressedKlassPointers::encode(static_cast<Klass*>(value));
+    return patch_imm_in_li32(insn_addr, static_cast<int32_t>(nk));
+  } else if (MacroAssembler::is_movptr1_at(insn_addr) ||
+             MacroAssembler::is_movptr2_at(insn_addr)) {
+    // Move wide metadata
+    return pd_patch_instruction_size(insn_addr, metadata);
+  }
+  ShouldNotReachHere();
+  return -1;
+}
+
 void MacroAssembler::reinit_heapbase() {
   if (UseCompressedOops) {
     if (Universe::is_fully_initialized() && !AOTCodeCache::is_on_for_dump()) {
@@ -3281,7 +3303,10 @@ void MacroAssembler::movptr(Register Rd, address addr, Register temp) {
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register temp) {
   uint64_t uimm64 = (uint64_t)addr;
 #ifndef PRODUCT
-  {
+  // Skip the block comment when dumping the AOT code cache: the comment text is
+  // the build-time address, which is meaningless in a future JVM instance and
+  // would flood the AOT C string table with unique entries.
+  if (!AOTCodeCache::is_on_for_dump()) {
     char buffer[64];
     os::snprintf_checked(buffer, sizeof(buffer), "0x%" PRIx64, uimm64);
     block_comment(buffer);

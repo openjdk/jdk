@@ -31,7 +31,7 @@
  * @comment the flag is debug
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler2.enabled
- * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64"
+ * @requires vm.simpleArch == "x64" | vm.simpleArch == "aarch64" | vm.simpleArch == "riscv64"
  * @modules java.base/jdk.internal.misc:+open
  * @library /test/lib /test/setup_aot
  * @build ${test.main.class}

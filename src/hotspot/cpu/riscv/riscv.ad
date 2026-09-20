@@ -2372,7 +2372,20 @@ encode %{
         __ mov_metadata(dst_reg, (Metadata*)con);
       } else {
         assert(rtype == relocInfo::none || rtype == relocInfo::external_word_type, "unexpected reloc type");
-        __ mv(dst_reg, $src$$constant);
+        // Load fake address constants as a plain immediate. They are not real
+        // addresses (a bci may be used as a jsr return address, and compiling
+        // an unreachable unsafe access can produce a bad base) so they are of
+        // no interest to the AOT code cache, and movptr() only materializes
+        // the low 48 bits.
+        if (rtype == relocInfo::none ||
+            (uint64_t)con >= (1ull << 48) ||
+            con < (address)(uintptr_t)os::vm_page_size()) {
+          __ mv(dst_reg, $src$$constant);
+        } else {
+          // Use a relocation so that the address can be fixed up when this code
+          // is loaded from the AOT code cache in a new JVM instance.
+          __ la(dst_reg, Address(con, rtype));
+        }
       }
     }
   %}

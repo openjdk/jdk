@@ -48,6 +48,14 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
+// A reloc call keeps its destination in an address stub, so the trampoline
+// relocation has to be able to read and write it. Note that we deliberately do
+// not define USE_TRAMPOLINE_STUB_FIX_OWNER: the call site reaches its stub with
+// an auipc pair inside the same blob and so stays in range after a move, and
+// NativeCall::set_destination() already picks jal or jalr through
+// optimize_call() according to the distance to the final destination.
+#define USE_TRAMPOLINE_STUB_DESTINATION
+
 // auipc useable for all cc -> cc calls and jumps
 #define CODE_CACHE_SIZE_LIMIT ((2*G)-(2*K))
 
