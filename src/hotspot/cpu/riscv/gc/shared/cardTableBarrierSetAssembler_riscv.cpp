@@ -83,8 +83,7 @@ void CardTableBarrierSetAssembler::store_check(MacroAssembler* masm, Register ob
 
 void CardTableBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* masm, DecoratorSet decorators,
                                                                     Register start, Register count, Register tmp) {
-  assert_different_registers(start, tmp);
-  assert_different_registers(count, tmp);
+  assert_different_registers(start, count, tmp);
 
   Label L_loop, L_done;
   const Register end = count;
