@@ -6951,6 +6951,7 @@ void MacroAssembler::shift_left_add(Register Rd, Register Rs1, Register Rs2, int
   }
 }
 
+// emits sh1add/sh2add/sh3add for shamt 1/2/3
 void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, int shamt) {
   assert(UseZba, "shadd requires Zba");
   assert(1 <= shamt && shamt <= 3, "shamt is invalid");
