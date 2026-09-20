@@ -429,7 +429,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   // Restore stack bottom in case i2c adjusted stack
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shift_left_add(esp, t0, fp, LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ restore_bcp();
@@ -487,7 +487,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
 
   // Restore expression stack pointer
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shift_left_add(esp, t0, fp, LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   // null last_sp until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
@@ -550,13 +550,13 @@ address TemplateInterpreterGenerator::generate_cont_resume_interpreter_adapter()
 
   // Restore Java expression stack pointer
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shift_left_add(esp, t0, fp, Interpreter::logStackElementSize);
+  __ shift_left_add(esp, t0, fp, Interpreter::logStackElementSize, t0);
   // and null it as marker that esp is now tos until next java call
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   // Restore machine SP
   __ ld(t0, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
-  __ shift_left_add(sp, t0, fp, LogBytesPerWord);
+  __ shift_left_add(sp, t0, fp, LogBytesPerWord, t0);
 
   // Restore method
   __ ld(xmethod, Address(fp, frame::interpreter_frame_method_offset * wordSize));
@@ -1711,7 +1711,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // Restore the last_sp and null it out
   __ ld(t0, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ shift_left_add(esp, t0, fp, LogBytesPerWord);
+  __ shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
   __ sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
 
   __ restore_bcp();

@@ -194,7 +194,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ld(t0, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    shift_left_add(esp, t0, fp, LogBytesPerWord);
+    shift_left_add(esp, t0, fp, LogBytesPerWord, t0);
     // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }

@@ -2573,8 +2573,8 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     __ mv(t0, table_addr);
-    __ shift_left_add(ra, index, t0, 3);
-    __ ld(ra, Address(ra, 0));
+    __ shift_left_add(t0, index, t0, 3, index);
+    __ ld(ra, Address(t0, 0));
   }
 }
 
@@ -3457,8 +3457,8 @@ void TemplateTable::prepare_invoke(Register cache, Register recv) {
   {
     const address table_addr = (address) Interpreter::invoke_return_entry_table_for(code);
     __ mv(t0, table_addr);
-    __ shift_left_add(ra, t1, t0, 3);
-    __ ld(ra, Address(ra, 0));
+    __ shift_left_add(t0, t1, t0, 3, t1);
+    __ ld(ra, Address(t0, 0));
   }
 }
 
