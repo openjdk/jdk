@@ -77,6 +77,8 @@
  public:
   using Assembler::sve_cpy;
 
+  void entry_barrier();
+
   // jdk.internal.util.ArraysSupport.vectorizedHashCode
   address arrays_hashcode(Register ary, Register cnt, Register result, FloatRegister vdata0,
                           FloatRegister vdata1, FloatRegister vdata2, FloatRegister vdata3,

@@ -120,7 +120,8 @@ public class ImageReaderTest {
             "/modules/modbar",
             "/modules/modfoo/com",
             "/modules/modfoo/com/foo",
-            "/modules/modfoo/com/foo/bar"})
+            "/modules/modfoo/com/foo/bar",
+    })
     public void testModuleDirectories_expected(String name) throws IOException {
         try (ImageReader reader = ImageReader.open(image, PreviewMode.DISABLED)) {
             assertDir(reader, name);
@@ -135,7 +136,8 @@ public class ImageReaderTest {
             "/modules/unknown",
             "/modules/modbar/",
             "/modules/modfoo//com",
-            "/modules/modfoo/com/"})
+            "/modules/modfoo/com/",
+    })
     public void testModuleNodes_absent(String name) throws IOException {
         try (ImageReader reader = ImageReader.open(image, PreviewMode.DISABLED)) {
             assertAbsent(reader, name);
@@ -233,9 +235,11 @@ public class ImageReaderTest {
             "modules/modfoo/com:foo/HasPreviewVersion.class",
     })
     public void testResource_invalid(String modName, String resPath) throws IOException {
-        try (ImageReader reader = ImageReader.open(image, PreviewMode.DISABLED)) {
-            assertThrows(IllegalArgumentException.class, () -> reader.containsResource(modName, resPath));
-            assertThrows(IllegalArgumentException.class, () -> reader.findResourceNode(modName, resPath));
+        for (PreviewMode mode : List.of(PreviewMode.ENABLED, PreviewMode.DISABLED)) {
+            try (ImageReader reader = ImageReader.open(image, mode)) {
+                assertThrows(IllegalArgumentException.class, () -> reader.containsResource(modName, resPath));
+                assertThrows(IllegalArgumentException.class, () -> reader.findResourceNode(modName, resPath));
+            }
         }
     }
 

@@ -26,6 +26,7 @@
  * @bug 4229892
  * @summary Arrays.fill(Object[], ...) should throw ArrayStoreException
  * @author Martin Buchholz
+ * @library /test/lib
  */
 
 import java.io.*;
@@ -33,7 +34,13 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 
+import jdk.test.lib.valueclass.AsValueClass;
+
 public class Fill {
+
+    @AsValueClass
+    static record MyValue(int value) {};
+
     private static void realMain(String[] args) throws Throwable {
         try {
             Arrays.fill(new Integer[3], "foo");
@@ -51,6 +58,20 @@ public class Fill {
 
         try {
             Arrays.fill(new Integer[3], 0, 4, "foo");
+            fail("Expected ArrayIndexOutOfBoundsException");
+        }
+        catch (ArrayIndexOutOfBoundsException e) { pass(); }
+        catch (Throwable t) { unexpected(t); }
+
+        try {
+            Arrays.fill(new MyValue[3], "foo");
+            fail("Expected ArrayStoreException");
+        }
+        catch (ArrayStoreException e) { pass(); }
+        catch (Throwable t) { unexpected(t); }
+
+        try {
+            Arrays.fill(new MyValue[3], 0, 4, "foo");
             fail("Expected ArrayIndexOutOfBoundsException");
         }
         catch (ArrayIndexOutOfBoundsException e) { pass(); }

@@ -55,7 +55,7 @@ public:
     _oops_in_cld(g1h, pss),
     _oops_in_nmethod(g1h, pss),
     _clds(&_oops_in_cld, process_only_dirty),
-    _nmethods(pss->worker_id(), &_oops_in_nmethod, should_mark, pss) {}
+    _nmethods(&_oops_in_nmethod, should_mark, pss) {}
 };
 
 #endif // SHARE_GC_G1_G1SHAREDCLOSURES_HPP

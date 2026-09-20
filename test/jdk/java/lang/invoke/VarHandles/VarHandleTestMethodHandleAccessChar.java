@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,12 @@
  * questions.
  */
 
+// -- This file was mechanically generated: Do not edit! -- //
+
 /*
  * @test
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 VarHandleTestMethodHandleAccessChar
  */
 
@@ -44,9 +46,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
     static final char static_final_v = '\u0123';
 
-    static char static_v;
+    static char static_v = '\u0123';
 
-    final char final_v = '\u0123';
+    final char final_v;
 
     char v;
 
@@ -59,6 +61,12 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
     VarHandle vhStaticFinalField;
 
     VarHandle vhArray;
+
+    public VarHandleTestMethodHandleAccessChar() {
+        final_v = '\u0123';
+        v = '\u0123';
+        super();
+    }
 
     @BeforeAll
     public void setup() throws Exception {
@@ -286,10 +294,30 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
 
         // Compare set and get
         {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
             char o = (char) hs.get(TestAccessMode.GET_AND_SET).invokeExact(recv, '\u4567');
             assertEquals('\u0123', o, "getAndSet char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
             assertEquals('\u4567', x, "getAndSet char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_SET_ACQUIRE).invokeExact(recv, '\u4567');
+            assertEquals('\u0123', o, "getAndSetAcquire char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals('\u4567', x, "getAndSetAcquire char value");
+        }
+
+        {
+            hs.get(TestAccessMode.SET).invokeExact(recv, '\u0123');
+
+            char o = (char) hs.get(TestAccessMode.GET_AND_SET_RELEASE).invokeExact(recv, '\u4567');
+            assertEquals('\u0123', o, "getAndSetRelease char");
+            char x = (char) hs.get(TestAccessMode.GET).invokeExact(recv);
+            assertEquals('\u4567', x, "getAndSetRelease char value");
         }
 
         // get and add, add and get
@@ -574,7 +602,7 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET).invokeExact('\u4567', '\u89AB');
             assertEquals(success, false, "failing weakCompareAndSet char");
             char x = (char) hs.get(TestAccessMode.GET).invokeExact();
-            assertEquals('\u0123', x, "failing weakCompareAndSetRe char value");
+            assertEquals('\u0123', x, "failing weakCompareAndSet char value");
         }
 
         // Compare set and get
@@ -587,7 +615,6 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             assertEquals('\u4567', x, "getAndSet char value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact('\u0123');
 
@@ -597,7 +624,6 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             assertEquals('\u4567', x, "getAndSetAcquire char value");
         }
 
-        // Compare set and get
         {
             hs.get(TestAccessMode.SET).invokeExact('\u0123');
 
@@ -869,10 +895,10 @@ public class VarHandleTestMethodHandleAccessChar extends VarHandleBaseTest {
             }
 
             {
-                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_ACQUIRE).invokeExact(array, i, '\u0123', '\u89AB');
-                assertEquals(success, false, "failing weakCompareAndSetAcquire char");
+                boolean success = (boolean) hs.get(TestAccessMode.WEAK_COMPARE_AND_SET_RELEASE).invokeExact(array, i, '\u0123', '\u89AB');
+                assertEquals(success, false, "failing weakCompareAndSetRelease char");
                 char x = (char) hs.get(TestAccessMode.GET).invokeExact(array, i);
-                assertEquals('\u4567', x, "failing weakCompareAndSetAcquire char value");
+                assertEquals('\u4567', x, "failing weakCompareAndSetRelease char value");
             }
 
             {

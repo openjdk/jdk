@@ -25,8 +25,6 @@
 
 package com.sun.tools.javac.tree;
 
-
-
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.*;
@@ -181,6 +179,36 @@ public class TreeInfo {
         }
     }
 
+    /** Is this tree `super`, or `Ident.super`?
+     */
+    public static boolean isSuperOrSelectorDotSuper(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isSuperOrSelectorDotSuper(skipParens(tree));
+            case IDENT:
+                return ((JCIdent)tree).name == ((JCIdent)tree).name.table.names._super;
+            case SELECT:
+                return ((JCFieldAccess)tree).name == ((JCFieldAccess)tree).name.table.names._super;
+            default:
+                return false;
+        }
+    }
+
+    /** Is this tree `this`, or `Ident.this`?
+     */
+    public static boolean isThisOrSelectorDotThis(JCTree tree) {
+        switch (tree.getTag()) {
+            case PARENS:
+                return isThisOrSelectorDotThis(skipParens(tree));
+            case IDENT:
+                return ((JCIdent)tree).name == ((JCIdent)tree).name.table.names._this;
+            case SELECT:
+                return ((JCFieldAccess)tree).name == ((JCFieldAccess)tree).name.table.names._this;
+            default:
+                return false;
+        }
+    }
+
     /** Check if the given tree is an explicit reference to the 'this' instance of the
      *  class currently being compiled. This is true if tree is:
      *  - An unqualified 'this' identifier
@@ -189,21 +217,24 @@ public class TreeInfo {
      *    but also NOT an enclosing outer class of 'currentClass'.
      */
     public static boolean isExplicitThisReference(Types types, Type.ClassType currentClass, JCTree tree) {
+        Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol) types.erasure(currentClass).tsym;
         switch (tree.getTag()) {
             case PARENS:
                 return isExplicitThisReference(types, currentClass, skipParens(tree));
             case IDENT: {
                 JCIdent ident = (JCIdent)tree;
                 Names names = ident.name.table.names;
-                return ident.name == names._this || ident.name == names._super;
+                return ident.name == names._this && tree.type.tsym == currentClass.tsym ||
+                       ident.name == names._super &&
+                               (tree.type.tsym == currentClass.tsym ||
+                                currentClassSym.isSubClass(tree.type.tsym, types));
             }
             case SELECT: {
                 JCFieldAccess select = (JCFieldAccess)tree;
                 Type selectedType = types.erasure(select.selected.type);
                 if (!selectedType.hasTag(TypeTag.CLASS))
                     return false;
-                Symbol.ClassSymbol currentClassSym = (Symbol.ClassSymbol)((Type.ClassType)types.erasure(currentClass)).tsym;
-                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)((Type.ClassType)selectedType).tsym;
+                Symbol.ClassSymbol selectedClassSym = (Symbol.ClassSymbol)(selectedType).tsym;
                 Names names = select.name.table.names;
                 return currentClassSym.isSubClass(selectedClassSym, types) &&
                         (select.name == names._super ||
