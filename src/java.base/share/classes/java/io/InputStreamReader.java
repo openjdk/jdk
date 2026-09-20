@@ -185,8 +185,13 @@ public class InputStreamReader extends Reader {
 
     @Override
     public String readAllAsString() throws IOException {
-        String s = sd.tryReadAllAsString();
-        return (s != null) ? s : super.readAllAsString();
+        // optimized implementation for InputStreamReader to
+        // try and avoid unnecessary buffer copies in super.readAllAsString()
+        if (this.getClass() == InputStreamReader.class) {
+            String s = sd.tryReadAllAsString();
+            return (s != null) ? s : super.readAllAsString();
+        }
+        return super.readAllAsString();
     }
 
     /**
