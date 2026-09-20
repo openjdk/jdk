@@ -123,8 +123,6 @@ java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linu
 java/awt/Frame/InitialIconifiedTest.java 7144049,8203920 macosx-all,linux-all
 java/awt/Frame/FocusTest.java 8341480 macosx-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
-java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion.java 8060176 windows-all,macosx-all
-java/awt/event/MouseWheelEvent/InfiniteRecursion/InfiniteRecursion_1.java 8060176 windows-all,macosx-all
 java/awt/dnd/FileListBetweenJVMsTest/FileListBetweenJVMsTest.java 8353673 macosx-all
 java/awt/dnd/URIListBetweenJVMsTest/URIListBetweenJVMsTest.java 8171510 macosx-all
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64,macosx-all
