@@ -492,7 +492,7 @@ void ShenandoahBarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssemb
 
   // end = start + count << LogBytesPerHeapOop
   // last element address to make inclusive
-  __ shadd(end, count, start, LogBytesPerHeapOop);
+  __ shift_left_add(end, count, start, LogBytesPerHeapOop);
   __ subi(end, end, BytesPerHeapOop);
   __ srli(start, start, CardTable::card_shift());
   __ srli(end, end, CardTable::card_shift());
