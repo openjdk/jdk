@@ -1040,9 +1040,9 @@ import java.net.URI;
  * </tr>
  * <tr>
  * <td id="RES_ACCESS">{@systemProperty jdk.xml.resource.access}</td>
- * <td>Defines allowed network access to external resources by specifying a list
+ * <td>Defines allowed access to external resources by specifying a list
  * of URI patterns, each following the syntax: <br><br>
- * {@code scheme:[/][host][:port]/[path pattern]}<br><br>
+ * {@code scheme:[/][host][:port]/[path]}<br><br>
  * Except where this specification explicitly extends or overrides the syntax or
  * semantics defined by the {@link java.net.URI URI} class, such as the support for wildcard
  * patterns, the definitions of {@link java.net.URI URI} apply.<br><br>
@@ -1087,7 +1087,7 @@ import java.net.URI;
  *     <li><b>port</b>: Optional. A decimal port number, as per the URI standard,
  *     to indicate only the specified port is permitted. If specified,
  *     it can not be empty. {@code http://example.com:}, for example, is illegal. </li>
- *     <li><b>path pattern</b>: Optional. Specifies a resource path. Wildcard {@code *}
+ *     <li><b>path</b>: Optional. Specifies a resource path. Wildcard {@code *}
  *     may be used in the path to match any sequence (e.g., {@code /foo/*} matches
  *     all resources under {@code /foo/}). For local schemes, paths are typically
  *     absolute (e.g., {@code file:/dtds/*}). To match all resources under a directory,
@@ -1103,20 +1103,20 @@ import java.net.URI;
  *         <li>as a leading wildcard in the host component ({@code http://*.example.com});</li>
  *         <li>as the final path segment ({@code file:/foo/*}).</li>
  *     </ul>
- *     Any other occurrence of * is treated as a literal character and does not perform wildcard matching.
+ *     Any other occurrence of {@code *} is treated as a literal character and does not perform wildcard matching.
  *     </li>
  * </ul>
  * Example:
  * {@snippet :
- *     jdk.xml.resource.access = https://*.sun.com, http://www.w3.org, https://127.0.0.1, file:/dtds/, jrt:*, file:/tmp/foo.jar
+ *     jdk.xml.resource.access = https://*.sun.com, http://www.w3.org, https://127.0.0.1, file:/dtds/*, jrt:*, file:/tmp/foo.jar
  * }
  * This configuration permits access to:
  * <ul>
  *     <li>https access to any subdomain of sun.com, e.g. java.sun.com</li>
- *     <li>Resources from specific domain as listed in the example, w3.org, 127.0.0.1</li>
+ *     <li>Resources from the specific domain as listed in the example, w3.org, 127.0.0.1</li>
  *     <li>All local resources under the dtds directory</li>
  *     <li>Resources from the Java runtime image</li>
- *     <li>Resources inside a jar file {@code /tmp/foo.jar}</li>
+ *     <li>The local {@code /tmp/foo.jar} file and its contents</li>
  * </ul>
  * The following configuration permits all access:<br>
  * {@code jdk.xml.resource.access = *}<br>

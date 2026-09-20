@@ -49,8 +49,8 @@ import java.util.Locale;
  * <ul>
  *   <li><b>scheme</b>: The URI scheme (e.g., http, https, ftp, file, jrt).</li>
  *   <li><b>host</b>: Domain name, IPv4, or IPv6 address. For local schemes ("file", "jrt"), host is omitted.</li>
- *   <li><b>port</b>: (optional) Port number to match. If omitted, matches the default port for the scheme.</li>
- *   <li><b>path-pattern</b>: (optional) Resource path. Supports wildcards (e.g., {@code /*}, {@code /dtds/*}).</li>
+ *   <li><b>port</b>: Optional. A decimal port number that matches only the specified port. If omitted, the rule matches all ports..</li>
+ *   <li><b>path-pattern</b>: Optional. A resource path pattern. Supports wildcards (e.g., {@code /*}, {@code /dtds/*}).</li>
  * </ul>
  * <p>
  * Wildcards are allowed in host (e.g., <code>*.foo.com</code>) and path (e.g., <code>/*</code> or <code>/foo/*</code>).
@@ -153,7 +153,7 @@ public class AccessRule {
                 throw new IllegalArgumentException("Unsupported scheme in resource access pattern: " + pattern);
 
             String rest = pattern.substring(schemeSep + 1);
-            int slashCount = getSlashAfterScheme(rest);
+            int slashCount = countSlashes(rest);
 
             if ("jrt".equals(scheme) || ("file".equals(scheme) && slashCount != 2)) {
                 return parseLocalPath(scheme, slashCount, rest, pattern);
@@ -249,7 +249,7 @@ public class AccessRule {
         }
 
         //The slash following the scheme may appear one to three times.
-        private static int getSlashAfterScheme(String s) {
+        private static int countSlashes(String s) {
             int count = 0;
             while (count < s.length() && s.charAt(count) == '/') {
                 count++;

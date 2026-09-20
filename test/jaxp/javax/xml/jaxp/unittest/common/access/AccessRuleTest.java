@@ -57,12 +57,28 @@ public class AccessRuleTest {
             Arguments.of("http://*.oracle.com", "http://subdomains.oracle.com/dtds/example.dtd", true),
             Arguments.of("https://*", "https://all.https.access", true),
             Arguments.of("https://*.oracle.com", "https://subdomains.oracle.com/dtds/example.dtd", true),
-            Arguments.of("http://www.oracle.com", "http://www.oracle.com/dtds/example.dtd", true),
+            // If port is omitted, matches all ports.
+            Arguments.of("http://www.oracle.com",
+                "http://www.oracle.com/dtds/example.dtd; http://www.oracle.com:80/dtds/example.dtd; http://www.oracle.com:8080/dtds/example.dtd", true),
+            // An explicitly specified default port also matches an omitted port.
+            Arguments.of("http://www.oracle.com:80",
+                "http://www.oracle.com/dtds/example.dtd; http://www.oracle.com:80/dtds/example.dtd", true),
+            // An explicitly specified default port does not match a non-default port.
+            Arguments.of("http://www.oracle.com:80", "http://www.oracle.com:8080/dtds/example.dtd", false),
+            // If port is specified, matches only the specified port.
+            Arguments.of("http://www.oracle.com:8080",
+                "http://www.oracle.com/dtds/example.dtd; http://www.oracle.com:80/dtds/example.dtd", false),
+            Arguments.of("http://www.oracle.com:8080", "http://www.oracle.com:8080/dtds/example.dtd", true),
+
             Arguments.of("http://www.oracle.com, http://*.oracle.com",
                 "http://www.oracle.com/dtds/example.dtd; http://subdomains.oracle.com/dtds/example.dtd", true),
             Arguments.of("file:/dtds/dtd1.dtd", "file:/dtds/dtd1.dtd", true),
             Arguments.of("file:/dtds/dtd1.dtd, file:/xsds/*", "file:/dtds/dtd1.dtd; file:/xsds/example.xsd", true),
+            // To match all resources under a directory, the wildcard * must be added
             Arguments.of("file:/dir/*", "file:/dir/child.dtd; file:/dir/sub/example.dtd", true),
+            // Without the wildcard *, a directory path does not match resources under the directory.
+            Arguments.of("file:/dir/", "file:/dir/child.dtd; file:/dir/sub/example.dtd", false),
+
             Arguments.of("http://www.oracle.com, file:/dtds/dtd1.dtd, file:/xsds/*",
                 "http://www.oracle.com/dtds/example.dtd; file:/dtds/dtd1.dtd; file:/xsds/example.xsd", true),
             Arguments.of("http://[2001:db8::1]", "http://[2001:0db8:0000:0000:0000:0000:0000:0001]/dtds/example.dtd; "
