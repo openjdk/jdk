@@ -916,10 +916,9 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = nullptr;
   oop blocker_object_owner = nullptr;
 
-  if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
+  oop vthread = thread->vthread();
+  if (java_lang_VirtualThread::is_instance(vthread)) { // ThreadSnapshot only captures platform threads
     _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
-    oop vthread = thread->vthread();
-    assert(vthread != nullptr, "");
     blocker_object = vthread;
     blocker_object_owner = vthread;
   } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
@@ -1095,7 +1094,7 @@ ThreadsListEnumerator::ThreadsListEnumerator(Thread* cur_thread,
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread *jt = jtiwh.next(); ) {
     // skips JavaThreads in the process of exiting
     // and also skips VM internal JavaThreads
-    // Threads in _thread_new or _thread_new_trans state are included.
+    // Threads in _thread_new state are included.
     // i.e. threads have been started but not yet running.
     if (jt->threadObj() == nullptr   ||
         jt->is_exiting() ||
@@ -1258,7 +1257,7 @@ private:
             // The first stage of async deflation does not affect any field
             // used by this comparison so the ObjectMonitor* is usable here.
             if (mark.has_monitor()) {
-              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner(), mark);
+              ObjectMonitor* mon = ObjectSynchronizer::read_monitor(monitor->owner());
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor
@@ -1499,12 +1498,15 @@ oop ThreadSnapshotFactory::get_thread_snapshot(jobject jthread, TRAPS) {
   }
 
   // Locks
-  Symbol* lock_sym = vmSymbols::jdk_internal_vm_ThreadLock();
-  Klass* lock_k = SystemDictionary::resolve_or_fail(lock_sym, true, CHECK_NULL);
-  InstanceKlass* lock_klass = InstanceKlass::cast(lock_k);
-
   refArrayHandle locks;
   if (cl._locks != nullptr && cl._locks->length() > 0) {
+    Symbol* lock_sym = vmSymbols::jdk_internal_vm_ThreadLock();
+    Klass* lock_k = SystemDictionary::resolve_or_fail(lock_sym, true, CHECK_NULL);
+    if (lock_k->should_be_initialized()) {
+      lock_k->initialize(CHECK_NULL);
+    }
+
+    InstanceKlass* lock_klass = InstanceKlass::cast(lock_k);
     locks = oopFactory::new_refArray_handle(lock_klass, cl._locks->length(), CHECK_NULL);
     for (int n = 0; n < cl._locks->length(); n++) {
       GetThreadSnapshotHandshakeClosure::OwnedLock* lock_info = cl._locks->adr_at(n);

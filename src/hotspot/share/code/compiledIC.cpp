@@ -200,9 +200,9 @@ void CompiledIC::set_to_monomorphic(bool caller_is_c1) {
   bool to_compiled = code != nullptr && code->is_in_use() && !code->is_unloading();
 
   if (to_compiled) {
-    entry = caller_is_c1 ? code->inline_entry_point() : code->entry_point();
+    entry = caller_is_c1 ? code->value_entry_point() : code->entry_point();
   } else {
-    entry = caller_is_c1 ? method->get_c2i_unverified_inline_entry() : method->get_c2i_unverified_entry();
+    entry = caller_is_c1 ? method->get_c2i_unverified_value_entry() : method->get_c2i_unverified_entry();
   }
 
   log_trace(inlinecache)("IC@" INTPTR_FORMAT ": monomorphic to %s: %s",
@@ -346,13 +346,13 @@ void CompiledDirectCall::set(const methodHandle& callee_method, bool caller_is_c
   bool to_compiled = !to_interp_cont_enter && code != nullptr && code->is_in_use() && !code->is_unloading();
 
   if (to_compiled) {
-    _call->set_destination_mt_safe(caller_is_c1 ? code->verified_inline_entry_point() : code->verified_entry_point());
+    _call->set_destination_mt_safe(caller_is_c1 ? code->verified_value_entry_point() : code->verified_entry_point());
     assert(is_call_to_compiled(), "should be compiled after set to compiled");
   } else {
     // Patch call site to C2I adapter if code is deoptimized or unloaded.
     // We also need to patch the static call stub to set the rmethod register
     // to the callee_method so the c2i adapter knows how to build the frame
-    set_to_interpreted(callee_method, caller_is_c1 ? callee_method->get_c2i_inline_entry() : callee_method->get_c2i_entry());
+    set_to_interpreted(callee_method, caller_is_c1 ? callee_method->get_c2i_value_entry() : callee_method->get_c2i_entry());
     assert(is_call_to_interpreted(), "should be interpreted after set to interpreted");
   }
 

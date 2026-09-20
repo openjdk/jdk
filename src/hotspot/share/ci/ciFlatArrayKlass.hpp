@@ -25,8 +25,8 @@
 #ifndef SHARE_VM_CI_CIFLATARRAYKLASS_HPP
 #define SHARE_VM_CI_CIFLATARRAYKLASS_HPP
 
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "oops/flatArrayKlass.hpp"
 
 // ciFlatArrayKlass
@@ -65,7 +65,7 @@ public:
   virtual bool is_flat_array_klass() const override { return true; }
 
   virtual ciKlass* exact_klass() override {
-    assert(element_klass()->as_inline_klass()->exact_klass() != nullptr, "must have exact klass");
+    assert(element_klass()->as_value_klass()->exact_klass() != nullptr, "must have exact klass");
     return this;
   }
 };

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,37 +28,22 @@ import nsk.share.jpda.*;
 import nsk.share.jdi.*;
 import java.io.*;
 
-
 /**
  * This class is used as debugee application for the methbyname_ss002 JDI test.
  */
 
 public class methbyname_ss002a {
 
-    static boolean verbose_mode = false;  // debugger may switch to true
-                                          // - for more easy failure evaluation
+    private static Log log = new Log(System.err);
 
     private final static String
         package_prefix = "nsk.jdi.ReferenceType.methodsByName_ss.";
 //        package_prefix = "";    //  for DEBUG without package
     static String checked_class_name = package_prefix + "methbyname_ss002aClassForCheck";
 
-    private static void print_log_on_verbose(String message) {
-        if ( verbose_mode ) {
-            System.err.println(message);
-        }
-    }
-
     public static void main (String argv[]) {
 
-        for (int i=0; i<argv.length; i++) {
-            if ( argv[i].equals("-vbs") || argv[i].equals("-verbose") ) {
-                verbose_mode = true;
-                break;
-            }
-        }
-
-        print_log_on_verbose("**> methbyname_ss002a: debugee started!");
+        log.display("**> methbyname_ss002a: debugee started!");
         ArgumentHandler argHandler = new ArgumentHandler(argv);
         IOPipe pipe = argHandler.createDebugeeIOPipe();
 
@@ -67,19 +52,17 @@ public class methbyname_ss002a {
         methbyname_ss002aClassLoader customClassLoader = new methbyname_ss002aClassLoader(checked_class_dir, checked_class_name);
         try {
             customClassLoader.preloadClass(checked_class_name);
-            print_log_on_verbose
-                ("--> methbyname_ss002a: checked class loaded but not prepared: " + checked_class_name);
+            log.display("--> methbyname_ss002a: checked class loaded but not prepared: " + checked_class_name);
         } catch (Throwable e) {  // ClassNotFoundException
-            print_log_on_verbose
-                ("--> methbyname_ss002a: checked class NOT loaded: " + e);
+            log.display("--> methbyname_ss002a: checked class NOT loaded: " + e);
         }
 
-        print_log_on_verbose("**> methbyname_ss002a: waiting for \"quit\" signal...");
+        log.display("**> methbyname_ss002a: waiting for \"quit\" signal...");
         pipe.println("ready");
         String instruction = pipe.readln();
         if (instruction.equals("quit")) {
-            print_log_on_verbose("**> methbyname_ss002a: \"quit\" signal recieved!");
-            print_log_on_verbose("**> methbyname_ss002a: completed succesfully!");
+            log.display("**> methbyname_ss002a: \"quit\" signal recieved!");
+            log.display("**> methbyname_ss002a: completed succesfully!");
             System.exit(0/*STATUS_PASSED*/ + 95/*STATUS_TEMP*/);
         }
         System.err.println("!!**> methbyname_ss002a: unexpected signal (no \"quit\") - " + instruction);
