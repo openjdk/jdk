@@ -3443,12 +3443,12 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
   // OOPs are either narrow (32 bits) or wide (full VA bits).
   // We encode narrow OOPs by setting the upper 16 bits in the
   // first instruction.
-  int movptr_size = 0;
   if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow OOP
     uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     return patch_imm_in_li32(insn_addr, (int32_t)n);
   }
+  int movptr_size = 0;
   bool result = patch_addr_in_movptr(insn_addr, o, movptr_size);
   assert(result, "inv");
   return movptr_size;

@@ -255,10 +255,6 @@ public:
     instruction_size            =    5 * NativeInstruction::instruction_size, // sv48: lui, lui, slli, add, jalr
   };
 
-  static int insn_size() {
-    return MacroAssembler::movptr_instruction_size(/* use_temp */ true);
-  }
-
   address jump_destination() const;
 
   static void insert_unconditional(address code_pos, address entry);
