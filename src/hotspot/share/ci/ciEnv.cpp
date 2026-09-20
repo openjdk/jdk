@@ -178,6 +178,8 @@ ciEnv::ciEnv(CompileTask* task)
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+  _jvmti_can_get_owned_monitor_info = false;
+  _jvmti_can_walk_any_space = false;
 
   _dyno_klasses = nullptr;
   _dyno_locs = nullptr;
@@ -302,6 +304,8 @@ ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler, Arena::Tag::tag_cienv) {
   _jvmti_can_access_local_variables = false;
   _jvmti_can_post_on_exceptions = false;
   _jvmti_can_pop_frame = false;
+  _jvmti_can_get_owned_monitor_info = false;
+  _jvmti_can_walk_any_space = false;
 
   _dyno_klasses = nullptr;
   _dyno_locs = nullptr;
@@ -988,7 +992,7 @@ void ciEnv::validate_compile_task_dependencies(ciMethod* target) {
 }
 
 // is_loading_aot_code = true implies loading compiled code from AOT code cache
-bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool preload) {
+bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool aot_preload) {
   methodHandle method(thread, target->get_Method());
 
   // Change in Jvmti state may invalidate compilation.
@@ -1028,10 +1032,10 @@ bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool inst
   if (!failing() && (install_code || is_loading_aot_code)) {
     // Check for {class loads, evolution, breakpoints, ...} during compilation
     validate_compile_task_dependencies(target);
-    if (failing() && preload) {
+    if (failing() && aot_preload) {
       ResourceMark rm;
       char* method_name = method->name_and_sig_as_C_string();
-      log_info(aot, codecache, nmethod)("preload code for '%s' failed dependency check", method_name);
+      log_info(aot, codecache, nmethod)("AOT preload code for '%s' failed dependency check", method_name);
     }
   }
 
@@ -1046,7 +1050,7 @@ bool ciEnv::is_compilation_valid(JavaThread* thread, ciMethod* target, bool inst
   return true;
 }
 
-void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm) {
+void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool aot_preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm) {
   methodHandle method(thread, target->get_Method());
 
   if (entry_bci == InvocationEntryBci) {
@@ -1074,20 +1078,20 @@ void ciEnv::make_code_usable(JavaThread* thread, ciMethod* target, bool preload,
       char *method_name = method->name_and_sig_as_C_string();
       lt.print("Installing method (L%d) %s id=%d aot=%s%s%u",
                task()->comp_level(), method_name, compile_id(),
-               task()->is_aot_load() ? "A" : "", preload ? "P" : "",
+               task()->is_aot_load() ? "A" : "", aot_preload ? "P" : "",
                (aot_code_entry != nullptr ? aot_code_entry->offset() : 0));
     }
     // Allow the code to be executed
     MutexLocker ml(NMethodState_lock, Mutex::_no_safepoint_check_flag);
     if (nm->make_in_use()) {
-      assert(!preload || method->method_holder()->is_linked(), "AOT code preloaded only for linked method holder");
+      assert(!aot_preload || method->method_holder()->is_linked(), "AOT code preloaded only for linked method holder");
       method->set_code(method, nm);
 #if INCLUDE_CDS
-      if (preload) {
+      if (aot_preload) {
         MethodCounters* mc = method->get_method_counters(thread);
         assert(mc != nullptr, "CompileBroker should create MethodCounters if it is missing");
         mc->set_aot_preload_code_entry(aot_code_entry);
-        nm->set_preloaded(true);
+        nm->set_aot_preloaded(true);
       }
 #endif
     }
@@ -1121,7 +1125,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
   nmethod* nm = nullptr;
   {
     methodHandle method(thread, target->get_Method());
-    bool preload = task()->preload(); // Code is preloaded before Java method execution
+    bool aot_preload = task()->is_aot_preload(); // AOT code to preload before Java method execution
 
     // We require method counters to store some method state (max compilation levels) required by the compilation policy.
     if (method->get_method_counters(thread) == nullptr) {
@@ -1147,12 +1151,12 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
       return nullptr;
     }
 
-    if (!is_compilation_valid(thread, target, install_code, /*is_loading_aot_code*/ true, preload)) {
+    if (!is_compilation_valid(thread, target, install_code, /*is_loading_aot_code*/ true, aot_preload)) {
       return nullptr;
     }
 
     if (install_code) {
-      nm = nmethod::new_nmethod(archived_nm, method, compiler, aot_code_reader);
+      nm = nmethod::new_nmethod(archived_nm, method, aot_code_reader);
     }
     if (nm != nullptr) {
 #ifdef ASSERT
@@ -1170,7 +1174,7 @@ nmethod* ciEnv::register_aot_method(JavaThread* thread,
 #endif
       aot_code_entry->set_loaded();
       assert(nm->has_clinit_barriers() == aot_code_entry->has_clinit_barriers(), "should match");
-      make_code_usable(thread, target, preload, InvocationEntryBci, aot_code_entry, nm);
+      make_code_usable(thread, target, aot_preload, InvocationEntryBci, aot_code_entry, nm);
     }
   }
 
@@ -1200,7 +1204,7 @@ void ciEnv::register_method(ciMethod* target,
                             ImplicitExceptionTable* inc_table,
                             AbstractCompiler* compiler,
                             bool has_clinit_barriers,
-                            bool for_preload,
+                            bool for_aot_preload,
                             bool has_unsafe_access,
                             bool has_wide_vectors,
                             bool has_monitors,
@@ -1234,7 +1238,7 @@ void ciEnv::register_method(ciMethod* target,
     MutexLocker ml(Compile_lock);
     NoSafepointVerifier nsv;
 
-    if (!is_compilation_valid(THREAD, target, install_code, /*is_loading_aot_code*/ false, /*preload*/ false)) {
+    if (!is_compilation_valid(THREAD, target, install_code, /*is_loading_aot_code*/ false, /*aot_preload*/ false)) {
       code_buffer->free_blob();
       return;
     }
@@ -1283,7 +1287,7 @@ void ciEnv::register_method(ciMethod* target,
           log.print_cr("%s", ss.freeze());
         }
 #endif
-        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_preload);
+        AOTCodeEntry* aot_code_entry = AOTCodeCache::store_nmethod(nm, compiler, for_aot_preload);
         if (aot_code_entry != nullptr) {
           aot_code_entry->set_has_vectors(debug_info()->has_vectors());
           nm->set_aot_code_entry(aot_code_entry);
@@ -1299,15 +1303,15 @@ void ciEnv::register_method(ciMethod* target,
           assert(ctd != nullptr, "AOT compiled method should have CompileTrainingData");
           int inline_size = ctd->inline_instructions_size();
           aot_code_entry->set_inline_instructions_size(inline_size);
-          if (for_preload) {
+          if (for_aot_preload) {
             // Set it only for printing purpose, otherwise it is unused
             // during assembly phase.
-            nm->set_preloaded(true);
+            nm->set_aot_preloaded(true);
           }
         }
       }
 #endif
-      make_code_usable(THREAD, target, /* preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
+      make_code_usable(THREAD, target, /* aot_preload */ false, entry_bci, /* aot_code_entry */ nullptr, nm);
     }
   }
 
@@ -1960,7 +1964,7 @@ InstanceKlass::ClassState ciEnv::compute_init_state_for_aot_compile(InstanceKlas
       // Preload AOT code does not depend on Training Data,
       // it has class init barriers to initialize class by
       // going into interpreter or directly calling runtime.
-      log_trace(aot, compilation)("%d: for_preload: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
+      log_trace(aot, compilation)("%d: for_aot_preload: (%s) %s", task()->compile_id(), InstanceKlass::state2name(ik->init_state()), ik->external_name());
       return InstanceKlass::ClassState::fully_initialized;
     }
     default: fatal("%s", CompileTask::reason_name(task()->compile_reason()));

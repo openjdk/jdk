@@ -188,7 +188,8 @@ class Options {
   const bool _eliminate_boxing;      // Do boxing elimination.
   const bool _do_locks_coarsening;   // Do locks coarsening
   const bool _do_superword;          // Do SuperWord
-  const bool _for_preload;           // Generate code for preload (before Java method execution), do class init barriers
+  const bool _for_aot_preload;       // Generate AOT code for preload (before Java method execution),
+                                     // include class init barriers
   const bool _install_code;          // Install the code that was compiled
  public:
   Options(bool subsume_loads,
@@ -198,7 +199,7 @@ class Options {
           bool eliminate_boxing,
           bool do_locks_coarsening,
           bool do_superword,
-          bool for_preload,
+          bool for_aot_preload,
           bool install_code) :
           _subsume_loads(subsume_loads),
           _do_escape_analysis(do_escape_analysis),
@@ -207,7 +208,7 @@ class Options {
           _eliminate_boxing(eliminate_boxing),
           _do_locks_coarsening(do_locks_coarsening),
           _do_superword(do_superword),
-          _for_preload(for_preload),
+          _for_aot_preload(for_aot_preload),
           _install_code(install_code) {
   }
 
@@ -220,7 +221,7 @@ class Options {
        /* eliminate_boxing = */ false,
        /* do_lock_coarsening = */ false,
        /* do_superword = */ true,
-       /* for_preload = */ false,
+       /* for_aot_preload = */ false,
        /* install_code = */ true
     );
   }
@@ -606,8 +607,8 @@ public:
   bool              do_locks_coarsening() const { return _options._do_locks_coarsening; }
   bool              do_superword() const        { return _options._do_superword; }
 
-  bool              do_clinit_barriers()  const { return _options._for_preload; }
-  bool              for_preload()         const { return _options._for_preload; }
+  bool              do_clinit_barriers()  const { return _options._for_aot_preload; }
+  bool              for_aot_preload()     const { return _options._for_aot_preload; }
 
   // Other fixed compilation parameters.
   ciMethod*         method() const              { return _method; }

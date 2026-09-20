@@ -165,7 +165,6 @@ public:
   // Dependencies
   friend class StubGenerator;
   friend class VMStructs;
-  friend class AOTCodeAddressTable;
 
 #include CPU_HEADER(stubRoutines)
 

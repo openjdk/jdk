@@ -70,10 +70,8 @@ public:
         // For profiled C1 compilations, generate limited profile when there was limited/full
         // profiled compilation in training.
         return CompLevel_limited_profile <= high_top_level && high_top_level <= CompLevel_full_profile;
-      case CompLevel_full_profile:
-        // We do not include C1 full profiled methods at this time.
-        return false;
       default:
+        // This includes CompLevel_full_profile which should be filtered out.
         assert(false, "Unexpected AOT compilation level: %d", _comp_level);
     }
     // Do not include methods by default.
@@ -134,7 +132,7 @@ public:
       }
       assert(!HAS_PENDING_EXCEPTION, "");
       CompileBroker::compile_method(mh, InvocationEntryBci, _comp_level,
-                                    0, nullptr /*requires_online_comp*/,
+                                    0, nullptr /* AOTCodeEntry* */,
                                     _for_preload ? CompileTask::Reason_AOTCompileForPreload : CompileTask::Reason_AOTCompile,
                                     THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -154,7 +152,7 @@ public:
     for (int i = 0; i < _methods.length(); i++) {
       Method* m = _methods.at(i);
 
-      bool is_preloaded_code = m->has_compiled_code() && m->code()->preloaded();
+      bool is_preloaded_code = m->has_compiled_code() && m->code()->aot_preloaded();
       bool is_success = !m->is_not_compilable(_comp_level) &&
                         m->has_compiled_code() && m->code()->is_aot();
       // Successful preloaded AP4 code may mask failed normal A4 code later load.
@@ -169,10 +167,8 @@ public:
       if (log.is_enabled()) {
         ResourceMark rm;
         log.print("[%4d] A%d Compiled %s [%p", i, log_comp_level, m->external_name(), m);
-        if (builder != nullptr) {
-          Method* requested_m = builder->to_requested(builder->get_buffered_addr(m));
-          log.print(" -> %p", requested_m);
-        }
+        Method* requested_m = builder->to_requested(builder->get_buffered_addr(m));
+        log.print(" -> %p", requested_m);
         log.print_cr("] {%d} [%d] (%s)", compile_id(m), AOTCodeCache::store_entries_cnt(), (is_success ? "success" : "FAILED"));
       }
     }

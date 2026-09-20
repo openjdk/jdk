@@ -4196,8 +4196,9 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, bool ign
       !InlineSynchronizedMethods         ) INLINE_BAILOUT("callee is synchronized");
   if (!callee->holder()->is_linked())      INLINE_BAILOUT("callee's klass not linked yet");
   if (bc == Bytecodes::_invokestatic &&
-      (!callee->holder()->is_initialized() ||
-       compilation()->env()->is_aot_compile())) INLINE_BAILOUT("callee's klass not initialized yet");
+      !callee->holder()->is_initialized()) INLINE_BAILOUT("callee's klass not initialized yet");
+  if (bc == Bytecodes::_invokestatic &&
+      compilation()->env()->is_aot_compile()) INLINE_BAILOUT("AOT compilation");
   if (!callee->has_balanced_monitors())    INLINE_BAILOUT("callee's monitors do not match");
 
   // Proper inlining of methods with jsrs requires a little more work.

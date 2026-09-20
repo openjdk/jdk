@@ -129,7 +129,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   CompileTask* task = env->task();
   if (task->is_aot_load()) {
     assert(install_code, "AOT code loading requires install_code");
-    AOTCodeCache::load_nmethod(env, target, entry_bci, this, CompLevel_full_optimization);
+    AOTCodeCache::load_nmethod(env, target, entry_bci, this);
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.
     return;
@@ -142,8 +142,8 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
   bool do_superword = UseSuperWord;
-  bool for_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
-  assert(!for_preload || (ClassInitBarrierMode > 0), "sanity");
+  bool for_aot_preload = (task->compile_reason() == CompileTask::Reason_AOTCompileForPreload);
+  assert(!for_aot_preload || (ClassInitBarrierMode > 0), "sanity");
   while (!env->failing()) {
     ResourceMark rm;
     // Attempt to compile while subsuming loads into machine instructions.
@@ -154,7 +154,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
                     eliminate_boxing,
                     do_locks_coarsening,
                     do_superword,
-                    for_preload,
+                    for_aot_preload,
                     install_code);
     Compile C(env, target, entry_bci, options, directive);
 

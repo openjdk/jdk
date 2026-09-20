@@ -34,7 +34,6 @@
 #include "utilities/xmlstream.hpp"
 
 class AOTCodeEntry;
-class CompileQueue;
 class CompileTrainingData;
 class DirectiveSet;
 
@@ -70,7 +69,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Count
   };
 
-  static const char* reason_name(CompileTask::CompileReason compile_reason) {
+  static const char* reason_name(CompileReason compile_reason) {
     static const char* reason_names[] = {
       "no_reason",
       "count",
@@ -88,9 +87,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
     return reason_names[compile_reason];
   }
 
-  static bool reason_is_aot_compile(CompileTask::CompileReason compile_reason) {
-    return (compile_reason == CompileTask::Reason_AOTCompile) ||
-           (compile_reason == CompileTask::Reason_AOTCompileForPreload);
+  static bool reason_is_aot_compile(CompileReason compile_reason) {
+    return (compile_reason == Reason_AOTCompile) ||
+           (compile_reason == Reason_AOTCompileForPreload);
   }
 
  private:
@@ -130,23 +129,24 @@ class CompileTask : public CHeapObj<mtCompiler> {
  public:
   CompileTask(int compile_id, const methodHandle& method, int osr_bci, int comp_level,
                   int hot_count, AOTCodeEntry* aot_code_entry,
-                  CompileTask::CompileReason compile_reason,
+                  CompileReason compile_reason,
                   bool is_blocking);
   ~CompileTask();
 
   static void wait_for_no_active_tasks();
 
-  int          compile_id() const                   { return _compile_id; }
-  Method*      method() const                       { return _method; }
-  int          osr_bci() const                      { return _osr_bci; }
-  bool         is_complete() const                  { return _is_complete; }
-  bool         is_blocking() const                  { return _is_blocking; }
-  bool         is_success() const                   { return _is_success; }
-  bool         is_aot_load() const                  { return _aot_code_entry != nullptr; }
-  AOTCodeEntry* aot_code_entry()                    { return _aot_code_entry; }
-  DirectiveSet* directive() const                   { return _comp_directive_matcher.directive_set(); }
+  int          compile_id() const                { return _compile_id; }
+  Method*      method() const                    { return _method; }
+  int          osr_bci() const                   { return _osr_bci; }
+  bool         is_complete() const               { return _is_complete; }
+  bool         is_blocking() const               { return _is_blocking; }
+  bool         is_success() const                { return _is_success; }
+  bool         is_aot_load() const               { return _aot_code_entry != nullptr; }
+  bool         is_aot_preload() const            { return (_compile_reason == Reason_AOTPreload); }
+  AOTCodeEntry* aot_code_entry()                 { return _aot_code_entry; }
+  DirectiveSet* directive() const                { return _comp_directive_matcher.directive_set(); }
   void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
-  CompileReason compile_reason() const              { return _compile_reason; }
+  CompileReason compile_reason() const           { return _compile_reason; }
 
   CodeSection::csize_t nm_content_size() { return _nm_content_size; }
   void         set_nm_content_size(CodeSection::csize_t size) { _nm_content_size = size; }
@@ -154,7 +154,6 @@ class CompileTask : public CHeapObj<mtCompiler> {
   void         set_nm_insts_size(CodeSection::csize_t size) { _nm_insts_size = size; }
   CodeSection::csize_t nm_total_size() { return _nm_total_size; }
   void         set_nm_total_size(CodeSection::csize_t size) { _nm_total_size = size; }
-  bool         preload() const                   { return (_compile_reason == Reason_AOTPreload); }
   bool         can_become_stale() const          {
     switch (_compile_reason) {
       case Reason_BackedgeCount:
@@ -168,6 +167,14 @@ class CompileTask : public CHeapObj<mtCompiler> {
 
   bool is_aot_compile() {
     return reason_is_aot_compile(compile_reason());
+  }
+
+  // Next two functions are mostly used to print "A" or "AP".
+  bool is_aot_load_or_compile() const {
+    return is_aot_load() || (_compile_reason == Reason_AOTCompile);
+  }
+  bool is_aot_preload_or_compile() const {
+    return is_aot_preload() || (_compile_reason == Reason_AOTCompileForPreload);
   }
 
   void         mark_complete()                   { _is_complete = true; }
@@ -222,7 +229,7 @@ public:
   static void  print(outputStream* st, const nmethod* nm, const char* msg = nullptr, bool short_form = false, bool cr = true) {
     print_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
                nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
-               nm->is_aot(), nm->preloaded(),
+               nm->is_aot(), nm->aot_preloaded(),
                nm->compiler_name(), msg, short_form, cr);
   }
   static void  print_ul(const nmethod* nm, const char* msg = nullptr);

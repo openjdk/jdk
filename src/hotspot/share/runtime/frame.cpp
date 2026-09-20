@@ -731,7 +731,7 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       nmethod* nm = _cb->as_nmethod();
       Method* m = nm->method();
       if (m != nullptr) {
-        st->print("%s", (nm->preloaded() ? "P" : (nm->is_aot() ? "A" : "J")));
+        st->print("%s", (nm->aot_preloaded() ? "P" : (nm->is_aot() ? "A" : "J")));
         st->print(" %d%s", nm->compile_id(), (nm->is_osr_method() ? "%" : ""));
         st->print(" %s", nm->compiler_name());
         m->name_and_sig_as_C_string(buf, buflen);

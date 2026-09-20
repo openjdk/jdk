@@ -2506,10 +2506,10 @@ Node* GraphKit::uncommon_trap(int trap_request,
                                                       trap_request), bci());
   }
 
-  if (PreloadReduceTraps && C->for_preload() && (action != Deoptimization::Action_none)) {
+  if (PreloadReduceTraps && C->for_aot_preload() && (action != Deoptimization::Action_none)) {
     ResourceMark rm;
     ciMethod* cim = C->method();
-    log_debug(aot, codecache, deoptimization)("Uncommon trap in preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
+    log_debug(aot, codecache, deoptimization)("Uncommon trap in AOT preload code: reason=%s action=%s method=%s::%s bci=%d, %s",
                   Deoptimization::trap_reason_name(reason), Deoptimization::trap_action_name(action),
                   cim->holder()->name()->as_klass_external_name(), cim->name()->as_klass_external_name(),
                   bci(), comment);
@@ -3426,7 +3426,6 @@ void GraphKit::guard_klass_is_initialized(Node* klass) {
   precond(ClassInitBarrierMode == 1); // catch new value
   int init_state_off = in_bytes(InstanceKlass::init_state_offset());
   Node* adr = basic_plus_adr(top(), klass, init_state_off);
-  // should use MemNode::acquire for InstanceKlass::_init_state field load
   Node* init_state = LoadNode::make(_gvn, nullptr, immutable_memory(), adr,
                                     adr->bottom_type()->is_ptr(), TypeInt::BYTE,
                                     T_BYTE, MemNode::acquire);

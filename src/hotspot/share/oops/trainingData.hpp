@@ -535,7 +535,7 @@ class CompileTrainingData : public TrainingData {
   const bool _is_osr;
   const int _compile_id;
 
-  // Size of nmethod code during training
+  // Size of nmethod's inlineable instructions during training
   int _inline_instructions_size;
 
   // classes that should be initialized before this JIT task runs

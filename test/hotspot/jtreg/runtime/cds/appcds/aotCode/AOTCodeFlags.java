@@ -213,14 +213,14 @@ public class AOTCodeFlags {
                     out.shouldNotMatch("Nmethod:\\s+total");
                 } else {
                     if (isAdapterCachingOn(aMode)) {
-                        // AOTAdapterCaching is on, non-zero adapters should be stored
+                        // AOTAdapterCaching is on, adapters should be stored
                         out.shouldMatch("Adapter:\\s+total=[1-9][0-9]+");
                     } else {
                         // AOTAdapterCaching is off, no adapters should be stored
                         out.shouldMatch("Adapter:\\s+total=0");
                     }
                     if (isStubCachingOn(aMode)) {
-                        // AOTStubCaching is on, non-zero stubs should be stored
+                        // AOTStubCaching is on, stubs should be stored
                         out.shouldMatch("SharedBlob:\\s+total=[1-9][0-9]+");
                         out.shouldMatch("C1Blob:\\s+total=[1-9][0-9]+");
                         out.shouldMatch("C2Blob:\\s+total=[1-9][0-9]+");
@@ -230,17 +230,18 @@ public class AOTCodeFlags {
                         out.shouldMatch("SharedBlob:\\s+total=0");
                         out.shouldMatch("C1Blob:\\s+total=0");
                         out.shouldMatch("C2Blob:\\s+total=0");
+                        out.shouldMatch("StubGenBlob:\\s+total=0");
                     }
                     if (isCodeCachingOn(aMode)) {
-                        // AOTCodeCaching is on, non-zero nmethods should be stored/loaded
+                        // AOTCodeCaching is on, nmethods should be stored
                         out.shouldMatch("Nmethod:\\s+total=[1-9][0-9]+");
                     } else {
-                        // AOTCodeCaching is off, no nmethods should be stored/loaded
+                        // AOTCodeCaching is off, no nmethods should be stored
                         out.shouldMatch("Nmethod:\\s+total=0");
                     }
                 }
             } else if (runMode == RunMode.PRODUCTION) {
-                // Irrespective of assembly run mode, if both all types of code caching is disabled
+                // Irrespective of assembly run mode, if all types of code caching is disabled
                 // in production run, then it is equivalent to completely disabling AOT code cache
                 if (!isAdapterCachingOn(pMode) && !isStubCachingOn(pMode) && !isCodeCachingOn(pMode)) {
                     out.shouldNotMatch("Adapter:\\s+total");

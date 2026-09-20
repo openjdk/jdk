@@ -1830,10 +1830,10 @@ static void log_uncommon_trap(nmethod* nm, Method* tm, intptr_t pc, frame& fr, i
     if (class_name != nullptr) {
       ls.print("%s class_name=%s ", unresolved ? "unresolved" : "", class_name);
     }
-    ls.print("cid=%4d %s%s%s level=%d",
+    ls.print("cid=%4d %s%s%s level=%d ",
              nm->compile_id(), (is_osr ? "osr" : "   "),
              (nm->is_aot() ? "aot " : ""),
-             (nm->preloaded() ? "preload " : ""),
+             (nm->aot_preloaded() ? "preload " : ""),
              nm->comp_level());
     ls.print_cr("pc=" INTPTR_FORMAT " relative_pc=" INTPTR_FORMAT,
              pc, fr.pc() - nm->code_begin());

@@ -400,14 +400,15 @@
           "Produce AOT preload code which could be called on first "        \
           "method invocation, add class initialization barriers, "          \
           "other checks and constraints if needed "                         \
-          "(0: no barriers; 1: uncommon trap)")                             \
+          "(0: no AOT preload code produced) "                               \
+          "(1: produce AOT preload code with uncommon trap for barriers)")  \
           range(0, 1)                                                       \
                                                                             \
   product(uint, AOTCodePreloadStart, 0, DIAGNOSTIC,                         \
-          "The id of the first AOT code to preload")                        \
+          "The index of the first AOT code to preload")                     \
                                                                             \
   product(uint, AOTCodePreloadStop, max_jint, DIAGNOSTIC,                   \
-          "The id of the last AOT code to preload")                         \
+          "The index of the last AOT code to preload")                      \
                                                                             \
   product(bool, AOTPreloadBlocking, false, DIAGNOSTIC,                      \
           "Preload code is processed with blocking. Startup would not "     \

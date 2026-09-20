@@ -318,7 +318,7 @@ private:
   bool _load_reported;
 
   // This AOT code was preloaded before method is called
-  bool _preloaded;
+  bool _aot_preloaded;
 
   enum DeoptimizationStatus : u1 {
     not_marked,
@@ -522,7 +522,6 @@ public:
   // create nmethod using archived nmethod from AOT code cache
   static nmethod* new_nmethod(nmethod* archived_nm,
                               const methodHandle& method,
-                              AbstractCompiler* compiler,
                               AOTCodeReader* aot_code_reader);
 #endif
 public:
@@ -786,8 +785,8 @@ public:
   bool  needs_stack_repair() const                { return _flags.needs_stack_repair(); }
   bool  has_clinit_barriers() const               { return _flags.has_clinit_barriers(); }
 
-  bool  preloaded() const                         { return _preloaded; }
-  void  set_preloaded(bool z)                     { _preloaded = z; }
+  bool  aot_preloaded() const                     { return _aot_preloaded; }
+  void  set_aot_preloaded(bool z)                 { _aot_preloaded = z; }
 
   bool  has_flushed_dependencies() const          { return _has_flushed_dependencies; }
   void  set_has_flushed_dependencies(bool z)      {

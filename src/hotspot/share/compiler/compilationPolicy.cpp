@@ -112,7 +112,7 @@ void CompilationPolicy::maybe_compile_early(const methodHandle& m, MethodTrainin
   }
   // Consider replacing conservatively compiled AOT Preload code with faster AOT code or normal JITed code
   nmethod* nm = m->code();
-  bool recompile = (nm != nullptr) && nm->preloaded();
+  bool recompile = (nm != nullptr) && nm->aot_preloaded();
   CompLevel cur_level = static_cast<CompLevel>(m->highest_comp_level());
   CompLevel next_level = trained_transition(m, cur_level, mtd, THREAD);
   if ((next_level != cur_level || recompile) && can_be_compiled(m, next_level) && !CompileBroker::compilation_is_in_queue(m)) {
@@ -767,7 +767,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
   Method* max_method = nullptr;
 
   int64_t t = nanos_to_millis(os::javaTimeNanos());
-  // Iterate through the queue and find a method with a maximum rate.
+  // Iterate through the queue and select highest priority task.
   for (CompileTask* task = compile_queue->first(); task != nullptr;) {
     CompileTask* next_task = task->next();
     // If a method was unloaded or has been stale for some time, remove it from the queue.
@@ -793,20 +793,20 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
       if (PrintTieredEvents) {
         print_event(REMOVE_FROM_QUEUE, method, method, task->osr_bci(), (CompLevel) task->comp_level());
       }
-      method->clear_queued_for_compilation();
       compile_queue->remove_and_mark_stale(task);
+      method->clear_queued_for_compilation();
       task = next_task;
       continue;
     }
     update_rate(t, mh);
-    if (max_task == nullptr || compare_methods(method, max_method) || compare_tasks(task, max_task)) {
-      // Select a method with the highest rate
+    // Prefer Reason_MustBeCompiled task. Otherwise use method heuristics selection.
+    if (max_task == nullptr || compare_tasks(task, max_task)) {
       max_task = task;
       max_method = method;
     }
 
     if (task->is_blocking()) {
-      if (max_blocking_task == nullptr || compare_methods(method, max_blocking_task->method())) {
+      if (max_blocking_task == nullptr || compare_tasks(task, max_blocking_task)) {
         max_blocking_task = task;
       }
     }
@@ -833,7 +833,7 @@ CompileTask* CompilationPolicy::select_task(CompileQueue* compile_queue, JavaThr
         max_task->transfer_directive(directive_matcher);
 
         if (CompileBroker::compilation_is_complete(max_method_h, max_task->osr_bci(), CompLevel_limited_profile,
-                                                   nullptr /* requires_online_compilation */,
+                                                   nullptr /* AOTCodeEntry* */,
                                                    CompileTask::Reason_None)) {
           if (PrintTieredEvents) {
             print_event(REMOVE_FROM_QUEUE, max_method, max_method, max_task->osr_bci(), (CompLevel)max_task->comp_level());
@@ -1069,10 +1069,13 @@ bool CompilationPolicy::compare_methods(Method* x, Method* y) {
 
 bool CompilationPolicy::compare_tasks(CompileTask* x, CompileTask* y) {
   assert(!x->is_aot_load() && !y->is_aot_load(), "AOT code caching tasks are not expected here");
-  if (x->compile_reason() != y->compile_reason() && x->compile_reason() == CompileTask::Reason_MustBeCompiled) {
-    return true;
+  bool x_must_compile = x->compile_reason() == CompileTask::Reason_MustBeCompiled;
+  bool y_must_compile = y->compile_reason() == CompileTask::Reason_MustBeCompiled;
+  if (x_must_compile != y_must_compile) {
+    return x_must_compile;
   }
-  return false;
+  // Tasks have the same MustBeCompiled priority. Compare methods.
+  return compare_methods(x->method(), y->method());
 }
 
 // Is method profiled enough?

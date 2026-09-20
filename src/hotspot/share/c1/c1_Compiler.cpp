@@ -272,8 +272,8 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, bool 
   CompileTask* task = env->task();
   if (task->is_aot_load()) {
     assert(install_code, "AOT code loading requires install_code");
-    assert(!task->preload(), "Pre-loading AOT code is not implemented for C1 code");
-    AOTCodeCache::load_nmethod(env, method, entry_bci, this, CompLevel(task->comp_level()));
+    assert(!task->is_aot_preload(), "Pre-loading AOT code is not implemented for C1 code");
+    AOTCodeCache::load_nmethod(env, method, entry_bci, this);
     // We want to go quickly through AOT code load requests
     // instead of spending time on normal compilation.
     return;

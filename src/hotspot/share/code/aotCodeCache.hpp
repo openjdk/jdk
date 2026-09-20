@@ -37,18 +37,19 @@
 #include "utilities/sizes.hpp"
 
 /*
- * AOT Code Cache collects code from Code Cache and corresponding metadata
- * during application training run.
- * In following "production" runs this code and data can be loaded into
- * Code Cache skipping its generation.
- * Additionally special compiled code "preload" is generated with class initialization
+ * AOTCodeCache compiles AOT code during "assembly" phase by using metadata
+ * (classes and profiling) collected during application training run.
+ * Additionally special AOT "preload" code is generated with class initialization
  * barriers which can be called on first Java method invocation.
+ * Compiled AOT code is collected and stored in AOT cache.
+ * In following "production" runs this code and data can be loaded from
+ * AOT cache skipping execution in the Interpreter and JIT compilation
+ * for corresponding hot methods.
  */
 
 class AbstractCompiler;
 class AOTCodeCache;
 class AsmRemarks;
-class ciConstant;
 class ciEnv;
 class ciMethod;
 class CodeBlob;
@@ -66,9 +67,6 @@ class nmethod;
 class OopRecorder;
 class outputStream;
 class RelocIterator;
-class StubCodeGenerator;
-
-enum class vmIntrinsicID : int;
 
 #define DO_AOTCODEENTRY_KIND(Fn) \
   Fn(None) \
@@ -102,10 +100,10 @@ private:
           _loaded:1,              // Code was loaded for use
           _load_fail:1;           // Failed to load due to some klass state
 
-  uint   _id;          // Adapter's id, vmIntrinsic::ID for stub or Method's offset in AOTCache for nmethod
+  uint   _id;          // Adapter's id, BlobId for stub or Method's offset in AOTCache for nmethod
   uint   _offset;      // Offset to entry
   uint   _size;        // Entry size
-  uint   _name_offset; // Method's or intrinsic name
+  uint   _name_offset; // Compiled method name, adapter name, StubInfo::name()
   uint   _name_size;
   uint   _code_offset; // Start of code in cache
 
@@ -560,7 +558,7 @@ protected:
 
   public:
     void record();
-    bool verify(AOTCodeCache* cache) const;
+    bool verify() const;
 
 #ifdef COMPILER2
     bool reduce_initial_cm() const { return _reduceInitialCardMarks; }
@@ -662,7 +660,7 @@ protected:
 #endif
     bool verify_jvmti_state(ciEnv* env) const;
     bool verify_cpu_features(AOTCodeCache* cache) const;
-    bool verify(const char* load_buffer, uint load_size)  const;
+    bool verify(uint load_size)  const;
     size_t verify_section(uint offset,
                           uint count,
                           size_t unit_size,
@@ -674,7 +672,7 @@ protected:
       if (!verify_cpu_features(cache)) {
         return false;
       }
-      return _config.verify(cache);
+      return _config.verify();
     }
   };
 
@@ -692,9 +690,6 @@ private:
   bool   _for_dump;        // AOT cache is open for dumping AOT code
   bool   _failed;          // Failed read/write to/from cache (cache is broken?)
   bool   _lookup_failed;   // Failed to lookup for info (skip only this code load)
-
-  bool   _for_preload;         // Code for preload
-  bool   _has_clinit_barriers; // Code with clinit barriers
 
   AOTCodeAddressTable* _table;
 
@@ -810,7 +805,7 @@ public:
 #ifndef PRODUCT
   bool write_asm_remarks(AsmRemarks& asm_remarks, GrowableArray<const char*>& remarks, GrowableArray<uint>& remarks_len, uint* size);
   bool write_dbg_strings(DbgStrings& dbg_strings, GrowableArray<const char*>& strings, GrowableArray<uint>&strings_len, uint* size);
-  bool write_asm_rem_and_dbg_str(AsmRemarks& asm_remarks, DbgStrings& dbg_strings, uint entry_position);
+  bool write_asm_rem_and_dbg_str(AsmRemarks& asm_remarks, DbgStrings& dbg_strings);
 #endif // PRODUCT
 
 private:
@@ -850,7 +845,7 @@ public:
   // save and restore API nmethods
   static AOTCodeEntry* store_nmethod(nmethod* nm, AbstractCompiler* compiler, bool for_preload) NOT_CDS_RETURN_(nullptr);
 
-  static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler, CompLevel comp_level) NOT_CDS_RETURN_(false);
+  static bool load_nmethod(ciEnv* env, ciMethod* target, int entry_bci, AbstractCompiler* compiler) NOT_CDS_RETURN_(false);
 
   static void publish_external_addresses(GrowableArray<address>& addresses) NOT_CDS_RETURN;
   // publish all entries for a code blob in code cache address table
@@ -886,7 +881,7 @@ public:
   static void initialize() NOT_CDS_RETURN;
   static void init2() NOT_CDS_RETURN;
   static void init3() NOT_CDS_RETURN;
-  static void dump() NOT_CDS_RETURN;
+  static bool dump() NOT_CDS_RETURN_(false);
   static bool is_code_load_thread_on() NOT_CDS_RETURN_(false);
   static bool is_on() CDS_ONLY({ return cache() != nullptr; }) NOT_CDS_RETURN_(false);
   static bool is_on_for_use()  CDS_ONLY({ return is_on() && _cache->for_use(); }) NOT_CDS_RETURN_(false);
@@ -901,9 +896,6 @@ public:
   static void disable_caching() NOT_CDS_RETURN;
   static bool is_caching_enabled() NOT_CDS_RETURN_(false);
   static bool verify_jvmti_state(ciEnv* env) NOT_CDS_RETURN_(true);
-
-  //Helper for logging
-  static const char *get_kind_name(AOTCodeEntry::Kind kind);
 
   // It is used before AOTCodeCache is initialized.
   static bool maybe_dumping_code() NOT_CDS_RETURN_(false);
@@ -949,8 +941,6 @@ private:
   uint _comp_level;
   uint compile_id() const { return _compile_id; }
   uint comp_level() const { return _comp_level; }
-
-  bool _preload;             // Preloading code before method execution
 
   // Values used by restore(code_blob).
   // They should be set before calling it.

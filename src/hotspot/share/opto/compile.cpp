@@ -597,7 +597,7 @@ void Compile::print_compile_messages() {
     if (is_osr_compilation()) {
       tty->print("[OSR]");
     } else if (env()->task()->is_aot_compile()) {
-      if (for_preload()) {
+      if (for_aot_preload()) {
         tty->print("[PRE]");
       } else {
         tty->print("[AOT]");
@@ -639,10 +639,13 @@ void Compile::print_ideal_ir(const char* compile_phase_name) const {
   NoSafepointVerifier nsv;
   ttyLocker ttyl;
   if (xtty != nullptr) {
+    CompileTask* task = env()->task();
+    bool aot_comp = task->is_aot_load_or_compile();
+    bool aot_preload_comp = task->is_aot_preload_or_compile();
     xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" :
-               (for_preload() ? " compile_kind='AP'" : ""),
+               (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")),
                compile_phase_name);
   }
 
@@ -4978,7 +4981,7 @@ bool Compile::final_graph_reshaping() {
 bool Compile::too_many_traps(ciMethod* method,
                              int bci,
                              Deoptimization::DeoptReason reason) {
-  if (PreloadReduceTraps && for_preload()) {
+  if (PreloadReduceTraps && for_aot_preload()) {
     // Preload code should not have traps, if possible.
     return true;
   }
@@ -5008,7 +5011,7 @@ bool Compile::too_many_traps(ciMethod* method,
 // Less-accurate variant which does not require a method and bci.
 bool Compile::too_many_traps(Deoptimization::DeoptReason reason,
                              ciMethodData* logmd) {
-  if (PreloadReduceTraps && for_preload()) {
+  if (PreloadReduceTraps && for_aot_preload()) {
     // Preload code should not have traps, if possible.
     return true;
   }

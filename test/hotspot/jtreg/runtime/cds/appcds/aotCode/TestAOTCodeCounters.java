@@ -28,7 +28,7 @@
  * @requires vm.cds.supports.aot.code.caching
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
- *          compiler's runtime blobs generation.
+ *          compiled code generation.
  * @library /test/lib /test/setup_aot
  * @build TestAOTCodeCounters JavacBenchApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar

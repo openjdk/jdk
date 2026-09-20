@@ -1023,7 +1023,7 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
 }
 #endif // INCLUDE_CDS_JAVA_HEAP
 
-// RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
+// RelocateBufferToRequested --- Relocate all the pointers in rw/ro/ac,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
 //
 // - See ArchiveBuilder header for the definition of "buffer", "mapped" and "requested"

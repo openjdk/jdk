@@ -171,15 +171,10 @@ void CompileTask::print_tty() {
 
 void CompileTask::print_post(outputStream* st) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  bool is_aot = is_aot_load();
-  bool is_preload = preload();
-  if (is_aot_compile()) {
-    // Tag AOT compilation too
-    is_aot = true;
-    is_preload = (compile_reason() == Reason_AOTCompileForPreload);
-  }
+  bool is_aot = is_aot_load_or_compile();
+  bool is_aot_preload = is_aot_preload_or_compile();
   print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
-             is_osr_method, osr_bci(), is_blocking(), is_aot, is_preload,
+             is_osr_method, osr_bci(), is_blocking(), is_aot, is_aot_preload,
              compiler()->name(), nullptr, false /* short_form */, true /* cr */,
              true /* after_compile_details */,
              _num_inlined_bytecodes, _nm_total_size, _nm_insts_size,
@@ -190,7 +185,7 @@ void CompileTask::print_post(outputStream* st) {
 // ------------------------------------------------------------------
 // CompileTask::print_impl
 void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, int comp_level,
-                             bool is_osr_method, int osr_bci, bool is_blocking, bool is_aot, bool is_preload,
+                             bool is_osr_method, int osr_bci, bool is_blocking, bool is_aot, bool is_aot_preload,
                              const char* compiler_name,
                              const char* msg, bool short_form, bool cr, bool after_compile_details,
                              int inlined_bytecodes, int nm_total_size, int nm_insts_size,
@@ -266,10 +261,10 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   const char blocking_char  = is_blocking                     ? 'b' : ' ';
   const char native_char    = is_native                       ? 'n' : ' ';
   const char aot_char       = is_aot                          ? 'A' : ' ';
-  const char preload_char   = is_preload                      ? 'P' : ' ';
+  const char aot_preload_char = is_aot_preload                ? 'P' : ' ';
 
   // print method attributes
-  sst.print("%c%c%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char, aot_char, preload_char);
+  sst.print("%c%c%c%c%c%c%c ", compile_type, sync_char, exception_char, blocking_char, native_char, aot_char, aot_preload_char);
 
   if (TieredCompilation) {
     if (comp_level != -1)  sst.print("%d ", comp_level);
@@ -312,15 +307,10 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
 // CompileTask::print_compilation
 void CompileTask::print(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  bool is_aot = is_aot_load();
-  bool is_preload = preload();
-  if (is_aot_compile()) {
-    // Tag AOT compilation too
-    is_aot = true;
-    is_preload = (compile_reason() == Reason_AOTCompileForPreload);
-  }
+  bool is_aot = is_aot_load_or_compile();
+  bool is_aot_preload = is_aot_preload_or_compile();
   print_impl(st, is_unloaded() ? nullptr : method(), compile_id(), comp_level(),
-             is_osr_method, osr_bci(), is_blocking(), is_aot, is_preload,
+             is_osr_method, osr_bci(), is_blocking(), is_aot, is_aot_preload,
              compiler()->name(), msg, short_form, cr);
 }
 
@@ -331,17 +321,20 @@ void CompileTask::log_task(xmlStream* log) {
   methodHandle method(thread, this->method());
   ResourceMark rm(thread);
 
+  bool is_osr_method = osr_bci() != InvocationEntryBci;
+  bool is_aot = is_aot_load_or_compile();
+  bool is_aot_preload = is_aot_preload_or_compile();
   // <task id='9' method='M' osr_bci='X' level='1' blocking='1' stamp='1.234'>
   log->print(" compile_id='%d'", _compile_id);
-  if (_osr_bci != CompileBroker::standard_entry_bci) {
+  if (is_osr_method) {
     log->print(" compile_kind='osr'");  // same as nmethod::compile_kind
-  } else if (preload()) {
+  } else if (is_aot_preload) {
     log->print(" compile_kind='AP'");
-  } else if (is_aot_load()) {
+  } else if (is_aot) {
     log->print(" compile_kind='A'");
-  } // else compile_kind='c2c'
+  } // else compile_kind='jit'
   if (!method.is_null())  log->method(method());
-  if (_osr_bci != CompileBroker::standard_entry_bci) {
+  if (is_osr_method) {
     log->print(" osr_bci='%d'", _osr_bci);
   }
   if (_comp_level != CompilationPolicy::highest_compile_level()) {
@@ -520,7 +513,7 @@ void CompileTask::print_ul(const nmethod* nm, const char* msg) {
                nm->comp_level(), nm->is_osr_method(),
                nm->is_osr_method() ? nm->osr_entry_bci() : -1,
                /*is_blocking*/ false, nm->is_aot(),
-               nm->preloaded(), nm->compiler_name(),
+               nm->aot_preloaded(), nm->compiler_name(),
                msg, /* short form */ true, /* cr */ true);
   }
 }

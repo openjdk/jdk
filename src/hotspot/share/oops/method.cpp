@@ -430,7 +430,7 @@ Symbol* Method::klass_name() const {
 
 void Method::metaspace_pointers_do(MetaspaceClosure* it) {
   LogStreamHandle(Trace, aot) lsh;
-  if (lsh.is_enabled()) {
+  if (lsh.is_enabled() && method_holder() != nullptr) {
     lsh.print("Iter(Method): %p ", this);
     print_external_name(&lsh);
     lsh.cr();

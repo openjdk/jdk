@@ -1119,11 +1119,6 @@ ciMethodData* ciMethod::method_data() {
         log_debug(aot, compilation)("%d: No profile for %s", comp_id, h_m->name_and_sig_as_C_string());
         _method_data_recorded = CURRENT_ENV->get_empty_methodData();
       } else {
-        if (mdo->extra_data_lock() == nullptr) {
-          assert(!HAS_PENDING_EXCEPTION, "");
-          mdo->restore_unshareable_info(thread);
-          assert(!HAS_PENDING_EXCEPTION, "");
-        }
         _method_data_recorded = CURRENT_ENV->get_method_data(mdo);
         _method_data_recorded->load_data();
         {

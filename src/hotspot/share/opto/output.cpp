@@ -1920,11 +1920,14 @@ void PhaseOutput::fill_buffer(C2_MacroAssembler* masm, uint* blk_starts) {
       // To enable tools to match it up with the compilation activity,
       // be sure to tag this tty output with the compile ID.
       if (xtty != nullptr) {
+        CompileTask* task = C->env()->task();
+        bool aot_comp = task->is_aot_load_or_compile();
+        bool aot_preload_comp = task->is_aot_preload_or_compile();
         xtty->head("opto_assembly compile_id='%d'%s", C->compile_id(),
                    C->is_osr_compilation() ? " compile_kind='osr'" :
-                   (C->for_preload() ? " compile_kind='AP'" : ""));
+                   (aot_preload_comp ? " compile_kind='AP'" : (aot_comp ? " compile_kind='A'" : "")));
       }
-      const char* is_aot = C->env()->is_aot_compile() ? (C->for_preload() ? "(AP) " : "(A) -") : "-----";
+      const char* is_aot = C->env()->is_aot_compile() ? (C->for_aot_preload() ? "(AP) " : "(A) -") : "-----";
       if (C->method() != nullptr) {
         tty->print_cr("----------------------- MetaData before Compile_id = %d %s-------------------", C->compile_id(), is_aot);
         tty->print_raw(method_metadata_str.freeze());
@@ -3359,7 +3362,7 @@ void PhaseOutput::install_code(ciMethod*         target,
                               inc_table(),
                               compiler,
                               C->has_clinit_barriers(),
-                              C->for_preload(),
+                              C->for_aot_preload(),
                               has_unsafe_access,
                               SharedRuntime::is_wide_vector(C->max_vector_size()),
                               C->has_monitors(),
@@ -3370,7 +3373,7 @@ void PhaseOutput::install_code(ciMethod*         target,
     if (C->log() != nullptr) { // Print code cache state into compiler log
       C->log()->code_cache_state();
     }
-    assert(!C->has_clinit_barriers() || C->for_preload(), "class init barriers should be only in preload code");
+    assert(!C->has_clinit_barriers() || C->for_aot_preload(), "class init barriers should be only in preload code");
   }
 }
 void PhaseOutput::install_stub(const char* stub_name) {

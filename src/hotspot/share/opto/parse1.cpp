@@ -1304,7 +1304,7 @@ static bool is_auto_boxed_primitive(Node* n) {
 #if INCLUDE_CDS
 static int scale_limit(int64_t limit) {
  // To scale invocation limit a hyperbolic saturation curve formula
- // is used with upper limit 100K.
+ // is used with upper limit 1M.
  return (int)(AOTCodeInvokeBase + limit / (1.0 + limit / (1000000.0 * AOTCodeInvokeScale)));
 }
 
@@ -1380,10 +1380,10 @@ void Parse::count_aot_code_calls() {
 
     const TypePtr* m_type = TypeMetadataPtr::make(method());
     Node* m = makecon(m_type);
-    Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
-                          OptoRuntime::compile_method_Type(),
-                          OptoRuntime::compile_method_Java(),
-                          "compile_method", TypePtr::BOTTOM, m);
+    make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
+                      OptoRuntime::compile_method_Type(),
+                      OptoRuntime::compile_method_Java(),
+                      "compile_method", TypePtr::BOTTOM, m);
 
     // State before call
     io_phi ->init_req(2, in1_io);
@@ -1400,10 +1400,7 @@ void Parse::count_aot_code_calls() {
   }
 }
 
-#undef AOT_COUNT_INC
-#undef AOT_RECOMPILE_BIT
-
-#endif
+#endif // INCLUDE_CDS
 
 //-----------------------------do_method_entry--------------------------------
 // Emit any code needed in the pseudo-block before BCI zero.

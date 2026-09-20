@@ -315,8 +315,8 @@ private:
 
   // Helper routines to factor out common code used by routines that register a method
   // i.e. register_aot_method() and register_method()
-  bool is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool preload);
-  void make_code_usable(JavaThread* thread, ciMethod* target, bool preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm);
+  bool is_compilation_valid(JavaThread* thread, ciMethod* target, bool install_code, bool is_loading_aot_code, bool aot_preload);
+  void make_code_usable(JavaThread* thread, ciMethod* target, bool aot_preload, int entry_bci, AOTCodeEntry* aot_code_entry, nmethod* nm);
 
 public:
   enum {
@@ -415,7 +415,7 @@ public:
                        ImplicitExceptionTable*   inc_table,
                        AbstractCompiler*         compiler,
                        bool                      has_clinit_barriers,
-                       bool                      for_preload,
+                       bool                      for_aot_preload,
                        bool                      has_unsafe_access,
                        bool                      has_wide_vectors,
                        bool                      has_monitors,

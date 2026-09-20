@@ -986,7 +986,7 @@ int nmethod::total_size() const {
 
 const char* nmethod::compile_kind() const {
   if (is_osr_method()) return "osr";
-  if (preloaded())     return "AP";
+  if (aot_preloaded()) return "AP";
   if (is_aot())        return "A";
 
   if (method() != nullptr && is_native_method()) {
@@ -995,7 +995,7 @@ const char* nmethod::compile_kind() const {
     }
     return "c2n";
   }
-  return "";
+  return "jit";
 }
 
 const char* nmethod::compiler_name() const {
@@ -1201,7 +1201,6 @@ nmethod* nmethod::restore(address code_cache_buffer,
 
 nmethod* nmethod::new_nmethod(nmethod* archived_nm,
                               const methodHandle& method,
-                              AbstractCompiler* compiler,
                               AOTCodeReader* aot_code_reader)
 {
   nmethod* nm = nullptr;
@@ -1244,7 +1243,7 @@ void nmethod::init_defaults(CodeBuffer *code_buffer, CodeOffsets* offsets) {
   _has_flushed_dependencies   = false;
   _is_unlinked                = false;
   _load_reported              = false; // jvmti state
-  _preloaded                  = false;
+  _aot_preloaded              = false;
 
   _deoptimization_status      = not_marked;
 
@@ -1498,7 +1497,7 @@ nmethod::nmethod(const nmethod &nm) : CodeBlob(nm._name, nm._kind, nm._size, nm.
   _has_flushed_dependencies     = nm._has_flushed_dependencies;
   _is_unlinked                  = nm._is_unlinked;
   _load_reported                = nm._load_reported;
-  _preloaded                    = nm._preloaded;
+  _aot_preloaded                = nm._aot_preloaded;
 
   _deoptimization_status        = nm._deoptimization_status;
 

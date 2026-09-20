@@ -288,6 +288,7 @@ private:
                                    int compilable, const char* failure_reason);
   static void update_compile_perf_data(CompilerThread *thread, const methodHandle& method, bool is_osr);
 
+  static CompilerStatistics* stats_for(int comp_level, bool aot_preload, bool is_aot);
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
   static void compile_method_base(const methodHandle& method,

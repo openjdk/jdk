@@ -403,7 +403,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- has_valhalla_patched_classes              %d", _has_valhalla_patched_classes);
   _must_match.print(st);
   st->print_cr("- has_aot_linked_classes                    %d", _has_aot_linked_classes);
-  st->print_cr("- ptrmap_size_in_bits:                      %zu", _ptrmap_size_in_bits);
 }
 
 bool FileMapInfo::validate_class_location() {

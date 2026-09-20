@@ -786,7 +786,6 @@ void CDSConfig::setup_compiler_args() {
       AOTCodeCache::enable_caching();
     } else {
       AOTCodeCache::disable_caching();
-      // Use separate compilation queues and threads for AOT code loading
     }
   } else {
     FLAG_SET_ERGO(AOTReplayTraining, false);
