@@ -25,7 +25,6 @@
 #ifndef SHARE_CODE_AOTCODECACHE_HPP
 #define SHARE_CODE_AOTCODECACHE_HPP
 
-#include "compiler/compilerDefinitions.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTag.hpp"
@@ -34,7 +33,6 @@
 #include "runtime/vm_version.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/hashTable.hpp"
-#include "utilities/sizes.hpp"
 
 /*
  * AOTCodeCache compiles AOT code during "assembly" phase by using metadata

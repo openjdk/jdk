@@ -32,7 +32,6 @@
 #include "cds/heapShared.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
-#include "classfile/systemDictionaryShared.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "include/jvm_io.h"

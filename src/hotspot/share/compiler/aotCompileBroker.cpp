@@ -25,7 +25,6 @@
 #include "cds/aotCacheAccess.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/cdsConfig.hpp"
-#include "cds/runTimeClassInfo.hpp"
 #include "code/aotCodeCache.hpp"
 #include "compiler/aotCompileBroker.hpp"
 #include "compiler/compilationPolicy.hpp"

@@ -31,7 +31,6 @@
 #include "ci/ciValueKlass.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/vmClasses.hpp"
-#include "code/aotCodeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "jvm_io.h"
