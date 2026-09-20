@@ -49,6 +49,8 @@ public class TestAddWithZeroExtendedInt {
     private static final String SHADD_P_UXTW = "shaddP_reg_reg_uxtw_b";
     private static final String ADD_L_UXTW = "addL_reg_reg_uxtw_b";
     private static final String SHADD_L_UXTW = "shaddL_reg_reg_uxtw_b";
+    private static final String ADD_L_AND_UXTW = "addL_reg_reg_and_uxtw_b";
+    private static final String SHADD_L_AND_UXTW = "shaddL_reg_reg_and_uxtw_b";
 
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final byte[] ARRAY = new byte[256];
@@ -89,6 +91,30 @@ public class TestAddWithZeroExtendedInt {
     }
 
     @Test
+    @IR(counts = {ADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testAddLFromLong(long base, long value) {
+        return base + (value & 0xFFFF_FFFFL);
+    }
+
+    @Test
+    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testSh1AddLFromLong(long base, long value) {
+        return base + ((value & 0xFFFF_FFFFL) << 1);
+    }
+
+    @Test
+    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testSh2AddLFromLong(long base, long value) {
+        return base + ((value & 0xFFFF_FFFFL) << 2);
+    }
+
+    @Test
+    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
+    static long testSh3AddLFromLong(long base, long value) {
+        return base + ((value & 0xFFFF_FFFFL) << 3);
+    }
+
+    @Test
     @IR(counts = {ADD_P_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
     static byte testAddP(int index) {
         return UNSAFE.getByte(ARRAY, index & 0xFFFF_FFFFL);
@@ -113,6 +139,7 @@ public class TestAddWithZeroExtendedInt {
     }
 
     @Run(test = {"testAddL", "testSh1AddL", "testSh2AddL", "testSh3AddL",
+                 "testAddLFromLong", "testSh1AddLFromLong", "testSh2AddLFromLong", "testSh3AddLFromLong",
                  "testAddP", "testSh1AddP", "testSh2AddP", "testSh3AddP"})
     static void runTests() {
         long base = RunInfo.getRandom().nextLong();
@@ -120,6 +147,7 @@ public class TestAddWithZeroExtendedInt {
         int negative = RunInfo.getRandom().nextInt() | Integer.MIN_VALUE;
         verifyAddLResults(base, positive);
         verifyAddLResults(base, negative);
+        verifyAddLFromLongResults(base, RunInfo.getRandom().nextLong());
 
         int index = RunInfo.getRandom().nextInt(32);
         verifyAddPResults(index);
@@ -132,6 +160,15 @@ public class TestAddWithZeroExtendedInt {
         Asserts.assertEQ(testSh1AddL(base, value), base + (unsigned << 1));
         Asserts.assertEQ(testSh2AddL(base, value), base + (unsigned << 2));
         Asserts.assertEQ(testSh3AddL(base, value), base + (unsigned << 3));
+    }
+
+    @DontCompile
+    static void verifyAddLFromLongResults(long base, long value) {
+        long unsigned = value & 0xFFFF_FFFFL;
+        Asserts.assertEQ(testAddLFromLong(base, value), base + unsigned);
+        Asserts.assertEQ(testSh1AddLFromLong(base, value), base + (unsigned << 1));
+        Asserts.assertEQ(testSh2AddLFromLong(base, value), base + (unsigned << 2));
+        Asserts.assertEQ(testSh3AddLFromLong(base, value), base + (unsigned << 3));
     }
 
     @DontCompile
