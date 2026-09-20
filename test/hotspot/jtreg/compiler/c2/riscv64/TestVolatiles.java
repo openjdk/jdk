@@ -55,6 +55,7 @@ import jdk.test.lib.process.ProcessTools;
 // is correct, i.e. that the access is annotated and the membars around
 // it elided exactly when Zalasr is in use, and that neither happens
 // when it is not.
+
 public class TestVolatiles {
     public void runtest(String classname, String testType) throws Throwable {
         // n.b. clients omit the package name for the class
