@@ -289,7 +289,7 @@ class AtomicImpl::SupportsArithmetic : public CommonCore<T> {
     static_assert(std::is_integral_v<Offset>, "offset must be integral");
     static_assert(sizeof(Offset) <= sizeof(T), "offset size exceeds value size");
     if constexpr (!std::is_integral_v<T>) {
-      static_assert(std::is_pointer_v<T>, "must be");
+      static_assert(std::is_pointer_v<T>);
     } else if constexpr (std::is_signed_v<T>) {
       static_assert(std::is_signed_v<Offset>,
                     "value is signed but offset is unsigned");

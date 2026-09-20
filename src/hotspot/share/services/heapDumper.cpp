@@ -29,6 +29,7 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/workerThread.hpp"
@@ -841,10 +842,10 @@ public:
   private:
     char _sigs_start;
     int _offset;
-    InlineKlass* _inline_klass; // nullptr for heap object
+    ValueKlass* _value_klass; // nullptr for heap object
     LayoutKind _layout_kind;
   public:
-    FieldDescriptor(): _sigs_start(0), _offset(0), _inline_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
+    FieldDescriptor(): _sigs_start(0), _offset(0), _value_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
 
     template<typename FieldStreamType>
     FieldDescriptor(const FieldStreamType& field)
@@ -853,19 +854,19 @@ public:
       if (field.is_flat()) {
         const fieldDescriptor& fd = field.field_descriptor();
         InstanceKlass* holder_klass = fd.field_holder();
-        InlineLayoutInfo* layout_info = holder_klass->inline_layout_info_adr(fd.index());
-        _inline_klass = layout_info->klass();
+        ValueFieldLayoutInfo* layout_info = holder_klass->value_field_layout_info_adr(fd.index());
+        _value_klass = layout_info->klass();
         _layout_kind = layout_info->kind();
       } else {
-        _inline_klass = nullptr;
+        _value_klass = nullptr;
         _layout_kind = LayoutKind::REFERENCE;
       }
     }
 
     char sig_start() const            { return _sigs_start; }
     int offset() const                { return _offset; }
-    bool is_flat() const              { return _inline_klass != nullptr; }
-    InlineKlass* inline_klass() const { return _inline_klass; }
+    bool is_flat() const              { return _value_klass != nullptr; }
+    ValueKlass* value_klass() const   { return _value_klass; }
     LayoutKind layout_kind() const    { return _layout_kind; }
     bool is_flat_nullable() const     { return LayoutKindHelper::is_nullable_flat(_layout_kind); }
   };
@@ -972,16 +973,16 @@ private:
   const uintptr_t _id; // object id
 
   const int _offset;
-  InlineKlass* const _inline_klass;
+  ValueKlass* const _value_klass;
 
 public:
-  DumperFlatObject(uintptr_t id, int offset, InlineKlass* inline_klass)
-    : _next(nullptr), _id(id), _offset(offset), _inline_klass(inline_klass) {
+  DumperFlatObject(uintptr_t id, int offset, ValueKlass* value_klass)
+    : _next(nullptr), _id(id), _offset(offset), _value_klass(value_klass) {
   }
 
   uintptr_t object_id()       const { return _id; }
   int offset()                const { return _offset; }
-  InlineKlass* inline_klass() const { return _inline_klass; }
+  ValueKlass* value_klass() const { return _value_klass; }
 };
 
 class FlatObjectIdProvider {
@@ -1011,9 +1012,9 @@ public:
 
   bool is_empty() const { return _head == nullptr; }
 
-  uintptr_t push(int offset, InlineKlass* inline_klass) {
+  uintptr_t push(int offset, ValueKlass* value_klass) {
     uintptr_t id = _id_provider->get_id();
-    DumperFlatObject* obj = new DumperFlatObject(id, offset, inline_klass);
+    DumperFlatObject* obj = new DumperFlatObject(id, offset, value_klass);
     push(obj);
     return id;
   }
@@ -1273,13 +1274,12 @@ void DumperSupport::dump_instance_fields(AbstractDumpWriter* writer, oop o, int 
     if (field.is_flat()) {
       // check for possible nulls
       if (field.is_flat_nullable()) {
-        address payload = cast_from_oop<address>(o) + field_offset;
-        if (field.inline_klass()->is_payload_marked_as_null(payload)) {
+        if (field.value_klass()->is_payload_marked_as_null(o, field_offset)) {
           writer->write_objectID(nullptr);
           continue;
         }
       }
-      uintptr_t object_id = flat_fields->push(field_offset, field.inline_klass());
+      uintptr_t object_id = flat_fields->push(field_offset, field.value_klass());
       writer->write_objectID(object_id);
     } else {
       dump_field_value(writer, field.sig_start(), o, field_offset);
@@ -1334,8 +1334,8 @@ void DumperSupport::dump_instance(AbstractDumpWriter* writer, uintptr_t id, oop 
   // field values
   if (offset != 0) {
     // the object itself if flattened, so all fields are stored without headers
-    InlineKlass* inline_klass = InlineKlass::cast(ik);
-    offset -= inline_klass->payload_offset();
+    ValueKlass* value_klass = ValueKlass::cast(ik);
+    offset -= value_klass->payload_offset();
   }
 
   dump_instance_fields(writer, o, offset, cache_entry, flat_fields);
@@ -1481,7 +1481,7 @@ void DumperSupport::dump_object_array(AbstractDumpWriter* writer, objArrayOop ar
     flatArrayOop farray = flatArrayOop(array);
     FlatArrayKlass* fak = farray->klass();
 
-    InlineKlass* vk = fak->element_klass();
+    ValueKlass* vk = fak->element_klass();
     bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
 
     for (int index = 0; index < length; index++) {
@@ -2160,7 +2160,7 @@ void FlatObjectDumper::dump_flat_objects(AbstractDumpWriter* writer, oop holder,
   // DumperSupport::dump_instance can add entries to flat_objects
   while (!flat_objects->is_empty()) {
     DumperFlatObject* obj = flat_objects->pop();
-    DumperSupport::dump_instance(writer, obj->object_id(), holder, obj->offset(), obj->inline_klass(), class_cache, flat_objects);
+    DumperSupport::dump_instance(writer, obj->object_id(), holder, obj->offset(), obj->value_klass(), class_cache, flat_objects);
     delete obj;
   }
 }
@@ -2179,12 +2179,13 @@ class HeapObjectDumper : public ObjectClosure {
   AbstractDumpWriter* writer()                  { return _writer; }
   UnmountedVThreadDumper* _vthread_dumper;
   FlatObjectDumper* _flat_dumper;
+  bool _skip_filler_objects;
 
   DumperClassCacheTable _class_cache;
 
  public:
-  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper)
-    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper) {}
+  HeapObjectDumper(AbstractDumpWriter* writer, UnmountedVThreadDumper* vthread_dumper, FlatObjectDumper* flat_dumper, bool skip_filler_objects)
+    : _writer(writer), _vthread_dumper(vthread_dumper), _flat_dumper(flat_dumper), _skip_filler_objects(skip_filler_objects) {}
 
   // called for each object in the heap
   void do_object(oop o);
@@ -2196,6 +2197,10 @@ void HeapObjectDumper::do_object(oop o) {
     if (!java_lang_Class::is_primitive(o)) {
       return;
     }
+  }
+
+  if (_skip_filler_objects && CollectedHeap::is_filler_object(o)) {
+    return;
   }
 
   if (DumperSupport::mask_dormant_archived_object(o, nullptr) == nullptr) {
@@ -2744,7 +2749,8 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper);
+    bool skip_filler_objects = _gc_before_heap_dump;
+    HeapObjectDumper obj_dumper(&segment_writer, this, &_flat_dumper, skip_filler_objects);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {

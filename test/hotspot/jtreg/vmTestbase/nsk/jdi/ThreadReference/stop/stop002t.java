@@ -37,6 +37,7 @@ public class stop002t {
     private IOPipe pipe;
     volatile boolean stopLooping1 = false;
     volatile boolean stopLooping2 = false;
+    volatile boolean gotOpaqueFrameException = false;
     volatile static int testNumReady = 0;
     static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
     static Thread testThread = null;
@@ -139,8 +140,19 @@ public class stop002t {
                 testNumReady = 4; // signal debugger side of test that we are ready
                 stopMeHere++; stopMeHere--;
             }
-            log.complain("TEST #4: Failed to throw expected exception");
-            return Consts.TEST_FAILED;
+            if (vthreadMode) {
+                if (gotOpaqueFrameException) {
+                    // Exception not required when in vthread mode if OpaqueFrameException thrown
+                    log.display("TEST #4: threw OpaqueFrameException while in vthread mode");
+                } else {
+                    log.complain("TEST #4: Failed to throw expected exception and " +
+                                 "failed to throw debugger side OpaqueFrameException");
+                    return Consts.TEST_FAILED;
+                }
+            } else {
+                log.complain("TEST #4: Failed to throw expected exception");
+                return Consts.TEST_FAILED;
+            }
         } catch (Throwable t) {
             // Call Thread.interrupted(). Workaround for JDK-8306324
             log.display("TEST #4: interrupted = " + Thread.interrupted());

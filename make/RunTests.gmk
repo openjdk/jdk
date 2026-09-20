@@ -45,7 +45,7 @@ ifneq ($(TEST_VM_OPTS), )
 endif
 
 $(eval $(call ParseKeywordVariable, TEST_OPTS, \
-    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET AOT_JDK, \
+    SINGLE_KEYWORDS := JOBS TIMEOUT_FACTOR JCOV JCOV_DIFF_CHANGESET JCOV_SCALES AOT_JDK, \
     STRING_KEYWORDS := VM_OPTIONS JAVA_OPTIONS, \
 ))
 
@@ -121,8 +121,20 @@ ifeq ($(TEST_OPTS_JCOV), true)
   JCOV_SUPPORT_DIR := $(TEST_SUPPORT_DIR)/jcov-support
   JCOV_GRABBER_LOG := $(JCOV_OUTPUT_DIR)/grabber.log
   JCOV_RESULT_FILE := $(JCOV_OUTPUT_DIR)/result.xml
+  JCOV_TESTLIST := $(JCOV_OUTPUT_DIR)/testlist.txt
   JCOV_REPORT := $(JCOV_OUTPUT_DIR)/report
+  JCOV_GRABBER_OPTIONS ?=
+  JCOV_REPGEN_OPTIONS ?=
+  TEST_OPTS_JCOV_SCALES ?= false
   JCOV_MEM_OPTIONS := -Xms64m -Xmx4g
+
+  ifeq ($(TEST_OPTS_JCOV_SCALES), true)
+    JCOV_GRABBER_OPTIONS += -scale -mergebyname -outTestList $(JCOV_TESTLIST)
+    TEST_JOBS := 1
+    JTREG_TEST_MODE := othervm
+    JTREG_VM_OPTIONS += -Djcov.extension=com.sun.tdk.jcov.runtime.TestNameDecorator
+    JCOV_REPGEN_OPTIONS += -tests $(JCOV_TESTLIST)
+  endif
 
   # Replace our normal test JDK with the JCov image.
   JDK_UNDER_TEST := $(JCOV_IMAGE_DIR)
@@ -654,7 +666,7 @@ define SetupRunMicroTestBody
 	        $$($1_MICRO_ITER) $$($1_MICRO_FORK) $$($1_MICRO_TIME) \
 	        $$($1_MICRO_WARMUP_ITER) $$($1_MICRO_WARMUP_TIME) \
 	        $$($1_MICRO_VM_OPTIONS) $$($1_MICRO_BASIC_OPTIONS) $$(MICRO_OPTIONS) \
-	        $$($1_TEST_NAME) \
+	        $$(call ShellQuote,$$($1_TEST_NAME)) \
 	        > >($(TEE) $$($1_TEST_RESULTS_DIR)/micro.txt) \
 	    && $$(ECHO) $$$$? > $$($1_EXITCODE) \
 	    || $$(ECHO) $$$$? > $$($1_EXITCODE) \
@@ -1281,7 +1293,7 @@ UseSpecialTestHandler = \
 
 # Now process each test to run and setup a proper make rule
 $(foreach test, $(TESTS_TO_RUN), \
-  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+  $(eval TEST_ID := $(shell $(ECHO) $(call ShellQuote,$(strip $(test))) | \
       $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
   $(eval ALL_TEST_IDS += $(TEST_ID)) \
   $(if $(call UseCustomTestHandler, $(test)), \
@@ -1361,10 +1373,10 @@ run-test-report: post-run-test
 	$(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s %5s %5s %5s %5s %5s %2s\n" "  " \
 	    TEST TOTAL PASS FAIL ERROR SKIP " "
 	$(foreach test, $(TESTS_TO_RUN), \
-	  $(eval TEST_ID := $(shell $(ECHO) $(strip $(test)) | \
+	  $(eval TEST_ID := $(shell $(ECHO) $(call ShellQuote,$(strip $(test))) | \
 	      $(TR) -cs '[a-z][A-Z][0-9]\n' '_')) \
 	    $(ECHO) >> $(TEST_LAST_IDS) $(TEST_ID) $(NEWLINE) \
-	  $(eval NAME_PATTERN := $(shell $(ECHO) $(test) | $(TR) -c '\n' '_')) \
+	  $(eval NAME_PATTERN := $(shell $(ECHO) $(call ShellQuote,$(test)) | $(TR) -c '\n' '_')) \
 	  $(if $(filter __________________________________________________%, $(NAME_PATTERN)), \
 	    $(eval TEST_NAME := ) \
 	    $(PRINTF) >> $(TEST_SUMMARY) "%2s %-49s\n" "  " "$(test)"  $(NEWLINE) \
@@ -1414,6 +1426,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	fi
 	$(JAVA) $(JCOV_VM_OPTS) -jar $(JCOV_HOME)/lib/jcov.jar Grabber -v -t \
 	    $(JCOV_IMAGE_DIR)/template.xml -o $(JCOV_RESULT_FILE) \
+	    $(JCOV_GRABBER_OPTIONS) \
 	    1>$(JCOV_GRABBER_LOG) 2>&1 &
 
   jcov-start-grabber: jcov-do-start-grabber
@@ -1441,6 +1454,7 @@ ifeq ($(TEST_OPTS_JCOV), true)
 	    `$(ECHO) $(TOPDIR)/src/*/share/classes/ | $(TR) ' ' ':'` -fmt html \
 	    $(JCOV_MODULES_FILTER) $(JCOV_FILTERS) \
 	    -mainReportTitle "$(JCOV_REPORT_TITLE)" \
+	    $(JCOV_REPGEN_OPTIONS) \
 	    -o $(JCOV_REPORT) $(JCOV_RESULT_FILE))
 
   TARGETS += jcov-do-start-grabber jcov-start-grabber jcov-stop-grabber \

@@ -43,6 +43,11 @@ private:
 
   Address as_Address(LIR_Address* addr, Register tmp);
 
+  void mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_PatchCode patch_code,
+               CodeEmitInfo* info, bool wide, bool is_volatile);
+  void load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicType type, bool wide, CodeEmitInfo* info);
+  void load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info);
+
   // helper functions which checks for overflow and sets bailout if it
   // occurs.  Always returns a valid embeddable pointer but in the
   // bailout case the pointer won't be to unique storage.
@@ -94,7 +99,7 @@ private:
   void typecheck_helper_slowcheck(ciKlass* k, Register obj, Register Rtmp1,
                                   Register k_RInfo, Register klass_RInfo,
                                   Label* failure_target, Label* success_target);
-  void profile_object(ciMethodData* md, ciProfileData* data, Register obj,
+  void profile_object(LIR_OpTypeCheck* op, ciMethodData* md, ciProfileData* data, Register obj,
                       Register k_RInfo, Register klass_RInfo, Label* obj_is_null);
   void typecheck_loaded(LIR_OpTypeCheck* op, ciKlass* k, Register k_RInfo);
 

@@ -36,11 +36,11 @@
 #include "opto/callnode.hpp"
 #include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
-#include "opto/inlinetypenode.hpp"
 #include "opto/parse.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "opto/valuetypenode.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/debug.hpp"
@@ -71,8 +71,8 @@ void CallGenerator::mark_projs_not_dead_loop_safe(Node* ret) const {
   CallNode* call = call_node();
   if (ret->is_Proj() && ret->in(0) == call) {
     ret->mark_not_dead_loop_safe();
-  } else if (ret->isa_InlineType()) {
-    InlineTypeNode* vt = ret->as_InlineType();
+  } else if (ret->isa_ValueType()) {
+    ValueTypeNode* vt = ret->as_ValueType();
     Node* oop = vt->get_oop();
     if (oop->is_Proj() && oop->in(0) == call) {
       oop->mark_not_dead_loop_safe();
@@ -161,9 +161,9 @@ protected:
       _call_node(nullptr),
       _separate_io_proj(separate_io_proj)
   {
-    if (InlineTypeReturnedAsFields && method->is_method_handle_intrinsic()) {
+    if (ValueTypeReturnedAsFields && method->is_method_handle_intrinsic()) {
       // If that call has not been optimized by the time optimizations are over,
-      // we'll need to add a call to create an inline type instance from the klass
+      // we'll need to add a call to create a value type instance from the klass
       // returned by the call (see PhaseMacroExpand::expand_mh_intrinsic_return).
       // Separating memory and I/O projections for exceptions is required to
       // perform that graph transformation.
@@ -492,6 +492,31 @@ CallGenerator* CallGenerator::for_mh_late_inline(ciMethod* caller, ciMethod* cal
   return cg;
 }
 
+class LateInlineVectorCallGenerator : public LateInlineCallGenerator {
+ private:
+  CallGenerator* _fallback_cg;
+
+ public:
+  LateInlineVectorCallGenerator(ciMethod* method, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) :
+    LateInlineCallGenerator(method, intrinsic_cg), _fallback_cg(fallback_cg) {
+    assert(_fallback_cg != nullptr && _fallback_cg->is_parse(), "");
+  }
+
+  virtual bool is_vector_late_inline() const { return true; }
+
+  virtual JVMState* generate(JVMState* jvms) {
+    JVMState* new_jvms = LateInlineCallGenerator::generate(jvms);
+    CallGenerator* fallback = CallGenerator::for_late_inline(method(), _fallback_cg)->with_call_node(call_node());
+    Compile::current()->add_vector_late_inline(fallback);
+    return new_jvms;
+  }
+};
+
+CallGenerator* CallGenerator::for_vector_late_inline(ciMethod* m, CallGenerator* intrinsic_cg, CallGenerator* fallback_cg) {
+  return new LateInlineVectorCallGenerator(m, intrinsic_cg, fallback_cg);
+}
+
+
 // Allow inlining decisions to be delayed
 class LateInlineVirtualCallGenerator : public VirtualCallGenerator {
  private:
@@ -743,12 +768,12 @@ void CallGenerator::do_late_inline_helper() {
     int arg_num = 0;
     for (uint i1 = 0; i1 < nargs; i1++) {
       const Type* t = domain_sig->field_at(TypeFunc::Parms + i1);
-      if (t->is_inlinetypeptr() && !method()->mismatch() && method()->is_scalarized_arg(arg_num)) {
-        // Inline type arguments are not passed by reference: we get an argument per
-        // field of the inline type. Build InlineTypeNodes from the inline type arguments.
+      if (t->is_valueklassptr() && !method()->mismatch() && method()->is_scalarized_arg(arg_num)) {
+        // Value type arguments are not passed by reference: we get an argument per
+        // field of the value type. Build ValueTypeNodes from the value type arguments.
         GraphKit arg_kit(jvms, &gvn);
-        Node* vt = InlineTypeNode::make_from_multi(&arg_kit, call, t->inline_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
-        // GraphKit::access_load_at() may be called from InlineTypeNode::make_from_multi() and it may change the map
+        Node* vt = ValueTypeNode::make_from_multi(&arg_kit, call, t->value_klass(), j, /* in= */ true, /* null_free= */ !t->maybe_null());
+        // GraphKit::access_load_at() may be called from ValueTypeNode::make_from_multi() and it may change the map
         // that arg_kit uses.
         map = arg_kit.map();
         map->set_control(arg_kit.control());
@@ -769,20 +794,20 @@ void CallGenerator::do_late_inline_helper() {
       return;
     }
 
-    // Check if we are late inlining a method handle call that returns an inline type as fields.
+    // Check if we are late inlining a method handle call that returns a value type as fields.
     Node* buffer_oop = nullptr;
     ciMethod* inline_method = inline_cg()->method();
     ciType* return_type = inline_method->return_type();
-    // Allocate a buffer for the inline type returned as fields because the caller expects an oop return.
+    // Allocate a buffer for the value type returned as fields because the caller expects an oop return.
     // Moving this after the call would require distinct JVM states: a next-BCI state with the result for
     // deoptimization at an allocation safepoint and an invoke-BCI state for exceptions like OOME. The
     // pre-call state can safely execute the call if allocation deoptimizes.
-    bool needs_return_buffer = !call->tf()->returns_inline_type_as_fields() &&
-                               return_type->is_inlinetype() &&
-                               return_type->as_inline_klass()->can_be_returned_as_fields();
+    bool needs_return_buffer = !call->tf()->returns_value_type_as_fields() &&
+                               return_type->is_value_klass() &&
+                               return_type->as_value_klass()->can_be_returned_as_fields();
     // A non-null scalarized return would require a buffer. Since allocating that buffer could
     // initialize the value class, speculate that the result is null and deoptimize otherwise.
-    bool assert_null_return = needs_return_buffer && !return_type->as_inline_klass()->is_initialized();
+    bool assert_null_return = needs_return_buffer && !return_type->as_value_klass()->is_initialized();
     assert(!needs_return_buffer || is_mh_late_inline(), "Unexpected return type");
 
     if (needs_return_buffer && !assert_null_return) {
@@ -791,7 +816,7 @@ void CallGenerator::do_late_inline_helper() {
         PreserveReexecuteState preexecs(&arg_kit);
         arg_kit.jvms()->set_should_reexecute(true);
         arg_kit.inc_sp(nargs);
-        Node* klass_node = arg_kit.makecon(TypeKlassPtr::make(return_type->as_inline_klass()));
+        Node* klass_node = arg_kit.makecon(TypeKlassPtr::make(return_type->as_value_klass()));
         buffer_oop = arg_kit.new_instance(klass_node, nullptr, nullptr, /* deoptimize_on_exception */ true);
       }
       jvms = arg_kit.transfer_exceptions_into_jvms();
@@ -842,10 +867,10 @@ void CallGenerator::do_late_inline_helper() {
             call->as_CallStaticJava()->is_boxing_method()) {
           result = kit.must_be_not_null(result, false);
         }
-        // Handle inline type returns
-        InlineTypeNode* vt = result->isa_InlineType();
+        // Handle value type returns
+        ValueTypeNode* vt = result->isa_ValueType();
         if (vt != nullptr) {
-          if (call->tf()->returns_inline_type_as_fields()) {
+          if (call->tf()->returns_value_type_as_fields()) {
             vt->replace_call_results(&kit, call, C);
           } else if (assert_null_return && !vt->is_allocated(&kit.gvn())) {
             // Deoptimize if the result is non-null.
@@ -871,14 +896,14 @@ void CallGenerator::do_late_inline_helper() {
               Node* null_ctl = kit.top();
               kit.null_check_common(vt->get_null_marker(), T_INT, false, &null_ctl);
               region->init_req(1, null_ctl);
-              PhiNode* oop = PhiNode::make(region, kit.gvn().zerocon(T_OBJECT), TypeInstPtr::make(TypePtr::BotPTR, vt->type()->inline_klass()));
+              PhiNode* oop = PhiNode::make(region, kit.gvn().zerocon(T_OBJECT), TypeInstPtr::make(TypePtr::BotPTR, vt->type()->value_klass()));
               Node* init_mem = kit.reset_memory();
               PhiNode* mem = PhiNode::make(region, init_mem, Type::MEMORY, TypePtr::BOTTOM);
 
               // Not null, initialize the buffer
               kit.set_all_memory(init_mem);
 
-              Node* payload_ptr = kit.basic_plus_adr(buffer_oop, kit.gvn().type(vt)->inline_klass()->payload_offset());
+              Node* payload_ptr = kit.basic_plus_adr(buffer_oop, kit.gvn().type(vt)->value_klass()->payload_offset());
               vt->store_flat(&kit, buffer_oop, payload_ptr, false, true, true, IN_HEAP | MO_UNORDERED);
               // Do not let stores that initialize this buffer be reordered with a subsequent
               // store that would make this buffer accessible by other threads.
@@ -889,11 +914,11 @@ void CallGenerator::do_late_inline_helper() {
               oop->init_req(2, buffer_oop);
               mem->init_req(2, kit.merged_memory());
 
-              // Use cloned InlineTypeNode to propagate oop from now on
+              // Use cloned ValueTypeNode to propagate oop from now on
               vt = vt->clone_if_required(&kit.gvn(), kit.map());
               vt->set_oop(kit.gvn(), kit.gvn().transform(oop));
               vt->set_is_buffered(kit.gvn());
-              vt = kit.gvn().transform(vt)->as_InlineType();
+              vt = kit.gvn().transform(vt)->as_ValueType();
 
               kit.set_control(kit.gvn().transform(region));
               kit.set_all_memory(kit.gvn().transform(mem));
@@ -905,12 +930,12 @@ void CallGenerator::do_late_inline_helper() {
           }
           DEBUG_ONLY(buffer_oop = nullptr);
         } else {
-          assert(!call->tf()->returns_inline_type_as_fields() || !call->as_CallJava()->method()->return_type()->is_loaded(), "Unexpected return value");
+          assert(!call->tf()->returns_value_type_as_fields() || !call->as_CallJava()->method()->return_type()->is_loaded(), "Unexpected return value");
         }
         assert(buffer_oop == nullptr, "unused buffer allocation");
 
         // Note: scalarized results are guarded per projection
-        if (!call->tf()->returns_inline_type_as_fields()) {
+        if (!call->tf()->returns_value_type_as_fields()) {
           assert(callprojs->nb_resproj == 1 && callprojs->resproj[0] != nullptr,
                  "single result projection expected");
           // Limit result type propagation until next IGVN cleanup.
@@ -1184,9 +1209,9 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
     Node* n = slow_map->in(i);
     if (m != n) {
 #ifdef ASSERT
-      if (m->is_InlineType() != n->is_InlineType()) {
-        InlineTypeNode* unique_vt = m->is_InlineType() ? m->as_InlineType() : n->as_InlineType();
-        assert(unique_vt->is_allocated(&gvn), "InlineType can be merged with an oop only if it is allocated");
+      if (m->is_ValueType() != n->is_ValueType()) {
+        ValueTypeNode* unique_vt = m->is_ValueType() ? m->as_ValueType() : n->as_ValueType();
+        assert(unique_vt->is_allocated(&gvn), "ValueType can be merged with an oop only if it is allocated");
       }
 #endif
       const Type* t = gvn.type(m)->meet_speculative(gvn.type(n));
