@@ -529,12 +529,8 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
-  // Max virtual address width implied by the satp mode. Returns 48 before
-  // feature initialization.
   static int max_va_bits() {
-    if (!satp_mode.enabled()) {
-      return 48;
-    }
+    assert(satp_mode.enabled(), "satp mode not initialized yet");
     switch ((int)satp_mode.value()) {
       case VM_SV39: return 39;
       case VM_SV48: return 48;
@@ -542,6 +538,14 @@ private:
         ShouldNotReachHere();
         return 0;
     }
+  }
+
+  // Check if an address is canonical for the current VA mode.
+  // Canonical addresses have bits [63:va_bits] equal to bit va_bits-1.
+  static bool is_canonical_address(address addr) {
+    const int va_bits = max_va_bits();
+    const uintptr_t upper = (uintptr_t)addr >> (va_bits - 1);
+    return upper == 0 || upper == (UINTPTR_MAX >> (va_bits - 1));
   }
 
   static bool supports_float16_float_conversion() {

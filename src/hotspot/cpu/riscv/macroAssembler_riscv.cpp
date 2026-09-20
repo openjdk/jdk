@@ -919,7 +919,7 @@ void MacroAssembler::emit_static_call_stub() {
 
   // Jump to the entry point of the c2i stub.
   int32_t offset = 0;
-  movptr(t1, (address)0, offset, t0); // lui + lui + slli + add (sv39: lui + addi + slli)
+  movptr(t1, (address)0, offset, t0);
   jr(t1, offset);
 }
 
@@ -2887,81 +2887,217 @@ static int patch_offset_in_pc_relative(address branch, int64_t offset) {
   return PC_RELATIVE_INSTRUCTION_NUM * MacroAssembler::instruction_size;
 }
 
-// Split the address as follows:
+// A canonical Sv39 address uses the following four-instruction sequence.
+// movptr_sv39 emits the first three instructions; the final instruction
+// consumes its offset:
 //
-//  38                 21 20                 9 8                 0
-// +---------------------+--------------------+-------------------+
-// |   upper30[29:12]    |   upper30[11:0]    |      lower9       |
-// +---------------------+--------------------+-------------------+
+//   lui             Rd = LUI immediate; encoded field is instruction[31:12]
+//   addi            Rd = Rd + sign-extended 12-bit ADDI immediate
+//   slli 9          Rd = Rd << 9
+//   addi/jalr/load  uses `offset` in its 12-bit immediate field
 //
-// lui + addi      materializes upper30
-// slli 9          shifts upper30 to addr[38:9]
-// addi/jalr/load  uses lower9 as its immediate
+// The target is split into the fields consumed by those instructions:
 //
-// The LUI immediate is adjusted when upper30[11] is set because ADDI
-// sign-extends its 12-bit immediate.
-static int patch_addr_in_movptr_sv39(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+//   target[63:39]  canonical sign extension
+//   target[38:21]  adjusted LUI contribution
+//   target[20:9]   signed ADDI contribution
+//   target[8:0]    final offset
+//
+// so that lui + addi yield address[38:9], slli 9 shifts that into position,
+// and the final instruction supplies address[8:0]. LUI sign-extends its
+// U-immediate result on RV64, while ADDI sign-extends its 12-bit immediate.
+// `addi_imm` is the signed value from target[20:9], and `lui_imm` is adjusted
+// so that their sum yields address[38:9].
+struct MovptrSv39Parts {
+  int64_t lui_imm;   // full immediate passed to the first lui()
+  int64_t addi_imm;  // signed 12-bit immediate passed to the second addi()
+  int32_t offset;    // low 9-bit offset passed to the final addi/jalr/load
 
-  assert(addr < (1ull << 39), "39-bit overflow in address constant");
-  uint64_t upper30 = addr >> 9;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
+  static MovptrSv39Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper30 = addr >> 9;
+    // ADDI sign-extends its 12-bit immediate; compensate in LUI imm.
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper30, 11, 0);
+    // Invariant: lui_imm + addi_imm == upper30
+    const int64_t lui_imm = upper30 - addi_imm;
+    return MovptrSv39Parts{ lui_imm, addi_imm, (int32_t)(addr & 0x1ff) };
+  }
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (hi20 >> 12) & 0xfffff); // Lui.            target[38:21]
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 20, lower12 & 0xfff);        // Addi.           target[20: 9]
-                                                                                                                  // Slli.
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 3), 31, 20, addr & 0x1ff);           // Addi/Jalr/Load. target[ 8: 0]
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+    // Insn1: LUI imm [31:12]; cast to int64_t to get sign-extension
+    const int64_t lui_imm = (int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12);
+    // Insn2: ADDI imm [31:20]
+    const int64_t addi_imm = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20);
+    // Insn3: SLLI
+    // Skipped
+    // Insn4: ADDI/JALR imm [31:20]
+    const int32_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20);
 
-  return MacroAssembler::movptr_sv39_instruction_size;
-}
+    uint64_t target;
+    // To unsigned for left-shift
+    target = ((uint64_t)lui_imm) << 12;
+    target += (uint64_t)addi_imm;
+    target <<= 9;
+    // The final ADDI/JALR/load also sign-extends its 12-bit immediate.
+    target += (uintptr_t)offset;
 
-static int patch_addr_in_movptr1_sv48(address branch, address target) {
-  int32_t lower = ((intptr_t)target << 35) >> 35;
-  int64_t upper = ((intptr_t)target - lower) >> 29;
-  Assembler::patch(branch + 0,  31, 12, upper & 0xfffff);                       // Lui.             target[48:29] + target[28] ==> branch[31:12]
-  Assembler::patch(branch + 4,  31, 20, (lower >> 17) & 0xfff);                 // Addi.            target[28:17] ==> branch[31:20]
-  Assembler::patch(branch + 12, 31, 20, (lower >> 6) & 0x7ff);                  // Addi.            target[16: 6] ==> branch[31:20]
-  Assembler::patch(branch + 20, 31, 20, lower & 0x3f);                          // Addi/Jalr/Load.  target[ 5: 0] ==> branch[31:20]
-  return MacroAssembler::movptr1_sv48_instruction_size;
-}
+    return (address)target;
+  }
 
-static int patch_addr_in_movptr2_sv48(address instruction_address, address target) {
-  uintptr_t addr = (uintptr_t)target;
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const MovptrSv39Parts parts = from_address((intptr_t)target);
 
-  assert(addr < (1ull << 48), "48-bit overflow in address constant");
-  unsigned int upper18 = (addr >> 30ull);
-  int lower30 = (addr & 0x3fffffffu);
-  int low12 = (lower30 << 20) >> 20;
-  int mid18 = ((lower30 - low12) >> 12);
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, (uint32_t)parts.offset);
 
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 0), 31, 12, (upper18 & 0xfffff)); // Lui
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 1), 31, 12, (mid18   & 0xfffff)); // Lui
-                                                                                                                  // Slli
-                                                                                                                  // Add
-  Assembler::patch(instruction_address + (MacroAssembler::instruction_size * 4), 31, 20, low12 & 0xfff);      // Addi/Jalr/Load
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr_sv39_instruction_size;
+  }
+};
 
-  assert(MacroAssembler::target_addr_for_insn(instruction_address) == target, "Must be");
+// A canonical Sv48 address uses this six-instruction sequence for movptr1_sv48.
+// movptr1_sv48 emits the first five instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui             Rd = upper target portion
+//   addi            Rd = Rd + signed target[28:17]
+//   slli 11         Rd = Rd << 11
+//   addi            Rd = Rd + target[16:6]
+//   slli 6          Rd = Rd << 6
+//   addi/jalr/load  uses target[5:0]
+//
+//   target[63:48]  canonical sign extension
+//   target[47:29]  adjusted LUI contribution
+//   target[28:17]  signed ADDI contribution
+//   target[16:6]   second ADDI contribution
+//   target[5:0]    final offset
+//
+// The first LUI field includes the canonical sign bit and may be adjusted to
+// compensate for the signed ADDI immediate.
+struct Movptr1Sv48Parts {
+  int64_t lui_imm;     // full immediate passed to the first lui()
+  int64_t addi_imm;    // signed 12-bit immediate passed to the first addi()
+  int32_t middle_imm;  // unsigned 11-bit immediate passed to the second addi()
+  int32_t offset;      // low 6-bit offset passed to the final addi/jalr/load
 
-  return MacroAssembler::movptr2_sv48_instruction_size;
-}
+  static Movptr1Sv48Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper31 = addr >> 17;
+    const int64_t addi_imm = Assembler::sextract((uint32_t)upper31, 11, 0);
+    const int64_t lui_imm = upper31 - addi_imm;
+    const uintptr_t raw_addr = (uintptr_t)addr;
+    const int32_t middle_imm = (raw_addr >> 6) & 0x7ff;
+    const int32_t offset = raw_addr & 0x3f;
+    return Movptr1Sv48Parts{ lui_imm, addi_imm, middle_imm, offset };
+  }
 
-static bool patch_addr_in_movptr_for_mode(address instruction_address, address target, int& patched_size) {
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    uintptr_t target = (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12) << 29;
+    target += (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 20) << 17;
+    target += (uintptr_t)(intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 3), 31, 20) << 6;
+    target += (intptr_t)Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 5), 31, 20);
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr1Sv48Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 20, parts.addi_imm & 0xfff);
+    Assembler::patch(patch_addr + insn_size * 3, 31, 20, parts.middle_imm);
+    Assembler::patch(patch_addr + insn_size * 5, 31, 20, parts.offset);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr1_sv48_instruction_size;
+  }
+};
+
+// A canonical Sv48 address uses this five-instruction sequence for movptr2_sv48.
+// movptr2_sv48 emits the first four instructions; the caller emits the final
+// instruction using offset:
+//
+//   lui             tmp = upper target portion
+//   lui             Rd  = middle target portion
+//   slli 18         tmp = tmp << 18
+//   add             Rd  = Rd + tmp
+//   addi/jalr/load  uses signed target[11:0]
+//
+//   target[63:48]  canonical sign extension
+//   target[47:30]  upper LUI contribution
+//   target[29:12]  middle LUI contribution
+//   target[11:0]   signed final offset
+//
+struct Movptr2Sv48Parts {
+  int64_t upper_lui_imm;   // full immediate passed to the temporary register's lui()
+  int64_t middle_lui_imm;  // full immediate passed to the destination register's lui()
+  int32_t offset;          // signed 12-bit offset passed to the final addi/jalr/load
+
+  static Movptr2Sv48Parts from_address(intptr_t addr) {
+    assert(VM_Version::is_canonical_address((address)addr),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int64_t upper18 = addr >> 30;
+    const int64_t lower30 = (uintptr_t)addr & 0x3fffffff;
+    const int64_t offset = Assembler::sextract((uint32_t)lower30, 11, 0);
+    const int64_t upper_lui_imm = upper18 * 0x1000;
+    const int64_t middle_lui_imm = lower30 - offset;
+    return Movptr2Sv48Parts{ upper_lui_imm, middle_lui_imm, (int32_t)offset };
+  }
+
+  static address decode(address insn_addr) {
+    assert_cond(insn_addr != nullptr);
+    const int insn_size = MacroAssembler::instruction_size;
+    const int64_t upper18 = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 0), 31, 12);
+    const int64_t middle18 = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 1), 31, 12);
+    const int64_t offset = Assembler::sextract(Assembler::ld_instr(insn_addr + insn_size * 4), 31, 20);
+    uintptr_t target = (uintptr_t)upper18 << 30;
+    target += (uintptr_t)middle18 << 12;
+    target += offset;
+    return (address)target;
+  }
+
+  static int patch(address patch_addr, address target) {
+    assert(VM_Version::is_canonical_address(target),
+           "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+    const int insn_size = MacroAssembler::instruction_size;
+    const Movptr2Sv48Parts parts = from_address((intptr_t)target);
+
+    Assembler::patch(patch_addr + insn_size * 0, 31, 12, (parts.upper_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 1, 31, 12, (parts.middle_lui_imm >> 12) & 0xfffff);
+    Assembler::patch(patch_addr + insn_size * 4, 31, 20, parts.offset & 0xfff);
+
+    assert(MacroAssembler::target_addr_for_insn(patch_addr) == target, "postcondition");
+    return MacroAssembler::movptr2_sv48_instruction_size;
+  }
+};
+
+static bool patch_addr_in_movptr(address instruction_address, address target, int& patched_size) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
       if (MacroAssembler::is_movptr_sv39_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr_sv39(instruction_address, target);
+        patched_size = MovptrSv39Parts::patch(instruction_address, target);
         return true;
       }
       break;
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr1_sv48(instruction_address, target);
+        patched_size = Movptr1Sv48Parts::patch(instruction_address, target);
         return true;
       } else if (MacroAssembler::is_movptr2_sv48_at(instruction_address)) {
-        patched_size = patch_addr_in_movptr2_sv48(instruction_address, target);
+        patched_size = Movptr2Sv48Parts::patch(instruction_address, target);
         return true;
       }
       break;
@@ -3021,49 +3157,20 @@ static long get_offset_of_pc_relative(address insn_addr) {
   return offset;
 }
 
-static address get_target_of_movptr_sv39(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 12; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 20)); // Addi.
-  target_address <<= 9;                                                                                                            // Slli.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 3), 31, 20)); // Addi/Jalr/Load.
-  return (address)target_address;
-}
-
-static address get_target_of_movptr1_sv48(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  intptr_t target_address = (((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr), 31, 12)) & 0xfffff) << 29; // Lui.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 4), 31, 20)) << 17;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 12), 31, 20)) << 6;                 // Addi.
-  target_address += ((int64_t)Assembler::sextract(Assembler::ld_instr(insn_addr + 20), 31, 20));                      // Addi/Jalr/Load.
-  return (address) target_address;
-}
-
-static address get_target_of_movptr2_sv48(address insn_addr) {
-  assert_cond(insn_addr != nullptr);
-  int32_t upper18 = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 0), 31, 12)) & 0xfffff); // Lui
-  int32_t mid18   = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 1), 31, 12)) & 0xfffff); // Lui
-                                                                                                                       // 2                              // Slli
-                                                                                                                       // 3                              // Add
-  int32_t low12  = ((Assembler::sextract(Assembler::ld_instr(insn_addr + MacroAssembler::instruction_size * 4), 31, 20))); // Addi/Jalr/Load.
-  address ret = (address)(((intptr_t)upper18<<30ll) + ((intptr_t)mid18<<12ll) + low12);
-  return ret;
-}
-
-static bool get_target_of_movptr_for_mode(address insn_addr, address& target) {
+static bool get_target_of_movptr(address insn_addr, address& target) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
       if (MacroAssembler::is_movptr_sv39_at(insn_addr)) {
-        target = get_target_of_movptr_sv39(insn_addr);
+        target = MovptrSv39Parts::decode(insn_addr);
         return true;
       }
       break;
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(insn_addr)) {
-        target = get_target_of_movptr1_sv48(insn_addr);
+        target = Movptr1Sv48Parts::decode(insn_addr);
         return true;
       } else if (MacroAssembler::is_movptr2_sv48_at(insn_addr)) {
-        target = get_target_of_movptr2_sv48(insn_addr);
+        target = Movptr2Sv48Parts::decode(insn_addr);
         return true;
       }
       break;
@@ -3084,15 +3191,17 @@ address MacroAssembler::get_target_of_li32(address insn_addr) {
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address instruction_address, address target) {
   assert_cond(instruction_address != nullptr);
-  int64_t offset = target - instruction_address;
   int movptr_size = 0;
+  // Only branch and PC-relative forms consume this displacement. Compute it
+  // with unsigned pointer-width arithmetic to avoid overflow.
+  const int64_t offset = (intptr_t)((uintptr_t)target - (uintptr_t)instruction_address);
   if (MacroAssembler::is_jal_at(instruction_address)) {                         // jal
     return patch_offset_in_jal(instruction_address, offset);
   } else if (MacroAssembler::is_branch_at(instruction_address)) {               // beq/bge/bgeu/blt/bltu/bne
     return patch_offset_in_conditional_branch(instruction_address, offset);
-  } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
+  } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {           // auipc, addi/jalr/load
     return patch_offset_in_pc_relative(instruction_address, offset);
-  } else if (patch_addr_in_movptr_for_mode(instruction_address, target, movptr_size)) {
+  } else if (patch_addr_in_movptr(instruction_address, target, movptr_size)) {
     return movptr_size;
   } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
@@ -3121,7 +3230,7 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     offset = get_offset_of_conditional_branch(insn_addr);
   } else if (MacroAssembler::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
     offset = get_offset_of_pc_relative(insn_addr);
-  } else if (get_target_of_movptr_for_mode(insn_addr, target)) {
+  } else if (get_target_of_movptr(insn_addr, target)) {
     return target;
   } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
@@ -3132,20 +3241,18 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
 }
 
 int MacroAssembler::patch_oop(address insn_addr, address o) {
-  // OOPs are either narrow (32 bits) or wide (48 bits on sv48, 39 bits
-  // on sv39).  We encode narrow OOPs by setting the upper 16 bits in the
+  // OOPs are either narrow (32 bits) or wide (full VA bits).
+  // We encode narrow OOPs by setting the upper 16 bits in the
   // first instruction.
   int movptr_size = 0;
   if (MacroAssembler::is_li32_at(insn_addr)) {
     // Move narrow OOP
     uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     return patch_imm_in_li32(insn_addr, (int32_t)n);
-  } else if (patch_addr_in_movptr_for_mode(insn_addr, o, movptr_size)) {
-    // Move wide OOP
-    return movptr_size;
   }
-  ShouldNotReachHere();
-  return -1;
+  bool result = patch_addr_in_movptr(insn_addr, o, movptr_size);
+  assert(result, "inv");
+  return movptr_size;
 }
 
 void MacroAssembler::reinit_heapbase() {
@@ -3172,6 +3279,9 @@ void MacroAssembler::movptr(Register Rd, address addr, Register temp) {
 }
 
 void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register temp) {
+  assert(VM_Version::is_canonical_address(addr),
+         "address must be canonical for %d-bit VA", VM_Version::max_va_bits());
+
   uint64_t uimm64 = (uint64_t)addr;
 #ifndef PRODUCT
   {
@@ -3181,22 +3291,15 @@ void MacroAssembler::movptr(Register Rd, address addr, int32_t &offset, Register
   }
 #endif
 
-  assert(uimm64 < (1ull << VM_Version::max_va_bits()),
-         "%d-bit overflow in address constant", VM_Version::max_va_bits());
-
-  movptr_for_mode(Rd, uimm64, offset, temp);
-}
-
-void MacroAssembler::movptr_for_mode(Register Rd, uint64_t addr, int32_t &offset, Register temp) {
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      movptr_sv39(Rd, addr, offset);
+      movptr_sv39(Rd, uimm64, offset);
       break;
     case VM_Version::VM_SV48:
       if (temp == noreg) {
-        movptr1_sv48(Rd, addr, offset);
+        movptr1_sv48(Rd, uimm64, offset);
       } else {
-        movptr2_sv48(Rd, addr, offset, temp);
+        movptr2_sv48(Rd, uimm64, offset, temp);
       }
       break;
     default:
@@ -3218,80 +3321,35 @@ int MacroAssembler::movptr_instruction_size(bool use_temp) {
 }
 
 void MacroAssembler::movptr_sv39(Register Rd, uint64_t addr, int32_t &offset) {
-  // addr: [upper30[hi20, low12], lower9]
-  //
-  // Load upper 30 bits, i.e. addr >> 9. Since addr < 2^39, upper30 < 2^30,
-  // so even when the sign-extended low12 borrows from hi20 (see movptr1_sv48
-  // below for the trick), hi20 never reaches the sign bit of the lui
-  // immediate. This covers the whole [0, 2^39) range exactly.
-  uint64_t upper30 = addr >> 9;
-  int64_t lower12 = ((int64_t)(upper30 << 52)) >> 52;
-  int64_t hi20 = upper30 - lower12;
-  lui(Rd, hi20);
-  addi(Rd, Rd, lower12);
-
+  const MovptrSv39Parts parts = MovptrSv39Parts::from_address((intptr_t)addr);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
   slli(Rd, Rd, 9);
-
   // This offset will be used by following jalr/ld.
-  offset = addr & 0x1ff;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr1_sv48(Register Rd, uint64_t imm64, int32_t &offset) {
-  // Load upper 31 bits
-  //
-  // In case of 11th bit of `lower` is 0, it's straightforward to understand.
-  // In case of 11th bit of `lower` is 1, it's a bit tricky, to help understand,
-  // imagine divide both `upper` and `lower` into 2 parts respectively, i.e.
-  // [upper_20, upper_12], [lower_20, lower_12], they are the same just before
-  // `lower = (lower << 52) >> 52;`.
-  // After `upper -= lower;`,
-  //    upper_20' = upper_20 - (-1) == upper_20 + 1
-  //    upper_12 = 0x000
-  // After `lui(Rd, upper);`, `Rd` = upper_20' << 12
-  // Also divide `Rd` into 2 parts [Rd_20, Rd_12],
-  //    Rd_20 == upper_20'
-  //    Rd_12 == 0x000
-  // After `addi(Rd, Rd, lower);`,
-  //    Rd_20 = upper_20' + (-1) == upper_20 + 1 - 1 = upper_20
-  //    Rd_12 = lower_12
-  // So, finally Rd == [upper_20, lower_12]
-  int64_t imm = imm64 >> 17;
-  int64_t upper = imm, lower = imm;
-  lower = (lower << 52) >> 52;
-  upper -= lower;
-  upper = (int32_t)upper;
-  lui(Rd, upper);
-  addi(Rd, Rd, lower);
-
-  // Load the rest 17 bits.
+  const Movptr1Sv48Parts parts = Movptr1Sv48Parts::from_address((intptr_t)imm64);
+  lui(Rd, parts.lui_imm);
+  addi(Rd, Rd, parts.addi_imm);
   slli(Rd, Rd, 11);
-  addi(Rd, Rd, (imm64 >> 6) & 0x7ff);
+  addi(Rd, Rd, parts.middle_imm);
   slli(Rd, Rd, 6);
-
-  // This offset will be used by following jalr/ld.
-  offset = imm64 & 0x3f;
+  offset = parts.offset;
 }
 
 void MacroAssembler::movptr2_sv48(Register Rd, uint64_t addr, int32_t &offset, Register tmp) {
   assert_different_registers(Rd, tmp, noreg);
 
-  // addr: [upper18, lower30[mid18, lower12]]
-
-  int64_t upper18 = addr >> 18;
-  lui(tmp, upper18);
-
-  int64_t lower30 = addr & 0x3fffffff;
-  int64_t mid18 = lower30, lower12 = lower30;
-  lower12 = (lower12 << 52) >> 52;
-  // For this tricky part (`mid18 -= lower12;` + `offset = lower12;`),
-  // please refer to movptr1_sv48 above.
-  mid18 -= (int32_t)lower12;
-  lui(Rd, mid18);
+  const Movptr2Sv48Parts parts = Movptr2Sv48Parts::from_address((intptr_t)addr);
+  lui(tmp, parts.upper_lui_imm);
+  lui(Rd, parts.middle_lui_imm);
 
   slli(tmp, tmp, 18);
   add(Rd, Rd, tmp);
 
-  offset = lower12;
+  offset = parts.offset;
 }
 
 // floating point imm move
@@ -3733,8 +3791,8 @@ void MacroAssembler::movoop(Register dst, jobject obj) {
 
 // Move a metadata address into a register.
 void MacroAssembler::mov_metadata(Register dst, Metadata* obj) {
-  assert((uintptr_t)obj < (1ull << VM_Version::max_va_bits()),
-         "%d-bit overflow in metadata", VM_Version::max_va_bits());
+  assert(VM_Version::is_canonical_address((address)obj),
+         "metadata address must be canonical for %d-bit VA", VM_Version::max_va_bits());
   int oop_index;
   if (obj == nullptr) {
     oop_index = oop_recorder()->allocate_metadata_index(obj);

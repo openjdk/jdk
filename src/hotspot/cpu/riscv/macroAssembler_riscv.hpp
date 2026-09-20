@@ -958,7 +958,6 @@ public:
   static int movptr_instruction_size(bool use_temp);
 
  private:
-  void movptr_for_mode(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
   void movptr_sv39(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr1_sv48(Register Rd, uintptr_t addr, int32_t &offset);
   void movptr2_sv48(Register Rd, uintptr_t addr, int32_t &offset, Register tmp);
