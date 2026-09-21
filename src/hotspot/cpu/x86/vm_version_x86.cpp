@@ -2957,8 +2957,8 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
   if (std_cpuid1_ecx.bits.popcnt != 0)
     vm_features.set_feature(CPU_POPCNT);
   if (sefsl1_cpuid7_edx.bits.apx_f != 0 &&
-      xem_xcr0_eax.bits.apx_f != 0 &&
-      std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0) {
+      xem_xcr0_eax.bits.apx_f != 0 /*&&
+      std_cpuid29_ebx.bits.apx_nci_ndd_nf != 0*/) {
     vm_features.set_feature(CPU_APX_F);
   }
   if (std_cpuid1_ecx.bits.avx != 0 &&
