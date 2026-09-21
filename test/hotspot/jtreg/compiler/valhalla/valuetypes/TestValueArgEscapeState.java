@@ -33,7 +33,6 @@ import compiler.lib.ir_framework.*;
  *          passed as scalar arguments.
  * @library /test/lib /
  * @enablePreview
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @run driver ${test.main.class}
  */
 
