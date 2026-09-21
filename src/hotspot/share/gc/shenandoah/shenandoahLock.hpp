@@ -130,7 +130,7 @@ public:
   }
 
   ~ShenandoahReentrantLocker() {
-    if (_lock) {
+    if (_lock != nullptr) {
       _lock->unlock();
       _lock = nullptr;
     }

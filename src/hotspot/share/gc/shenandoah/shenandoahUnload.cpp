@@ -80,8 +80,7 @@ public:
   virtual bool has_dead_oop(nmethod* nm) const {
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
-    ShenandoahNMethodLock* lock = data->lock();
-    ShenandoahNMethodLocker locker(lock);
+    ShenandoahNMethodLocker locker(data->lock());
     ShenandoahIsUnloadingOopClosure cl;
     data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
     return  cl.is_unloading();
