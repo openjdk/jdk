@@ -62,9 +62,9 @@ static bool initialize(TRAPS) {
 
 /*
  * Abstract klasses are filtered out unconditionally.
- * If a klass is not yet initialized, i.e yet to run its <clinit>
- * it is also filtered out so we don't accidentally
- * trigger initialization.
+ *
+ * If a klass is initialized or is being initialized it
+ * is returned.
  */
 static bool is_allowed(const Klass* k) {
   assert(k != nullptr, "invariant");
@@ -72,7 +72,11 @@ static bool is_allowed(const Klass* k) {
     // Was excluded during initial class load.
     return false;
   }
-  return !(k->is_abstract() || k->should_be_initialized());
+  if (k->is_abstract()) {
+    return false;
+  }
+  const InstanceKlass* ik = InstanceKlass::cast(k);
+  return ik->is_initialized() || ik->is_being_initialized();
 }
 
 static void fill_klasses(GrowableArray<jclass>& event_subklasses, const InstanceKlass* event_klass, JavaThread* thread) {
