@@ -171,8 +171,11 @@ final class ValueObjectMethods {
             result = 31 * result + System.identityHashCode(oa);
         }
         // Use an alternative non-zero value when the computed hash is zero,
-        // to enable caching. The identity hash of the value class distinguishes
-        // different value classes and is easy for the compiler to fetch.
+        // to enable caching. Note that the computed hash is not directly
+        // `result` but `result` masked to fit in the cache of the mark word.
+        // In case the hash would be zero, the alternative is the identity
+        // hash of the value class. That allows to distinguish different value
+        // classes and is easy for the compiler to fetch.
         return (result & U.hashCodeMask()) == 0 ? typeHash : result;
     }
 }
