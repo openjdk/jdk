@@ -210,6 +210,10 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
             /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ tmp3_owner);
     beqz(tmp3_owner, monitor_locked);
 
+    // Normally, a contended monitor enters the runtime slow path here.
+    // If `Zawrs` is enabled, wait briefly for the current owner to release
+    // the monitor and retry the fast-path acquisition once, which can
+    // potentially avoid a runtime call if the owner releases the monitor soon.
     if (UseZawrs) {
       Label recursive;
       beq(tmp3_owner, tid, recursive);
@@ -218,8 +222,7 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       // wait on a monitor that may be reclaimed by async deflation.
       mv(t0, (uint64_t)ThreadIdentifier::initial());
       bltu(tmp3_owner, t0, slow_path);
-      // Wait once for a short-lived owner to release the monitor before
-      // paying the cost of entering the runtime slow path.
+
       Label retry;
       lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
       beqz(tmp3_owner, retry);
