@@ -117,7 +117,7 @@ public class TestSharedCloseDeopts {
                             try {
                                 testCase.payload().run(segment.scope(), segment, hold);
                             } catch (IllegalStateException e) {
-                                // arena was close, we can return
+                                // arena was closed, we can return
                                 return;
                             }
                         }
