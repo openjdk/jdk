@@ -245,7 +245,20 @@ public:
           // This means that we will re-do the liveness check before attempting
           // another memory access. If the scope has been closed at that point,
           // the target thread will see it and throw an exception.
-          if (code->has_scoped_access() && is_session_live(last_frame, &register_map)) {
+          bool f_has_scoped_access = code->has_scoped_access();
+          bool f_is_session_live = is_session_live(last_frame, &register_map);
+#ifndef PRODUCT
+          {
+            LogMessage(foreign, deoptimization) msg;
+            NonInterleavingLogStream ls{LogLevelType::Trace, msg};
+            if (ls.is_enabled()) {
+              ls.print_cr("Inspected compiled frame. has_scoped_access=%s is_session_live=%s:",
+                BOOL_TO_STR(f_has_scoped_access), BOOL_TO_STR(f_is_session_live));
+              last_frame.print_on(&ls);
+            }
+          }
+#endif
+          if (f_is_session_live && f_has_scoped_access) {
             Deoptimization::deoptimize(jt, last_frame);
           }
         } else {
