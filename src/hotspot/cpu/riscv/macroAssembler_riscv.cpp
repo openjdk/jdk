@@ -6937,13 +6937,13 @@ void MacroAssembler::shift_left_add(Register Rd, Register Rs1, Register Rs2, int
 }
 
 void MacroAssembler::shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp) {
+  assert_different_registers(Rs2, tmp);
   if (UseZba && (1 <= shamt && shamt <= 3)) {
     shadd(Rd, Rs1, Rs2, shamt);
     return;
   }
 
   if (shamt != 0) {
-    assert_different_registers(Rs2, tmp);
     slli(tmp, Rs1, shamt);
     add(Rd, Rs2, tmp);
   } else {
