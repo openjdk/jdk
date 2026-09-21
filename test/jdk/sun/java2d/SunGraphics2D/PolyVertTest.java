@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,76 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @key headful
  * @bug 4678208 4771101 6328481 6588884 8198613
  * @summary verify the pixelization of degenerate polylines and polygons
- * @run main PolyVertTest
- * @run main/othervm -Dsun.java2d.d3d=True PolyVertTest -hwonly
+ * @run main/othervm -Dsun.java2d.uiScale=1 PolyVertTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import java.awt.image.*;
+/*
+ * @test id=noxrender
+ * @key headful
+ * @requires (os.family == "linux")
+ * @bug 4678208 4771101 6328481 6588884 8198613
+ * @summary verify the pixelization of degenerate polylines and polygons
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.xrender=false PolyVertTest -hwonly
+ */
+
+/*
+ * @test id=dno3d
+ * @key headful
+ * @requires (os.family == "windows")
+ * @bug 4678208 4771101 6328481 6588884 8198613
+ * @summary verify the pixelization of degenerate polylines and polygons
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.d3d=false PolyVertTest -hwonly
+ */
+
+/*
+ * @test id=opengl
+ * @key headful
+ * @bug 4678208 4771101 6328481 6588884 8198613
+ * @summary verify the pixelization of degenerate polylines and polygons
+ * @run main/othervm -Dsun.java2d.uiScale=1 -Dsun.java2d.opengl=True PolyVertTest -hwonly
+ */
+
+import java.awt.AWTException;
+import java.awt.BorderLayout;
+import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.Point;
+import java.awt.Polygon;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Transparency;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
+import java.awt.image.VolatileImage;
+import java.io.File;
+import java.io.IOException;
+import javax.imageio.ImageIO;
 
 public class PolyVertTest {
-    static int TESTWIDTH;
-    static int TESTHEIGHT;
+
+    static volatile int TESTWIDTH;
+    static volatile int TESTHEIGHT;
     static final int REG_TEST_WIDTH = 10;
     static final int REG_TEST_HEIGHT = 10;
     static final int FULL_TEST_WIDTH = 50;
@@ -47,29 +101,29 @@ public class PolyVertTest {
     static final int GREEN = Color.green.getRGB();
     static final int RED   = Color.red.getRGB();
 
-    static BufferedImage refImg;
-    static BufferedImage errorImg;
-    static Graphics errorG;
-    static Component testCanvas;
+    static volatile BufferedImage refImg;
+    static volatile BufferedImage errorImg;
+    static volatile Graphics errorG;
+    static volatile TestCanvas testCanvas;
 
-    static int totalbadpixels;
-    static int totalfuzzypixels;
-    static int numbadtests;
-    static int numfuzzytests;
-    static int numframes;
-    static int fuzzystarty;
+    static volatile int totalbadpixels;
+    static volatile int totalfuzzypixels;
+    static volatile int numbadtests;
+    static volatile int numfuzzytests;
+    static volatile int numframes;
+    static volatile int fuzzystarty;
 
-    static boolean counting;
-    static boolean showerrors;
-    static boolean showresults;
-    static boolean fringe;
-    static boolean forceerror;
-    static boolean fulltest = true;
-    static boolean hwonly;
+    static volatile boolean counting;
+    static volatile boolean showerrors;
+    static volatile boolean showresults;
+    static volatile boolean fringe;
+    static volatile boolean forceerror;
+    static volatile boolean fulltest = true;
+    static volatile boolean hwonly;
 
     static WindowListener windowCloser = new WindowAdapter() {
         public void windowClosing(WindowEvent e) {
-            e.getWindow().hide();
+            e.getWindow().setVisible(false);
             if (--numframes <= 0) {
                 System.exit(0);
             }
@@ -233,9 +287,11 @@ public class PolyVertTest {
         g2d.setPaintMode();
     }
 
+/*
     public Dimension getPreferredSize() {
         return new Dimension(500, 500);
     }
+*/
 
     public static void usage(int exitcode) {
         System.err.println("usage: java PolyVertTest [<option>]*");
@@ -260,7 +316,7 @@ public class PolyVertTest {
         System.exit(exitcode);
     }
 
-    public static void main(String argv[]) {
+    public static void main(String argv[]) throws Exception {
         for (int i = 0; i < argv.length; i++) {
             String arg = argv[i];
             if (arg.equalsIgnoreCase("-count")) {
@@ -300,14 +356,22 @@ public class PolyVertTest {
         // finished our tests.
         numframes++;
 
-        makeReferenceImage();
-        testScreen();
-        testVolatileImage();
-        if (!hwonly) {
-            testBufferedImage();
-            testOffscreen();
-            testCompatibleImages();
+        try {
+            makeReferenceImage();
+            testCanvas = new TestCanvas();
+            testScreen();
+            testVolatileImage();
+            if (!hwonly) {
+                testBufferedImage();
+                testOffscreen();
+                testCompatibleImages();
+            }
+        } finally {
+            if (frame != null) {
+                EventQueue.invokeAndWait(frame::dispose);
+            }
         }
+
         if (totalfuzzypixels > 0) {
             System.err.println(totalfuzzypixels+" fuzzy pixels found in "+
                                numfuzzytests+" tests");
@@ -466,6 +530,11 @@ public class PolyVertTest {
                         errorG.setColor(isfuzzy ? Color.blue : Color.red);
                         errorG.fillRect(x, y, 1, 1);
                     } else if (!counting && !isfuzzy) {
+                        try {
+                            ImageIO.write(refImg, "png", new File("refimg" + ".png"));
+                            ImageIO.write(bimg, "png", new File(name+".png"));
+                        } catch (Exception e) {
+                        }
                         throw new RuntimeException("Error at "+x+", "+y+
                                                    " while testing: "+name);
                     }
@@ -520,7 +589,16 @@ public class PolyVertTest {
                 }
             }
         }
-        Frame f = new Frame("Results for "+name);
+        try {
+            EventQueue.invokeAndWait(() -> createDiffsUI(bimg, name));
+       } catch (Exception e) {
+            System.err.println("error creating diffs UI for " + name);
+       }
+    }
+
+    static void createDiffsUI(BufferedImage bimg, String name) {
+
+        Frame f = new Frame("Results for " + name);
         f.setLayout(new BorderLayout());
         f.addWindowListener(windowCloser);
         ++numframes;
@@ -530,8 +608,9 @@ public class PolyVertTest {
         p.add(new ImageCanvas(refImg));
         f.add(p, "Center");
         droperrorbuf();
-        f.pack();
-        f.show();
+        f.setSize(500, FULL_TEST_HEIGHT + 50);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
     }
 
     public static void testBufferedImage() {
@@ -549,16 +628,40 @@ public class PolyVertTest {
         test(bimg, name);
     }
 
-    public static void testScreen() {
-        Frame f = new Frame("PolyVertTest");
-        TestCanvas child = new TestCanvas();
-        testCanvas = child;
-        f.add(child);
-        f.pack();
-        f.show();
-        BufferedImage bimg = child.getImage();
-        f.hide();
-        verify(bimg, "Screen");
+    static volatile Frame frame;
+
+    public static void testScreen() throws Exception {
+        EventQueue.invokeAndWait(PolyVertTest::createUI);
+        try {
+            Robot robot = new Robot();
+            robot.waitForIdle();
+            robot.delay(2000);
+            Point p = testCanvas.getLocationOnScreen();
+            Rectangle r = new Rectangle(p.x, p.y, TESTWIDTH, TESTHEIGHT);
+            BufferedImage bimg = robot.createScreenCapture(r);
+            verify(bimg, "Screen");
+        } catch (AWTException e) {
+            throw new RuntimeException(e);
+        } finally {
+           if (frame != null) {
+               //EventQueue.invokeAndWait(frame::dispose);
+           }
+        }
+    }
+
+    public static void createUI() {
+        frame = new Frame("PolyVertTest");
+        frame = new Frame("SimplePrimQuality");
+        frame.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(50, 50, 50, 50);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        frame.add(testCanvas, c);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
     }
 
     public static void testOffscreen() {
@@ -600,6 +703,7 @@ public class PolyVertTest {
 
     public static void testVolatileImage() {
         Image img = testCanvas.createVolatileImage(TESTWIDTH, TESTHEIGHT);
+        System.err.println("img="+img);
         test(img, "Volatile");
     }
 
@@ -620,42 +724,17 @@ public class PolyVertTest {
     }
 
     public static class TestCanvas extends Canvas {
-        BufferedImage bimg;
 
         public Dimension getPreferredSize() {
             return new Dimension(TESTWIDTH, TESTHEIGHT);
         }
 
         public void paint(Graphics g) {
-            if (bimg != null ||
-                getWidth() < TESTWIDTH ||
-                getHeight() < TESTHEIGHT)
-            {
+            if (getWidth() < TESTWIDTH ||
+                getHeight() < TESTHEIGHT) {
                 return;
             }
             render((Graphics2D) g);
-            Toolkit.getDefaultToolkit().sync();
-            Point p = getLocationOnScreen();
-            Rectangle r = new Rectangle(p.x, p.y, TESTWIDTH, TESTHEIGHT);
-            try {
-                bimg = new Robot().createScreenCapture(r);
-            } catch (AWTException e) {
-                e.printStackTrace();
-            }
-            synchronized (this) {
-                notifyAll();
-            }
-        }
-
-        public synchronized BufferedImage getImage() {
-            while (bimg == null) {
-                try {
-                    wait();
-                } catch (InterruptedException e) {
-                    return null;
-                }
-            }
-            return bimg;
-        }
-    }
+       }
+   }
 }
