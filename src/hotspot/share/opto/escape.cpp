@@ -1129,7 +1129,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
 
       if (base->Opcode() == Op_CastPP) {
         Node* previous_base = get_addp_base(previous_addp);
-        if (previous_base->Opcode() == Op_CastPP) {
+        if (previous_base->Opcode() == Op_CastPP && (base->_idx >= nodes_size() || ptnode_adr(base->_idx) == nullptr)) {
           assert(previous_base != base, "Should have been pushed through Phi");
           // add the CastPP to the connection graph
           _nodes.at_grow(base->_idx, nullptr);
@@ -1141,7 +1141,7 @@ void ConnectionGraph::updates_after_load_split(Node* data_phi, Node* previous_lo
             add_edge(ptnode_adr(base->_idx), java_object);
           }
           base = base->in(1);
-          assert(previous_base->in(1)->is_Phi() && previous_base->in(1)->in(i) == base, "an input to the cast was cloned");
+          assert(previous_base->in(1)->as_Phi()->in(i) == base, "an input to the cast was cloned");
         }
       }
 

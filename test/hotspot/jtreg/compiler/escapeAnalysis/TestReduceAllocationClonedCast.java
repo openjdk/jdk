@@ -49,6 +49,9 @@ public class TestReduceAllocationClonedCast {
             test3(true, true);
             test3(false, false);
             test3(false, true);
+            test4(true, true);
+            test4(false, false);
+            test4(false, true);
         }
         System.out.println("DONE");
     }
@@ -118,6 +121,21 @@ public class TestReduceAllocationClonedCast {
                 }
             }
             field = 42;
+        }
+        return a.field;
+    }
+
+    static int test4(boolean flag, boolean flag2) {
+        A a = null;
+        if (flag) {
+            a = new A(42);
+        } else {
+            a = fieldA;
+            if (flag2) {
+                if (a == null) {
+                    throw new RuntimeException("not taken");
+                }
+            }
         }
         return a.field;
     }
