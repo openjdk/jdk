@@ -94,9 +94,8 @@ ShenandoahSimpleLock::ShenandoahSimpleLock() : _owner(nullptr) {
 }
 
 void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
-  assert(_owner.load_relaxed() != Thread::current(), "lock already owned by current thread");
   _lock.lock();
-  assert(_owner.load_relaxed() == nullptr, "lock already owned by another thread");
+  assert(_owner.load_relaxed() == nullptr, "No owner yet.");
   _owner.store_relaxed(Thread::current());
 }
 

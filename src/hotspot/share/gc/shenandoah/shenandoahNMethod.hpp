@@ -35,8 +35,7 @@
 
 class BarrierSetNMethod;
 
-// Use ShenandoahSimpleLock as ShenandoahNMethodLock
-typedef ShenandoahSimpleLock                               ShenandoahNMethodLock;
+typedef ShenandoahSimpleLock                             ShenandoahNMethodLock;
 typedef ShenandoahReentrantLocker<ShenandoahNMethodLock> ShenandoahNMethodLocker;
 
 struct ShenandoahPatchableJump {
