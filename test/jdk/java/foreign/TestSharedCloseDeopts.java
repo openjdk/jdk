@@ -177,8 +177,10 @@ public class TestSharedCloseDeopts {
         // assert that we saw the frame during scope closure using UL log messages
         List<String> log = Files.readAllLines(LOG_FILE);
         // look for both scope closures. One with the same scope, one with the other
-        assertTrue(log.contains("Inspected compiled frame. has_scoped_access=" + testCase.hasAccess() + " is_session_live=false:"));
-        assertTrue(log.contains("Inspected compiled frame. has_scoped_access=" + testCase.hasAccess() + " is_session_live=true:"));
+        assertTrue(log.stream().anyMatch(l ->
+                l.contains("has_scoped_access=" + testCase.hasAccess()) && l.contains("is_session_live=false")));
+        assertTrue(log.stream().anyMatch(l ->
+                l.contains("has_scoped_access=" + testCase.hasAccess()) && l.contains("is_session_live=true")));
     }
 
     // simulate a safepoint in a method with a scoped access
