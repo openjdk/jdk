@@ -3801,7 +3801,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_nmax_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
-		                      vones, vweights, vacc1, vacc2, vp);
+                                      vones, vweights, vacc1, vacc2, vp);
 
     __ bdnz(L_nmax_loop);
 
@@ -3832,7 +3832,7 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(L_by16_loop);
 
     generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
-		                      vones, vweights, vacc1, vacc2, vp);
+                                      vones, vweights, vacc1, vacc2, vp);
 
     __ addi(len, len, -16);
 
