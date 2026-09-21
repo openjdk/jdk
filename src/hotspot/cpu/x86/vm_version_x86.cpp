@@ -357,19 +357,30 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ cmpl(rax, 0x80000004);     // Is cpuid(0x80000005) supported?
     __ jcc(Assembler::belowEqual, ext_cpuid1);
     __ cmpl(rax, 0x80000006);     // Is cpuid(0x80000007) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid5);
+    __ jcc(Assembler::belowEqual, ext_cpuid5);
     __ cmpl(rax, 0x80000007);     // Is cpuid(0x80000008) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid7);
+    __ jcc(Assembler::belowEqual, ext_cpuid7);
     __ cmpl(rax, 0x80000008);     // Is cpuid(0x80000009 and above) supported?
-    __ jccb(Assembler::belowEqual, ext_cpuid8);
+    __ jcc(Assembler::belowEqual, ext_cpuid8);
     __ cmpl(rax, 0x8000001E);     // Is cpuid(0x8000001E) supported?
-    __ jccb(Assembler::below, ext_cpuid8);
+    __ jcc(Assembler::below, ext_cpuid8);
     //
     // Extended cpuid(0x8000001E)
     //
     __ movl(rax, 0x8000001E);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid1E_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi,12), rdx);
+
+    //
+    // Extended cpuid(0x80000021)
+    //
+    __ movl(rax, 0x80000021);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::ext_cpuid21_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -1013,6 +1024,7 @@ void VM_Version::get_processor_features() {
     clear_feature(CPU_AVX512_FP16);
     clear_feature(CPU_AVX10_1);
     clear_feature(CPU_AVX10_2);
+    clear_feature(CPU_AVX512_BMM);
   }
 
 
@@ -3011,7 +3023,13 @@ VM_Version::VM_Features VM_Version::CpuidInfo::feature_flags() const {
         vm_features.set_feature(CPU_AVX512_VBMI);
       if (sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
         vm_features.set_feature(CPU_AVX512_VBMI2);
+      if (is_amd()) {
+        if (ext_cpuid21_eax.bits.avx512_bmm != 0) {
+          vm_features.set_feature(CPU_AVX512_BMM);
+        }
+      }
     }
+
     if (is_intel()) {
       if (sefsl1_cpuid7_edx.bits.avx10 != 0 &&
           std_cpuid24_ebx.bits.avx10_vlen_512 !=0 &&

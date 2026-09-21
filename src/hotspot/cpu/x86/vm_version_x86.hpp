@@ -340,6 +340,15 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union ExtCpuid21Eax {
+    uint32_t value;
+    struct {
+      uint32_t                  : 23,
+               avx512_bmm       : 1,
+                                : 8;
+    } bits;
+  };
+
   union XemXcr0Eax {
     uint32_t value;
     struct {
@@ -440,7 +449,9 @@ protected:
     decl(AVX10_1,           avx10_1           ) /* AVX10 512 bit vector ISA Version 1 support*/ \
     decl(AVX10_2,           avx10_2           ) /* AVX10 512 bit vector ISA Version 2 support*/ \
     decl(HYBRID,            hybrid            ) /* Hybrid architecture */ \
-    decl(FAST_BMI2,         fast_bmi2         ) /* Native Hardware support for PEXT/PDEP BMI2 instructions */
+    decl(FAST_BMI2,         fast_bmi2         ) /* Native Hardware support for PEXT/PDEP BMI2 instructions */ \
+    decl(AVX512_BMM,        avx512_bmm        ) /* AVX512 BMM instructions */
+
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name) CPU_##id,
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -667,6 +678,12 @@ protected:
     uint32_t      ext_cpuid1E_ecx;
     uint32_t      ext_cpuid1E_edx; // unused currently
 
+    // cpuid function 0x80000021 // AMD 1Ah
+    ExtCpuid21Eax ext_cpuid21_eax; // avx512_bmm
+    uint32_t      ext_cpuid21_ebx;
+    uint32_t      ext_cpuid21_ecx;
+    uint32_t      ext_cpuid21_edx; // unused currently
+
     // extended control register XCR0 (the XFEATURE_ENABLED_MASK register)
     XemXcr0Eax   xem_xcr0_eax;
     uint32_t     xem_xcr0_edx; // reserved
@@ -746,6 +763,7 @@ public:
   static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
   static ByteSize ext_cpuid8_offset() { return byte_offset_of(CpuidInfo, ext_cpuid8_eax); }
   static ByteSize ext_cpuid1E_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1E_eax); }
+  static ByteSize ext_cpuid21_offset() { return byte_offset_of(CpuidInfo, ext_cpuid21_eax); }
   static ByteSize tpl_cpuidB0_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB0_eax); }
   static ByteSize tpl_cpuidB1_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB1_eax); }
   static ByteSize tpl_cpuidB2_offset() { return byte_offset_of(CpuidInfo, tpl_cpuidB2_eax); }
@@ -894,6 +912,7 @@ public:
   static bool supports_avx512vldq()   { return (supports_evex() && supports_avx512dq() && supports_avx512vl()); }
   static bool supports_avx512vlbwdq() { return (supports_evex() && supports_avx512vl() &&
                                                 supports_avx512bw() && supports_avx512dq()); }
+  static bool supports_avx512bmm()    { return _features.supports_feature(CPU_AVX512_BMM); }
   static bool supports_avx512novl()   { return (supports_evex() && !supports_avx512vl()); }
   static bool supports_avx512nobw()   { return (supports_evex() && !supports_avx512bw()); }
   static bool supports_avx256only()   { return (supports_avx2() && !supports_evex()); }
