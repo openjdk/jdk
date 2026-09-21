@@ -294,7 +294,13 @@ public abstract class BaseFileManager implements JavaFileManager {
                 return true;
 
             case PREVIEWMODE:
-                previewMode = Boolean.parseBoolean(value);
+                if ("true".equals(value)) {
+                    previewMode = true;
+                } else if ("false".equals(value)) {
+                    previewMode = false;
+                } else {
+                    throw new IllegalArgumentException("Must be \"true\" or \"false\", got: " + value);
+                }
                 locations.setPreviewMode(previewMode);
                 return true;
 

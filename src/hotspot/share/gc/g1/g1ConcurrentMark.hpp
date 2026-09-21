@@ -45,8 +45,8 @@
 
 class ConcurrentGCTimer;
 class G1CollectedHeap;
-class G1CSetCandidateGroup;
-class G1CSetCandidateGroupList;
+class G1CardSetGroup;
+class G1CardSetGroupList;
 class G1ConcurrentMark;
 class G1ConcurrentMarkThread;
 class G1CMOopClosure;
@@ -354,7 +354,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
                                               // always pointing to the end of the
                                               // last claimed region
 
-  uint                    _worker_id_offset;
   uint                    _max_num_tasks;    // Maximum number of marking tasks
   uint                    _num_active_tasks; // Number of tasks currently active
   G1CMTask**              _tasks;            // Task queue array (max_worker_id length)
@@ -567,8 +566,6 @@ public:
   // TARS for the given region during remembered set rebuilding.
   inline HeapWord* top_at_rebuild_start(G1HeapRegion* r) const;
 
-  uint worker_id_offset() const { return _worker_id_offset; }
-
   // Fully allocates and initializes data structures for the concurrent cycle.
   // Methods that use concurrent cycle state such as the concurrent mark threads,
   // tasks, marking stack, statistics, TAMS or TARS require this initialization.
@@ -718,9 +715,11 @@ public:
   // safepoint.
   void clear_bitmap_for_region(G1HeapRegion* hr);
 
-  // Verify that there are no collection set oops on the stacks (taskqueues /
-  // global mark stack) and fingers (global / per-task).
-  // If marking is not in progress, it's a no-op.
+  // Verify that no entry on the global mark stack or the task queues refers to
+  // an object in the (optional) collection set, that the global finger is at a
+  // region bottom, and that no task finger points into a region in the
+  // (optional) collection set.
+  // A no-op unless marking or remembered set rebuilding is in progress.
   void verify_no_collection_set_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();
@@ -1029,9 +1028,9 @@ class G1PrintRegionLivenessInfoClosure : public G1HeapRegionClosure {
     return (double) val / (double) M;
   }
 
-  void log_cset_candidate_group_add_total(G1CSetCandidateGroup* gr, const char* type);
-  void log_cset_candidate_grouplist(G1CSetCandidateGroupList& gl, const char* type);
-  void log_cset_candidate_groups();
+  void log_card_set_group_add_total(G1CardSetGroup* gr, const char* type);
+  void log_card_set_group_list(G1CardSetGroupList& gl, const char* type);
+  void log_card_set_groups();
 
 public:
   // The header and footer are printed in the constructor and

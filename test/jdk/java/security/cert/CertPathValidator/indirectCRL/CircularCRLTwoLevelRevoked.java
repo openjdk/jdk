@@ -31,8 +31,7 @@
  * @test
  *
  * @bug 6720721
- * @summary CRL check with circular depency support needed
- * @enablePreview
+ * @summary CRL check with circular dependency support needed
  * @run main/othervm CircularCRLTwoLevelRevoked
  * @author Xuelei Fan
  */
