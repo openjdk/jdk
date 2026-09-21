@@ -3768,9 +3768,11 @@ class StubGenerator: public StubCodeGenerator {
     __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
 
     // load adler ones
+    // {1, <*16 times>}
     __ vspltisb(vones, 1);
 
     // load adler weights
+    // {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
     __ li(R0, 0);
     __ lvsl(vweights, R0);
     __ vspltisb(vacc1, 15);
