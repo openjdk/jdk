@@ -2264,15 +2264,14 @@ public abstract class KeyboardFocusManager
                                        temporary, descendant, cause);
                     // Fix 5028014. Rolled out.
                     // SunToolkit.postPriorityEvent(currentFocusOwnerEvent);
-                    SunToolkit.postEvent(currentFocusOwner.appContext,
-                                         currentFocusOwnerEvent);
+                    SunToolkit.postEvent(currentFocusOwnerEvent);
                 }
                 FocusEvent newFocusOwnerEvent =
                     new FocusEvent(descendant, FocusEvent.FOCUS_GAINED,
                                    temporary, currentFocusOwner, cause);
                 // Fix 5028014. Rolled out.
                 // SunToolkit.postPriorityEvent(newFocusOwnerEvent);
-                SunToolkit.postEvent(descendant.appContext, newFocusOwnerEvent);
+                SunToolkit.postEvent(newFocusOwnerEvent);
 
                 if (focusLog.isLoggable(PlatformLogger.Level.FINEST))
                     focusLog.finest("2. SNFH_HANDLED for {0}", String.valueOf(descendant));

@@ -40,6 +40,7 @@ class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
   explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
   void post_initialize() override;
+  void initialize_generations() override;
   void initialize_heuristics() override;
   void post_initialize_heuristics() override;
 
@@ -60,27 +61,18 @@ public:
 
 private:
   // ---------- Evacuations and Promotions
-  //
-  // True when regions and objects should be aged during the current cycle
-  ShenandoahSharedFlag  _is_aging_cycle;
   // Age census used for adapting tenuring threshold
   ShenandoahAgeCensus* _age_census;
 
 public:
-  void set_aging_cycle(bool cond) {
-    _is_aging_cycle.set_cond(cond);
-  }
-
-  inline bool is_aging_cycle() const {
-    return _is_aging_cycle.is_set();
-  }
-
   // Return the age census object for young gen
   ShenandoahAgeCensus* age_census() const {
     return _age_census;
   }
 
   inline bool is_tenurable(const ShenandoahHeapRegion* r) const;
+
+  void start_idle_span() override;
 
   // Ages regions that haven't been used for allocations in the current cycle.
   // Resets ages for regions that have been used for allocations.
@@ -99,9 +91,6 @@ public:
   size_t plab_min_size() const { return _min_plab_size; }
   size_t plab_max_size() const { return _max_plab_size; }
 
-  void retire_plab(PLAB* plab);
-  void retire_plab(PLAB* plab, Thread* thread);
-
   // ---------- Update References
   //
   // In the generational mode, we will use this function for young, mixed, and global collections.
@@ -110,10 +99,6 @@ public:
   void final_update_refs_update_region_states() override;
 
 private:
-  HeapWord* allocate_from_plab(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_from_plab_slow(Thread* thread, size_t size, bool is_promotion);
-  HeapWord* allocate_new_plab(size_t min_size, size_t word_size, size_t* actual_size);
-
   const size_t _min_plab_size;
   const size_t _max_plab_size;
 

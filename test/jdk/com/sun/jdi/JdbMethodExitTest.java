@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -239,6 +239,7 @@ public class JdbMethodExitTest extends JdbTest {
         // trace exit of methods with all the return values
         // (but just check a couple of them)
         jdb.command(JdbCommand.traceMethodExits(true, threadId));
+        execCommand(JdbCommand.trace());
         execCommand(JdbCommand.cont())
                 .shouldContain("instance of JdbMethodExitTestTarg")
                 .shouldContain("return value = 8");
@@ -252,7 +253,7 @@ public class JdbMethodExitTest extends JdbTest {
                 .shouldContain("Method entered:");
         execCommand(JdbCommand.cont())
                 .shouldContain("Method exited: return value = \"traceMethods\"");
-        jdb.command(JdbCommand.stepUp());
+        jdb.command(JdbCommand.next());
 
 
         List<String> reply = new LinkedList<>();

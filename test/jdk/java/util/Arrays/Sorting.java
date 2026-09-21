@@ -23,8 +23,9 @@
 
 /*
  * @test
- * @compile/module=java.base java/util/SortingHelper.java
  * @bug 6880672 6896573 6899694 6976036 7013585 7018258 8003981 8226297
+ * @library /test/lib
+ * @compile/module=java.base java/util/SortingHelper.java
  * @build Sorting
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:DisableIntrinsic=_arraySort,_arrayPartition Sorting -shortrun
  * @run main/othervm -XX:-TieredCompilation -XX:CompileCommand=CompileThresholdScaling,java.util.DualPivotQuicksort::sort,0.0001 Sorting -shortrun
@@ -39,6 +40,8 @@ import java.io.PrintStream;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.SortingHelper;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class Sorting {
 
@@ -70,6 +73,13 @@ public class Sorting {
     private final int[] lengths;
     private Object[] gold;
     private Object[] test;
+
+    @AsValueClass
+    record Point(int x, int y) implements Comparable<Point> {
+        public int compareTo(Point p) {
+            return Integer.compare(x * x + y * y, p.x * p.x + p.y * p.y);
+        }
+    }
 
     public static void main(String[] args) {
         long start = System.currentTimeMillis();
@@ -142,7 +152,26 @@ public class Sorting {
         for (TestRandom random : randoms) {
             testRange(length, random);
             testStability(length, random);
+            testValueClass(length, random);
         }
+    }
+
+    private void testValueClass(int length, TestRandom random) {
+        printTestName("Test value class (Point[])", random, length);
+
+        Point[] points = new Point[length];
+        for (int i = 0; i < length; i++) {
+            points[i] = new Point(random.nextInt(10) - 5, random.nextInt(10) - 5);
+        }
+
+        sortingHelper.sort(points);
+        checkSorted(points);
+
+        Comparator<Point> byXThenY = Comparator.comparingInt(Point::x).thenComparingInt(Point::y);
+        sortingHelper.sort(points, byXThenY);
+        checkSorted(points, byXThenY);
+
+        out.println();
     }
 
     private void testEmptyArray() {
@@ -342,6 +371,22 @@ public class Sorting {
             if (a[i].getKey() > a[i + 1].getKey()) {
                 fail("Array is not sorted at " + i + "-th position: " +
                     a[i].getKey() + " and " + a[i + 1].getKey());
+            }
+        }
+    }
+
+    private void checkSorted(Point[] a) {
+        for (int i = 0; i < a.length - 1; i++) {
+            if (a[i].compareTo(a[i + 1]) > 0) {
+                fail("Point array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
+            }
+        }
+    }
+
+    private void checkSorted(Point[] a, Comparator<Point> c) {
+        for (int i = 0; i < a.length - 1; i++) {
+            if (c.compare(a[i], a[i + 1]) > 0) {
+                fail("Point array is not sorted at " + i + "-th position: " + a[i] + " and " + a[i + 1]);
             }
         }
     }

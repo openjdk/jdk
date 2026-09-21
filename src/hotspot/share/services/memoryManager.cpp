@@ -163,8 +163,8 @@ GCStatInfo::GCStatInfo(int num_pools) {
 }
 
 GCStatInfo::~GCStatInfo() {
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _before_gc_usage_array);
-  FREE_C_HEAP_ARRAY(MemoryUsage*, _after_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_before_gc_usage_array);
+  FREE_C_HEAP_ARRAY(_after_gc_usage_array);
 }
 
 void GCStatInfo::set_gc_usage(int pool_index, MemoryUsage usage, bool before_gc) {

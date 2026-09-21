@@ -137,7 +137,7 @@ public:
   }
 
   ~Task() {
-    FREE_C_HEAP_ARRAY(Tickspan, _worker_times);
+    FREE_C_HEAP_ARRAY(_worker_times);
   }
 
   virtual void work(uint worker_id) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,26 +21,22 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8215510
  * @compile NameValidationTest.java
- * @run testng NameValidationTest
+ * @run junit NameValidationTest
  * @summary unit tests for verifying member names
  */
 
 import java.lang.constant.*;
-import java.lang.invoke.*;
-
-import org.testng.annotations.Test;
 
 import static java.lang.constant.DirectMethodHandleDesc.*;
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.constant.DirectMethodHandleDesc.Kind.VIRTUAL;
 
-import static org.testng.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import org.junit.jupiter.api.Test;
 
-@Test
 public class NameValidationTest {
 
     private static final String[] badMemberNames = new String[] {"xx.xx", "zz;zz", "[l", "aa/aa", "<cinit>"};
@@ -49,26 +45,17 @@ public class NameValidationTest {
     private static final String[] badClassNames = new String[] {"zz;zz", "[l", "aa/aa", ".", "a..b"};
     private static final String[] goodClassNames = new String[] {"3", "~", "$", "qq", "a.a"};
 
+    @Test
     public void testMemberNames() {
         DirectMethodHandleDesc mh = MethodHandleDesc.of(Kind.VIRTUAL, CD_String, "isEmpty", "()Z");
         for (String badName : badMemberNames) {
-            try {
-                memberNamesHelper(badName, mh, CD_int, null);
-                fail("Expected failure for name " + badName);
-            } catch (IllegalArgumentException iae) {
-                // expected
-            }
-            try {
-                memberNamesHelper(badName, mh, CD_int, new ConstantDesc[0]);
-                fail("Expected failure for name " + badName);
-            } catch (IllegalArgumentException iae) {
-                // expected
-            }
+            assertThrows(IllegalArgumentException.class, () -> memberNamesHelper(badName, mh, CD_int, null), badName);
+            assertThrows(IllegalArgumentException.class, () -> memberNamesHelper(badName, mh, CD_int, new ConstantDesc[0]), badName);
         }
 
-        for (String badName : goodMemberNames) {
-            memberNamesHelper(badName, mh, CD_int, null);
-            memberNamesHelper(badName, mh, CD_int, new ConstantDesc[0]);
+        for (String goodName : goodMemberNames) {
+            memberNamesHelper(goodName, mh, CD_int, null);
+            memberNamesHelper(goodName, mh, CD_int, new ConstantDesc[0]);
         }
     }
 
@@ -83,14 +70,10 @@ public class NameValidationTest {
         }
     }
 
+    @Test
     public void testClassNames() {
         for (String badName : badClassNames) {
-            try {
-                ClassDesc.of(badName);
-                fail("Expected failure for name " + badName);
-            } catch (IllegalArgumentException iae) {
-                // expected
-            }
+            assertThrows(IllegalArgumentException.class, () -> ClassDesc.of(badName), badName);
         }
 
         for (String goodName : goodClassNames) {

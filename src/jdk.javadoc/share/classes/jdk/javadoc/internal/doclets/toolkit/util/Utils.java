@@ -1618,7 +1618,7 @@ public class Utils {
         CompilationUnitTree cu = path.getCompilationUnit();
         LineMap lineMap = cu.getLineMap();
         DocSourcePositions spos = docTrees.getSourcePositions();
-        long pos = spos.getStartPosition(cu, path.getLeaf());
+        long pos = spos.getStartPosition(path.getLeaf());
         return lineMap.getLineNumber(pos);
     }
 
@@ -2525,7 +2525,7 @@ public class Utils {
                     usedInDeclaration.addAll(types2Classes(tpe.getBounds()));
                 }
                 usedInDeclaration.addAll(types2Classes(List.of(te.getSuperclass())));
-                usedInDeclaration.addAll(types2Classes(te.getPermittedSubclasses()));
+                // Intentionally allow preview permitted subclasses
                 usedInDeclaration.addAll(types2Classes(te.getRecordComponents().stream().map(Element::asType).toList())); //TODO: annotations on record components???
             }
             case CONSTRUCTOR, METHOD -> {

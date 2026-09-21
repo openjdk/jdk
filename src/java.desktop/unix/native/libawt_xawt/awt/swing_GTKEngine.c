@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -400,5 +400,5 @@ Java_com_sun_java_swing_plaf_gtk_GTKLookAndFeel_applyThemeIfNeeded(JNIEnv *env, 
     const gboolean result = gtk->apply_theme_if_needed();
     gtk->gdk_threads_leave();
 
-    return result;
+    return result ? JNI_TRUE : JNI_FALSE;
 }

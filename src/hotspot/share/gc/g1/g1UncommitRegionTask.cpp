@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ G1UncommitRegionTask::G1UncommitRegionTask() :
     G1ServiceTask("G1 Uncommit Region Task"),
     _active(false),
     _summary_duration(),
-    _summary_region_count(0) { }
+    _summary_num_regions(0) { }
 
 void G1UncommitRegionTask::initialize() {
   assert(_instance == nullptr, "Already initialized");
@@ -58,9 +58,9 @@ void G1UncommitRegionTask::enqueue() {
 
   G1UncommitRegionTask* uncommit_task = instance();
   if (!uncommit_task->is_active()) {
-    // Change state to active and schedule using UncommitInitialDelayMs.
+    // Change state to active and schedule.
     uncommit_task->set_active(true);
-    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, UncommitInitialDelayMs);
+    G1CollectedHeap::heap()->service_thread()->schedule_task(uncommit_task, G1UncommitInitialDelay);
   }
 }
 
@@ -77,28 +77,28 @@ void G1UncommitRegionTask::set_active(bool state) {
   _active = state;
 }
 
-void G1UncommitRegionTask::report_execution(Tickspan time, uint regions) {
-  _summary_region_count += regions;
-  _summary_duration += time;
+void G1UncommitRegionTask::report_execution(Tickspan uncommit_time, uint num_uncommitted_regions) {
+  _summary_num_regions += num_uncommitted_regions;
+  _summary_duration += uncommit_time;
 
   log_trace(gc, heap)("Concurrent Uncommit: %zu%s, %u regions, %1.3fms",
-                      byte_size_in_proper_unit(regions * G1HeapRegion::GrainBytes),
-                      proper_unit_for_byte_size(regions * G1HeapRegion::GrainBytes),
-                      regions,
-                      time.seconds() * 1000);
+                      byte_size_in_proper_unit(num_uncommitted_regions * G1HeapRegion::GrainBytes),
+                      proper_unit_for_byte_size(num_uncommitted_regions * G1HeapRegion::GrainBytes),
+                      num_uncommitted_regions,
+                      uncommit_time.seconds() * 1000);
 }
 
 void G1UncommitRegionTask::report_summary() {
   log_debug(gc, heap)("Concurrent Uncommit Summary: %zu%s, %u regions, %1.3fms",
-                      byte_size_in_proper_unit(_summary_region_count * G1HeapRegion::GrainBytes),
-                      proper_unit_for_byte_size(_summary_region_count * G1HeapRegion::GrainBytes),
-                      _summary_region_count,
+                      byte_size_in_proper_unit(_summary_num_regions * G1HeapRegion::GrainBytes),
+                      proper_unit_for_byte_size(_summary_num_regions * G1HeapRegion::GrainBytes),
+                      _summary_num_regions,
                       _summary_duration.seconds() * 1000);
 }
 
 void G1UncommitRegionTask::clear_summary() {
   _summary_duration = Tickspan();
-  _summary_region_count = 0;
+  _summary_num_regions = 0;
 }
 
 void G1UncommitRegionTask::execute() {
@@ -106,18 +106,18 @@ void G1UncommitRegionTask::execute() {
 
   // Translate the size limit into a number of regions. This cannot be a
   // compile time constant because G1HeapRegionSize is set ergonomically.
-  static const uint region_limit = (uint) (UncommitSizeLimit / G1HeapRegionSize);
+  static const uint max_num_regions_to_uncommit = (uint)(UncommitSizeLimit / G1HeapRegionSize);
 
   // Prevent from running during a GC pause.
   SuspendibleThreadSetJoiner sts;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   Ticks start = Ticks::now();
-  uint uncommit_count = g1h->uncommit_regions(region_limit);
+  uint num_uncommitted_regions = g1h->uncommit_regions(max_num_regions_to_uncommit);
   Tickspan uncommit_time = (Ticks::now() - start);
 
-  if (uncommit_count > 0) {
-    report_execution(uncommit_time, uncommit_count);
+  if (num_uncommitted_regions > 0) {
+    report_execution(uncommit_time, num_uncommitted_regions);
   }
 
   // Reschedule if there are more regions to uncommit, otherwise

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,7 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
-
-import java.io.IOException;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.CharacterData;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -38,10 +30,17 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
+import static org.w3c.dom.ptests.DOMTestUtil.createNewDocument;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs /javax/xml/jaxp/functional
- * @run testng/othervm org.w3c.dom.ptests.TextTest
+ * @run junit/othervm org.w3c.dom.ptests.TextTest
  * @summary Test for Text implementation returned by Document.createTextNode(String)
  */
 public class TextTest extends AbstractCharacterDataTest {
@@ -60,8 +59,7 @@ public class TextTest extends AbstractCharacterDataTest {
 
         textNode.splitText(0);
         int increased = node.getChildNodes().getLength() - rawChildNum;
-        assertEquals(increased, 1);
-
+        assertEquals(1, increased);
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,11 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.html.Content;
 import jdk.javadoc.internal.html.ContentBuilder;
+import jdk.javadoc.internal.html.HtmlAttr;
+import jdk.javadoc.internal.html.HtmlId;
+import jdk.javadoc.internal.html.HtmlTag;
 import jdk.javadoc.internal.html.HtmlTree;
+import jdk.javadoc.internal.html.Script;
 import jdk.javadoc.internal.html.Text;
 
 import static java.util.stream.Collectors.groupingBy;
@@ -108,6 +112,24 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                         HtmlTree.HEADING(Headings.PAGE_TITLE_HEADING,
                                 contents.getContent("doclet.External_Specifications"))))
                 .addMainContent(mainContent)
+                .addMainContent(new Script("""
+                        let select = document.getElementById('specs-by-domain');
+                        select.addEventListener("change", selectHost);
+                        addEventListener("pageshow", selectHost);
+                        function selectHost() {
+                            const selectedClass = select.value ? "external-specs-tab" + select.value : "external-specs";
+                            let tabPanel = document.getElementById("external-specs.tabpanel");
+                            let count = 0;
+                            tabPanel.querySelectorAll("div.external-specs").forEach(function(elem) {
+                                elem.style.display = elem.classList.contains(selectedClass) ? "" : "none";
+                                if (elem.style.display === "") {
+                                    let isEvenRow = count++ % 4 < 2;
+                                    toggleStyle(elem.classList, isEvenRow, evenRowColor, oddRowColor);
+                                }
+                            });
+                        }
+                        selectHost();
+                        """).asContent())
                 .setFooter(getFooter()));
         printHtmlDocument(null, "external specifications", body);
 
@@ -180,7 +202,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         boolean noHost = false;
         for (var searchIndexItems : searchIndexMap.values()) {
             try {
-                URI uri = getSpecURI(searchIndexItems.get(0));
+                URI uri = getSpecURI(searchIndexItems.getFirst());
                 String host = uri.getHost();
                 if (host != null) {
                     hostNamesSet.add(host);
@@ -191,14 +213,19 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                 // ignore
             }
         }
-        var hostNamesList = new ArrayList<>(hostNamesSet);
 
         var table = new Table<URI>(HtmlStyles.summaryTable)
                 .setCaption(contents.externalSpecifications)
                 .setHeader(new TableHeader(contents.specificationLabel, contents.referencedIn))
                 .setColumnStyles(HtmlStyles.colFirst, HtmlStyles.colLast)
-                .setId(HtmlIds.EXTERNAL_SPECS);
+                .setId(HtmlIds.EXTERNAL_SPECS)
+                .setDefaultTab(contents.externalSpecifications)
+                .setRenderTabs(false);
+
+        var hostNamesList = new ArrayList<>(hostNamesSet);
+        Content selector = Text.EMPTY;
         if ((hostNamesList.size() + (noHost ? 1 : 0)) > 1) {
+            selector = createHostSelect(hostNamesList, noHost);
             for (var host : hostNamesList) {
                 table.addTab(Text.of(host), u -> host.equals(u.getHost()));
             }
@@ -207,10 +234,9 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                         u -> u.getHost() == null);
             }
         }
-        table.setDefaultTab(Text.of(resources.getText("doclet.External_Specifications.All_Specifications")));
 
         for (List<IndexItem> searchIndexItems : searchIndexMap.values()) {
-            IndexItem ii = searchIndexItems.get(0);
+            IndexItem ii = searchIndexItems.getFirst();
             Content specName = createSpecLink(ii);
             Content referencesList = HtmlTree.UL(HtmlStyles.refList, searchIndexItems,
                     item -> HtmlTree.LI(createLink(item)));
@@ -227,12 +253,36 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
                 table.addRow(specName, references);
             }
         }
+        content.add(selector);
         content.add(table);
     }
 
     private Map<String, List<IndexItem>> groupExternalSpecs() {
         return configuration.indexBuilder.getItems(DocTree.Kind.SPEC).stream()
                 .collect(groupingBy(IndexItem::getLabel, () -> new TreeMap<>(getTitleComparator()), toList()));
+    }
+
+    private Content createHostSelect(List<String> hosts, boolean hasLocal) {
+        var index = 1;
+        var id = HtmlId.of("specs-by-domain");
+        var specsByHost = resources.getText("doclet.External_Specifications.by-host");
+        var select = HtmlTree.of(HtmlTag.SELECT)
+                .setId(id)
+                .add(HtmlTree.of(HtmlTag.OPTION)
+                        .put(HtmlAttr.VALUE, "")
+                        .add(Text.of(resources.getText("doclet.External_Specifications.all-hosts"))));
+
+        for (var host : hosts) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, Integer.toString(index++))
+                    .add(Text.of(host)));
+        }
+        if (hasLocal) {
+            select.add(HtmlTree.of(HtmlTag.OPTION)
+                    .put(HtmlAttr.VALUE, Integer.toString(index))
+                    .add(Text.of("Local")));
+        }
+        return new ContentBuilder(HtmlTree.LABEL(id.name(), Text.of(specsByHost)), Text.of(" "), select);
     }
 
     Comparator<String> getTitleComparator() {

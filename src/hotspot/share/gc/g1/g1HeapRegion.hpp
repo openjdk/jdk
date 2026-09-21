@@ -41,7 +41,7 @@ class G1CardSet;
 class G1CardSetConfiguration;
 class G1CollectedHeap;
 class G1CMBitMap;
-class G1CSetCandidateGroup;
+class G1CardSetGroup;
 class G1Predictions;
 class G1HeapRegionRemSet;
 class G1HeapRegionSetBase;
@@ -518,8 +518,8 @@ public:
   void install_surv_rate_group(G1SurvRateGroup* surv_rate_group);
   void uninstall_surv_rate_group();
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group);
-  void uninstall_cset_group();
+  void install_card_set_group(G1CardSetGroup* card_set_group);
+  void uninstall_card_set_group();
 
   void record_surv_words_in_group(size_t words_survived);
 
@@ -567,41 +567,15 @@ public:
 // G1HeapRegionClosure is used for iterating over regions.
 // Terminates the iteration when the "do_heap_region" method returns "true".
 class G1HeapRegionClosure : public StackObj {
-  friend class G1HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
 public:
-  G1HeapRegionClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region(G1HeapRegion* r) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
 class G1HeapRegionIndexClosure : public StackObj {
-  friend class G1HeapRegionManager;
-  friend class G1CollectionSet;
-  friend class G1CollectionSetCandidates;
-
-  bool _is_complete;
-  void set_incomplete() { _is_complete = false; }
-
 public:
-  G1HeapRegionIndexClosure(): _is_complete(true) {}
-
   // Typically called on each region until it returns true.
   virtual bool do_heap_region_index(uint region_index) = 0;
-
-  // True after iteration if the closure was applied to all heap regions
-  // and returned "false" in all cases.
-  bool is_complete() { return _is_complete; }
 };
 
 #endif // SHARE_GC_G1_G1HEAPREGION_HPP

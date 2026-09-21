@@ -45,7 +45,7 @@ ProcSmapsParser::ProcSmapsParser(FILE* f) :
 }
 
 ProcSmapsParser::~ProcSmapsParser() {
-  FREE_C_HEAP_ARRAY(char, _line);
+  FREE_C_HEAP_ARRAY(_line);
 }
 
 bool ProcSmapsParser::read_line() {

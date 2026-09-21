@@ -38,26 +38,30 @@ class ContextPathMatcherStringPrefixTest extends ContextPathMatcherPathPrefixTes
 
     @Test
     @Override
-    void testContextPathAtRoot() throws Exception {
-        try (var infra = new Infra("/")) {
-            infra.expect(200, "/foo", "/foo/", "/foo/bar", "/foobar");
-        }
-    }
-
-    @Test
-    @Override
     void testContextPathAtSubDir() throws Exception {
+        // Repeating all cases with both known (GET) and unknown (DOH) request methods to stress both paths
         try (var infra = new Infra("/foo")) {
-            infra.expect(200, "/foo", "/foo/", "/foo/bar", "/foobar");
-        }
-    }
-
-    @Test
-    @Override
-    void testContextPathAtSubDirWithTrailingSlash() throws Exception {
-        try (var infra = new Infra("/foo/")) {
-            infra.expect(200, "/foo/", "/foo/bar");
-            infra.expect(404, "/foo", "/foobar");
+            // 200
+            infra.expect(200, "GET /foo");
+            infra.expect(200, "GET /foo/");
+            infra.expect(200, "GET /foo/bar");
+            infra.expect(200, "GET /foobar");   // Differs from path prefix matching!
+            infra.expect(200, "DOH /foo");
+            infra.expect(200, "DOH /foo/");
+            infra.expect(200, "DOH /foo/bar");
+            infra.expect(200, "DOH /foobar");   // Differs from path prefix matching!
+            // 404
+            infra.expect(404, "GET /");
+            infra.expect(404, "GET foo");
+            infra.expect(404, "GET *");
+            infra.expect(404, "GET ");
+            infra.expect(404, "DOH /");
+            infra.expect(404, "DOH foo");
+            infra.expect(404, "DOH *");
+            infra.expect(404, "DOH ");
+            // 400
+            infra.expect(400, "GET");
+            infra.expect(400, "DOH");
         }
     }
 

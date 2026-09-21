@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,19 @@
  */
 package org.xml.sax.ptests;
 
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
-
-import java.io.FileInputStream;
-
-import javax.xml.parsers.SAXParserFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.xml.sax.HandlerBase;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLReaderAdapter;
+
+import javax.xml.parsers.SAXParserFactory;
+import java.io.FileInputStream;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.xml.sax.ptests.SAXTestConst.XML_DIR;
 
 /**
  * Class containing the test cases for XMLReaderAdapter API
@@ -43,7 +42,7 @@ import org.xml.sax.helpers.XMLReaderAdapter;
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.xml.sax.ptests.XMLReaderAdapterTest
+ * @run junit/othervm org.xml.sax.ptests.XMLReaderAdapterTest
  */
 public class XMLReaderAdapterTest {
     /**
@@ -64,21 +63,17 @@ public class XMLReaderAdapterTest {
 
     /**
      * To test the constructor that uses XMLReader.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void constructor02() throws Exception {
         XMLReader xmlReader = SAXParserFactory.newInstance().newSAXParser().getXMLReader();
-        assertNotNull(new XMLReaderAdapter(xmlReader));
+        new XMLReaderAdapter(xmlReader);
     }
 
     /**
      * To test the parse method. The specification says that this method
      * will throw an exception if the embedded XMLReader does not support
      * the http://xml.org/sax/features/namespace-prefixes property.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void nsfeature01() throws Exception {
@@ -93,8 +88,6 @@ public class XMLReaderAdapterTest {
      * To test the parse method. The specification says that this method
      * will throw an exception if the embedded XMLReader does not support
      * the http://xml.org/sax/features/namespace-prefixes property.
-     *
-     * @throws Exception If any errors occur.
      */
     @Test
     public void parse01() throws Exception {

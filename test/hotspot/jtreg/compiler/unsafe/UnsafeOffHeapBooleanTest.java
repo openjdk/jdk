@@ -42,7 +42,7 @@ public class UnsafeOffHeapBooleanTest {
     public static void test() {
         // Write two bytes to the off-heap memory location, both
         // bytes correspond to the boolean value 'true'.
-        UNSAFE.putShort(null, offHeapMemory, (short)0x0204);
+        UNSAFE.putShort(null, offHeapMemory, (short)0x03FF);
 
         // Read two bytes from the storage allocated above (as booleans).
         bool0 = UNSAFE.getBoolean(null, offHeapMemory + 0);

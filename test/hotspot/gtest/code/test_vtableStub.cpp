@@ -32,24 +32,24 @@ TEST_VM(code, vtableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
 
-  VtableStubs::find_vtable_stub(0); // min vtable index
+  VtableStubs::find_vtable_stub(0, false); // min vtable index
   for (int i = 0; i < 15; i++) {
-    VtableStubs::find_vtable_stub((1 << i) - 1);
-    VtableStubs::find_vtable_stub((1 << i));
+    VtableStubs::find_vtable_stub((1 << i) - 1, false);
+    VtableStubs::find_vtable_stub((1 << i), false);
   }
-  VtableStubs::find_vtable_stub((1 << 15) - 1); // max vtable index
+  VtableStubs::find_vtable_stub((1 << 15) - 1, false); // max vtable index
 }
 
 TEST_VM(code, itableStubs) {
   // Should be in VM to use locks
   ThreadInVMfromNative ThreadInVMfromNative(JavaThread::current());
 
-  VtableStubs::find_itable_stub(0); // min itable index
+  VtableStubs::find_itable_stub(0, false); // min itable index
   for (int i = 0; i < 15; i++) {
-    VtableStubs::find_itable_stub((1 << i) - 1);
-    VtableStubs::find_itable_stub((1 << i));
+    VtableStubs::find_itable_stub((1 << i) - 1, false);
+    VtableStubs::find_itable_stub((1 << i), false);
   }
-  VtableStubs::find_itable_stub((1 << 15) - 1); // max itable index
+  VtableStubs::find_itable_stub((1 << 15) - 1, false); // max itable index
 }
 
 #endif

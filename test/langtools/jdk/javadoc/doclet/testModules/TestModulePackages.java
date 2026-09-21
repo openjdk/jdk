@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8178070 8196201 8184205 8246429 8198705
+ * @bug 8178070 8196201 8184205 8246429 8198705 8373526
  * @summary Test packages table in module summary pages
  * @library /tools/lib ../../lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -152,31 +152,31 @@ public class TestModulePackages extends JavadocTester {
         checkOutput("m/p/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">m</a></li>
-                    <li><a href="package-summary.html" class="current-selection">p</a></li>
+                    <li><a href="../module-summary.html" title="Module m">m</a></li>
+                    <li><a href="package-summary.html" title="Package p" class="current-selection">p</a></li>
                     </ol>
                     """);
         checkOutput("o/p/package-summary.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">o</a></li>
-                    <li><a href="package-summary.html" class="current-selection">p</a></li>
+                    <li><a href="../module-summary.html" title="Module o">o</a></li>
+                    <li><a href="package-summary.html" title="Package p" class="current-selection">p</a></li>
                     </ol>
                     """);
         checkOutput("m/p/C.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">m</a></li>
-                    <li><a href="package-summary.html">p</a></li>
-                    <li><a href="C.html" class="current-selection">C</a></li>
+                    <li><a href="../module-summary.html" title="Module m">m</a></li>
+                    <li><a href="package-summary.html" title="Package p">p</a></li>
+                    <li><a href="C.html" title="Class C" class="current-selection">C</a></li>
                     </ol>
                     """);
         checkOutput("o/p/C.html", true,
                 """
                     <ol class="sub-nav-list">
-                    <li><a href="../module-summary.html">o</a></li>
-                    <li><a href="package-summary.html">p</a></li>
-                    <li><a href="C.html" class="current-selection">C</a></li>
+                    <li><a href="../module-summary.html" title="Module o">o</a></li>
+                    <li><a href="package-summary.html" title="Package p">p</a></li>
+                    <li><a href="C.html" title="Class C" class="current-selection">C</a></li>
                     </ol>
                     """);
         checkOutput("type-search-index.js", true,

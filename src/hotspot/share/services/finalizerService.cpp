@@ -93,7 +93,7 @@ FinalizerEntry::FinalizerEntry(const InstanceKlass* ik) :
     _total_finalizers_run(0) {}
 
 FinalizerEntry::~FinalizerEntry() {
-  FREE_C_HEAP_ARRAY(char, _codesource);
+  FREE_C_HEAP_ARRAY(_codesource);
 }
 
 const InstanceKlass* FinalizerEntry::klass() const {
@@ -299,7 +299,7 @@ static FinalizerEntry* get_entry(oop finalizee, Thread* thread) {
 
 static void log_registered(oop finalizee, Thread* thread) {
   ResourceMark rm(thread);
-  const intptr_t identity_hash = ObjectSynchronizer::FastHashCode(thread, finalizee);
+  const intptr_t identity_hash = finalizee->identity_hash(thread);
   log_info(finalizer)("Registered object (" INTPTR_FORMAT ") of class %s as finalizable", identity_hash, finalizee->klass()->external_name());
 }
 
@@ -314,7 +314,7 @@ void FinalizerService::on_register(oop finalizee, Thread* thread) {
 
 static void log_completed(oop finalizee, Thread* thread) {
   ResourceMark rm(thread);
-  const intptr_t identity_hash = ObjectSynchronizer::FastHashCode(thread, finalizee);
+  const intptr_t identity_hash = finalizee->identity_hash(thread);
   log_info(finalizer)("Finalizer was run for object (" INTPTR_FORMAT ") of class %s", identity_hash, finalizee->klass()->external_name());
 }
 

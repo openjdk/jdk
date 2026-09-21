@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (C) 2021, 2024, Tencent. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -65,7 +65,7 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
      * including specific handshake messages, and might be best examined
      * after gaining some familiarity with this application.
      */
-    private static final boolean debug = false;
+    private static final boolean debug = Boolean.getBoolean("test.debug");
 
     private static final boolean CLIENT_AUTH
             = Boolean.getBoolean("test.clientAuth");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 TestApp
  *                 TestApp$Foo
+ *                 TestApp$Foo$A
  *                 TestApp$Foo$Bar
  *                 TestApp$Foo$ShouldBeExcluded
  *                 TestApp$Foo$ShouldBeExcludedChild
@@ -43,6 +44,8 @@
  */
 
 import java.io.File;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -165,6 +168,8 @@ class TestApp {
             long start = System.currentTimeMillis();
             while (System.currentTimeMillis() - start < 1000) {
                 lambdaHotSpot();
+                lambdaHotSpot2();
+                invokeHandleHotSpot();
                 s.hotSpot2();
                 b.hotSpot3();
                 Taz.hotSpot4();
@@ -207,12 +212,52 @@ class TestApp {
             }
         }
 
+        interface A {
+            Object get();
+        }
+
+        // Lambdas that refer to excluded classes should not be AOT-resolved
+        static void lambdaHotSpot2() {
+            long start = System.currentTimeMillis();
+            A a = ShouldBeExcluded::new;
+            while (System.currentTimeMillis() - start < 20) {
+                Object obj = (ShouldBeExcluded)a.get();
+            }
+        }
+
+        static void invokeHandleHotSpot() {
+            try {
+                invokeHandleHotSpotImpl();
+            } catch (Throwable t) {
+                throw new RuntimeException("Unexpected", t);
+            }
+        }
+
+        static void invokeHandleHotSpotImpl() throws Throwable {
+            MethodHandle constructorHandle =
+                MethodHandles.lookup().unreflectConstructor(ShouldBeExcluded.class.getConstructor());
+            long start = System.currentTimeMillis();
+            while (System.currentTimeMillis() - start < 20) {
+                // The JVM rewrites this to:
+                // invokehandle  <java/lang/invoke/MethodHandle.invoke()LShouldBeExcluded;>
+                //
+                // The AOT cache must not contain a java.lang.invoke.MethodType that refers to the
+                // ShouldBeExcluded class.
+                ShouldBeExcluded o = (ShouldBeExcluded)constructorHandle.invoke();
+                if (o.getClass() != ShouldBeExcluded.class) {
+                    throw new RuntimeException("Unexpected object: " + o);
+                }
+            }
+        }
+
         static void doit(Runnable r) {
             r.run();
         }
 
         // All subclasses of jdk.jfr.Event are excluded from the CDS archive.
         static class ShouldBeExcluded extends jdk.jfr.Event {
+            public ShouldBeExcluded() {}
+
             int f = (int)(System.currentTimeMillis()) + 123;
             int m() {
                 return f + 456;
@@ -275,4 +320,3 @@ class TestApp {
         }
     }
 }
-

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @library /test/lib
  * @build jdk.test.lib.net.SimpleSSLContext
  * @build ShortResponseBody ShortResponseBodyPost
- * @run testng/othervm
+ * @run junit/othervm
  *       -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *       -Djdk.httpclient.enableAllMethodRetry
  *       -Djdk.internal.httpclient.debug=true

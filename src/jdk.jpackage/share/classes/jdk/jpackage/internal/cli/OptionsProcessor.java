@@ -62,8 +62,9 @@ import jdk.jpackage.internal.util.Result;
  */
 final class OptionsProcessor {
 
-    OptionsProcessor(OptionsBuilder optionsBuilder, CliBundlingEnvironment bundlingEnv) {
+    OptionsProcessor(OptionsBuilder optionsBuilder, OperatingSystem os, CliBundlingEnvironment bundlingEnv) {
         this.optionsBuilder = Objects.requireNonNull(optionsBuilder);
+        this.os = Objects.requireNonNull(os);
         this.bundlingEnv = Objects.requireNonNull(bundlingEnv);
     }
 
@@ -88,7 +89,7 @@ final class OptionsProcessor {
         final var untypedOptions = optionsBuilder.create();
 
         // Create command line structure analyzer.
-        final var analyzerResult = Result.of(() -> new OptionsAnalyzer(untypedOptions, bundlingEnv));
+        final var analyzerResult = Result.of(() -> new OptionsAnalyzer(untypedOptions, os, bundlingEnv));
         if (analyzerResult.hasErrors()) {
             // Failed to derive the bundling operation from the command line.
             allErrors.addAll(analyzerResult.mapErrors().errors());
@@ -419,6 +420,7 @@ final class OptionsProcessor {
 
 
     private final JOptSimpleOptionsBuilder.OptionsBuilder optionsBuilder;
+    private final OperatingSystem os;
     private final CliBundlingEnvironment bundlingEnv;
 
     private static final OptionValue<List<Options>> ADD_LAUNCHER_INTERNAL =

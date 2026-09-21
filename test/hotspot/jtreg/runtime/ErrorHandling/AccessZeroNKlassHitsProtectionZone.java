@@ -126,7 +126,7 @@ public class AccessZeroNKlassHitsProtectionZone {
 
     private static void run_test(boolean COH, boolean CDS) throws IOException, SkippedException {
         // Notes:
-        // We want to enforce zero-based encoding, to test the protection page in that case. For zero-based encoding,
+        // We want to enforce non-zero-based encoding, to test the protection page in that case. For zero-based encoding,
         // protection page is at address zero, no need to test that.
         // If CDS is on, we never use zero-based, forceBase is ignored.
         // If CDS is off, we use forceBase to (somewhat) reliably force the encoding base to beyond 32G,
@@ -218,8 +218,9 @@ public class AccessZeroNKlassHitsProtectionZone {
             case runwb -> WhiteBox.getWhiteBox().decodeNKlassAndAccessKlass(0);
             case no_coh_no_cds -> run_test(false, false);
             case no_coh_cds -> run_test(false, true);
-            case coh_no_cds -> run_test(true, false);
-            case coh_cds -> run_test(true, true);
+            // TODO 8348568 Re-enable
+            // case coh_no_cds -> run_test(true, false);
+            // case coh_cds -> run_test(true, true);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -48,7 +48,6 @@ class RegisterImpl : public AbstractRegisterImpl {
   };
 
   // construction
-  inline friend Register as_Register(int encoding);
   VMReg as_VMReg();
 
   // derived registers, offsets, and addresses
@@ -113,7 +112,6 @@ class ConcreteRegisterImpl : public AbstractRegisterImpl {
   static const int max_fpr;
 };
 
-CONSTANT_REGISTER_DECLARATION(Register, noreg, (-1));
-#define noreg ((Register)(noreg_RegisterEnumValue))
+const Register noreg = as_Register(-1);
 
 #endif // CPU_ZERO_REGISTER_ZERO_HPP

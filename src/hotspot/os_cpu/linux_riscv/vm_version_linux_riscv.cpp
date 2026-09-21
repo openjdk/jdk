@@ -36,40 +36,42 @@
 #include <sys/auxv.h>
 #include <sys/prctl.h>
 
+static constexpr uint64_t feature_bit(int n) { return nth_bit<uint64_t>(n); }
+
 #ifndef HWCAP_ISA_I
-#define HWCAP_ISA_I  nth_bit('I' - 'A')
+#define HWCAP_ISA_I  feature_bit('I' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_M
-#define HWCAP_ISA_M  nth_bit('M' - 'A')
+#define HWCAP_ISA_M  feature_bit('M' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_A
-#define HWCAP_ISA_A  nth_bit('A' - 'A')
+#define HWCAP_ISA_A  feature_bit('A' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_F
-#define HWCAP_ISA_F  nth_bit('F' - 'A')
+#define HWCAP_ISA_F  feature_bit('F' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_D
-#define HWCAP_ISA_D  nth_bit('D' - 'A')
+#define HWCAP_ISA_D  feature_bit('D' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_C
-#define HWCAP_ISA_C  nth_bit('C' - 'A')
+#define HWCAP_ISA_C  feature_bit('C' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_Q
-#define HWCAP_ISA_Q  nth_bit('Q' - 'A')
+#define HWCAP_ISA_Q  feature_bit('Q' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_H
-#define HWCAP_ISA_H  nth_bit('H' - 'A')
+#define HWCAP_ISA_H  feature_bit('H' - 'A')
 #endif
 
 #ifndef HWCAP_ISA_V
-#define HWCAP_ISA_V  nth_bit('V' - 'A')
+#define HWCAP_ISA_V  feature_bit('V' - 'A')
 #endif
 
 #define read_csr(csr)                                           \
@@ -283,10 +285,13 @@ void VM_Version::vendor_features() {
   }
   switch (mvendorid.value()) {
     case RIVOS:
-    rivos_features();
-    break;
+      rivos_features();
+      break;
+    case XUANTIE:
+      xuantie_features();
+      break;
     default:
-    break;
+      break;
   }
 }
 
@@ -305,7 +310,6 @@ void VM_Version::rivos_features() {
 
   ext_Zfh.enable_feature();
 
-  ext_Zicboz.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
@@ -322,4 +326,46 @@ void VM_Version::rivos_features() {
     ext_Zacas.enable_feature();
     ext_Zihintpause.enable_feature();
   }
+}
+
+void VM_Version::xuantie_features() {
+  if (!marchid.enabled()) {
+    return;
+  }
+
+  const uint64_t architecture_id = static_cast<uint64_t>(marchid.value());
+  if (architecture_id != C925_MARCHID &&
+      architecture_id != C930_MARCHID &&
+      architecture_id != C950_MARCHID) {
+    return;
+  }
+
+  ext_v.enable_feature();
+  ext_Zacas.enable_feature();
+  ext_Zabha.enable_feature();
+  ext_Zba.enable_feature();
+  ext_Zbb.enable_feature();
+  ext_Zbc.enable_feature();
+  ext_Zbs.enable_feature();
+  ext_Zcb.enable_feature();
+  ext_Zfa.enable_feature();
+  ext_Zfh.enable_feature();
+  ext_Zfhmin.enable_feature();
+  ext_Zicbom.enable_feature();
+  ext_Zicbop.enable_feature();
+  ext_Zicboz.enable_feature();
+  ext_Zicond.enable_feature();
+  ext_Zicntr.enable_feature();
+  ext_Zicsr.enable_feature();
+  ext_Zic64b.enable_feature();
+  ext_Zifencei.enable_feature();
+  ext_Zihintpause.enable_feature();
+  ext_Zvbb.enable_feature();
+  ext_Zvbc.enable_feature();
+  ext_Zvfh.enable_feature();
+  ext_Zvkn.enable_feature();
+  ext_Zvkg.enable_feature();
+
+  unaligned_scalar.enable_feature(MISALIGNED_SCALAR_FAST);
+  unaligned_vector.enable_feature(MISALIGNED_VECTOR_FAST);
 }

@@ -110,7 +110,7 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   print_and_check_table(table, 0);
 
-  FREE_C_HEAP_ARRAY(NMTPreInitAllocation*, allocations);
+  FREE_C_HEAP_ARRAY(allocations);
 }
 
 #ifdef ASSERT

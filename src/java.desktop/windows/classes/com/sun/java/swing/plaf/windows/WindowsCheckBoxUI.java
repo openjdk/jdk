@@ -35,7 +35,7 @@ import javax.swing.plaf.ComponentUI;
  *
  * @author Jeff Dinkins
  */
-public final class WindowsCheckBoxUI extends WindowsRadioButtonUI
+public class WindowsCheckBoxUI extends WindowsRadioButtonUI
 {
     // NOTE: WindowsCheckBoxUI inherits from WindowsRadioButtonUI instead
     // of BasicCheckBoxUI because we want to pick up all the

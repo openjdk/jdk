@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/threads.hpp"
 #include "testutils.hpp"
+#include "threadHelper.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
@@ -120,6 +121,96 @@ TEST_VM(os, page_size_for_region_unaligned) {
     size_t small_page = os::page_sizes().smallest();
     size_t actual = os::page_size_for_region_unaligned(small_page - 17, 1);
     ASSERT_EQ(small_page, actual);
+  }
+}
+
+TEST_VM(os, test_print_markword) {
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    JavaThread* THREAD = JavaThread::current();
+    ThreadInVMfromNative invm(THREAD);
+    markWord m0 = vmClasses::Byte_klass()->prototype_header();
+    const struct { markWord mw; const char* expected; } patterns[] = {
+      { markWord(0), "is null"},
+      { m0, "mark(is_lock_neutral no_hash age=0) java.lang.Byte" },
+      { m0.set_age(2), "age=2" },
+      { m0.copy_set_hash(0x12345), "is an unknown value" }
+    };
+    constexpr int nmark = sizeof(patterns) / sizeof(patterns[0]);
+    for (int i = 0; i < nmark; i++) {
+      stringStream st;
+      MutexLocker lock(ClassLoaderDataGraph_lock);
+      os::print_location(&st, (intptr_t) patterns[i].mw.to_pointer(), true);
+      ASSERT_THAT(st.base(), testing::HasSubstr(patterns[i].expected));
+    }
+  }
+#endif
+}
+
+static void assert_test_pattern(oop& obj, const char* pattern, bool is_present=true) {
+  stringStream st;
+  os::print_location(&st, p2i(obj), true);
+  if (is_present) {
+    ASSERT_THAT(st.base(), testing::HasSubstr(pattern));
+  } else {
+    ASSERT_THAT(st.base(), testing::Not(testing::HasSubstr(pattern)));
+  }
+}
+
+TEST_VM(os, test_print_location) {
+  JavaThread* THREAD = JavaThread::current();
+  ThreadInVMfromNative invm(THREAD);
+
+  oop obj = vmClasses::Byte_klass()->allocate_instance(THREAD);
+
+  {
+    // wizard mode off, so don't print markword
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    assert_test_pattern(obj, "is_lock_neutral no_hash", WizardMode);
+  }
+
+  // WizardMode (not available in release mode) prints details
+#ifndef PRODUCT
+  FlagSetting fs(WizardMode, true);
+  bool using_wizardMode = true;
+#else
+  bool using_wizardMode = false;
+#endif
+
+  HandleMark hm(THREAD);
+  Handle h_obj(THREAD, obj);
+
+  // Thread tries to lock it.
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    ObjectLocker ol(h_obj, THREAD);
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "locked");
+    } else {
+      assert_test_pattern(obj, "locked", false);
+    }
+    assert_test_pattern(obj, "is_lock_neutral", false);
+  }
+
+  // Unlocked again
+  {
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral", false);
+    }
+  }
+
+  // Hash the object then print it.
+  {
+    intx hash = h_obj->identity_hash();
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    if (using_wizardMode) {
+      assert_test_pattern(obj, "is_lock_neutral hash=");
+    } else {
+      assert_test_pattern(obj, "is_lock_neutral hash=", false);
+    }
   }
 }
 
@@ -506,6 +597,7 @@ static inline bool can_reserve_executable_memory(void) {
 #define PRINT_MAPPINGS(s) { tty->print_cr("%s", s); os::print_memory_mappings((char*)p, total_range_len, tty); tty->cr(); }
 //#define PRINT_MAPPINGS
 
+#ifndef _AIX
 // Release a range allocated with reserve_multiple carefully, to not trip mapping
 // asserts on Windows in os::release_memory()
 static void carefully_release_multiple(address start, int num_stripes, size_t stripe_len) {
@@ -515,7 +607,6 @@ static void carefully_release_multiple(address start, int num_stripes, size_t st
   }
 }
 
-#ifndef _AIX // JDK-8257041
 // Reserve an area consisting of multiple mappings
 //  (from multiple calls to os::reserve_memory)
 static address reserve_multiple(int num_stripes, size_t stripe_len) {
@@ -746,7 +837,7 @@ static void test_show_mappings(address start, size_t size) {
 #endif
   // buf[buflen - 1] = '\0';
   // tty->print_raw(buf);
-  FREE_C_HEAP_ARRAY(char, buf);
+  FREE_C_HEAP_ARRAY(buf);
 }
 
 TEST_VM(os, show_mappings_small_range) {
@@ -1062,17 +1153,26 @@ TEST_VM(os, is_first_C_frame) {
 TEST_VM(os, trim_native_heap) {
   EXPECT_TRUE(os::can_trim_native_heap());
   os::size_change_t sc;
-  sc.before = sc.after = (size_t)-1;
-  EXPECT_TRUE(os::trim_native_heap(&sc));
-  tty->print_cr("%zu->%zu", sc.before, sc.after);
-  // Regardless of whether we freed memory, both before and after
-  // should be somewhat believable numbers (RSS).
-  const size_t min = 5 * M;
-  const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
-  ASSERT_LE(min, sc.before);
-  ASSERT_GT(max, sc.before);
-  ASSERT_LE(min, sc.after);
-  ASSERT_GT(max, sc.after);
+  os::Linux::accurate_meminfo_t info1;
+  os::Linux::accurate_meminfo_t info2;
+  bool have_info1 = os::Linux::query_accurate_process_memory_info(&info1);
+  EXPECT_TRUE(os::trim_native_heap(nullptr));
+  bool have_info2 = os::Linux::query_accurate_process_memory_info(&info2);
+
+  if (have_info1 && have_info2) {
+    sc.before = (info1.rss + info1.swap) * K;
+    sc.after = (info2.rss + info2.swap) * K;
+    tty->print_cr("%zu->%zu", sc.before, sc.after);
+
+    // Regardless of whether we freed memory, both before and after
+    // should be somewhat believable numbers (RSS).
+    const size_t min = 5 * M;
+    const size_t max = LP64_ONLY(20 * G) NOT_LP64(3 * G);
+    ASSERT_LE(min, sc.before);
+    ASSERT_GT(max, sc.before);
+    ASSERT_LE(min, sc.after);
+    ASSERT_GT(max, sc.after);
+  }
   // Should also work
   EXPECT_TRUE(os::trim_native_heap());
 }
@@ -1105,7 +1205,7 @@ TEST_VM(os, reserve_at_wish_address_shall_not_replace_mappings_largepages) {
     const size_t lpsz = os::large_page_size();
     char* p1 = os::reserve_memory_aligned(lpsz, lpsz, mtTest);
     ASSERT_NE(p1, nullptr);
-    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, false);
+    char* p2 = os::reserve_memory_special(lpsz, lpsz, lpsz, p1, mtTest, false);
     ASSERT_EQ(p2, nullptr); // should have failed
     os::release_memory(p1, M);
   } else {
@@ -1191,7 +1291,7 @@ TEST_VM(os, map_unmap_memory) {
   ::close(fd);
 
   fd = os::open(path, O_RDONLY, 0666);
-  char* result = os::map_memory(fd, path, 0, nullptr, size, mtTest, true, false);
+  char* result = os::map_memory(fd, path, 0, nullptr, size, true /* read_only */, mtTest, false /* allow_exec */);
   ASSERT_NOT_NULL(result);
   EXPECT_EQ(strcmp(letters, result), 0);
   os::unmap_memory(result, size);
@@ -1200,16 +1300,22 @@ TEST_VM(os, map_unmap_memory) {
 
 TEST_VM(os, map_memory_to_file_aligned) {
   const char* letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-  const size_t size = strlen(letters) + 1;
+  const size_t content_size = strlen(letters) + 1;
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity, 1 * M };
 
   int fd = os::open("map_memory_to_file.txt", O_RDWR | O_CREAT, 0666);
   EXPECT_TRUE(fd > 0);
-  EXPECT_TRUE(os::write(fd, letters, size));
+  ASSERT_TRUE(os::write(fd, letters, content_size));
 
-  char* result = os::map_memory_to_file_aligned(os::vm_allocation_granularity(), os::vm_allocation_granularity(), fd, mtTest);
-  ASSERT_NOT_NULL(result);
-  EXPECT_EQ(strcmp(letters, result), 0);
-  os::unmap_memory(result, os::vm_allocation_granularity());
+  const size_t size = granularity;
+  for (size_t alignment : alignments) {
+    char* result = os::map_memory_to_file_aligned(size, alignment, fd, mtTest);
+    ASSERT_NOT_NULL(result) << "Mapping failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Failed to aligned to " << alignment;
+    EXPECT_EQ(strcmp(letters, result), 0) << "Text mismatch at alignment=" << alignment;
+    os::unmap_memory(result, size);
+  }
   ::close(fd);
 }
 
@@ -1219,4 +1325,37 @@ TEST_VM(os, dll_load_null_error_buf) {
   // This should not crash.
   void* lib = os::dll_load("NoSuchLib", nullptr, 0);
   ASSERT_NULL(lib);
+}
+
+TEST_VM(os, reserve_memory_aligned_basic) {
+  const size_t granularity = os::vm_allocation_granularity();
+  const size_t alignments[] = { granularity, 2 * granularity, 4 * granularity, 16 * granularity };
+
+  for (size_t alignment : alignments) {
+    const size_t size = alignment;
+    char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+    ASSERT_NE(result, (char*)nullptr) << "reserve_memory_aligned failed for alignment=" << alignment;
+    EXPECT_TRUE(is_aligned(result, alignment)) << "Result " << result << " not aligned to " << alignment;
+
+    ASSERT_TRUE(os::commit_memory(result, size, false));
+    memset(result, 0xCD, size);
+    EXPECT_EQ((unsigned char)result[0], 0xCD);
+
+    os::release_memory(result, size);
+  }
+}
+
+TEST_VM(os, reserve_memory_aligned_large) {
+  const size_t alignment = 1 * M;
+  const size_t size = alignment;
+
+  char* result = os::reserve_memory_aligned(size, alignment, mtTest);
+  ASSERT_NE(result, (char*)nullptr);
+  EXPECT_TRUE(is_aligned(result, alignment));
+
+  ASSERT_TRUE(os::commit_memory(result, size, false));
+  memset(result, 0xEF, size);
+  EXPECT_EQ((unsigned char)result[size - 1], 0xEF);
+
+  os::release_memory(result, size);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,14 @@
 
 package jdk.jpackage.test;
 
+import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.text.MessageFormat;
-import static jdk.jpackage.internal.util.function.ExceptionBox.toUnchecked;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.regex.Pattern;
 
 public enum JPackageStringBundle {
 
@@ -42,6 +46,9 @@ public enum JPackageStringBundle {
         } catch (ClassNotFoundException|NoSuchMethodException ex) {
             throw toUnchecked(ex);
         }
+        formatter = (String key, Object[] args) -> {
+            return createFormattedMessage(key, args).value();
+        };
     }
 
     /**
@@ -55,19 +62,26 @@ public enum JPackageStringBundle {
         }
     }
 
-    private String getFormattedString(String key, Object[] args) {
-        var str = getString(key);
-        if (args.length != 0) {
-            return MessageFormat.format(str, args);
-        } else {
-            return str;
-        }
+    public CannedFormattedString cannedFormattedString(String key, Object ... args) {
+        return new CannedFormattedString(formatter, key, List.of(args));
     }
 
-    public CannedFormattedString cannedFormattedString(String key, Object ... args) {
-        return new CannedFormattedString(this::getFormattedString, key, args);
+    public Pattern cannedFormattedStringAsPattern(String key, Function<Object, Pattern> formatArgMapper, Object ... args) {
+        return createFormattedMessage(key, args).toPattern(formatArgMapper);
+    }
+
+    public Pattern cannedFormattedStringAsPattern(String key, Object ... args) {
+        return createFormattedMessage(key, args).toPattern();
+    }
+
+    private CannedMessageFormat createFormattedMessage(String key, Object ... args) {
+        return CannedMessageFormat.create(
+                CannedMessageFormat.defaultInvalidFormatArgumentCountExceptionSupplier(key, args.length),
+                getString(key),
+                args);
     }
 
     private final Class<?> i18nClass;
     private final Method i18nClass_getString;
+    private final BiFunction<String, Object[], String> formatter;
 }

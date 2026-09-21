@@ -51,7 +51,7 @@ void ContiguousSpace::initialize(MemRegion mr,
   set_bottom(bottom);
   set_end(end);
   if (clear_space) {
-    clear(SpaceDecorator::DontMangle);
+    set_top(bottom);
   }
   if (ZapUnusedHeapArea) {
     mangle_unused_area();

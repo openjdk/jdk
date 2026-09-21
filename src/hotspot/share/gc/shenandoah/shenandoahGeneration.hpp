@@ -63,7 +63,7 @@ private:
   // Return available assuming that we can allocate no more than capacity bytes within this generation.
   size_t available(size_t capacity) const;
 
- public:
+public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers);
   ~ShenandoahGeneration();
@@ -83,10 +83,10 @@ private:
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
+  virtual void post_initialize_heuristics();
 
   virtual void post_initialize(ShenandoahHeap* heap);
 
-  virtual size_t bytes_allocated_since_gc_start() const override = 0;
   virtual size_t used() const override = 0;
   virtual size_t used_regions() const = 0;
   virtual size_t used_regions_size() const = 0;
@@ -96,7 +96,6 @@ private:
   virtual size_t max_capacity() const override = 0;
 
   size_t available() const override;
-  size_t available_with_reserve() const;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
@@ -141,10 +140,10 @@ private:
   // Cancel marking (used by Full collect and when cancelling cycle).
   virtual void cancel_marking();
 
-  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
+  virtual bool contains(ShenandoahAffiliation affiliation) const override = 0;
 
   // Return true if this region is affiliated with this generation.
-  virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  virtual bool contains(ShenandoahHeapRegion* region) const override = 0;
 
   // Return true if this object is affiliated with this generation.
   virtual bool contains(oop obj) const = 0;
@@ -173,7 +172,6 @@ private:
 
   // Task queues
   ShenandoahObjToScanQueueSet* task_queues() const { return _task_queues; }
-  virtual void reserve_task_queues(uint workers);
   virtual ShenandoahObjToScanQueueSet* old_gen_task_queues() const;
 
   // Scan remembered set at start of concurrent young-gen marking.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,17 @@
  */
 package org.w3c.dom.ptests;
 
-import static org.testng.Assert.assertEquals;
-import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.ProcessingInstruction;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.w3c.dom.ptests.DOMTestUtil.createDOMWithNS;
 
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.PITest
+ * @run junit/othervm org.w3c.dom.ptests.PITest
  * @summary Test for the methods of Processing Instruction
  */
 public class PITest {
@@ -43,11 +43,11 @@ public class PITest {
     public void test() throws Exception {
         Document document = createDOMWithNS("PITest01.xml");
         ProcessingInstruction pi = document.createProcessingInstruction("PI", "processing");
-        assertEquals(pi.getData(), "processing");
-        assertEquals(pi.getTarget(), "PI");
+        assertEquals("processing", pi.getData());
+        assertEquals("PI", pi.getTarget());
 
         pi.setData("newProcessing");
-        assertEquals(pi.getData(), "newProcessing");
+        assertEquals("newProcessing", pi.getData());
     }
 
 }

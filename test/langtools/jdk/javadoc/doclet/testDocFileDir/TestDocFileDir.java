@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4258405 4973606 8024096
+ * @bug 4258405 4973606 8024096 8347112
  * @summary This test verifies that the doc-file directory does not
  *          get overwritten when the sourcepath is equal to the destination
  *          directory.
@@ -71,14 +71,13 @@ public class TestDocFileDir extends JavadocTester {
             "This doc file did not get trashed.");
     }
 
-    // Exercising -docfilessubdirs and -excludedocfilessubdir
+    // Exercising -excludedocfilessubdir
     @Test
     public void test3() {
         String outdir = "out3";
         setOutputDirectoryCheck(DirectoryCheck.NONE);
         javadoc("-d", outdir,
                 "-sourcepath", testSrc,
-                "-docfilessubdirs",
                 "-excludedocfilessubdir", "subdir-excluded1:subdir-excluded2",
                 "pkg");
         checkExit(Exit.OK);

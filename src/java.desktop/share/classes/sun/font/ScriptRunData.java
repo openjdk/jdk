@@ -38,11 +38,12 @@ public final class ScriptRunData {
     private static final int CHAR_START = 0;
     private static final int CHAR_LIMIT = 0x110000;
 
-    private static int cache = 0;
+    private static volatile int cache = 0;
     public static int getScript(int cp) {
+        int lcache = cache;
         // optimize for runs of characters in the same script
-        if (cp >= data[cache] && cp < data[cache+2]) {
-            return data[cache+1];
+        if (cp >= data[lcache] && cp < data[lcache+2]) {
+            return data[lcache+1];
         }
         if ((cp >= CHAR_START) && (cp < CHAR_LIMIT)) {
             int probe = dataPower;

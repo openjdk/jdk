@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ import sun.swing.MnemonicHandler;
  * @author Mark Davidson
  * @since 1.4
  */
-public final class WindowsRootPaneUI extends BasicRootPaneUI {
+public class WindowsRootPaneUI extends BasicRootPaneUI {
 
     private static final WindowsRootPaneUI windowsRootPaneUI = new WindowsRootPaneUI();
     static final AltProcessor altProcessor = new AltProcessor();

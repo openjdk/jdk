@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,10 @@ class HandshakeClosure : public ThreadClosure, public CHeapObj<mtThread> {
   virtual ~HandshakeClosure()                      {}
   const char* name() const                         { return _name; }
   virtual bool is_async()                          { return false; }
-  virtual bool is_suspend()                        { return false; }
+  virtual bool is_self_suspend()                   { return false; }
+  virtual bool is_suspend_request()                { return false; }
   virtual bool is_async_exception()                { return false; }
+  virtual bool is_enabled(Thread* target)          { return true;  }
   virtual void do_thread(Thread* thread) = 0;
 };
 
@@ -99,7 +101,6 @@ class HandshakeState {
   Monitor _lock;
   // Set to the thread executing the handshake operation.
   Thread* volatile _active_handshaker;
-
   bool claim_handshake();
   bool possibly_can_process_handshake();
   bool can_process_handshake();

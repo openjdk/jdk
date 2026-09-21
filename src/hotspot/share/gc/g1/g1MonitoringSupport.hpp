@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,10 +122,10 @@ class MemoryPool;
 // path as low-overhead as possible.
 
 class G1MonitoringSupport : public CHeapObj<mtGC> {
-  friend class VMStructs;
-  friend class G1YoungGCMonitoringScope;
-  friend class G1FullGCMonitoringScope;
   friend class G1ConcGCMonitoringScope;
+  friend class G1FullGCMonitoringScope;
+  friend class G1YoungGCMonitoringScope;
+  friend class VMStructs;
 
   G1CollectedHeap* _g1h;
 
@@ -246,6 +246,6 @@ public:
 
 class G1ConcGCMonitoringScope : public G1MonitoringScope {
 public:
-  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support);
+  G1ConcGCMonitoringScope(G1MonitoringSupport* monitoring_support, bool affects_memory_pools);
 };
 #endif // SHARE_GC_G1_G1MONITORINGSUPPORT_HPP

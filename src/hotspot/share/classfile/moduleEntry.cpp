@@ -23,7 +23,6 @@
  */
 
 #include "cds/aotClassLocation.hpp"
-#include "cds/aotGrowableArray.inline.hpp"
 #include "cds/archiveBuilder.hpp"
 #include "cds/archiveUtils.hpp"
 #include "cds/cdsConfig.hpp"
@@ -168,7 +167,7 @@ void ModuleEntry::add_read(ModuleEntry* m) {
   } else {
     if (reads() == nullptr) {
       // Lazily create a module's reads list
-      AOTGrowableArray<ModuleEntry*>* new_reads = new (mtModule) AOTGrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
+      GrowableArray<ModuleEntry*>* new_reads = new (mtModule) GrowableArray<ModuleEntry*>(MODULE_READS_SIZE, mtModule);
       set_reads(new_reads);
     }
 
@@ -618,18 +617,7 @@ void ModuleEntryTable::patch_javabase_entries(JavaThread* current, Handle module
   for (int i = 0; i < list_length; i++) {
     Klass* k = list->at(i);
     assert(k->is_klass(), "List should only hold classes");
-#ifndef PRODUCT
-    if (HeapShared::is_a_test_class_in_unnamed_module(k)) {
-      // We allow -XX:ArchiveHeapTestClass to archive additional classes
-      // into the CDS heap, but these must be in the unnamed module.
-      ModuleEntry* unnamed_module = ClassLoaderData::the_null_class_loader_data()->unnamed_module();
-      Handle unnamed_module_handle(current, unnamed_module->module_oop());
-      java_lang_Class::fixup_module_field(k, unnamed_module_handle);
-    } else
-#endif
-    {
-      java_lang_Class::fixup_module_field(k, module_handle);
-    }
+    java_lang_Class::fixup_module_field(k, module_handle);
     k->class_loader_data()->dec_keep_alive_ref_count();
   }
 

@@ -112,7 +112,7 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 // that specific collector in mind, and the documentation above suitably
 // extended and updated.
 void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop new_obj) {
-#if COMPILER2_OR_JVMCI
+#ifdef COMPILER2
   if (!ReduceInitialCardMarks) {
     return;
   }
@@ -124,5 +124,5 @@ void CardTableBarrierSet::on_slowpath_allocation_exit(JavaThread* thread, oop ne
     // Do the card mark
     write_region(mr);
   }
-#endif // COMPILER2_OR_JVMCI
+#endif // COMPILER2
 }

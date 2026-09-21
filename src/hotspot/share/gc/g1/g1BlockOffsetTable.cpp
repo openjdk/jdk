@@ -73,8 +73,8 @@ void G1BlockOffsetTable::set_offset_array(Atomic<uint8_t>* left, Atomic<uint8_t>
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_address(Atomic<uint8_t>* addr, const char* msg) const {
-  Atomic<uint8_t>* start_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift()));
-  Atomic<uint8_t>* end_addr = const_cast<Atomic<uint8_t>*>(_offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift()));
+  Atomic<uint8_t>* start_addr = _offset_base + (uintptr_t(_reserved.start()) >> CardTable::card_shift());
+  Atomic<uint8_t>* end_addr = _offset_base + (uintptr_t(_reserved.end()) >> CardTable::card_shift());
   assert(addr >= start_addr && addr <= end_addr,
          "%s - offset address: " PTR_FORMAT ", start address: " PTR_FORMAT ", end address: " PTR_FORMAT,
          msg, (p2i(addr)), (p2i(start_addr)), (p2i(end_addr)));
@@ -270,8 +270,8 @@ void G1BlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk_end
     Atomic<uint8_t>* value = current_card;
     if (offset_array(prev) != offset_array(value)) {
       assert(offset_array(value) >= offset_array(prev), "monotonic");
-      size_t n_cards_back = BOTConstants::entry_to_cards_back(offset_array(value));
-      assert(start_card == (current_card - n_cards_back), "inv");
+      size_t num_cards_back = BOTConstants::entry_to_cards_back(offset_array(value));
+      assert(start_card == (current_card - num_cards_back), "inv");
     }
   }
 }

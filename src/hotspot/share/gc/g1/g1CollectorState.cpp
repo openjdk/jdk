@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,32 @@
  *
  */
 
-#include "gc/g1/g1CollectorState.hpp"
-#include "gc/g1/g1GCPauseType.hpp"
+#include "gc/g1/g1CollectorState.inline.hpp"
+#include "runtime/safepoint.hpp"
+#include "utilities/debug.hpp"
 
-G1GCPauseType G1CollectorState::young_gc_pause_type(bool concurrent_operation_is_full_mark) const {
-  assert(!in_full_gc(), "must be");
-  if (in_concurrent_start_gc()) {
-    assert(!in_young_gc_before_mixed(), "must be");
-    return concurrent_operation_is_full_mark ? G1GCPauseType::ConcurrentStartMarkGC :
-                                               G1GCPauseType::ConcurrentStartUndoGC;
-  } else if (in_young_gc_before_mixed()) {
-    assert(!in_concurrent_start_gc(), "must be");
-    return G1GCPauseType::LastYoungGC;
-  } else if (in_mixed_phase()) {
-    assert(!in_concurrent_start_gc(), "must be");
-    assert(!in_young_gc_before_mixed(), "must be");
-    return G1GCPauseType::MixedGC;
-  } else {
-    assert(!in_concurrent_start_gc(), "must be");
-    assert(!in_young_gc_before_mixed(), "must be");
-    return G1GCPauseType::YoungGC;
+G1CollectorState::Pause G1CollectorState::gc_pause_type(bool concurrent_operation_is_full_mark) const {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  switch (_phase) {
+    case Phase::YoungNormal: return Pause::Normal;
+    case Phase::YoungConcurrentStart:
+        return concurrent_operation_is_full_mark ? Pause::ConcurrentStartFull :
+                                                   Pause::ConcurrentStartUndo;
+    case Phase::YoungPrepareMixed: return Pause::PrepareMixed;
+    case Phase::Mixed: return Pause::Mixed;
+    case Phase::FullGC: return Pause::Full;
+    default: ShouldNotReachHere();
   }
+}
+
+const char* G1CollectorState::to_string(Pause type) {
+  static const char* pause_strings[] = { "Normal",
+                                         "Concurrent Start", // Do not distinguish between the different
+                                         "Concurrent Start", // Concurrent Start pauses.
+                                         "Prepare Mixed",
+                                         "Cleanup",
+                                         "Remark",
+                                         "Mixed",
+                                         "Full" };
+  return pause_strings[static_cast<uint>(type)];
 }

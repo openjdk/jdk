@@ -663,6 +663,23 @@ public class ForkJoinPoolTest extends JSR166TestCase {
         }
     }
 
+    public void testCallerInterruptedDuringSubmit() throws InterruptedException, ExecutionException {
+        final Thread submitter = Thread.currentThread();
+        final ExecutorService p = new ForkJoinPool(1);
+        try (PoolCleaner cleaner = cleaner(p)) {
+            for (int i = 0; i < 512; ++i) { // Enough repetitions such that any race condition is bound to materialize
+                try {
+                    p.submit(submitter::interrupt).get();
+                    // If we don't get an InterruptedException, then the current thread should be interrupted
+                    assertTrue(Thread.interrupted());
+                } catch (InterruptedException e) {
+                    // If we do get an InterruptedException, then the current thread should not be interrupted
+                    assertTrue(!Thread.interrupted());
+                }
+            }
+        }
+    }
+
     /**
      * get of submit(callable) throws ExecutionException if callable
      * throws exception

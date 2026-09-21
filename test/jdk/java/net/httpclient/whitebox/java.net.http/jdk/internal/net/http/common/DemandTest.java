@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,16 @@
 
 package jdk.internal.net.http.common;
 
-import org.testng.annotations.Test;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
+import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DemandTest {
 
@@ -59,53 +60,61 @@ public class DemandTest {
     public void test03() {
         Demand d = new Demand();
         d.increase(3);
-        assertEquals(d.decreaseAndGet(3), 3);
+        assertEquals(3, d.decreaseAndGet(3));
     }
 
     @Test
     public void test04() {
         Demand d = new Demand();
         d.increase(3);
-        assertEquals(d.decreaseAndGet(5), 3);
+        assertEquals(3, d.decreaseAndGet(5));
     }
 
     @Test
     public void test05() {
         Demand d = new Demand();
         d.increase(7);
-        assertEquals(d.decreaseAndGet(4), 4);
+        assertEquals(4, d.decreaseAndGet(4));
     }
 
     @Test
     public void test06() {
         Demand d = new Demand();
-        assertEquals(d.decreaseAndGet(3), 0);
+        assertEquals(0, d.decreaseAndGet(3));
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test07() {
-        Demand d = new Demand();
-        d.increase(0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Demand d = new Demand();
+            d.increase(0);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test08() {
-        Demand d = new Demand();
-        d.increase(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Demand d = new Demand();
+            d.increase(-1);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test09() {
-        Demand d = new Demand();
-        d.increase(10);
-        d.decreaseAndGet(0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Demand d = new Demand();
+            d.increase(10);
+            d.decreaseAndGet(0);
+        });
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test
     public void test10() {
-        Demand d = new Demand();
-        d.increase(13);
-        d.decreaseAndGet(-3);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Demand d = new Demand();
+            d.increase(13);
+            d.decreaseAndGet(-3);
+        });
     }
 
     @Test
@@ -169,7 +178,7 @@ public class DemandTest {
         assertTrue(d.isFulfilled());
     }
 
-    @Test(invocationCount = 32)
+    @Test
     public void test15() throws InterruptedException {
         int N = Math.max(2, Runtime.getRuntime().availableProcessors() + 1);
         int M = ((N + 1) * N) / 2; // 1 + 2 + 3 + ... N
@@ -187,7 +196,7 @@ public class DemandTest {
                     error.compareAndSet(null, e);
                 }
                 try {
-                    assertEquals(d.decreaseAndGet(j), j);
+                    assertEquals(j, d.decreaseAndGet(j));
                 } catch (Throwable t) {
                     error.compareAndSet(null, t);
                 } finally {
@@ -197,6 +206,6 @@ public class DemandTest {
         }
         stop.await();
         assertTrue(d.isFulfilled());
-        assertEquals(error.get(), null);
+        assertNull(error.get());
     }
 }

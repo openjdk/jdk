@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@
 
 #ifndef HEADLESS
 
+#include <X11/Xresource.h>
+
 extern LockFunc       OGLSD_Lock;
 extern GetRasInfoFunc OGLSD_GetRasInfo;
 extern UnlockFunc     OGLSD_Unlock;
@@ -49,6 +51,74 @@ extern void
     OGLSD_SetNativeDimensions(JNIEnv *env, OGLSDOps *oglsdo, jint w, jint h);
 
 jboolean surfaceCreationFailed = JNI_FALSE;
+
+/**
+ * Per-Window GLXWindow entry with reference counting.
+ * Stored in an XContext keyed by the X Window XID.
+ */
+typedef struct {
+    GLXWindow glxWindow;
+    int       refCount;
+} GLXWindowRef;
+
+static XContext glxWindowContext;
+
+/**
+ * Gets or creates a shared GLXWindow for the given X Window.
+ * All callers are synchronized by the AWT lock.
+ */
+static GLXWindow acquireGLXWindow(Window window, GLXFBConfig fbconfig)
+{
+    if (glxWindowContext == 0) {
+        glxWindowContext = XUniqueContext();
+    }
+
+    XPointer data;
+    if (XFindContext(awt_display, window, glxWindowContext, &data) == 0) {
+        GLXWindowRef *ref = (GLXWindowRef *)data;
+        ref->refCount++;
+        return ref->glxWindow;
+    }
+
+    GLXWindow glxWin = j2d_glXCreateWindow(awt_display, fbconfig, window, NULL);
+    if (glxWin == 0) {
+        return 0;
+    }
+
+    GLXWindowRef *ref = malloc(sizeof(*ref));
+    if (ref == NULL) {
+        j2d_glXDestroyWindow(awt_display, glxWin);
+        return 0;
+    }
+    ref->glxWindow = glxWin;
+    ref->refCount = 1;
+    if (XSaveContext(awt_display, window, glxWindowContext, (XPointer)ref) != 0)
+    {
+        j2d_glXDestroyWindow(awt_display, glxWin);
+        free(ref);
+        return 0;
+    }
+    return glxWin;
+}
+
+/**
+ * Decrements the reference count for the GLXWindow associated with the given
+ * X Window. Destroys it when the count reaches zero.
+ * All callers are synchronized by the AWT lock.
+ */
+static void releaseGLXWindow(Window window)
+{
+    XPointer data;
+    if (XFindContext(awt_display, window, glxWindowContext, &data) != 0) {
+        return;
+    }
+    GLXWindowRef *ref = (GLXWindowRef *)data;
+    if (--ref->refCount <= 0) {
+        j2d_glXDestroyWindow(awt_display, ref->glxWindow);
+        XDeleteContext(awt_display, window, glxWindowContext);
+        free(ref);
+    }
+}
 
 #endif /* !HEADLESS */
 
@@ -74,7 +144,7 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
     // later the graphicsConfig will be used for deallocation of oglsdo
     oglsdo->graphicsConfig = gc;
 
-    GLXSDOps *glxsdo = (GLXSDOps *)malloc(sizeof(GLXSDOps));
+    GLXSDOps *glxsdo = (GLXSDOps *)calloc(1, sizeof(GLXSDOps));
 
     if (glxsdo == NULL) {
         JNU_ThrowOutOfMemoryError(env, "creating native GLX ops");
@@ -125,8 +195,13 @@ Java_sun_java2d_opengl_GLXSurfaceData_initOps(JNIEnv *env, jobject glxsd,
 void
 OGLSD_DestroyOGLSurface(JNIEnv *env, OGLSDOps *oglsdo)
 {
+    GLXSDOps *glxsdo = (GLXSDOps *)oglsdo->privOps;
     J2dTraceLn(J2D_TRACE_INFO, "OGLSD_DestroyOGLSurface");
-    // X Window is free'd later by AWT code...
+    if (glxsdo != NULL && glxsdo->drawable != 0) {
+        releaseGLXWindow(glxsdo->window);
+        glxsdo->drawable = 0;
+        oglsdo->drawableType = OGLSD_UNDEFINED;
+    }
 }
 
 /**
@@ -296,6 +371,13 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
         return JNI_FALSE;
     }
 
+    glxsdo->drawable = acquireGLXWindow(window,
+                                        glxsdo->configData->glxInfo->fbconfig);
+    if (glxsdo->drawable == 0) {
+        J2dRlsTraceLn(J2D_TRACE_ERROR, "OGLSD_InitOGLWindow: GLXWindow is 0");
+        return JNI_FALSE;
+    }
+
     XGetWindowAttributes(awt_display, window, &attr);
     oglsdo->width = attr.width;
     oglsdo->height = attr.height;
@@ -304,7 +386,6 @@ OGLSD_InitOGLWindow(JNIEnv *env, OGLSDOps *oglsdo)
     oglsdo->isOpaque = JNI_TRUE;
     oglsdo->xOffset = 0;
     oglsdo->yOffset = 0;
-    glxsdo->drawable = window;
     glxsdo->xdrawable = window;
 
     J2dTraceLn(J2D_TRACE_VERBOSE, "  created window: w=%d h=%d",
@@ -333,7 +414,16 @@ OGLSD_SwapBuffers(JNIEnv *env, jlong window)
         return;
     }
 
-    j2d_glXSwapBuffers(awt_display, (Window)window);
+    XPointer data;
+    if (XFindContext(awt_display, (Window)window, glxWindowContext, &data) != 0)
+    {
+        J2dRlsTraceLn(J2D_TRACE_ERROR,
+                      "OGLSD_SwapBuffers: GLXWindow not found");
+        return;
+    }
+
+    GLXWindowRef *ref = (GLXWindowRef *)data;
+    j2d_glXSwapBuffers(awt_display, ref->glxWindow);
 }
 
 // needed by Mac OS X port, no-op on other platforms

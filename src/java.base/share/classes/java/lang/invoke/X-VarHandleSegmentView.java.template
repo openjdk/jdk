@@ -33,20 +33,20 @@ import static java.lang.invoke.SegmentVarHandle.*;
 
 #warn
 
-{#if[byte]?final:sealed} class VarHandleSegmentAs$Type$s {
+{#if[ByteOrBoolean]?final:sealed} class VarHandleSegmentAs$Type$s {
 
-#if[!byte]
+#if[!ByteOrBoolean]
     static final int NON_PLAIN_ACCESS_MIN_ALIGN_MASK = $BoxType$.BYTES - 1;
 
-#end[byte]
+#end[ByteOrBoolean]
     static VarForm selectForm(long alignmentMask, boolean constantOffset) {
-#if[byte]
+#if[ByteOrBoolean]
         return constantOffset ? CONSTANT_OFFSET_FORM : VARIABLE_OFFSET_FORM;
-#else[byte]
+#else[ByteOrBoolean]
         return (alignmentMask & NON_PLAIN_ACCESS_MIN_ALIGN_MASK) != NON_PLAIN_ACCESS_MIN_ALIGN_MASK ?
                 (constantOffset ? CONSTANT_OFFSET_FORM : VARIABLE_OFFSET_FORM) :
                 (constantOffset ? VarHandleSegmentAs$Type$sAligned.CONSTANT_OFFSET_FORM : VarHandleSegmentAs$Type$sAligned.VARIABLE_OFFSET_FORM);
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     static final VarForm CONSTANT_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$s.class, MemorySegment.class, $type$.class, long.class);
@@ -70,16 +70,16 @@ import static java.lang.invoke.SegmentVarHandle.*;
                 handle.be);
         return $Type$.$rawType$BitsTo$Type$(rawValue);
 #else[floatingPoint]
-#if[byte]
-        return SCOPED_MEMORY_ACCESS.get$Type$(bb.sessionImpl(),
+#if[ByteOrBoolean]
+        return SCOPED_MEMORY_ACCESS.get$RawType$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
-                offset(bb, base, offset));
-#else[byte]
+                offset(bb, base, offset)){#if[boolean]? != 0};
+#else[ByteOrBoolean]
         return SCOPED_MEMORY_ACCESS.get$Type$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
                 offset(bb, base, offset),
                 handle.be);
-#end[byte]
+#end[ByteOrBoolean]
 #end[floatingPoint]
     }
 
@@ -99,21 +99,21 @@ import static java.lang.invoke.SegmentVarHandle.*;
                 $Type$.$type$ToRaw$RawType$Bits(value),
                 handle.be);
 #else[floatingPoint]
-#if[byte]
+#if[ByteOrBoolean]
         SCOPED_MEMORY_ACCESS.put$Type$(bb.sessionImpl(),
                 bb.unsafeGetBase(),
                 offset(bb, base, offset),
                 value);
-#else[byte]
+#else[ByteOrBoolean]
         SCOPED_MEMORY_ACCESS.put$Type$Unaligned(bb.sessionImpl(),
                 bb.unsafeGetBase(),
                 offset(bb, base, offset),
                 value,
                 handle.be);
-#end[byte]
+#end[ByteOrBoolean]
 #end[floatingPoint]
     }
-#if[!byte]
+#if[!ByteOrBoolean]
 }
 
 // This class must be accessed through non-aligned VarHandleSegmentAs$Type$s
@@ -123,7 +123,7 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static final VarForm VARIABLE_OFFSET_FORM = new VarForm(VarHandleSegmentAs$Type$sAligned.class, VarHandleSegmentAs$Type$s.VARIABLE_OFFSET_FORM);
 
     VarHandleSegmentAs$Type$sAligned() { throw new AssertionError(); }
-#end[byte]
+#end[ByteOrBoolean]
 
 #if[floatingPoint]
     @ForceInline
@@ -138,17 +138,29 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
         return $Type$.$rawType$BitsTo$Type$(rv);
     }
 #else[floatingPoint]
-#if[byte]
+#if[ByteOrBoolean]
+#if[boolean]
+    @ForceInline
+    static $rawType$ convEndian(boolean big, $type$ v) {
+        return (byte) (v ? 1 : 0);
+    }
+
+    @ForceInline
+    static $type$ convEndian(boolean big, $rawType$ n) {
+        return n != 0;
+    }
+#else[boolean]
     @ForceInline
     static $type$ convEndian(boolean big, $type$ n) {
         return n;
     }
-#else[byte]
+#end[boolean]
+#else[ByteOrBoolean]
     @ForceInline
     static $type$ convEndian(boolean big, $type$ n) {
         return big == BE ? n : $BoxType$.reverseBytes(n);
     }
-#end[byte]
+#end[ByteOrBoolean]
 #end[floatingPoint]
 
     @ForceInline
@@ -424,18 +436,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndAdd(VarHandle ob, Object obb, long base, long offset, $type$ delta) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     delta);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndAddConvEndianWithCAS(bb, offset(bb, base, offset), delta);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -447,18 +459,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndAddAcquire(VarHandle ob, Object obb, long base, long offset, $type$ delta) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     delta);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndAddConvEndianWithCAS(bb, offset(bb, base, offset), delta);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -470,20 +482,20 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndAddRelease(VarHandle ob, Object obb, long base, long offset, $type$ delta) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndAdd$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     delta);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndAddConvEndianWithCAS(bb, offset(bb, base, offset), delta);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
-#if[!byte]
+#if[!ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndAddConvEndianWithCAS(AbstractMemorySegmentImpl  bb, long offset, $type$ delta) {
@@ -496,7 +508,7 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
                 nativeExpectedValue, $RawBoxType$.reverseBytes({#if[ShorterThanInt]?($type$) }(expectedValue + delta))));
         return expectedValue;
     }
-#end[byte]
+#end[ByteOrBoolean]
 #end[AtomicAdd]
 #if[Bitwise]
 
@@ -509,18 +521,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseOr(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -532,18 +544,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseOrRelease(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -555,20 +567,20 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseOrAcquire(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseOr$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseOrConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
-#if[!byte]
+#if[!ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndBitwiseOrConvEndianWithCAS(AbstractMemorySegmentImpl  bb, long offset, $type$ value) {
@@ -581,7 +593,7 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
                 nativeExpectedValue, $RawBoxType$.reverseBytes({#if[ShorterThanInt]?($type$) }(expectedValue | value))));
         return expectedValue;
     }
-#end[byte]
+#end[ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndBitwiseAnd(VarHandle ob, Object obb, long base, $type$ value) {
@@ -592,18 +604,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseAnd(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -615,18 +627,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseAndRelease(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -639,20 +651,20 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseAndAcquire(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseAnd$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseAndConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
-#if[!byte]
+#if[!ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndBitwiseAndConvEndianWithCAS(AbstractMemorySegmentImpl  bb, long offset, $type$ value) {
@@ -665,7 +677,7 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
                 nativeExpectedValue, $RawBoxType$.reverseBytes({#if[ShorterThanInt]?($type$) }(expectedValue & value))));
         return expectedValue;
     }
-#end[byte]
+#end[ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndBitwiseXor(VarHandle ob, Object obb, long base, $type$ value) {
@@ -676,18 +688,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseXor(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -699,18 +711,18 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseXorRelease(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Release(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
 
     @ForceInline
@@ -722,20 +734,20 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
     static $type$ getAndBitwiseXorAcquire(VarHandle ob, Object obb, long base, long offset, $type$ value) {
         SegmentVarHandle handle = (SegmentVarHandle)ob;
         AbstractMemorySegmentImpl bb = handle.checkSegment(obb, base, false);
-#if[!byte]
+#if[!ByteOrBoolean]
         if (handle.be == BE) {
-#end[byte]
+#end[ByteOrBoolean]
             return SCOPED_MEMORY_ACCESS.getAndBitwiseXor$RawType$Acquire(bb.sessionImpl(),
                     bb.unsafeGetBase(),
                     offset(bb, base, offset),
                     value);
-#if[!byte]
+#if[!ByteOrBoolean]
         } else {
             return getAndBitwiseXorConvEndianWithCAS(bb, offset(bb, base, offset), value);
         }
-#end[byte]
+#end[ByteOrBoolean]
     }
-#if[!byte]
+#if[!ByteOrBoolean]
 
     @ForceInline
     static $type$ getAndBitwiseXorConvEndianWithCAS(AbstractMemorySegmentImpl  bb, long offset, $type$ value) {
@@ -748,6 +760,6 @@ final class VarHandleSegmentAs$Type$sAligned extends VarHandleSegmentAs$Type$s {
                 nativeExpectedValue, $RawBoxType$.reverseBytes({#if[ShorterThanInt]?($type$) }(expectedValue ^ value))));
         return expectedValue;
     }
-#end[byte]
+#end[ByteOrBoolean]
 #end[Bitwise]
 }

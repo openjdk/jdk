@@ -42,7 +42,7 @@ public:
   G1MonotonicArenaMemoryStats();
 
   void add(G1MonotonicArenaMemoryStats const other) {
-    STATIC_ASSERT(ARRAY_SIZE(_num_segments) == ARRAY_SIZE(_num_mem_sizes));
+    static_assert(ARRAY_SIZE(_num_segments) == ARRAY_SIZE(_num_mem_sizes));
     for (uint i = 0; i < ARRAY_SIZE(_num_mem_sizes); i++) {
       _num_mem_sizes[i] += other._num_mem_sizes[i];
       _num_segments[i] += other._num_segments[i];

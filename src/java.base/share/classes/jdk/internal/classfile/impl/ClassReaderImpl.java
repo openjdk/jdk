@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ public final class ClassReaderImpl
     private final int metadataStart;
     private final int classfileLength;
     private final Function<Utf8Entry, AttributeMapper<?>> attributeMapper;
+    private final int version;
     private final int flags;
     private final int thisClassPos;
     private ClassEntry thisClass;
@@ -73,9 +74,11 @@ public final class ClassReaderImpl
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
         }
-        if (readU2(6) > ClassFile.latestMajorVersion()) {
-            throw new IllegalArgumentException("Unsupported class file version: " + readU2(6));
+        int version = readInt(4);
+        if ((version & 0xFFFF) > ClassFile.latestMajorVersion()) {
+            throw new IllegalArgumentException("Unsupported class file version: " + version);
         }
+        this.version = version;
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
         int p = CP_ITEM_START;
@@ -153,6 +156,10 @@ public final class ClassReaderImpl
 
     public int thisClassPos() {
         return thisClassPos;
+    }
+
+    public int classFileVersion() {
+        return version;
     }
 
     @Override

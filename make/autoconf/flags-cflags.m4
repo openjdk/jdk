@@ -213,7 +213,9 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       WARNINGS_ENABLE_ADDITIONAL=""
       WARNINGS_ENABLE_ADDITIONAL_CXX=""
       WARNINGS_ENABLE_ADDITIONAL_JVM=""
+      WARNINGS_ENABLE_ADDITIONAL_JDK="-w34189"
       DISABLED_WARNINGS="4800 5105"
+      CFLAGS_CONVERSION_WARNINGS=
       ;;
 
     gcc)
@@ -239,6 +241,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       if test "x$OPENJDK_TARGET_CPU_ARCH" = "xppc"; then
         DISABLED_WARNINGS="$DISABLED_WARNINGS psabi"
       fi
+      CFLAGS_CONVERSION_WARNINGS="-Wconversion -Wno-float-conversion"
       ;;
 
     clang)
@@ -258,6 +261,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
       # These warnings will never be turned on, since they generate too many
       # false positives.
       DISABLED_WARNINGS="unknown-warning-option unused-parameter"
+      CFLAGS_CONVERSION_WARNINGS="-Wimplicit-int-conversion"
       ;;
   esac
   WARNINGS_ENABLE_ALL="$WARNINGS_ENABLE_ALL_NORMAL $WARNINGS_ENABLE_ADDITIONAL"
@@ -270,6 +274,7 @@ AC_DEFUN([FLAGS_SETUP_WARNINGS],
   AC_SUBST(DISABLED_WARNINGS)
   AC_SUBST(DISABLED_WARNINGS_C)
   AC_SUBST(DISABLED_WARNINGS_CXX)
+  AC_SUBST(CFLAGS_CONVERSION_WARNINGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_QUALITY_CHECKS],
@@ -540,12 +545,9 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -fstack-protector"
     TOOLCHAIN_CFLAGS_JDK="-fvisibility=hidden -pipe -fstack-protector"
     # reduce lib size on linux in link step, this needs also special compile flags
-    # do this on s390x also for libjvm (where serviceability agent is not supported)
     if test "x$ENABLE_LINKTIME_GC" = xtrue; then
       TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
-      if test "x$OPENJDK_TARGET_CPU" = xs390x && test "x$DEBUG_LEVEL" == xrelease; then
-        TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
-      fi
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
     fi
     # technically NOT for CXX (but since this gives *worse* performance, use
     # no-strict-aliasing everywhere!)
@@ -572,6 +574,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
       fi
       TOOLCHAIN_CFLAGS_JDK="-pipe"
       TOOLCHAIN_CFLAGS_JDK_CONLY="-fno-strict-aliasing" # technically NOT for CXX
+    fi
+
+    if test "x$ENABLE_LINKTIME_GC" = xtrue; then
+      TOOLCHAIN_CFLAGS_JDK="$TOOLCHAIN_CFLAGS_JDK -ffunction-sections -fdata-sections"
+      TOOLCHAIN_CFLAGS_JVM="$TOOLCHAIN_CFLAGS_JVM -ffunction-sections -fdata-sections"
     fi
 
     if test "x$OPENJDK_TARGET_OS" = xaix; then
@@ -617,8 +624,8 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
   ADLC_LANGSTD_CXXFLAGS="$LANGSTD_CXXFLAGS"
 
   # CFLAGS WARNINGS STUFF
-  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL"
-  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX"
+  WARNING_CFLAGS_JDK_CONLY="$WARNINGS_ENABLE_ALL $WARNINGS_ENABLE_ADDITIONAL_JDK"
+  WARNING_CFLAGS_JDK_CXXONLY="$WARNINGS_ENABLE_ALL_CXX $WARNINGS_ENABLE_ADDITIONAL_JDK"
   WARNING_CFLAGS_JVM="$WARNINGS_ENABLE_ALL_JVM"
 
   # Set some additional per-OS defines.
@@ -939,11 +946,21 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
 [
   # Is branch protection available?
   BRANCH_PROTECTION_AVAILABLE=false
-  BRANCH_PROTECTION_FLAG="-mbranch-protection=standard"
+  BRANCH_PROTECTION_CFLAG=""
+  BRANCH_PROTECTION_ASFLAG=""
 
   if test "x$OPENJDK_TARGET_CPU" = xaarch64; then
     if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
-      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_FLAG],
+      BRANCH_PROTECTION_CFLAG="-mbranch-protection=standard"
+      # The GCC/Clang assembler accepts the same flag as the compiler.
+      BRANCH_PROTECTION_ASFLAG="$BRANCH_PROTECTION_CFLAG"
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
+          IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
+    elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+      BRANCH_PROTECTION_CFLAG="/guard:signret"
+      # MSVC's assembler does not support branch protection flags, so
+      # BRANCH_PROTECTION_ASFLAG is intentionally left empty.
+      FLAGS_COMPILER_CHECK_ARGUMENTS(ARGUMENT: [$BRANCH_PROTECTION_CFLAG],
           IF_TRUE: [BRANCH_PROTECTION_AVAILABLE=true])
     fi
   fi
@@ -951,5 +968,5 @@ AC_DEFUN_ONCE([FLAGS_SETUP_BRANCH_PROTECTION],
   UTIL_ARG_ENABLE(NAME: branch-protection, DEFAULT: false,
       RESULT: BRANCH_PROTECTION_ENABLED, AVAILABLE: $BRANCH_PROTECTION_AVAILABLE,
       DESC: [enable branch protection when compiling C/C++],
-      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_FLAG])
+      IF_ENABLED: [BRANCH_PROTECTION_CFLAGS=$BRANCH_PROTECTION_CFLAG])
 ])

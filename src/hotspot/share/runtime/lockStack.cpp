@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,10 @@ const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_ba
 LockStack::LockStack(JavaThread* jt) :
   _top(lock_stack_base_offset), _base() {
   // Make sure the layout of the object is compatible with the emitted code's assumptions.
-  STATIC_ASSERT(sizeof(_bad_oop_sentinel) == oopSize);
-  STATIC_ASSERT(sizeof(_base[0]) == oopSize);
-  STATIC_ASSERT(std::is_standard_layout<LockStack>::value);
-  STATIC_ASSERT(offsetof(LockStack, _bad_oop_sentinel) == offsetof(LockStack, _base) - oopSize);
+  static_assert(sizeof(_bad_oop_sentinel) == oopSize);
+  static_assert(sizeof(_base[0]) == oopSize);
+  static_assert(std::is_standard_layout<LockStack>::value);
+  static_assert(offsetof(LockStack, _bad_oop_sentinel) == offsetof(LockStack, _base) - oopSize);
 #ifdef ASSERT
   for (int i = 0; i < CAPACITY; i++) {
     _base[i] = nullptr;
@@ -115,10 +115,6 @@ void LockStack::print_on(outputStream* st) {
   }
 }
 
-OMCache::OMCache(JavaThread* jt) : _entries() {
-  STATIC_ASSERT(std::is_standard_layout<OMCache>::value);
-  STATIC_ASSERT(std::is_standard_layout<OMCache::OMCacheEntry>::value);
-  STATIC_ASSERT(offsetof(OMCache, _null_sentinel) == offsetof(OMCache, _entries) +
-                offsetof(OMCache::OMCacheEntry, _oop) +
-                OMCache::CAPACITY * in_bytes(oop_to_oop_difference()));
+OMCache::OMCache(JavaThread* jt) {
+  static_assert(std::is_standard_layout<OMCache>::value);
 }

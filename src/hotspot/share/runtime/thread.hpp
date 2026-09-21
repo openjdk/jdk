@@ -111,7 +111,6 @@ class Thread: public ThreadShadow {
   friend class VMError;
   friend class VMErrorCallbackMark;
   friend class VMStructs;
-  friend class JVMCIVMStructs;
   friend class JavaThread;
  private:
 
@@ -153,7 +152,7 @@ class Thread: public ThreadShadow {
   }
 
   template <typename T> T* gc_data() {
-    STATIC_ASSERT(sizeof(T) <= sizeof(_gc_data));
+    static_assert(sizeof(T) <= sizeof(_gc_data));
     return reinterpret_cast<T*>(&_gc_data);
   }
 
@@ -257,7 +256,7 @@ class Thread: public ThreadShadow {
 
  private:
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
-  jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
+  uint64_t _allocated_bytes;                    // Cumulative number of bytes allocated on
                                                 // the Java heap
   ThreadHeapSampler _heap_sampler;              // For use when sampling the memory.
 
@@ -410,9 +409,9 @@ class Thread: public ThreadShadow {
   void retire_tlab(ThreadLocalAllocStats* stats = nullptr);
   void fill_tlab(HeapWord* start, size_t pre_reserved, size_t new_size);
 
-  jlong allocated_bytes()               { return _allocated_bytes; }
-  void incr_allocated_bytes(jlong size) { _allocated_bytes += size; }
-  inline jlong cooked_allocated_bytes() const;
+  uint64_t allocated_bytes()               { return _allocated_bytes; }
+  void incr_allocated_bytes(uint64_t size) { _allocated_bytes += size; }
+  inline uint64_t cooked_allocated_bytes() const;
 
   ThreadHeapSampler& heap_sampler()     { return _heap_sampler; }
 
@@ -667,5 +666,29 @@ inline Thread* Thread::current_or_null_safe() {
   }
   return nullptr;
 }
+
+// A SkipGCALot object is used to elide the usual effect of gc-a-lot
+// over a section of execution by a thread.
+class SkipGCALot : public StackObj {
+  private:
+   bool _saved;
+   Thread* _t;
+
+  public:
+#ifdef ASSERT
+    SkipGCALot(Thread* t) : _t(t) {
+      _saved = _t->skip_gcalot();
+      _t->set_skip_gcalot(true);
+    }
+
+    ~SkipGCALot() {
+      assert(_t->skip_gcalot(), "Save-restore protocol invariant");
+      _t->set_skip_gcalot(_saved);
+    }
+#else
+    SkipGCALot(Thread* t) { }
+    ~SkipGCALot() { }
+#endif
+};
 
 #endif // SHARE_RUNTIME_THREAD_HPP

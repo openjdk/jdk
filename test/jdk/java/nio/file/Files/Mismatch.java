@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,6 @@
  * questions.
  */
 
-import org.testng.Assert;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -36,13 +30,23 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Map;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /* @test
  * @bug 8202285
  * @build Mismatch
- * @run testng Mismatch
+ * @run junit Mismatch
  * @summary Unit test for the Files.mismatch method.
  */
 public class Mismatch {
@@ -55,29 +59,28 @@ public class Mismatch {
     private static final Map<String, String> ZIPFS_MAP = Map.of("create", "true");
 
     // temporary test directory where all test files will be created
-    Path testDir;
+    static Path testDir;
 
-    @BeforeClass
-    void setup() throws IOException {
+    @BeforeAll
+    static void setup() throws IOException {
         testDir = Files.createTempDirectory("testMismatch");
     }
 
-    @AfterClass
-    void cleanup() throws IOException {
+    @AfterAll
+    static void cleanup() throws IOException {
         // clean up files created under the test directory
         Files.walk(testDir).map(Path::toFile).forEach(File::delete);
         Files.deleteIfExists(testDir);
     }
 
     /*
-     * DataProvider for mismatch test. Provides the following fields:
+     * MethodSource for mismatch test. Provides the following fields:
      * path1 -- the path to a file
      * path2 -- the path to another file
      * expected -- expected result of the mismatch method
      * note -- a note about the test
      */
-    @DataProvider(name = "testMismatch")
-    public Object[][] getDataForMismatch() throws IOException {
+    public static Stream<Arguments> getDataForMismatch() throws IOException {
         // an non-existent file
         Path foo = Paths.get("nonexistentfile");
 
@@ -147,151 +150,148 @@ public class Mismatch {
         Path test1065000m532500 = createASCIIFile(testDir, "test1065000m532500", size, size >> 1, '%');
         Path test1065000m1064999 = createASCIIFile(testDir, "test1065000m1064999", size, 1064999, '$');
 
-        return new Object[][]{
-            // Spec Case 1: the two paths locate the same file , even if one does not exist
-            {foo, foo, MISMATCH_NO, "Same file, no mismatch"},
-            {test1024a, test1024a, MISMATCH_NO, "Same file, no mismatch"},
+        return Stream.of
+            (// Spec Case 1: the two paths locate the same file , even if one does not exist
+             Arguments.of(foo, foo, MISMATCH_NO, "Same file, no mismatch"),
+             Arguments.of(test1024a, test1024a, MISMATCH_NO, "Same file, no mismatch"),
 
-            // Spec Case 2:  The two files are the same size, and every byte in the first file
-            // is identical to the corresponding byte in the second file.
-            {test0a, test0b, MISMATCH_NO, "Sizes == 0, no mismatch"},
-            {test147a, test147b, MISMATCH_NO, "size = 147 < buffer = 8192, no mismatch"},
-            {test1024a, test1024b, MISMATCH_NO, "size = 1024 < buffer = 8192, no mismatch"},
-            {test8192a, test8192b, MISMATCH_NO, "size = 8192 = buffer = 8192, no mismatch"},
-            {test65536a, test65536b, MISMATCH_NO, "read 8 * full buffer, no mismatch"},
-            {test70025a, test70025b, MISMATCH_NO, "read 8 * full buffer plus a partial buffer, no mismatch"},
+             // Spec Case 2:  The two files are the same size, and every byte in the first file
+             // is identical to the corresponding byte in the second file.
+             Arguments.of(test0a, test0b, MISMATCH_NO, "Sizes == 0, no mismatch"),
+             Arguments.of(test147a, test147b, MISMATCH_NO, "size = 147 < buffer = 8192, no mismatch"),
+             Arguments.of(test1024a, test1024b, MISMATCH_NO, "size = 1024 < buffer = 8192, no mismatch"),
+             Arguments.of(test8192a, test8192b, MISMATCH_NO, "size = 8192 = buffer = 8192, no mismatch"),
+             Arguments.of(test65536a, test65536b, MISMATCH_NO, "read 8 * full buffer, no mismatch"),
+             Arguments.of(test70025a, test70025b, MISMATCH_NO, "read 8 * full buffer plus a partial buffer, no mismatch"),
 
 
-            /**
-             * Spec Case 3: the value returned is the position of the first mismatched byte
-             * Impl: the impl uses a buffer 8192. The testcases below covers a range of files
-             * with sizes <= and > the buffer size. The last buffer is either full or partially full.
-            */
+             /*
+              * Spec Case 3: the value returned is the position of the first mismatched byte
+              * Impl: the impl uses a buffer 8192. The testcases below covers a range of files
+              * with sizes <= and > the buffer size. The last buffer is either full or partially full.
+              */
 
-            // edge case, one of the file sizes is zero
-            // also covers Spec Case 4 and 6
-            {test147a, test147m0, 0, "mismatch = 0 (at the beginning)"},
-            {test65536m0, test65536a, 0, "mismatch = 0 (at the beginning)"},
+             // edge case, one of the file sizes is zero
+             // also covers Spec Case 4 and 6
+             Arguments.of(test147a, test147m0, 0, "mismatch = 0 (at the beginning)"),
+             Arguments.of(test65536m0, test65536a, 0, "mismatch = 0 (at the beginning)"),
 
-            /**
-             * Compares files of equal sizes
-            */
-            // small files
-            {test147a, test147m70, 70, "read one partial buffer, mismatch = 70"},
-            {test147a, test147m146, 146, "read one partial buffer, mismatch = 146 (end)"},
-            {test1024a, test1024m512, 512, "read one partial buffer, mismatch = 512"},
-            {test1024a, test1024m1023, 1023, "read one partial buffer, mismatch = 1023 (end)"},
+             /*
+              * Compares files of equal sizes
+              */
+             // small files
+             Arguments.of(test147a, test147m70, 70, "read one partial buffer, mismatch = 70"),
+             Arguments.of(test147a, test147m146, 146, "read one partial buffer, mismatch = 146 (end)"),
+             Arguments.of(test1024a, test1024m512, 512, "read one partial buffer, mismatch = 512"),
+             Arguments.of(test1024a, test1024m1023, 1023, "read one partial buffer, mismatch = 1023 (end)"),
 
-            // file size >= Impl's Buffer Size
-            {test8192a, test8192m4096, 4096, "read one buffer, mismatch = 4096 "},
-            {test8192a, test8192m8191, 8191, "read one buffer, mismatch = 8191 (at the end)"},
+             // file size >= Impl's Buffer Size
+             Arguments.of(test8192a, test8192m4096, 4096, "read one buffer, mismatch = 4096 "),
+             Arguments.of(test8192a, test8192m8191, 8191, "read one buffer, mismatch = 8191 (at the end)"),
 
-            // file size = n * Impl's Buffer Size
-            {test65536a, test65536m32768, 32768, "read through half of the file, mismatch = 32768"},
-            {test65536a, test65536m65535, 65535, "read through the whole file, mismatch = 65535 (at the end)"},
+             // file size = n * Impl's Buffer Size
+             Arguments.of(test65536a, test65536m32768, 32768, "read through half of the file, mismatch = 32768"),
+             Arguments.of(test65536a, test65536m65535, 65535, "read through the whole file, mismatch = 65535 (at the end)"),
 
-            // file size = n * Impl's Buffer Size + x
-            {test70025a, test70025m8400, 8400, "mismatch in the 2nd buffer, mismatch = 8400"},
-            {test70025a, test70025m35000, 35000, "read about half of the file, mismatch = 35000"},
-            {test70025a, test70025m70024, 70024, "read through the whole file, mismatch = 70024 (at the end)"},
+             // file size = n * Impl's Buffer Size + x
+             Arguments.of(test70025a, test70025m8400, 8400, "mismatch in the 2nd buffer, mismatch = 8400"),
+             Arguments.of(test70025a, test70025m35000, 35000, "read about half of the file, mismatch = 35000"),
+             Arguments.of(test70025a, test70025m70024, 70024, "read through the whole file, mismatch = 70024 (at the end)"),
 
-            /**
-             * Compares files of unequal sizes
-            */
-            {test8192m8191, test70025m35000, 8191, "mismatch at the end of the 1st file/buffer, mismatch = 8191"},
-            {test65536m32768, test70025m8400, 8400, "mismatch in the 2nd buffer, mismatch = 8400"},
-            {test70025m70024, test1065000m532500, 70024, "mismatch at the end of the 1st file, mismatch = 70024"},
+             /*
+              * Compares files of unequal sizes
+              */
+             Arguments.of(test8192m8191, test70025m35000, 8191, "mismatch at the end of the 1st file/buffer, mismatch = 8191"),
+             Arguments.of(test65536m32768, test70025m8400, 8400, "mismatch in the 2nd buffer, mismatch = 8400"),
+             Arguments.of(test70025m70024, test1065000m532500, 70024, "mismatch at the end of the 1st file, mismatch = 70024"),
 
-            /**
-             * Spec Case 4:  returns the size of the smaller file (in bytes) when the files are
-             * different sizes and every byte of the smaller file is identical to the corresponding
-             * byte of the larger file.
-             * Impl: similar to case 3, covers a range of file sizes
-            */
-            {test147a, test1024a, 147, "mismatch is the length of the smaller file: 147"},
-            {test1024a, test8192a, 1024, "mismatch is the length of the smaller file: 1024"},
-            {test1024a, test65536a, 1024, "mismatch is the length of the smaller file: 1024"},
-            {test8192a, test65536a, 8192, "mismatch is the length of the smaller file: 8192"},
-            {test70025a, test65536a, 65536, "mismatch is the length of the smaller file: 65536"},
-            {test1048576a, test1065000m1064999, 1048576, "mismatch is the length of the smaller file: 1048576"},
+             /*
+              * Spec Case 4:  returns the size of the smaller file (in bytes) when the files are
+              * different sizes and every byte of the smaller file is identical to the corresponding
+              * byte of the larger file.
+              * Impl: similar to case 3, covers a range of file sizes
+              */
+             Arguments.of(test147a, test1024a, 147, "mismatch is the length of the smaller file: 147"),
+             Arguments.of(test1024a, test8192a, 1024, "mismatch is the length of the smaller file: 1024"),
+             Arguments.of(test1024a, test65536a, 1024, "mismatch is the length of the smaller file: 1024"),
+             Arguments.of(test8192a, test65536a, 8192, "mismatch is the length of the smaller file: 8192"),
+             Arguments.of(test70025a, test65536a, 65536, "mismatch is the length of the smaller file: 65536"),
+             Arguments.of(test1048576a, test1065000m1064999, 1048576, "mismatch is the length of the smaller file: 1048576"),
 
-            // Spec Case 5: This method is always reflexive (for Path f , mismatch(f,f) returns -1L)
-            // See tests for Spec Case 1.
+             // Spec Case 5: This method is always reflexive (for Path f , mismatch(f,f) returns -1L)
+             // See tests for Spec Case 1.
 
-            // Spec Case 6: If the file system and files remain static, then this method is symmetric
-            // (for two Paths f and g, mismatch(f,g) will return the same value as mismatch(g,f)).
-            // The following tests are selected from tests for Spec Case 3 with the order of
-            // file paths switched, the returned values are the same as those for Case 3:
-            {test147m70, test147a, 70, "read one partial buffer, mismatch = 70"},
-            {test147m146, test147a, 146, "read one partial buffer, mismatch = 146 (end)"},
-            {test1024m512, test1024a, 512, "read one partial buffer, mismatch = 512"},
-            {test1024m1023, test1024a, 1023, "read one partial buffer, mismatch = 1023 (end)"},
+             // Spec Case 6: If the file system and files remain static, then this method is symmetric
+             // (for two Paths f and g, mismatch(f,g) will return the same value as mismatch(g,f)).
+             // The following tests are selected from tests for Spec Case 3 with the order of
+             // file paths switched, the returned values are the same as those for Case 3:
+             Arguments.of(test147m70, test147a, 70, "read one partial buffer, mismatch = 70"),
+             Arguments.of(test147m146, test147a, 146, "read one partial buffer, mismatch = 146 (end)"),
+             Arguments.of(test1024m512, test1024a, 512, "read one partial buffer, mismatch = 512"),
+             Arguments.of(test1024m1023, test1024a, 1023, "read one partial buffer, mismatch = 1023 (end)"),
 
-            {test70025m35000, test8192m8191, 8191, "mismatch at the end of the 1st file/buffer, mismatch = 8191"},
-            {test70025m8400, test65536m32768, 8400, "mismatch in the 2nd buffer, mismatch = 8400"},
-            {test1065000m532500, test70025m70024, 70024, "mismatch at the end of the 1st file, mismatch = 70024"},
-        };
+             Arguments.of(test70025m35000, test8192m8191, 8191, "mismatch at the end of the 1st file/buffer, mismatch = 8191"),
+             Arguments.of(test70025m8400, test65536m32768, 8400, "mismatch in the 2nd buffer, mismatch = 8400"),
+             Arguments.of(test1065000m532500, test70025m70024, 70024, "mismatch at the end of the 1st file, mismatch = 70024")
+             );
     }
 
     /*
-     * DataProvider for mismatch tests involving ZipFS using a few test cases selected
+     * MethodSource for mismatch tests involving ZipFS using a few test cases selected
      * from those of the original mismatch tests.
      */
-    @DataProvider(name = "testMismatchZipfs")
-    public Object[][] getDataForMismatchZipfs() throws IOException {
+    public static Stream<Arguments> getDataForMismatchZipfs() throws IOException {
         Path test1200 = createASCIIFile(testDir, "test1200", 1200, -1, ' ');
         Path test9500 = createASCIIFile(testDir, "test9500", 9500, -1, ' ');
         Path test9500m4200 = createASCIIFile(testDir, "test9500m4200", 9500, 4200, '!');
         Path test80025 = createASCIIFile(testDir, "test80025", 80025, -1, ' ');
         Path test1028500 = createASCIIFile(testDir, "test1028500", 1028500, -1, ' ');
-        return new Object[][]{
-            {test1200, test1200, MISMATCH_NO, "Compares the file and its copy in zip, no mismatch"},
-            {test9500, test9500m4200, 4200,
-                "Compares a copy of test9500m4200 in zip with test9500, shall return 4200"},
-            {test80025, test1028500, 80025, "mismatch is the length of the smaller file: 80025"},
-        };
+        return Stream.of
+            (
+             Arguments.of(test1200, test1200, MISMATCH_NO, "Compares the file and its copy in zip, no mismatch"),
+             Arguments.of(test9500, test9500m4200, 4200,
+                          "Compares a copy of test9500m4200 in zip with test9500, shall return 4200"),
+             Arguments.of(test80025, test1028500, 80025,
+                          "mismatch is the length of the smaller file: 80025")
+             );
     }
 
     /*
-     * DataProvider for verifying null handling.
+     * MethodSource for verifying null handling.
      */
-    @DataProvider(name = "testFileNull")
-    public Object[][] getDataForNull() throws IOException {
+    public static Stream<Arguments> getDataForNull() throws IOException {
         Path test = createASCIIFile(testDir, "testNonNull", 2200, -1, ' ');
-        return new Object[][]{
-            {(Path)null, (Path)null},
-            {(Path)null, test},
-            {test, (Path)null},
-        };
+        return Stream.of(Arguments.of((Path)null, (Path)null),
+                         Arguments.of((Path)null, test),
+                         Arguments.of(test, (Path)null));
     }
 
     /*
-     * DataProvider for verifying how the mismatch method handles the situation
+     * MethodSource for verifying how the mismatch method handles the situation
      * when one or both files do not exist.
      */
-    @DataProvider(name = "testFileNotExist")
-    public Object[][] getDataForFileNotExist() throws IOException {
+    public static Stream<Arguments> getDataForFileNotExist() throws IOException {
         Path test = createASCIIFile(testDir, "testFileNotExist", 3200, -1, ' ');
-        return new Object[][]{
-            {Paths.get("foo"), Paths.get("bar")},
-            {Paths.get("foo"), test},
-            {test, Paths.get("bar")},
-        };
+        return Stream.of
+            (Arguments.of(Paths.get("foo"), Paths.get("bar")),
+             Arguments.of("foo", test),
+             Arguments.of(test, Paths.get("bar")));
     }
 
     /**
-     * Tests the mismatch method. Refer to the dataProvider testMismatch for more
-     * details about the cases.
+     * Tests the mismatch method. Refer to the dataProvider getDataForNull for
+     * more details about the cases.
      * @param path the path to a file
      * @param path2 the path to another file
      * @param expected the expected result
      * @param msg the message about the test
      * @throws IOException if the test fails
      */
-    @Test(dataProvider = "testMismatch", priority = 0)
+    @ParameterizedTest
+    @MethodSource("getDataForMismatch")
     public void testMismatch(Path path, Path path2, long expected, String msg)
         throws IOException {
-        Assert.assertEquals(Files.mismatch(path, path2), expected, msg);
+        assertEquals(expected, Files.mismatch(path, path2), msg);
     }
 
     /**
@@ -302,7 +302,8 @@ public class Mismatch {
      * @param msg the message about the test
      * @throws IOException if the test fails
      */
-    @Test(dataProvider = "testMismatchZipfs", priority = 1)
+    @ParameterizedTest
+    @MethodSource("getDataForMismatchZipfs")
     public void testMismatchZipfs(Path path, Path path2, long expected, String msg)
         throws IOException {
         Path zipPath = Paths.get(testDir.toString(), "TestWithFSZip.zip");
@@ -311,9 +312,9 @@ public class Mismatch {
             Files.copy(path, copy, REPLACE_EXISTING);
 
             if (path2 == null) {
-                Assert.assertEquals(Files.mismatch(copy, path), expected, msg);
+                assertEquals(expected, Files.mismatch(copy, path), msg);
             } else {
-                Assert.assertEquals(Files.mismatch(copy, path2), expected, msg);
+                assertEquals(expected, Files.mismatch(copy, path2), msg);
             }
         }
     }
@@ -324,9 +325,11 @@ public class Mismatch {
      * @param path2 the path to another file
      * @throws NullPointerException as expected
      */
-    @Test(dataProvider = "testFileNull", priority = 2, expectedExceptions = NullPointerException.class)
+    @ParameterizedTest
+    @MethodSource("getDataForNull")
     public void testMismatchNull(Path path, Path path2) throws Exception {
-        long result = Files.mismatch(path, path2);
+        assertThrows(NullPointerException.class,
+                     () -> Files.mismatch(path, path2));
     }
 
     /**
@@ -335,9 +338,11 @@ public class Mismatch {
      * @param path2 the path to another file
      * @throws IOException as expected
      */
-    @Test(dataProvider = "testFileNotExist", priority = 2, expectedExceptions = IOException.class)
+    @ParameterizedTest
+    @MethodSource("getDataForFileNotExist")
     public void testMismatchNotExist(Path path, Path path2) throws IOException {
-        long result = Files.mismatch(path, path2);
+        assertThrows(IOException.class,
+                     () -> {long result = Files.mismatch(path, path2);});
     }
 
     /**

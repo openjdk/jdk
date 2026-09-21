@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,16 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/stat.h>
 
 #include "childproc.h"
+#include "childproc_errorcodes.h"
 
 extern int errno;
 
@@ -41,36 +43,34 @@ extern int errno;
     void *mptr; \
     mptr = malloc (Y); \
     if (mptr == 0) { \
-        error (fdout, ERR_MALLOC); \
+        sendErrorCodeAndExit (fdout, ESTEP_JSPAWN_ALLOC_FAILED, (int)Y, errno); \
     } \
     X = mptr; \
 }
-
-#define ERR_MALLOC 1
-#define ERR_PIPE 2
-#define ERR_ARGS 3
 
 #ifndef VERSION_STRING
 #error VERSION_STRING must be defined
 #endif
 
-void error (int fd, int err) {
-    if (write (fd, &err, sizeof(err)) != sizeof(err)) {
-        /* Not sure what to do here. I have no one to speak to. */
-        exit(0x80 + err);
+/* Attempts to send an error code to the parent (which may or may not
+ * work depending on whether the fail pipe exists); then exits with an
+ * error code corresponding to the fail step. */
+void sendErrorCodeAndExit(int failpipe_fd, int step, int hint, int errno_) {
+    errcode_t errcode;
+    buildErrorCode(&errcode, step, hint, errno_);
+    if (failpipe_fd == -1 || !sendErrorCode(failpipe_fd, errcode)) {
+        /* Write error code to stdout, in the hope someone reads this. */
+        printf("jspawnhelper fail: " ERRCODE_FORMAT "\n", ERRCODE_FORMAT_ARGS(errcode));
     }
-    exit (1);
+    exit(exitCodeFromErrorCode(errcode));
 }
 
-void shutItDown() {
-    fprintf(stdout, "jspawnhelper version %s\n", VERSION_STRING);
-    fprintf(stdout, "This command is not for general use and should ");
-    fprintf(stdout, "only be run as the result of a call to\n");
-    fprintf(stdout, "ProcessBuilder.start() or Runtime.exec() in a java ");
-    fprintf(stdout, "application\n");
-    fflush(stdout);
-    _exit(1);
-}
+static const char* usageErrorText =
+    "jspawnhelper version " VERSION_STRING "\n"
+    "This command is not for general use and should "
+    "only be run as the result of a call to\n"
+    "ProcessBuilder.start() or Runtime.exec() in a java "
+    "application\n";
 
 /*
  * read the following off the pipefd
@@ -84,22 +84,31 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
     int bufsize, offset=0;
     int magic;
     int res;
+    const int step = ESTEP_JSPAWN_RCV_CHILDSTUFF_COMM_FAIL;
+    int substep = 0;
 
     res = readFully (fdin, &magic, sizeof(magic));
-    if (res != 4 || magic != magicNumber()) {
-        error (fdout, ERR_PIPE);
+    if (res != 4) {
+        sendErrorCodeAndExit(fdout, step, substep, errno);
+    }
+
+    substep ++;
+    if (magic != magicNumber()) {
+        sendErrorCodeAndExit(fdout, step, substep, errno);
     }
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 5);
 #endif
 
+    substep ++;
     if (readFully (fdin, c, sizeof(*c)) != sizeof(*c)) {
-        error (fdout, ERR_PIPE);
+        sendErrorCodeAndExit(fdout, step, substep, errno);
     }
 
+    substep ++;
     if (readFully (fdin, &sp, sizeof(sp)) != sizeof(sp)) {
-        error (fdout, ERR_PIPE);
+        sendErrorCodeAndExit(fdout, step, substep, errno);
     }
 
     bufsize = sp.argvBytes + sp.envvBytes +
@@ -107,8 +116,9 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
 
     ALLOC(buf, bufsize);
 
+    substep++;
     if (readFully (fdin, buf, bufsize) != bufsize) {
-        error (fdout, ERR_PIPE);
+        sendErrorCodeAndExit(fdout, step, substep, errno);
     }
 
     /* Initialize argv[] */
@@ -139,50 +149,63 @@ void initChildStuff (int fdin, int fdout, ChildStuff *c) {
     offset += sp.parentPathvBytes;
 }
 
+#ifdef DEBUG
+static void checkIsValid(int fd) {
+    if (!fdIsValid(fd)) {
+        puts(usageErrorText);
+        sendErrorCodeAndExit(-1, ESTEP_JSPAWN_INVALID_FD, fd, errno);
+    }
+}
+static void checkIsPipe(int fd) {
+    checkIsValid(fd);
+    if (!fdIsPipe(fd)) {
+        puts(usageErrorText);
+        sendErrorCodeAndExit(-1, ESTEP_JSPAWN_NOT_A_PIPE, fd, errno);
+    }
+}
+static void checkFileDescriptorSetup() {
+    checkIsValid(STDIN_FILENO);
+    checkIsValid(STDOUT_FILENO);
+    checkIsValid(STDERR_FILENO);
+    checkIsPipe(FAIL_FILENO);
+    checkIsPipe(CHILDENV_FILENO);
+}
+#endif // DEBUG
+
 int main(int argc, char *argv[]) {
     ChildStuff c;
-    struct stat buf;
-    /* argv[1] contains the fd number to read all the child info */
-    int r, fdinr, fdinw, fdout;
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
 
-    if (argc != 3) {
-        fprintf(stdout, "Incorrect number of arguments: %d\n", argc);
-        shutItDown();
+    if (argc != 2) {
+        printf("Incorrect number of arguments: %d\n", argc);
+        puts(usageErrorText);
+        sendErrorCodeAndExit(-1, ESTEP_JSPAWN_ARG_ERROR, 0, 0);
     }
 
     if (strcmp(argv[1], VERSION_STRING) != 0) {
-        fprintf(stdout, "Incorrect Java version: %s\n", argv[1]);
-        shutItDown();
+        printf("Incorrect Java version: %s\n", argv[1]);
+        puts(usageErrorText);
+        sendErrorCodeAndExit(-1, ESTEP_JSPAWN_VERSION_ERROR, 0, 0);
     }
 
-    r = sscanf (argv[2], "%d:%d:%d", &fdinr, &fdinw, &fdout);
-    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
-        fstat(fdinr, &buf);
-        if (!S_ISFIFO(buf.st_mode)) {
-            fprintf(stdout, "Incorrect input pipe\n");
-            shutItDown();
-        }
-    } else {
-        fprintf(stdout, "Incorrect FD array data: %s\n", argv[2]);
-        shutItDown();
-    }
+#ifdef DEBUG
+    /* Check expected file descriptors */
+    checkFileDescriptorSetup();
+#endif
 
-    // Close the writing end of the pipe we use for reading from the parent.
-    // We have to do this before we start reading from the parent to avoid
-    // blocking in the case the parent exits before we finished reading from it.
-    close(fdinw); // Deliberately ignore errors (see https://lwn.net/Articles/576478/).
-    initChildStuff (fdinr, fdout, &c);
-    // Now set the file descriptor for the pipe's writing end to -1
-    // for the case that somebody tries to close it again.
-    assert(c.childenv[1] == fdinw);
-    c.childenv[1] = -1;
-    // The file descriptor for reporting errors back to our parent we got on the command
-    // line should be the same like the one in the ChildStuff struct we've just read.
-    assert(c.fail[1] == fdout);
+    initChildStuff(CHILDENV_FILENO, FAIL_FILENO, &c);
+
+#ifdef DEBUG
+    /* Not needed in spawn mode */
+    assert(c.in[0] == -1 && c.in[1] == -1 &&
+           c.out[0] == -1 && c.out[1] == -1 &&
+           c.err[0] == -1 && c.err[1] == -1 &&
+           c.fail[0] == -1 && c.fail[1] == -1 &&
+           c.fds[0] == -1 && c.fds[1] == -1 && c.fds[2] == -1);
+#endif
 
     childProcess (&c);
     return 0; /* NOT REACHED */

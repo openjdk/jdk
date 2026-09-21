@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, 2026, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,9 @@
 #ifndef SHARE_NMT_VMATREE_HPP
 #define SHARE_NMT_VMATREE_HPP
 
+#include "memory/resourceArea.hpp"
 #include "nmt/memTag.hpp"
+#include "nmt/nmtHashTable.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
@@ -238,23 +240,38 @@ public:
     delta commit;
   };
 
-  struct SummaryDiff {
-    SingleDiff tag[mt_number_of_tags];
-    SummaryDiff() {
-      clear();
-    }
-    void clear() {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i] = SingleDiff{0, 0};
-      }
+  class SummaryDiff {
+    struct KVEntry {
+      MemTag mt;
+      SingleDiff single_diff;
+      static int hash(const KVEntry& kv) { return (int)kv.mt; }
+      static bool equals(const KVEntry& a, const KVEntry& b) { return a.mt == b.mt; }
+      KVEntry(const KVEntry&) = default;
+      KVEntry() = default;
+      KVEntry(MemTag mt, SingleDiff sd) : mt(mt), single_diff(sd) {}
+    };
+
+    using Table = OpenAddressedHashTable<KVEntry,
+                                         decltype(&KVEntry::hash),
+                                         decltype(&KVEntry::equals),
+                                         mtNMT, AllocFailStrategy::EXIT_OOM, 100>;
+    Table _table;
+  public:
+    SummaryDiff() : _table(&KVEntry::hash, &KVEntry::equals) {
     }
 
-    void add(SummaryDiff& other) {
-      for (int i = 0; i < mt_number_of_tags; i++) {
-        tag[i].reserve += other.tag[i].reserve;
-        tag[i].commit += other.tag[i].commit;
-      }
+    SingleDiff& tag(MemTag tag);
+    SingleDiff& tag(int mt_index);
+
+    template<typename F>
+    void visit(F f) const {
+      _table.visit([&](const KVEntry& entry) {
+        f(entry.mt, entry.single_diff);
+      });
     }
+
+    void add(const SummaryDiff& other);
+    void clear();
 
 #ifdef ASSERT
     void print_on(outputStream* out);
@@ -313,7 +330,7 @@ public:
   // partially contained within that interval and set their tag to the one provided.
   // This may cause merging and splitting of ranges.
   // Released regions are ignored.
-  SummaryDiff set_tag(position from, size size, MemTag tag);
+  void set_tag(position from, size size, MemTag tag, SummaryDiff& diff);
 
   void uncommit_mapping(position from, size size, const RegionData& metadata, SummaryDiff& diff) {
     register_mapping(from, from + size, StateType::Reserved, metadata, diff, true);

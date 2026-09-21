@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ class RegMask {
   friend class RegMaskIterator;
 
   // RM_SIZE_IN_INTS is aligned to 64-bit - assert that this holds
-  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE_IN_INTS, 2)));
+  LP64_ONLY(static_assert(is_aligned(RM_SIZE_IN_INTS, 2)));
 
   static const unsigned int WORD_BIT_MASK = BitsPerWord - 1U;
 
@@ -105,11 +105,11 @@ class RegMask {
       LP64_ONLY(((RM_SIZE_IN_INTS_MAX + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_IN_INTS_MAX);
 
   // Sanity check
-  STATIC_ASSERT(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
+  static_assert(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
 
   // Ensure that register masks cannot grow beyond the point at which
   // OptoRegPair can no longer index the whole mask
-  STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
+  static_assert(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
 
   union {
     // Array of Register Mask bits. The array should be
@@ -285,8 +285,9 @@ class RegMask {
         _rm_word_ext = NEW_ARENA_ARRAY(_arena, uintptr_t, new_ext_size);
       } else {
         assert(_original_ext_address == &_rm_word_ext, "clone sanity check");
-        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, uintptr_t, _rm_word_ext,
+        _rm_word_ext = REALLOC_ARENA_ARRAY(_arena, _rm_word_ext,
                                            old_ext_size, new_ext_size);
+
       }
       if (initialize_by_infinite_stack) {
         int fill = 0;
@@ -792,8 +793,6 @@ public:
     int rm_index_diff = _offset - rm._offset;
     int rm_hwm_tr = (int)rm._hwm - rm_index_diff;
     int rm_lwm_tr = (int)rm._lwm - rm_index_diff;
-    int rm_rm_max_tr = (int)rm.rm_word_max_index() - rm_index_diff;
-    int rm_rm_size_tr = (int)rm._rm_size_in_words - rm_index_diff;
     int hwm = MIN2((int)_hwm, rm_hwm_tr);
     int lwm = MAX2((int)_lwm, rm_lwm_tr);
     for (int i = lwm; i <= hwm; i++) {

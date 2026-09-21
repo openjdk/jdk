@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.Unsafe;
 import sun.invoke.util.VerifyAccess;
 
+import java.lang.classfile.ClassFile;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
@@ -389,6 +391,10 @@ final class MemberName implements Member, Cloneable {
     public boolean isFinal() {
         return Modifier.isFinal(flags);
     }
+     /** Utility method to query the ACC_STRICT_INIT flag of this member. */
+    public boolean isStrictInit() {
+        return (flags & ClassFile.ACC_STRICT_INIT) != 0;
+    }
     /** Utility method to query whether this member or its defining class is final. */
     public boolean canBeStaticallyBound() {
         return Modifier.isFinal(flags | clazz.getModifiers());
@@ -408,11 +414,12 @@ final class MemberName implements Member, Cloneable {
     // let the rest (native, volatile, transient, etc.) be tested via Modifier.isFoo
 
     // unofficial modifier flags, used by HotSpot:
-    static final int BRIDGE    = 0x00000040;
-    static final int VARARGS   = 0x00000080;
-    static final int SYNTHETIC = 0x00001000;
-    static final int ANNOTATION= 0x00002000;
-    static final int ENUM      = 0x00004000;
+    static final int BRIDGE      = 0x00000040;
+    static final int VARARGS     = 0x00000080;
+    static final int SYNTHETIC   = 0x00001000;
+    static final int ANNOTATION  = 0x00002000;
+    static final int ENUM        = 0x00004000;
+
     /** Utility method to query the modifier flags of this member; returns false if the member is not a method. */
     public boolean isBridge() {
         return allFlagsSet(IS_METHOD | BRIDGE);
@@ -426,19 +433,30 @@ final class MemberName implements Member, Cloneable {
         return allFlagsSet(SYNTHETIC);
     }
 
-    static final String CONSTRUCTOR_NAME = "<init>";  // the ever-popular
+    /** Query whether this member is a flat field */
+    public boolean isFlat() { return getLayout() != Unsafe.NON_FLAT_LAYOUT; }
+
+    /** Query whether this member is a null-restricted field */
+    public boolean isNullRestricted() { return (flags & MN_NULL_RESTRICTED) == MN_NULL_RESTRICTED; }
+
+    /**
+     * VM-internal layout code for this field, 0 if this field is not flat.
+     */
+    public int getLayout() { return (flags >>> MN_LAYOUT_SHIFT) & MN_LAYOUT_MASK; }
+
+    static final String CONSTRUCTOR_NAME = "<init>";
 
     // modifiers exported by the JVM:
     static final int RECOGNIZED_MODIFIERS = 0xFFFF;
 
     // private flags, not part of RECOGNIZED_MODIFIERS:
     static final int
-            IS_METHOD        = MN_IS_METHOD,        // method (not constructor)
-            IS_CONSTRUCTOR   = MN_IS_CONSTRUCTOR,   // constructor
-            IS_FIELD         = MN_IS_FIELD,         // field
-            IS_TYPE          = MN_IS_TYPE,          // nested type
-            CALLER_SENSITIVE = MN_CALLER_SENSITIVE, // @CallerSensitive annotation detected
-            TRUSTED_FINAL    = MN_TRUSTED_FINAL;    // trusted final field
+            IS_METHOD             = MN_IS_METHOD,              // method (not constructor)
+            IS_CONSTRUCTOR        = MN_IS_CONSTRUCTOR,         // constructor
+            IS_FIELD              = MN_IS_FIELD,               // field
+            IS_TYPE               = MN_IS_TYPE,                // nested type
+            CALLER_SENSITIVE      = MN_CALLER_SENSITIVE,       // @CallerSensitive annotation detected
+            TRUSTED_FINAL         = MN_TRUSTED_FINAL;          // trusted final field
 
     static final int ALL_ACCESS = Modifier.PUBLIC | Modifier.PRIVATE | Modifier.PROTECTED;
     static final int ALL_KINDS = IS_METHOD | IS_CONSTRUCTOR | IS_FIELD | IS_TYPE;

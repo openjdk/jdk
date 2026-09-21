@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2025, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2026, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ m4_define(jvm_features_valid, m4_normalize( \
     ifdef([custom_jvm_features_valid], custom_jvm_features_valid) \
     \
     cds compiler1 compiler2 dtrace epsilongc g1gc jfr jni-check \
-    jvmci jvmti link-time-opt management minimal opt-size parallelgc \
+    jvmti link-time-opt management minimal opt-size parallelgc \
     serialgc services shenandoahgc vm-structs zero zgc \
 ))
 
@@ -62,7 +62,6 @@ m4_define(jvm_feature_desc_epsilongc, [include the epsilon (no-op) garbage colle
 m4_define(jvm_feature_desc_g1gc, [include the G1 garbage collector])
 m4_define(jvm_feature_desc_jfr, [enable JDK Flight Recorder (JFR)])
 m4_define(jvm_feature_desc_jni_check, [enable -Xcheck:jni support])
-m4_define(jvm_feature_desc_jvmci, [enable JVM Compiler Interface (JVMCI)])
 m4_define(jvm_feature_desc_jvmti, [enable Java Virtual Machine Tool Interface (JVM TI)])
 m4_define(jvm_feature_desc_link_time_opt, [enable link time optimization])
 m4_define(jvm_feature_desc_management, [enable java.lang.management API support])
@@ -270,26 +269,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_CHECK_DTRACE],
 ])
 
 ################################################################################
-# Check if the feature 'jvmci' is available on this platform.
-#
-AC_DEFUN_ONCE([JVM_FEATURES_CHECK_JVMCI],
-[
-  JVM_FEATURES_CHECK_AVAILABILITY(jvmci, [
-    AC_MSG_CHECKING([if platform is supported by JVMCI])
-    if test "x$OPENJDK_TARGET_CPU" = "xx86_64"; then
-      AC_MSG_RESULT([yes])
-    elif test "x$OPENJDK_TARGET_CPU" = "xaarch64"; then
-      AC_MSG_RESULT([yes])
-    elif test "x$OPENJDK_TARGET_CPU" = "xriscv64"; then
-      AC_MSG_RESULT([yes])
-    else
-      AC_MSG_RESULT([no, $OPENJDK_TARGET_CPU])
-      AVAILABLE=false
-    fi
-  ])
-])
-
-################################################################################
 # Check if the feature 'shenandoahgc' is available on this platform.
 #
 AC_DEFUN_ONCE([JVM_FEATURES_CHECK_SHENANDOAHGC],
@@ -376,7 +355,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_PREPARE_PLATFORM],
 
   JVM_FEATURES_CHECK_CDS
   JVM_FEATURES_CHECK_DTRACE
-  JVM_FEATURES_CHECK_JVMCI
   JVM_FEATURES_CHECK_SHENANDOAHGC
   JVM_FEATURES_CHECK_ZGC
 
@@ -401,17 +379,17 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
     JVM_FEATURES_VARIANT_UNAVAILABLE="cds minimal zero"
   elif test "x$variant" = "xzero"; then
     JVM_FEATURES_VARIANT_UNAVAILABLE="compiler1 compiler2 \
-        jvmci minimal zgc"
+        minimal zgc"
   else
     JVM_FEATURES_VARIANT_UNAVAILABLE="minimal zero"
   fi
 
   # Check which features should be off by default for this JVM variant.
   if test "x$variant" = "xclient"; then
-    JVM_FEATURES_VARIANT_FILTER="compiler2 jvmci link-time-opt opt-size"
+    JVM_FEATURES_VARIANT_FILTER="compiler2 link-time-opt opt-size"
   elif test "x$variant" = "xminimal"; then
     JVM_FEATURES_VARIANT_FILTER="cds compiler2 dtrace epsilongc g1gc \
-        jfr jni-check jvmci jvmti management parallelgc services \
+        jfr jni-check jvmti management parallelgc services \
         shenandoahgc vm-structs zgc"
     if test "x$OPENJDK_TARGET_CPU" = xarm ; then
       JVM_FEATURES_VARIANT_FILTER="$JVM_FEATURES_VARIANT_FILTER opt-size"
@@ -421,7 +399,7 @@ AC_DEFUN([JVM_FEATURES_PREPARE_VARIANT],
           link-time-opt"
     fi
   elif test "x$variant" = "xcore"; then
-    JVM_FEATURES_VARIANT_FILTER="compiler1 compiler2 jvmci \
+    JVM_FEATURES_VARIANT_FILTER="compiler1 compiler2 \
         link-time-opt opt-size"
   elif test "x$variant" = "xzero"; then
     JVM_FEATURES_VARIANT_FILTER="jfr link-time-opt opt-size"
@@ -517,11 +495,6 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
     AC_MSG_ERROR([Specified JVM feature 'jfr' requires feature 'services' for variant '$variant'])
   fi
 
-  if JVM_FEATURES_IS_ACTIVE(jvmci) && ! (JVM_FEATURES_IS_ACTIVE(compiler1) || \
-      JVM_FEATURES_IS_ACTIVE(compiler2)); then
-    AC_MSG_ERROR([Specified JVM feature 'jvmci' requires feature 'compiler2' or 'compiler1' for variant '$variant'])
-  fi
-
   if JVM_FEATURES_IS_ACTIVE(jvmti) && ! JVM_FEATURES_IS_ACTIVE(services); then
     AC_MSG_ERROR([Specified JVM feature 'jvmti' requires feature 'services' for variant '$variant'])
   fi
@@ -530,9 +503,6 @@ AC_DEFUN([JVM_FEATURES_VERIFY],
   # is missing the feature.
   if ! JVM_FEATURES_IS_ACTIVE(cds); then
     ENABLE_CDS="false"
-  fi
-  if ! JVM_FEATURES_IS_ACTIVE(jvmci); then
-    INCLUDE_JVMCI="false"
   fi
   if JVM_FEATURES_IS_ACTIVE(compiler2); then
     INCLUDE_COMPILER2="true"
@@ -559,7 +529,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_SETUP],
   # and disable them in JVM_FEATURES_VERIFY if a variant is found that are
   # missing any of them.
   ENABLE_CDS="true"
-  INCLUDE_JVMCI="true"
   INCLUDE_COMPILER2="false"
 
   for variant in $JVM_VARIANTS; do
@@ -599,7 +568,6 @@ AC_DEFUN_ONCE([JVM_FEATURES_SETUP],
   AC_SUBST(JVM_FEATURES_zero)
   AC_SUBST(JVM_FEATURES_custom)
 
-  AC_SUBST(INCLUDE_JVMCI)
   AC_SUBST(INCLUDE_COMPILER2)
 
 ])

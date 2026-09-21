@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,8 @@
  ******************************************************************/
 
 package java.awt.image;
+
+import java.util.Objects;
 
 import static sun.java2d.StateTrackable.State.STABLE;
 import static sun.java2d.StateTrackable.State.UNTRACKABLE;
@@ -71,12 +73,13 @@ public final class DataBufferByte extends DataBuffer
      * specified size.
      *
      * @param size The size of the {@code DataBuffer}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
      */
     public DataBufferByte(int size) {
-      super(STABLE, TYPE_BYTE, size);
-      data = new byte[size];
-      bankdata = new byte[1][];
-      bankdata[0] = data;
+        super(STABLE, TYPE_BYTE, size);
+        data = new byte[size];
+        bankdata = new byte[1][];
+        bankdata[0] = data;
     }
 
     /**
@@ -85,6 +88,8 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param numBanks The number of banks in the {@code DataBuffer}.
+     * @throws IllegalArgumentException if {@code size} or {@code numBanks}
+     *         is less than or equal to zero.
      */
     public DataBufferByte(int size, int numBanks) {
         super(STABLE, TYPE_BYTE, size, numBanks);
@@ -109,9 +114,14 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param dataArray The byte array for the {@code DataBuffer}.
      * @param size The size of the {@code DataBuffer} bank.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal
+     *         to zero, or is greater than the length of {@code dataArray}.
      */
     public DataBufferByte(byte[] dataArray, int size) {
         super(UNTRACKABLE, TYPE_BYTE, size);
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, dataArray.length);
         data = dataArray;
         bankdata = new byte[1][];
         bankdata[0] = data;
@@ -133,9 +143,16 @@ public final class DataBufferByte extends DataBuffer
      * @param size The size of the {@code DataBuffer} bank.
      * @param offset The offset into the {@code dataArray}. {@code dataArray}
      * must have at least {@code offset} + {@code size} elements.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException
+     *         if {@code size} is less than or equal to zero,
+     *         or {@code offset} is less than zero,
+     *         or {@code (offset + size)} is greater than the length of {@code dataArray}.
      */
-    public DataBufferByte(byte[] dataArray, int size, int offset){
+    public DataBufferByte(byte[] dataArray, int size, int offset) {
         super(UNTRACKABLE, TYPE_BYTE, size, 1, offset);
+        Objects.requireNonNull(dataArray, "dataArray must not be null");
+        checkArraySize(size, offset, dataArray.length);
         data = dataArray;
         bankdata = new byte[1][];
         bankdata[0] = data;
@@ -154,9 +171,19 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param dataArray The byte arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code size}.
      */
     public DataBufferByte(byte[][] dataArray, int size) {
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length);
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, 0, dataArray[b].length);
+        }
         bankdata = dataArray.clone();
         data = bankdata[0];
     }
@@ -179,9 +206,23 @@ public final class DataBufferByte extends DataBuffer
      * @param dataArray The byte arrays for the {@code DataBuffer}.
      * @param size The size of the banks in the {@code DataBuffer}.
      * @param offsets The offsets into each array.
+     * @throws IllegalArgumentException if {@code size} is less than or equal to zero.
+     * @throws NullPointerException if {@code dataArray} is {@code null}.
+     * @throws NullPointerException if any bank of {@code dataArray} is {@code null}.
+     * @throws IllegalArgumentException if {@code dataArray} does not have at least one bank.
+     * @throws NullPointerException if {@code offsets} is {@code null}.
+     * @throws IllegalArgumentException if any element of {@code offsets} is less than zero.
+     * @throws ArrayIndexOutOfBoundsException if the lengths of {@code dataArray}
+     *          and {@code offsets} differ.
+     * @throws IllegalArgumentException if the length of any bank of {@code dataArray}
+     *         is less than {@code (size + offsets[bankIndex])}.
      */
     public DataBufferByte(byte[][] dataArray, int size, int[] offsets) {
         super(UNTRACKABLE, TYPE_BYTE, size, dataArray.length, offsets);
+        for (int b = 0; b < dataArray.length; b++) {
+            Objects.requireNonNull(dataArray[b], "bank must not be null");
+            checkBankSize(b, size, offsets[b], dataArray[b].length);
+        }
         bankdata = dataArray.clone();
         data = bankdata[0];
     }
@@ -211,8 +252,10 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param bank The bank whose data array you want to get.
      * @return The data array for the specified bank.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index.
      */
     public byte[] getData(int bank) {
+        checkBank(bank);
         theTrackable.setUntrackable();
         return bankdata[bank];
     }
@@ -237,10 +280,12 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param i The data array element you want to get.
      * @return The requested data array element as an integer.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
      */
     public int getElem(int i) {
+        checkIndex(i);
         return (int)(data[i+offset]) & 0xff;
     }
 
@@ -252,8 +297,11 @@ public final class DataBufferByte extends DataBuffer
      * @return The requested data array element as an integer.
      * @see #setElem(int, int)
      * @see #setElem(int, int, int)
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      */
     public int getElem(int bank, int i) {
+        checkIndex(bank, i);
         return (int)(bankdata[bank][i+offsets[bank]]) & 0xff;
     }
 
@@ -263,10 +311,12 @@ public final class DataBufferByte extends DataBuffer
      *
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the data array element.
+     * @throws ArrayIndexOutOfBoundsException if {@code (i + getOffset())} is not a valid index.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int i, int val) {
+        checkIndex(i);
         data[i+offset] = (byte)val;
         theTrackable.markDirty();
     }
@@ -277,10 +327,13 @@ public final class DataBufferByte extends DataBuffer
      * @param bank The bank in which you want to set the data array element.
      * @param i The data array element you want to set.
      * @param val The integer value to which you want to set the specified data array element.
+     * @throws ArrayIndexOutOfBoundsException if {@code bank} is not a valid bank index,
+     *         or {@code (i + getOffsets()[bank])} is not a valid index into the bank.
      * @see #getElem(int)
      * @see #getElem(int, int)
      */
     public void setElem(int bank, int i, int val) {
+        checkIndex(bank, i);
         bankdata[bank][i+offsets[bank]] = (byte)val;
         theTrackable.markDirty();
     }

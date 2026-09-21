@@ -29,4 +29,5 @@ public class MessageTag {
     public static final String PRINT_TIMES = "[PRINT_TIMES]";
     public static final String VM_INFO = "[VM_INFO]";
     public static final String APPLICABLE_IR_RULES = "[APPLICABLE_IR_RULES]";
+    public static final String END_MARKER = "#END#";
 }

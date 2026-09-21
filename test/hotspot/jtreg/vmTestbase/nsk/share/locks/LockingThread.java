@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,6 +302,8 @@ public class LockingThread extends Thread {
 
     private Wicket waitStateWicket = new Wicket();
 
+    private volatile boolean canEnterRelinquishWait = false;
+
     private Thread.State requiredState;
 
     public void waitState() {
@@ -365,7 +367,9 @@ public class LockingThread extends Thread {
         relinquishMonitor = true;
         relinquishedMonitorIndex = index;
 
+        canEnterRelinquishWait = false;
         interrupt();
+        canEnterRelinquishWait = true;
 
         DebugMonitorInfo monitorInfo = monitorsInfo.get(relinquishedMonitorIndex);
 
@@ -431,6 +435,10 @@ public class LockingThread extends Thread {
                     relinquishedMonitor = monitorInfo.monitor;
 
                     log("Relinquish monitor: " + relinquishedMonitor);
+
+                    while (!canEnterRelinquishWait) {
+                        Thread.onSpinWait();
+                    }
 
                     // monitor is relinquished
                     ready();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,6 @@ import javax.accessibility.AccessibleContext;
 
 import sun.awt.AWTAccessor;
 import sun.awt.AWTAccessor.MouseEventAccessor;
-import sun.awt.AppContext;
 import sun.awt.PeerEvent;
 import sun.awt.SunToolkit;
 import sun.awt.dnd.SunDropTargetEvent;
@@ -2875,13 +2874,8 @@ public class Container extends Component {
      */
 
     transient Component modalComp;
-    transient AppContext modalAppContext;
 
     private void startLWModal() {
-        // Store the app context on which this component is being shown.
-        // Event dispatch thread of this app context will be sleeping until
-        // we wake it by any event from hideAndDisposeHandler().
-        modalAppContext = AppContext.getAppContext();
 
         // keep the KeyEvents from being dispatched
         // until the focus has been transferred
@@ -2946,25 +2940,22 @@ public class Container extends Component {
 
     private void stopLWModal() {
         synchronized (getTreeLock()) {
-            if (modalAppContext != null) {
-                Container nativeContainer = getHeavyweightContainer();
-                if(nativeContainer != null) {
-                    if (this.modalComp !=  null) {
-                        nativeContainer.modalComp = this.modalComp;
-                        this.modalComp = null;
-                        return;
-                    }
-                    else {
-                        nativeContainer.modalComp = null;
-                    }
+            Container nativeContainer = getHeavyweightContainer();
+            if (nativeContainer != null) {
+                if (this.modalComp !=  null) {
+                    nativeContainer.modalComp = this.modalComp;
+                    this.modalComp = null;
+                    return;
                 }
-                // Wake up event dispatch thread on which the dialog was
-                // initially shown
-                SunToolkit.postEvent(modalAppContext,
-                        new PeerEvent(this,
-                                new WakingRunnable(),
-                                PeerEvent.PRIORITY_EVENT));
+                else {
+                    nativeContainer.modalComp = null;
+                }
             }
+            // Wake up event dispatch thread on which the dialog was
+            // initially shown
+            SunToolkit.postEvent(new PeerEvent(this,
+                            new WakingRunnable(),
+                            PeerEvent.PRIORITY_EVENT));
             EventQueue.invokeLater(new WakingRunnable());
             getTreeLock().notifyAll();
         }
@@ -4797,34 +4788,12 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
             // translate coordinates to this native container
             final Point ptSrcOrigin = srcComponent.getLocationOnScreen();
 
-            if (AppContext.getAppContext() != nativeContainer.appContext) {
-                final MouseEvent mouseEvent = me;
-                Runnable r = new Runnable() {
-                        public void run() {
-                            if (!nativeContainer.isShowing() ) {
-                                return;
-                            }
-
-                            Point       ptDstOrigin = nativeContainer.getLocationOnScreen();
-                            mouseEvent.translatePoint(ptSrcOrigin.x - ptDstOrigin.x,
-                                              ptSrcOrigin.y - ptDstOrigin.y );
-                            Component targetOver =
-                                nativeContainer.getMouseEventTarget(mouseEvent.getX(),
-                                                                    mouseEvent.getY(),
-                                                                    Container.INCLUDE_SELF);
-                            trackMouseEnterExit(targetOver, mouseEvent);
-                        }
-                    };
-                SunToolkit.executeOnEventHandlerThread(nativeContainer, r);
+            if (!nativeContainer.isShowing()) {
                 return;
-            } else {
-                if (!nativeContainer.isShowing() ) {
-                    return;
-                }
-
-                Point   ptDstOrigin = nativeContainer.getLocationOnScreen();
-                me.translatePoint( ptSrcOrigin.x - ptDstOrigin.x, ptSrcOrigin.y - ptDstOrigin.y );
             }
+
+            Point ptDstOrigin = nativeContainer.getLocationOnScreen();
+            me.translatePoint( ptSrcOrigin.x - ptDstOrigin.x, ptSrcOrigin.y - ptDstOrigin.y );
         }
         //System.out.println("Track event: " + me);
         // feed the 'dragged-over' event directly to the enter/exit
@@ -4905,8 +4874,6 @@ class LightweightDispatcher implements java.io.Serializable, AWTEventListener {
                 // avoid recursively calling LightweightDispatcher...
                 ((Container)target).dispatchEventToSelf(retargeted);
             } else {
-                assert AppContext.getAppContext() == target.appContext;
-
                 if (nativeContainer.modalComp != null) {
                     if (((Container)nativeContainer.modalComp).isAncestorOf(target)) {
                         target.dispatchEvent(retargeted);

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +26,9 @@
  * @test
  * @summary Vectorization test with small strip mining iterations
  * @library /test/lib /
- *
- * @build jdk.test.whitebox.WhiteBox
- *        compiler.vectorization.runner.VectorizationTestRunner
- *
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:.
- *                   -XX:+UnlockDiagnosticVMOptions
- *                   -XX:+WhiteBoxAPI
- *                   -XX:LoopStripMiningIter=10
- *                   compiler.vectorization.runner.StripMinedLoopTest
- *
  * @requires vm.compiler2.enabled
+ *
+ * @run driver ${test.main.class}
  */
 
 package compiler.vectorization.runner;
@@ -57,6 +49,12 @@ public class StripMinedLoopTest extends VectorizationTestRunner {
             a[i] = 2;
             b[i] = 3;
         }
+    }
+
+    // We must pass the flags directly to the Test VM, and not the Driver VM in the @run above.
+    @Override
+    protected String[] testVMFlags(String[] args) {
+        return new String[]{"-XX:LoopStripMiningIter=10"};
     }
 
     @Test

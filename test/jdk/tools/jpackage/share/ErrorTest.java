@@ -26,10 +26,15 @@ import static java.util.stream.Collectors.toMap;
 import static jdk.internal.util.OperatingSystem.LINUX;
 import static jdk.internal.util.OperatingSystem.MACOS;
 import static jdk.internal.util.OperatingSystem.WINDOWS;
+import static jdk.jpackage.internal.util.PListWriter.writePList;
+import static jdk.jpackage.internal.util.XmlUtils.createXml;
+import static jdk.jpackage.internal.util.XmlUtils.toXmlConsumer;
 import static jdk.jpackage.internal.util.function.ThrowingFunction.toFunction;
+import static jdk.jpackage.internal.util.function.ThrowingSupplier.toSupplier;
 import static jdk.jpackage.test.JPackageCommand.makeAdvice;
 import static jdk.jpackage.test.JPackageCommand.makeError;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -45,22 +50,40 @@ import java.util.function.UnaryOperator;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import jdk.internal.util.OperatingSystem;
+import jdk.jpackage.internal.util.MacBundle;
 import jdk.jpackage.internal.util.TokenReplace;
 import jdk.jpackage.test.Annotations.Parameter;
 import jdk.jpackage.test.Annotations.ParameterSupplier;
 import jdk.jpackage.test.Annotations.Test;
+import jdk.jpackage.test.ApplicationLayout;
 import jdk.jpackage.test.CannedArgument;
 import jdk.jpackage.test.CannedFormattedString;
 import jdk.jpackage.test.JPackageCommand;
 import jdk.jpackage.test.JPackageOutputValidator;
+import jdk.jpackage.test.JavaTool;
+import jdk.jpackage.test.LinuxHelper;
+import jdk.jpackage.test.MacSign;
+import jdk.jpackage.test.MacSign.CertificateRequest;
+import jdk.jpackage.test.MacSign.CertificateType;
+import jdk.jpackage.test.MacSign.KeychainWithCertsSpec;
+import jdk.jpackage.test.MacSign.ResolvedKeychain;
+import jdk.jpackage.test.MacSign.StandardCertificateNamePrefix;
 import jdk.jpackage.test.PackageType;
 import jdk.jpackage.test.TKit;
+import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.mock.VerbatimCommandMock;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
+import jdk.jpackage.test.stdmock.MacSignMockUtils;
 
 /*
  * @test
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @build jdk.test.lib.security.CertificateBuilder
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -71,7 +94,10 @@ import jdk.jpackage.test.TKit;
  * @test
  * @summary Test jpackage output for erroneous input
  * @library /test/jdk/tools/jpackage/helpers
+ * @library /test/lib
  * @build jdk.jpackage.test.*
+ * @build jdk.jpackage.test.stdmock.*
+ * @build jdk.test.lib.security.CertificateBuilder
  * @compile -Xlint:all -Werror ErrorTest.java
  * @run main/othervm/timeout=720 -Xmx512m jdk.jpackage.test.Main
  *  --jpt-run=ErrorTest
@@ -81,39 +107,102 @@ import jdk.jpackage.test.TKit;
 public final class ErrorTest {
 
     enum Token {
-        JAVA_HOME(cmd -> {
+        JAVA_HOME(() -> {
             return System.getProperty("java.home");
         }),
-        APP_IMAGE(cmd -> {
+        APP_IMAGE(() -> {
+            final var appImageRoot = TKit.createTempDirectory("appimage");
+
+            final var appImageCmd = JPackageCommand.helloAppImage()
+                    // Use the default jpackage tool provider to create an application image.
+                    // The ErrorTest is used from the OptionsValidationFailTest unit tests that override
+                    // the default jpackage tool provider with the implementation that doesn't do packaging
+                    // and can not create a valid application image.
+                    .useToolProvider(JavaTool.JPACKAGE.asToolProvider())
+                    .setFakeRuntime().setArgumentValue("--dest", appImageRoot);
+
+            appImageCmd.execute();
+
+            return appImageCmd.outputBundle();
+        }),
+        APP_IMAGE_WITH_SHORT_NAME(() -> {
             final var appImageRoot = TKit.createTempDirectory("appimage");
 
             final var appImageCmd = JPackageCommand.helloAppImage()
                     .setFakeRuntime().setArgumentValue("--dest", appImageRoot);
 
+            // Let jpackage pick the name from the main class (Hello). It qualifies as the "short" name.
+            appImageCmd.removeArgumentWithValue("--name");
+
             appImageCmd.execute();
 
-            return appImageCmd.outputBundle().toString();
+            return appImageCmd.outputBundle();
         }),
-        INVALID_MAC_RUNTIME_BUNDLE(toFunction(cmd -> {
+        MAC_APP_IMAGE_INVALID_INFO_PLIST(toFunction(cmd -> {
+            var appImageDir = (Path)APP_IMAGE.expand(cmd).orElseThrow();
+            // Replace the default Info.plist file with an empty one.
+            var plistFile = new MacBundle(appImageDir).infoPlistFile();
+            TKit.trace(String.format("Create invalid plist file [%s]", plistFile));
+            createXml(plistFile, xml -> {
+                writePList(xml, toXmlConsumer(() -> {
+                }));
+            });
+            return appImageDir;
+        })),
+        INVALID_MAC_RUNTIME_BUNDLE(toSupplier(() -> {
             // Has "Contents/MacOS/libjli.dylib", but missing "Contents/Home/lib/libjli.dylib".
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-bundle");
             Files.createDirectories(root.resolve("Contents/Home"));
             Files.createFile(root.resolve("Contents/Info.plist"));
             Files.createDirectories(root.resolve("Contents/MacOS"));
             Files.createFile(root.resolve("Contents/MacOS/libjli.dylib"));
-            return root.toString();
+            return root;
         })),
-        INVALID_MAC_RUNTIME_IMAGE(toFunction(cmd -> {
+        INVALID_MAC_RUNTIME_IMAGE(toSupplier(() -> {
             // Has some files in the "lib" subdirectory, but doesn't have the "lib/libjli.dylib" file.
             final Path root = TKit.createTempDirectory("mac-invalid-runtime-image");
             Files.createDirectories(root.resolve("lib"));
             Files.createFile(root.resolve("lib/foo"));
-            return root.toString();
+            return root;
         })),
-        EMPTY_DIR(toFunction(cmd -> {
+        EMPTY_DIR(() -> {
             return TKit.createTempDirectory("empty-dir");
+        }),
+        ADD_LAUNCHER_PROPERTY_FILE(() -> {
+            final Path propsFile = TKit.createTempFile("add-launcher.properties");
+            TKit.createPropertiesFile(propsFile, Map.of());
+            return propsFile;
+        }),
+        EMPTY_KEYCHAIN,
+        KEYCHAIN_WITH_APP_IMAGE_CERT,
+        KEYCHAIN_WITH_PKG_CERT,
+        RESOURCE_DIR(toFunction(cmd -> {
+            return TKit.createTempDirectory("resources");
         })),
-        ADD_LAUNCHER_PROPERTY_FILE,
+        FAKE_RUNTIME(toFunction(cmd -> {
+            return JPackageCommand.createInputRuntimeImage(JPackageCommand.RuntimeImageType.RUNTIME_TYPE_FAKE);
+        })),
+        LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve(cmd.mainLauncherName() + ".desktop"), List.of(
+                    "Version=12345"
+            ));
+            return resourceDir;
+        })),
+        LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve("Foo.desktop"), List.of(
+                    "Version=54321"
+            ));
+            return resourceDir;
+        })),
+        LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE(toFunction(cmd -> {
+            var resourceDir = Path.of(cmd.getArgumentValue("--resource-dir"));
+            TKit.createTextFile(resourceDir.resolve("Zoo.desktop"), List.of(
+                    "Version=777"
+            ));
+            return resourceDir;
+        })),
         ;
 
         private Token() {
@@ -124,7 +213,14 @@ public final class ErrorTest {
             this.valueSupplier = Optional.of(valueSupplier);
         }
 
-        String token() {
+        private Token(Supplier<Object> valueSupplier) {
+            this(_ -> {
+                return valueSupplier.get();
+            });
+        }
+
+        @Override
+        public String toString() {
             return makeToken(name());
         }
 
@@ -142,7 +238,7 @@ public final class ErrorTest {
         }
 
         private final Optional<Function<JPackageCommand, Object>> valueSupplier;
-        private final TokenReplace tokenReplace = new TokenReplace(token());
+        private final TokenReplace tokenReplace = new TokenReplace(toString());
     }
 
     record PackageTypeSpec(Optional<PackageType> type, boolean anyNativeType) implements CannedArgument {
@@ -342,6 +438,11 @@ public final class ErrorTest {
                 return addArgs(arg).addArgs(otherArgs).error("ERR_UnsupportedOption", arg);
             }
 
+            Builder mutate(Consumer<Builder> mutator) {
+                mutator.accept(this);
+                return this;
+            }
+
             TestSpec create() {
                 return new TestSpec(
                         Optional.ofNullable(type),
@@ -387,7 +488,7 @@ public final class ErrorTest {
             removeArgs.forEach(cmd::removeArgumentWithValue);
             cmd.addArguments(addArgs);
 
-            final var tokenValueSupplier = TokenReplace.createCachingTokenValueSupplier(Stream.of(Token.values()).collect(toMap(Token::token, token -> {
+            final var tokenValueSupplier = TokenReplace.createCachingTokenValueSupplier(Stream.of(Token.values()).collect(toMap(Token::toString, token -> {
                 return () -> {
                     return token.expand(cmd).orElseGet(() -> {
                         final var tvs = Objects.requireNonNull(tokenValueSuppliers.get(token), () -> {
@@ -405,6 +506,24 @@ public final class ErrorTest {
                 cmd.clearArguments().addArguments(newArgs);
             }
 
+            var resolvedExpectedMessages = expectedMessages.stream().map(cannedMessage -> {
+                return new CannedFormattedString(
+                        cannedMessage.formatter(),
+                        cannedMessage.format(),
+                        cannedMessage.args().stream().<Object>map(arg -> {
+                            return switch (arg) {
+                                case String str -> {
+                                    for (final var token : Token.values()) {
+                                        str = token.asTokenReplace().applyTo(str, tokenValueSupplier);
+                                    }
+                                    yield str;
+                                }
+                                case Token tkn -> tokenValueSupplier.apply(tkn.toString());
+                                default -> arg;
+                            };
+                        }).toList());
+            }).toList();
+
             // Disable default logic adding `--verbose` option
             // to jpackage command line.
             // It will affect jpackage error messages if the command line is malformed.
@@ -414,7 +533,7 @@ public final class ErrorTest {
             // with jpackage arguments in this test.
             cmd.ignoreDefaultRuntime(true);
 
-            var validator = new JPackageOutputValidator().stderr().expectMatchingStrings(expectedMessages).match(match);
+            var validator = new JPackageOutputValidator().stderr().expectMatchingStrings(resolvedExpectedMessages).match(match);
             if (match) {
                 new JPackageOutputValidator().stdout().validateEndOfStream().applyTo(cmd);
             }
@@ -499,10 +618,10 @@ public final class ErrorTest {
             testSpec().appDesc("com.other/com.other.Hello").removeArgs("--module-path")
                     .error("ERR_MissingArgument2", "--runtime-image", "--module-path"),
             // no main class in module path
-            testSpec().noAppDesc().addArgs("--module", "java.base", "--runtime-image", Token.JAVA_HOME.token())
+            testSpec().noAppDesc().addArgs("--module", "java.base", "--runtime-image", Token.JAVA_HOME.toString())
                     .error("ERR_NoMainClass"),
             // no module in module path
-            testSpec().noAppDesc().addArgs("--module", "com.foo.bar", "--runtime-image", Token.JAVA_HOME.token())
+            testSpec().noAppDesc().addArgs("--module", "com.foo.bar", "--runtime-image", Token.JAVA_HOME.toString())
                     .error("error.no-module-in-path", "com.foo.bar"),
             // non-existing argument file
             testSpec().noAppDesc().notype().addArgs("@foo")
@@ -543,7 +662,7 @@ public final class ErrorTest {
 
     private static List<TestSpec> createRuntimeMutuallyExclusive(String arg, String... otherArgs) {
         return createMutuallyExclusive(
-                new ArgumentGroup("--runtime-image", Token.JAVA_HOME.token()),
+                new ArgumentGroup("--runtime-image", Token.JAVA_HOME.toString()),
                 new ArgumentGroup(arg, otherArgs)
         ).map(TestSpec.Builder::noAppDesc).map(TestSpec.Builder::nativeType).map(TestSpec.Builder::create).toList();
     }
@@ -558,7 +677,7 @@ public final class ErrorTest {
     }
 
     public static Collection<Object[]> invalidAppVersion() {
-        return fromTestSpecBuilders(Stream.of(
+        return toTestArgs(Stream.of(
                 // Invalid app version. Just cover all different error messages.
                 // Extensive testing of invalid version strings is done in DottedVersionTest unit test.
                 testSpec().addArgs("--app-version", "").error("error.version-string-empty"),
@@ -575,6 +694,7 @@ public final class ErrorTest {
     @Test
     @ParameterSupplier("basic")
     @ParameterSupplier("testRuntimeInstallerInvalidOptions")
+    @ParameterSupplier("testAdditionLaunchers")
     @ParameterSupplier(value="testWindows", ifOS = WINDOWS)
     @ParameterSupplier(value="testMac", ifOS = MACOS)
     @ParameterSupplier(value="testLinux", ifOS = LINUX)
@@ -595,15 +715,16 @@ public final class ErrorTest {
                 List.of("--arguments", "foo"),
                 List.of("--java-options", "-Dfoo.bar=10"),
                 List.of("--add-launcher", "foo=foo.properties"),
-                List.of("--app-content", "dir"));
+                List.of("--app-content", "dir"),
+                List.of("--app-resources", "dir"));
 
         if (TKit.isWindows()) {
             argsStream = Stream.concat(argsStream, Stream.of(List.of("--win-console")));
         }
 
-        return fromTestSpecBuilders(argsStream.map(args -> {
+        return toTestArgs(argsStream.map(args -> {
             var builder = testSpec().noAppDesc().nativeType()
-                    .addArgs("--runtime-image", Token.JAVA_HOME.token())
+                    .addArgs("--runtime-image", Token.JAVA_HOME.toString())
                     .addArgs(args);
             if (args.contains("--add-modules")) {
                 builder.error("ERR_MutuallyExclusiveOptions", "--runtime-image", "--add-modules");
@@ -612,29 +733,224 @@ public final class ErrorTest {
         }));
     }
 
-    @Test
-    @ParameterSupplier
-    public static void testAdditionLaunchers(TestSpec spec) {
-        final Path propsFile = TKit.createTempFile("add-launcher.properties");
-        TKit.createPropertiesFile(propsFile, Map.of());
-        spec.mapExpectedMessages(cannedStr -> {
-            return cannedStr.mapArgs(arg -> {
-                if (arg == Token.ADD_LAUNCHER_PROPERTY_FILE) {
-                    return propsFile;
-                } else {
-                    return arg;
-                }
-            });
-        }).test(Map.of(Token.ADD_LAUNCHER_PROPERTY_FILE, cmd -> propsFile));
-    }
-
     public static Collection<Object[]> testAdditionLaunchers() {
-        return fromTestSpecBuilders(Stream.of(
-            testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.token())
+        return toTestArgs(Stream.of(
+            testSpec().addArgs("--add-launcher", Token.ADD_LAUNCHER_PROPERTY_FILE.toString())
                     .error("error.parameter-add-launcher-malformed", Token.ADD_LAUNCHER_PROPERTY_FILE, "--add-launcher"),
-            testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
+            testSpec().removeArgs("--name").addArgs("--name", "foo", "--add-launcher", "foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.toString())
                     .error("error.launcher-duplicate-name", "foo")
         ));
+    }
+
+    @Test(ifOS = MACOS)
+    public static void testMacSignAppStoreInvalidRuntime() throws IOException {
+
+        // Create app image with the runtime directory content that will fail the subsequent signing jpackage command.
+        var appImageCmd = JPackageCommand.helloAppImage().setFakeRuntime();
+        appImageCmd.executeAndAssertImageCreated();
+        Files.createDirectory(appImageCmd.appLayout().runtimeHomeDirectory().resolve("bin"));
+
+        final var keychain = SignEnvMock.SingleCertificateKeychain.FOO.keychain();
+
+        var spec = testSpec()
+                .noAppDesc()
+                .addArgs("--mac-app-store", "--mac-sign", "--app-image", appImageCmd.outputBundle().toString())
+                .error("error.invalid-app-image-runtime-image-bin-dir",
+                        ApplicationLayout.macAppImage().runtimeHomeDirectory(), appImageCmd.outputBundle())
+                .create();
+
+        TKit.withNewState(() -> {
+            var script = Script.build()
+                    // Disable the mutation making mocks "run once".
+                    .commandMockBuilderMutator(null)
+                    // Replace "/usr/bin/security" with the mock bound to the keychain mock.
+                    .map(MacSignMockUtils.securityMock(SignEnvMock.VALUE))
+                    // Don't mock other external commands.
+                    .use(VerbatimCommandMock.INSTANCE)
+                    .createLoop();
+
+            // Create jpackage tool provider using the /usr/bin/security mock.
+            var jpackage = JPackageMockUtils.createJPackageToolProvider(OperatingSystem.MACOS, script);
+
+            // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
+            JPackageCommand.useToolProviderByDefault(jpackage);
+
+            spec.test();
+        });
+    }
+
+    @Test(ifOS = MACOS)
+    @ParameterSupplier
+    @ParameterSupplier("testMacPkgSignWithoutIdentity")
+    public static void testMacSignWithoutIdentity(TestSpec spec) {
+        // The test calls JPackageCommand.useToolProviderByDefault(),
+        // which alters global variables in the test library,
+        // so run the test case with a new global state to isolate the alteration of the globals.
+        TKit.withNewState(() -> {
+            testMacSignWithoutIdentityWithNewTKitState(spec);
+        });
+    }
+
+    private static void testMacSignWithoutIdentityWithNewTKitState(TestSpec spec) {
+        final Token keychainToken = spec.expectedMessages().stream().flatMap(cannedStr -> {
+            return cannedStr.args().stream().filter(Token.class::isInstance).map(Token.class::cast).filter(token -> {
+                switch (token) {
+                    case EMPTY_KEYCHAIN, KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
+                        return true;
+                    }
+                    default -> {
+                        return false;
+                    }
+                }
+            });
+        }).distinct().reduce((a, b) -> {
+            throw new IllegalStateException(String.format(
+                    "Error messages %s reference multiple keychains: %s and %s", spec.expectedMessages(), a, b));
+        }).orElseThrow();
+
+        final ResolvedKeychain keychain;
+
+        switch (keychainToken) {
+            case EMPTY_KEYCHAIN -> {
+                keychain = new ResolvedKeychain(new KeychainWithCertsSpec(MacSign.createEmptyKeychain(), List.of()));
+            }
+            case KEYCHAIN_WITH_APP_IMAGE_CERT, KEYCHAIN_WITH_PKG_CERT -> {
+                CertificateType existingCertType;
+                switch (keychainToken) {
+                    case KEYCHAIN_WITH_APP_IMAGE_CERT -> {
+                        existingCertType = CertificateType.CODE_SIGN;
+                    }
+                    case KEYCHAIN_WITH_PKG_CERT -> {
+                        existingCertType = CertificateType.INSTALLER;
+                    }
+                    default -> {
+                        throw new AssertionError();
+                    }
+                }
+
+                keychain = Stream.of(SignEnvMock.SingleCertificateKeychain.values()).filter(k -> {
+                    return k.certificateType() == existingCertType;
+                }).findFirst().orElseThrow().keychain();
+
+                var script = Script.build()
+                        // Disable the mutation making mocks "run once".
+                        .commandMockBuilderMutator(null)
+                        // Replace "/usr/bin/security" with the mock bound to the keychain mock.
+                        .map(MacSignMockUtils.securityMock(SignEnvMock.VALUE))
+                        // Don't mock other external commands.
+                        .use(VerbatimCommandMock.INSTANCE)
+                        .createLoop();
+
+                // Create jpackage tool provider using the /usr/bin/security mock.
+                var jpackage = JPackageMockUtils.createJPackageToolProvider(OperatingSystem.MACOS, script);
+
+                // Override the default jpackage tool provider with the one using the /usr/bin/security mock.
+                JPackageCommand.useToolProviderByDefault(jpackage);
+            }
+            default -> {
+                throw new AssertionError();
+            }
+        }
+
+        MacSign.withKeychain(_ -> {
+            spec.mapExpectedMessages(cannedStr -> {
+                return cannedStr.mapArgs(arg -> {
+                    switch (arg) {
+                        case StandardCertificateNamePrefix certPrefix -> {
+                            return certPrefix.value();
+                        }
+                        case Token _ -> {
+                            return keychain.name();
+                        }
+                        default -> {
+                            return arg;
+                        }
+                    }
+                });
+            }).test(Map.of(keychainToken, _ -> keychain.name()));
+        }, keychain);
+    }
+
+    public static Collection<Object[]> testMacSignWithoutIdentity() {
+        final List<TestSpec> testCases = new ArrayList<>();
+
+        final var signArgs = List.of("--mac-sign", "--mac-signing-keychain", Token.EMPTY_KEYCHAIN.toString());
+        final var appImageArgs = List.of("--app-image", Token.APP_IMAGE_WITH_SHORT_NAME.toString());
+
+        for (var withAppImage : List.of(true, false)) {
+            var builder = testSpec();
+            if (withAppImage) {
+                builder.noAppDesc().addArgs(appImageArgs);
+            }
+            builder.addArgs(signArgs);
+
+            for (var type: List.of(PackageType.IMAGE, PackageType.MAC_PKG, PackageType.MAC_DMG)) {
+                builder.setMessages().error("error.cert.not.found",
+                        MacSign.StandardCertificateNamePrefix.CODE_SIGN, Token.EMPTY_KEYCHAIN);
+                switch (type) {
+                    case MAC_PKG -> {
+                        // jpackage must report two errors:
+                        //  1. It can't find signing identity to sign the app image
+                        //  2. It can't find signing identity to sign the PKG installer
+                        builder.error("error.cert.not.found",
+                                MacSign.StandardCertificateNamePrefix.INSTALLER, Token.EMPTY_KEYCHAIN);
+                    }
+                    default -> {
+                        // NOP
+                    }
+                }
+                var testSpec = builder.type(type).create();
+                testCases.add(testSpec);
+            }
+        }
+
+        return toTestArgs(testCases);
+    }
+
+    public static Collection<Object[]> testMacPkgSignWithoutIdentity() {
+        final List<TestSpec.Builder> testCases = new ArrayList<>();
+
+        final var appImageArgs = List.of("--app-image", Token.APP_IMAGE_WITH_SHORT_NAME.toString());
+
+        for (var withAppImage : List.of(true, false)) {
+            for (var existingCertType : CertificateType.values()) {
+                Token keychain;
+                StandardCertificateNamePrefix missingCertificateNamePrefix = switch (existingCertType) {
+                    case INSTALLER -> {
+                        keychain = Token.KEYCHAIN_WITH_PKG_CERT;
+                        yield StandardCertificateNamePrefix.CODE_SIGN;
+                    }
+                    case CODE_SIGN -> {
+                        keychain = Token.KEYCHAIN_WITH_APP_IMAGE_CERT;
+                        yield StandardCertificateNamePrefix.INSTALLER;
+                    }
+                };
+
+                var builder = testSpec()
+                        .type(PackageType.MAC_PKG)
+                        .addArgs("--mac-sign", "--mac-signing-keychain", keychain.toString())
+                        .error("error.cert.not.found", missingCertificateNamePrefix, keychain);
+
+                if (withAppImage) {
+                    builder.noAppDesc().addArgs(appImageArgs);
+                } else {
+                    /*
+                     * Use shorter name to avoid
+                     *
+                     * [03:08:55.623] --mac-package-name is set to 'MacSignWithoutIdentityErrorTest', which is longer than 16 characters. For a better Mac experience consider shortening it.
+                     *
+                     * in the output.
+                     * The same idea is behind using the "APP_IMAGE_WITH_SHORT_NAME" token
+                     * instead of the "APP_IMAGE" for the predefined app image.
+                     */
+                    builder.removeArgs("--name");
+                }
+
+                testCases.add(builder);
+            }
+        }
+
+        return toTestArgs(testCases);
     }
 
     @Test
@@ -650,8 +966,8 @@ public final class ErrorTest {
     @Test
     @ParameterSupplier("invalidNames")
     public static void testInvalidAddLauncherName(InvalidName name) {
-        testAdditionLaunchers(testSpec()
-                .addArgs("--add-launcher", name + "=" + Token.ADD_LAUNCHER_PROPERTY_FILE.token())
+        test(testSpec()
+                .addArgs("--add-launcher", name + "=" + Token.ADD_LAUNCHER_PROPERTY_FILE.toString())
                 .error("ERR_InvalidSLName", adjustTextStreamVerifierArg(name.value()))
                 .match(!name.isMessingUpConsoleOutput())
                 .create());
@@ -703,13 +1019,13 @@ public final class ErrorTest {
                             .error("error.msi-product-version-components", "1.2.3.4.5")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "256.1")
-                            .error("error.msi-product-version-major-out-of-range", "256.1")
+                            .error("error.msi-product-version-major-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.256")
-                            .error("error.msi-product-version-minor-out-of-range", "1.256")
+                            .error("error.msi-product-version-minor-out-of-range")
                             .advice("error.version-string-wrong-format.advice"),
                     testSpec().type(type).addArgs("--app-version", "1.2.65536")
-                            .error("error.msi-product-version-build-out-of-range", "1.2.65536")
+                            .error("error.msi-product-version-build-out-of-range")
                             .advice("error.version-string-wrong-format.advice")
             );
         }).flatMap(x -> x).map(TestSpec.Builder::create).toList());
@@ -724,29 +1040,25 @@ public final class ErrorTest {
         final List<TestSpec> testCases = new ArrayList<>();
 
         testCases.addAll(Stream.of(
-                testSpec().addArgs("--app-version", "0.2")
-                        .error("message.version-string-first-number-not-zero")
-                        .advice("error.invalid-cfbundle-version.advice"),
-                testSpec().addArgs("--app-version", "1.2.3.4")
-                        .error("message.version-string-too-many-components")
-                        .advice("error.invalid-cfbundle-version.advice"),
                 testSpec().invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().type(PackageType.MAC_DMG).invalidTypeArg("--mac-installer-sign-identity", "foo"),
                 testSpec().invalidTypeArg("--mac-dmg-content", "foo"),
                 testSpec().type(PackageType.MAC_PKG).invalidTypeArg("--mac-dmg-content", "foo"),
-                testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.token())
+                testSpec().noAppDesc().addArgs("--app-image", Token.APP_IMAGE.toString())
                         .error("error.app-image.mac-sign.required"),
                 testSpec().type(PackageType.MAC_PKG).addArgs("--mac-package-identifier", "#1")
-                        .error("message.invalid-identifier", "#1")
-                        .advice("message.invalid-identifier.advice"),
+                        .error("error.parameter-not-mac-bundle-identifier", "#1", "--mac-package-identifier")
+                        .advice("error.parameter-not-mac-bundle-identifier.advice"),
                 // Bundle for mac app store should not have runtime commands
                 testSpec().nativeType().addArgs("--mac-app-store", "--jlink-options", "--bind-services")
                         .error("ERR_MissingJLinkOptMacAppStore", "--strip-native-commands"),
                 // Predefined app image must be a valid macOS bundle.
-                testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.token())
-                        .error("error.parameter-not-mac-bundle", JPackageCommand.cannedArgument(cmd -> {
-                            return Path.of(cmd.getArgumentValue("--app-image"));
-                        }, Token.EMPTY_DIR.token()), "--app-image")
+                testSpec().noAppDesc().nativeType().addArgs("--app-image", Token.EMPTY_DIR.toString())
+                        .error("error.parameter-not-mac-bundle", Token.EMPTY_DIR, "--app-image"),
+                testSpec().nativeType().noAppDesc().addArgs("--app-image", Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.toString())
+                        .error("error.invalid-app-image-plist-file", JPackageCommand.cannedArgument(cmd -> {
+                            return new MacBundle(Path.of(cmd.getArgumentValue("--app-image"))).infoPlistFile();
+                        }, Token.MAC_APP_IMAGE_INVALID_INFO_PLIST.toString()))
         ).map(TestSpec.Builder::create).toList());
 
         macInvalidRuntime(testCases::add);
@@ -754,13 +1066,12 @@ public final class ErrorTest {
         // Test a few app-image options that should not be used when signing external app image
         testCases.addAll(Stream.of(
                 new ArgumentGroup("--app-version", "2.0"),
-                new ArgumentGroup("--name", "foo"),
-                new ArgumentGroup("--mac-app-store")
+                new ArgumentGroup("--name", "foo")
         ).flatMap(argGroup -> {
             var withoutSign = testSpec()
                     .noAppDesc()
                     .addArgs(argGroup.asArray())
-                    .addArgs("--app-image", Token.APP_IMAGE.token());
+                    .addArgs("--app-image", Token.APP_IMAGE.toString());
 
             var withSign = withoutSign.copy().addArgs("--mac-sign");
 
@@ -828,6 +1139,82 @@ public final class ErrorTest {
                         .advice("error.rpm-invalid-value-for-package-name.advice")
         ).map(TestSpec.Builder::create).toList());
 
+        if (LinuxHelper.isDesktopFileValidateCommandAvailable()) {
+            Stream.of(
+                    testSpec().type(PackageType.LINUX_RPM).addArgs("--linux-menu-group", "%$@#!")
+                            .error("error.parameter-invalid-value", "%$@#!", "--linux-menu-group")
+                            .advice("error.invalid-desktop-category.advice")
+            ).map(TestSpec.Builder::create).forEach(testCases::add);
+
+            Consumer<TestSpec.Builder> desktopValidatorInitializer = builder -> {
+                builder.type(PackageType.LINUX_RPM)
+                        .addArgs("--runtime-image", Token.FAKE_RUNTIME.toString())
+                        .addArgs("--linux-shortcut")
+                        .removeArgs("--name").addArgs("--name", "Wake")
+                        .addArgs("--resource-dir", Token.RESOURCE_DIR.toString())
+                        .addArgs("--temp", Token.EMPTY_DIR.toString());
+            };
+
+            // Invalid desktop entry files
+            Stream.of(
+                    // Invalid main desktop entry file
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Valid main desktop entry file, invalid additional launcher desktop file
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE.toString())
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Invalid main desktop entry file, valid additional launcher desktop file and one of additional launchers
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // Main desktop entry file and all additional launcher desktop files invalid
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.main-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Wake.desktop", Token.EMPTY_DIR))
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice"),
+                    // All additional launcher desktop files invalid
+                    testSpec().mutate(desktopValidatorInitializer)
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_ZOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--resource-dir", Token.LINUX_ADD_INVALID_FOO_DESKTOP_ENTRY_FILE_RESOURCE.toString())
+                            .addArgs("--add-launcher", "Zoo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .addArgs("--add-launcher", "Foo=" + Token.ADD_LAUNCHER_PROPERTY_FILE)
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Foo.desktop", Token.EMPTY_DIR),
+                                    "Foo")
+                            .error("error.invalid-desktop-entry-file.add-launcher",
+                                    String.format("%s/image/opt/wake/lib/wake-Zoo.desktop", Token.EMPTY_DIR),
+                                    "Zoo")
+                            .advice("error.invalid-desktop-entry-file.advice")
+            ).map(TestSpec.Builder::create).forEach(testCases::add);
+        }
+
         invalidShortcut(testCases::add, "--linux-shortcut");
 
         return toTestArgs(testCases.stream());
@@ -889,14 +1276,12 @@ public final class ErrorTest {
 
     private static void macInvalidRuntime(Consumer<TestSpec> accumulator) {
         var runtimeWithBinDirErr = makeError(
-                "error.invalid-runtime-image-bin-dir", JPackageCommand.cannedArgument(cmd -> {
-                    return Path.of(cmd.getArgumentValue("--runtime-image"));
-                }, Token.JAVA_HOME.token()));
+                "error.invalid-runtime-image-bin-dir", Token.JAVA_HOME);
         var runtimeWithBinDirErrAdvice = makeAdvice(
                 "error.invalid-runtime-image-bin-dir.advice", "--mac-app-store");
 
         Stream.of(
-                testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.token())
+                testSpec().nativeType().addArgs("--mac-app-store", "--runtime-image", Token.JAVA_HOME.toString())
                         .messages(runtimeWithBinDirErr, runtimeWithBinDirErrAdvice)
         ).map(TestSpec.Builder::create).forEach(accumulator);
 
@@ -929,14 +1314,11 @@ public final class ErrorTest {
         }
 
         TestSpec.Builder applyTo(TestSpec.Builder builder) {
-            return builder.addArgs("--runtime-image", runtimeDir.token()).messages(expectedErrorMsg());
+            return builder.addArgs("--runtime-image", runtimeDir.toString()).messages(expectedErrorMsg());
         }
 
         private CannedFormattedString expectedErrorMsg() {
-            return makeError(
-                    "error.invalid-runtime-image-missing-file", JPackageCommand.cannedArgument(cmd -> {
-                        return Path.of(cmd.getArgumentValue("--runtime-image"));
-                    }, runtimeDir.token()), missingFile);
+            return makeError("error.invalid-runtime-image-missing-file", runtimeDir, missingFile);
         }
     }
 
@@ -1007,8 +1389,14 @@ public final class ErrorTest {
         );
     }
 
-    private static <T> Collection<Object[]> toTestArgs(Stream<T> stream) {
-        return stream.filter(v -> {
+    private static Collection<Object[]> toTestArgs(Stream<?> stream) {
+        return stream.map(v -> {
+            if (v instanceof TestSpec.Builder builder) {
+                return builder.create();
+            } else {
+                return v;
+            }
+        }).filter(v -> {
             if (v instanceof TestSpec ts) {
                 return ts.isSupported();
             } else {
@@ -1019,8 +1407,8 @@ public final class ErrorTest {
         }).toList();
     }
 
-    private static Collection<Object[]> fromTestSpecBuilders(Stream<TestSpec.Builder> stream) {
-        return toTestArgs(stream.map(TestSpec.Builder::create));
+    private static Collection<Object[]> toTestArgs(Collection<?> col) {
+        return toTestArgs(col.stream());
     }
 
     private static String adjustTextStreamVerifierArg(String str) {
@@ -1028,4 +1416,40 @@ public final class ErrorTest {
     }
 
     private static final Pattern LINE_SEP_REGEXP = Pattern.compile("\\R");
+
+    private final class SignEnvMock {
+
+        enum SingleCertificateKeychain {
+            FOO(CertificateType.CODE_SIGN),
+            BAR(CertificateType.INSTALLER),
+            ;
+
+            SingleCertificateKeychain(CertificateType certificateType) {
+                this.keychain = KeychainWithCertsSpec.build()
+                        .name(name().toLowerCase() + ".keychain")
+                        .addCert(CertificateRequest.build()
+                                .userName(name().toLowerCase())
+                                .type(Objects.requireNonNull(certificateType)))
+                        .create();
+            }
+
+            static List<KeychainWithCertsSpec> signingEnv() {
+                return Stream.of(values()).map(v -> {
+                    return v.keychain;
+                }).toList();
+            }
+
+            CertificateType certificateType() {
+                return keychain.certificateRequests().getFirst().type();
+            }
+
+            ResolvedKeychain keychain() {
+                return new ResolvedKeychain(keychain).toMock(VALUE.env());
+            }
+
+            private final KeychainWithCertsSpec keychain;
+        }
+
+        static final MacSignMockUtils.SignEnv VALUE = new MacSignMockUtils.SignEnv(SingleCertificateKeychain.signingEnv());
+    }
 }

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6498300 8377457
+ * @bug     6498300 8377457 8379548
  *
  * @summary regression: parent loggers are not properly registered
  * @author  ss45998

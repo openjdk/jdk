@@ -112,12 +112,6 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      */
     private static final String uiClassID = "PopupMenuUI";
 
-    /**
-     * Key used in AppContext to determine if light way popups are the default.
-     */
-    private static final Object defaultLWPopupEnabledKey =
-        new StringBuffer("JPopupMenu.defaultLWPopupEnabledKey");
-
     /** Bug#4425878-Property javax.swing.adjustPopupLocationToFit introduced */
     static boolean popupPositionFixDisabled =
          System.getProperty("javax.swing.adjustPopupLocationToFit","").equals("false");
@@ -153,6 +147,8 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     private static final boolean VERBOSE = false; // show reuse hits/misses
     private static final boolean DEBUG =   false;  // show bad params, misc.
 
+    private static boolean defaultLWPopupEnabled = true;
+
     /**
      *  Sets the default value of the <code>lightWeightPopupEnabled</code>
      *  property.
@@ -163,8 +159,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *  @see #setLightWeightPopupEnabled
      */
     public static void setDefaultLightWeightPopupEnabled(boolean aFlag) {
-        SwingUtilities.appContextPut(defaultLWPopupEnabledKey,
-                                     Boolean.valueOf(aFlag));
+        defaultLWPopupEnabled = aFlag;
     }
 
     /**
@@ -177,14 +172,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *  @see #setDefaultLightWeightPopupEnabled
      */
     public static boolean getDefaultLightWeightPopupEnabled() {
-        Boolean b = (Boolean)
-            SwingUtilities.appContextGet(defaultLWPopupEnabledKey);
-        if (b == null) {
-            SwingUtilities.appContextPut(defaultLWPopupEnabledKey,
-                                         Boolean.TRUE);
-            return true;
-        }
-        return b.booleanValue();
+        return defaultLWPopupEnabled;
     }
 
     /**
@@ -987,7 +975,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
         if (newFrame != frame) {
             // Use the invoker's frame so that events
             // are propagated properly
-            if (newFrame!=null) {
+            if (newFrame != null) {
                 this.frame = newFrame;
                 if(popup != null) {
                     setVisible(false);
@@ -1024,7 +1012,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      */
     JPopupMenu getRootPopupMenu() {
         JPopupMenu mp = this;
-        while((mp!=null) && (mp.isPopupMenu()!=true) &&
+        while((mp != null) && (mp.isPopupMenu()!=true) &&
               (mp.getInvoker() != null) &&
               (mp.getInvoker().getParent() instanceof JPopupMenu popupMenu)
               ) {
@@ -1194,7 +1182,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     private static Frame getFrame(Component c) {
         Component w = c;
 
-        while(!(w instanceof Frame) && (w!=null)) {
+        while(!(w instanceof Frame) && (w != null)) {
             w = w.getParent();
         }
         return (Frame)w;

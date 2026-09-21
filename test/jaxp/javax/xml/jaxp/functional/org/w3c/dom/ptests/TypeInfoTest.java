@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,24 +22,23 @@
  */
 package org.w3c.dom.ptests;
 
-import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
-import static org.testng.Assert.assertEquals;
-
-import java.io.StringReader;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.TypeInfo;
 import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.StringReader;
+
+import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /*
  * @test
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm org.w3c.dom.ptests.TypeInfoTest
+ * @run junit/othervm org.w3c.dom.ptests.TypeInfoTest
  * @summary Test getTypeName and getTypeNamespace methods of TypeInfo interface
  */
 public class TypeInfoTest {
@@ -48,11 +47,14 @@ public class TypeInfoTest {
      */
     @Test
     public void test() throws Exception {
-        TypeInfo typeInfo = getTypeOfRoot(SCHEMA_INSTANCE, "<?xml version='1.0'?>\n" + "<test1 xmlns=\"testNS\"><code/></test1>\n");
+        TypeInfo typeInfo = getTypeOfRoot(SCHEMA_INSTANCE,
+                """
+                <?xml version='1.0'?>
+                <test1 xmlns="testNS"><code/></test1>
+                """);
 
-        assertEquals(typeInfo.getTypeName(), "Test");
-        assertEquals(typeInfo.getTypeNamespace(), "testNS");
-
+        assertEquals("Test", typeInfo.getTypeName());
+        assertEquals("testNS", typeInfo.getTypeNamespace());
     }
 
     private TypeInfo getTypeOfRoot(String schemaText, String docText) throws Exception {
@@ -87,53 +89,55 @@ public class TypeInfoTest {
      * Schema instance
      */
     private static final String SCHEMA_INSTANCE =
-            "<?xml version=\"1.0\"?>\n"
-            + "<xsd:schema xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n"
-            + "            xmlns:testNS=\"testNS\"\n"
-            + "            targetNamespace=\"testNS\" elementFormDefault=\"qualified\">\n"
-            + "    <xsd:element name=\"test1\" type=\"testNS:Test\"/>\n"
-            + "    \n"
-            + "    <xsd:complexType name=\"Test\">\n"
-            + "        <xsd:sequence>\n"
-            + "            <xsd:element name=\"description\" minOccurs=\"0\"/>\n"
-            + "            <xsd:element name=\"code\"/>\n"
-            + "        </xsd:sequence>\n"
-            + "    </xsd:complexType>\n"
-            + "\n"
-            + "    <xsd:element name=\"test2\">\n"
-            + "        <xsd:complexType>\n"
-            + "            <xsd:sequence>\n"
-            + "                <xsd:element name=\"description\" minOccurs=\"0\"/>\n"
-            + "                <xsd:element name=\"code\"/>\n"
-            + "            </xsd:sequence>\n"
-            + "        </xsd:complexType>\n"
-            + "    </xsd:element>\n"
-            + "\n"
-            + "    <xsd:element name=\"test3\" type=\"xsd:string\"/>\n"
-            + "\n"
-            + "    <xsd:element name=\"test4\" type=\"testNS:Test1\"/>\n"
-            + "\n"
-            + "    <xsd:simpleType name=\"Test1\">\n"
-            + "        <xsd:restriction base=\"xsd:string\"/>\n"
-            + "    </xsd:simpleType>\n"
-            + "\n"
-            + "    <xsd:element name=\"test5\">\n"
-            + "        <xsd:simpleType>\n"
-            + "            <xsd:restriction base=\"xsd:string\"/>\n"
-            + "        </xsd:simpleType>\n"
-            + "    </xsd:element>\n"
-            + "\n"
-            + "    <xsd:element name=\"test6\">\n"
-            + "        <xsd:complexType>\n"
-            + "            <xsd:complexContent>\n"
-            + "                <xsd:extension base=\"testNS:Test\">\n"
-            + "                    <xsd:attribute name=\"attr\" type=\"xsd:string\"/>\n"
-            + "                </xsd:extension>\n"
-            + "            </xsd:complexContent>\n"
-            + "        </xsd:complexType>\n"
-            + "    </xsd:element>\n"
-            + "\n"
-            + "</xsd:schema>\n";
+            """
+            <?xml version="1.0"?>
+            <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+                        xmlns:testNS="testNS"
+                        targetNamespace="testNS" elementFormDefault="qualified">
+                <xsd:element name="test1" type="testNS:Test"/>
+
+                <xsd:complexType name="Test">
+                    <xsd:sequence>
+                        <xsd:element name="description" minOccurs="0"/>
+                        <xsd:element name="code"/>
+                    </xsd:sequence>
+                </xsd:complexType>
+
+                <xsd:element name="test2">
+                    <xsd:complexType>
+                        <xsd:sequence>
+                            <xsd:element name="description" minOccurs="0"/>
+                            <xsd:element name="code"/>
+                        </xsd:sequence>
+                    </xsd:complexType>
+                </xsd:element>
+
+                <xsd:element name="test3" type="xsd:string"/>
+
+                <xsd:element name="test4" type="testNS:Test1"/>
+
+                <xsd:simpleType name="Test1">
+                    <xsd:restriction base="xsd:string"/>
+                </xsd:simpleType>
+
+                <xsd:element name="test5">
+                    <xsd:simpleType>
+                        <xsd:restriction base="xsd:string"/>
+                    </xsd:simpleType>
+                </xsd:element>
+
+                <xsd:element name="test6">
+                    <xsd:complexType>
+                        <xsd:complexContent>
+                            <xsd:extension base="testNS:Test">
+                                <xsd:attribute name="attr" type="xsd:string"/>
+                            </xsd:extension>
+                        </xsd:complexContent>
+                    </xsd:complexType>
+                </xsd:element>
+
+            </xsd:schema>
+            """;
 
 
 }

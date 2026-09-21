@@ -34,6 +34,7 @@ import jdk.jpackage.test.mock.CommandActionSpecs;
 import jdk.jpackage.test.mock.CommandMockExit;
 import jdk.jpackage.test.mock.CommandMockSpec;
 import jdk.jpackage.test.mock.Script;
+import jdk.jpackage.test.stdmock.JPackageMockUtils;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -86,7 +87,7 @@ public class LinuxSystemEnvironmentTest {
 
             Globals.main(() -> {
 
-                MockUtils.buildJPackage().script(script).applyToGlobals();
+                JPackageMockUtils.buildJPackage().script(script).applyToGlobals();
 
                 var actual = LinuxSystemEnvironment.detectNativePackageType();
 

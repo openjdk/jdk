@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import javax.print.attribute.standard.Destination;
 
 /*
  * @test
- * @bug 4223328
+ * @bug 4223328 4138921
  * @summary Printer graphics must throw expected exceptions
  * @key printer
  * @run main PrintNullString
@@ -106,12 +106,8 @@ public class PrintNullString implements Printable {
             g2d.drawString("caught expected NPE for null iterator, int", 20, 120);
         }
 
-        try {
-            g2d.drawString(emptyIterator, 20, 140);
-            throw new RuntimeException("FAILURE: No IAE for empty iterator, int");
-        } catch (IllegalArgumentException e) {
-            g2d.drawString("caught expected IAE for empty iterator, int", 20, 140);
-        }
+        g2d.drawString(emptyIterator, 20, 140);
+        g2d.drawString("OK for empty iterator, int", 20, 140);
 
         // API 4: null & empty drawString(Iterator, float, int);
         try {
@@ -121,12 +117,8 @@ public class PrintNullString implements Printable {
             g2d.drawString("caught expected NPE for null iterator, float", 20, 160);
         }
 
-        try {
-            g2d.drawString(emptyIterator, 20.0f, 180.0f);
-            throw new RuntimeException("FAILURE: No IAE for empty iterator, float");
-        } catch (IllegalArgumentException e) {
-            g2d.drawString("caught expected IAE for empty iterator, float", 20, 180);
-        }
+        g2d.drawString(emptyIterator, 20.0f, 180.0f);
+        g2d.drawString("OK for empty iterator, float", 20.0f, 100.f);
 
         return PAGE_EXISTS;
     }

@@ -36,8 +36,8 @@
 #include "runtime/os.hpp"
 #endif
 
-inline jlong Thread::cooked_allocated_bytes() const {
-  jlong allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
+inline uint64_t Thread::cooked_allocated_bytes() const {
+  uint64_t allocated_bytes = AtomicAccess::load_acquire(&_allocated_bytes);
   size_t used_bytes = 0;
   if (UseTLAB) {
     // cooked_used_bytes() does its best to not return implausible values, but

@@ -455,7 +455,7 @@ void StringDedup::Table::free_buckets(Bucket* buckets, size_t number_of_buckets)
   while (number_of_buckets > 0) {
     buckets[--number_of_buckets].~Bucket();
   }
-  FREE_C_HEAP_ARRAY(Bucket, buckets);
+  FREE_C_HEAP_ARRAY(buckets);
 }
 
 // Compute the hash code for obj using halfsiphash_32.  As this is a high
@@ -523,7 +523,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
   assert(value != nullptr, "precondition");
   assert(TypeArrayKlass::cast(value->klass())->element_type() == T_BYTE, "precondition");
   int length = value->length();
-  static_assert(sizeof(jchar) == 2 * sizeof(jbyte), "invariant");
+  static_assert(sizeof(jchar) == 2 * sizeof(jbyte));
   assert(((length & 1) == 0) || CompactStrings, "invariant");
   if ((length & 1) == 0) {
     // If the length of the byte array is even, then the value array could be

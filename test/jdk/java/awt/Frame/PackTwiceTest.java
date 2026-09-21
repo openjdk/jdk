@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.awt.TextField;
 public class PackTwiceTest {
     public static void main(String[] args) throws Exception {
         String INSTRUCTIONS = """
-                1. You would see a Frame titled 'TestFrame'
+                1. You would see a Frame titled 'PackTwiceTest TestFrame'
                 2. The Frame displays a text as below:
                     'I am a lengthy sentence...can you see me?'
                 3. If you can see the full text without resizing the frame

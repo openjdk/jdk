@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@ package compiler.arguments;
 
 /*
  * @test TestCompileTaskTimeout
- * @bug 8308094 8365909 8366875
+ * @bug 8308094 8365909 8366875 8381235
  * @requires vm.debug & vm.flagless & os.name == "Linux"
  * @summary Check functionality of CompileTaskTimeout
  * @library /test/lib
@@ -44,15 +44,15 @@ public class TestCompileTaskTimeout {
 
         // Short timeouts crash the VM.
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "--version")
-                    .shouldHaveExitValue(134)
+                    .shouldNotHaveExitValue(0)
                     .shouldContain("timed out after");
 
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "-XX:TieredStopAtLevel=3", "--version")
-                    .shouldHaveExitValue(134)
+                    .shouldNotHaveExitValue(0)
                     .shouldContain("timed out after");
 
         ProcessTools.executeTestJava("-Xcomp", "-XX:CompileTaskTimeout=1", "-XX:-TieredCompilation", "--version")
-                    .shouldHaveExitValue(134)
+                    .shouldNotHaveExitValue(0)
                     .shouldContain("timed out after");
 
         // A long enough timeout succeeds.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,46 +25,55 @@ package jdk.test.lib.json;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.Optional;
 
-public interface JSONValue {
+public sealed interface JSONValue
+        permits JSONValue.JSONObject, JSONValue.JSONArray, JSONValue.JSONString,
+                JSONValue.JSONNumber, JSONValue.JSONBoolean, JSONValue.JSONNull {
 
     public final class JSONObject implements JSONValue {
-        private final Map<String, JSONValue> value;
+        private final Map<String, JSONValue> members;
 
-        public JSONObject(Map<String, JSONValue> value) {
-            this.value = value;
+        private JSONObject(Map<String, ? extends JSONValue> members) {
+            this.members = Map.copyOf(members);
         }
 
         @Override
-        public JSONObject asObject() {
-            return this;
-        }
-
-        public JSONValue get(String k) {
-            return value.get(k);
+        public JSONValue get(String name) {
+            JSONValue v = members.get(name);
+            if (v == null) {
+                throw new NoSuchElementException("member " + name + " does not exist");
+            }
+            return v;
         }
 
         @Override
-        public int size() {
-            return value.size();
+        public Optional<JSONValue> getOrAbsent(String name) {
+            return Optional.ofNullable(members.get(name));
+        }
+
+        @Override
+        public Map<String, JSONValue> members() {
+            return members;
         }
 
         @Override
         public String toString() {
             var builder = new StringBuilder();
             builder.append("{");
-            for (var key : value.keySet()) {
+            for (String key : members.keySet()) {
                 builder.append("\"");
                 builder.append(key);
                 builder.append("\":");
-                builder.append(value.get(key).toString());
+                builder.append(members.get(key).toString());
                 builder.append(",");
             }
 
-            var end = builder.length() - 1;
+            int end = builder.length() - 1;
             if (builder.charAt(end) == ',') {
                 builder.deleteCharAt(end);
             }
@@ -72,13 +81,17 @@ public interface JSONValue {
             builder.append("}");
             return builder.toString();
         }
+
+        public static JSONObject of(Map<String, ? extends JSONValue> members) {
+            return new JSONObject(members);
+        }
     }
 
     public final class JSONString implements JSONValue {
         private final String value;
 
-        public JSONString(String value) {
-            this.value = value;
+        private JSONString(String value) {
+            this.value = Objects.requireNonNull(value);
         }
 
         @Override
@@ -88,9 +101,6 @@ public interface JSONValue {
 
         @Override
         public String toString() {
-            if (value == null) {
-                return "null";
-            }
             var builder = new StringBuilder();
             builder.append("\"");
 
@@ -131,26 +141,17 @@ public interface JSONValue {
             builder.append("\"");
             return builder.toString();
         }
+
+        public static JSONString of(String value) {
+            return new JSONString(value);
+        }
     }
 
-    public final class JSONArray implements JSONValue, Iterable<JSONValue> {
-        private final List<JSONValue> values;
+    public final class JSONArray implements JSONValue {
+        private final List<JSONValue> elements;
 
-        public JSONArray(List<JSONValue> array) {
-            this.values = array;
-        }
-
-        @Override
-        public JSONArray asArray() {
-            return this;
-        }
-
-        public JSONValue get(int i) {
-            return values.get(i);
-        }
-
-        public int size() {
-            return values.size();
+        JSONArray(List<? extends JSONValue> elements) {
+            this.elements = List.copyOf(elements);
         }
 
         @Override
@@ -158,9 +159,10 @@ public interface JSONValue {
             var builder = new StringBuilder();
 
             builder.append("[");
-            for (var i = 0; i < size(); i++) {
-                builder.append(get(i).toString());
-                if (i != (size() - 1)) {
+            int size = elements.size();
+            for (int i = 0; i < size; i++) {
+                builder.append(elements.get(i).toString());
+                if (i != (size - 1)) {
                     builder.append(",");
                 }
             }
@@ -169,8 +171,106 @@ public interface JSONValue {
         }
 
         @Override
-        public Iterator<JSONValue> iterator() {
-            return values.iterator();
+        public List<JSONValue> elements() {
+            return elements;
+        }
+
+        @Override
+        public JSONValue element(int index) {
+            return elements.get(index);
+        }
+
+        public static JSONArray of(List<? extends JSONValue> elements) {
+            return new JSONArray(elements);
+        }
+    }
+
+    public final class JSONNumber implements JSONValue {
+        private final String value;
+
+        private JSONNumber(String value) {
+            this.value = Objects.requireNonNull(value);
+        }
+
+        @Override
+        public int asInt() {
+            return Integer.parseInt(value);
+        }
+
+        @Override
+        public long asLong() {
+            return Long.parseLong(value);
+        }
+
+        @Override
+        public double asDouble() {
+            return Double.parseDouble(value);
+        }
+
+        @Override
+        public String toString() {
+            return value;
+        }
+
+        public static JSONNumber of(String value) {
+            return new JSONNumber(value);
+        }
+
+        public static JSONNumber of(int value) {
+            return of(String.valueOf(value));
+        }
+
+        public static JSONNumber of(long value) {
+            return of(String.valueOf(value));
+        }
+
+        public static JSONNumber of(double value) {
+            return of(String.valueOf(value));
+        }
+    }
+
+    public final class JSONBoolean implements JSONValue {
+        private static JSONBoolean TRUE = new JSONBoolean(true);
+        private static JSONBoolean FALSE = new JSONBoolean(false);
+
+        private final boolean value;
+
+        private JSONBoolean(boolean value) {
+            this.value = value;
+        }
+
+        @Override
+        public boolean asBoolean() {
+            return value;
+        }
+
+        @Override
+        public String toString() {
+            return String.valueOf(value);
+        }
+
+        public static JSONBoolean of(boolean value) {
+            return value ? TRUE : FALSE;
+        }
+    }
+
+    public final class JSONNull implements JSONValue {
+        private static JSONNull NULL = new JSONNull();
+
+        private JSONNull() {}
+
+        @Override
+        public Optional<JSONValue> valueOrNull() {
+            return Optional.empty();
+        }
+
+        @Override
+        public String toString() {
+            return "null";
+        }
+
+        public static JSONNull of() {
+            return NULL;
         }
     }
 
@@ -181,8 +281,8 @@ public interface JSONValue {
         JSONParser() {
         }
 
-        private IllegalStateException failure(String message) {
-            return new IllegalStateException(String.format("[%d]: %s : %s", pos, message, input));
+        private IllegalArgumentException failure(String message) {
+            return new IllegalArgumentException(String.format("[%d]: %s : %s", pos, message, input));
         }
 
         private char current() {
@@ -220,13 +320,13 @@ public interface JSONValue {
             }
         }
 
-        private JSONString parseBoolean() {
+        private JSONBoolean parseBoolean() {
             if (current() == 't') {
                 expect('r');
                 expect('u');
                 expect('e');
                 advance();
-                return new JSONString("true");
+                return JSONBoolean.of(true);
             }
 
             if (current() == 'f') {
@@ -235,7 +335,7 @@ public interface JSONValue {
                 expect('s');
                 expect('e');
                 advance();
-                return new JSONString("false");
+                return JSONBoolean.of(false);
             }
             throw failure("a boolean can only be 'true' or 'false'");
         }
@@ -319,11 +419,10 @@ public interface JSONValue {
             var value = builder.toString();
             if (isInteger) {
                 new BigInteger(value);
-                return new JSONString(value);
             } else {
                 Double.parseDouble(value);
-                return new JSONString(value);
             }
+            return JSONNumber.of(value);
         }
 
         private JSONString parseString() {
@@ -374,7 +473,7 @@ public interface JSONValue {
             }
 
             advance(); // step beyond closing "
-            return new JSONString(builder.toString());
+            return JSONString.of(builder.toString());
         }
 
         private JSONArray parseArray() {
@@ -397,15 +496,15 @@ public interface JSONValue {
             }
 
             advance(); // step beyond closing ']'
-            return new JSONArray(list);
+            return JSONArray.of(list);
         }
 
-        public JSONString parseNull() {
+        public JSONNull parseNull() {
             expect('u');
             expect('l');
             expect('l');
             advance();
-            return new JSONString(null);
+            return JSONNull.of();
         }
 
         public JSONObject parseObject() {
@@ -438,7 +537,7 @@ public interface JSONValue {
             }
 
             advance(); // step beyond '}'
-            return new JSONObject(map);
+            return JSONObject.of(map);
         }
 
         private boolean isDigit(char c) {
@@ -526,27 +625,51 @@ public interface JSONValue {
         }
     }
 
-    public static JSONValue parse(String s) {
+    static JSONValue parse(String s) {
         return new JSONParser().parse(s);
     }
 
-    default int size() {
-        throw new IllegalStateException("Size operation unsupported");
+    default JSONValue get(String name) {
+        throw new UnsupportedOperationException("Unsupported conversion to object");
+    }
+
+    default Optional<JSONValue> getOrAbsent(String name) {
+        throw new UnsupportedOperationException("Unsupported conversion to object");
+    }
+
+    default Optional<JSONValue> valueOrNull() {
+        return Optional.of(this);
+    }
+
+    default Map<String, JSONValue> members() {
+        throw new UnsupportedOperationException("Unsupported conversion to object");
+    }
+
+    default List<JSONValue> elements() {
+        throw new UnsupportedOperationException("Unsupported conversion to array");
+    }
+
+    default JSONValue element(int index) {
+        throw new UnsupportedOperationException("Unsupported conversion to array");
     }
 
     default String asString() {
-        throw new IllegalStateException("Unsupported conversion to String");
+        throw new UnsupportedOperationException("Unsupported conversion to string");
     }
 
-    default JSONArray asArray() {
-        throw new IllegalStateException("Unsupported conversion to array");
+    default int asInt() {
+        throw new UnsupportedOperationException("Unsupported conversion to number");
     }
 
-    default JSONObject asObject() {
-        throw new IllegalStateException("Unsupported conversion to object");
+    default long asLong() {
+        throw new UnsupportedOperationException("Unsupported conversion to number");
     }
 
-    default JSONValue get(String field) {
-        return asObject().get(field);
+    default double asDouble() {
+        throw new UnsupportedOperationException("Unsupported conversion to number");
+    }
+
+    default boolean asBoolean() {
+        throw new UnsupportedOperationException("Unsupported conversion to boolean");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,24 +23,23 @@
 
 package test.gaptest;
 
-import static javax.xml.transform.OutputKeys.ENCODING;
-import static javax.xml.transform.OutputKeys.INDENT;
-import static org.testng.Assert.assertEquals;
-
-import java.io.StringReader;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamSource;
+import java.io.StringReader;
 
-import org.testng.annotations.Test;
+import static javax.xml.transform.OutputKeys.ENCODING;
+import static javax.xml.transform.OutputKeys.INDENT;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /*
  * @test
  * @bug 4512806
  * @library /javax/xml/jaxp/libs
- * @run testng/othervm test.gaptest.Bug4512806
+ * @run junit/othervm test.gaptest.Bug4512806
  * @summary test transformer.setOutputProperties(null)
  */
 public class Bug4512806 {
@@ -57,13 +56,13 @@ public class Bug4512806 {
         transformer.setOutputProperty(INDENT, "no");
         transformer.setOutputProperty(ENCODING, "UTF-16");
 
-        assertEquals(printPropertyValue(INDENT), "indent=no");
-        assertEquals(printPropertyValue(ENCODING), "encoding=UTF-16");
+        assertEquals("indent=no", printPropertyValue(INDENT));
+        assertEquals("encoding=UTF-16", printPropertyValue(ENCODING));
 
         transformer.setOutputProperties(null);
 
-        assertEquals(printPropertyValue(INDENT), "indent=yes");
-        assertEquals(printPropertyValue(ENCODING), "encoding=UTF-8");
+        assertEquals("indent=yes", printPropertyValue(INDENT));
+        assertEquals("encoding=UTF-8", printPropertyValue(ENCODING));
 
     }
 

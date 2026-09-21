@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "asm/macroAssembler.inline.hpp"
+#include "code/aotCodeCache.hpp"
 #include "gc/g1/g1BarrierSet.hpp"
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1BarrierSetRuntime.hpp"
@@ -131,6 +132,7 @@ void G1BarrierSetAssembler::gen_write_ref_array_post_barrier(MacroAssembler* mas
 
 static void generate_queue_test_and_insertion(MacroAssembler* masm, ByteSize index_offset, ByteSize buffer_offset, Label& runtime,
                                               const Register thread, const Register value, const Register temp1, const Register temp2) {
+  assert_different_registers(value, temp1, temp2);
   // Can we store a value in the given thread's buffer?
   // (The index field is typed as size_t.)
   __ ldr(temp1, Address(thread, in_bytes(index_offset)));   // temp1 := *(index address)
@@ -204,6 +206,7 @@ void G1BarrierSetAssembler::g1_write_barrier_pre(MacroAssembler* masm,
 
   __ bind(runtime);
 
+  assert_different_registers(rscratch1, pre_val); // push_call_clobbered_registers trashes rscratch1
   __ push_call_clobbered_registers();
 
   // Calling the runtime using the regular call_VM_leaf mechanism generates
@@ -243,9 +246,25 @@ static void generate_post_barrier(MacroAssembler* masm,
   assert_different_registers(store_addr, new_val, thread, tmp1, tmp2, noreg, rscratch1);
 
   // Does store cross heap regions?
-  __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
-  __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
-  __ cbz(tmp1, done);
+ #if INCLUDE_CDS
+  // AOT code needs to load the barrier grain shift from the aot
+  // runtime constants area in the code cache otherwise we can compile
+  // it as an immediate operand
+  if (AOTCodeCache::is_on_for_dump()) {
+    address grain_shift_address = (address)AOTRuntimeConstants::grain_shift_address();
+    __ eor(tmp1, store_addr, new_val);
+    __ lea(tmp2, ExternalAddress(grain_shift_address));
+    __ ldrb(tmp2, tmp2);
+    __ lsrv(tmp1, tmp1, tmp2);
+    __ cbz(tmp1, done);
+  } else
+#endif
+  {
+    __ eor(tmp1, store_addr, new_val);                     // tmp1 := store address ^ new value
+    __ lsr(tmp1, tmp1, G1HeapRegion::LogOfHRGrainBytes);   // tmp1 := ((store address ^ new value) >> LogOfHRGrainBytes)
+    __ cbz(tmp1, done);
+  }
+
   // Crosses regions, storing null?
   if (new_val_may_be_null) {
     __ cbz(new_val, done);
@@ -366,6 +385,16 @@ void G1BarrierSetAssembler::load_at(MacroAssembler* masm, DecoratorSet decorator
 
 void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet decorators, BasicType type,
                                          Address dst, Register val, Register tmp1, Register tmp2, Register tmp3) {
+
+  bool in_heap = (decorators & IN_HEAP) != 0;
+  bool as_normal = (decorators & AS_NORMAL) != 0;
+  bool dest_uninitialized = (decorators & IS_DEST_UNINITIALIZED) != 0;
+
+  bool needs_pre_barrier = as_normal && !dest_uninitialized;
+  bool needs_post_barrier = (val != noreg && in_heap);
+
+  assert_different_registers(val, tmp1, tmp2, tmp3);
+
   // flatten object address if needed
   if (dst.index() == noreg && dst.offset() == 0) {
     if (dst.base() != tmp3) {
@@ -375,31 +404,38 @@ void G1BarrierSetAssembler::oop_store_at(MacroAssembler* masm, DecoratorSet deco
     __ lea(tmp3, dst);
   }
 
-  g1_write_barrier_pre(masm,
-                       tmp3 /* obj */,
-                       tmp2 /* pre_val */,
-                       rthread /* thread */,
-                       tmp1  /* tmp1 */,
-                       rscratch2  /* tmp2 */,
-                       val != noreg /* tosca_live */,
-                       false /* expand_call */);
+  if (needs_pre_barrier) {
+    g1_write_barrier_pre(masm,
+                         tmp3 /* obj */,
+                         tmp2 /* pre_val */,
+                         rthread /* thread */,
+                         tmp1  /* tmp1 */,
+                         rscratch2  /* tmp2 */,
+                         val != noreg /* tosca_live */,
+                         false /* expand_call */);
+  }
 
   if (val == noreg) {
     BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), noreg, noreg, noreg, noreg);
   } else {
     // G1 barrier needs uncompressed oop for region cross check.
     Register new_val = val;
-    if (UseCompressedOops) {
-      new_val = rscratch2;
-      __ mov(new_val, val);
+    if (needs_post_barrier) {
+      if (UseCompressedOops) {
+        new_val = rscratch2;
+        __ mov(new_val, val);
+      }
     }
+
     BarrierSetAssembler::store_at(masm, decorators, type, Address(tmp3, 0), val, noreg, noreg, noreg);
-    g1_write_barrier_post(masm,
-                          tmp3 /* store_adr */,
-                          new_val /* new_val */,
-                          rthread /* thread */,
-                          tmp1 /* tmp1 */,
-                          tmp2 /* tmp2 */);
+    if (needs_post_barrier) {
+      g1_write_barrier_post(masm,
+                            tmp3 /* store_adr */,
+                            new_val /* new_val */,
+                            rthread /* thread */,
+                            tmp1 /* tmp1 */,
+                            tmp2 /* tmp2 */);
+    }
   }
 
 }

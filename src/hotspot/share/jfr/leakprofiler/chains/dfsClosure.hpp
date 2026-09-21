@@ -46,11 +46,14 @@ class DFSClosure : public BasicOopIterateClosure {
   size_t _max_depth;
   size_t _depth;
   bool _ignore_root_set;
+  const address _headroom_limit;
 
   DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* start_edge);
 
   void add_chain();
   void closure_impl(UnifiedOopRef reference, const oop pointee);
+
+  bool have_headroom() const;
 
  public:
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS_EXCEPT_REFERENT; }

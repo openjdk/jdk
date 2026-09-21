@@ -27,10 +27,10 @@
  * @summary Multi-threaded client timeout tests for ldap pool
  * @library /test/lib
  *          lib/
- * @run testng/othervm/timeout=480 LdapPoolTimeoutTest
+ * @run junit/othervm/timeout=480 LdapPoolTimeoutTest
  */
 
-import org.testng.annotations.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.naming.Context;
 import javax.naming.NamingException;

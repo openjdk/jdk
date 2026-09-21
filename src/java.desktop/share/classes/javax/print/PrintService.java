@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -425,6 +425,7 @@ public interface PrintService {
      * @return {@code true} if this service is the same as the obj argument,
      *         {@code false} otherwise
      */
+    @Override
     public boolean equals(Object obj);
 
     /**
@@ -433,5 +434,6 @@ public interface PrintService {
      *
      * @return hash code of this object
      */
+    @Override
     public int hashCode();
 }
