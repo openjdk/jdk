@@ -216,8 +216,8 @@ void AOTCodeCache::initialize() {
     return; // AOTCache must be specified to dump and use AOT code
   }
 
-  if (VerifyOops && InlineTypePassFieldsAsArgs) {
-    log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + InlineTypePassFieldsAsArgs.");
+  if (VerifyOops && ValueTypePassFieldsAsArgs) {
+    log_info(aot, codecache, init)("AOT Adapter Caching is not supported with VerifyOops + ValueTypePassFieldsAsArgs.");
     FLAG_SET_ERGO(AOTAdapterCaching, false);
   }
 
@@ -1929,8 +1929,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(SharedRuntime::throw_delayed_StackOverflowError);
     ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_count_addr()); // used by generate_verify_oop()
     ADD_EXTERNAL_ADDRESS(StubRoutines::verify_oop_subroutine_entry_address());
-    if (InlineTypeReturnedAsFields) {
-      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_inline_type_fields_to_buf);
+    if (ValueTypeReturnedAsFields) {
+      ADD_EXTERNAL_ADDRESS(SharedRuntime::store_value_type_fields_to_buf);
     }
   }
 
@@ -1939,7 +1939,7 @@ void AOTCodeAddressTable::init_extrs() {
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_abstract);
   ADD_EXTERNAL_ADDRESS(SharedRuntime::handle_wrong_method_ic_miss);
-  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_inline_types);
+  ADD_EXTERNAL_ADDRESS(SharedRuntime::allocate_value_types);
 #if defined(AARCH64) && !defined(ZERO)
   ADD_EXTERNAL_ADDRESS(JavaThread::aarch64_get_thread_helper);
 #endif
@@ -2064,8 +2064,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(Runtime1::load_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::store_flat_array);
     ADD_EXTERNAL_ADDRESS(Runtime1::substitutability_check);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args);
-    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_inline_args_no_receiver);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args);
+    ADD_EXTERNAL_ADDRESS(Runtime1::buffer_value_args_no_receiver);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_identity_exception);
     ADD_EXTERNAL_ADDRESS(Runtime1::throw_illegal_monitor_state_exception);
     // already added
@@ -2093,8 +2093,8 @@ void AOTCodeAddressTable::init_extrs() {
     ADD_EXTERNAL_ADDRESS(OptoRuntime::rethrow_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::slow_arraycopy_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::register_finalizer_C);
-    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_inline_C);
-    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_inline_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::load_unknown_value_C);
+    ADD_EXTERNAL_ADDRESS(OptoRuntime::store_unknown_value_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_end_first_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_final_transition_C);
     ADD_EXTERNAL_ADDRESS(OptoRuntime::vthread_start_transition_C);

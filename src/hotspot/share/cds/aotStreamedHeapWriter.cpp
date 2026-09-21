@@ -378,7 +378,7 @@ void AOTStreamedHeapWriter::update_header_for_buffered_addr(address buffered_add
   // in the shared heap. This also has the side effect of pre-initializing the
   // identity_hash for all shared objects, so they are less likely to be written
   // into during run time, increasing the potential of memory sharing.
-  if (src_obj != nullptr && !src_klass->is_inline_klass()) {
+  if (src_obj != nullptr && !src_klass->is_value_klass()) {
     intptr_t src_hash = src_obj->identity_hash();
     mw = mw.copy_set_hash(src_hash);
   }

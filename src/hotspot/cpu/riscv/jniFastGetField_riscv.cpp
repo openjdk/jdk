@@ -105,10 +105,10 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, t0, slow);
 
   __ srli(roffset, c_rarg2, jfieldIDWorkaround::offset_shift); // offset
+  __ add(roffset, robj, roffset);
 
   assert(count < LIST_CAPACITY, "LIST_CAPACITY too small");
   speculative_load_pclist[count] = __ pc();   // Used by the segfault handler
-  __ add(roffset, robj, roffset);
 
   switch (type) {
     case T_BOOLEAN: __ lbu(result, Address(roffset, 0)); break;

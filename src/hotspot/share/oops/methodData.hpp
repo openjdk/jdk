@@ -2057,8 +2057,8 @@ public:
 class ACmpData : public BranchData {
 private:
   enum {
-    left_inline_type_flag = DataLayout::first_flag,
-    right_inline_type_flag
+    left_value_type_flag = DataLayout::first_flag,
+    right_value_type_flag
   };
 
   SingleTypeEntry _left;
@@ -2092,19 +2092,19 @@ public:
     return static_cell_count();
   }
 
-  void set_left_inline_type() { set_flag_at(left_inline_type_flag); }
-  bool left_inline_type() const { return flag_at(left_inline_type_flag); }
+  void set_left_value_type() { set_flag_at(left_value_type_flag); }
+  bool left_value_type() const { return flag_at(left_value_type_flag); }
 
-  void set_right_inline_type() { set_flag_at(right_inline_type_flag); }
-  bool right_inline_type() const { return flag_at(right_inline_type_flag); }
+  void set_right_value_type() { set_flag_at(right_value_type_flag); }
+  bool right_value_type() const { return flag_at(right_value_type_flag); }
 
   // Code generation support
-  static int left_inline_type_byte_constant() {
-    return flag_number_to_constant(left_inline_type_flag);
+  static int left_value_type_byte_constant() {
+    return flag_number_to_constant(left_value_type_flag);
   }
 
-  static int right_inline_type_byte_constant() {
-    return flag_number_to_constant(right_inline_type_flag);
+  static int right_value_type_byte_constant() {
+    return flag_number_to_constant(right_value_type_flag);
   }
 
   static ByteSize left_offset() {
