@@ -100,7 +100,7 @@ void ShenandoahSimpleLock::lock(bool allow_block_for_safepoint) {
 }
 
 void ShenandoahSimpleLock::unlock() {
-  assert(_owner.load_relaxed() == Thread::current(), "lock not owned by current thread");
+  assert(_owner.load_relaxed() == Thread::current(), "Lock must be held by current thread.");
   _owner.store_relaxed(nullptr);
   _lock.unlock();
 }
