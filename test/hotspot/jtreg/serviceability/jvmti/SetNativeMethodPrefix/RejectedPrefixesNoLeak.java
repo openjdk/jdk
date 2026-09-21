@@ -44,7 +44,7 @@
  *
  * The agent here calls SetNativeMethodPrefixes() with { <prefix>, nullptr },
  * so the first prefix is copied and the second one is rejected. Repeating that
- * with a large prefix makes the leak big enough to read off NMT's Internal
+ * with a large prefix makes the leak big enough to read off NMT's Serviceability
  * accounting, which is where os::strdup() charges the copies: an unfixed VM
  * grows by iterations * prefix length, a fixed one does not grow at all.
  */
@@ -59,7 +59,7 @@ public class RejectedPrefixesNoLeak {
     private static final int JVMTI_ERROR_NULL_POINTER = 100;
 
     // One megabyte per copied prefix, so the leak stands out against the noise
-    // of whatever else is charged to Internal while the test runs.
+    // of whatever else is charged to Serviceability while the test runs.
     private static final int PREFIX_LENGTH = 1024 * 1024;
     private static final int ITERATIONS = 64;
 
@@ -67,24 +67,24 @@ public class RejectedPrefixesNoLeak {
     // a few megabytes of growth is the bug and not measurement noise.
     private static final long GROWTH_LIMIT_KB = 16 * 1024;
 
-    private static final Pattern INTERNAL_COMMITTED =
-        Pattern.compile("Internal \\(reserved=\\d+KB, committed=(\\d+)KB\\)");
+    private static final Pattern SERVICEABILITY_COMMITTED =
+        Pattern.compile("Serviceability \\(reserved=\\d+KB, committed=(\\d+)KB\\)");
 
     // Calls SetNativeMethodPrefixes() with a rejected array the given number of
     // times and returns the error code of the last call.
     private static native int rejectPrefixes(int iterations, int prefixLength);
 
-    private static long internalCommittedKB() {
+    private static long serviceabilityCommittedKB() {
         String summary = new PidJcmdExecutor().execute("VM.native_memory summary scale=KB").getStdout();
-        Matcher matcher = INTERNAL_COMMITTED.matcher(summary);
+        Matcher matcher = SERVICEABILITY_COMMITTED.matcher(summary);
         if (!matcher.find()) {
-            throw new RuntimeException("No Internal entry in the NMT summary:\n" + summary);
+            throw new RuntimeException("No Serviceability entry in the NMT summary:\n" + summary);
         }
         return Long.parseLong(matcher.group(1));
     }
 
     public static void main(String[] args) {
-        long before = internalCommittedKB();
+        long before = serviceabilityCommittedKB();
 
         int error = rejectPrefixes(ITERATIONS, PREFIX_LENGTH);
         if (error != JVMTI_ERROR_NULL_POINTER) {
@@ -92,12 +92,12 @@ public class RejectedPrefixesNoLeak {
                                        + ", expected JVMTI_ERROR_NULL_POINTER");
         }
 
-        long growth = internalCommittedKB() - before;
-        System.out.println("Internal committed grew by " + growth + "KB");
+        long growth = serviceabilityCommittedKB() - before;
+        System.out.println("Serviceability committed grew by " + growth + "KB");
 
         if (growth > GROWTH_LIMIT_KB) {
             throw new RuntimeException(ITERATIONS + " rejected SetNativeMethodPrefixes calls with a "
-                                       + (PREFIX_LENGTH / 1024) + "KB prefix grew Internal by " + growth
+                                       + (PREFIX_LENGTH / 1024) + "KB prefix grew Serviceability by " + growth
                                        + "KB, expected at most " + GROWTH_LIMIT_KB + "KB");
         }
         System.out.println("Test PASSED");
