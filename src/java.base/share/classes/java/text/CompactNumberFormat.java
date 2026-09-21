@@ -657,8 +657,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern((long) roundedNumber);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getNumberValue(number, divisor);
-            if (checkIncrement(val, compactDataIndex, divisor)) {
+            double val = getRoundedQuotient(number, divisor);
+            if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
             roundedNumber = roundedNumber / divisor;
@@ -739,8 +739,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getNumberValue(number, divisor);
-            if (checkIncrement(val, compactDataIndex, divisor)) {
+            double val = getRoundedQuotient(number, divisor);
+            if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
             var noFraction = number % divisor == 0;
@@ -835,8 +835,8 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue());
+            if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
 
@@ -910,8 +910,8 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getNumberValue(number.doubleValue(), divisor.doubleValue());
-            if (checkIncrement(val, compactDataIndex, divisor.doubleValue())) {
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue());
+            if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
             var noFraction = number.mod(new BigInteger(divisor.toString()))
@@ -2548,15 +2548,24 @@ public final class CompactNumberFormat extends NumberFormat {
         }
     }
 
-    private double getNumberValue(double number, double divisor) {
+    /**
+     * Returns the result of dividing the number by the divisor. The divisor is the value
+     * associated with the initial compact pattern. The quotient is rounded to maximum fraction digits,
+     * and is fed to shouldPromotePattern to determine if the pattern needs to be promoted.
+     */
+    private double getRoundedQuotient(double number, double divisor) {
+        // Division should be aware of the maximum fraction digits permitted.
+        // For example, with HALF_UP and 2 maximum fraction digits:
+        //      - 999_951 / 1000 -> 999.95 -> stay at K
+        //      - 999_999 / 1000 -> 1000.0 -> promote K to M
         var num = BigDecimal.valueOf(number)
-                .divide(BigDecimal.valueOf(divisor), roundingMode);
-        return getMaximumFractionDigits() > 0 ? num.doubleValue() : num.intValue();
+                .divide(BigDecimal.valueOf(divisor), getMaximumFractionDigits(), roundingMode);
+        return num.doubleValue();
     }
 
     // Checks whether the val is incremented by the BigDecimal division in
-    // getNumberValue(), and affects the compact number index.
-    private boolean checkIncrement(double val, int index, double divisor) {
+    // getRoundedQuotient, and affects the compact number index.
+    private boolean shouldPromotePattern(double val, int index, double divisor) {
         if (index < compactPatterns.length - 1 &&
             !"".equals(compactPatterns[index])) { // ignore empty pattern
             var nextDiv = divisors.get(index + 1).doubleValue();
