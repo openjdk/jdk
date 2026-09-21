@@ -33,11 +33,11 @@
 // Note that memory_order_conservative requires a full barrier after atomic stores.
 // See https://patchwork.kernel.org/patch/3575821/
 //
-// Under Ztso, loads and stores already have acquire and release semantics
-// respectively, and AMO/LR/SC instructions are inherently sequentially
-// consistent (equivalent to .aqrl).  Only a compiler barrier is needed to
-// prevent the C++ compiler from reordering memory accesses across the
-// atomic operation.
+// Under Ztso, loads and stores have acquire-RCpc and release-RCpc semantics,
+// respectively, while AMOs have acquire-RCsc and release-RCsc semantics.  The
+// latter makes the hardware fences around AMO-based atomic operations
+// redundant, but compiler barriers are still needed.  LR/SC-based operations
+// do not have the same ordering guarantees and still require the full fences.
 
 #if defined(__clang_major__)
 #define FULL_COMPILER_ATOMIC_SUPPORT
@@ -57,7 +57,7 @@ struct AtomicAccess::PlatformAdd {
 #endif
 
     if (order != memory_order_relaxed) {
-      if (UseZtso) {
+      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
         compiler_barrier();
       } else {
         FULL_MEM_BARRIER;
@@ -67,7 +67,7 @@ struct AtomicAccess::PlatformAdd {
     D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
 
     if (order != memory_order_relaxed) {
-      if (UseZtso) {
+      if (UseZtso && (byte_size == 4 || byte_size == 8)) {
         compiler_barrier();
       } else {
         FULL_MEM_BARRIER;
@@ -92,11 +92,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
   STATIC_ASSERT(1 == sizeof(T));
 
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
 
   uint32_t volatile* aligned_dst = (uint32_t volatile*)(((uintptr_t)dest) & (~((uintptr_t)0x3)));
@@ -125,11 +121,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribu
     : "memory" );
 
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
 
   return (T)((old_value & mask) >> shift);
@@ -154,11 +146,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
   uint64_t rc_temp;
 
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
 
   __asm__ __volatile__ (
@@ -172,11 +160,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribu
     : "memory" );
 
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
   return (T)old_value;
 }
@@ -190,12 +174,6 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                            T exchange_value,
                                                            atomic_memory_order order) const {
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  // If we add xchg for sub word and are using older compiler
-  // it must be added here due to not using lib atomic.
-  STATIC_ASSERT(byte_size >= 4);
-#endif
-
   STATIC_ASSERT(byte_size == sizeof(T));
   STATIC_ASSERT(byte_size == 4 || byte_size == 8);
 
@@ -233,22 +211,14 @@ inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest _
 
   STATIC_ASSERT(byte_size == sizeof(T));
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
 
   __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
                             __ATOMIC_RELAXED, __ATOMIC_RELAXED);
 
   if (order != memory_order_relaxed) {
-    if (UseZtso) {
-      compiler_barrier();
-    } else {
-      FULL_MEM_BARRIER;
-    }
+    FULL_MEM_BARRIER;
   }
   return compare_value;
 }
