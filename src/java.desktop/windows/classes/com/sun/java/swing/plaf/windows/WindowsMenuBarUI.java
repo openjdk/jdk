@@ -105,23 +105,21 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
     }
     @Override
     protected void installListeners() {
-        if (WindowsLookAndFeel.isOnVista()) {
-            installWindowListener();
-            hierarchyListener =
-                new HierarchyListener() {
-                    public void hierarchyChanged(HierarchyEvent e) {
-                        if ((e.getChangeFlags()
-                                & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
-                            if (menuBar.isDisplayable()) {
-                                installWindowListener();
-                            } else {
-                                uninstallWindowListener();
-                            }
+        installWindowListener();
+        hierarchyListener =
+            new HierarchyListener() {
+                public void hierarchyChanged(HierarchyEvent e) {
+                    if ((e.getChangeFlags()
+                            & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0) {
+                        if (menuBar.isDisplayable()) {
+                            installWindowListener();
+                        } else {
+                            uninstallWindowListener();
                         }
                     }
-            };
-            menuBar.addHierarchyListener(hierarchyListener);
-        }
+                }
+        };
+        menuBar.addHierarchyListener(hierarchyListener);
         super.installListeners();
     }
 
