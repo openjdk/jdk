@@ -145,7 +145,7 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
       index = index_opr->as_register_lo();
     }
     if (scale != 0) {
-      __ shadd(tmp, index, base, tmp, scale);
+      __ shift_left_add(tmp, index, base, scale);
     } else {
       __ add(tmp, base, index);
     }

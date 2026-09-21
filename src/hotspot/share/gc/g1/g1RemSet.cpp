@@ -321,7 +321,7 @@ public:
     WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
-    uint const start_pos = num_regions * worker_id / max_workers;
+    uint const start_pos = (uint)((uint64_t)num_regions * worker_id / max_workers);
     uint cur = start_pos;
 
     do {
