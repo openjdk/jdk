@@ -1018,8 +1018,8 @@ void TemplateTable::iastore() {
   // x13: array
   index_check(x13, x11); // prefer index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_INT) >> 2);
-  __ shift_left_add(t0, x11, x13, 2);
-  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
+  __ shift_left_add(x11, x11, x13, 2);
+  __ access_store_at(T_INT, IN_HEAP | IS_ARRAY, Address(x11, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::lastore() {
@@ -1031,8 +1031,8 @@ void TemplateTable::lastore() {
   // x13: array
   index_check(x13, x11); // prefer index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_LONG) >> 3);
-  __ shift_left_add(t0, x11, x13, 3);
-  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
+  __ shift_left_add(x11, x11, x13, 3);
+  __ access_store_at(T_LONG, IN_HEAP | IS_ARRAY, Address(x11, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::fastore() {
@@ -1044,8 +1044,8 @@ void TemplateTable::fastore() {
   // x13:  array
   index_check(x13, x11); // prefer index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_FLOAT) >> 2);
-  __ shift_left_add(t0, x11, x13, 2);
-  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* ftos */, noreg, noreg, noreg);
+  __ shift_left_add(x11, x11, x13, 2);
+  __ access_store_at(T_FLOAT, IN_HEAP | IS_ARRAY, Address(x11, 0), noreg /* ftos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::dastore() {
@@ -1057,8 +1057,8 @@ void TemplateTable::dastore() {
   // x13:  array
   index_check(x13, x11); // prefer index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_DOUBLE) >> 3);
-  __ shift_left_add(t0, x11, x13, 3);
-  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(t0, 0), noreg /* dtos */, noreg, noreg, noreg);
+  __ shift_left_add(x11, x11, x13, 3);
+  __ access_store_at(T_DOUBLE, IN_HEAP | IS_ARRAY, Address(x11, 0), noreg /* dtos */, noreg, noreg, noreg);
 }
 
 void TemplateTable::aastore() {
@@ -1188,8 +1188,8 @@ void TemplateTable::castore() {
   // x13: array
   index_check(x13, x11); // prefer index in x11
   __ addi(x11, x11, arrayOopDesc::base_offset_in_bytes(T_CHAR) >> 1);
-  __ shift_left_add(t0, x11, x13, 1);
-  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(t0, 0), x10, noreg, noreg, noreg);
+  __ shift_left_add(x11, x11, x13, 1);
+  __ access_store_at(T_CHAR, IN_HEAP | IS_ARRAY, Address(x11, 0), x10, noreg, noreg, noreg);
 }
 
 void TemplateTable::sastore() {
