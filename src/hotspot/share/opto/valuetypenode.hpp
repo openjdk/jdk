@@ -259,7 +259,7 @@ private:
     Compile::current()->add_flat_access(this);
   }
 
-  static Node* convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, int& oop_off_2);
+  static Node* convert_to_payload(PhaseIterGVN& igvn, Node* ctrl, ValueTypeNode* value, bool null_free, int& oop_off_1, Node*& oop_1, int& oop_off_2, Node*& oop_2);
   static Node* set_payload_value(PhaseIterGVN& igvn, BasicType payload_bt, Node* payload, BasicType val_bt, Node* value, int offset);
 };
 

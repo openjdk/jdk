@@ -1630,7 +1630,7 @@ Node* PhaseMacroExpand::make_load_raw(Node* ctl, Node* mem, Node* base, int offs
 
 Node* PhaseMacroExpand::make_store_raw(Node* ctl, Node* mem, Node* base, int offset, Node* value, BasicType bt) {
   Node* adr = off_heap_plus_addr(base, offset);
-  mem = StoreNode::make(_igvn, ctl, mem, adr, nullptr, value, bt, MemNode::unordered);
+  mem = StoreNode::make(_igvn, ctl, mem, adr, TypeRawPtr::BOTTOM, value, bt, MemNode::unordered);
   transform_later(mem);
   return mem;
 }
