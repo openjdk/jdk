@@ -4789,6 +4789,8 @@ instruct loadN(iRegNNoSp dst, memory mem)
   ins_pipe(iload_reg_mem);
 %}
 
+// Fuse DecodeN and LoadN: when compressed oops are zero-based and unscaled,
+// decoding is a no-op zero-extension, which lwu already performs.
 instruct loadN2P_unscaled(iRegPNoSp dst, memory mem)
 %{
     predicate(CompressedOops::shift() == 0 && n->in(1)->as_Load()->is_unordered() &&
