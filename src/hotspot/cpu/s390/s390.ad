@@ -10288,7 +10288,7 @@ instruct inlineCallClearArray(iRegL cnt, iRegP_N2P base, immL_0 zero, Universe d
 %}
 
 // Clear-array with dynamic array length and non-zero value.
-instruct inlineCallClearArrayWordFillSmall(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, v16TempReg v16, flagsReg cr) %{
+instruct inlineCallClearArrayWordFill(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, v16TempReg v16, flagsReg cr) %{
   predicate(((ClearArrayNode*)n)->requires_word_fill() &&
             !((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) val));
@@ -10299,7 +10299,7 @@ instruct inlineCallClearArrayWordFillSmall(iRegL cnt, iRegP_N2P base, iRegL val,
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct inlineCallClearArrayWordFillLarge(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, v16TempReg v16, flagsReg cr) %{
+instruct inlineCallClearArrayWordFillBig(iRegL cnt, iRegP_N2P base, iRegL val, Universe dummy, iRegL tmpL, v16TempReg v16, flagsReg cr) %{
   predicate(((ClearArrayNode*)n)->requires_word_fill() &&
             ((ClearArrayNode*)n)->is_large());
   match(Set dummy (ClearArray (Binary cnt base) val));

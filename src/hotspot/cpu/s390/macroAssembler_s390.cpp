@@ -64,9 +64,6 @@
 #include "opto/output.hpp"
 #endif
 
-long short_fubar = 0;
-long long_fubar = 0;
-
 #include <ucontext.h>
 
 #define BLOCK_COMMENT(str) block_comment(str)
@@ -5022,17 +5019,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
   if (!is_large) {
     NearLabel loop, loop_end;
 
-    load_const_optimized(tmp, (uintptr_t)&short_fubar);
-    z_agsi(0, tmp, 1);
-
     // 2x unrolled loop; cnt == 0 is handled correctly (both branches skip, falls to done)
-    z_srag(tmp, cnt, 1);    // tmp = cnt / 2, sets CC
+    z_srag(tmp, cnt, 1);     // tmp = cnt / 2, sets CC
     z_bre(loop_end);         // skip pair loop if cnt < 2
 
     bind(loop);
     z_stg(value, 0, base);
     z_stg(value, 8, base);
-    z_la(base, 16, base);
+    add2reg(base, 16);
     z_brctg(tmp, loop);      // 64-bit decrement-and-branch
 
     bind(loop_end);
@@ -5041,36 +5035,32 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
     z_stocg(value, 0, base, bcondNotAllZero);
 
     BLOCK_COMMENT("} fill_words");
+
     return;
   }
 
-  NearLabel loop, loop_end, scalar_copy, again;
-  load_const_optimized(tmp, (uintptr_t)&long_fubar);
-  z_agsi(0, tmp, 1);
+  // Control reaches here when cnt > 8
+  NearLabel loopi, skip;
 
-  z_srag(tmp, cnt, 1);
-  branch_optimized(Assembler::bcondAllZero, loop_end);
+  z_vlvgp(Vtmp, value, value);      // populate the Vector register with value
+  z_srlg(tmp, cnt, 0x2)             // tmp = cnt / 4
 
-  z_vlvgp(Vtmp, value, value);
-
-  z_srlg(tmp, cnt, 2);
-  add2reg(tmp, 1);
-  z_tmll(cnt, 0x2);
-  branch_optimized(Assembler::bcondAllZero, loop);
-  z_vst(Vtmp, Address(base, 0));
-  add2reg(base, 16);
-  branch_optimized(Assembler::bcondAlways, loop);
-
-  bind(again);
+  bind(loop);
   z_vst(Vtmp, Address(base, 0));
   z_vst(Vtmp, Address(base, 16));
   add2reg(base, 32);
-  bind(loop);
-  z_brctg(tmp, again);
+  z_brctg(tmp, loop);
 
-  bind(loop_end);
-  z_tmll(cnt, 1);
+  z_tmll(cnt, 0x2);
+  branch_optimized(Assembler::bcondAllZero, skip);
+  z_vst(Vtmp, Address(base, 0));
+  add2reg(base, 16);
+  bind(skip);
+
+  z_tmll(cnt, 0x1);
   z_stocg(value, 0, base, bcondNotAllZero);
+
+  BLOCK_COMMENT("} fill_words");
 }
 
 // Allocator.
