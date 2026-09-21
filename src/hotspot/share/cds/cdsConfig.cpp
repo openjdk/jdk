@@ -345,6 +345,10 @@ void CDSConfig::check_incompatible_property(const char* key, const char* value) 
     }
   }
 
+  if (strcmp(key, "jdk.internal.lambda.disableEagerInitialization") == 0 && strcasecmp(value, "true") == 0) {
+    log_warning(aot)("Disabled AOTInvokeDynamicLinking because jdk.internal.lambda.disableEagerInitialization is set to true");
+    FLAG_SET_ERGO(AOTInvokeDynamicLinking, false);
+  }
 }
 
 // Returns any JVM command-line option, such as "--patch-module", that's not supported by CDS.
