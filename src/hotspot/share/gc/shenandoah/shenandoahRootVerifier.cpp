@@ -31,7 +31,6 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
-#include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -41,6 +40,7 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/threads.hpp"
+#include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
@@ -53,8 +53,7 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
   // that would patch barriers or process the oops incorrectly. Verifier code
   // can enter stack watermark processing as part of regular thread root work.
-  // Alas, this might hide some of the issues from the verifier, but at least
-  // verifier would not introduce its own bugs.
+  // This pretends Java threads have fixed up all state before we go for verification.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
     StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
