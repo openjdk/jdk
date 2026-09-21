@@ -81,7 +81,7 @@ public:
     assert(ShenandoahHeap::heap()->is_concurrent_weak_root_in_progress(), "Only for this phase");
     ShenandoahNMethod* data = ShenandoahNMethod::gc_data(nm);
     ShenandoahNMethodLock* lock = data->lock();
-    ShenandoahNMethodLocker locker(lock, !lock->owned_by_self());
+    ShenandoahNMethodLocker locker(lock);
     ShenandoahIsUnloadingOopClosure cl;
     data->oops_do(&cl, /* fix_relocations = */ false, /* icic = */ nullptr);
     return  cl.is_unloading();
