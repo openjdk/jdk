@@ -66,14 +66,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class TestSharedCloseDeopts {
     static final WhiteBox WB = WhiteBox.getWhiteBox();
-    static final Method PAYLOAD_METHOD;
+    static final Method PAYLOAD_WITH_ACCESS_METHOD;
+    static final Method PAYLOAD_WITHOUT_ACCESS_METHOD;
     static final int C2_COMPILED_LEVEL = 4;
     static final String SHARED_SCOPE_CLOSED_DEOPT_REASON = "constraint";
     static final Path LOG_FILE = Path.of("test_deopts.txt");
 
     static {
         try {
-            PAYLOAD_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithAccess",
+            PAYLOAD_WITH_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithAccess",
+                    MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
+            PAYLOAD_WITHOUT_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithoutAccess",
                     MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
@@ -96,6 +99,7 @@ public class TestSharedCloseDeopts {
             try (Arena arena = Arena.ofShared()) {
                 MemorySegment segment = arena.allocate(ValueLayout.JAVA_INT);
                 t = Thread.ofPlatform()
+                    .name("Warmup-Worker")
                     .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                     .start(() -> {
                         while (arena.scope().isAlive()) {
@@ -111,11 +115,12 @@ public class TestSharedCloseDeopts {
                 // await compilation while polluting the profile to avoid
                 // uncommon trap deopt as result of loop backedge test
                 do {
+                    assertTrue(WB.isMethodCompilable(testCase.method(), C2_COMPILED_LEVEL, false));
                     for (int i = 0; i < 100_000; i++) {
                         hold.setRelease(true);
                         hold.setRelease(false);
                     }
-                } while (WB.getMethodCompilationLevel(PAYLOAD_METHOD, false) != C2_COMPILED_LEVEL);
+                } while (WB.getMethodCompilationLevel(testCase.method(), false) != C2_COMPILED_LEVEL);
             }
             t.join();
             if (uncaughtException.get() != null) {
@@ -138,6 +143,7 @@ public class TestSharedCloseDeopts {
             Arena _ = Arena.ofShared()) {
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_INT);
             t = Thread.ofPlatform()
+                .name("Test-Worker")
                 .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                 .start(() ->  testCase.payload.run(segment.scope(), segment, hold));
             // give it a moment to get there
@@ -161,8 +167,7 @@ public class TestSharedCloseDeopts {
         assertTrue(log.contains("Inspected compiled frame. has_scoped_access=" + testCase.hasAccess() + " is_session_live=true:"));
     }
 
-    // using same scope, but no scoped access
-    // should not deopt in this case
+    // simulate a safepoint in a method with a scoped access
     public static MemorySegment.Scope payloadWithAccess(MemorySegment.Scope scope, MemorySegment segment,
                                                         AtomicBoolean hold) {
         segment.set(ValueLayout.JAVA_INT, 0L, 42);
@@ -190,12 +195,12 @@ public class TestSharedCloseDeopts {
         MemorySegment.Scope run(MemorySegment.Scope scope, MemorySegment segment, AtomicBoolean hold);
     }
 
-    public record TestCase(String name, Payload payload, boolean hasAccess) {}
+    public record TestCase(Method method, Payload payload, boolean hasAccess) {}
 
     public static Stream<TestCase> cases() {
         return Stream.of(
-                new TestCase("payloadWithAccess", TestSharedCloseDeopts::payloadWithAccess, true),
-                new TestCase("payloadWithoutAccess", TestSharedCloseDeopts::payloadWithoutAccess, false)
+                new TestCase(PAYLOAD_WITH_ACCESS_METHOD, TestSharedCloseDeopts::payloadWithAccess, true),
+                new TestCase(PAYLOAD_WITHOUT_ACCESS_METHOD, TestSharedCloseDeopts::payloadWithoutAccess, false)
         );
     }
 }
