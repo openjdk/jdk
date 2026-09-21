@@ -52,7 +52,6 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
   assert(lock != nullptr, "Must be");
   ShenandoahNMethodLocker locker(lock);
 
-
   if (!is_armed(nm)) {
     // Some other thread managed to complete while we were waiting for lock.
     // No need to continue. We only need to sync up the changes done by others.
