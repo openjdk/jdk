@@ -198,7 +198,7 @@ private:
     virtual bool not_null()                const override { return dereference() != nullptr; }
     virtual int size()                     const override { return get_size(dereference()); }
     virtual MetaspaceClosureType type()    const override { return as_type(dereference()->type()); }
-    virtual Ref* clone()                   const override {
+    virtual Ref* clone() const override {
       MSORef* cloned_obj = new MSORef(_mpp, writability());
       cloned_obj->set_enclosing_obj(this->enclosing_obj());
       return cloned_obj;
@@ -277,7 +277,7 @@ private:
     virtual bool not_null()                const override { precond(dereference() != nullptr); return true; }
     virtual int size()                     const override { return (int)heap_word_size(byte_size()); }
     virtual MetaspaceClosureType type()    const override { return MetaspaceClosureType::CArrayType; }
-    virtual Ref* clone()                   const override {
+    virtual Ref* clone() const override {
       CArrayRef<T>* cloned_obj = new CArrayRef<T>(_mpp, _num_elems, writability());
       cloned_obj->set_enclosing_obj(this->enclosing_obj());
       return cloned_obj;
