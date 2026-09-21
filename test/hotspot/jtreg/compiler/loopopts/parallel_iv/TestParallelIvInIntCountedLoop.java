@@ -436,6 +436,25 @@ public class TestParallelIvInIntCountedLoop {
         Asserts.assertEQ(10 - Math.ceilDiv(s, 5) * 5, testIntCountedLoopWithDoubledIvAndNegativeStride(-s));
     }
 
+    // prev lags the counter by a constant other than the stride
+    @Test
+    @IR(failOn = { IRNode.LOOP, IRNode.COUNTED_LOOP })
+    private static int testIntCountedLoopWithDoubledIvPlusConstant(int stop) {
+        int a = 0, prev = 2; // == init + 3 - stride
+        for (int i = 0; i < stop; i++) {
+            a = prev;
+            prev = i + 3;
+        }
+
+        return a;
+    }
+
+    @Run(test = "testIntCountedLoopWithDoubledIvPlusConstant")
+    private static void runTestIntCountedLoopWithDoubledIvPlusConstant() {
+        int s = RNG.nextInt(2, 1024);
+        Asserts.assertEQ(s + 1, testIntCountedLoopWithDoubledIvPlusConstant(s));
+    }
+
     // prev does not lag the counter on entry in the original code, but it does after the loop is peeled
     // (unrolling is off: otherwise the loop is split into pre/main/post and the post loop remains)
     @Test
