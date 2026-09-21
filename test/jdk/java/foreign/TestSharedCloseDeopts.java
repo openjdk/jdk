@@ -132,6 +132,10 @@ public class TestSharedCloseDeopts {
                         hold.setRelease(false);
                     }
                 } while (WB.getMethodCompilationLevel(testCase.method(), false) != C2_COMPILED_LEVEL);
+                if (testCase.hasAccess()) {
+                    // verify expected compilation
+                    assertTrue(WB.hasScopedAccess(testCase.method()));
+                }
             }
             t.join();
             if (uncaughtException.get() != null) {

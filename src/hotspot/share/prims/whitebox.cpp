@@ -1767,6 +1767,14 @@ WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
   return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
+WB_ENTRY(jboolean, WB_HasScopedAccess(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, false);
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  nmethod* code = mh->code();
+  return (code != nullptr ? code->has_scoped_access() : false);
+WB_END
+
 WB_ENTRY(jlong, WB_GetMethodData(JNIEnv* env, jobject wv, jobject method))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, 0);
@@ -3082,6 +3090,8 @@ static JNINativeMethod methods[] = {
   {CC"getMethodData0",     CC"(Ljava/lang/reflect/Executable;)J",
                                                       (void*)&WB_GetMethodData      },
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
+  {CC"hasScopedAccess0",   CC"(Ljava/lang/reflect/Executable;)Z",
+                                                      (void*)&WB_HasScopedAccess    },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
   {CC"DefineModule",       CC"(Ljava/lang/Object;ZLjava/lang/String;Ljava/lang/String;[Ljava/lang/Object;)V",
