@@ -799,7 +799,7 @@ public final /*value*/ class Character
          * It should be adjusted whenever the Unicode Character Database
          * is upgraded.
          */
-        private static final int NUM_ENTITIES = 804;
+        private static final int NUM_ENTITIES = 821;
         private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
