@@ -94,7 +94,7 @@ public class BaseOffsets {
     public static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     static final long INT_OFFSET;
-    static final long INT_ARRAY_OFFSET;
+    static final long INT_ARRAY_OFFSET = Platform.is64bit() && WB.getBooleanVMFlag("AlignArrayElements") ? 16 : 12;
     static final long LONG_ARRAY_OFFSET;
     static {
         if (!Platform.is64bit() || WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
