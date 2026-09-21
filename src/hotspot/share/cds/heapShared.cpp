@@ -809,11 +809,7 @@ void HeapShared::remove_scratch_objects(Klass* k) {
 //changes the names in the JDK code.  See discussion in JDK-8342481 for
 //related ideas about marking AOT-related classes.
 bool HeapShared::is_lambda_form_klass(InstanceKlass* ik) {
-  return ik->is_hidden() &&
-    (ik->name()->starts_with("java/lang/invoke/LambdaForm$MH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$DMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$BMH+") ||
-     ik->name()->starts_with("java/lang/invoke/LambdaForm$VH+"));
+  return ik->is_hidden() && ik->name()->starts_with("java/lang/invoke/LambdaForm$");
 }
 
 bool HeapShared::is_lambda_proxy_klass(InstanceKlass* ik) {
