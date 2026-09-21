@@ -201,6 +201,21 @@ instruct andL_16bits_b(iRegLNoSp dst, iRegL src, immL_16bits mask) %{
   ins_pipe(ialu_reg);
 %}
 
+// And with a low 32-bit mask
+instruct andL_32bits_b(iRegLNoSp dst, iRegL src, immL_32bits mask) %{
+  predicate(UseZba);
+  match(Set dst (AndL src mask));
+
+  format %{ "zext.w  $dst, $src\t#@andL_32bits_b" %}
+
+  ins_cost(ALU_COST);
+  ins_encode %{
+    __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
+  %}
+
+  ins_pipe(ialu_reg);
+%}
+
 instruct addL_reg_reg_and_uxtw_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_32bits mask) %{
   predicate(UseZba);
   match(Set dst (AddL src1 (AndL src2 mask)));
@@ -215,21 +230,6 @@ instruct addL_reg_reg_and_uxtw_b(iRegLNoSp dst, iRegL src1, iRegL src2, immL_32b
   %}
 
   ins_pipe(ialu_reg_reg);
-%}
-
-// And with a low 32-bit mask
-instruct andL_32bits_b(iRegLNoSp dst, iRegL src, immL_32bits mask) %{
-  predicate(UseZba);
-  match(Set dst (AndL src mask));
-
-  format %{ "zext.w  $dst, $src\t#@andL_32bits_b" %}
-
-  ins_cost(ALU_COST);
-  ins_encode %{
-    __ zext_w(as_Register($dst$$reg), as_Register($src$$reg));
-  %}
-
-  ins_pipe(ialu_reg);
 %}
 
 // BSWAP instructions
