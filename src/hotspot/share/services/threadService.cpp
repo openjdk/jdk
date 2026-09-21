@@ -1269,8 +1269,7 @@ private:
               }
             }
           }
-          // Don't report the monitor as owned by this thread if it is doing wait()
-          // and has released it.
+          // Don't report the monitor as owned by this thread if it is doing wait() and so has released it.
           if (!(_blocker._type == Blocker::WAITING_ON) || !(_blocker._obj.resolve() == monitor->owner())) {
             _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
           }
