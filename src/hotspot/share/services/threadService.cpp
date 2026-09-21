@@ -1249,7 +1249,7 @@ private:
           // the monitor is associated with an object, i.e., it is locked
 
           if (depth == 0 && _blocker.is_empty()) {
-            ObjectMonitor* pending_moninor = java_lang_VirtualThread::is_instance(_thread_h())
+            ObjectMonitor* pending_monitor = java_lang_VirtualThread::is_instance(_thread_h())
               ? java_lang_VirtualThread::current_pending_monitor(_thread_h())
               : jvf->thread()->current_pending_monitor();
 
@@ -1261,7 +1261,7 @@ private:
               if (// if the monitor is null we must be in the process of locking
                   mon == nullptr ||
                   // we have marked ourself as pending on this monitor
-                  mon == pending_moninor ||
+                  mon == pending_monitor ||
                   // we are not the owner of this monitor
                   (_java_thread != nullptr && !mon->is_entered(_java_thread))) {
                 _blocker = Blocker(Blocker::WAITING_TO_LOCK, OopHandle(oop_storage(), monitor->owner()));
@@ -1269,7 +1269,11 @@ private:
               }
             }
           }
-          _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
+          // Don't report the monitor as owned by this thread if it is doing wait()
+          // and has released it.
+          if (!(_blocker._type == Blocker::WAITING_ON) || !(_blocker._obj.resolve() == monitor->owner())) {
+            _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
+          }
         }
       }
     }

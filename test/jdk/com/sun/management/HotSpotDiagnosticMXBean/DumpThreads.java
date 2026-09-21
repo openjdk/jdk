@@ -339,6 +339,7 @@ class DumpThreads {
             ThreadFields fields = findThread(tid, lines);
             assertNotNull(fields, "thread not found");
             assertEquals("WAITING", fields.state());
+            assertFalse(contains(lines, "- locked <" + lockAsString));
 
             // thread dump in JSON format should include thread in root container
             ThreadDump threadDump = dumpThreadsToJson();
@@ -348,6 +349,9 @@ class DumpThreads {
             assertNotNull(ti, "thread not found");
             assertEquals(ti.isVirtual(), thread.isVirtual());
             assertEquals("WAITING", ti.state());
+            assertFalse(ti.ownedMonitors().values().stream()
+                          .flatMap(List::stream)
+                          .anyMatch(lockAsString::equals));
             if (pinned) {
                 long carrierTid = ti.carrier().orElse(-1L);
                 assertNotEquals(-1L, carrierTid, "carrier not found");
