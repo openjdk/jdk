@@ -2634,14 +2634,17 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     /**
      * Performs dot product of bytes.
      *
-     * Each accumulator lane receives the sum of the four products of byte lanes.
+     * Each accumulator lane receives the sum of the
+     * four products of byte lanes.
      *
      * @param v input vector to perform dot product against the current vector
      * @param acc vector to accumulate result into
      * @return new vector of accumulated dot product
      *
      * @throws IllegalArgumentException if {@code v} differs in species,
-     *         {@code acc} differs in shape, or {@code acc} is not an {@code int} vector
+     *         {@code acc} differs in shape, or {@code acc} is not
+     *         an {@code int} vector
+     * @since 28
      */
     @ForceInline
     public final IntVector dot(Vector<Byte> v, Vector<Integer> acc) {
@@ -2650,7 +2653,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         }
 
         if (this.species().vectorShape() != acc.species().vectorShape()) {
-            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() + " acc=" + acc.species().vectorShape());
+            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() +
+                                               " acc=" + acc.species().vectorShape());
         }
 
         if (acc.elementType() != int.class) {
@@ -2660,7 +2664,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         ByteVector bv = (ByteVector) v;
         IntVector  iv = (IntVector) acc;
 
-        return VectorSupport.dot(VECTOR_OP_DOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(), iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
+        return VectorSupport.dot(VECTOR_OP_DOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(),
+                                 iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
             byte[] b1 = v1.vec();
             byte[] b2 = v2.vec();
             int[] res = v3.toArray();
@@ -2681,14 +2686,17 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
     /**
      * Performs dot product of unsigned zero extended bytes.
      *
-     * Each accumulator lane receives the sum of the four products of byte lanes.
+     * Each accumulator lane receives the sum of the
+     * four products of byte lanes.
      *
      * @param v input vector to perform dot product against the current vector
      * @param acc vector to accumulate result into
      * @return new vector of accumulated dot product
      *
      * @throws IllegalArgumentException if {@code v} differs in species,
-     *         {@code acc} differs in shape, or {@code acc} is not an {@code int} vector
+     *         {@code acc} differs in shape, or {@code acc} is not
+     *         an {@code int} vector
+     * @since 28
      */
     @ForceInline
     public final IntVector dotUnsigned(Vector<Byte> v, Vector<Integer> acc) {
@@ -2697,7 +2705,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         }
 
         if (this.species().vectorShape() != acc.species().vectorShape()) {
-            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() + " acc=" + acc.species().vectorShape());
+            throw new IllegalArgumentException("Bad shape: this=" + this.species().vectorShape() +
+                                               " acc=" + acc.species().vectorShape());
         }
 
         if (acc.elementType() != int.class) {
@@ -2707,7 +2716,8 @@ public abstract sealed class ByteVector extends AbstractVector<Byte>
         ByteVector bv = (ByteVector) v;
         IntVector  iv = (IntVector) acc;
 
-        return VectorSupport.dot(VECTOR_OP_UDOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(), iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
+        return VectorSupport.dot(VECTOR_OP_UDOT, getClass(), laneTypeOrdinal(), length(), iv.getClass(),
+                                 iv.laneTypeOrdinal(), iv.length(), this, bv, iv, (v1, v2, v3) -> {
             byte[] b1 = v1.vec();
             byte[] b2 = v2.vec();
             int[] res = v3.toArray();

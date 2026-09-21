@@ -25,6 +25,7 @@ package compiler.vectorapi;
 
 import compiler.lib.ir_framework.*;
 
+import java.util.Arrays;
 import java.util.Random;
 
 import jdk.incubator.vector.ByteVector;
@@ -54,24 +55,61 @@ public class TestVectorDotProduct {
     private static final int INT_LENGTH = BYTE_LENGTH / 4;
     private static final Random RD = Utils.getRandomInstance();
 
-    private static byte[] a;
-    private static byte[] b;
-    private static int[] acc;
-    private static int[] r;
+    private static byte[] a = new byte[BYTE_LENGTH];
+    private static byte[] b = new byte[BYTE_LENGTH];
+    private static int[] acc = new int[INT_LENGTH];
+    private static int[] r = new int[INT_LENGTH];
 
-    static {
-        a = new byte[BYTE_LENGTH];
-        b = new byte[BYTE_LENGTH];
-        acc = new int[INT_LENGTH];
-        r = new int[INT_LENGTH];
+    private enum Data { RANDOM, MAX_BY_MAX, MAX_BY_MIN, UNSIGNED_MAX }
 
-        for (int i = 0; i < BYTE_LENGTH; i++) {
-            a[i] = (byte) RD.nextInt();
-            b[i] = (byte) RD.nextInt();
+    private static void fill(Data data) {
+        switch (data) {
+            case RANDOM -> {
+                for (int byteIndex = 0; byteIndex < BYTE_LENGTH; byteIndex++) {
+                    a[byteIndex] = (byte) RD.nextInt();
+                    b[byteIndex] = (byte) RD.nextInt();
+                }
+                for (int lane = 0; lane < INT_LENGTH; lane++) {
+                    acc[lane] = RD.nextInt();
+                }
+            }
+            case MAX_BY_MAX -> {
+                Arrays.fill(a, Byte.MAX_VALUE);
+                Arrays.fill(b, Byte.MAX_VALUE);
+                Arrays.fill(acc, Integer.MAX_VALUE);
+            }
+            case MAX_BY_MIN -> {
+                Arrays.fill(a, Byte.MAX_VALUE);
+                Arrays.fill(b, Byte.MIN_VALUE);
+                Arrays.fill(acc, Integer.MIN_VALUE);
+            }
+            case UNSIGNED_MAX -> {
+                Arrays.fill(a, (byte) 0xFF);
+                Arrays.fill(b, (byte) 0xFF);
+                Arrays.fill(acc, Integer.MAX_VALUE);
+            }
         }
+    }
 
-        for (int i = 0; i < INT_LENGTH; i++) {
-            acc[i] = RD.nextInt();
+    private static int product(int byteIndex, boolean unsigned) {
+        if (unsigned) {
+            return Byte.toUnsignedInt(a[byteIndex]) *
+                   Byte.toUnsignedInt(b[byteIndex]);
+        }
+        return a[byteIndex] * b[byteIndex];
+    }
+
+    private static void verify(boolean unsigned, Data data) {
+        for (int lane = 0; lane < I_SPECIES.length(); lane++) {
+            int expected = acc[lane];
+            for (int offset = 0; offset < BYTE_LENGTH; offset += B_SPECIES.length()) {
+                int byteIndex = offset + lane * 4;
+                expected += product(byteIndex, unsigned)
+                          + product(byteIndex + 1, unsigned)
+                          + product(byteIndex + 2, unsigned)
+                          + product(byteIndex + 3, unsigned);
+            }
+            Asserts.assertEquals(expected, r[lane], data + " lane " + lane);
         }
     }
 
@@ -84,9 +122,9 @@ public class TestVectorDotProduct {
         counts = {IRNode.DOT_V, "> 0"})
     public static void testDot() {
         IntVector cv = IntVector.fromArray(I_SPECIES, acc, 0);
-        for (int i = 0; i < BYTE_LENGTH; i += B_SPECIES.length()) {
-            ByteVector av = ByteVector.fromArray(B_SPECIES, a, i);
-            ByteVector bv = ByteVector.fromArray(B_SPECIES, b, i);
+        for (int offset = 0; offset < BYTE_LENGTH; offset += B_SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(B_SPECIES, a, offset);
+            ByteVector bv = ByteVector.fromArray(B_SPECIES, b, offset);
 
             cv = av.dot(bv, cv);
         }
@@ -95,18 +133,10 @@ public class TestVectorDotProduct {
 
     @Run(test = "testDot")
     public static void testDot_runner() {
-        testDot();
-
-        for (int i = 0; i < I_SPECIES.length(); i++) {
-            int res = acc[i];
-            for (int j = 0; j < BYTE_LENGTH; j += B_SPECIES.length()) {
-                int b_i = j + i * 4;
-                res += a[b_i]     * b[b_i] +
-                       a[b_i + 1] * b[b_i + 1] +
-                       a[b_i + 2] * b[b_i + 2] +
-                       a[b_i + 3] * b[b_i + 3];
-            }
-            Asserts.assertEquals(res, r[i]);
+        for (Data data : Data.values()) {
+            fill(data);
+            testDot();
+            verify(false, data);
         }
     }
 
@@ -119,9 +149,9 @@ public class TestVectorDotProduct {
         counts = {IRNode.UDOT_V, "> 0"})
     public static void testDotUnsigned() {
         IntVector cv = IntVector.fromArray(I_SPECIES, acc, 0);
-        for (int i = 0; i < BYTE_LENGTH; i += B_SPECIES.length()) {
-            ByteVector av = ByteVector.fromArray(B_SPECIES, a, i);
-            ByteVector bv = ByteVector.fromArray(B_SPECIES, b, i);
+        for (int offset = 0; offset < BYTE_LENGTH; offset += B_SPECIES.length()) {
+            ByteVector av = ByteVector.fromArray(B_SPECIES, a, offset);
+            ByteVector bv = ByteVector.fromArray(B_SPECIES, b, offset);
 
             cv = av.dotUnsigned(bv, cv);
         }
@@ -130,22 +160,19 @@ public class TestVectorDotProduct {
 
     @Run(test = "testDotUnsigned")
     public static void testDotUnsigned_runner() {
-        testDotUnsigned();
-
-        for (int i = 0; i < I_SPECIES.length(); i++) {
-            int res = acc[i];
-            for (int j = 0; j < BYTE_LENGTH; j += B_SPECIES.length()) {
-                int b_i = j + i * 4;
-                res += Byte.toUnsignedInt(a[b_i])     * Byte.toUnsignedInt(b[b_i]) +
-                       Byte.toUnsignedInt(a[b_i + 1]) * Byte.toUnsignedInt(b[b_i + 1]) +
-                       Byte.toUnsignedInt(a[b_i + 2]) * Byte.toUnsignedInt(b[b_i + 2]) +
-                       Byte.toUnsignedInt(a[b_i + 3]) * Byte.toUnsignedInt(b[b_i + 3]);
-            }
-            Asserts.assertEquals(res, r[i]);
+        for (Data data : Data.values()) {
+            fill(data);
+            testDotUnsigned();
+            verify(true, data);
         }
     }
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("--add-modules=jdk.incubator.vector");
+        TestFramework framework = new TestFramework();
+        framework.addFlags("--add-modules=jdk.incubator.vector");
+        framework.addScenarios(new Scenario(0, "-XX:MaxVectorSize=8"),
+                               new Scenario(1, "-XX:MaxVectorSize=16"),
+                               new Scenario(2));
+        framework.start();
     }
 }
