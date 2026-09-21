@@ -1052,10 +1052,13 @@ source_hpp %{
   // will do an acquire. If so, this node must not do the acquire
   // operation.
   bool followed_by_acquire(const Node *n);
+
+  bool compressed_oop_constants_fit_in_31_bits();
 %}
 
 source %{
 
+#include "oops/compressedOops.hpp"
 #include "opto/c2_CodeStubs.hpp"
 #include "oops/klass.inline.hpp"
 
@@ -1068,6 +1071,16 @@ int MachNode::pd_alignment_required() const {
 
 int MachNode::compute_padding(int current_offset) const {
   return 0;
+}
+
+bool compressed_oop_constants_fit_in_31_bits() {
+  const uintptr_t heap_range = (uintptr_t)CompressedOops::end() -
+                               (uintptr_t)CompressedOops::base();
+  if (heap_range == 0) {
+    return true;
+  }
+  const jlong max_encoded_oop = (jlong)((heap_range - 1) >> CompressedOops::shift());
+  return Assembler::is_uimm(max_encoded_oop, 31);
 }
 
 // Should the matcher clone input 'm' of node 'n'?
@@ -5682,14 +5695,15 @@ instruct loadConN(iRegNdst dst, immN src) %{
   match(Set dst src);
   ins_cost(DEFAULT_COST*3);
 
-  format %{ "LIS/ORI/CLRLDI $dst, $src" %}
-  size(12);
+  format %{ "LIS/ORI[/CLRLDI] $dst, $src" %}
   ins_encode %{
     AddressLiteral addrlit = __ constant_oop_address((jobject)$src$$constant);
     __ lis($dst$$Register, 0);                              // Will get patched.
     __ relocate(addrlit.rspec(), /*compressed format*/ 1);
     __ ori($dst$$Register, $dst$$Register, 0);              // Will get patched.
-    __ clrldi($dst$$Register, $dst$$Register, 0x20);
+    if (!compressed_oop_constants_fit_in_31_bits()) {
+      __ clrldi($dst$$Register, $dst$$Register, 0x20);
+    }
   %}
   ins_pipe(pipe_class_default);
 %}
