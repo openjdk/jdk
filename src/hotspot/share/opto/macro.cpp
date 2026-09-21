@@ -1269,8 +1269,8 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
 
 // Do scalar replacement.
 bool PhaseMacroExpand::scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints) {
-  Unique_Node_List safepoints_done;
-  Unique_Node_List scalar_objects_done;
+  Node_List safepoints_done;
+  Node_List scalar_objects_done;
   Node* res = alloc->result_cast();
   assert(res == nullptr || res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = nullptr;
