@@ -174,12 +174,6 @@ template<typename T>
 inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
                                                            T exchange_value,
                                                            atomic_memory_order order) const {
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  // If we add xchg for sub word and are using older compiler
-  // it must be added here due to not using lib atomic.
-  static_assert(byte_size >= 4);
-#endif
-
   static_assert(byte_size == sizeof(T));
   static_assert(byte_size == 4 || byte_size == 8);
 
