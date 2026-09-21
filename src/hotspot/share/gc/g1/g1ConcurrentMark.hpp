@@ -288,7 +288,7 @@ private:
 class G1CMRootMemRegions {
   // The set of root MemRegions.
   MemRegion* _root_regions;
-  uint const _max_regions;
+  uint const _max_num_regions;
 
   Atomic<uint> _num_regions;  // Actual number of root regions.
   Atomic<uint> _num_claimed_regions; // Number of root regions currently claimed.
@@ -297,7 +297,7 @@ class G1CMRootMemRegions {
   uint num_claimed_regions() const { return _num_claimed_regions.load_relaxed(); }
 
 public:
-  G1CMRootMemRegions(uint const max_regions);
+  G1CMRootMemRegions(uint const max_num_regions);
   ~G1CMRootMemRegions();
 
   void add(HeapWord* start, HeapWord* end);
@@ -715,9 +715,11 @@ public:
   // safepoint.
   void clear_bitmap_for_region(G1HeapRegion* hr);
 
-  // Verify that there are no collection set oops on the stacks (taskqueues /
-  // global mark stack) and fingers (global / per-task).
-  // If marking is not in progress, it's a no-op.
+  // Verify that no entry on the global mark stack or the task queues refers to
+  // an object in the (optional) collection set, that the global finger is at a
+  // region bottom, and that no task finger points into a region in the
+  // (optional) collection set.
+  // A no-op unless marking or remembered set rebuilding is in progress.
   void verify_no_collection_set_oops() PRODUCT_RETURN;
 
   inline bool do_yield_check();

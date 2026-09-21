@@ -608,7 +608,7 @@ class ConstantPool : public Metadata {
   void restore_unshareable_info(TRAPS);
 private:
   void remove_unshareable_entries();
-  void remove_resolved_klass_if_non_deterministic(int cp_index);
+  void remove_resolved_klass_if_non_archivable(int cp_index);
   template <typename Function> void iterate_archivable_resolved_references(Function function);
 #endif
 

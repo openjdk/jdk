@@ -145,6 +145,7 @@ void AOTStreamedHeapWriter::order_source_objs(GrowableArrayCHeap<oop, mtClassSha
       oop obj = dfs_stack.pop();
       assert(obj != nullptr, "null root");
       int* dfs_number = _dfs_order_table->get(cast_from_oop<void*>(obj));
+      assert(dfs_number != nullptr, "reachable obj not added to _source_objs");
       if (*dfs_number != -1) {
         // Already visited in the traversal
         continue;

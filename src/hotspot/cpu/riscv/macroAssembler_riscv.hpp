@@ -189,8 +189,8 @@ class MacroAssembler: public Assembler {
   void resolve_jobject(Register value, Register tmp1, Register tmp2);
   void resolve_global_jobject(Register value, Register tmp1, Register tmp2);
 
-  void movoop(Register dst, jobject obj);
-  void mov_metadata(Register dst, Metadata* obj);
+  void movoop(Register dst, jobject obj, Register tmp = noreg);
+  void mov_metadata(Register dst, Metadata* obj, Register tmp = noreg);
   void bang_stack_size(Register size, Register tmp);
   void set_narrow_oop(Register dst, jobject obj);
   void set_narrow_klass(Register dst, Klass* k);
@@ -1405,6 +1405,23 @@ public:
         bool upper);
   void update_byte_crc32(Register crc, Register val, Register table);
 
+  // CRC32C code for java.util.zip.CRC32C::updateBytes() intrinsic,
+  // accelerated with Zbc carry-less multiplication (clmul/clmulh).
+  void kernel_crc32c(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_fold(Register crc, Register buf, Register len,
+        Register byte_table, Register clmul_table,
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register tmp6);
+  void kernel_crc32c_clmul_align(Register crc, Register buf, Register len,
+        Register table, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_fold_128(Register accum_lo, Register accum_hi,
+        Register k1, Register k2, Register buf, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_reduce_128_to_64(Register accum_lo, Register accum_hi,
+        Register clmul_table, Register k, Register tmp1, Register tmp2);
+  void kernel_crc32c_clmul_barrett_64_to_32(Register accum_lo, Register clmul_table,
+        Register k, Register tmp);
+
 #ifdef COMPILER2
   void vector_update_crc32(Register crc, Register buf, Register len,
                            Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5,
@@ -1467,8 +1484,10 @@ public:
   void zero_memory(Register addr, Register len, Register tmp);
   void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
-  // shift left by shamt and add
-  void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt);
+  void shift_left_add(Register Rd, Register Rs1, Register Rs2, int shamt, Register tmp);
+
+  void shadd(Register Rd, Register Rs1, Register Rs2, int shamt);
 
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
