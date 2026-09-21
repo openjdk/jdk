@@ -2043,11 +2043,11 @@ bool FileMapHeader::validate() {
     return false;
   }
 
-  if (align_array_elements() != AlignArrayElements) {
-    aot_log_warning(aot)("Unable to use %s.\nThe %s's AlignArrayElements setting (%s)"
-                     " does not equal the current AlignArrayElements setting (%s).", file_type, file_type,
-                     _align_array_elements ? "enabled" : "disabled",
-                     AlignArrayElements    ? "enabled" : "disabled");
+  if (UseCompactObjectHeaders && align_array_elements() != AlignArrayElements) {
+    AOTMetaspace::report_loading_error("The %s's AlignArrayElements setting (%s)"
+                                       " does not equal the current AlignArrayElements setting (%s).", file_type,
+                                       _align_array_elements ? "enabled" : "disabled",
+                                       AlignArrayElements    ? "enabled" : "disabled");
     return false;
   }
 
