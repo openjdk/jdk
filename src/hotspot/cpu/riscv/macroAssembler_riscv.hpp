@@ -614,7 +614,7 @@ class MacroAssembler: public Assembler {
     if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
       c_zext_w(Rd);
     } else {
-      add_uw(Rd, Rs, zr);
+      _add_uw(Rd, Rs, zr);
     }
   }
 
@@ -1484,6 +1484,8 @@ public:
   void zero_memory(Register addr, Register len, Register tmp);
   void zero_dcache_blocks(Register base, Register cnt, Register tmp1, Register tmp2);
 
+  // zext add
+  void add_uw(Register Rd, Register Rs1, Register Rs2, Register tmp = t0);
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
