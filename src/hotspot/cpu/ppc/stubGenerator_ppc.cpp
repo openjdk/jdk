@@ -3760,13 +3760,17 @@ class StubGenerator: public StubCodeGenerator {
 
     __ load_const_optimized(base, BASE);
     __ load_const_optimized(nmax, NMAX);
-    __ load_const_optimized(magic, (uint32_t)0x80078071);
+
+    // magic number to compute division by BASE in combination with right shift by 15
+    __ load_const_optimized(magic, (uint32_t)0x80078071, R0);
 
     // load tables
     __ compute_vp_for_byte_vector_unaligned(vp, vacc1);
 
+    // load adler ones
     __ vspltisb(vones, 1);
 
+    // load adler weights
     __ li(R0, 0);
     __ lvsl(vweights, R0);
     __ vspltisb(vacc1, 15);
@@ -3775,9 +3779,7 @@ class StubGenerator: public StubCodeGenerator {
 
     // split Adler
     __ clrldi(s1, adler, 48);      // low 16 bits
-
-    __ srdi(s2, adler, 16);
-    __ clrldi(s2, s2, 48);         // high 16 bits
+    __ srwi(s2, adler, 16);        // high 16 bits
 
     // len == 0 ?
     __ cmpwi(CR0, len, 0);
@@ -3788,18 +3790,18 @@ class StubGenerator: public StubCodeGenerator {
     __ blt(CR0, L_by1);
 
     // len >= NMAX ?
+    __ load_const_optimized(count, (int)(NMAX / 16));
     __ bind(L_nmax);
 
     __ cmpw(CR0, len, nmax);
     __ blt(CR0, L_by16);
 
-    __ load_const_optimized(count, (int)(NMAX / 16));
     __ mtctr(count);
     __ align(32);
     __ bind(L_nmax_loop);
 
-    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
-                         vdata, vones, vweights, vacc1, vacc2, vp);
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
+		                      vones, vweights, vacc1, vacc2, vp);
 
     __ bdnz(L_nmax_loop);
 
@@ -3829,8 +3831,8 @@ class StubGenerator: public StubCodeGenerator {
     __ align(32);
     __ bind(L_by16_loop);
 
-    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1,
-                         vdata, vones, vweights, vacc1, vacc2, vp);
+    generate_updateBytesAdler32_accum(s1, s2, buf, tmp0, tmp1, vdata,
+		                      vones, vweights, vacc1, vacc2, vp);
 
     __ addi(len, len, -16);
 
@@ -3878,9 +3880,9 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   void generate_updateBytesAdler32_accum(Register s1, Register s2, Register buf,
-                             Register tmp0, Register tmp1, VectorRegister vdata,
-                             VectorRegister vones, VectorRegister vweights,
-                             VectorRegister vacc1, VectorRegister vacc2, VectorRegister vp) {
+                                         Register tmp0, Register tmp1, VectorRegister vdata,
+                                         VectorRegister vones, VectorRegister vweights,
+                                         VectorRegister vacc1, VectorRegister vacc2, VectorRegister vp) {
 
     // load 16 input bytes
     __ load_byte_vector_unaligned(vdata, 0, buf, tmp0, vp);
@@ -3888,7 +3890,7 @@ class StubGenerator: public StubCodeGenerator {
     // compute the weighted sum
 
     // accumulator cleared to zero
-    __ vxor(vacc2, vacc2, vacc2);
+    __ vspltisb(vacc2, 0);
 
     // (i/p bytes) vdata =  {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
     // (weights) vweights = {16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1}
@@ -3925,7 +3927,7 @@ class StubGenerator: public StubCodeGenerator {
     // compute the byte sum
 
     // accumulator cleared to zero
-    __ vxor(vacc1, vacc1, vacc1);
+    __ vspltisb(vacc1, 0);
 
     // (i/p bytes) vdata = {b0, b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13, b14, b15}
     // (ones) vones      = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
@@ -3959,7 +3961,6 @@ class StubGenerator: public StubCodeGenerator {
 
     // advance the buffer pointer
     __ addi(buf, buf, 16);
-
   }
 
 #ifdef VM_LITTLE_ENDIAN
