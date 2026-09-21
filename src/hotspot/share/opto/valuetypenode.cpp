@@ -502,6 +502,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
+    if (kit->stopped()) { return; }
     Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
     store_flat(kit, cast, ptr, true, false, false, decorators);
 
@@ -524,6 +525,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
+      if (kit->stopped()) { return; }
       Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
       store_flat(kit, cast, ptr, true, false, true, decorators);
 
@@ -538,6 +540,7 @@ void ValueTypeNode::store_flat_array(GraphKit* kit, Node* base, Node* idx) {
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
+      if (kit->stopped()) { return; }
       Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
       store_flat(kit, cast, ptr, false, false, true, decorators);
 
@@ -1583,6 +1586,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
     assert(vk->has_nullable_atomic_layout(), "element type %s does not have a nullable flat layout", vk->name()->as_utf8());
     kit->set_all_memory(input_memory_state);
     Node* cast = kit->cast_to_flat_array_exact(base, vk, false, true);
+    if (kit->stopped()) { return nullptr; }
     Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
     vt_nullable = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, false, decorators);
 
@@ -1605,6 +1609,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_atomic_layout(), "element type %s does not have a null-free atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, true);
+      if (kit->stopped()) { return nullptr; }
       Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
       vt_null_free = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, true, false, true, decorators);
 
@@ -1619,6 +1624,7 @@ ValueTypeNode* ValueTypeNode::make_from_flat_array(GraphKit* kit, ciValueKlass* 
       assert(vk->has_null_free_non_atomic_layout(), "element type %s does not have a null-free non-atomic flat layout", vk->name()->as_utf8());
       kit->set_all_memory(input_memory_state);
       Node* cast = kit->cast_to_flat_array_exact(base, vk, true, false);
+      if (kit->stopped()) { return nullptr; }
       Node* ptr = kit->array_element_address(cast, idx, T_FLAT_ELEMENT);
       vt_non_atomic = ValueTypeNode::make_from_flat(kit, vk, cast, ptr, false, false, true, decorators);
 
