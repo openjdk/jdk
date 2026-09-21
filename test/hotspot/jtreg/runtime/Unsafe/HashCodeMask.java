@@ -26,7 +26,6 @@
  * @summary Make sure hashCodeMask() returns a value that is a power of two minus 1
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- *          java.management
  * @run main ${test.main.class}
  */
 
