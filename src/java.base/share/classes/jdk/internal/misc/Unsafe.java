@@ -314,7 +314,7 @@ public final class Unsafe {
     private native int fieldLayout0(Object o);
 
     public native Object[] newSpecialArray(Class<?> componentType,
-                                                  int length, int layoutKind);
+                                                  int length, int layout);
 
     /**
      * Fetches a reference value from a given Java variable.
@@ -356,8 +356,8 @@ public final class Unsafe {
      * @param offset indication of where the variable resides in a Java heap
      *        object, if any, else a memory address locating the variable
      *        statically
-     * @param layoutKind opaque value used by the VM to know the layout
-     *        the field or array element. This value must be retrieved with
+     * @param layout opaque value used by the VM to know the layout of the
+     *        field or array element. This value must be retrieved with
      *        {@link #fieldLayout} or {@link #arrayLayout}.
      * @param valueType value type
      * @param <V> the type of a value
@@ -366,7 +366,7 @@ public final class Unsafe {
      *         {@link NullPointerException}
      */
     @IntrinsicCandidate
-    public native <V> V getFlatValue(Object o, long offset, int layoutKind, Class<?> valueType);
+    public native <V> V getFlatValue(Object o, long offset, int layout, Class<?> valueType);
 
     /**
      * Stores the given value into a given Java variable.
@@ -379,8 +379,8 @@ public final class Unsafe {
      * @param offset indication of where the variable resides in a Java heap
      *        object, if any, else a memory address locating the variable
      *        statically
-     * @param layoutKind opaque value used by the VM to know the layout
-     *        the field or array element. This value must be retrieved with
+     * @param layout opaque value used by the VM to know the layout of the
+     *        field or array element. This value must be retrieved with
      *        {@link #fieldLayout} or {@link #arrayLayout}.
      * @param valueType value type
      * @param v the value to store into the indicated Java variable
@@ -389,7 +389,7 @@ public final class Unsafe {
      *         {@link NullPointerException}
      */
     @IntrinsicCandidate
-    public native <V> void putFlatValue(Object o, long offset, int layoutKind, Class<?> valueType, V v);
+    public native <V> void putFlatValue(Object o, long offset, int layout, Class<?> valueType, V v);
 
     /**
      * Returns the header size of the given value type.

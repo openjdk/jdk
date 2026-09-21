@@ -32,12 +32,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/devirtualizer.inline.hpp"
 
-inline bool ValueKlass::layout_has_null_marker(LayoutKind lk) const {
-  assert(is_layout_supported(lk), "Must be");
-  return LayoutKindHelper::is_nullable_flat(lk) ||
-         (lk == LayoutKind::BUFFERED && supports_nullable_layouts());
-}
-
 inline bool ValueKlass::is_layout_supported(LayoutKind lk) const {
   switch(lk) {
     case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
@@ -51,9 +45,6 @@ inline bool ValueKlass::is_layout_supported(LayoutKind lk) const {
       break;
     case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
       return has_nullable_non_atomic_layout();
-      break;
-    case LayoutKind::BUFFERED:
-      return true;
       break;
     default:
       ShouldNotReachHere();
@@ -78,9 +69,6 @@ inline int ValueKlass::layout_size_in_bytes(LayoutKind kind) const {
       assert(has_nullable_non_atomic_layout(), "Layout not available");
       return nullable_non_atomic_size_in_bytes();
       break;
-    case LayoutKind::BUFFERED:
-      return payload_size_in_bytes();
-      break;
     default:
       ShouldNotReachHere();
   }
@@ -103,9 +91,6 @@ inline int ValueKlass::layout_alignment(LayoutKind kind) const {
     case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
       assert(has_nullable_non_atomic_layout(), "Layout not available");
       return null_free_non_atomic_alignment();
-    break;
-    case LayoutKind::BUFFERED:
-      return payload_alignment();
       break;
     default:
       ShouldNotReachHere();

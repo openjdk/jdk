@@ -58,16 +58,15 @@
 
 // Allocation...
 
-FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, LayoutKind lk)
+FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperties props, FlatLayout layout)
     : ObjArrayKlass(1, element_klass, name, Kind, props),
-      _layout_kind(lk) {
+      _flat_layout(layout) {
   assert(element_klass->is_value_klass(), "Expected value klass");
-  assert(lk != LayoutKind::NULLABLE_NON_ATOMIC_FLAT, "Layout not supported by arrays yet (needs frozen arrays)");
-  assert(LayoutKindHelper::is_flat(lk), "Must be a flat layout");
+  assert(layout.layout_kind() != LayoutKind::NULLABLE_NON_ATOMIC_FLAT, "Layout not supported by arrays yet (needs frozen arrays)");
 
   assert(_class_loader_data == element_klass->class_loader_data(), "Sanity check");
 
-  set_layout_helper(array_layout_helper(ValueKlass::cast(element_klass), lk));
+  set_layout_helper(array_layout_helper(ValueKlass::cast(element_klass), _flat_layout));
   assert(is_array_klass(), "sanity");
   assert(is_flatArray_klass(), "sanity");
 
@@ -76,21 +75,16 @@ FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperti
   assert(layout_helper_is_flatArray(layout_helper()), "Must be");
   assert(layout_helper_element_type(layout_helper()) == T_FLAT_ELEMENT, "Must be");
   assert(prototype_header().is_flat_array(), "Must be");
-  switch(lk) {
-    case LayoutKind::NULL_FREE_NON_ATOMIC_FLAT:
-    case LayoutKind::NULL_FREE_ATOMIC_FLAT:
-      assert(layout_helper_is_null_free(layout_helper()), "Must be");
-      assert(prototype_header().is_null_free_array(), "Must be");
-    break;
-    case LayoutKind::NULLABLE_ATOMIC_FLAT:
+  if (layout.is_nullable()) {
+    if (layout.is_atomic()) {
       assert(!layout_helper_is_null_free(layout_helper()), "Must be");
       assert(!prototype_header().is_null_free_array(), "Must be");
-    break;
-    case LayoutKind::NULLABLE_NON_ATOMIC_FLAT:
+    } else {
       ShouldNotReachHere();
-    default:
-      ShouldNotReachHere();
-    break;
+    }
+  } else {
+    assert(layout_helper_is_null_free(layout_helper()), "Must be");
+    assert(prototype_header().is_null_free_array(), "Must be");
   }
 #endif // ASSERT
 
@@ -99,7 +93,7 @@ FlatArrayKlass::FlatArrayKlass(Klass* element_klass, Symbol* name, ArrayProperti
   }
 }
 
-FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties props, LayoutKind lk, TRAPS) {
+FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties props, FlatLayout layout, TRAPS) {
   guarantee((!Universe::is_bootstrapping() || vmClasses::Object_klass_is_loaded()), "Too-early construction of a flat array klass");
   assert(UseArrayFlattening, "Flatten array required");
   assert(MultiArray_lock->holds_lock(THREAD), "must hold lock after bootstrapping");
@@ -126,7 +120,7 @@ FlatArrayKlass* FlatArrayKlass::allocate_klass(Klass* eklass, ArrayProperties pr
   Symbol* name = create_element_klass_array_name(THREAD, element_klass);
   ClassLoaderData* loader_data = element_klass->class_loader_data();
   int size = ArrayKlass::static_size(FlatArrayKlass::header_size());
-  FlatArrayKlass* vak = new (loader_data, size, THREAD) FlatArrayKlass(element_klass, name, props, lk);
+  FlatArrayKlass* vak = new (loader_data, size, THREAD) FlatArrayKlass(element_klass, name, props, layout);
 
   ModuleEntry* module = vak->module();
   assert(module != nullptr, "No module entry for array");
@@ -159,11 +153,11 @@ oop FlatArrayKlass::multi_allocate(int rank, jint* last_size, TRAPS) {
   ShouldNotReachHere();
 }
 
-jint FlatArrayKlass::array_layout_helper(ValueKlass* vk, LayoutKind lk) {
+jint FlatArrayKlass::array_layout_helper(ValueKlass* vk, FlatLayout fl) {
   BasicType etype = T_FLAT_ELEMENT;
-  int esize = log2i_exact(round_up_power_of_2(vk->layout_size_in_bytes(lk)));
+  int esize = log2i_exact(round_up_power_of_2(vk->layout_size_in_bytes(fl.layout_kind())));
   int hsize = arrayOopDesc::base_offset_in_bytes(etype);
-  bool null_free = !LayoutKindHelper::is_nullable_flat(lk);
+  bool null_free = !fl.is_nullable();
   int lh = Klass::array_layout_helper(_lh_array_tag_flat_value, null_free, hsize, etype, esize);
 
   assert(lh < (int)_lh_neutral_value, "must look like an array layout");
@@ -254,7 +248,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
         FlatArrayPayload src_payload(sa, src_pos, fsk);
         FlatArrayPayload dst_payload(da, dst_pos, fdk);
 
-        if (fsk->layout_kind() == fdk->layout_kind()) {
+        if (fsk->flat_layout() == fdk->flat_layout()) {
           // Because source and destination have the same layout, we do not have
           // to worry about null checks and atomicity problems.
           int index_delta;
@@ -286,7 +280,7 @@ void FlatArrayKlass::copy_array(arrayOop s, int src_pos,
           src_payload = src_payload_handle();
           dst_payload = dst_payload_handle();
 
-          const bool dst_is_null_restricted = !LayoutKindHelper::is_nullable_flat(dst_payload.layout_kind());
+          const bool dst_is_null_restricted = !dst_payload.is_nullable_flat();
 
           // fsk->layout_kind() != fdk->layout_kind() implies that s != d, which
           // means that the copy is disjoint and we do not need to worry about
@@ -375,7 +369,7 @@ void FlatArrayKlass::print_on(outputStream* st) const {
   element_klass()->print_value_on(st);
   st->cr();
 
-  st->print(" - layout kind: %s", LayoutKindHelper::layout_kind_as_string(layout_kind()));
+  st->print(" - layout kind: %s", flat_layout().as_string());
   st->cr();
 
   st->print(" - array properties: %s", properties().as_string());

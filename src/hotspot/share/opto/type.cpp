@@ -5184,7 +5184,7 @@ bool TypeAryPtr::empty(void) const {
   if (const TypeOopPtr* elem_ptr = elem()->make_oopptr(); _ary->_flat && elem_ptr != nullptr && elem_ptr->is_valueklassptr()) {
     auto impossible_layout_with_null_freeness = [this](bool null_free, bool atomic) -> bool {
       ArrayDescription description = elem()->value_klass()->array_description_of_array_properties(ArrayProperties::Default().with_null_restricted(null_free).with_non_atomic(!atomic));
-      return !LayoutKindHelper::is_flat(description._layout_kind);  // We get a contradiction between _ary->_flat and array_layout_selection
+      return !description.is_flat();  // We get a contradiction between _ary->_flat and array_layout_selection
     };
     auto impossible_layout = [&](bool atomic) -> bool {
       if (is_null_free()) {

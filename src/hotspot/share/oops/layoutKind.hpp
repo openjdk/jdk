@@ -26,26 +26,26 @@
 #define SHARE_OOPS_LAYOUTKIND_HPP
 
 #include "memory/allStatic.hpp"
+#include "utilities/enumIterator.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/sizes.hpp"
 
-// LayoutKind is an enum used to indicate which layout has been used for a given value field.
+class outputStream;
+
+// LayoutKind is an enum used to indicate which flat layout has been used for a given flat value field.
+//
 // Each layout has its own properties and its own access protocol that is detailed below.
 //
-// REFERENCE : This layout uses a pointer to a heap allocated instance (no flattening).
-//             When used, field_flags().is_flat() is false . The field can be nullable or
-//             null-restricted, in the later case, field_flags().is_null_free_value_type() is true.
-//             In case of a null-restricted field, putfield  and putstatic  must perform a null-check
-//             before writing a new value. Still for null-restricted fields, if getfield reads a null pointer
-//             from the receiver, it means that the field was not initialized yet, and getfield must substitute
-//             the null reference with the default value of the field's class.
 // NULL_FREE_NON_ATOMIC_FLAT : This layout is the simplest form of flattening. Any field embedded inside the flat field
 //             can be accessed independently. The field is null-restricted, meaning putfield must perform a
 //             null-check before performing a field update.
+//
 // NULL_FREE_ATOMIC_FLAT : This flat layout is designed for atomic updates, with size and alignment that make use of
 //             atomic instructions possible. All accesses, reads and writes, must be performed atomically.
 //             The field is null-restricted, meaning putfield must perform a null-check before performing a
 //             field update.
+//
 // NULLABLE_ATOMIC_FLAT : This is the flat layout designed for JEP 401. It is designed for atomic updates,
 //             with size and alignment that make use of atomic instructions possible. All accesses, reads and
 //             writes, must be performed atomically. The layout includes a null marker which indicates if the
@@ -67,6 +67,7 @@
 //             null marker). The reset value instance is needed because the VM needs an instance guaranteed to
 //             always be filled with zeros, and the default value could have its null marker set to non-zero if
 //             it is used as a source to update a NULLABLE_ATOMIC_FLAT field.
+//
 // NULLABLE_NON_ATOMIC_FLAT: This is a special layout, only used for strict final non-static fields. Because strict
 //             final non-static fields cannot be updated after the call to the super constructor, there's no
 //             concurrency issue on those fields, so they can be flattened even if they are nullable. During the
@@ -78,41 +79,22 @@
 //             rest of the value atomically. If the null marker indicates a non-null value, the fields of the
 //             field's value can be read independently. Same rules for a putfield, no atomicity requirement,
 //             as long as all fields and the null marker are up to date at the end of the putfield.
-// BUFFERED:   This layout is only used in heap buffered instances of a value class. It is computed to be compatible
-//             in size and alignment with all other flat layouts supported by the value class.
-//
-//
-// IMPORTANT: The REFERENCE layout must always be associated with the numerical value zero, because the implementation
-// of the java.lang.invoke.MemberName class relies on this property.
 
 enum class LayoutKind : uint32_t {
-  REFERENCE                 = 0,    // indirection to a heap allocated instance
-  BUFFERED                  = 1,    // layout used in heap allocated standalone instances
-  NULL_FREE_NON_ATOMIC_FLAT = 2,    // flat, null-free (no null marker), no guarantee of atomic updates
-  NULL_FREE_ATOMIC_FLAT     = 3,    // flat, null-free, size compatible with atomic updates, alignment requirement is equal to the size
-  NULLABLE_ATOMIC_FLAT      = 4,    // flat, include a null marker, plus same size/alignment properties as ATOMIC layout
-  NULLABLE_NON_ATOMIC_FLAT  = 5,    // flat, include a null marker, non-atomic, only used for strict final non-static fields
-  UNKNOWN                   = 6     // used for uninitialized fields of type LayoutKind
+  NULL_FREE_NON_ATOMIC_FLAT = 0,    // flat, null-free (no null marker), no guarantee of atomic updates
+  NULL_FREE_ATOMIC_FLAT     = 1,    // flat, null-free, size compatible with atomic updates, alignment requirement is equal to the size
+  NULLABLE_ATOMIC_FLAT      = 2,    // flat, include a null marker, plus same size/alignment properties as ATOMIC layout
+  NULLABLE_NON_ATOMIC_FLAT  = 3,    // flat, include a null marker, non-atomic, only used for strict final non-static fields
 };
 
-class outputStream;
+ENUMERATOR_RANGE(LayoutKind, LayoutKind::NULL_FREE_NON_ATOMIC_FLAT, LayoutKind::NULLABLE_NON_ATOMIC_FLAT)
 
 class LayoutKindHelper : AllStatic {
  public:
-  static LayoutKind get_copy_layout(LayoutKind src, LayoutKind dst) {
-    assert(src == dst || src == LayoutKind::BUFFERED || dst == LayoutKind::BUFFERED,
-           "Only same or from/to BUFFERED is supported. src: %s, dst: %s",
-           layout_kind_as_string(src), layout_kind_as_string(dst));
-    return src == LayoutKind::BUFFERED ? dst : src;
+  static bool is_valid_underlying_value(uint32_t value) {
+    return (uint32_t)EnumRange<LayoutKind>().first() <= value && value <= (uint32_t)EnumRange<LayoutKind>().last();
   }
 
-  static bool is_flat(LayoutKind lk) {
-    assert(lk != LayoutKind::UNKNOWN, "Sanity check");
-    return lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT ||
-           lk == LayoutKind::NULL_FREE_ATOMIC_FLAT ||
-           lk == LayoutKind::NULLABLE_ATOMIC_FLAT ||
-           lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
-  }
   static bool is_atomic_flat(LayoutKind lk) {
     return lk == LayoutKind::NULL_FREE_ATOMIC_FLAT ||
            lk == LayoutKind::NULLABLE_ATOMIC_FLAT;
@@ -121,13 +103,210 @@ class LayoutKindHelper : AllStatic {
     return lk == LayoutKind::NULLABLE_ATOMIC_FLAT ||
            lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT;
   }
-  static bool is_null_free_flat(LayoutKind lk) {
-    return lk == LayoutKind::NULL_FREE_ATOMIC_FLAT ||
-           lk == LayoutKind::NULL_FREE_NON_ATOMIC_FLAT;
-  }
   static const char* layout_kind_as_string(LayoutKind lk);
+};
 
-  static void print_on(LayoutKind lk, outputStream* st) NOT_DEBUG_RETURN;
+// This class puts an abstraction around flat layouts and provides convenience
+// methods that can be used instead of explicit calls to LayoutKindHelper.
+class FlatLayout {
+  LayoutKind _layout_kind;
+
+public:
+  FlatLayout(LayoutKind layout_kind) : _layout_kind(layout_kind) {}
+
+  LayoutKind layout_kind() const { return _layout_kind; }
+
+  bool is_nullable() const       { return LayoutKindHelper::is_nullable_flat(_layout_kind); }
+  bool is_atomic() const         { return LayoutKindHelper::is_atomic_flat(_layout_kind); }
+
+  static ByteSize layout_kind_offset() { return in_ByteSize(offset_of(FlatLayout, _layout_kind)); }
+
+  bool operator==(const FlatLayout& other) const {
+    return _layout_kind == other._layout_kind;
+  }
+
+  const char* as_string() const;
+  void print_on(outputStream* st) const NOT_DEBUG_RETURN;
+};
+
+// This class is used for places where storing a FlatLayout is optional
+// and its presence depends on an external "has flat layout" discriminator.
+//
+// This helps keep information about flatness in one place, instead of
+// duplicating it together with the FlatLayout. If this duplication isn't
+// problematic, then OptionalFlatLayout is probably a more natural class to
+// use.
+//
+// Note that the implementation of the class is subtle in that it supports
+// a tri-state:
+//
+// 1) A FlatLayout is present and the slot is considered initialized
+// 2) No FlatLayout is present but the slot is still considered initialized
+// 3) The slot is not considered initialized
+//
+// All these three cases are currently used in the code. Care must be taken
+// to ensure that the external discriminator (has_flat_layout) is properly
+// initialized and agrees with the active union member:
+//
+// has_flat_layout == true => _flat_layout is active
+// has_flat_layout == false => _initialized_non_flat is active
+//
+// Here again is a reason to use the safer OptionalFlatLayout class. It handles
+// the active member and it has built-in initialization asserts. Raw
+// FlatLayoutSlot users typically don't gain much from differentiating between
+// the two states of _initialized_non_flat.
+class FlatLayoutSlot {
+  // Note that the union makes sure that a FlatLayout object is only
+  // created (in the C++ sense) when we have a proper FlatLayout.
+  // Otherwise the bool object is created.
+  union {
+    // This is only set when a flat layout is present.
+    FlatLayout _flat_layout;
+
+    // This bool is set when the flat layout is not present.
+    //
+    // Its value is used to determine if this slot should be considered
+    // initialized
+    bool _initialized_non_flat;
+  };
+
+public:
+  FlatLayoutSlot(FlatLayout flat_layout)
+    : _flat_layout(flat_layout) {}
+
+  explicit FlatLayoutSlot(bool initialized_non_flat = false)
+    : _initialized_non_flat(initialized_non_flat) {}
+
+  // Get the FlatLayout. The external has_flat_layout discriminator is used to
+  // catch when code tries to fetch layout without having a flat layout.
+  FlatLayout get_if(bool has_flat_layout) const {
+    precond(has_flat_layout);
+    return _flat_layout;
+  }
+
+  bool is_initialized(bool has_flat_layout) const {
+    return has_flat_layout || _initialized_non_flat;
+  }
+};
+
+// This class optionally holds a FlatLayout.
+//
+// It is similar to FlatLayoutSlot and has support for the same tri-state. The
+// difference is that this class has its own "has flat layout" (_is_flat)
+// discriminator. This also means that it can assert that the current instance
+// has been initialized.
+class OptionalFlatLayout {
+  bool           _is_flat;
+  FlatLayoutSlot _flat_layout;
+
+  OptionalFlatLayout(bool is_flat, FlatLayoutSlot flat_layout)
+    : _is_flat(is_flat),
+      _flat_layout(flat_layout) {}
+
+public:
+  // Default constructor creates an "uninitialized" state.
+  OptionalFlatLayout()
+    : OptionalFlatLayout(false /* is_flat */, FlatLayoutSlot(false /* initialized */)) {}
+
+  OptionalFlatLayout(FlatLayout flat_layout)
+    : OptionalFlatLayout(true /* is_flat */, FlatLayoutSlot(flat_layout)) {}
+
+  static OptionalFlatLayout flat(FlatLayout flat_layout) {
+    return OptionalFlatLayout(flat_layout);
+  }
+
+  static OptionalFlatLayout non_flat() {
+    return OptionalFlatLayout(false /* is_flat */, FlatLayoutSlot(true /* initialized */));
+  }
+
+  static OptionalFlatLayout uninitialized() {
+    return OptionalFlatLayout();
+  }
+
+  bool is_initialized() const {
+    return _flat_layout.is_initialized(_is_flat);
+  }
+
+  bool is_flat() const {
+    precond(is_initialized());
+    return _is_flat;
+  }
+
+  // Get the FlatLayout, assert if it isn't present.
+  FlatLayout get() const {
+    return _flat_layout.get_if(_is_flat);
+  }
+
+  bool is_nullable_flat() const {
+    return is_flat() && get().is_nullable();
+  }
+
+  bool is_atomic_flat() const {
+    return is_flat() && get().is_atomic();
+  }
+
+  bool operator==(const OptionalFlatLayout& other) const {
+    precond(is_initialized());
+    precond(other.is_initialized());
+
+    if (_is_flat) {
+      if (other._is_flat) {
+        return get() == other.get();
+      } else {
+        return false;
+      }
+    } else {
+      // No other data to check for non-flat field layouts
+      return !other._is_flat;
+    }
+  }
+};
+
+// Class to help encoding and decoding optional FlatLayouts to and from an int.
+//
+//  0 -> non-flat layout
+// >0 =  flat layout with (value - 1) corresponding to the LayoutKind
+class FlatLayoutEncoding {
+public:
+  static bool is_valid_layout_value(int layout_value) {
+    if (layout_value == 0) {
+      // Means non-flat field layout
+      return true;
+    } else {
+      // The flat values are shifted one step in order to make place for the non-flat values
+      const uint32_t layout_kind_value = (uint32_t)layout_value - 1;
+      return LayoutKindHelper::is_valid_underlying_value(layout_kind_value);
+    }
+  }
+
+  static jint encode(OptionalFlatLayout ofl) {
+    if (!ofl.is_flat()) {
+      // Unsafe.nonFlatValue == 0
+      return 0;
+    }
+    return static_cast<jint>(ofl.get().layout_kind()) + 1;
+  }
+
+  static jint encode_flat(FlatLayout flat_layout) {
+    return encode(flat_layout);
+  }
+
+  static jint encode_non_flat() {
+    return encode(OptionalFlatLayout::non_flat());
+  }
+
+  static OptionalFlatLayout decode(jint layout_value) {
+    assert(is_valid_layout_value(layout_value),
+           "invalid encoded layout value %d", layout_value);
+
+    if (layout_value == 0) {
+      return OptionalFlatLayout::non_flat();
+    } else {
+      // The flat values are shifted one step in order to make place for the non-flat values
+      const uint32_t layout_kind_value = (uint32_t)layout_value - 1;
+      return FlatLayout(static_cast<LayoutKind>(layout_kind_value));
+    }
+  }
 };
 
 #endif // SHARE_OOPS_LAYOUTKIND_HPP

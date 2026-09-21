@@ -27,7 +27,9 @@
 
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.hpp"
+#include "oops/klass.hpp"
 #include "oops/layoutKind.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/weakHandle.hpp"
 #include "utilities/resizableHashTable.hpp"
 
@@ -38,19 +40,19 @@ class JvmtiEnv;
 // - value heap object: _obj: oop, offset == 0, _value_klass == _obj.klass();
 // - flat value object: _obj: holder object, offset == offset in the holder, _value_klass == klass of the flattened object;
 class JvmtiHeapwalkObject {
-  oop _obj;                 // for flattened value object this is holder object
-  int _offset;              // == 0 for heap objects
-  ValueKlass* _value_klass; // for value object, nullptr otherwise
-  LayoutKind _layout_kind;  // layout kind in holder object, used only for flat->heap conversion
+  oop _obj;                                 // for flattened value object this is holder object
+  int _offset;                              // == 0 for heap objects
+  ValueKlass* _value_klass;                 // for value object, nullptr otherwise
+  OptionalFlatLayout _optional_flat_layout; // layout in holder object, used only for flat->heap conversion
 
   static ValueKlass* value_klass_or_null(oop obj) {
     Klass* k = obj->klass();
     return k->is_value_klass() ? ValueKlass::cast(k) : nullptr;
   }
 public:
-  JvmtiHeapwalkObject(): _obj(nullptr), _offset(0), _value_klass(nullptr), _layout_kind(LayoutKind::UNKNOWN) {}
-  JvmtiHeapwalkObject(oop obj): _obj(obj), _offset(0), _value_klass(value_klass_or_null(obj)), _layout_kind(LayoutKind::REFERENCE) {}
-  JvmtiHeapwalkObject(oop obj, int offset, ValueKlass* vk, LayoutKind lk): _obj(obj), _offset(offset), _value_klass(vk), _layout_kind(lk) {}
+  JvmtiHeapwalkObject(): _obj(nullptr), _offset(0), _value_klass(nullptr), _optional_flat_layout() {}
+  JvmtiHeapwalkObject(oop obj): _obj(obj), _offset(0), _value_klass(value_klass_or_null(obj)), _optional_flat_layout(OptionalFlatLayout::non_flat()) {}
+  JvmtiHeapwalkObject(oop obj, int offset, ValueKlass* vk, OptionalFlatLayout ofl): _obj(obj), _offset(offset), _value_klass(vk), _optional_flat_layout(ofl) {}
 
   inline bool is_empty() const { return _obj == nullptr; }
   inline bool is_value() const { return _value_klass != nullptr; }
@@ -59,7 +61,7 @@ public:
   inline oop obj() const { return _obj; }
   inline int offset() const { return _offset; }
   inline ValueKlass* value_klass() const { return _value_klass; }
-  inline LayoutKind layout_kind() const { return _layout_kind; }
+  inline OptionalFlatLayout optional_flat_layout() const { return _optional_flat_layout; }
 
   inline Klass* klass() const { return is_value() ? _value_klass : obj()->klass(); }
 
@@ -158,8 +160,9 @@ class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
 
 
 // This class is the Key type for hash table to keep flattened value objects during heap walk operations.
+// When used for lookups it contains a buffered (non-flattened) value.
 // The objects needs to be moved to JvmtiTagMapTable outside of safepoint.
-class JvmtiFlatTagMapKey: public CHeapObj<mtServiceability> {
+class JvmtiValueTagMapKey: public CHeapObj<mtServiceability> {
 private:
   // holder object
   OopHandle _h;
@@ -167,13 +170,16 @@ private:
   oop _holder;
   int _offset;
   ValueKlass* _value_klass;
-  LayoutKind _layout_kind;
-public:
-  JvmtiFlatTagMapKey(const JvmtiHeapwalkObject& obj);
-  // Copy ctor is called when we put entry to the hash table.
-  JvmtiFlatTagMapKey(const JvmtiFlatTagMapKey& src);
+  OptionalFlatLayout _optional_flat_layout;
 
-  JvmtiFlatTagMapKey& operator=(const JvmtiFlatTagMapKey&) = delete;
+  OopHandle create_holder_oop_handle() const;
+
+public:
+  JvmtiValueTagMapKey(const JvmtiHeapwalkObject& obj);
+  // Copy ctor is called when we put entry to the hash table.
+  JvmtiValueTagMapKey(const JvmtiValueTagMapKey& src);
+
+  JvmtiValueTagMapKey& operator=(const JvmtiValueTagMapKey&) = delete;
 
   JvmtiHeapwalkObject heapwalk_object() const;
 
@@ -181,24 +187,24 @@ public:
   oop holder_no_keepalive() const;
   int offset() const { return _offset; }
   ValueKlass* value_klass() const { return _value_klass; }
-  LayoutKind layout_kind() const { return _layout_kind; }
+  FlatLayout flat_layout() const { return _optional_flat_layout.get(); }
 
   void release_handle();
 
-  static unsigned get_hash(const JvmtiFlatTagMapKey& entry);
-  static bool equals(const JvmtiFlatTagMapKey& lhs, const JvmtiFlatTagMapKey& rhs);
+  static unsigned get_hash(const JvmtiValueTagMapKey& entry);
+  static bool equals(const JvmtiValueTagMapKey& lhs, const JvmtiValueTagMapKey& rhs);
 };
 
 typedef
-ResizeableHashTable <JvmtiFlatTagMapKey, jlong,
+ResizeableHashTable <JvmtiValueTagMapKey, jlong,
                      AnyObj::C_HEAP, mtServiceability,
-                     JvmtiFlatTagMapKey::get_hash,
-                     JvmtiFlatTagMapKey::equals> FlatObjectHashtable;
+                     JvmtiValueTagMapKey::get_hash,
+                     JvmtiValueTagMapKey::equals> FlatObjectHashtable;
 
 // A supporting class for iterating over all entries in JvmtiFlatTagMapTable.
-class JvmtiFlatTagMapKeyClosure {
+class JvmtiValueTagMapKeyClosure {
 public:
-  virtual bool do_entry(JvmtiFlatTagMapKey& key, jlong& value) = 0;
+  virtual bool do_entry(JvmtiValueTagMapKey& key, jlong& value) = 0;
 };
 
 class JvmtiFlatTagMapTable: public CHeapObj<mtServiceability> {
@@ -219,7 +225,7 @@ public:
   jlong remove(const JvmtiHeapwalkObject& obj);
 
   // iterate over entries in the hashmap
-  void entry_iterate(JvmtiFlatTagMapKeyClosure* closure);
+  void entry_iterate(JvmtiValueTagMapKeyClosure* closure);
 
   bool is_empty() const { return _table.number_of_entries() == 0; }
 

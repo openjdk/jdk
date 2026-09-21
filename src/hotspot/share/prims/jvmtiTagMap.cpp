@@ -41,6 +41,7 @@
 #include "oops/flatArrayOop.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/layoutKind.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -232,13 +233,17 @@ private:
     Handle holder;
     int offset;
     ValueKlass* value_klass;
-    LayoutKind layout_kind;
+    OptionalFlatLayout optional_flat_layout;
     // converted heap-allocated object
     Handle dst;
 
-    Entry(): holder(), offset(0), value_klass(nullptr), dst() {}
-    Entry(Handle holder, int offset, ValueKlass* value_klass, LayoutKind lk)
-      : holder(holder), offset(offset), value_klass(value_klass), layout_kind(lk), dst() {}
+    Entry(): holder(), offset(0), value_klass(nullptr), optional_flat_layout(), dst() {}
+    Entry(Handle holder, int offset, ValueKlass* value_klass, FlatLayout fl)
+      : holder(holder), offset(offset), value_klass(value_klass), optional_flat_layout(fl), dst() {}
+
+    FlatLayout flat_layout() const {
+      return optional_flat_layout.get();
+    }
   };
 
   int _batch_size;
@@ -256,15 +261,15 @@ public:
       return false;
     }
 
-    class Importer: public JvmtiFlatTagMapKeyClosure {
+    class Importer: public JvmtiValueTagMapKeyClosure {
     private:
       GrowableArray<Entry>& _entries;
       int _batch_size;
     public:
       Importer(GrowableArray<Entry>& entries, int batch_size): _entries(entries), _batch_size(batch_size) {}
 
-      bool do_entry(JvmtiFlatTagMapKey& key, jlong& tag) {
-        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.value_klass(), key.layout_kind());
+      bool do_entry(JvmtiValueTagMapKey& key, jlong& tag) {
+        Entry entry(Handle(Thread::current(), key.holder()), key.offset(), key.value_klass(), key.flat_layout());
         _entries.append(entry);
 
         return _entries.length() < _batch_size;
@@ -280,7 +285,7 @@ public:
       EXCEPTION_MARK;
       Entry& entry = _entries.at(i);
       FlatValuePayload payload = FlatValuePayload::construct_from_parts(
-          entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
+          entry.holder(), entry.offset, entry.value_klass, entry.flat_layout());
       oop obj = payload.read(JavaThread::current());
 
       if (HAS_PENDING_EXCEPTION) {
@@ -305,7 +310,7 @@ public:
         // some error during conversion, skip the entry
         continue;
       }
-      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.value_klass, entry.layout_kind);
+      JvmtiHeapwalkObject obj(entry.holder(), entry.offset, entry.value_klass, entry.flat_layout());
       jlong tag = src_table->remove(obj);
 
       if (tag != 0) { // ensure the entry is still in the src_table
@@ -585,27 +590,49 @@ class ClassFieldDescriptor: public CHeapObj<mtServiceability> {
   int _field_offset;
   char _field_type;
   ValueKlass* _value_klass; // nullptr for heap object
-  LayoutKind _layout_kind;
- public:
-  ClassFieldDescriptor(int index, const FieldStreamBase& fld) :
-      _field_index(index), _field_offset(fld.offset()), _field_type(fld.signature()->char_at(0)) {
-    if (fld.is_flat()) {
-      const fieldDescriptor& fd = fld.field_descriptor();
-      InstanceKlass* holder_klass = fd.field_holder();
-      ValueFieldInfo* vfi = holder_klass->value_field_info_adr(fd.index());
-      _value_klass = vfi->klass();
-      _layout_kind = vfi->kind();
+  FlatLayoutSlot _flat_layout_slot;
+
+  static ValueFieldInfo* calc_value_field_info(const FieldStreamBase& field) {
+    precond(field.is_flat());
+    const fieldDescriptor& fd = field.field_descriptor();
+    InstanceKlass* holder_klass = fd.field_holder();
+    return holder_klass->value_field_info_adr(fd.index());
+  }
+
+  static ValueKlass* calc_value_klass(const FieldStreamBase& field) {
+    if (field.is_flat()) {
+      return calc_value_field_info(field)->klass();
     } else {
-      _value_klass = nullptr;
-      _layout_kind = LayoutKind::REFERENCE;
+      return nullptr;
     }
   }
+
+  static FlatLayoutSlot calc_flat_layout_slot(const FieldStreamBase& field) {
+    if (field.is_flat()) {
+      return FlatLayoutSlot(calc_value_field_info(field)->flat_layout());
+    } else {
+      return FlatLayoutSlot();
+    }
+  }
+
+ public:
+  ClassFieldDescriptor(int index, const FieldStreamBase& fld)
+   : _field_index(index),
+     _field_offset(fld.offset()),
+     _field_type(fld.signature()->char_at(0)),
+     _value_klass(calc_value_klass(fld)),
+     _flat_layout_slot(calc_flat_layout_slot(fld)) {}
+
   int field_index()  const  { return _field_index; }
   char field_type()  const  { return _field_type; }
   int field_offset() const  { return _field_offset; }
   bool is_flat()     const  { return _value_klass != nullptr; }
   ValueKlass* value_klass() const { return _value_klass; }
-  LayoutKind layout_kind() const { return _layout_kind; }
+  FlatLayout flat_layout() const { return _flat_layout_slot.get_if(is_flat()); }
+
+  bool is_nullable_flat() const {
+    return is_flat() && flat_layout().is_nullable();
+  }
 };
 
 class ClassFieldMap: public CHeapObj<mtServiceability> {
@@ -1380,12 +1407,12 @@ void IterateThroughHeapObjectClosure::visit_flat_fields(const JvmtiHeapwalkObjec
       field_offset += obj.offset() - obj.value_klass()->payload_offset();
     }
     // check for possible nulls
-    if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
+    if (field->is_nullable_flat()) {
       if (field->value_klass()->is_payload_marked_as_null(obj.obj(), field_offset)) {
         continue;
       }
     }
-    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->layout_kind());
+    JvmtiHeapwalkObject field_obj(obj.obj(), field_offset, field->value_klass(), field->flat_layout());
 
     visit_object(field_obj);
 
@@ -1401,7 +1428,7 @@ void IterateThroughHeapObjectClosure::visit_flat_array_elements(const JvmtiHeapw
   flatArrayOop array = flatArrayOop(obj.obj());
   FlatArrayKlass* fak = array->klass();
   ValueKlass* vk = fak->element_klass();
-  bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+  bool need_null_check = fak->flat_layout().is_nullable();
 
   for (int index = 0; index < array->length(); index++) {
     address addr = (address)array->value_at_addr(index, fak->layout_helper());
@@ -1414,7 +1441,7 @@ void IterateThroughHeapObjectClosure::visit_flat_array_elements(const JvmtiHeapw
 
     // offset in the array oop
     int offset = (int)(addr - cast_from_oop<address>(array));
-    JvmtiHeapwalkObject elem(obj.obj(), offset, vk, fak->layout_kind());
+    JvmtiHeapwalkObject elem(obj.obj(), offset, vk, fak->flat_layout());
 
     visit_object(elem);
 
@@ -2890,7 +2917,7 @@ inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObj
   flatArrayOop array = flatArrayOop(o.obj());
   FlatArrayKlass* fak = array->klass();
   ValueKlass* vk = fak->element_klass();
-  bool need_null_check = LayoutKindHelper::is_nullable_flat(fak->layout_kind());
+  bool need_null_check = fak->flat_layout().is_nullable();
 
   // array reference to its class
   oop mirror = fak->java_mirror();
@@ -2912,7 +2939,7 @@ inline bool VM_HeapWalkOperation::iterate_over_flat_array(const JvmtiHeapwalkObj
 
     // offset in the array oop
     int offset = (int)(addr - cast_from_oop<address>(array));
-    JvmtiHeapwalkObject elem(o.obj(), offset, vk, fak->layout_kind());
+    JvmtiHeapwalkObject elem(o.obj(), offset, vk, fak->flat_layout());
 
     // report the array reference
     if (!CallbackInvoker::report_array_element_reference(o, elem, index)) {
@@ -3114,12 +3141,12 @@ inline bool VM_HeapWalkOperation::iterate_over_object(const JvmtiHeapwalkObject&
     if (!is_primitive_field_type(type)) {
       if (field->is_flat()) {
         // check for possible nulls
-        if (LayoutKindHelper::is_nullable_flat(field->layout_kind())) {
+        if (field->is_nullable_flat()) {
           if (field->value_klass()->is_payload_marked_as_null(o.obj(), field_offset)) {
             continue;
           }
         }
-        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->layout_kind());
+        JvmtiHeapwalkObject field_obj(o.obj(), field_offset, field->value_klass(), field->flat_layout());
         if (!CallbackInvoker::report_field_reference(o, field_obj, slot)) {
           return false;
         }

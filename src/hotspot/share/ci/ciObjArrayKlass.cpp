@@ -29,6 +29,7 @@
 #include "ci/ciSymbol.hpp"
 #include "ci/ciUtilities.hpp"
 #include "ci/ciUtilities.inline.hpp"
+#include "oops/arrayKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "runtime/signature.hpp"
 
@@ -160,7 +161,7 @@ ciObjArrayKlass* ciObjArrayKlass::make_impl(ciKlass* element_klass, bool refined
       .with_non_atomic(!atomic);
 
     if (force_ref_layout) {
-      const ArrayDescription description(Klass::RefArrayKlassKind, props, LayoutKind::REFERENCE);
+      const ArrayDescription description = ArrayDescription::reference(props);
       array = ObjArrayKlass::cast(array)->klass_from_description(description, THREAD);
     } else {
       array = ObjArrayKlass::cast(array)->klass_with_properties(props, THREAD);

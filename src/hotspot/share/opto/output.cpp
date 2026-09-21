@@ -754,13 +754,11 @@ static jint array_description_value(const TypeAryPtr* ary_type) {
       .with_null_restricted(is_element_value && array_klass->is_elem_null_free())
       .with_non_atomic(is_element_value && !array_klass->is_elem_atomic());
 
-  LayoutKind layout_kind = LayoutKind::REFERENCE;
-  Klass::KlassKind kind = Klass::RefArrayKlassKind;
   if (ary_type->is_flat()) {
-    layout_kind = array_klass->as_flat_array_klass()->layout_kind();
-    kind = Klass::FlatArrayKlassKind;
+    return (jint)ArrayDescription::flat(properties, array_klass->as_flat_array_klass()->flat_layout()).value();
+  } else {
+    return (jint)ArrayDescription::reference(properties).value();
   }
-  return (jint)ArrayDescription(kind, properties, layout_kind).value();
 }
 
 
