@@ -65,7 +65,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _eden_surv_rate_group(new G1SurvRateGroup()),
   _survivor_surv_rate_group(new G1SurvRateGroup()),
   _reserve_factor((double) G1ReservePercent / 100.0),
-  _reserve_regions(0),
+  _num_reserve_regions(0),
   _young_gen_sizer(),
   _free_regions_at_end_of_collection(0),
   _pending_cards_from_gc(0),
@@ -75,7 +75,7 @@ G1Policy::G1Policy(STWGCTimer* gc_timer) :
   _phase_times_timer(gc_timer),
   _phase_times(nullptr),
   _tenuring_threshold(MaxTenuringThreshold),
-  _max_survivor_regions(0),
+  _max_num_survivor_regions(0),
   _survivors_age_table(true)
 {
 }
@@ -156,16 +156,15 @@ class G1NumYoungRegionsPredictor {
   }
 };
 
-void G1Policy::record_new_heap_size(uint new_number_of_regions) {
-  // re-calculate the necessary reserve
-  double reserve_regions_d = (double) new_number_of_regions * _reserve_factor;
-  // We use ceiling so that if reserve_regions_d is > 0.0 (but
-  // smaller than 1.0) we'll get 1.
-  _reserve_regions.store_relaxed((uint) ceil(reserve_regions_d));
+void G1Policy::record_new_heap_size(uint new_num_regions) {
+  // Re-calculate the necessary reserve.
+  double num_reserve_regions_d = (double)new_num_regions * _reserve_factor;
+  // Round up above result to always get a non-zero result.
+  _num_reserve_regions.store_relaxed((uint)ceil(num_reserve_regions_d));
 
-  _young_gen_sizer.heap_size_changed(new_number_of_regions);
+  _young_gen_sizer.heap_size_changed(new_num_regions);
 
-  _ihop_control->update_target_occupancy(new_number_of_regions * G1HeapRegion::GrainBytes);
+  _ihop_control->update_target_occupancy(new_num_regions * G1HeapRegion::GrainBytes);
 }
 
 uint G1Policy::calculate_desired_num_eden_regions_by_mmu() const {
@@ -340,10 +339,10 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
     // It can be concurrently modified by the mutator as it expands the heap. It can
     // only increase at that time, so this is a conservative snapshot. So at worst this
     // method will return a too small number of young regions in that case.
-    uint reserve_regions = _reserve_regions.load_relaxed();
+    uint num_reserve_regions = _num_reserve_regions.load_relaxed();
 
     uint max_to_eat_into_reserve = MIN2(min_num_young_regions_by_sizer,
-                                        (reserve_regions + 1) / 2);
+                                        (num_reserve_regions + 1) / 2);
 
     log_trace(gc, ergo, heap)("Target young regions: Common "
                               "free regions at end of collection %u "
@@ -352,14 +351,14 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
                               "max to eat into reserve %u",
                               _free_regions_at_end_of_collection,
                               desired_num_young_regions,
-                              reserve_regions,
+                              num_reserve_regions,
                               max_to_eat_into_reserve);
 
     uint num_survivor_regions = _g1h->num_survivor_regions();
     uint desired_num_eden_regions = desired_num_young_regions - num_survivor_regions;
     uint num_eden_regions = num_young_regions - num_survivor_regions;
 
-    if (_free_regions_at_end_of_collection <= reserve_regions) {
+    if (_free_regions_at_end_of_collection <= num_reserve_regions) {
       // Fully eat (or already eating) into the reserve.
       uint receiving_eden = MIN3(_free_regions_at_end_of_collection,
                                  desired_num_eden_regions,
@@ -374,9 +373,9 @@ uint G1Policy::calculate_target_num_young_regions(uint desired_num_young_regions
       log_trace(gc, ergo, heap)("Target young regions: Fully eat into reserve "
                                 "receiving eden %u receiving additional eden %u",
                                 receiving_eden, receiving_additional_eden);
-    } else if (_free_regions_at_end_of_collection < (desired_num_eden_regions + reserve_regions)) {
+    } else if (_free_regions_at_end_of_collection < (desired_num_eden_regions + num_reserve_regions)) {
       // Partially eat into the reserve, at most max_to_eat_into_reserve regions.
-      uint free_outside_reserve = _free_regions_at_end_of_collection - reserve_regions;
+      uint free_outside_reserve = _free_regions_at_end_of_collection - num_reserve_regions;
       assert(free_outside_reserve < desired_num_eden_regions,
              "must be %u %u",
              free_outside_reserve, desired_num_eden_regions);
@@ -699,9 +698,9 @@ void G1Policy::record_young_collection_start() {
   // every time we calculate / recalculate the target number of young regions.
   update_survivors_policy();
 
-  assert(max_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
+  assert(max_num_survivor_regions() + _g1h->num_used_regions() <= _g1h->max_num_regions(),
          "Maximum survivor regions %u plus used regions %u exceeds max regions %u",
-         max_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
+         max_num_survivor_regions(), _g1h->num_used_regions(), _g1h->max_num_regions());
   assert_used_and_recalculate_used_equal(_g1h);
 
   // do that for any other surv rate groups
@@ -858,8 +857,8 @@ G1CollectorState G1Policy::record_young_collection_end(bool concurrent_operation
     // given that humongous object allocations do not really affect
     // either the pause's duration nor when the next pause will take
     // place we can safely ignore them here.
-    uint regions_allocated = _collection_set->num_eden_regions();
-    double alloc_rate_ms = (double) regions_allocated / app_time_ms;
+    uint num_eden_regions = _collection_set->num_eden_regions();
+    double alloc_rate_ms = (double) num_eden_regions / app_time_ms;
     _analytics->report_alloc_rate_ms(alloc_rate_ms);
 
     double merge_refinement_table_time = p->cur_merge_refinement_table_time();
@@ -1222,8 +1221,8 @@ size_t G1Policy::estimate_used_young_bytes_locked() const {
   return bytes_used + allocator->used_in_alloc_regions();
 }
 
-size_t G1Policy::desired_survivor_size(uint max_regions) const {
-  size_t const survivor_capacity = G1HeapRegion::GrainWords * max_regions;
+size_t G1Policy::desired_survivor_size(uint max_num_regions) const {
+  size_t const survivor_capacity = G1HeapRegion::GrainWords * max_num_regions;
   return (size_t)((((double)survivor_capacity) * TargetSurvivorRatio) / 100);
 }
 
@@ -1233,14 +1232,14 @@ void G1Policy::print_age_table() {
 
 // Calculates survivor space parameters.
 void G1Policy::update_survivors_policy() {
-  double max_survivor_regions_d =
+  double max_num_survivor_regions_d =
                  (double)target_num_young_regions() / (double) SurvivorRatio;
 
   // Calculate desired survivor size based on desired max survivor regions (unconstrained
   // by remaining heap). Otherwise we may cause undesired promotions as we are
   // already getting close to end of the heap, impacting performance even more.
-  uint const desired_max_survivor_regions = ceil(max_survivor_regions_d);
-  size_t const survivor_size = desired_survivor_size(desired_max_survivor_regions);
+  uint const desired_max_num_survivor_regions = ceil(max_num_survivor_regions_d);
+  size_t const survivor_size = desired_survivor_size(desired_max_num_survivor_regions);
 
   _tenuring_threshold = _survivors_age_table.compute_tenuring_threshold(survivor_size);
   if (UsePerfData) {
@@ -1249,8 +1248,8 @@ void G1Policy::update_survivors_policy() {
   }
   // The real maximum survivor size is bounded by the number of regions that can
   // be allocated into.
-  _max_survivor_regions = MIN2(desired_max_survivor_regions,
-                               _g1h->num_available_regions());
+  _max_num_survivor_regions = MIN2(desired_max_num_survivor_regions,
+                                   _g1h->num_available_regions());
 }
 
 bool G1Policy::force_concurrent_start_if_outside_cycle(GCCause::Cause gc_cause) {
