@@ -4365,12 +4365,15 @@ class C2 extends C1 implements I2 {
             Points to the tag of the referrer object, or
             points to the zero if the referrer
             object is not tagged.
-            Null if the referrer in not an object (that is,
+            Null if the referrer is not an object (that is,
             this callback is reporting a heap root).
             To set the tag value to be associated with the referrer object
             the agent sets the <code>jlong</code> pointed to by the parameter.
             If this callback is reporting a reference from an object to itself,
             <code>referrer_tag_ptr == tag_ptr</code>.
+            For <datalink id="JVMTI_HEAP_REFERENCE_OTHER"/>, this parameter can be
+            null or non-null, depending on whether the callback is reporting a heap
+            root reference or a reference from an object.
           </description>
         </param>
         <param id="length">
