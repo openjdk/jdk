@@ -648,7 +648,9 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dabs: // fall through
     case vmIntrinsics::_dsqrt: // fall through
-    case vmIntrinsics::_dsqrt_strict: {
+    case vmIntrinsics::_dsqrt_strict: // fall through
+    case vmIntrinsics::_floatToFloat16: // fall through
+    case vmIntrinsics::_float16ToFloat: {
       assert(x->number_of_arguments() == 1, "wrong type");
       LIRItem value(x->argument_at(0), this);
       value.load_item();
@@ -662,6 +664,17 @@ void LIRGenerator::do_MathIntrinsic(Intrinsic* x) {
         }
         case vmIntrinsics::_dabs: {
           __ abs(value.result(), dst, LIR_OprFact::illegalOpr);
+          break;
+        }
+        case vmIntrinsics::_floatToFloat16: {
+          // flt_to_flt16 needs a float temporary to move the result through.
+          LIR_Opr tmp = new_register(T_FLOAT);
+          __ f2hf(value.result(), dst, tmp);
+          break;
+        }
+        case vmIntrinsics::_float16ToFloat: {
+          // flt16_to_flt only needs t0/t1, which are not visible to the allocator.
+          __ hf2f(value.result(), dst, LIR_OprFact::illegalOpr);
           break;
         }
         default:

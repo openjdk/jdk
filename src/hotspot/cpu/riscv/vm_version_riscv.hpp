@@ -535,8 +535,18 @@ private:
   static bool supports_fast_class_init_checks() { return true; }
   static bool supports_fencei_barrier() { return ext_Zifencei.enabled(); }
 
+  // Zfhmin only provides half-precision load/store/convert instructions,
+  // Zfh additionally provides half-precision arithmetic. Either one is
+  // enough to convert between float16 and float.
   static bool supports_float16_float_conversion() {
     return UseZfh || UseZfhmin;
+  }
+
+  // Shared code gates the Float.float16ToFloat/floatToFloat16 intrinsics on
+  // this, and those only need the conversion instructions. Note that it does
+  // not imply half-precision arithmetic is available, which needs UseZfh.
+  static bool supports_float16() {
+    return supports_float16_float_conversion();
   }
 
   // Check intrinsic support

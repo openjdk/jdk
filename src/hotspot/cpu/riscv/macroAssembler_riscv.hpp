@@ -1505,6 +1505,13 @@ public:
   // Helper routine processing the slow path of NaN when converting float to float16
   void float_to_float16_NaN(Register dst, FloatRegister src, Register tmp1, Register tmp2);
 
+  // j.l.Float.float16ToFloat and j.l.Float.floatToFloat16, with the NaN handling
+  // emitted inline. C2 uses C2_MacroAssembler::float16_to_float() and
+  // C2_MacroAssembler::float_to_float16() instead, which keep it out of line.
+  // Both clobber t0 and t1.
+  void flt16_to_flt(FloatRegister dst, Register src);
+  void flt_to_flt16(Register dst, FloatRegister src, FloatRegister ftmp);
+
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {
