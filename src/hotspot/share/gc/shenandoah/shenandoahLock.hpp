@@ -117,19 +117,19 @@ public:
 };
 
 template <typename Lock>
-class ShenandoahConditionalLocker : public StackObj {
+class ShenandoahReentrantLocker : public StackObj {
 private:
   Lock* _lock;
 
 public:
-  ShenandoahConditionalLocker(Lock* lock, bool condition) : _lock(nullptr) {
-    if (condition) {
+  ShenandoahReentrantLocker(Lock* lock) : _lock(nullptr) {
+    if (!lock->owned_by_self()) {
       _lock = lock;
       _lock->lock();
     }
   }
 
-  ~ShenandoahConditionalLocker() {
+  ~ShenandoahReentrantLocker() {
     if (_lock) {
       _lock->unlock();
       _lock = nullptr;
