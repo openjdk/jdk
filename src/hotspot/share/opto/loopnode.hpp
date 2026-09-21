@@ -1312,6 +1312,9 @@ public:
 
   // Replace parallel induction variable (parallel to trip counter)
   void replace_parallel_iv(IdealLoopTree *loop);
+  bool replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2);
+  bool replace_independent_index(IdealLoopTree* loop, PhiNode* phi2);
+  void replace_with_affine_index(IdealLoopTree* loop, PhiNode* phi2, jlong ratio_con, BasicType stride_con2_bt);
 
   Node *dom_lca( Node *n1, Node *n2 ) const {
     return find_non_split_ctrl(dom_lca_internal(n1, n2));

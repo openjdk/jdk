@@ -4563,8 +4563,8 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) const {
   return true;
 }
 
-// If (n2 - n1) is a constant, return it in *offset.
-static bool is_constant_difference(Node* n2, Node* n1, jint* offset) {
+// If (n2 - n1) is a constant, return it in offset.
+static bool is_constant_difference(Node* n2, Node* n1, jint& offset) {
   jint off = 0;
   if (n2->Opcode() == Op_AddI && n2->in(2)->Opcode() == Op_ConI) {
     off = java_add(off, n2->in(2)->get_int());
@@ -4579,7 +4579,24 @@ static bool is_constant_difference(Node* n2, Node* n1, jint* offset) {
   } else if (n2->uncast() != n1->uncast()) {
     return false;
   }
-  *offset = off;
+  offset = off;
+  return true;
+}
+
+// Look for an index that repeats the trip counter one iteration late:
+//    int prev = init + const_offset - const_stride;
+//    for (int iv = init; iv != limit; iv += const_stride) { use(prev); prev = iv + const_offset; }
+bool PhaseIdealLoop::replace_lagging_index(IdealLoopTree* loop, PhiNode* phi2) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  jint next_off = 0; // At the end of the iteration prev == iv + next_off?
+  jint init_off = 0; // Before the first iteration prev == iv + init_off?
+  if (phi2->region() != cl ||
+      !is_constant_difference(phi2->in(LoopNode::LoopBackControl), cl->phi(), next_off) ||
+      !is_constant_difference(phi2->in(LoopNode::EntryControl), cl->init_trip(), init_off) ||
+      init_off != java_subtract(next_off, checked_cast<jint>(cl->stride_con()))) {
+    return false;
+  }
+  replace_with_affine_index(loop, phi2, 1, T_INT);
   return true;
 }
 
@@ -4630,9 +4647,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   if (incr == nullptr) {
     return;         // Dead loop?
   }
-  Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  jlong stride_con = cl->stride_con();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -4643,49 +4658,48 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     }
 
     PhiNode* phi2 = out->as_Phi();
+    if (replace_lagging_index(loop, phi2) || replace_independent_index(loop, phi2)) {
+      --i; // deleted this phi; rescan starting with next position
+    }
+  }
+}
+
+bool PhaseIdealLoop::replace_independent_index(IdealLoopTree* loop, PhiNode* phi2) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  Node* incr = cl->incr();
+  jlong stride_con = cl->stride_con();
+
     Node* incr2 = phi2->in(LoopNode::LoopBackControl);
-    // Look for an index that repeats the trip counter one iteration late:
-    //    int prev = init + const_offset - const_stride;
-    //    for (int iv = init; iv != limit; iv += const_stride) { use(prev); prev = iv + const_offset; }
-    jint next_off = 0; // At the end of the iteration prev == iv + next_off?
-    jint init_off = 0; // Before the first iteration prev == iv + init_off?
-    bool lagging_index = phi2->region() == loop->_head &&
-        is_constant_difference(incr2, phi, &next_off) &&
-        is_constant_difference(phi2->in(LoopNode::EntryControl), init, &init_off) &&
-        init_off == java_subtract(next_off, checked_cast<jint>(stride_con));
     // Look for induction variables of the form:  X += constant
-    bool no_parallel_index = phi2->region() != loop->_head ||
+    if (phi2->region() != loop->_head ||
         incr2->req() != 3 ||
         incr2->in(1)->uncast() != phi2 ||
         incr2 == incr ||
         (incr2->Opcode() != Op_AddI && incr2->Opcode() != Op_AddL) ||
-        !incr2->in(2)->is_Con();
-
-    if (!lagging_index && no_parallel_index) {
-      continue;
+        !incr2->in(2)->is_Con()) {
+      return false;
     }
 
-    if (!no_parallel_index && incr2->in(1)->is_ConstraintCast() &&
+    if (incr2->in(1)->is_ConstraintCast() &&
         !(incr2->in(1)->in(0)->is_IfProj() && incr2->in(1)->in(0)->in(0)->is_RangeCheck())) {
       // Skip AddI->CastII->Phi case if CastII is not controlled by local RangeCheck
-      continue;
+      return false;
     }
     // Check for parallel induction variable (parallel to trip counter)
     // via an affine function.  In particular, count-down loops with
     // count-up array indices are common. We only RCE references off
     // the trip-counter, so we need to convert all these to trip-counter
     // expressions.
-    Node* init2 = phi2->in(LoopNode::EntryControl);
 
     // Determine the basic type of the stride constant (and the iv being incremented).
-    BasicType stride_con2_bt = lagging_index || incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    jlong stride_con2 = lagging_index ? stride_con : incr2->in(2)->get_integer_as_long(stride_con2_bt);
+    BasicType stride_con2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
+    jlong stride_con2 = incr2->in(2)->get_integer_as_long(stride_con2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_jint (or min_jlong, respectively) and
     // stride_con is -1.
     if (stride_con2 == min_signed_integer(stride_con2_bt) && stride_con == -1) {
-      continue;
+      return false;
     }
 
     // The general case here gets a little tricky.  We want to find the
@@ -4698,8 +4712,19 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     jlong ratio_con = stride_con2 / stride_con;
 
     if ((ratio_con * stride_con) != stride_con2) { // Check for exact (no remainder)
-        continue;
+      return false;
     }
+
+    replace_with_affine_index(loop, phi2, ratio_con, stride_con2_bt);
+  return true;
+}
+
+void PhaseIdealLoop::replace_with_affine_index(IdealLoopTree* loop, PhiNode* phi2, jlong ratio_con, BasicType stride_con2_bt) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  Node* init = cl->init_trip();
+  Node* phi = cl->phi();
+
+    Node* init2 = phi2->in(LoopNode::EntryControl);
 
 #ifndef PRODUCT
     if (TraceLoopOpts) {
@@ -4738,8 +4763,6 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     if (add->outcnt() == 0) {
       _igvn.remove_dead_node(add, PhaseIterGVN::NodeOrigin::Graph);
     }
-    --i; // deleted this phi; rescan starting with next position
-  }
 }
 
 Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* input) {
