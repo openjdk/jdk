@@ -27,6 +27,7 @@
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "runtime/atomicAccess.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 #include <cfloat>
 #include <cmath>
@@ -52,10 +53,11 @@ HdrSeq::~HdrSeq() {
 
 void HdrSeq::allocate_hdr() {
   if (_hdr == nullptr) {
-    _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
+    int** hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
     for (int c = 0; c < MagBuckets; c++) {
-      _hdr[c] = nullptr;
+      hdr[c] = nullptr;
     }
+    AtomicAccess::release_store(&_hdr, hdr);
   }
 }
 
@@ -128,7 +130,7 @@ double HdrSeq::percentile(double level) const {
     return minimum();
   }
 
-  if (_hdr == nullptr) {
+  if (level == 100 || _hdr == nullptr) {
     return maximum();
   }
 

@@ -41,6 +41,9 @@ class HdrSeq: public NumberSeq {
 private:
   enum PrivateConstants {
     ValBuckets = 64,
+    // Accounts for the maximum object count we can have from scanning dirty
+    // cards in a chunk and leaves some extra headroom. Buckets are in a range
+    // of [2^-33, 2^23).
     MagBuckets = 56,
     MagMinimum = -32
   };

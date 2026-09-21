@@ -116,6 +116,7 @@ TEST_VM_F(BasicShenandoahNumberSeqTest, clear_test) {
 
   EXPECT_NE(test.num(), 0);
   EXPECT_NE(test.sum(), 0);
+  EXPECT_EQ(test.minimum(), 1);
   EXPECT_NE(test.maximum(), 0);
   EXPECT_NE(test.avg(), 0);
   EXPECT_EQ(test.sd(), 0);
@@ -181,8 +182,9 @@ TEST_VM(ShenandoahNumberSeq, large_value) {
   HdrSeq seq;
   // Largest real input. 4 MiB chunk / 8 byte min object
   const double max_dirty_scan_obj_cnt = 524288;
-  seq.add(1); // Widen [min, max] so clamping doesn't return the max
   seq.add(max_dirty_scan_obj_cnt);
+  seq.add(1); // Widen [min, max] so clamping doesn't return the max
+  EXPECT_EQ(seq.minimum(), 1);
   EXPECT_EQ(seq.maximum(), max_dirty_scan_obj_cnt);
   EXPECT_EQ(seq.percentile(100), max_dirty_scan_obj_cnt);
 }
