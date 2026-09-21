@@ -5040,10 +5040,10 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
   }
 
   // Control reaches here when cnt > 8
-  NearLabel loopi, skip;
+  NearLabel loop, skip;
 
   z_vlvgp(Vtmp, value, value);      // populate the Vector register with value
-  z_srlg(tmp, cnt, 0x2)             // tmp = cnt / 4
+  z_srlg(tmp, cnt, 0x2);            // tmp = cnt / 4
 
   bind(loop);
   z_vst(Vtmp, Address(base, 0));
