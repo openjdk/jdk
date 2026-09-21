@@ -107,7 +107,7 @@ bool C2Compiler::init_c2_runtime() {
   return OptoRuntime::generate(thread->env());
 }
 
-void C2Compiler::initialize(bool is_aot_comp_thread) {
+void C2Compiler::initialize() {
   assert(!CompilerConfig::is_c1_or_interpreter_only(), "C2 compiler is launched, it's not c1/interpreter only mode");
   // The first compiler thread that gets here will initialize the
   // small amount of global state (and runtime stubs) that C2 needs.

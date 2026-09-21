@@ -1003,6 +1003,20 @@
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
           range(0, max_juint)                                               \
+                                                                            \
+  /* Next three AOT code flags are used only during assembly phase */       \
+  /* for tier4 AOT compilation and they are ignored in other phases */      \
+                                                                            \
+  product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
+          "AOT code invocation base limit")                                 \
+          range(1.0, 10000.0)                                               \
+                                                                            \
+  product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
+          "scale AOT code invocation limit")                                \
+          range(0.001, 1000.0)                                              \
+                                                                            \
+  product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
+          "Use AOT code counter to trigger JIT compilation")                \
 
 // end of C2_FLAGS
 

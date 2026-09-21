@@ -65,7 +65,9 @@ bool Compiler::init_c1_runtime() {
 }
 
 
-void Compiler::initialize(bool is_aot_comp_thread) {
+void Compiler::initialize() {
+  CompilerThread* thread = CompilerThread::current();
+  bool is_aot_comp_thread = thread->is_aot_thread();
   // AOT code loading does not use scratch buffer but it needs
   // to wait when normal C1 compiler thread initializes runtime.
   // Except when C1 JIT compilation is disabled and we need to
@@ -75,10 +77,10 @@ void Compiler::initialize(bool is_aot_comp_thread) {
     return;
   }
   // Buffer blob must be allocated per C1 compiler thread at startup.
-  BufferBlob* buffer_blob = is_aot_comp_thread ? nullptr : init_buffer_blob();
+  BufferBlob* buffer_blob = is_aot_comp_thread ? nullptr : init_buffer_blob(thread);
   if (should_perform_init()) {
     if (is_aot_comp_thread) {
-      buffer_blob = init_buffer_blob(); // for runtime initialization
+      buffer_blob = init_buffer_blob(thread); // for runtime initialization
     }
     if (buffer_blob == nullptr || !init_c1_runtime()) {
       // When we come here we are in state 'initializing'; entire C1 compilation
@@ -99,15 +101,15 @@ uint Compiler::code_buffer_size() {
   return Compilation::desired_max_code_buffer_size + Compilation::desired_max_constant_size;
 }
 
-BufferBlob* Compiler::init_buffer_blob() {
+BufferBlob* Compiler::init_buffer_blob(CompilerThread* thread) {
   // Allocate buffer blob once at startup since allocation for each
   // compilation seems to be too expensive (at least on Intel win32).
-  assert (CompilerThread::current()->get_buffer_blob() == nullptr, "Should initialize only once");
+  assert (thread->get_buffer_blob() == nullptr, "Should initialize only once");
 
   // Setup CodeBuffer.
   BufferBlob* buffer_blob = BufferBlob::create("C1 temporary CodeBuffer", code_buffer_size());
   if (buffer_blob != nullptr) {
-    CompilerThread::current()->set_buffer_blob(buffer_blob);
+    thread->set_buffer_blob(buffer_blob);
   }
 
   return buffer_blob;

@@ -28,13 +28,14 @@
 #include "compiler/abstractCompiler.hpp"
 
 class DirectiveSet;
+class CompilerThread;
 
 // There is one instance of the Compiler per CompilerThread.
 
 class Compiler: public AbstractCompiler {
  private:
   static bool init_c1_runtime();
-  BufferBlob* init_buffer_blob();
+  BufferBlob* init_buffer_blob(CompilerThread* thread);
 
  public:
   // Creation
@@ -45,7 +46,7 @@ class Compiler: public AbstractCompiler {
   virtual const char* name()                     { return "C1"; }
 
   // Initialization
-  virtual void initialize(bool is_aot_comp_thread);
+  virtual void initialize();
 
   // Compilation entry point for methods
   virtual void compile_method(ciEnv* env, ciMethod* target, int entry_bci, bool install_code, DirectiveSet* directive);

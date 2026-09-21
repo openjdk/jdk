@@ -158,7 +158,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   CompilerType type() const              { return _type; }
 
   // Customization
-  virtual void initialize (bool is_aot_comp_thread) = 0;
+  virtual void initialize () = 0;
 
   void set_num_compiler_threads(int num) { _num_compiler_threads = num;  }
   int num_compiler_threads()             { return _num_compiler_threads; }

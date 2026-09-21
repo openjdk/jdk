@@ -301,8 +301,8 @@ private:
                                   Thread* thread);
 
   static CompileQueue* compile_queue(int comp_level, bool is_aot);
-  static bool init_compiler_runtime(bool is_aot_comp_thread);
-  static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread, bool is_aot_comp_thread);
+  static bool init_compiler_runtime();
+  static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
 public:
   enum {

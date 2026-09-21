@@ -393,14 +393,15 @@
                                                                             \
   product(uint, DisableAOTCode, 0, DIAGNOSTIC,                              \
           "Disable AOT code on some compilation levels "                    \
-          "(T1=1; T2=10; T4=1000; T5/preload=10000)")                       \
+          "(T1=1; T2=10; T4=1000; T5/preload=10000) "                       \
+          "(T3 is disabled regardless - AOT T3 code is not generated)")     \
           constraint(DisableAOTCodeConstraintFunc, AtParse)                 \
                                                                             \
   product(uint, ClassInitBarrierMode, 0, DIAGNOSTIC,                        \
           "Produce AOT preload code which could be called on first "        \
           "method invocation, add class initialization barriers, "          \
           "other checks and constraints if needed "                         \
-          "(0: no AOT preload code produced) "                               \
+          "(0: no AOT preload code produced) "                              \
           "(1: produce AOT preload code with uncommon trap for barriers)")  \
           range(0, 1)                                                       \
                                                                             \
@@ -421,20 +422,6 @@
           "Assert when external address is missing from the AOT Code "      \
           "external address table. By default (false) AOT compilation "     \
           "will be skipped for method which references such address.")      \
-                                                                            \
-  /* Next three AOT code flags are used only during assembly phase */       \
-  /* for tier4 AOT compilation and they are ignored in other phases */      \
-                                                                            \
-  product(double, AOTCodeInvokeBase, 100.0, DIAGNOSTIC,                     \
-          "AOT code invocation base limit")                                 \
-          range(1.0, 10000.0)                                               \
-                                                                            \
-  product(double, AOTCodeInvokeScale, 1.0, DIAGNOSTIC,                      \
-          "scale AOT code invocation limit")                                \
-          range(0.001, 1000.0)                                              \
-                                                                            \
-  product(bool, UseAOTCodeCounters, true, DIAGNOSTIC,                       \
-          "Use AOT code counter to trigger JIT compilation")                \
                                                                             \
 
 // end of COMPILER_FLAGS

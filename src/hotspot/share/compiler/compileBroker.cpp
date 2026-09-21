@@ -837,7 +837,16 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
   if (new_thread != nullptr && new_thread->osthread() != nullptr) {
 
     if (type == compiler_t) {
-      CompilerThread::cast(new_thread)->set_compiler(comp);
+      CompilerThread* comp_thread = CompilerThread::cast(new_thread);
+      comp_thread->set_compiler(comp);
+      // Count AOT compiler thread
+      bool is_aot_thread = (queue != nullptr) &&
+                           (queue == _ac1_compile_queue || queue == _ac2_compile_queue);
+      if (is_aot_thread) {
+        comp_thread->set_is_aot_thread();
+        int num = comp->num_aot_compiler_threads() + 1;
+        comp->set_num_aot_compiler_threads(num);
+      }
     }
 
     // Note that we cannot call os::set_priority because it expects Java
@@ -855,13 +864,6 @@ JavaThread* CompileBroker::make_thread(ThreadType type, jobject thread_handle, C
     }
     os::set_native_priority(new_thread, native_prio);
 
-    // Count AOT compiler thread
-    bool is_aot_thread = (type == compiler_t) && (queue != nullptr) &&
-                         (queue == _ac1_compile_queue || queue == _ac2_compile_queue);
-    if (is_aot_thread) {
-      int num = comp->num_aot_compiler_threads() + 1;
-      comp->set_num_aot_compiler_threads(num);
-    }
     // Note that this only sets the JavaThread _priority field, which by
     // definition is limited to Java priorities and not OS priorities.
     JavaThread::start_internal_daemon(THREAD, new_thread, thread_oop, NearMaxPriority);
@@ -1308,6 +1310,11 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 }
 
+static bool is_blocking_compilation(DirectiveSet* directive, CompileTask::CompileReason compile_reason) {
+  return ReplayCompiles || !directive->BackgroundCompilationOption ||
+         (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
+}
+
 void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry* aot_code_entry, TRAPS) {
   // Don't need most of the checks for AOT code preloading.
   precond(_initialized);
@@ -1340,9 +1347,7 @@ void CompileBroker::preload_aot_method(const methodHandle& method, AOTCodeEntry*
     }
 
     CompilerDirectiveMatcher matcher(method, comp_level);
-    bool is_blocking = ReplayCompiles                                             ||
-                       !matcher.directive_set()->BackgroundCompilationOption      ||
-                       (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
+    bool is_blocking = is_blocking_compilation(matcher.directive_set(), compile_reason);
     // CompileBroker::compile_method can trap and can have pending async exception.
     compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason,
                         is_blocking, THREAD);
@@ -1476,9 +1481,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
     if (!should_compile_new_jobs()) {
       return nullptr;
     }
-    bool is_blocking = ReplayCompiles                                             ||
-                       !directive->BackgroundCompilationOption                    ||
-                       (AOTPreloadBlocking && (compile_reason == CompileTask::Reason_AOTPreload));
+    bool is_blocking = is_blocking_compilation(directive, compile_reason);
     compile_method_base(method, aot_code_entry, osr_bci, comp_level, hot_count, compile_reason, is_blocking, THREAD);
   }
 
@@ -1686,7 +1689,7 @@ void CompileBroker::wait_for_no_active_tasks() {
  * of this function is that the compiler runtimes are initialized and that
  * compiler threads can start compiling.
  */
-bool CompileBroker::init_compiler_runtime(bool is_aot_comp_thread) {
+bool CompileBroker::init_compiler_runtime() {
   CompilerThread* thread = CompilerThread::current();
   AbstractCompiler* comp = thread->compiler();
   // Final sanity check - the compiler object must exist
@@ -1704,19 +1707,19 @@ bool CompileBroker::init_compiler_runtime(bool is_aot_comp_thread) {
     ThreadInVMfromNative tv(thread);
 
     // Perform per-thread and global initializations
-    comp->initialize(is_aot_comp_thread);
+    comp->initialize();
   }
 
   if (comp->is_failed()) {
     disable_compilation_forever();
     // If compiler initialization failed, no compiler thread that is specific to a
     // particular compiler runtime will ever start to compile methods.
-    shutdown_compiler_runtime(comp, thread, is_aot_comp_thread);
+    shutdown_compiler_runtime(comp, thread);
     return false;
   }
 
   // C1 specific check. AOT C1 thread does not use buffer to load AOT code.
-  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr) && !is_aot_comp_thread) {
+  if (comp->is_c1() && (thread->get_buffer_blob() == nullptr) && !thread->is_aot_thread()) {
     warning("Initialization of %s thread failed (no space to run compilers)", thread->name());
     return false;
   }
@@ -1738,10 +1741,10 @@ void CompileBroker::free_buffer_blob_if_allocated(CompilerThread* thread) {
  * We do this to keep things simple. This can be changed if it ever turns
  * out to be a problem.
  */
-void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread, bool is_aot_comp_thread) {
+void CompileBroker::shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread) {
   free_buffer_blob_if_allocated(thread);
 
-  if (comp->should_perform_shutdown(is_aot_comp_thread)) {
+  if (comp->should_perform_shutdown(thread->is_aot_thread())) {
     // There are two reasons for shutting down the compiler
     // 1) compiler runtime initialization failed
     // 2) The code cache is full and the following flag is set: -XX:-UseCodeCacheFlushing
@@ -1841,7 +1844,6 @@ void CompileBroker::compiler_thread_loop() {
   CompilerThread* thread = CompilerThread::current();
   CompileQueue* queue = thread->queue();
   precond(queue != nullptr);
-  bool is_aot_comp_thread = (queue == _ac1_compile_queue || queue == _ac2_compile_queue);
 
   // For the thread that initializes the ciObjectFactory
   // this resource mark holds all the shared objects
@@ -1873,7 +1875,7 @@ void CompileBroker::compiler_thread_loop() {
   }
 
   // If compiler thread/runtime initialization fails, exit the compiler thread
-  if (!init_compiler_runtime(is_aot_comp_thread)) {
+  if (!init_compiler_runtime()) {
     return;
   }
 
@@ -1939,7 +1941,7 @@ void CompileBroker::compiler_thread_loop() {
   }
 
   // Shut down compiler runtime
-  shutdown_compiler_runtime(thread->compiler(), thread, is_aot_comp_thread);
+  shutdown_compiler_runtime(thread->compiler(), thread);
 }
 
 // ------------------------------------------------------------------

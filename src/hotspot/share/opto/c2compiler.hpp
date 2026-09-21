@@ -42,7 +42,7 @@ public:
 
   // Name
   const char *name() { return "C2"; }
-  void initialize(bool is_aot_comp_thread);
+  void initialize();
 
   // Compilation entry point for methods
   void compile_method(ciEnv* env,

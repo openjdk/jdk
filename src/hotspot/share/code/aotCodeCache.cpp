@@ -712,7 +712,7 @@ static uint get_c2_ea_state() {
   state += eliminate_lock   ? 4 : 0;
   return state;
 }
-#endif
+#endif // COMPILER2
 
 void AOTCodeCache::Config::record() {
 
@@ -738,7 +738,7 @@ void AOTCodeCache::Config::record() {
 #ifdef COMPILER2
   _reduceInitialCardMarks = ReduceInitialCardMarks;
   _c2_ea_state = get_c2_ea_state();
-#endif
+#endif // COMPILER2
 
   _jvmti_state = _dump_jvmti_state;
 }
@@ -1258,7 +1258,7 @@ address AOTCodeCache::reserve_bytes(uint nbytes) {
 }
 
 static void copy_bytes(const char* from, address to, uint size) {
-  precond((int)size > 0);
+  precond((int)size > 0); // size <= max_jint which is AOTCodeMaxSize limit
   memcpy(to, from, size);
   log_trace(aot, codecache)("Copied %d bytes from " INTPTR_FORMAT " to " INTPTR_FORMAT, size, p2i(from), p2i(to));
 }
@@ -1633,7 +1633,8 @@ void AOTCodeCache::invalidate_entry(AOTCodeEntry* entry) {
   }
   found = (i < count);
   assert(found, "entry should exist");
-#endif
+#endif // ASSERT
+
   uint name_offset = entry->offset() + entry->name_offset();
   const char* name = _load_buffer + name_offset;
   uint level       = entry->comp_level();

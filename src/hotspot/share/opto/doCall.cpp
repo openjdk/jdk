@@ -618,6 +618,10 @@ void Parse::do_call() {
     // Generate class init barrier for static method in AOT "preload" code.
     clinit_barrier(holder_klass, method());
     if (stopped()) {
+      // Constant folding of class initialization state check is not expected here.
+      // For AOT "preload" code all instance classes are considered initialized.
+      // See Reason_AOTCompileForPreload case in ciEnv::compute_init_state_for_aot_compile().
+      // But check it anyway to be safe.
       return; // MUST uncommon-trap?
     }
   }
