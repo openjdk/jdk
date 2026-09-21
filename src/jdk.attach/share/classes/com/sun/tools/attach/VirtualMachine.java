@@ -286,7 +286,7 @@ public abstract class VirtualMachine {
      * </tbody>
      * </table>
      *
-     * @since 27
+     * @since 28
      */
     public static VirtualMachine attach(String id, Map<String, ?> env)
         throws AttachNotSupportedException, IllegalArgumentException, IOException

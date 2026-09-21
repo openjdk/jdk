@@ -398,7 +398,6 @@ void* do_map_allocate_pd_VirtualAlloc2(void* addr, size_t length, int protReques
         }
         uint64_t existing_end = (uint64_t) meminfo.BaseAddress + (uint64_t) meminfo.RegionSize;
         uint64_t requested_end = (uint64_t) addr + (uint64_t) length;
-        uint64_t remaining = requested_end - existing_end;
 
         int e = GetLastError();
         if (e == 0) {
@@ -497,6 +496,10 @@ uint64_t read_pointer_at_offset_pd(const char* filename, uint64_t offset) {
     }
     uint64_t p;
     int e = read(fd, &p, sizeof(p));
+    if (e != sizeof(p)) {
+        warn("read_pointer_at_offset_pd: failed");
+        p = (uint64_t) -1;
+    }
     close(fd);
     return p;
 }

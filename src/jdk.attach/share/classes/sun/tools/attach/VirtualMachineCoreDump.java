@@ -25,6 +25,8 @@
 package sun.tools.attach;
 
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.AttachOperationFailedException;
+import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.BufferedInputStream;
@@ -42,35 +44,33 @@ import java.nio.file.Paths;
 
 import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.concurrent.*;
 import java.util.List;
+import java.util.Properties;
 import java.util.Map;
+import java.util.concurrent.*;
 
 import jdk.internal.util.OperatingSystem;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /*
- * Implementation of HotSpotVirtualMachine for a core dump or MiniDump.
+ * Common class for implementation of VirtualMachine for a core dump or MiniDump.
  */
 @SuppressWarnings("restricted")
-public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
+public abstract class VirtualMachineCoreDump extends VirtualMachine {
 
     protected boolean attached;
-    protected String filename;
     protected String libDirs;
     protected String revivalCachePath;
 
     /**
      * Attaches to a core file or minidump.
      */
-    VirtualMachineCoreDumpImpl(AttachProvider provider, String vmid, Map<String, ?> env)
+    VirtualMachineCoreDump(AttachProvider provider, String vmid, Map<String, ?> env)
             throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
-        // Superclass HotSpotVirtualMachine modified to accept String that is not a PID.
         super(provider, vmid);
 
-        filename = vmid;
         if (env != null) {
             libDirs = (String) env.get("libDirs"); // May be a list using File.pathSeparator
             revivalCachePath = (String) env.get("revivalCachePath");
@@ -79,7 +79,10 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
     }
 
     protected void attach() throws AttachNotSupportedException, IllegalArgumentException, IOException {
-        checkCoreFile(filename);
+        if (!new File(id()).exists()) {
+            throw new IOException("No such file '" + id() + "'");
+        }
+        checkCoreFile(id());
         if (revivalCachePath != null) {
             File f = new File(revivalCachePath);
             if (!f.exists() || !f.isDirectory() || !f.canWrite()) {
@@ -89,33 +92,20 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
         attached = true;
     }
 
-    private static final int HEADER_READ_SIZE = 24; // Enough bytes for magic (and file type on ELF)
+    /**
+     * Platform-specific check whether the file is of the correct type.
+     */
+    protected abstract void checkCoreFile(String filename) throws AttachNotSupportedException, IOException;
 
-    private static void checkCoreFile(String filename) throws AttachNotSupportedException, IOException {
-        if (!new File(filename).exists()) {
-            throw new IOException("No such file '" + filename + "'");
-        }
-        // Verify header of an ELF core file (Linux) or MiniDump (Windows).
-        try (InputStream is = new FileInputStream(filename)) {
-            byte[] bytes = new byte[HEADER_READ_SIZE];
-            int e = is.read(bytes);
-            if (e < HEADER_READ_SIZE) {
-                throw new AttachNotSupportedException("Truncated file '" + filename + "'");
-            }
-            if (OperatingSystem.isWindows()) {
-                if (bytes[0] != 'M' || bytes[1] != 'D' || bytes[2] != 'M' || bytes[3] != 'P') {
-                    throw new AttachNotSupportedException("Not a MiniDump: '" + filename + "'");
-                }
-            } else if (OperatingSystem.isLinux()) {
-                if (bytes[0] != 0x7f || bytes[1] != 'E' || bytes[2] != 'L' || bytes[3] != 'F'
-                    || bytes[16] != 4 /* ET_CORE */) {
-                    throw new AttachNotSupportedException("Not a core file: '" + filename + "'");
-                }
-            } else {
-                throw new AttachNotSupportedException("Unimplemented OS");
-            }
-        }
-    }
+    /**
+     * Name of the helper app to run.
+     */
+    protected abstract String helperName(String jdkLibDir);
+
+    /**
+     * Add any platform-specific settings in the environment for the helper process.
+     */
+    protected abstract void setEnv(Map<String, String> env, String jdkLibDir);
 
     /**
      * Detach from the target VM
@@ -126,31 +116,38 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
 
     private void checkAttached() throws IOException {
         if (!attached) {
-            throw new IOException("Not attached");
+            throw new AttachOperationFailedException("Not attached");
         }
     }
 
     private static final int HELPER_TRIES = 100; // Default attempts to run helper
     private static final int HELPER_RETRY = 7;   // revivalhelper exit value hint to retry due to e.g. address space clash
 
+
+/*    public InputStream executeCommand(String cmd, Object ... args) throws IOException {
+        return execute(cmd, args);
+    } */
+
+    public InputStream executeJCmd(String command) throws IOException {
+        return execute("jcmd", command);
+    }
+
     /**
      * Execute the given command in the target VM.
      */
     @SuppressWarnings("deprecation")
     InputStream execute(String cmd, Object ... args) throws IOException {
-        checkNulls(args);
         checkAttached();
         // Only the 'jcmd' operation is implemented on a core/minidump.
         if (!cmd.equals("jcmd")) {
-            throw new IOException("Command '" + cmd + "' not implemented");
+            throw new AttachOperationFailedException("Command '" + cmd + "' not implemented");
         }
+        String jdkLibDir = Path.of(System.getProperty("java.home"), "lib").toString();
 
         // Invoke "JDK/lib/revivalhelper corefilename jcmd command..."
-        String jdkLibDir = Path.of(System.getProperty("java.home"), "lib").toString();
-        String helper = jdkLibDir + File.separator + "revivalhelper"
-                        + (System.getProperty("os.name").startsWith("Windows") ? ".exe" : "");
+        String helper = helperName(jdkLibDir);
         if (!(new File(helper).exists())) {
-            throw new IOException("jcmd helper '" + helper + "' not found");
+            throw new AttachOperationFailedException("jcmd helper '" + helper + "' not found");
         }
         List<String> pargs = new ArrayList<String>();
         pargs.add(helper);
@@ -162,7 +159,7 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
             pargs.add("-R" + revivalCachePath); // Set alternate cache location with -Rpath
         }
 
-        pargs.add(filename);
+        pargs.add(id());
         pargs.add(cmd);
         for (Object o : args) {
             pargs.add((String) o);
@@ -184,18 +181,11 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
         if (Boolean.getBoolean("jdk.attach.core.skipVersionCheck")) {
             newEnv.put("REVIVAL_SKIPVERSIONCHECK", "1");
         }
-        // Linux-specific:
-        if (System.getProperty("os.name").startsWith("Linux")) {
-            newEnv.put("LD_USE_LOAD_BIAS", "1"); // Required by OS to respect shared object load addresses
-            newEnv.put("LD_PRELOAD", jdkLibDir + File.separator + "librevival_support.so");
-        }
-        // Windows-specific:
-        String editbin = System.getProperty("jdk.attach.core.editbin");
-        if (editbin != null) {
-            newEnv.put("EDITBIN", editbin);
-        }
-        // Run the helper, which may fail, e.g. address clash, which Address Space Layout Randomization causes and fixes.
-        // Recognise from the process return value and retry.
+
+        setEnv(newEnv, jdkLibDir); // Add any platform-specific settings
+
+        // Run the helper. This may fail, e.g. address clash, which Address Space Layout Randomization both causes and fixes.
+        // Recognise such a clash from the process return value, and retry.
         int maxTries = Integer.getInteger("jdk.attach.core.tries", HELPER_TRIES);
         String out = null;
         boolean ok = false;
@@ -224,13 +214,13 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
                     if (i > 1 || verbose) {
                         System.err.println("jcmd via revival: failed, exit with: " + e + ". tries=" + i);
                     }
-                    throw new IOException("jcmd returned an error");  // JCmd caller will call System.exit(1)
+                    throw new AttachOperationFailedException("jcmd returned an error");  // JCmd caller will call System.exit(1)
                 } else {
                     // Success.
                     ok = true;
                 }
             } catch (InterruptedException | ExecutionException | TimeoutException ex) {
-                System.err.println("VirtualMachineCoreDumpImpl.execute: " + ex);
+                System.err.println("VirtualMachineCoreDump.execute: " + ex);
                 if (verbose) {
                     ex.printStackTrace();
                 }
@@ -252,5 +242,55 @@ public class VirtualMachineCoreDumpImpl extends HotSpotVirtualMachine {
             }
         }
         return sb.toString();
+    }
+
+    @Override
+    public void startManagementAgent(Properties agentProperties) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public String startLocalManagementAgent() throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public Properties getAgentProperties() throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public Properties getSystemProperties() throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgentLibrary(String agentLibrary, String options) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgentLibrary(String agentLibrary) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgentPath(String path) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgentPath(String path, String p2) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgent(String agentLibrary, String options) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
+    }
+
+    @Override
+    public void loadAgent(String agentLibrary) throws IOException {
+        throw new AttachOperationFailedException("not implemented");
     }
 }

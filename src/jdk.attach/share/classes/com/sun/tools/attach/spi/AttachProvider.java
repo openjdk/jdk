@@ -125,7 +125,7 @@ public abstract class AttachProvider {
      *
      * @throws  AttachNotSupportedException
      *          If the identifier cannot be parsed, or it corresponds to
-     *          to a Java virtual machine that does not exist, or it
+     *          a Java virtual machine that does not exist, or it
      *          corresponds to a Java virtual machine which this
      *          provider cannot attach.
      *
@@ -168,10 +168,10 @@ public abstract class AttachProvider {
      *
      * @throws  AttachNotSupportedException
      *          If the identifier cannot be parsed, or it corresponds to
-     *          to a Java virtual machine that does not exist, or it
+     *          a Java virtual machine that does not exist, or it
      *          corresponds to a Java virtual machine which this
      *          provider cannot attach.
-     *          Also thrown if called with a non-empty {@code env}, and this method is not overridden.
+     *          Also thrown if this method is not overridden by an AttachProvider implementation.
      *
      * @throws  IllegalArgumentException
      *          If the implementation encounters an error relating to arguments in {@code env}.
@@ -179,7 +179,7 @@ public abstract class AttachProvider {
      * @throws  IOException
      *          If some other I/O error occurs
      *
-     * @since 27
+     * @since 28
      */
     public VirtualMachine attachVirtualMachine(String id, Map<String, ?> env)
         throws AttachNotSupportedException, IllegalArgumentException, IOException {

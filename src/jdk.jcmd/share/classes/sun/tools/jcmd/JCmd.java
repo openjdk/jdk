@@ -40,8 +40,10 @@ import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
+import com.sun.tools.attach.spi.AttachProvider;
 
 import sun.tools.attach.HotSpotVirtualMachine;
+import sun.tools.attach.VirtualMachineCoreDump;
 import sun.tools.common.ProcessArgumentMatcher;
 import sun.tools.common.PrintStreamPrinter;
 import sun.tools.jstat.JStatLogger;
@@ -91,7 +93,7 @@ public class JCmd {
         if (pids == null /* including if arg.isForceCore() */ || pids.isEmpty()) {
             System.out.println(arg.getProcessString() + ":");
             try {
-                executeCommandForCrashDump(arg.getProcessString(), arg.getLibDirs(), arg.getRevivalCachePath(), arg.getCommand());
+                executeCommandForCore(arg.getProcessString(), arg.getLibDirs(), arg.getRevivalCachePath(), arg.getCommand());
                 System.exit(0);
             } catch (Exception ex) {
                 // An error like "Unknown diagnostic command" was already printed.
@@ -126,6 +128,25 @@ public class JCmd {
         System.exit(success ? 0 : 1);
     }
 
+    private static final String PROVIDER_CORE_TYPE = "core";
+
+    private static VirtualMachine attachCore(String id, Map<String, String> env) throws AttachNotSupportedException, IOException {
+        AttachNotSupportedException lastExc = null;
+        for (AttachProvider p : AttachProvider.providers()) {
+            try {
+                if (p.type().equals(PROVIDER_CORE_TYPE)) {
+                    return p.attachVirtualMachine(id, env);
+                }
+            } catch (AttachNotSupportedException e) {
+                lastExc = e;
+            }
+        }
+        if (lastExc != null) {
+            throw lastExc;
+        }
+        throw new AttachNotSupportedException("Attach to core not implemented (no Attach Provider available)");
+    }
+
     private static void executeCommandForPid(String pid, String command)
         throws AttachNotSupportedException, IOException,
                UnsupportedEncodingException {
@@ -135,7 +156,7 @@ public class JCmd {
         vm.detach();
     }
 
-    private static void executeCommandForCrashDump(String pid, String libDirs, String revivalCachePath, String command)
+    private static void executeCommandForCore(String pid, String libDirs, String revivalCachePath, String command)
         throws AttachNotSupportedException, IOException, UnsupportedEncodingException {
 
         Map<String,String> env = new HashMap<>();
@@ -145,22 +166,28 @@ public class JCmd {
         if (revivalCachePath != null) {
             env.put("revivalCachePath", revivalCachePath);
         }
-        VirtualMachine vm = VirtualMachine.attach(pid, env);
+        VirtualMachine vm = attachCore(pid, env);
         executeCommandCommon(vm, command);
         vm.detach();
     }
 
     private static void executeCommandCommon(VirtualMachine vm, String command) throws IOException, UnsupportedEncodingException {
-        // Cast to HotSpotVirtualMachine as executeJCmd is an
-        // implementation specific method.
-        HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
         String lines[] = command.split("\\n");
         for (String line : lines) {
             if (line.trim().equals("stop")) {
                 break;
             }
 
-            InputStream is = hvm.executeJCmd(line);
+            InputStream is = null;
+            // Cast to HotSpotVirtualMachine (or core dump) as executeJCmd is an
+            // implementation specific method.
+            if (vm instanceof HotSpotVirtualMachine) {
+                is = ((HotSpotVirtualMachine) vm).executeJCmd(line);
+            } else if (vm instanceof VirtualMachineCoreDump) {
+                is = ((VirtualMachineCoreDump) vm).executeJCmd(line);
+            } else {
+                throw new AttachOperationFailedException("incompatible VM: " + vm);
+            }
 
             if (PrintStreamPrinter.drainUTF8(is, System.out) == 0) {
                 System.out.println("Command executed successfully");

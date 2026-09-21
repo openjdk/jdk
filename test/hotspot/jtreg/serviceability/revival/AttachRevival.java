@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @summary Test attach API on a core file
+ * @summary Test attach API on a core file.
  * @requires os.family == "linux" | os.family == "windows"
  * @library /test/lib
  * @modules jdk.attach/sun.tools.attach
@@ -117,6 +117,10 @@ public class AttachRevival {
         }
     }
 
+    /**
+     * Test basic Attach API operation.
+     * The separate test JCmdRevival.java covers jcmd in detail.
+     */
     static void test(String [] args) throws Throwable {
         String type = args[0];
         ProcessBuilder pb = getProcessBuilder(type);
@@ -152,8 +156,12 @@ public class AttachRevival {
 
     static void testAttach(String coreFileName, String type, String command) throws Throwable {
         System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
+        testVM(coreFileName, type, command, VirtualMachine.attach(coreFileName, Map.of()));
+        testVM(coreFileName, type, command, VirtualMachine.attach(coreFileName));
+    }
 
-        VirtualMachine vm = VirtualMachine.attach(coreFileName, Map.of());
+    static void testVM(String coreFileName, String type, String command, VirtualMachine vm) throws Throwable {
+        System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
         System.out.println("vm = '" + vm.toString() + "'");
         String id = vm.id();
         System.out.println("VM id = '" + id + "'");
@@ -161,42 +169,38 @@ public class AttachRevival {
         try {
             vm.startLocalManagementAgent();
             throw new RuntimeException("startLocalManagementAgent should not succeed");
-        } catch (IOException e1) {
-            System.out.println("Expected Exception from startLocalManagementAgent:");
-            e1.printStackTrace(System.out);
+        } catch (AttachOperationFailedException e1) {
+            System.out.println("Got expected Exception from startLocalManagementAgent: " + e1);
         }
 
         try {
             vm.loadAgent("noAgent");
             throw new RuntimeException("loadAgent should not succeed");
-        } catch (IOException e2) {
-            System.out.println("Expected Exception from loadAgent:");
-            e2.printStackTrace(System.out);
+        } catch (AttachOperationFailedException e2) {
+            System.out.println("Got expected Exception from loadAgent: " + e2);
         }
 
         try {
             Properties props = vm.getSystemProperties();
             System.out.println(props);
             throw new RuntimeException("getSystemProperties should not succeed");
-        } catch (IOException e3) {
+        } catch (AttachOperationFailedException e3) {
             // java.io.IOException: command 'properties' not implemented
-            System.out.println("Expected Exception from getSystemProperties:");
-            e3.printStackTrace(System.out);
+            System.out.println("Got expected Exception from getSystemProperties: " + e3);
         }
 
-        // For jcmd we would cast to HotSpotVirtualMachine as executeJCmd is an implementation specific method.
-        HotSpotVirtualMachine hvm = (HotSpotVirtualMachine) vm;
+        // For jcmd we need a cast as executeJCmd is an implementation specific method.
+        //HotSpotVirtualMachine hvm = (VirtualMachineCoreDump) vm;
+        VirtualMachineCoreDump hvm = (VirtualMachineCoreDump) vm;
 
-        // Separate JCmdRevival test covers jcmd in detail.
         // Test IOException is thrown after detaching:
         vm.detach();
         try {
             InputStream is = hvm.executeJCmd("help");
             PrintStreamPrinter.drainUTF8(is, System.out);
             throw new RuntimeException("jcmd should not succeed after detach");
-        } catch (IOException e4) {
-            System.out.println("Expected Exception from jcmd after detach:");
-            e4.printStackTrace(System.out);
+        } catch (AttachOperationFailedException e4) {
+            System.out.println("Got expected Exception from jcmd after detach: " + e4);
         }
     }
 }

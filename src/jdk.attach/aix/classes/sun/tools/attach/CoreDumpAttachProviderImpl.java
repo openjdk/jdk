@@ -33,6 +33,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Not implemented.
+ */
 public class CoreDumpAttachProviderImpl extends HotSpotAttachProvider {
 
     public CoreDumpAttachProviderImpl() {
@@ -58,10 +61,6 @@ public class CoreDumpAttachProviderImpl extends HotSpotAttachProvider {
     public VirtualMachine attachVirtualMachine(String vmid, Map<String, ?> env)
         throws AttachNotSupportedException, IllegalArgumentException, IOException {
 
-        if (new File(vmid).exists()) {
-            return new VirtualMachineCoreDumpImpl(this, vmid, env);
-        } else {
-            throw new AttachNotSupportedException("No such file: '" + vmid + "'");
-        }
+        throw new AttachNotSupportedException("Not implemented");
     }
 }

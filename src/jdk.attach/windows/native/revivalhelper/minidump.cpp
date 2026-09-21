@@ -132,7 +132,6 @@ MINIDUMP_DIRECTORY* MiniDump::find_stream(int stream) {
     if (fd < 0) {
         error("MiniDump not open");
     }
-    MINIDUMP_DIRECTORY* result = nullptr;
     MINIDUMP_DIRECTORY* md = (MINIDUMP_DIRECTORY*) malloc(sizeof(MINIDUMP_DIRECTORY));
     if (md == nullptr) {
         warn("malloc failed for MINIDUMP_DIRECTORY");
@@ -145,11 +144,15 @@ MINIDUMP_DIRECTORY* MiniDump::find_stream(int stream) {
     }
     for (unsigned int i = 0; i < hdr.NumberOfStreams; i++) {
         int e = read(fd, md, sizeof(*md));
+        if (e != sizeof(*md)) {
+            warn("MiniDump failed to read stream %d", i);
+            break;
+        }
         if (md->StreamType == stream) {
             pos = lseek(fd, md->Location.Rva, SEEK_SET);
             if (pos != md->Location.Rva) {
                 warn("MiniDump seek failed Location.Rva: 0x%ld", md->Location.Rva);
-                return nullptr;
+                break;
             }
             return md;
         }
@@ -221,7 +224,7 @@ void MiniDump::read_sharedlibs() {
     if (md == nullptr) {
         error("MiniDump::read_sharedlibs: ModuleListStream not found.");
     }
-    ULONG32 size = md->Location.DataSize; // Use MINIDUMP_LOCATION_DESCRIPTOR
+    // Use MINIDUMP_LOCATION_DESCRIPTOR
     ULONG32 n;
     int e = read(fd, &n, sizeof(n));
     if (e != sizeof(n)) {
