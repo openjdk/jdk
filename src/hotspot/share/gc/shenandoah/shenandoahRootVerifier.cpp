@@ -46,14 +46,18 @@
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
-  _bs_nm(static_cast<ShenandoahBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())),
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
 
-  // Disable nmethod entry barriers. We cannot allow GC-state dependent fixups,
-  // that would patch barriers incorrectly. It would also inhibit code roots processing
-  // that would hide the issues from the verification.
-  _bs_nm->disable();
+  // Need to complete GC processing before deactivating the barriers.
+  // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
+  // that would patch barriers or process the oops incorrectly. Verifier code
+  // can enter stack watermark processing as part of regular thread root work.
+  // Alas, this might hide some of the issues from the verifier, but at least
+  // verifier would not introduce its own bugs.
+  for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
+    StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
+  }
 
   // Clear state to deactivate barriers. Indicate that state has changed
   // so that verifier threads will use this value, rather than thread local
@@ -66,7 +70,6 @@ ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
-  _bs_nm->enable();
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {

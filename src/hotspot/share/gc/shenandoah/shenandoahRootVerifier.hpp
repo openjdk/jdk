@@ -26,14 +26,12 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHROOTVERIFIER_HPP
 
-#include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
 
 class ShenandoahGCStateResetter : public StackObj {
 private:
   ShenandoahHeap* const _heap;
-  ShenandoahBarrierSetNMethod* const _bs_nm;
   const char _saved_gc_state;
   const bool _saved_gc_state_changed;
 
