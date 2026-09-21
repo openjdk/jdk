@@ -130,7 +130,7 @@ Java_sun_nio_ch_Pollset_pollsetCtl(JNIEnv *env, jclass c, jint ps,
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jobject this,
+Java_sun_nio_ch_Pollset_pollsetBulkCtl(JNIEnv *env, jclass this,
                                 jint pollsetFD, jlong address, jint count) {
 
     /*

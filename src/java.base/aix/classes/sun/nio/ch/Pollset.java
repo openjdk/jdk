@@ -132,6 +132,7 @@ public class Pollset {
     }
 
     static {
+        IOUtil.load();
         init();
     }
     // -- Native methods --

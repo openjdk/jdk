@@ -44,11 +44,6 @@ import jdk.internal.misc.Blocker;
 class PollsetSelectorImpl
         extends SelectorImpl
 {
-    static {
-        IOUtil.load();
-        Pollset.init();
-    }
-
     // maximum number of events to poll in one call to pollset
     static final int NUM_POLLCTLEVENTS = Math.min(IOUtil.fdLimit(), 1024);
 
