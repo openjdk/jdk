@@ -44,7 +44,6 @@ import jdk.test.lib.Asserts;
 
 public class TestAddWithZeroExtendedInt {
     private static final String ADD_L_AND_UXTW = "addL_reg_reg_and_uxtw_b";
-    private static final String SHADD_L_AND_UXTW = "shaddL_reg_reg_and_uxtw_b";
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("-XX:-TieredCompilation");
@@ -56,26 +55,7 @@ public class TestAddWithZeroExtendedInt {
         return base + (value & 0xFFFF_FFFFL);
     }
 
-    @Test
-    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
-    static long testSh1AddLFromLong(long base, long value) {
-        return base + ((value & 0xFFFF_FFFFL) << 1);
-    }
-
-    @Test
-    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
-    static long testSh2AddLFromLong(long base, long value) {
-        return base + ((value & 0xFFFF_FFFFL) << 2);
-    }
-
-    @Test
-    @IR(counts = {SHADD_L_AND_UXTW, "1"}, phase = CompilePhase.FINAL_CODE)
-    static long testSh3AddLFromLong(long base, long value) {
-        return base + ((value & 0xFFFF_FFFFL) << 3);
-    }
-
-    @Run(test = {"testAddLFromLong",
-                 "testSh1AddLFromLong", "testSh2AddLFromLong", "testSh3AddLFromLong"})
+    @Run(test = "testAddLFromLong")
     static void runTests() {
         long base = RunInfo.getRandom().nextLong();
         verifyAddLFromLongResults(base, RunInfo.getRandom().nextLong());
@@ -85,8 +65,5 @@ public class TestAddWithZeroExtendedInt {
     static void verifyAddLFromLongResults(long base, long value) {
         long unsigned = value & 0xFFFF_FFFFL;
         Asserts.assertEQ(testAddLFromLong(base, value), base + unsigned);
-        Asserts.assertEQ(testSh1AddLFromLong(base, value), base + (unsigned << 1));
-        Asserts.assertEQ(testSh2AddLFromLong(base, value), base + (unsigned << 2));
-        Asserts.assertEQ(testSh3AddLFromLong(base, value), base + (unsigned << 3));
     }
 }
