@@ -101,7 +101,7 @@ public class CompressedCPUSpecificClassSpaceReservation {
             output.shouldContain("reserve_between (range [0x0000100000000000-0xffffffffffffffff)");
         } else if (Platform.isS390x()) {
             output.shouldContain(tryReserveBelow4G); // unconditionally
-            if (doNotOptimizeForZeroBased) {
+            if (CDS) {
                 output.shouldNotContain(tryReserveForZeroBased);
             } else {
                 output.shouldContain(tryReserveForZeroBased);
