@@ -26,7 +26,6 @@
  * @requires vm.compiler2.enabled
  * @requires vm.debug
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
- * @key randomness
  * @library /test/lib
  *
  * @build jdk.test.whitebox.WhiteBox
@@ -105,21 +104,16 @@ public class TestSharedCloseDeopts {
             // do a dry run to compile the payload* methods
             // and reduce other noise due to uncommon traps triggering
             AtomicBoolean hold = new AtomicBoolean();
+            AtomicBoolean shouldCallPayload = new AtomicBoolean(true);
             AtomicReference<Throwable> uncaughtException = new AtomicReference<>();
-            Thread t;
             try (Arena arena = Arena.ofShared()) {
                 MemorySegment segment = arena.allocate(ValueLayout.JAVA_INT);
-                t = Thread.ofPlatform()
+                Thread workerThread = Thread.ofPlatform()
                     .name("Warmup-Worker")
                     .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                     .start(() -> {
-                        while (arena.scope().isAlive()) {
-                            try {
-                                testCase.payload().run(segment.scope(), segment, hold);
-                            } catch (IllegalStateException e) {
-                                // arena was closed, we can return
-                                return;
-                            }
+                        while (shouldCallPayload.getAcquire()) {
+                            testCase.payload().run(segment.scope(), segment, hold);
                         }
                     });
 
@@ -132,14 +126,15 @@ public class TestSharedCloseDeopts {
                         hold.setRelease(false);
                     }
                 } while (WB.getMethodCompilationLevel(testCase.method(), false) != C2_COMPILED_LEVEL);
-                if (testCase.hasAccess()) {
-                    // verify expected compilation
-                    assertTrue(WB.hasScopedAccess(testCase.method()));
+                assertEquals(testCase.hasAccess(), WB.hasScopedAccess(testCase.method()));
+
+                // Note: stop calling payload before closing the scope
+                // to avoid uncommon trap/deopt in liveness state check
+                shouldCallPayload.setRelease(false);
+                workerThread.join();
+                if (uncaughtException.get() != null) {
+                    throw uncaughtException.get();
                 }
-            }
-            t.join();
-            if (uncaughtException.get() != null) {
-                throw uncaughtException.get();
             }
         }
     }
@@ -152,16 +147,19 @@ public class TestSharedCloseDeopts {
 
         AtomicBoolean hold = new AtomicBoolean(true); // hold worker thread in loop
         AtomicReference<Throwable> uncaughtException = new AtomicReference<>();
-        Thread t;
+        Thread workerThread;
         int deoptCountBeforeClose;
         try (Arena arena = Arena.ofShared();
             Arena _ = Arena.ofShared()) {
             MemorySegment segment = arena.allocate(ValueLayout.JAVA_INT);
-            t = Thread.ofPlatform()
+            workerThread = Thread.ofPlatform()
                 .name("Test-Worker")
                 .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                 .start(() ->  testCase.payload.run(segment.scope(), segment, hold));
-            waitUntilThreadIsAtSafepoint(t, testCase.method().getName(), testCase.callLineNumber());
+            waitUntilThreadIsAtSafepoint(workerThread, testCase.method().getName(), testCase.callLineNumber());
+            // double check that we're still good to go
+            assertEquals(C2_COMPILED_LEVEL, WB.getMethodCompilationLevel(testCase.method(), false));
+            assertEquals(testCase.hasAccess(), WB.hasScopedAccess(testCase.method()));
             deoptCountBeforeClose = WB.getDeoptCount(SHARED_SCOPE_CLOSED_DEOPT_REASON, null);
         }
         // We closed 2 shared arenas here. One of them was unrelated. Expect at most 1 deopt
@@ -169,7 +167,7 @@ public class TestSharedCloseDeopts {
         assertEquals(deoptCountBeforeClose + (testCase.hasAccess() ? 1 : 0), deoptCountAfterClose);
 
         hold.setRelease(false); // release thread from loop
-        t.join();
+        workerThread.join();
         if (uncaughtException.get() != null) {
             throw uncaughtException.get();
         }
