@@ -44,10 +44,20 @@
 #include "utilities/debug.hpp"
 #include "utilities/enumIterator.hpp"
 
+Atomic<int> ShenandoahGCStateResetter::_active_count;
+
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
+
+  if (_active_count.load_relaxed() > 0) {
+    // Already active, nothing to do.
+    assert(_heap->gc_state() == 0, "Must be");
+    int active = _active_count.fetch_then_add(1);
+    assert(active > 0, "Must have active");
+    return;
+  }
 
   // Need to complete GC processing before deactivating the barriers.
   // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
@@ -58,6 +68,10 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
     StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
 
+  // From this moment on, level-1 resetter is active.
+  bool succ = _active_count.compare_set(0, 1);
+  assert(succ, "Must succeed");
+
   // Clear state to deactivate barriers. Indicate that state has changed
   // so that verifier threads will use this value, rather than thread local
   // values (which we are _not_ changing here).
@@ -66,6 +80,11 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
+  if (_active_count.add_then_fetch(-1) > 0) {
+    // Nested, nothing to do.
+    return;
+  }
+
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
