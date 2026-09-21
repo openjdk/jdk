@@ -364,6 +364,7 @@ UNSAFE_ENTRY(jarray, Unsafe_NewSpecialArray(JNIEnv *env, jobject unsafe, jclass 
   // Arrays do not currently support nullable non-atomic flat elements.
   // However, if the element type is naturally atomic and has a nullable atomic layout,
   // then we can create a layout which is nullable atomic flat instead.
+  // This is necessary for the current way that VarHandle CAS is implemented.
   if (lk == LayoutKind::NULLABLE_NON_ATOMIC_FLAT) {
     if (!vk->is_naturally_atomic(false/*null-free*/)
         || !vk->has_nullable_atomic_layout()) {
