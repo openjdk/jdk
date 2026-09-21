@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Run the LambdaEagerInitTest.java test in CDSAppTester::AOT workflow
- *          and -Djava.lang.invoke.MethodHandle.COMPILE_THRESHOLD=-1
+ *          and -Djdk.internal.lambda.disableEagerInitialization=true
  * @bug 8391690
  * @requires vm.cds.supports.aot.class.linking
  * @library /test/lib
