@@ -26,22 +26,19 @@
 
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
-#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cfloat>
 #include <cmath>
 
-HdrSeq::HdrSeq() :
-  _hdr(nullptr),
-  _minimum(DBL_MAX) {
+HdrSeq::HdrSeq() : _minimum(DBL_MAX) {
+  _hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
+  for (int c = 0; c < MagBuckets; c++) {
+    _hdr[c] = nullptr;
+  }
 }
 
 HdrSeq::~HdrSeq() {
-  if (_hdr == nullptr) {
-    return;
-  }
-
   for (int c = 0; c < MagBuckets; c++) {
     int* sub = _hdr[c];
     if (sub != nullptr) {
@@ -51,19 +48,7 @@ HdrSeq::~HdrSeq() {
   FREE_C_HEAP_ARRAY(_hdr);
 }
 
-void HdrSeq::allocate_hdr() {
-  if (_hdr == nullptr) {
-    int** hdr = NEW_C_HEAP_ARRAY(int*, MagBuckets, mtGC);
-    for (int c = 0; c < MagBuckets; c++) {
-      hdr[c] = nullptr;
-    }
-    AtomicAccess::release_store(&_hdr, hdr);
-  }
-}
-
 void HdrSeq::add(double val) {
-  allocate_hdr();
-
   if (val < 0) {
     assert (false, "value (%8.2f) is not negative", val);
     val = 0;
@@ -130,7 +115,7 @@ double HdrSeq::percentile(double level) const {
     return minimum();
   }
 
-  if (level == 100 || _hdr == nullptr) {
+  if (level == 100) {
     return maximum();
   }
 
@@ -143,7 +128,15 @@ double HdrSeq::percentile(double level) const {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
           double value = std::ldexp(((double) val / ValBuckets) / 2.0 + 0.5, MagMinimum + mag);
-          return clamp(value, minimum(), maximum());
+          // The writes to _minimum, _maximum, and _num can be reordered, so a thread
+          // may observe that _minimum == DBL_MAX, _maximum < _minimum, and _num > 0
+          // while another thread is executing HdrSeq::add. Checking low <= high
+          // keeps clamp() from asserting min <= max.
+          double low = minimum();
+          double high = maximum();
+          // value < low and value > high can be possible due to precision loss when
+          // recomputing value. Clamping is done to fit value within the range.
+          return (low <= high) ? clamp(value, low, high) : value;
         }
       }
     }
@@ -156,8 +149,6 @@ void HdrSeq::add(const HdrSeq& other) {
     // Other sequence is empty, return
     return;
   }
-
-  allocate_hdr();
 
   for (int mag = 0; mag < MagBuckets; mag++) {
     int* other_bucket = other._hdr[mag];
@@ -198,10 +189,6 @@ void HdrSeq::add(const HdrSeq& other) {
 }
 
 void HdrSeq::clear() {
-  if (_hdr == nullptr) {
-    return;
-  }
-
   // Clear the storage
   for (int mag = 0; mag < MagBuckets; mag++) {
     int* bucket = _hdr[mag];

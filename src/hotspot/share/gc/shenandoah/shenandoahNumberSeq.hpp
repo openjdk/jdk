@@ -36,20 +36,18 @@
 // 0.012 seconds gives 0.768 * 2^-6 and that increments the bucket _hdr[26][34].
 // This allows for memory efficient storage of huge amount of samples.
 //
-// Accepts positive numbers only.
+// Accepts zero and values within the range of [2^-33, 2^23).
 class HdrSeq: public NumberSeq {
 private:
   enum PrivateConstants {
     ValBuckets = 64,
     // Accounts for the maximum object count we can have from scanning dirty
-    // cards in a chunk and leaves some extra headroom. Buckets are in a range
-    // of [2^-33, 2^23).
+    // cards in a chunk and leaves some extra headroom.
     MagBuckets = 56,
     MagMinimum = -32
   };
   int** _hdr;
   double _minimum;
-  void allocate_hdr();
 
 public:
   HdrSeq();

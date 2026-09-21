@@ -169,9 +169,12 @@ TEST_VM(ShenandoahNumberSeq, percentile_within_bounds) {
   HdrSeq seq;
   const double min_value = 0.1;
   const double max_value = 100;
-  seq.add(min_value);
-  seq.add(max_value);
 
+  seq.add(min_value);
+  seq.add(1);
+  seq.add(2);
+  seq.add(3);
+  seq.add(max_value);
   for (int i = 0; i <= 100; i += 10) {
     EXPECT_GE(seq.percentile(i), min_value) << "at percentile " << i;
     EXPECT_LE(seq.percentile(i), max_value) << "at percentile " << i;
@@ -182,16 +185,9 @@ TEST_VM(ShenandoahNumberSeq, large_value) {
   HdrSeq seq;
   // Largest real input. 4 MiB chunk / 8 byte min object
   const double max_dirty_scan_obj_cnt = 524288;
+  seq.add(1);
   seq.add(max_dirty_scan_obj_cnt);
-  seq.add(1); // Widen [min, max] so clamping doesn't return the max
   EXPECT_EQ(seq.minimum(), 1);
   EXPECT_EQ(seq.maximum(), max_dirty_scan_obj_cnt);
   EXPECT_EQ(seq.percentile(100), max_dirty_scan_obj_cnt);
-}
-
-TEST_VM(ShenandoahNumberSeq, null_hdr) {
-  HdrSeq empty;
-  empty.clear();
-  EXPECT_EQ(empty.percentile(0), 0);
-  EXPECT_EQ(empty.percentile(50), 0);
 }
