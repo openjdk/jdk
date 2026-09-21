@@ -27,7 +27,7 @@
  * @summary Range check elimination must preserve safepoints in long-running pre- and post-loops
  * @requires vm.compiler2.enabled
  * @library /test/lib
- * @run driver/timeout=240 compiler.loopstripmining.TestRCESideLoopSafepoints
+ * @run driver/timeout=240 ${test.main.class}
  */
 
 package compiler.loopstripmining;

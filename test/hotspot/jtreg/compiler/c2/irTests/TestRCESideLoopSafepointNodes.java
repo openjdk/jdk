@@ -35,7 +35,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @summary Keep only the pre- and post-loop safepoints required by range check elimination
  * @library /test/lib /
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.TestRCESideLoopSafepointNodes
+ * @run driver ${test.main.class}
  */
 
 public class TestRCESideLoopSafepointNodes {

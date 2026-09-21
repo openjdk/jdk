@@ -2636,6 +2636,10 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
       newhead->as_Loop()->clear_strip_mined();
       _igvn.replace_input_of(newhead, LoopNode::EntryControl, newhead->in(LoopNode::EntryControl)->in(LoopNode::EntryControl));
       set_idom(newhead, newhead->in(LoopNode::EntryControl), dd);
+      if (mode == CloneIncludesSafepoint) {
+        new_sfpt = sfpt->clone();
+        old_new.map(sfpt->_idx, new_sfpt);
+      }
     }
     // Look at data node that were assigned a control in the outer
     // loop: they are kept in the outer loop by the safepoint so start
@@ -2667,7 +2671,7 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
             }
           }
         } else {
-          assert(n == sfpt && mode != CloneIncludesStripMined, "where's the safepoint clone?");
+          assert(n == sfpt && mode == ControlAroundStripMined, "where's the safepoint clone?");
         }
         if (n != sfpt) {
           extra_data_nodes.push(n);
@@ -2682,6 +2686,35 @@ void PhaseIdealLoop::clone_outer_loop(LoopNode* head, CloneLoopMode mode, IdealL
     if (mode == CloneIncludesStripMined) {
       _igvn.register_new_node_with_optimizer(new_sfpt);
       _igvn.register_new_node_with_optimizer(new_cle_out);
+    } else if (mode == CloneIncludesSafepoint) {
+      // Move the cloned exit test after the safepoint.
+      CountedLoopEndNode* new_end = new CountedLoopEndNode(new_sfpt, new_cle->in(CountedLoopEndNode::TestValue),
+                                                           new_cle->_prob, new_cle->_fcnt);
+      new_cle_out->set_req(0, new_cle);
+      set_loop(new_cle_out, outer_loop->_parent);
+      set_idom(new_cle_out, new_cle, dd);
+      set_loop(new_sfpt, outer_loop->_parent);
+      set_idom(new_sfpt, new_cle_out, dd);
+      set_loop(new_end, outer_loop->_parent);
+      set_idom(new_end, new_sfpt, dd);
+
+      Node* zero = _igvn.intcon(0);
+      set_root_as_ctrl(zero);
+      _igvn.replace_input_of(new_cle, CountedLoopEndNode::TestValue, zero);
+      IfTrueNode* backedge = new_cle->true_proj();
+      _igvn.replace_input_of(backedge, 0, new_end);
+      set_idom(backedge, new_end, dd);
+
+      IfFalseNode* new_exit = new IfFalseNode(new_end);
+      set_loop(new_exit, outer_loop->_parent);
+      set_idom(new_exit, new_end, dd);
+      old_new.map(cle->_idx, new_end);
+      old_new.map(cle_out->_idx, new_exit);
+      old_new.map(le->_idx, new_end);
+
+      _igvn.register_new_node_with_optimizer(new_sfpt);
+      _igvn.register_new_node_with_optimizer(new_cle_out);
+      _igvn.register_new_node_with_optimizer(new_end);
     }
     // Some other transformation may have pessimistically assigned some
     // data nodes to the outer loop. Set their control so they are out
@@ -2890,9 +2923,10 @@ void PhaseIdealLoop::fix_ctrl_uses(const Node_List& body, const IdealLoopTree* l
             IfNode* le = cl->outer_loop_end();
             use = le->false_proj();
             use_loop = get_loop(use);
-            if (mode == CloneIncludesStripMined) {
+            if (mode == CloneIncludesStripMined || mode == CloneIncludesSafepoint) {
               nnn = old_new[le->_idx];
-            } else {
+            }
+            if (mode != CloneIncludesStripMined) {
               newuse = old_new[cle_out->_idx];
             }
           }
