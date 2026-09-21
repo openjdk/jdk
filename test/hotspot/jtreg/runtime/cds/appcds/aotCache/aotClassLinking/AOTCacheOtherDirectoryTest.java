@@ -37,6 +37,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import static java.nio.file.StandardCopyOption.COPY_ATTRIBUTES;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import jdk.test.lib.cds.CDSTestUtils;
 import jdk.test.lib.cds.CDSAppTester.RunMode;
@@ -49,6 +50,7 @@ public class AOTCacheOtherDirectoryTest {
     static final String jarName = "app.jar";
     static final String appJar = ClassFileInstaller.getJarPath(jarName);
     static final String targetDirName = "target";
+    static final String targetDirName2 = "target2";
     static final String mainClass = "AOTCacheOtherDirectoryApp";
     static final String aotCacheName = "otherDirectoryCache";
 
@@ -56,9 +58,13 @@ public class AOTCacheOtherDirectoryTest {
         // Move the jar file to directory test_root/target
         Path srcPath = Paths.get(appJar);
         Path destDir = Files.createDirectory(Paths.get(targetDirName));
+        Path destDir2 = Files.createDirectory(Paths.get(targetDirName2));
         Path destPath = destDir.resolve(jarName);
+        Path destPath2 = destDir2.resolve(jarName);
         Files.move(srcPath, destPath, REPLACE_EXISTING);
+        Files.copy(destPath, destPath2, REPLACE_EXISTING, COPY_ATTRIBUTES);
         final String realPath = destPath.toRealPath().toUri().toURL().getPath();
+        final String realPath2 = destPath2.toRealPath().toUri().toURL().getPath();
 
         // Dump archive in root directory first
         SimpleCDSAppTester.of(targetDirName + File.separator + aotCacheName)
@@ -70,7 +76,7 @@ public class AOTCacheOtherDirectoryTest {
         // Sanity test, run from same directory
         String[] cmdLine = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
                                           "-XX:AOTCache=" + targetDirName + File.separator + aotCacheName + ".aot",
-                                          "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production.map:none:filesize=0",
+                                          "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production1.map:none:filesize=0",
                                           "-cp", destPath.toString(), mainClass};
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmdLine);
         OutputAnalyzer output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
@@ -80,13 +86,23 @@ public class AOTCacheOtherDirectoryTest {
         // At runtime, run from /target so the classpath is different but use the same JAR
         String[] cmdLine2 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
                                            "-XX:AOTCache=" + aotCacheName + ".aot",
-                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production.map:none:filesize=0",
+                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production2.map:none:filesize=0",
                                            "-cp", jarName, mainClass};
         pb = ProcessTools.createTestJavaProcessBuilder(cmdLine2);
         pb.directory(destDir.toFile());
         output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
         output.shouldHaveExitValue(0);
         output.shouldContain("CodeSource = " + realPath);
+
+        // At runtime, run from /target2 so the classpath is different but use the same JAR
+        String[] cmdLine3 = new String[] { "-XX:-AOTClassLinking", "-XX:AOTMode=on",
+                                           "-XX:AOTCache=" + targetDirName + File.separator + aotCacheName + ".aot",
+                                           "-Xlog:cds,aot=trace,aot+map+oops=trace:file=production3.map:none:filesize=0",
+                                           "-cp", destPath2.toString(), mainClass};
+        pb = ProcessTools.createTestJavaProcessBuilder(cmdLine3);
+        output = CDSTestUtils.executeAndLog(pb.start(), RunMode.PRODUCTION.toString());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("CodeSource = " + realPath2);
     }
 }
 
