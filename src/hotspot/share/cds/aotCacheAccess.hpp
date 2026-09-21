@@ -45,6 +45,7 @@ class AOTCacheAccess : AllStatic {
   using narrowPtr = AOTCompressedPointers::narrowPtr;
 private:
   static bool can_generate_aot_code(address addr) NOT_CDS_RETURN_(false);
+  static bool verify_narrow_ptr;
 public:
   static bool can_generate_aot_code(Method* m) {
     return can_generate_aot_code((address)m);
@@ -74,6 +75,9 @@ public:
    * The encoded pointer is normally obtained by reading a value embedded in some other AOT-ed entry, like an AOT compiled code.
    */
   static Klass* narrow_ptr_to_klass(narrowPtr narrowp) {
+    if (verify_narrow_ptr) {
+      return try_narrow_ptr_to_klass(narrowp);
+    }
     Metadata* metadata = AOTCompressedPointers::decode_not_null<Metadata*>(narrowp);
     assert(metadata->is_klass(), "sanity check");
     return (Klass*)metadata;
@@ -86,6 +90,9 @@ public:
    * The encoded pointer is normally obtained by reading a value embedded in some other AOT-ed entry, like an AOT compiled code.
    */
   static Method* narrow_ptr_to_method(narrowPtr narrowp) {
+    if (verify_narrow_ptr) {
+      return try_narrow_ptr_to_method(narrowp);
+    }
     Metadata* metadata = AOTCompressedPointers::decode_not_null<Metadata*>(narrowp);
     assert(metadata->is_method(), "sanity check");
     return (Method*)metadata;

@@ -28,6 +28,7 @@
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/stringTable.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
@@ -81,14 +82,11 @@ Metadata* AOTCacheAccess::try_narrow_ptr_to_metadata(narrowPtr narrowp, size_t s
   uintptr_t base = SharedBaseAddress;
   uintptr_t low_bound  = p2u(MetaspaceObj::aot_metaspace_base());
   uintptr_t high_bound = p2u(MetaspaceObj::aot_metaspace_top());
-  if (base > low_bound || low_bound > high_bound) { // paranoid check
-    return nullptr;
-  }
   size_t low_offset  = low_bound  - base;
   size_t high_offset = high_bound - base;
 
   size_t offset = AOTCompressedPointers::get_byte_offset(narrowp);
-  if (offset == 0 || offset > AOTCompressedPointers::MaxMetadataOffsetBytes ||
+  if (offset > AOTCompressedPointers::MaxMetadataOffsetBytes ||
       offset < low_offset || offset >= high_offset ||
       size > (high_offset - offset)) {
     return nullptr;
@@ -117,6 +115,8 @@ void* AOTCacheAccess::allocate_aot_code_region(size_t size) {
   return (void*)ArchiveBuilder::ac_region_alloc(size);
 }
 
+bool AOTCacheAccess::verify_narrow_ptr = false;
+
 static size_t _aot_code_region_size = 0;
 
 size_t AOTCacheAccess::get_aot_code_region_size() {
@@ -130,6 +130,13 @@ void AOTCacheAccess::set_aot_code_region_size(size_t sz) {
 bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
+  uintptr_t base = SharedBaseAddress;
+  uintptr_t low_bound  = p2u(MetaspaceObj::aot_metaspace_base());
+  uintptr_t high_bound = p2u(MetaspaceObj::aot_metaspace_top());
+  if (base > low_bound || low_bound > high_bound) { // paranoid check
+    return false;
+  }
+  verify_narrow_ptr = VerifyAOTCode;
   return static_mapinfo->map_aot_code_region(rs);
 }
 

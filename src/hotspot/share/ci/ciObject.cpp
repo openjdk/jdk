@@ -24,7 +24,6 @@
 
 #include "ci/ciObject.hpp"
 #include "ci/ciUtilities.inline.hpp"
-#include "code/aotCodeCache.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -203,13 +202,13 @@ void ciObject::add_to_constant_value_cache(int off, ciConstant val) {
 // ------------------------------------------------------------------
 // ciObject::should_be_constant()
 bool ciObject::should_be_constant() {
-  if (ScavengeRootsInCode >= 2 && !(AOTCodeCache::is_dumping_code())) {
+  ciEnv* env = CURRENT_ENV;
+  if (ScavengeRootsInCode >= 2 && !env->is_aot_compile()) {
     return true;  // force everybody to be a constant
   }
   if (is_null_object()) {
     return true;
   }
-  ciEnv* env = CURRENT_ENV;
 
   // We want Strings and Classes to be embeddable by default since
   // they used to be in the perm world.  Not all Strings used to be
@@ -220,7 +219,7 @@ bool ciObject::should_be_constant() {
   }
   if ((klass()->is_subclass_of(env->MethodHandle_klass()) ||
        klass()->is_subclass_of(env->CallSite_klass())) &&
-      !(AOTCodeCache::is_dumping_code())) { // For now disable it when compiling AOT code.
+      !env->is_aot_compile()) { // For now disable it when compiling AOT code.
     // We want to treat these aggressively.
     return true;
   }

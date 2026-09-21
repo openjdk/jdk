@@ -3105,7 +3105,7 @@ void AOTCodeCache::preload_aot_code(TRAPS) {
       if (!check_entry(AOTCodeEntry::Nmethod, cached_id, CompLevel_full_optimization, entry)) {
         continue;
       }
-      Method* m = AOTCacheAccess::try_narrow_ptr_to_method(cast_from_u4(entry->id()));
+      Method* m = AOTCacheAccess::narrow_ptr_to_method(cast_from_u4(entry->id()));
       if (m == nullptr) {
         log_warning(aot, codecache, init)("Damaged method id '%u' in preload AOT code entry %u " INTPTR_FORMAT " [%u + %u]", entry->id(), i, p2i(entry), entry_offset, entry_size);
         continue;
@@ -3582,7 +3582,7 @@ Method* AOTCodeReader::read_method() {
     return nullptr;
   }
 
-  Method* m = AOTCacheAccess::try_narrow_ptr_to_method(method_narrow_ptr);
+  Method* m = AOTCacheAccess::narrow_ptr_to_method(method_narrow_ptr);
   if (m == nullptr || !AOTMetaspace::in_aot_cache((address)m)) {
     // Something changed in CDS
     set_lookup_failed("Method is not in AOT cache");
@@ -3692,7 +3692,7 @@ Klass* AOTCodeReader::read_klass(JavaThread* thread) {
   }
   uint init_state = (state  & 1);
   uint array_dim  = (state >> 1);
-  Klass* k = AOTCacheAccess::try_narrow_ptr_to_klass(klass_narrow_ptr);
+  Klass* k = AOTCacheAccess::narrow_ptr_to_klass(klass_narrow_ptr);
   if (k == nullptr || !AOTMetaspace::in_aot_cache((address)k)) {
     // Something changed in CDS
     set_lookup_failed("Klass is not in AOT cache");

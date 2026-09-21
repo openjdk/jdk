@@ -62,7 +62,6 @@ ciInstanceKlass::ciInstanceKlass(Klass* k) :
 #ifdef ASSERT
   if (!ik->is_loaded()) {
     ResourceMark rm;
-    ik->print_on(tty);
     assert(false, "must be at least loaded: %s", ik->name()->as_C_string());
   }
 #endif // ASSERT
