@@ -4828,9 +4828,7 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     }
 #endif
 
-    //if (UseNewCode) {
     phase->replace_parallel_iv(this);
-    //}
   } else {
     // When StressCountedLoop is enabled, this loop may intentionally avoid a counted loop conversion.
     // This is expected behavior for the stress mode, which exercises alternative compilation paths.

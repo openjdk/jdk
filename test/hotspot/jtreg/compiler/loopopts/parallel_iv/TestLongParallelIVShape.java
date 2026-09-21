@@ -21,19 +21,57 @@
  * questions.
  */
 
+package compiler.loopopts.parallel_iv;
+
+import compiler.lib.ir_framework.*;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+
+import java.util.Objects;
+import java.util.Random;
+
 /**
  * @test
- * @summary Dump long counted loop shape for parallel IV analysis
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+TraceLoopOpts
- *                   -XX:-TieredCompilation
- *                   -XX:CompileCommand=compileonly,TestLongParallelIVShape::test*
- *                   TestLongParallelIVShape
+ * @bug 8342708
+ * @key randomness
+ * @summary Test parallel IV replacement in long counted loops
+ * @library /test/lib /
+ * @requires vm.compiler2.enabled
+ * @run driver compiler.loopopts.parallel_iv.TestLongParallelIVShape
  */
 public class TestLongParallelIVShape {
+    // TODO: use generators
+    private static final Random RNG = Utils.getRandomInstance();
 
-    static volatile long stopField = 1000;
+    static int[] array = new int[4096];
 
-    static long testLongLoopLongIV(long stop) {
+    public static void main(String[] args) {
+        TestFramework.runWithFlags(
+                "-XX:-ShortRunningLongLoop",
+                "-XX:+IgnoreUnrecognizedVMOptions",
+                "-XX:+UseNewCode"
+        );
+    }
+
+    // A controlled test making sure a simple counted loop can be found by the test framework.
+    @Test
+    @Arguments(values = { Argument.NUMBER_42 })
+    @IR(counts = { IRNode.COUNTED_LOOP, ">=1" })
+    static long testControlledSimpleLoop(long stop) {
+        long a = 0;
+        for (long i = 0; i < stop; i++) {
+            a += i; // cannot be extracted to multiplications
+        }
+
+        return a;
+    }
+
+    // Long parallel IV with constant stride in a long counted loop.
+    // Loop nest creates inner int CountedLoop, existing int
+    // replace_parallel_iv fires, then empty loop removal eliminates the loop.
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    static long testLongLoopWithLongIV(long stop) {
         long a = 0;
         for (long i = 0; i < stop; i++) {
             a += 42;
@@ -41,6 +79,31 @@ public class TestLongParallelIVShape {
         return a;
     }
 
+    @Run(test = "testLongLoopWithLongIV")
+    private static void runTestLongLoopWithLongIV() {
+        long s = RNG.nextLong(0, 10_000);
+        Asserts.assertEQ(42L * s, testLongLoopWithLongIV(s));
+    }
+
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
+    static long testIntLoopWithLongIV(long stop) {
+        long a = 0;
+        for (int i = 0; i < stop; i++) {
+            a += 42;
+        }
+        return a;
+    }
+
+    @Run(test = "testIntLoopWithLongIV")
+    private static void runTestIntLoopWithLongIV() {
+        long s = RNG.nextInt(0, 10_000);
+        Asserts.assertEQ(42L * s, testIntLoopWithLongIV(s));
+    }
+
+    // Int parallel IV in a long counted loop. Same pipeline as above.
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
     static int testLongLoopIntIV(long stop) {
         int a = 0;
         for (long i = 0; i < stop; i++) {
@@ -49,6 +112,15 @@ public class TestLongParallelIVShape {
         return a;
     }
 
+    @Run(test = "testLongLoopIntIV")
+    private static void runTestLongLoopIntIV() {
+        long s = RNG.nextLong(0, 10_000);
+        Asserts.assertEQ((int)(42L * s), testLongLoopIntIV(s));
+    }
+
+    // Multiple parallel IVs. Both handled by the existing int pipeline.
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
     static long testLongLoopTwoIVs(long stop) {
         long a = 0;
         long b = 0;
@@ -59,6 +131,16 @@ public class TestLongParallelIVShape {
         return a + b;
     }
 
+    @Run(test = "testLongLoopTwoIVs")
+    private static void runTestLongLoopTwoIVs() {
+        long s = RNG.nextLong(0, 10_000);
+        Asserts.assertEQ(49L * s, testLongLoopTwoIVs(s));
+    }
+
+    // Stride exceeds Integer.MAX_VALUE. Still handled by the existing int
+    // pipeline (replace_parallel_iv uses jlong for stride_con2).
+    @Test
+    @IR(failOn = { IRNode.COUNTED_LOOP })
     static long testLongLoopHugeStride(long stop) {
         long a = 0;
         for (long i = 0; i < stop; i++) {
@@ -67,13 +149,33 @@ public class TestLongParallelIVShape {
         return a;
     }
 
-    public static void main(String[] args) {
-        long stop = stopField;
-        for (int i = 0; i < 20_000; i++) {
-            testLongLoopLongIV(stop);
-            // testLongLoopIntIV(stop);
-            // testLongLoopTwoIVs(stop);
-            // testLongLoopHugeStride(stop);
+    @Run(test = "testLongLoopHugeStride")
+    private static void runTestLongLoopHugeStride() {
+        long s = RNG.nextLong(0, 10_000);
+        Asserts.assertEQ(3_000_000_000L * s, testLongLoopHugeStride(s));
+    }
+
+    // Parallel IV used in a range check (via Objects.checkIndex). Without long
+    // replace_parallel_iv, j is its own phi and extract_long_range_checks
+    // cannot match it against the primary IV i — the range check stays in the
+    // loop body and cannot be hoisted. With long replace_parallel_iv running
+    // before loop nest creation, j is replaced with i*3, allowing
+    // is_range_check_if to recongize Objects.checkIndex().
+    @Test
+    @IR(failOn = { IRNode.RANGE_CHECK })
+    static long testLongLoopParallelIVRangeCheck(long stop) {
+        long sum = 0;
+        long j = 0;
+        for (long i = 0; i < stop; i++) {
+            sum += array[Objects.checkIndex((int) j, array.length)];
+            j += 3;
         }
+        return sum;
+    }
+
+    @Run(test = "testLongLoopParallelIVRangeCheck")
+    private static void runTestLongLoopParallelIVRangeCheck() {
+        long s = RNG.nextInt(0, 1366);
+        Asserts.assertEQ(0L, testLongLoopParallelIVRangeCheck(s));
     }
 }
