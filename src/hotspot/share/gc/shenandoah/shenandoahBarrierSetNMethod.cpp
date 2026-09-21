@@ -48,6 +48,13 @@ bool ShenandoahBarrierSetNMethod::nmethod_entry_barrier(nmethod* nm) {
     return true;
   }
 
+  if (!_enabled.load_relaxed()) {
+    // NMethod entry barriers are temporarily disabled. Leave nmethod in current state.
+    // We only need to sync up the changes done by others.
+    cross_modify_fence();
+    return true;
+  }
+
   ShenandoahNMethodLock* lock = ShenandoahNMethod::lock_for_nmethod(nm);
   assert(lock != nullptr, "Must be");
   ShenandoahNMethodLocker locker(lock);

@@ -31,6 +31,7 @@
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahBarrierSetNMethod.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
@@ -45,8 +46,15 @@
 
 ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _heap(ShenandoahHeap::heap()),
+  _bs_nm(static_cast<ShenandoahBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())),
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
+
+  // Disable nmethod entry barriers. We cannot allow GC-state dependent fixups,
+  // that would patch barriers incorrectly. It would also inhibit code roots processing
+  // that would hide the issues from the verification.
+  _bs_nm->disable();
+
   // Clear state to deactivate barriers. Indicate that state has changed
   // so that verifier threads will use this value, rather than thread local
   // values (which we are _not_ changing here).
@@ -58,6 +66,7 @@ ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
   _heap->_gc_state.set(_saved_gc_state);
   _heap->_gc_state_changed = _saved_gc_state_changed;
   assert(_heap->gc_state() == _saved_gc_state, "Should be restored");
+  _bs_nm->enable();
 }
 
 void ShenandoahRootVerifier::roots_do(OopIterateClosure* oops, ShenandoahGeneration* generation) {
