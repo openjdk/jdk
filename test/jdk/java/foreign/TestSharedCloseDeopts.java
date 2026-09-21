@@ -50,6 +50,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.classfile.*;
+import java.lang.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.LineNumber;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.ValueLayout;
@@ -72,13 +77,19 @@ public class TestSharedCloseDeopts {
     static final String SHARED_SCOPE_CLOSED_DEOPT_REASON = "constraint";
     static final Path LOG_FILE = Path.of("test_deopts.txt");
 
+    static final ClassModel TEST_CLASS_MODEL;
+
     static {
         try {
             PAYLOAD_WITH_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithAccess",
                     MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
             PAYLOAD_WITHOUT_ACCESS_METHOD = TestSharedCloseDeopts.class.getDeclaredMethod("payloadWithoutAccess",
                     MemorySegment.Scope.class, MemorySegment.class, AtomicBoolean.class);
-        } catch (ReflectiveOperationException e) {
+            try (InputStream stream = TestSharedCloseDeopts.class
+                    .getResourceAsStream("TestSharedCloseDeopts.class")) {
+                TEST_CLASS_MODEL = ClassFile.of().parse(stream.readAllBytes());
+            }
+        } catch (ReflectiveOperationException | IOException e) {
             throw new ExceptionInInitializerError(e);
         }
     }
@@ -146,8 +157,7 @@ public class TestSharedCloseDeopts {
                 .name("Test-Worker")
                 .uncaughtExceptionHandler((_, ex) -> uncaughtException.set(ex))
                 .start(() ->  testCase.payload.run(segment.scope(), segment, hold));
-            // give it a moment to get there
-            Thread.sleep(1000);
+            waitUntilThreadIsAtSafepoint(t, testCase.method().getName(), testCase.callLineNumber());
             deoptCountBeforeClose = WB.getDeoptCount(SHARED_SCOPE_CLOSED_DEOPT_REASON, null);
         }
         // We closed 2 shared arenas here. One of them was unrelated. Expect at most 1 deopt
@@ -195,12 +205,49 @@ public class TestSharedCloseDeopts {
         MemorySegment.Scope run(MemorySegment.Scope scope, MemorySegment segment, AtomicBoolean hold);
     }
 
-    public record TestCase(Method method, Payload payload, boolean hasAccess) {}
+    public record TestCase(Method method, int callLineNumber, Payload payload, boolean hasAccess) {}
 
     public static Stream<TestCase> cases() {
         return Stream.of(
-                new TestCase(PAYLOAD_WITH_ACCESS_METHOD, TestSharedCloseDeopts::payloadWithAccess, true),
-                new TestCase(PAYLOAD_WITHOUT_ACCESS_METHOD, TestSharedCloseDeopts::payloadWithoutAccess, false)
+                new TestCase(PAYLOAD_WITH_ACCESS_METHOD, findLineNumberOfCall(PAYLOAD_WITH_ACCESS_METHOD),
+                        TestSharedCloseDeopts::payloadWithAccess, true),
+                new TestCase(PAYLOAD_WITHOUT_ACCESS_METHOD, findLineNumberOfCall(PAYLOAD_WITHOUT_ACCESS_METHOD),
+                        TestSharedCloseDeopts::payloadWithoutAccess, false)
         );
+    }
+
+    // Wait until we see the target thread at the safepoint at least once,
+    // to avoid false negatives due to incidental delays with the worker thread starting.
+    private static void waitUntilThreadIsAtSafepoint(Thread t, String methodName, int lineNumber) throws InterruptedException {
+        while (true) {
+            Thread.sleep(100); // give the target thread a moment to advance
+            StackTraceElement[] trace = t.getStackTrace();
+            if (trace.length >= 1) {
+                String lastMethodName = trace[0].getMethodName();
+                int lastLineNumber = trace[0].getLineNumber();
+                if (lastMethodName.equals(methodName) && lastLineNumber == lineNumber) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private static int findLineNumberOfCall(Method payload) {
+        MethodModel methodModel = TEST_CLASS_MODEL.methods().stream()
+                .filter(mm -> mm.methodName().equalsString(payload.getName()))
+                .findFirst().orElseThrow();
+        LineNumber result = null;
+        for (CodeElement codeElement : methodModel.code().orElseThrow().elementList()) {
+            if (codeElement instanceof LineNumber lineNumber) {
+                result = lineNumber;
+            }
+            if (codeElement instanceof InvokeInstruction invoke
+                    && invoke.opcode() == Opcode.INVOKESTATIC
+                    && invoke.method().name().equalsString("outOfLine")) {
+                break; // found our instruction
+            }
+        }
+        assertNotNull(result);
+        return result.line();
     }
 }
