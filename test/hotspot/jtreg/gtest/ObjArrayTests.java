@@ -62,3 +62,35 @@
  * @library /test/lib
  * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompressedOops -XX:ObjectAlignmentInBytes=256
  */
+
+/* @test id=nocoh-noalign
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompactObjectHeaders -XX:-AlignArrayElements
+ */
+
+/* @test id=coh-noalign
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:+UseCompactObjectHeaders -XX:-AlignArrayElements
+ */
+
+/* @test id=nocoh-align
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:-UseCompactObjectHeaders -XX:+AlignArrayElements
+ */
+
+/* @test id=coh-align
+ * @summary Run object array size tests with compressed oops
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=objArrayOop.* -XX:+UseCompactObjectHeaders -XX:+AlignArrayElements
+ */
