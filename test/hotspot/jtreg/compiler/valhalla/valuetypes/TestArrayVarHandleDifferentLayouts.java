@@ -29,12 +29,13 @@ import jdk.test.lib.Asserts;
 
 /*
  * @test
- * @bug 8370914
- * @summary Test VarHandle access on an array that is a merged of different layouts.
+ * @bug 8390511
+ * @summary Test VarHandle access on an array that is a merge of different layouts.
  * @library /test/lib /
  * @enablePreview
  * @modules java.base/jdk.internal.value
- * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1 ${test.main.class}
+ * @run main/othervm -Xbatch -XX:-TieredCompilation -XX:CompileThreshold=1
+ *                   -XX:CompileOnly=${test.main.class}::* ${test.main.class}
  */
 public class TestArrayVarHandleDifferentLayouts {
     private static final int INDEX = 8;
