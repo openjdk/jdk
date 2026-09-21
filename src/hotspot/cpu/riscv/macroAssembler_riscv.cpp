@@ -6177,7 +6177,7 @@ void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register
   mulhu(t0, x_xstart, y_idx);
   mul(product, x_xstart, y_idx);
   cad(product, product, carry, t1);
-  add(carry, t0, t1);  // Optimized: adc(dst, src1, zr, carry) -> add(dst, src1, carry)
+  add(carry, t0, t1);
 
   subiw(kdx, kdx, 2);
   ror(product, product, 32); // back to big-endian
@@ -6257,12 +6257,12 @@ void MacroAssembler::multiply_128_x_128_loop(Register y, Register z,
   mulhu(carry2, product_hi, yz_idx2);
 
   cad(tmp3, tmp3, carry, carry);
-  add(tmp4, tmp4, carry);  // Optimized: adc(dst, src1, zr, carry) -> add(dst, src1, carry)
+  add(tmp4, tmp4, carry);
   cad(tmp3, tmp3, t0, t0);
   cadc(tmp4, tmp4, tmp, t0);
-  add(carry, carry2, t0);  // Optimized: adc(dst, src1, zr, carry) -> add(dst, src1, carry)
+  add(carry, carry2, t0);
   cad(tmp4, tmp4, t1, carry2);
-  add(carry, carry, carry2);  // Optimized: adc(dst, src1, zr, carry) -> add(dst, src1, carry)
+  add(carry, carry, carry2);
 
   ror(tmp3, tmp3, 32); // convert little-endian to big-endian
   ror(tmp4, tmp4, 32);
