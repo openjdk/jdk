@@ -1299,9 +1299,9 @@ const TypePtr* PhaseMacroExpand::adjust_for_flat_array(const TypeAryPtr* top_des
                                                        Node*& dest_offset, Node*& length, BasicType& dest_elem,
                                                        Node*& dest_length) {
 #ifdef ASSERT
-  assert(top_dest->elem()->make_ptr()->is_instptr()->is_inlinetypeptr(), "must be concrete value klass");
+  assert(top_dest->elem()->make_ptr()->is_instptr()->is_valueklassptr(), "must be concrete value klass");
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool needs_barriers = top_dest->elem()->inline_klass()->contains_oops() &&
+  bool needs_barriers = top_dest->elem()->value_klass()->contains_oops() &&
     bs->array_copy_requires_gc_barriers(dest_length != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization);
   assert(!needs_barriers || StressReflectiveCode, "Flat arraycopy would require GC barriers");
 #endif
@@ -1348,6 +1348,17 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   MergeMemNode* merge_mem = nullptr;
 
   if (ac->is_clonebasic()) {
+    // Flag the trailing MemBar so that optimize_simple_memory_chain knows it guards
+    // an expanded clone. clone_at_expansion virtual function may replace the ArrayCopyNode
+    // but does not set this flag.
+    Node* membar = ac->proj_out(TypeFunc::Control)->unique_ctrl_out();
+    assert(membar->is_MemBar(), "expect MemBar after clonebasic");
+    assert(membar->in(TypeFunc::Memory)->is_MergeMem() &&
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->is_Proj() &&
+           membar->in(TypeFunc::Memory)->as_MergeMem()->memory_at(Compile::AliasIdxRaw)->in(0) == ac,
+            "MemBar is from ac");
+    membar->as_MemBar()->set_trailing_expanded_array_copy();
+
     BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
     bs->clone_at_expansion(this, ac);
     return;
@@ -1482,15 +1493,15 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   if (src_elem != dest_elem || top_src->is_flat() != top_dest->is_flat() || dest_elem == T_VOID) {
     // 1) and 2)
     go_to_slow_path = true;
-  } else if ((top_src->is_flat() && !top_src->elem()->is_inlinetypeptr()) ||
-             (top_dest->is_flat() && !top_dest->elem()->is_inlinetypeptr())) {
+  } else if ((top_src->is_flat() && !top_src->elem()->is_valueklassptr()) ||
+             (top_dest->is_flat() && !top_dest->elem()->is_valueklassptr())) {
     // 3)
     go_to_slow_path = true;
   } else if (top_dest->is_flat() &&
              bs->array_copy_requires_gc_barriers(alloc != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization) &&
-             top_dest->elem()->inline_klass()->contains_oops()) {
+             top_dest->elem()->value_klass()->contains_oops()) {
     // 4)
-    assert(top_src->is_flat() && top_src->elem()->inline_klass()->contains_oops(), "must match");
+    assert(top_src->is_flat() && top_src->elem()->value_klass()->contains_oops(), "must match");
     go_to_slow_path = true;
   }
 

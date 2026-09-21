@@ -483,7 +483,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // actual reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(recv, NullRestrictedValue.of((byte)20,(short)1854), Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchange(0, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -516,7 +516,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // actual reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(recv, NullRestrictedValue.of((byte)20,(short)1854), Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeAcquire(0, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -549,7 +549,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // actual reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(recv, NullRestrictedValue.of((byte)20,(short)1854), Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.compareAndExchangeRelease(0, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -579,7 +579,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -608,7 +608,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -637,7 +637,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(recv, Void.class);
         });
-        checkWMTE(() -> { // reciever primitive class
+        checkWMTE(() -> { // receiver primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         // Incorrect return type
@@ -772,7 +772,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
                 NullRestrictedValue x = (NullRestrictedValue) hs.get(am, methodType(NullRestrictedValue.class, VarHandleTestMethodTypeNullRestrictedValue.class, NullRestrictedValue.class, Class.class)).
                     invokeExact(recv, NullRestrictedValue.of((byte)20,(short)1854), Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 NullRestrictedValue x = (NullRestrictedValue) hs.get(am, methodType(NullRestrictedValue.class, int.class , NullRestrictedValue.class, NullRestrictedValue.class)).
                     invokeExact(0, NullRestrictedValue.of((byte)20,(short)1854), NullRestrictedValue.of((byte)20,(short)1854));
             });
@@ -809,7 +809,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
                 NullRestrictedValue x = (NullRestrictedValue) hs.get(am, methodType(NullRestrictedValue.class, VarHandleTestMethodTypeNullRestrictedValue.class, Class.class)).
                     invokeExact(recv, Void.class);
             });
-            checkWMTE(() -> { // reciever primitive class
+            checkWMTE(() -> { // receiver primitive class
                 NullRestrictedValue x = (NullRestrictedValue) hs.get(am, methodType(NullRestrictedValue.class, int.class, NullRestrictedValue.class)).
                     invokeExact(0, NullRestrictedValue.of((byte)20,(short)1854));
             });
@@ -1777,7 +1777,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSet(0, 0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         checkWMTE(() -> { // index reference class
@@ -1810,7 +1810,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetAcquire(0, 0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         checkWMTE(() -> { // index reference class
@@ -1843,7 +1843,7 @@ public class VarHandleTestMethodTypeNullRestrictedValue extends VarHandleBaseTes
         checkCCE(() -> { // value reference class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(array, 0, Void.class);
         });
-        checkWMTE(() -> { // reciarrayever primitive class
+        checkWMTE(() -> { // array primitive class
             NullRestrictedValue x = (NullRestrictedValue) vh.getAndSetRelease(0, 0, NullRestrictedValue.of((byte)20,(short)1854));
         });
         checkWMTE(() -> { // index reference class

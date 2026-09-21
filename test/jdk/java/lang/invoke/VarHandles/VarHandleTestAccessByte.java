@@ -27,8 +27,8 @@
  * @test
  * @run junit/othervm -Diters=10   -Xint                                                   VarHandleTestAccessByte
  *
- * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop sets to 2000 iterations
- *          to hit compilation thresholds
+ * @comment Set CompileThresholdScaling to 0.1 so that the warmup loop set to 2000 iterations
+ *          hits compilation thresholds
  *
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1 -XX:TieredStopAtLevel=1 VarHandleTestAccessByte
  * @run junit/othervm -Diters=2000 -XX:CompileThresholdScaling=0.1                         VarHandleTestAccessByte
@@ -317,7 +317,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Lazy
         {
             byte x = (byte) vh.getAcquire(recv);
-            assertEquals((byte)0x01, x, "getRelease byte value");
+            assertEquals((byte)0x01, x, "getAcquire byte value");
         }
 
         // Opaque
@@ -366,7 +366,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
         // Lazy
         {
             byte x = (byte) vh.getAcquire();
-            assertEquals((byte)0x01, x, "getRelease byte value");
+            assertEquals((byte)0x01, x, "getAcquire byte value");
         }
 
         // Opaque
@@ -610,7 +610,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             vh.set(recv, (byte)0x01);
 
             byte o = (byte) vh.getAndAddRelease(recv, (byte)0x23);
-            assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+            assertEquals((byte)0x01, o, "getAndAddRelease byte");
             byte x = (byte) vh.get(recv);
             assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
         }
@@ -918,7 +918,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
             vh.set((byte)0x01);
 
             byte o = (byte) vh.getAndAddRelease((byte)0x23);
-            assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+            assertEquals((byte)0x01, o, "getAndAddRelease byte");
             byte x = (byte) vh.get();
             assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
         }
@@ -1229,7 +1229,7 @@ public class VarHandleTestAccessByte extends VarHandleBaseTest {
                 vh.set(array, i, (byte)0x01);
 
                 byte o = (byte) vh.getAndAddRelease(array, i, (byte)0x23);
-                assertEquals((byte)0x01, o, "getAndAddReleasebyte");
+                assertEquals((byte)0x01, o, "getAndAddRelease byte");
                 byte x = (byte) vh.get(array, i);
                 assertEquals((byte)((byte)0x01 + (byte)0x23), x, "getAndAddRelease byte value");
             }

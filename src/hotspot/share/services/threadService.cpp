@@ -916,10 +916,9 @@ void ThreadSnapshot::initialize(ThreadsList * t_list, JavaThread* thread) {
   oop blocker_object = nullptr;
   oop blocker_object_owner = nullptr;
 
-  if (thread->is_vthread_mounted() && thread->vthread() != threadObj) { // ThreadSnapshot only captures platform threads
+  oop vthread = thread->vthread();
+  if (java_lang_VirtualThread::is_instance(vthread)) { // ThreadSnapshot only captures platform threads
     _thread_status = JavaThreadStatus::IN_OBJECT_WAIT;
-    oop vthread = thread->vthread();
-    assert(vthread != nullptr, "");
     blocker_object = vthread;
     blocker_object_owner = vthread;
   } else if (_thread_status == JavaThreadStatus::BLOCKED_ON_MONITOR_ENTER ||
@@ -1326,9 +1325,9 @@ public:
 
     // Pick minimum length that will cover most cases
     int init_length = 64;
-    _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-    _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
-    _locks = new (mtInternal) GrowableArray<OwnedLock>(init_length, mtInternal);
+    _methods = new (mtServiceability) GrowableArray<Method*>(init_length, mtServiceability);
+    _bcis = new (mtServiceability) GrowableArray<int>(init_length, mtServiceability);
+    _locks = new (mtServiceability) GrowableArray<OwnedLock>(init_length, mtServiceability);
     int total_count = 0;
 
     vframeStream vfst(_java_thread != nullptr

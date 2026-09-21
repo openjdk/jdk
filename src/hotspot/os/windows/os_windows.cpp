@@ -2010,6 +2010,21 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+  DWORD valueLength = bufferSize;
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  if (RegGetValueA(HKEY_LOCAL_MACHINE, subKey, valueName,
+                   RRF_RT_REG_SZ, nullptr, buffer, &valueLength) != ERROR_SUCCESS) {
+    buffer[0] = '\0';
+    return false;
+  }
+  return true;
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
 
@@ -2097,6 +2112,12 @@ void os::win32::print_windows_version(outputStream* st) {
 
   st->print(" Build %d", build_number);
   st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
+  // InstallationType (e.g. Server Core, Nano server)
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
+  }
   st->cr();
 }
 
@@ -2168,22 +2189,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-  if (status == ERROR_SUCCESS) {
-    DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
-    if (status != ERROR_SUCCESS) {
-        strncpy(buf, "## __CPU__", buflen);
-    } else {
-      if (size < buflen) {
-        buf[size] = '\0';
-      }
-    }
-    RegCloseKey(key);
-  } else {
-    // Put generic cpu info to return
+  DWORD size = (DWORD)buflen;
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "ProcessorNameString", RRF_RT_REG_SZ, nullptr, buf, &size);
+  if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
 }
@@ -4275,33 +4285,7 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-void getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return;
-  }
-
-  RegCloseKey(hKey);
-}
-
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);
@@ -5173,9 +5157,9 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  char* native_file1 = os::strdup_check_oom(file1);
+  char* native_file1 = os::strdup_check_oom(file1, mtInternal);
   native_file1 = os::native_path(native_file1);
-  char* native_file2 = os::strdup_check_oom(file2);
+  char* native_file2 = os::strdup_check_oom(file2, mtInternal);
   native_file2 = os::native_path(native_file2);
   if (strcmp(native_file1, native_file2) == 0) {
     os::free(native_file1);

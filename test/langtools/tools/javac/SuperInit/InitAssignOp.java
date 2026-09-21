@@ -63,7 +63,7 @@ public class InitAssignOp {
                              private int i;
 
                              public Test() {
-                                 ++this.i;
+                                 ++i;
                                  super();
                              }
                              public static void main(String... args) {
@@ -72,7 +72,7 @@ public class InitAssignOp {
                          }
                          """,
                          List.of(
-                             "Test.java:5:15: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                             "Test.java:5:11: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
                              "1 error"
                          )),
             new TestCase("""
@@ -80,7 +80,7 @@ public class InitAssignOp {
                              private int i;
 
                              public Test() {
-                                 this.i++;
+                                 i++;
                                  super();
                              }
                              public static void main(String... args) {
@@ -89,7 +89,7 @@ public class InitAssignOp {
                          }
                          """,
                          List.of(
-                             "Test.java:5:13: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                             "Test.java:5:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
                              "1 error"
                          )),
             new TestCase("""
@@ -97,7 +97,7 @@ public class InitAssignOp {
                              private int i;
 
                              public Test() {
-                                 this.i += 1;
+                                 i += 1;
                                  super();
                              }
                              public static void main(String... args) {
@@ -106,7 +106,7 @@ public class InitAssignOp {
                          }
                          """,
                          List.of(
-                             "Test.java:5:13: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
+                             "Test.java:5:9: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.value.classes)",
                              "1 error"
                          )),
         };
