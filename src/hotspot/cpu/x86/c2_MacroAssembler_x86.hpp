@@ -361,8 +361,6 @@ public:
                           XMMRegister xtmp2, XMMRegister xtmp3, XMMRegister xtmp4, XMMRegister xtmp5,
                           AddressLiteral float_sign_flip, Register rscratch, int vec_enc);
 
-  void vector_castHF2B_avx10_2(XMMRegister dst, XMMRegister src, int vec_enc);
-
   void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, XMMRegister src, int vec_enc);
 
   void vector_castF2X_avx10_2(BasicType to_elem_bt, XMMRegister dst, Address src, int vec_enc);

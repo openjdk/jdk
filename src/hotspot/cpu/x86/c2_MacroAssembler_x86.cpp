@@ -5374,11 +5374,6 @@ void C2_MacroAssembler::vector_castHF2L_evex(XMMRegister dst, XMMRegister src, X
   vector_cast_fp_to_long_special_cases_evex(T_SHORT, dst, src, xtmp1, xtmp2, ktmp1, ktmp2, rscratch, double_sign_flip, vec_enc);
 }
 
-void C2_MacroAssembler::vector_castHF2B_avx10_2(XMMRegister dst, XMMRegister src, int vec_enc) {
-  assert(VM_Version::supports_avx10_2(), "");
-  evcvttph2ibs(dst, src, vec_enc);
-}
-
 void C2_MacroAssembler::vector_round_double_evex(XMMRegister dst, XMMRegister src,
                                                  AddressLiteral double_sign_flip, AddressLiteral new_mxcsr, int vec_enc,
                                                  Register tmp, XMMRegister xtmp1, XMMRegister xtmp2, KRegister ktmp1, KRegister ktmp2) {
