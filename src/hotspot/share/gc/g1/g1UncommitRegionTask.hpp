@@ -35,8 +35,8 @@ class G1UncommitRegionTask : public G1ServiceTask {
   // This limit is small enough to ensure that the duration of each invocation
   // is short, while still making reasonable progress.
   static const uint UncommitSizeLimit = 128 * M;
-  // Minimum number of regions to uncommit to get some reasonable progress.
-  static const uint MinRegionsToUncommit = 4;
+  // Minimum number of regions to uncommit.
+  static const uint MinRegionsToUncommit = 1;
   // The delay between two uncommit task executions.
   static const uint UncommitTaskDelayMs = 10;
 
