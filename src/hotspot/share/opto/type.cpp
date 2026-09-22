@@ -2267,11 +2267,11 @@ const TypeTuple *TypeTuple::LONG_PAIR;
 const TypeTuple *TypeTuple::INT_CC_PAIR;
 const TypeTuple *TypeTuple::LONG_CC_PAIR;
 
-static void collect_inline_fields(ciValueKlass* vk, const Type** field_array, uint& pos) {
+static void collect_value_fields(ciValueKlass* vk, const Type** field_array, uint& pos) {
   for (int i = 0; i < vk->nof_declared_nonstatic_fields(); i++) {
     ciField* field = vk->declared_nonstatic_field_at(i);
     if (field->is_flat()) {
-      collect_inline_fields(field->type()->as_value_klass(), field_array, pos);
+      collect_value_fields(field->type()->as_value_klass(), field_array, pos);
       if (!field->is_null_free()) {
         // Use T_INT instead of T_BOOLEAN here because the upper bits can contain garbage if the holder
         // is null and C2 will only zero them for T_INT assuming that T_BOOLEAN is already canonicalized.
@@ -2314,7 +2314,7 @@ const TypeTuple* TypeTuple::make_range(ciSignature* sig, InterfaceHandling inter
     if (ret_vt_fields) {
       uint pos = TypeFunc::Parms;
       field_array[pos++] = get_const_type(return_type); // Oop might be null when returning as fields
-      collect_inline_fields(return_type->as_value_klass(), field_array, pos);
+      collect_value_fields(return_type->as_value_klass(), field_array, pos);
       if (is_call) {
         // ValueTypeNode::NullMarker field returned by scalarized calls
         field_array[pos++] = get_const_basic_type(T_BOOLEAN);
@@ -2360,7 +2360,7 @@ const TypeTuple *TypeTuple::make_domain(ciMethod* method, InterfaceHandling inte
     ciInstanceKlass* recv = method->holder();
     if (vt_fields_as_args && recv->is_value_klass() && recv->as_value_klass()->can_be_passed_as_fields() && method->is_scalarized_arg(0)) {
       field_array[pos++] = get_const_type(recv, interface_handling); // buffer argument
-      collect_inline_fields(recv->as_value_klass(), field_array, pos);
+      collect_value_fields(recv->as_value_klass(), field_array, pos);
     } else {
       field_array[pos++] = get_const_type(recv, interface_handling)->join_speculative(TypePtr::NOTNULL);
     }
@@ -2385,7 +2385,7 @@ const TypeTuple *TypeTuple::make_domain(ciMethod* method, InterfaceHandling inte
         field_array[pos++] = get_const_type(type, interface_handling); // buffer argument
         // ValueTypeNode::NullMarker field used for null checking
         field_array[pos++] = get_const_basic_type(T_BOOLEAN);
-        collect_inline_fields(type->as_value_klass(), field_array, pos);
+        collect_value_fields(type->as_value_klass(), field_array, pos);
       } else {
         field_array[pos++] = get_const_type(type, interface_handling);
       }
@@ -5922,7 +5922,7 @@ const Type* TypeInstKlassPtr::xjoin(const Type* t) const {
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
@@ -5959,7 +5959,7 @@ bool TypeInstKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool
 }
 
 template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_instance(const T1* this_one, const T2* other) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return false;
   }
@@ -5974,7 +5974,7 @@ bool TypeInstKlassPtr::is_same_java_type_as_helper(const TypeKlassPtr* other) co
 }
 
 template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_instance(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (!this_one->is_loaded() || !other->is_loaded()) {
     return true;
   }
@@ -6412,7 +6412,7 @@ const Type* TypeAryKlassPtr::xjoin(const Type* t) const {
 }
 
 template <class T1, class T2> bool TypePtr::is_java_subtype_of_helper_for_array(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
 
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
@@ -6456,7 +6456,7 @@ bool TypeAryKlassPtr::is_java_subtype_of_helper(const TypeKlassPtr* other, bool 
 }
 
 template <class T1, class T2> bool TypePtr::is_same_java_type_as_helper_for_array(const T1* this_one, const T2* other) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
 
   int dummy;
   bool this_top_or_bottom = (this_one->base_element_type(dummy) == Type::TOP || this_one->base_element_type(dummy) == Type::BOTTOM);
@@ -6488,7 +6488,7 @@ bool TypeAryKlassPtr::is_same_java_type_as_helper(const TypeKlassPtr* other) con
 }
 
 template <class T1, class T2> bool TypePtr::maybe_java_subtype_of_helper_for_array(const T1* this_one, const T2* other, bool this_exact, bool other_exact) {
-  static_assert(std::is_base_of<T2, T1>::value, "");
+  static_assert(std::is_base_of<T2, T1>::value);
   if (other->klass() == ciEnv::current()->Object_klass() && other->_interfaces->empty() && other_exact) {
     return true;
   }

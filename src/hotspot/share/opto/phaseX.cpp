@@ -2361,9 +2361,8 @@ void PhaseIterGVN::remove_globally_dead_node(Node* dead, NodeOrigin origin) {
             if (in->outcnt() == 0) { // Made input go dead?
               stack.push(in, PROCESS_INPUTS); // Recursively remove
               recurse = true;
-            } else if (in->outcnt() == 1 &&
-                       in->has_special_unique_user()) {
-              _worklist.push(in->unique_out());
+            } else if (in->outcnt() == 1 && in->has_special_unique_user()) {
+              add_users_to_worklist(in);
             } else if (in->outcnt() <= 2 && dead->is_Phi()) {
               if (in->Opcode() == Op_Region) {
                 _worklist.push(in);
@@ -2513,10 +2512,13 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   return nullptr;
 }
 
-void PhaseIterGVN::add_users_to_worklist(Node *n) {
-  add_users_to_worklist0(n, _worklist);
+void PhaseIterGVN::add_users_to_worklist(Node* n) const {
+  add_users_to_worklist(n, _worklist);
+}
 
-  Unique_Node_List& worklist = _worklist;
+void PhaseIterGVN::add_users_to_worklist(Node* n, Unique_Node_List& worklist) {
+  add_users_to_worklist0(n, worklist);
+
   // Move users of node to worklist
   for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
     Node* use = n->fast_out(i); // Get use
@@ -2543,20 +2545,29 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   uint use_op = use->Opcode();
   if(use->is_Cmp()) {       // Enable CMP/BOOL optimization
     add_users_to_worklist0(use, worklist); // Put Bool on worklist
-    if (use->outcnt() > 0) {
-      Node* bol = use->raw_out(0);
-      if (bol->outcnt() > 0) {
-        Node* iff = bol->raw_out(0);
-        if (iff->outcnt() == 2) {
+    for (DUIterator_Fast jmax, j = use->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = use->fast_out(j);
+      if (!bol->is_Bool()) {
+        continue;
+      }
+      for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+        Node* bol_use = bol->fast_out(k);
+        if (bol_use->is_CMove()) {
+          // CMoveNode::Identity folds "(x == y) ? y : x" by comparing the inputs
+          // of the Cmp with those of the CMove.
+          worklist.push(bol_use);
+        } else if (bol_use->is_If() && bol_use->outcnt() == 2) {
           // Look for the 'is_x2logic' pattern: "x ? : 0 : 1" and put the
           // phi merging either 0 or 1 onto the worklist
-          Node* ifproj0 = iff->raw_out(0);
-          Node* ifproj1 = iff->raw_out(1);
-          if (ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
+          Node* ifproj0 = bol_use->raw_out(0);
+          Node* ifproj1 = bol_use->raw_out(1);
+          if (ifproj0->is_IfProj() && ifproj1->is_IfProj() &&
+              ifproj0->outcnt() > 0 && ifproj1->outcnt() > 0) {
             Node* region0 = ifproj0->raw_out(0);
             Node* region1 = ifproj1->raw_out(0);
-            if( region0 == region1 )
+            if (region0 == region1 && region0->is_Region()) {
               add_users_to_worklist0(region0, worklist);
+            }
           }
         }
       }
@@ -2712,6 +2723,13 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
       return u->Opcode() == Op_URShiftI || u->Opcode() == Op_URShiftL;
     });
   }
+  // If changed AddI inputs, check for Phi users for
+  // "(P < Q) ? X+Y : X" optimization in is_cond_add.
+  if (use_op == Op_AddI) {
+    add_users_to_worklist_if(worklist, use, [](const Node* u) -> bool {
+      return u->Opcode() == Op_Phi;
+    });
+  }
   // If changed LShiftI/LShiftL inputs, check AddI/AddL users for their
   // URShiftI/URShiftL users for "((x << z) + y) >>> z" optimization opportunity
   // (see URShiftINode::Ideal). Handles the case where the LShift input changes.
@@ -2781,6 +2799,10 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
   // Check for Max/Min(A, Max/Min(B, C)) where A == B or A == C
   if (use->is_MinMax()) {
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->is_MinMax(); });
+  }
+  // Check for A | (B | C) and (B | C) | A where A == B or A == C.
+  if (use_op == Op_OrI || use_op == Op_OrL) {
+    add_users_to_worklist_if(worklist, use, [&](Node* u) { return u->Opcode() == use->Opcode(); });
   }
   auto enqueue_init_mem_projs = [&](ProjNode* proj) {
     add_users_to_worklist0(proj, worklist);
@@ -3593,8 +3615,8 @@ void Node::set_req_X( uint i, Node *n, PhaseIterGVN *igvn ) {
         igvn->_worklist.push( old );
       break;
     case 1:
-      if( old->is_Store() || old->has_special_unique_user() )
-        igvn->add_users_to_worklist( old );
+      if (old->is_Store() || old->has_special_unique_user())
+        igvn->add_users_to_worklist(old);
       break;
     case 2:
       if( old->is_Store() )

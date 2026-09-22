@@ -4655,15 +4655,8 @@ void MacroAssembler::asm_assert_mems_zero(AsmAssertCond cond, int size, int mem_
 }
 #endif // ASSERT
 
-void MacroAssembler::verify_coop(Register coop, const char* msg) {
-  if (!VerifyOops) { return; }
-  if (UseCompressedOops) { decode_heap_oop(coop); }
-  verify_oop(coop, msg);
-  if (UseCompressedOops) { encode_heap_oop(coop, coop); }
-}
-
 // READ: oop. KILL: R0. Volatile floats perhaps.
-void MacroAssembler::verify_oop(Register oop, const char* msg) {
+void MacroAssembler::verify_oop(Register oop, const char* msg, bool compressed) {
   if (!VerifyOops) {
     return;
   }
@@ -4677,6 +4670,9 @@ void MacroAssembler::verify_oop(Register oop, const char* msg) {
   save_volatile_gprs(R1_SP, -nbytes_save); // except R0
 
   mr_if_needed(R4_ARG2, oop);
+  if (compressed) {
+    decode_heap_oop(R4_ARG2);
+  }
   save_LR_CR(tmp); // save in old frame
   push_frame_reg_args(nbytes_save, tmp);
   // load FunctionDescriptor** / entry_address *
@@ -4833,8 +4829,8 @@ void MacroAssembler::atomically_flip_locked_state(bool is_unlock, Register obj, 
   }
 
   bind(retry);
-  STATIC_ASSERT(markWord::fast_locked_value == 0); // Or need to change this!
-  STATIC_ASSERT(markWord::lock_neutral_value == 1); // Or need to change this!
+  static_assert(markWord::fast_locked_value == 0); // Or need to change this!
+  static_assert(markWord::lock_neutral_value == 1); // Or need to change this!
   if (!is_unlock) {
     ldarx(tmp, obj, MacroAssembler::cmpxchgx_hint_acquire_lock());
     xori(tmp, tmp, markWord::lock_neutral_value); // flip lock-neutral bit

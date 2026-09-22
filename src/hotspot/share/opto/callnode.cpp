@@ -880,38 +880,17 @@ bool CallNode::may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) const {
     // are not passed as arguments according to Escape Analysis.
     return false;
   }
-  if (t_oop->is_ptr_to_boxed_value()) {
+  if (t_oop->is_ptr_to_boxed_value() && is_CallStaticJava()) {
     ciKlass* boxing_klass = t_oop->is_instptr()->instance_klass();
-    if (is_CallStaticJava() && as_CallStaticJava()->is_boxing_method()) {
+    if (as_CallStaticJava()->is_boxing_method()) {
       // Skip unrelated boxing methods.
       Node* proj = proj_out_or_null(TypeFunc::Parms);
       if ((proj == nullptr) || (phase->type(proj)->is_instptr()->instance_klass() != boxing_klass)) {
         return false;
       }
     }
-    if (is_CallJava() && as_CallJava()->method() != nullptr) {
-      ciMethod* meth = as_CallJava()->method();
-      if (meth->is_getter()) {
-        return false;
-      }
-      // May modify (by reflection) if an boxing object is passed
-      // as argument or returned.
-      Node* proj = returns_pointer() ? proj_out_or_null(TypeFunc::Parms) : nullptr;
-      if (proj != nullptr) {
-        const TypeInstPtr* inst_t = phase->type(proj)->isa_instptr();
-        if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
-                                   (inst_t->instance_klass() == boxing_klass))) {
-          return true;
-        }
-      }
-      const TypeTuple* d = tf()->domain_cc();
-      for (uint i = TypeFunc::Parms; i < d->cnt(); i++) {
-        const TypeInstPtr* inst_t = d->field_at(i)->isa_instptr();
-        if ((inst_t != nullptr) && (!inst_t->klass_is_exact() ||
-                                 (inst_t->instance_klass() == boxing_klass))) {
-          return true;
-        }
-      }
+    ciMethod* meth = as_CallStaticJava()->method();
+    if (meth != nullptr && meth->is_getter()) {
       return false;
     }
   }

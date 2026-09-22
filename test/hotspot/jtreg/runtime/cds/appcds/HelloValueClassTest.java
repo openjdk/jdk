@@ -31,7 +31,7 @@
  * @modules java.base/jdk.internal.value
  *          java.base/jdk.internal.vm.annotation
  * @compile test-classes/HelloValueClassApp.java
- * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_inline.jar
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar hello_value.jar
  *          HelloValueClassApp HelloValueClassApp$Point
  *          HelloValueClassApp$Rectangle HelloValueClassApp$ValueRecord
  * @run main/othervm HelloValueClassTest
@@ -41,7 +41,7 @@ import jdk.test.lib.helpers.ClassFileInstaller;
 import jdk.test.lib.process.OutputAnalyzer;
 public class HelloValueClassTest {
     public static void main(String[] args) throws Exception {
-        String appJar = ClassFileInstaller.getJarPath("hello_inline.jar");
+        String appJar = ClassFileInstaller.getJarPath("hello_value.jar");
         String mainClass = "HelloValueClassApp";
         OutputAnalyzer output =
             TestCommon.dump(appJar, TestCommon.list(mainClass,

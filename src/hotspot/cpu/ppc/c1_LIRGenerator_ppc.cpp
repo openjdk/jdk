@@ -78,7 +78,7 @@ LIR_Opr LIRGenerator::syncLockOpr()                  { return FrameMap::R5_opr; 
 LIR_Opr LIRGenerator::syncTempOpr()                  { return FrameMap::R4_oop_opr; } // Need temp effect for MonitorEnterStub.
 LIR_Opr LIRGenerator::getThreadTemp()                { return LIR_OprFact::illegalOpr; } // not needed
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
   case intTag:     opr = FrameMap::R3_opr;         break;
@@ -95,13 +95,8 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
   return opr;
 }
 
-LIR_Opr LIRGenerator::rlock_callee_saved(BasicType type) {
-  ShouldNotReachHere();
-  return LIR_OprFact::illegalOpr;
-}
 
-
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 

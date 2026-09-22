@@ -28,6 +28,7 @@ import static jdk.jpackage.internal.util.PathUtils.mapNullablePath;
 
 import java.nio.file.Path;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import jdk.jpackage.internal.util.CompositeProxy;
 
@@ -40,6 +41,27 @@ import jdk.jpackage.internal.util.CompositeProxy;
  * configure and construct instances of this interface.
  */
 public interface ApplicationLayout extends AppImageLayout, ApplicationLayoutMixin {
+
+    enum Directory implements DirectorySelector {
+        LAUNCHERS_DIR(ApplicationLayout::launchersDirectory),
+        APP_DIR(ApplicationLayout::appDirectory),
+        APP_MODULES_DIR(ApplicationLayout::appModsDirectory),
+        DESKTOP_INTEGRATION_DIR(ApplicationLayout::desktopIntegrationDirectory),
+        CONTENT_DIR(ApplicationLayout::contentDirectory),
+        RESOURCES_DIR(ApplicationLayout::resourcesDirectory),
+        ;
+
+        Directory(Function<ApplicationLayout, Path> func) {
+            this.func = Objects.requireNonNull(func);
+        }
+
+        @Override
+        public Path resolve(AppImageLayout target) {
+            return func.apply((ApplicationLayout)target);
+        }
+
+        private Function<ApplicationLayout, Path> func;
+    }
 
     @Override
     default ApplicationLayout resolveAt(Path root) {
