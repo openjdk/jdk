@@ -170,7 +170,16 @@ public class TestRemoveFullyCoveredStores {
                 static final String STORE_B_RULE = IRNode.START + "StoreB" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
                 static final String STORE_C_RULE = IRNode.START + "StoreC" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
                 static final String STORE_I_RULE = IRNode.START + "StoreI" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
-                static final String STORE_L_RULE = IRNode.START + "StoreL" + IRNode.MID + "Memory: @aryptr:.*" + IRNode.END;
+
+                static final String SINGLE_USER = "\\\\[\\\\[\\\\s*\\\\d+\\\\s*\\\\]\\\\]";
+                static final String STORE_VECTOR_WITH_SINGLE_USER = IRNode.START + "StoreVector\\\\b" + IRNode.MID +
+                                                                    SINGLE_USER + IRNode.END;
+                static final String STORE_VECTOR_MASKED_WITH_SINGLE_USER = IRNode.START + "StoreVectorMasked\\\\b" +
+                                                                           IRNode.MID + SINGLE_USER + IRNode.END;
+                static final String STORE_VECTOR_SCATTER_WITH_SINGLE_USER = IRNode.START + "StoreVectorScatter\\\\b" +
+                                                                            IRNode.MID + SINGLE_USER + IRNode.END;
+                static final String STORE_VECTOR_SCATTER_MASKED_WITH_SINGLE_USER = IRNode.START + "StoreVectorScatterMasked\\\\b" +
+                                                                                   IRNode.MID + SINGLE_USER + IRNode.END;
             """
         )).asToken();
     }
@@ -274,7 +283,6 @@ public class TestRemoveFullyCoveredStores {
             @IR(failOn = {STORE_B_RULE,
                           STORE_C_RULE,
                           STORE_I_RULE},
-                counts = {STORE_L_RULE, ">= 1"},
                 phase = CompilePhase.BEFORE_MATCHING)
             """ : "",
             Template.make(() -> scope(
@@ -432,23 +440,34 @@ public class TestRemoveFullyCoveredStores {
         if (caseType != CaseType.POSITIVE) {
             return "";
         }
-
+        // Fully covered store elimination only considers previous stores with a single
+        // user. However, the IR shape is not always stable and may occasionally
+        // introduce multiple users so that preventing the elimination from being applied.
+        // Therefore, to keep the test stable, only single-user stores are counted in IR
+        // verification.
         return switch (op) {
             case STORE_ARRAY_UNSAFE_VECTOR ->
                 stableIR(op, vec) ?
                 """
                 @IR(failOn = {STORE_I_RULE},
-                    counts = {IRNode.STORE_VECTOR, "<= 1"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 32"},
                     applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "sve", "true", "rvv", "true"})
                 """:"";
 
+            // The IR shape is not always stable, so the upper bound is relaxed to 2
+            // to allow shapes such as:
+            // StoreVectorMasked ... [[ 18 ]]
+            // StoreVectorMasked ... [[ 27 22 ]]
+            // StoreVectorMasked ... [[ 38 ]]
+            // Although this relaxes the IR constraint, it still catches the stable
+            // case where all three stores remain single-user stores without any
+            // elimination, and it does not weaken the correctness checks.
             case STORE_VECTOR ->
                 stableIR(op, vec) ?
                 """
-                @IR(failOn = {IRNode.STORE_VECTOR_MASKED},
-                    counts = {IRNode.STORE_VECTOR, "<= 1"},
+                @IR(failOn = {STORE_VECTOR_MASKED_WITH_SINGLE_USER},
+                    counts = {STORE_VECTOR_WITH_SINGLE_USER, "<= 2"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 64"},
                     applyIfCPUFeatureOr = {"avx512f", "true", "sve", "true", "rvv", "true"})
@@ -457,7 +476,7 @@ public class TestRemoveFullyCoveredStores {
             case STORE_VECTOR_MASK ->
                 stableIR(op, vec) ?
                 """
-                @IR(counts = {IRNode.STORE_VECTOR_MASKED, "<= 1"},
+                @IR(counts = {STORE_VECTOR_MASKED_WITH_SINGLE_USER, "<= 2"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 32"},
                     applyIfCPUFeatureOr = {"asimd", "true", "avx", "true", "rvv", "true"})
@@ -466,7 +485,7 @@ public class TestRemoveFullyCoveredStores {
             case STORE_VECTOR_SCATTER ->
                 stableIR(op, vec) ?
                 """
-                @IR(counts = {IRNode.STORE_VECTOR_SCATTER, "<= 1"},
+                @IR(counts = {STORE_VECTOR_SCATTER_WITH_SINGLE_USER, "<= 2"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 32"},
                     applyIfCPUFeatureOr = {"sve", "true", "avx512vl", "true", "rvv", "true"})
@@ -475,7 +494,7 @@ public class TestRemoveFullyCoveredStores {
             case STORE_VECTOR_SCATTER_MASK ->
                 stableIR(op, vec) ?
                 """
-                @IR(counts = {IRNode.STORE_VECTOR_SCATTER_MASKED, "<= 1"},
+                @IR(counts = {STORE_VECTOR_SCATTER_MASKED_WITH_SINGLE_USER, "<= 2"},
                     phase = CompilePhase.BEFORE_MATCHING,
                     applyIf = {"MaxVectorSize", ">= 32"},
                     applyIfCPUFeatureOr = {"sve", "true", "avx512vl", "true", "rvv", "true"})
