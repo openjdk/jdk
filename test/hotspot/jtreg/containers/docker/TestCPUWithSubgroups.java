@@ -65,7 +65,7 @@ public class TestCPUWithSubgroups {
         try {
             testCpuLimitSubgroup(provider);
             if ("cgroupv2".equals(provider)) {
-                testCpuLimitAtMoudntRoot();
+                testCpuLimitAtMountRoot();
             }
         } finally {
             DockerTestUtils.removeDockerImage(imageName);
