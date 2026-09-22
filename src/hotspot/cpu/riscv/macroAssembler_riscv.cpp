@@ -4619,7 +4619,16 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   Label retry, fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && ((acquire & Assembler::aq) != 0)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     bind(retry); // amocas loads the current value into result
     notr(scratch1, mask);
@@ -4694,7 +4703,16 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
   Label fail, done;
 
   if (UseZacas) {
-    lw(result, aligned_addr);
+    // This word load pre-checks the target byte/short. A mismatch branches
+    // directly to fail, so the acquiring amocas below is never executed.
+    // When Zalasr has elided a preceding volatile store's trailing StoreLoad
+    // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
+    // the required RCsc ordering on this failure path.
+    if (UseZalasr && ((acquire & Assembler::aq) != 0)) {
+      lw_aq(result, aligned_addr);
+    } else {
+      lw(result, aligned_addr);
+    }
 
     notr(scratch1, mask);
 
