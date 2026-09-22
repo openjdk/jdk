@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,26 @@ MTLTR_GetGlyphCacheTexture()
     return NULL;
 }
 
+static void
+MTLTR_ConvertLCDDataToBGRA(GlyphInfo *ginfo, unsigned char *imageData,
+                           jint rowBytesOffset)
+{
+    for (int row = 0; row < ginfo->height; row++) {
+        unsigned char *src =
+            ginfo->image + (row * ginfo->rowBytes) + rowBytesOffset;
+        unsigned char *dst = imageData + row * ginfo->width * 4;
+
+        for (int col = 0; col < ginfo->width; col++) {
+            int srcIndex = col * 3;
+            int dstIndex = col * 4;
+            dst[dstIndex] = src[srcIndex];
+            dst[dstIndex + 1] = src[srcIndex + 1];
+            dst[dstIndex + 2] = src[srcIndex + 2];
+            dst[dstIndex + 3] = 0xFF;
+        }
+    }
+}
+
 /**
  * Adds the given glyph to the glyph cache (texture and data structure)
  * associated with the given MTLContext.
@@ -227,16 +247,7 @@ MTLTR_AddToGlyphCache(GlyphInfo *glyph, MTLContext *mtlc,
         } else {
             unsigned int imageBytes = w * h * 4;
             unsigned char imageData[imageBytes];
-            memset(&imageData, 0, sizeof(imageData));
-
-            int srcIndex = 0;
-            int dstIndex = 0;
-            for (int i = 0; i < (w * h); i++) {
-                imageData[dstIndex++] = glyph->image[srcIndex++];
-                imageData[dstIndex++] = glyph->image[srcIndex++];
-                imageData[dstIndex++] = glyph->image[srcIndex++];
-                imageData[dstIndex++] = 0xFF;
-            }
+            MTLTR_ConvertLCDDataToBGRA(glyph, imageData, 0);
 
             NSUInteger bytesPerRow = 4 * w;
             [gcinfo->texture replaceRegion:region
@@ -557,16 +568,7 @@ MTLTR_DrawLCDGlyphNoCache(MTLContext *mtlc, BMTLSDOps *dstOps,
 
     unsigned int imageBytes = w * h * 4;
     unsigned char imageData[imageBytes];
-    memset(&imageData, 0, sizeof(imageData));
-
-    int srcIndex = 0;
-    int dstIndex = 0;
-    for (int i = 0; i < (w * h); i++) {
-        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
-        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
-        imageData[dstIndex++] = ginfo->image[srcIndex++ + rowBytesOffset];
-        imageData[dstIndex++] = 0xFF;
-    }
+    MTLTR_ConvertLCDDataToBGRA(ginfo, imageData, rowBytesOffset);
 
     // copy LCD mask into glyph texture tile
     MTLRegion region = MTLRegionMake2D(0, 0, w, h);

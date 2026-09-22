@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,17 +22,13 @@
  */
 
 /*
-  @test
-  @key headful
-  @bug 6244574
-  @bug 6258142
-  @bug 6395165
-  @bug 6588884
-  @summary Tests that source is clipped correctly when blitting
-  different types of images to the screen
-  @author Dmitri.Trembovetski: area=Graphics2D
-  @run main SourceClippingBlitTest
-*/
+ * @test
+ * @key headful
+ * @bug 6244574 6258142 6395165 6588884
+ * @summary Tests that source is clipped correctly when blitting
+ * different types of images to the screen
+ * @run main SourceClippingBlitTest
+ */
 
 import java.awt.AWTException;
 import java.awt.Canvas;
@@ -41,24 +37,30 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Image;
+import java.awt.Insets;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.Transparency;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.awt.image.VolatileImage;
+import java.io.File;
+import java.io.IOException;
+
+import javax.imageio.ImageIO;
 
 public class SourceClippingBlitTest extends Canvas {
     static final int TESTW = 300;
     static final int TESTH = 300;
     static final int IMAGEW = 50;
     static final int IMAGEH = 50;
+    static final int MARGIN = 1;
 
     static final Rectangle IMAGE_BOUNDS = new Rectangle(0, 0, IMAGEW, IMAGEH);
     static Robot robot;
@@ -87,7 +89,13 @@ public class SourceClippingBlitTest extends Canvas {
 
         Frame f = new Frame(SourceClippingBlitTest.class.getName());
         final SourceClippingBlitTest test = new SourceClippingBlitTest();
-        f.add(test);
+        f.setLayout(new GridBagLayout());
+        GridBagConstraints c = new GridBagConstraints();
+        c.insets = new Insets(50, 50, 50, 50);
+        c.fill = GridBagConstraints.BOTH;
+        c.weightx = 1.0;
+        c.weighty = 1.0;
+        f.add(test, c);
         f.addWindowListener(new WindowAdapter() {
             public void windowActivated(WindowEvent e) {
                 if (!done) {
@@ -128,9 +136,9 @@ public class SourceClippingBlitTest extends Canvas {
         for (Image srcIm :
             new Image[] {
                 getBufferedImage(gc, IMAGEW, IMAGEH,
-                        BufferedImage.TYPE_INT_RGB, true),
+                    BufferedImage.TYPE_INT_RGB, true),
                 getBufferedImage(gc, IMAGEW, IMAGEH,
-                        BufferedImage.TYPE_INT_RGB, false),
+                    BufferedImage.TYPE_INT_RGB, false),
                 // commented out due to 6593406
 //                getBMImage(gc, IMAGEW, IMAGEH),
 //                getBufferedImage(gc, IMAGEW, IMAGEH,
@@ -151,7 +159,7 @@ public class SourceClippingBlitTest extends Canvas {
                         srcRect.grow(sizeVar, sizeVar);
 
                         Rectangle dstRect =
-                                new Rectangle(sizeVar, sizeVar,
+                            new Rectangle(sizeVar, sizeVar,
                                 srcRect.width, srcRect.height);
                         System.out.println("testing blit rect src: " + srcRect);
                         System.out.println("                  dst: " + dstRect);
@@ -191,12 +199,12 @@ public class SourceClippingBlitTest extends Canvas {
                 }
             }
             g.drawImage(image,
-                    dstRect.x, dstRect.y,
-                    dstRect.x + bltWidth, dstRect.y + bltHeight,
-                    srcRect.x, srcRect.y,
-                    srcRect.x + bltWidth, srcRect.y + bltHeight,
-                    Color.red,
-                    null);
+                dstRect.x, dstRect.y,
+                dstRect.x + bltWidth, dstRect.y + bltHeight,
+                srcRect.x, srcRect.y,
+                srcRect.x + bltWidth, srcRect.y + bltHeight,
+                Color.red,
+                null);
         } while (vi != null && vi.contentsLost());
     }
 
@@ -221,13 +229,25 @@ public class SourceClippingBlitTest extends Canvas {
         newDstRect.translate(trX, trY);
         Rectangle.intersect(newDstRect, new Rectangle(0, 0, w, h), newDstRect);
 
+        Rectangle innerRect = new Rectangle(newDstRect);
+        innerRect.grow(-MARGIN, -MARGIN);
+
+        Rectangle outerRect = new Rectangle(newDstRect);
+        outerRect.grow(MARGIN, MARGIN);
+
         System.out.println("calculated dest rect:" + newDstRect);
+        System.out.println("calculated inner rect:" + innerRect);
+        System.out.println("calculated outer rect:" + outerRect);
 
         // we do implicit clipping of the destination surface
         // by only checking pixels within its bounds
-        for (int y = 0; y < h; y++) {
-            for (int x = 0; x < w; x++) {
+        for (int y = MARGIN; y < h - MARGIN; y++) {
+            for (int x = MARGIN; x < w - MARGIN; x++) {
                 int rgb = 0;
+                if (outerRect.contains(x, y) &&
+                    !innerRect.contains(x, y)) {
+                    continue;
+                }
                 if (newDstRect.contains(x, y)) {
                     rgb = Color.red.getRGB();
                 } else {
@@ -235,9 +255,14 @@ public class SourceClippingBlitTest extends Canvas {
                 }
                 if (grabbedBI.getRGB(x, y) != rgb) {
                     String msg1 = "Test failed at x="+x+" y="+y;
+                    String name = "SourceClippingBlitTest.png";
+                    try {
+                        ImageIO.write(grabbedBI, "png", new File(name));
+                        System.out.println("Dumped res to: "+name);
+                    } catch (IOException e) {}
                     System.out.println(msg1);
                     System.out.println(" expected: "+Integer.toHexString(rgb)+
-                            " got:"+Integer.toHexString(grabbedBI.getRGB(x, y)));
+                        " got:"+Integer.toHexString(grabbedBI.getRGB(x, y)));
                     throw new RuntimeException(msg1);
                 }
             }
@@ -258,7 +283,7 @@ public class SourceClippingBlitTest extends Canvas {
         if (dstImage == null) {
             dstImage =
                 gc.createCompatibleVolatileImage(TESTW, TESTH,
-                                                 Transparency.OPAQUE);
+                    Transparency.OPAQUE);
         }
         dstImage.validate(gc);
         g = dstImage.getGraphics();

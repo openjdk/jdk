@@ -3350,7 +3350,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         do_oop_store(_masm, field, Z_tos,
                      oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
       } else {
-        Label null_free_reference, is_flat, rewrite_inline, done_valhalla;
+        Label null_free_reference, is_flat, rewrite_value, done_valhalla;
         __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
         __ branch_optimized(Assembler::bcondAllOne, is_flat);
         __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
@@ -3372,7 +3372,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         // Store into the field
         do_oop_store(_masm, field, Z_tos,
                      oopStore_tmp1, oopStore_tmp2, oopStore_tmp3, IN_HEAP);
-        __ z_bru(rewrite_inline);
+        __ z_bru(rewrite_value);
         __ bind(is_flat);
         pop_and_check_object(oopStore_tmp1);
         {
@@ -3386,7 +3386,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           Register flat_index = oopStore_tmp2; // Z_R1_scratch (index scratch, discarded after load)
           __ load_field_entry(flat_entry, flat_index);
           __ write_flat_field(flat_entry, off, flat_index, oopStore_tmp3, oopStore_tmp1);
-        }__ bind(rewrite_inline);
+        }__ bind(rewrite_value);
         if (do_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc_reg, patch_tmp, true, byte_no);
         }
