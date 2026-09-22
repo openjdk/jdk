@@ -52,32 +52,24 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   _saved_gc_state(_heap->gc_state()),
   _saved_gc_state_changed(_heap->_gc_state_changed) {
 
-  if (_active_count.load_relaxed() > 0) {
-    // Already active, nothing to do.
-    assert(_heap->gc_state() == 0, "Must be");
-    int active = _active_count.fetch_then_add(1, memory_order_relaxed);
-    assert(active > 0, "Must have active");
-    return;
-  }
-
   // Need to complete GC processing before deactivating the barriers.
   // Once the GC state is dropped, we cannot allow GC-state dependent fixups,
   // that would patch barriers or process the oops incorrectly. Verifier code
   // can enter stack watermark processing as part of regular thread root work.
   // This pretends Java threads have fixed up all state before we go for verification.
+  // Do this unconditionally in all callers to get to the same consensus point.
   for (JavaThreadIteratorWithHandle jtiwh; JavaThread* jt = jtiwh.next();) {
     StackWatermarkSet::finish_processing(jt, nullptr, StackWatermarkKind::gc);
   }
 
   // From this moment on, level-1 resetter is active.
-  bool succ = _active_count.compare_set(0, 1, memory_order_relaxed);
-  assert(succ, "Must succeed");
-
-  // Clear state to deactivate barriers. Indicate that state has changed
-  // so that verifier threads will use this value, rather than thread local
-  // values (which we are _not_ changing here).
-  _heap->_gc_state.clear();
-  _heap->_gc_state_changed = true;
+  if (_active_count.compare_set(0, 1, memory_order_relaxed)) {
+    // Clear state to deactivate barriers. Indicate that state has changed
+    // so that verifier threads will use this value, rather than thread local
+    // values (which we are _not_ changing here).
+    _heap->_gc_state.clear();
+    _heap->_gc_state_changed = true;
+  }
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
