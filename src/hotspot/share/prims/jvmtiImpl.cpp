@@ -823,7 +823,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::dynamic_code_generated_event(
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.dynamic_code_generated.name = os::strdup(name);
+  event._event_data.dynamic_code_generated.name = os::strdup(name, mtServiceability);
   event._event_data.dynamic_code_generated.code_begin = code_begin;
   event._event_data.dynamic_code_generated.code_end = code_end;
   return event;
@@ -835,7 +835,7 @@ JvmtiDeferredEvent JvmtiDeferredEvent::class_unload_event(const char* name) {
   // the event poster will keep it around after we enqueue the
   // deferred event and return. strdup() failure is handled in
   // the post() routine below.
-  event._event_data.class_unload.name = os::strdup(name);
+  event._event_data.class_unload.name = os::strdup(name, mtServiceability);
   return event;
 }
 

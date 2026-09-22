@@ -75,6 +75,8 @@ public:
 
   virtual oop oop_load_no_keepalive(const nmethod* nm, int index);
   virtual oop oop_load_phantom(const nmethod* nm, int index);
+
+  virtual void finalize_relocations(nmethod* nm) {}
 };
 
 

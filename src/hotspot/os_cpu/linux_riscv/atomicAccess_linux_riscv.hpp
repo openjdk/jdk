@@ -78,7 +78,7 @@ struct AtomicAccess::PlatformAdd {
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
     // If we add add and fetch for sub word and are using older compiler
     // it must be added here due to not using lib atomic.
-    STATIC_ASSERT(byte_size >= 4);
+    static_assert(byte_size >= 4);
 #endif
 
     switch (order) {
@@ -105,7 +105,7 @@ inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(1 == sizeof(T));
+  static_assert(1 == sizeof(T));
   riscv_atomic_stub_t stub;
   switch (order) {
     case memory_order_relaxed:
@@ -122,7 +122,7 @@ inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(4 == sizeof(T));
+  static_assert(4 == sizeof(T));
   riscv_atomic_stub_t stub;
   switch (order) {
     case memory_order_relaxed:
@@ -144,7 +144,7 @@ inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
-  STATIC_ASSERT(8 == sizeof(T));
+  static_assert(8 == sizeof(T));
   riscv_atomic_stub_t stub;
   switch (order) {
     case memory_order_relaxed:
@@ -171,11 +171,11 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
   // If we add xchg for sub word and are using older compiler
   // it must be added here due to not using lib atomic.
-  STATIC_ASSERT(byte_size >= 4);
+  static_assert(byte_size >= 4);
 #endif
 
-  STATIC_ASSERT(byte_size == sizeof(T));
-  STATIC_ASSERT(byte_size == 4 || byte_size == 8);
+  static_assert(byte_size == sizeof(T));
+  static_assert(byte_size == 4 || byte_size == 8);
 
   switch (order) {
     case memory_order_relaxed:

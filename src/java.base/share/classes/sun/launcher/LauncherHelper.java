@@ -188,7 +188,7 @@ public final class LauncherHelper {
             return Option.DEFAULT;
         }
 
-        if (optionFlag.equals("-XshowSetings:")) {
+        if (optionFlag.equals("-XshowSettings:")) {
             abort(null, "java.launcher.bad.option", ":");
         }
 
