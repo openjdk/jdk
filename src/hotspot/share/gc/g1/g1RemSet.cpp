@@ -212,7 +212,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
     }
 
     void do_work(uint worker_id) override {
-      const uint num_regions_per_worker = MAX2<uint>(num_cards_per_worker / G1HeapRegion::CardsPerRegion, 1);
+      const uint num_regions_per_worker = MAX2<uint>(num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion, 1);
 
       uint cur = _cur_dirty_regions.load_relaxed();
       while (cur < _regions->size()) {
