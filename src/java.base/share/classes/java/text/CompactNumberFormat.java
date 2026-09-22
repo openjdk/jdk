@@ -657,7 +657,7 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern((long) roundedNumber);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getRoundedQuotient(number, divisor);
+            double val = getRoundedQuotient(number, divisor, isNegative);
             if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
@@ -739,7 +739,7 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             long divisor = (Long) divisors.get(compactDataIndex);
-            double val = getRoundedQuotient(number, divisor);
+            double val = getRoundedQuotient(number, divisor, isNegative);
             if (shouldPromotePattern(val, compactDataIndex, divisor)) {
                 divisor = (Long) divisors.get(++compactDataIndex);
             }
@@ -835,7 +835,7 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue());
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue(), isNegative);
             if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
@@ -910,7 +910,7 @@ public final class CompactNumberFormat extends NumberFormat {
         int compactDataIndex = selectCompactPattern(number);
         if (compactDataIndex != -1) {
             Number divisor = divisors.get(compactDataIndex);
-            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue());
+            double val = getRoundedQuotient(number.doubleValue(), divisor.doubleValue(), isNegative);
             if (shouldPromotePattern(val, compactDataIndex, divisor.doubleValue())) {
                 divisor = divisors.get(++compactDataIndex);
             }
@@ -2549,18 +2549,21 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Returns the result of dividing the number by the divisor. The divisor is the value
-     * associated with the initial compact pattern. The quotient is rounded to maximum fraction digits,
+     * Returns a double which indicates if promotion of the compact pattern should occur.
+     * The returned value is the result of dividing the number by the divisor associated with
+     * the initial compact pattern. The quotient is rounded to maximum fraction digits,
      * and is fed to shouldPromotePattern to determine if the pattern needs to be promoted.
      */
-    private double getRoundedQuotient(double number, double divisor) {
+    private double getRoundedQuotient(double number, double divisor, boolean isNegative) {
         // Division should be aware of the maximum fraction digits permitted.
         // For example, with HALF_UP and 2 maximum fraction digits:
         //      - 999_951 / 1000 -> 999.95 -> stay at K
         //      - 999_999 / 1000 -> 1000.0 -> promote K to M
-        var num = BigDecimal.valueOf(number)
-                .divide(BigDecimal.valueOf(divisor), getMaximumFractionDigits(), roundingMode);
-        return num.doubleValue();
+        // Ensure that sign is taken into account, otherwise rounding under CEILING/FLOOR
+        // would be incorrect when the dividend is negative.
+        BigDecimal signedDividend = isNegative ? BigDecimal.valueOf(number).negate() : BigDecimal.valueOf(number);
+        var signedQuotient = signedDividend.divide(BigDecimal.valueOf(divisor), getMaximumFractionDigits(), roundingMode);
+        return signedQuotient.abs().doubleValue();
     }
 
     // Checks whether the val is incremented by the BigDecimal division in

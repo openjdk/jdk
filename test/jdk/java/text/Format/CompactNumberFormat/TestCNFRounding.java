@@ -69,6 +69,9 @@ public class TestCNFRounding {
             Arguments.of(BigDecimal.valueOf(-999_951), "-999.95K", 2, RoundingMode.HALF_UP),
             Arguments.of(BigDecimal.valueOf(999_951), "1M", 1, RoundingMode.HALF_UP),
             Arguments.of(BigDecimal.valueOf(-999_951), "-1M", 1, RoundingMode.HALF_UP),
+            // Negative CEILING/FLOOR values
+            Arguments.of(BigDecimal.valueOf(-999_999), "-999.99K", 2, RoundingMode.CEILING),
+            Arguments.of(BigDecimal.valueOf(-999_999), "-1M", 2, RoundingMode.FLOOR),
             // BigInteger path that forces BigDecimal division.
             // Need to supply a BI whose underlying value exceeds what 64 bit long supports and whose
             // division result would produce a fraction. LONG.MAX/MIN_VALUE +- 1 works.
