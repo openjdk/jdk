@@ -112,6 +112,7 @@ public:
     Writability _writability;
     address _enclosing_obj;
     Ref* _next;
+    NONCOPYABLE(Ref);
 
   protected:
     virtual void** mpp() const = 0;
