@@ -249,28 +249,52 @@ static int open_debuginfo_from_build_id(ELF_SHDR* shbuf, ELF_EHDR* ehdr, struct 
 int open_debuginfo(const char* filename, int fd) {
   // prepare (load ELF sections)
   ELF_EHDR ehdr;
-  read_elf_header(fd, &ehdr);
-  ELF_SHDR* shbuf = read_section_header_table(fd, &ehdr);
+  if (!read_elf_header(fd, &ehdr)) {
+    return -1;
+  }
+
+  ELF_SHDR* shbuf = NULL;
+  if ((shbuf = read_section_header_table(fd, &ehdr)) == NULL) {
+    return -1;
+  }
+  if (ehdr.e_shnum == 0) {
+    // calloc() might return the pointer which should not be accessed
+    // if the size is zero. (implementation-defined)
+    free(shbuf);
+    return -1;
+  }
+
   struct elf_section *scn_cache = (struct elf_section *)calloc(ehdr.e_shnum, sizeof(struct elf_section));
+  if (scn_cache == NULL) {
+    free(shbuf);
+    return -1;
+  }
+
+  bool read_failure = false;
   for (int cnt = 0; cnt < ehdr.e_shnum; cnt++) {
     scn_cache[cnt].c_shdr = &shbuf[cnt];
     if (shbuf[cnt].sh_type == SHT_NOTE || shbuf[cnt].sh_type == SHT_STRTAB) {
       scn_cache[cnt].c_data = read_section_data(fd, &ehdr, &shbuf[cnt]);
+      if (scn_cache[cnt].c_data == NULL) {
+        read_failure = true;
+        break;
+      }
     }
   }
 
-  // attempt to open debuginfo
-  int debug_fd = open_debuginfo_from_debug_link(filename, fd, &ehdr, scn_cache);
-  if (debug_fd == -1) {
-    // try again with build id.
-    debug_fd = open_debuginfo_from_build_id(shbuf, &ehdr, scn_cache);
+  int debug_fd = -1;
+  if (!read_failure) {
+    // attempt to open debuginfo
+    debug_fd = open_debuginfo_from_debug_link(filename, fd, &ehdr, scn_cache);
+    if (debug_fd == -1) {
+      // try again with build id.
+      debug_fd = open_debuginfo_from_build_id(shbuf, &ehdr, scn_cache);
+    }
   }
 
   // cleanup
   for (int cnt = 0; cnt < ehdr.e_shnum; cnt++) {
-    if (shbuf[cnt].sh_type == SHT_NOTE) {
-      free(scn_cache[cnt].c_data);
-    }
+    free(scn_cache[cnt].c_data);
   }
   free(scn_cache);
   free(shbuf);
