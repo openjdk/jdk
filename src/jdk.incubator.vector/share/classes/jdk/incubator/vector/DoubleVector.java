@@ -680,10 +680,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
     final
     DoubleVector lanewiseTemplate(VectorOperators.Unary op) {
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return unaryMathOp(op);
             }
         }
@@ -708,10 +705,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                                           VectorMask<Double> m) {
         m.check(maskClass, this);
         if (opKind(op, VO_SPECIAL)) {
-            if (op == ZOMO) {
-                return blend(broadcast(-1), compare(NE, 0, m));
-            }
-            else if (opKind(op, VO_MATHLIB)) {
+            if (opKind(op, VO_MATHLIB)) {
                 return blend(unaryMathOp(op), m);
             }
         }
@@ -1859,6 +1853,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -1907,6 +1902,7 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                 }
             }
             else {
+                int opc = opCode(op);
                 throw new AssertionError(op);
             }
             return maskType.cast(m.cast(vsp));
@@ -2164,15 +2160,21 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
     /*package-private*/
     final
     @ForceInline
-    DoubleVector sliceTemplate(int origin, Vector<Double> v1) {
+    <V extends Vector<Double>>
+    DoubleVector sliceTemplate(int origin, V v1) {
         DoubleVector that = (DoubleVector) v1;
         that.check(this);
         Objects.checkIndex(origin, length() + 1);
-        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
-        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)(length() - origin));
-        VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Double> iota = iotaShuffle(origin, 1, true);
-        return that.rearrange(iota).blend(this.rearrange(iota), blendMask);
+        return (DoubleVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                LongVector iotaVector = (LongVector) vec1.iotaShuffle().toBitsVector();
+                LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vec1.vspecies().asIntegral(),
+                                                                     (long)(vec1.length() - index));
+                VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Double> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.rearrange(iota).blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -2199,11 +2201,17 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
     @ForceInline
     DoubleVector sliceTemplate(int origin) {
         Objects.checkIndex(origin, length() + 1);
-        LongVector iotaVector = (LongVector) iotaShuffle().toBitsVector();
-        LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vspecies().asIntegral(), (long)(length() - origin));
-        VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vspecies());
-        AbstractShuffle<Double> iota = iotaShuffle(origin, 1, true);
-        return vspecies().zero().blend(this.rearrange(iota), blendMask);
+        DoubleVector that = (DoubleVector) vspecies().zero();
+        return (DoubleVector)VectorSupport.sliceOp(origin, getClass(), LANE_TYPE_ORDINAL, length(), this, that,
+            (index, vec1, vec2) ->  {
+                LongVector iotaVector = (LongVector) vec1.iotaShuffle().toBitsVector();
+                LongVector filter = LongVector.broadcast((LongVector.LongSpecies) vec1.vspecies().asIntegral(),
+                                                                     (long)(vec1.length() - index));
+                VectorMask<Double> blendMask = iotaVector.compare(VectorOperators.LT, filter).cast(vec1.vspecies());
+                AbstractShuffle<Double> iota = vec1.iotaShuffle(index, 1, true);
+                return vec2.blend(vec1.rearrange(iota), blendMask);
+            }
+        );
     }
 
     /**
@@ -3616,18 +3624,6 @@ public abstract sealed class DoubleVector extends AbstractVector<Double>
                 .reinterpretAsDoubles();
         }
         return this;
-    }
-
-    @Override
-    @ForceInline
-    final
-    DoubleVector swapIfNeeded(AbstractSpecies<?> srcSpecies) {
-        int subLanesPerSrc = subLanesToSwap(srcSpecies);
-        if (subLanesPerSrc < 0) {
-            return this;
-        }
-        VectorShuffle<Double> shuffle = normalizeSubLanesForSpecies(this.vspecies(), subLanesPerSrc);
-        return (DoubleVector) this.rearrange(shuffle);
     }
 
     static final int ARRAY_SHIFT =

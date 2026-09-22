@@ -707,6 +707,7 @@ public class Flow {
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
                 }
+                scan(c.guard);
                 scanStats(c.stats);
                 if (alive != Liveness.DEAD && c.caseKind == JCCase.RULE) {
                     scanSyntheticBreak(make, tree);
@@ -721,7 +722,7 @@ public class Flow {
                                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases);
             if (exhaustiveSwitch) {
                 if (!tree.isExhaustive) {
-                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                    ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                     tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -729,7 +730,7 @@ public class Flow {
                         if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                             log.error(tree, Errors.NotExhaustiveStatement);
                         } else {
-                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveStatementDetails);
+                            logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.statement.details");
                         }
                     }
                 }
@@ -752,6 +753,7 @@ public class Flow {
                 for (JCCaseLabel pat : c.labels) {
                     scan(pat);
                 }
+                scan(c.guard);
                 scanStats(c.stats);
                 if (alive == Liveness.ALIVE) {
                     if (c.caseKind == JCCase.RULE) {
@@ -768,7 +770,7 @@ public class Flow {
                 TreeInfo.isErrorEnumSwitch(tree.selector, tree.cases)) {
                 tree.isExhaustive = true;
             } else {
-                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(tree.selector, tree.cases);
+                ExhaustivenessResult exhaustivenessResult = exhaustiveness.exhausts(attrEnv, tree.selector, tree.cases);
 
                 tree.isExhaustive = exhaustivenessResult.exhaustive();
 
@@ -776,7 +778,7 @@ public class Flow {
                     if (exhaustivenessResult.notExhaustiveDetails().isEmpty()) {
                         log.error(tree, Errors.NotExhaustive);
                     } else {
-                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, Errors.NotExhaustiveDetails);
+                        logNotExhaustiveError(tree.pos(), exhaustivenessResult, "not.exhaustive.details");
                     }
                 }
             }
@@ -787,7 +789,7 @@ public class Flow {
 
         private void logNotExhaustiveError(DiagnosticPosition pos,
                                            ExhaustivenessResult exhaustivenessResult,
-                                           Error errorKey) {
+                                           String errorKey) {
             List<JCDiagnostic> details =
                     exhaustivenessResult.notExhaustiveDetails()
                                        .stream()
@@ -795,23 +797,26 @@ public class Flow {
                                        .sorted((d1, d2) -> d1.toString()
                                                              .compareTo(d2.toString()))
                                        .collect(List.collector());
-            JCDiagnostic main = diags.error(null, log.currentSource(), pos, errorKey);
-            JCDiagnostic d = new JCDiagnostic.MultilineDiagnostic(main, details);
+            JCDiagnostic missingCases = diags.fragment(details.size() == 1 ? Fragments.MissingCase
+                                                                           : Fragments.MissingCases);
+            JCDiagnostic augmentedMissingCases = new JCDiagnostic.MultilineDiagnostic(missingCases, details);
+            JCDiagnostic d = diags.error(null, log.currentSource(), pos, errorKey, augmentedMissingCases);
             log.report(d);
         }
 
         private JCDiagnostic patternToDiagnostic(PatternDescription desc) {
-            Type patternType = types.erasure(desc.type());
+            Type erasedPatternType = types.erasure(desc.type());
             return diags.fragment(switch (desc) {
                 case BindingPattern _ ->
-                    Fragments.BindingPattern(patternType);
+                    Fragments.BindingPattern(desc.type().hasTag(TypeTag.TYPEVAR) ? desc.type()
+                                                                                 : erasedPatternType);
                 case RecordPattern rp ->
-                    Fragments.RecordPattern(patternType,
+                    Fragments.RecordPattern(erasedPatternType,
                                             Arrays.stream(rp.nested())
                                                   .map(this::patternToDiagnostic)
                                                   .toList());
                 case EnumConstantPattern ep ->
-                    Fragments.EnumConstantPattern(patternType,
+                    Fragments.EnumConstantPattern(erasedPatternType,
                                                   ep.enumConstant());
             });
         }
@@ -1225,6 +1230,7 @@ public class Flow {
             for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
                 JCCase c = l.head;
                 scan(c.labels);
+                scan(c.guard);
                 scan(c.stats);
             }
             if (tree.hasTag(SWITCH_EXPRESSION)) {

@@ -415,18 +415,6 @@ bool FileMapInfo::validate_class_location() {
     }
   }
 
-  if (CDSConfig::is_dumping_dynamic_archive()) {
-    // Only support dynamic dumping with the usage of the default CDS archive
-    // or a simple base archive.
-    // If the base layer archive contains additional path component besides
-    // the runtime image and the -cp, dynamic dumping is disabled.
-    if (config->num_boot_classpaths() > 0) {
-      CDSConfig::disable_dumping_dynamic_archive();
-      aot_log_warning(aot)(
-        "Dynamic archiving is disabled because base layer archive has appended boot classpath");
-    }
-  }
-
 #if INCLUDE_JVMTI
   if (_classpath_entries_for_jvmti != nullptr) {
     os::free(_classpath_entries_for_jvmti);
@@ -676,7 +664,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
   if (base == nullptr) {
     *base_archive_name = CDSConfig::default_archive_path();
   } else {
-    *base_archive_name = os::strdup_check_oom(base);
+    *base_archive_name = os::strdup_check_oom(base, mtClassShared);
   }
 
   return true;
@@ -1682,8 +1670,12 @@ bool FileMapInfo::can_use_heap_region() {
                       narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
     aot_log_info(aot)("    AOTCompatibleOopCompression = %s", header()->compatible_oop_compression() ? "true" : "false");
   }
+#if INCLUDE_G1GC
   aot_log_info(aot)("The current max heap size = %zuM, G1HeapRegion::GrainBytes = %zu",
                 MaxHeapSize/M, G1HeapRegion::GrainBytes);
+#else
+  aot_log_info(aot)("The current max heap size = %zuM", MaxHeapSize/M);
+#endif
   aot_log_info(aot)("    narrow_klass_base = " PTR_FORMAT ", arrow_klass_pointer_bits = %d, narrow_klass_shift = %d",
                 p2i(CompressedKlassPointers::base()), CompressedKlassPointers::narrow_klass_pointer_bits(), CompressedKlassPointers::shift());
   if (UseCompressedOops) {
@@ -1694,9 +1686,9 @@ bool FileMapInfo::can_use_heap_region() {
   if (!object_streaming_mode()) {
     aot_log_info(aot)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
                       UseCompressedOops ? p2i(CompressedOops::begin()) :
-                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) : 0L,
+                      G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().start()) :) 0L,
                       UseCompressedOops ? p2i(CompressedOops::end()) :
-                      UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
+                      G1GC_ONLY(UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) :) 0L);
   }
 
   int err = 0;
