@@ -279,7 +279,7 @@ Relocation* RelocIterator::reloc() {
 // Verify all the destructors are trivial, so we don't need to worry about
 // destroying old contents of a RelocationHolder being assigned or destroyed.
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(Reloc) \
-  static_assert(std::is_trivially_destructible<Reloc>::value, "must be");
+  static_assert(std::is_trivially_destructible<Reloc>::value);
 
 #define VERIFY_TRIVIALLY_DESTRUCTIBLE(name) \
   VERIFY_TRIVIALLY_DESTRUCTIBLE_AUX(PASTE_TOKENS(name, _Relocation));
@@ -567,6 +567,31 @@ void section_word_Relocation::unpack_data() {
 
   _section = sindex;
   _target  = address_from_scaled_offset(offset, base);
+}
+
+void patchable_barrier_Relocation::pack_data_to(CodeSection* dest) {
+  short* p = (short*) dest->locs_end();
+  *p++ = relocInfo::data0_from_int(_target_offset);
+  *p++ = relocInfo::data1_from_int(_target_offset);
+  *p++ = checked_cast<short>(_metadata);
+  dest->set_locs_end((relocInfo*)p);
+}
+
+void patchable_barrier_Relocation::unpack_data() {
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  _target_offset = relocInfo::jint_from_data(&d[0]);
+  _metadata = checked_cast<uint16_t>(d[2]);
+}
+
+void patchable_barrier_Relocation::set_target_offset(int32_t target_offset) {
+  assert(!is_target_offset_resolved(), "Should be");
+  assert(datalen() == 3, "Should be int+short fields");
+  short* d = data();
+  d[0] = relocInfo::data0_from_int(target_offset);
+  d[1] = relocInfo::data1_from_int(target_offset);
+  _target_offset = target_offset;
+  assert(is_target_offset_resolved(), "Should be");
 }
 
 //// miscellaneous methods

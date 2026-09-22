@@ -2390,7 +2390,11 @@ void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes
   // Clean up any MergeMems that feed other MergeMems since the
   // optimizer doesn't like that.
   while (wl.size() > 0) {
-    _gvn.transform(wl.pop());
+    Node* old_mem = wl.pop();
+    Node* new_mem = _gvn.transform(old_mem);
+    if (old_mem != new_mem) {
+      C->gvn_replace_by(old_mem, new_mem);
+    }
   }
 
   if (callprojs->fallthrough_catchproj != nullptr && !final_ctl->is_top() && do_replaced_nodes) {

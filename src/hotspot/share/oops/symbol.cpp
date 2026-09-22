@@ -43,7 +43,7 @@
 Symbol* Symbol::_vm_symbols[vmSymbols::number_of_symbols()];
 
 uint32_t Symbol::pack_hash_and_refcount(short hash, int refcount) {
-  STATIC_ASSERT(PERM_REFCOUNT == ((1 << 16) - 1));
+  static_assert(PERM_REFCOUNT == ((1 << 16) - 1));
   assert(refcount >= 0, "negative refcount");
   assert(refcount <= PERM_REFCOUNT, "invalid refcount");
   uint32_t hi = hash;

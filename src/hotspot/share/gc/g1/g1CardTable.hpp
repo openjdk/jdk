@@ -98,7 +98,7 @@ public:
   static const size_t WordAllDirty = 0;
   static const size_t WordAllFromRemset = (SIZE_MAX / 255) * g1_from_remset_card;
 
-  STATIC_ASSERT(BitsPerByte == 8);
+  static_assert(BitsPerByte == 8);
   static const size_t WordAlreadyScanned = (SIZE_MAX / 255) * g1_card_already_scanned;
 
   G1CardTable(MemRegion whole_heap): CardTable(whole_heap), _listener() {

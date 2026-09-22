@@ -22,6 +22,7 @@
  *
  */
 
+#include "code/codeCache.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -72,6 +73,9 @@ void ShenandoahOldGC::op_final_mark() {
     if (VerifyAfterGC) {
       Universe::verify();
     }
+
+    // Arm nmethods/stack for concurrent processing
+    CodeCache::arm_all_nmethods();
 
     {
       ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::final_mark_propagate_gc_state);
@@ -138,7 +142,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // return from here with weak roots in progress. This is not a valid gc state
   // for any young collections (or allocation failures) that interrupt the old
   // collection.
-  entry_final_roots();
+  vmop_entry_final_roots();
 
   // After concurrent old marking finishes, we reclaim immediate garbage. Further, we may also want to expand OLD in order
   // to make room for anticipated promotions and/or for mixed evacuations.  Mixed evacuations are especially likely to

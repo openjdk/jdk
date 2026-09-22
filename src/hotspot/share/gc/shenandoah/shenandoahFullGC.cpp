@@ -25,6 +25,7 @@
  */
 
 
+#include "code/codeCache.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/continuationGCSupport.hpp"
 #include "gc/shared/fullGCForwarding.inline.hpp"
@@ -127,6 +128,9 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   // Regardless if progress was made, we record that we completed a "successful" full GC.
   _generation->heuristics()->record_success_full();
   heap->shenandoah_policy()->record_success_full();
+
+  // Leaving full GC, we need to flip barriers back to idle.
+  CodeCache::arm_all_nmethods();
 
   {
     ShenandoahTimingsTracker timing(ShenandoahPhaseTimings::full_gc_propagate_gc_state);

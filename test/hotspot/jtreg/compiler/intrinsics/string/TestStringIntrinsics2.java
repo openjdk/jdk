@@ -686,7 +686,7 @@ public class TestStringIntrinsics2 {
                        "TestOther.asmStringEqualsConst(\"\", \"\")");
 
             // check length 0 optimization
-            assertTrue(asmStringEquals("", ""),
+            assertTrue(asmStringEquals(new String(""), new String("")),
                        "TestOther.asmStringEquals(\"\", \"\")");
 
             // check first character optimization

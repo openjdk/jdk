@@ -46,7 +46,7 @@ constexpr static int num_throttled_events = sizeof(throttleble_events) / sizeof(
 // Throttler-by-ID lookup table
 class ThrottlerLookupTable {
   static constexpr int max = (int)LAST_EVENT_ID;
-  STATIC_ASSERT(max < 1000); // should this ever get unreasonably large, we rethink this table.
+  static_assert(max < 1000); // should this ever get unreasonably large, we rethink this table.
   JfrEventThrottler* _table[max];
 public:
   ThrottlerLookupTable() { memset(_table, 0, sizeof(_table)); }

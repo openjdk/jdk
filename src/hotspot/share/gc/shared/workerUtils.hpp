@@ -78,7 +78,7 @@ public:
 // subtasks will be identified by integer indices, usually elements of an
 // enumeration type.
 
-class SubTasksDone: public CHeapObj<mtInternal> {
+class SubTasksDone: public CHeapObj<mtGC> {
   Atomic<bool>* _tasks;
   uint _num_tasks;
 
@@ -124,7 +124,7 @@ public:
 // partitioned tasks (like striding in the parallel remembered
 // set scanning).
 
-class SequentialSubTasksDone : public CHeapObj<mtInternal> {
+class SequentialSubTasksDone : public CHeapObj<mtGC> {
 
   uint _num_tasks;     // Total number of tasks available.
   Atomic<uint> _num_claimed;    // Number of tasks claimed.

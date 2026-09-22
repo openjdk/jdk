@@ -467,7 +467,7 @@ void Compile::disconnect_useless_nodes(Unique_Node_List& useful, Unique_Node_Lis
     }
     if (n->outcnt() == 1 && n->has_special_unique_user()) {
       assert(useful.member(n->unique_out()), "do not push a useless node");
-      worklist.push(n->unique_out());
+      PhaseIterGVN::add_users_to_worklist(n, worklist);
     }
     if (n->outcnt() == 0) {
       worklist.push(n);

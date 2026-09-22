@@ -169,7 +169,7 @@ public:
   // The alignment used for spaces in young gen and old gen
   constexpr static size_t default_space_alignment() {
     constexpr size_t alignment = 64 * K * HeapWordSize;
-    static_assert(is_power_of_2(alignment), "inv");
+    static_assert(is_power_of_2(alignment));
     return alignment;
   }
 

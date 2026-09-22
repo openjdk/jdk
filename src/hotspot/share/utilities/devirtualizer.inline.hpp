@@ -85,7 +85,7 @@ ALWAYSINLINE
 static typename EnableIf<!std::is_same<Receiver, Base>::value, void>::type
 call_do_oop(void (Receiver::*)(T*), void (Base::*)(T*), OopClosureType* closure, T* p) {
   // Sanity check
-  STATIC_ASSERT((!std::is_same<OopClosureType, OopIterateClosure>::value));
+  static_assert(!std::is_same<OopClosureType, OopIterateClosure>::value);
   closure->OopClosureType::do_oop(p);
 }
 

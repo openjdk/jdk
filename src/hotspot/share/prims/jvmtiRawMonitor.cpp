@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ JvmtiRawMonitor::JvmtiRawMonitor(const char* name) : _owner(nullptr),
                                                      _magic(JVMTI_RM_MAGIC),
                                                      _name(nullptr) {
 #ifdef ASSERT
-  _name = strcpy(NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtInternal), name);
+  _name = strcpy(NEW_C_HEAP_ARRAY(char, strlen(name) + 1, mtServiceability), name);
 #endif
 }
 

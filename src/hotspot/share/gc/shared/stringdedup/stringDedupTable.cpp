@@ -523,7 +523,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
   assert(value != nullptr, "precondition");
   assert(TypeArrayKlass::cast(value->klass())->element_type() == T_BYTE, "precondition");
   int length = value->length();
-  static_assert(sizeof(jchar) == 2 * sizeof(jbyte), "invariant");
+  static_assert(sizeof(jchar) == 2 * sizeof(jbyte));
   assert(((length & 1) == 0) || CompactStrings, "invariant");
   if ((length & 1) == 0) {
     // If the length of the byte array is even, then the value array could be

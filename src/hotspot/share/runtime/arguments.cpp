@@ -1008,7 +1008,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   } else {
     *bldarray = REALLOC_C_HEAP_ARRAY(*bldarray, new_count, mtArguments);
   }
-  (*bldarray)[*count] = os::strdup_check_oom(arg);
+  (*bldarray)[*count] = os::strdup_check_oom(arg, mtArguments);
   *count = new_count;
 }
 
@@ -1091,7 +1091,7 @@ void Arguments::set_jvm_flags_file(const char *value) {
   if (_jvm_flags_file != nullptr) {
     os::free(_jvm_flags_file);
   }
-  _jvm_flags_file = os::strdup_check_oom(value);
+  _jvm_flags_file = os::strdup_check_oom(value, mtArguments);
 }
 
 void Arguments::print_jvm_flags_on(outputStream* st) {
@@ -1528,7 +1528,7 @@ void Arguments::process_java_launcher_argument(const char* launcher, void* extra
   if (_sun_java_launcher != _default_java_launcher) {
     os::free(const_cast<char*>(_sun_java_launcher));
   }
-  _sun_java_launcher = os::strdup_check_oom(launcher);
+  _sun_java_launcher = os::strdup_check_oom(launcher, mtArguments);
 }
 
 bool Arguments::created_by_java_launcher() {
@@ -2329,7 +2329,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
       // Deprecated flag to redirect GC output to a file. -Xloggc:<filename>
       log_warning(gc)("-Xloggc is deprecated. Will use -Xlog:gc:%s instead.", tail);
       _legacyGCLogging.lastFlag = 2;
-      _legacyGCLogging.file = os::strdup_check_oom(tail);
+      _legacyGCLogging.file = os::strdup_check_oom(tail, mtArguments);
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -2520,7 +2520,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, JVMFlagOrigin
 }
 
 void Arguments::set_ext_dirs(char *value) {
-  _ext_dirs = os::strdup_check_oom(value);
+  _ext_dirs = os::strdup_check_oom(value, mtArguments);
 }
 
 void Arguments::add_patch_mod_prefix(const char* module_name, const char* path) {
@@ -2719,7 +2719,7 @@ class ScopedVMInitArgs : public StackObj {
     if (_vm_options_file_arg != nullptr) {
       os::free(_vm_options_file_arg);
     }
-    _vm_options_file_arg = os::strdup_check_oom(vm_options_file_arg);
+    _vm_options_file_arg = os::strdup_check_oom(vm_options_file_arg, mtArguments);
   }
 
   ~ScopedVMInitArgs() {

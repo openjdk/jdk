@@ -53,7 +53,7 @@
 #define SEGV_BNDERR_value 3
 
 #if defined(SEGV_BNDERR)
-STATIC_ASSERT(SEGV_BNDERR == SEGV_BNDERR_value);
+static_assert(SEGV_BNDERR == SEGV_BNDERR_value);
 #else
 #define SEGV_BNDERR SEGV_BNDERR_value
 #endif

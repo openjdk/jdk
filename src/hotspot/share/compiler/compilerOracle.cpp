@@ -255,7 +255,7 @@ template<> void TypedMethodOptionMatcher::set_value(bool value) {
 }
 
 template<> void TypedMethodOptionMatcher::set_value(ccstr value) {
-  _u.ccstr_value = (ccstr)os::strdup_check_oom(value);
+  _u.ccstr_value = (ccstr)os::strdup_check_oom(value, mtCompiler);
 }
 
 void TypedMethodOptionMatcher::print() {

@@ -376,6 +376,9 @@ inline frame frame::sender(RegisterMap* map) const {
     StackWatermarkSet::on_iteration(map->thread(), result);
   }
 
+  // Calling frame::id() is currently not supported for heap frames.
+  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+
   return result;
 }
 

@@ -7703,6 +7703,36 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
     }
 
     /**
+     * Creates a synchronizing method handle that executes the given {@code body}
+     * handle while synchronizing on a lock object passed as the first argument.
+     * <p>
+     * The returned method handle behaves similar to the following notional code:
+     * {@snippet lang="java" :
+     * R adapter(Object lock, A... a) {
+     *     synchronized (lock) {
+     *         return body.invokeExact(a...);
+     *     }
+     * }
+     * }
+     * <p>
+     * The returned method handle will throw an {@link IdentityException} if the object
+     * passed as the lock object is not an {@link java.util.Objects#hasIdentity(Object) identity object}.
+     * <p>
+     * <em>Note:</em> The resulting adapter is never a {@linkplain MethodHandle#asVarargsCollector
+     * variable-arity method handle}, even if the original body method handle was.
+     *
+     * @param body body of the synchronized block
+     * @return the synchronizing method handle
+     * @throws NullPointerException if {@code body} is {@code null}.
+     *
+     * @since 28
+     */
+    public static MethodHandle synchronize(MethodHandle body) {
+        Objects.requireNonNull(body);
+        return MethodHandleImpl.makeSynchronize(body.asFixedArity());
+    }
+
+    /**
      * Adapts a target var handle by pre-processing incoming and outgoing values using a pair of filter functions.
      * <p>
      * When calling e.g. {@link VarHandle#set(Object...)} on the resulting var handle, the incoming value (of type {@code T}, where

@@ -41,7 +41,7 @@
 #ifndef CGROUP2_SUPER_MAGIC
 #  define CGROUP2_SUPER_MAGIC 0x63677270
 #else
-  STATIC_ASSERT(CGROUP2_SUPER_MAGIC == 0x63677270);
+  static_assert(CGROUP2_SUPER_MAGIC == 0x63677270);
 #endif
 
 // controller names have to match the *_IDX indices

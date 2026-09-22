@@ -358,6 +358,6 @@ public:
 // to fill in certain parts of that memory.  The allocated memory is then
 // treated as referring to an oopDesc.  For that to be valid, the oopDesc
 // class must have a trivial default constructor (C++14 3.8/1).
-static_assert(std::is_trivially_default_constructible<oopDesc>::value, "required");
+static_assert(std::is_trivially_default_constructible<oopDesc>::value);
 
 #endif // SHARE_OOPS_OOP_HPP
