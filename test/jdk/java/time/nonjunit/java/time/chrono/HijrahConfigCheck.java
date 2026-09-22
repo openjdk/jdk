@@ -67,7 +67,7 @@ public class HijrahConfigCheck {
         } catch (DateTimeException ex) {
             Throwable cause = ex.getCause();
             if (!(cause instanceof IllegalArgumentException) ||
-                    !"Invalid month length in year: 1448".equals(cause.getMessage())) {
+                    !"Invalid month length in year: 1448, length: 28".equals(cause.getMessage())) {
                 throw new RuntimeException("Unexpected exception for invalid Hijrah configuration", ex);
             }
         }

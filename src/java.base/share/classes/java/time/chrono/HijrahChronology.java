@@ -945,7 +945,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
                 epochMonths[epochMonth++] = epochDay;
 
                 if (length < 29 || length > 32) {
-                    throw new IllegalArgumentException("Invalid month length in year: " + year);
+                    throw new IllegalArgumentException("Invalid month length in year: " + year + ", length: " + length);
                 }
                 epochDay += length;
                 minMonthLength = Math.min(minMonthLength, length);
