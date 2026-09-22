@@ -1409,7 +1409,6 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // (In places where this matters, e.g. when reserving the heap, we take care of passing segment-aligned
   // addresses on Aix. See, e.g., ReservedHeapSpace.
   char* const addr = (char*) shmat(shmid, requested_addr, 0);
-  const int errno_shmat = errno;
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
