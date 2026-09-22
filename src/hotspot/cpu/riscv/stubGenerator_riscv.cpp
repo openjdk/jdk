@@ -4238,9 +4238,17 @@ class StubGenerator: public StubCodeGenerator {
   */
   address generate_vectorizedMismatch()
   {
+    StubId stub_id = StubId::stubgen_vectorizedMismatch_id;
+    int entry_count = StubInfo::entry_count(stub_id);
+    assert(entry_count == 1, "sanity check");
+    address start = load_archive_data(stub_id);
+    if (start != nullptr) {
+      return start;
+    }
     __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "vectorizedMismatch");
-    address entry = __ pc();
+    StubCodeMark mark(this, stub_id);
+
+    start = __ pc();
 
     const Register result = c_rarg0;
     const Register obja   = c_rarg0;
@@ -4256,7 +4264,10 @@ class StubGenerator: public StubCodeGenerator {
     __ leave();
     __ ret();
 
-    return entry;
+    // record the stub entry and end
+    store_archive_data(stub_id, start, __ pc());
+
+    return start;
   }
 
 #ifdef COMPILER2
