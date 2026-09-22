@@ -1437,9 +1437,15 @@ void CompilationPolicy::method_back_branch_event(const methodHandle& mh, const m
   if (is_compilation_enabled()) {
     CompLevel next_osr_level = loop_event(imh, level, THREAD);
     CompLevel max_osr_level = (CompLevel)imh->highest_osr_comp_level();
-    // At the very least compile the OSR version
+    // Try to compile the OSR version, so that it can be switched at this back branch.
+    // If OSR version compilation is not possible, compile normal entry version instead,
+    // and hope the loop-bearing method would be re-entered soon.
     if (!CompileBroker::compilation_is_in_queue(imh) && (next_osr_level != level)) {
-      compile(imh, bci, next_osr_level, CHECK);
+      if (!imh->is_not_osr_compilable(next_osr_level)) {
+        compile(imh, bci, next_osr_level, CHECK);
+      } else if (comp_level(imh()) < next_osr_level) {
+        compile(imh, InvocationEntryBci, next_osr_level, CHECK);
+      }
     }
 
     // Use loop event as an opportunity to also check if there's been
