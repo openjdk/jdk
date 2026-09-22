@@ -936,7 +936,7 @@ class MacroAssembler: public Assembler {
   unsigned int Clear_Array_Const(long cnt, Register base);
   unsigned int Clear_Array_Const_Big(long cnt, Register base_pointer_arg, Register odd_tmp_reg);
   void fill_words(Register base, Register cnt, Register value, Register tmp,
-                  VectorRegister Vtmp, bool is_large);
+                  bool is_large, VectorRegister Vtmp = Z_V0);
   unsigned int CopyRawMemory_AlignedDisjoint(Register src_reg, Register dst_reg,
                                              Register cnt_reg,
                                              Register tmp1_reg, Register tmp2_reg);

@@ -5012,7 +5012,7 @@ unsigned int MacroAssembler::Clear_Array_Const_Big(long cnt, Register base_point
 }
 
 // Fill words with a non-zero value.
-void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp, VectorRegister Vtmp, bool is_large) {
+void MacroAssembler::fill_words(Register base, Register cnt, Register value, Register tmp,  bool is_large, VectorRegister Vtmp) {
   assert_different_registers(base, cnt, value, tmp);
   BLOCK_COMMENT("fill_words {");
 
@@ -5039,7 +5039,14 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value, Reg
     return;
   }
 
-  // Control reaches here when cnt > 8
+#ifdef ASSERT
+  // Sanity, This implementation will fail only if cnt < 4
+  NearLabel correct_cnt;
+  compare64_and_branch(cnt, 0x4, Assembler::bcondNotLow, correct_cnt);
+  stop("cnt must be atleast 4");
+  bind(correct_cnt);
+#endif //ASSERT
+
   NearLabel loop, skip;
 
   z_vlvgp(Vtmp, value, value);      // populate the Vector register with value
