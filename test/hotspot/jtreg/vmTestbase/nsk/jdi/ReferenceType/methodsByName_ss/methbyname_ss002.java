@@ -57,8 +57,6 @@ public class methbyname_ss002 {
     static ArgumentHandler      argsHandler;
     private static Log  logHandler;
 
-
-
     public static void main (String argv[]) {
         int result = run(argv,System.out);
         if (result != 0) {
@@ -103,11 +101,7 @@ public class methbyname_ss002 {
 
         Debugee debugee;
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         print_log_on_verbose("==> nsk/jdi/ReferenceType/methodsByName_ss/methbyname_ss002 test LOG:");
         print_log_on_verbose("==> test checks methodsByName(String name, String signature) method of ReferenceType ");

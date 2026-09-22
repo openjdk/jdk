@@ -30,9 +30,9 @@
 #include "c1/c1_Runtime1.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "ci/ciArray.hpp"
-#include "ci/ciInlineKlass.hpp"
 #include "ci/ciObjArrayKlass.hpp"
 #include "ci/ciTypeArrayKlass.hpp"
+#include "ci/ciValueKlass.hpp"
 #include "gc/shared/c1/barrierSetC1.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -54,7 +54,7 @@ void LIRItem::load_byte_item() {
     // make sure that it is a byte register
     assert(!value()->type()->is_float() && !value()->type()->is_double(),
            "can't load floats in byte register");
-    LIR_Opr reg = _gen->rlock_byte(T_BYTE);
+    LIR_Opr reg = _gen->rlock_byte();
     __ move(res, reg);
 
     _result = reg;
@@ -87,7 +87,7 @@ LIR_Opr LIRGenerator::syncTempOpr()     { return FrameMap::rax_opr; }
 LIR_Opr LIRGenerator::getThreadTemp()   { return LIR_OprFact::illegalOpr; }
 
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::rax_opr;          break;
@@ -104,7 +104,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   LIR_Opr reg = new_register(T_INT);
   set_vreg_flag(reg, LIRGenerator::byte_reg);
   return reg;
@@ -288,7 +288,7 @@ void LIRGenerator::do_MonitorEnter(MonitorEnter* x) {
     info_for_exception = state_for(x);
   }
 
-  CodeStub* throw_ie_stub = x->maybe_inlinetype() ?
+  CodeStub* throw_ie_stub = x->maybe_valuetype() ?
       new SimpleExceptionStub(StubId::c1_throw_identity_exception_id,
                               obj.result(), state_for(x))
     : nullptr;
@@ -674,7 +674,7 @@ LIR_Opr LIRGenerator::atomic_cmpxchg(BasicType type, LIR_Opr addr, LIRItem& cmp_
 }
 
 LIR_Opr LIRGenerator::atomic_xchg(BasicType type, LIR_Opr addr, LIRItem& value) {
-  bool is_oop = is_reference_type(type);
+  DEBUG_ONLY(bool is_oop = is_reference_type(type);)
   LIR_Opr result = new_register(type);
   value.load_item();
   // Because we want a 2-arg form of xchg and xadd
@@ -920,7 +920,6 @@ void LIRGenerator::do_update_CRC32(Intrinsic* x) {
   assert(UseCRC32Intrinsics, "need AVX and CLMUL instructions support");
   // Make all state_for calls early since they can emit code
   LIR_Opr result = rlock_result(x);
-  int flags = 0;
   switch (x->id()) {
     case vmIntrinsics::_updateCRC32: {
       LIRItem crc(x->argument_at(0), this);
@@ -1139,7 +1138,7 @@ void LIRGenerator::do_NewInstance(NewInstance* x) {
   CodeEmitInfo* info = state_for(x, x->needs_state_before() ? x->state_before() : x->state());
   LIR_Opr reg = result_register_for(x->type());
   new_instance(reg, x->klass(), x->is_unresolved(),
-               !x->is_unresolved() && x->klass()->is_inlinetype(),
+               !x->is_unresolved() && x->klass()->is_value_klass(),
                FrameMap::rcx_oop_opr,
                FrameMap::rdi_oop_opr,
                FrameMap::rsi_oop_opr,

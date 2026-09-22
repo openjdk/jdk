@@ -418,7 +418,12 @@ ALWAYSINLINE frame frame::sender(RegisterMap* map) const {
   }
 
   // Calling frame::id() is currently not supported for heap frames.
-  assert(result._on_heap || this->_on_heap || result.is_older(this->id()), "Must be");
+  // For an async map, registers are sampled at an arbitrary point,
+  // which means that the apparent sender may not be a valid frame
+  // suitable for walking. Because of this we only assert if the
+  // sender frame is older than this frame for non-async maps.
+  assert(result._on_heap || this->_on_heap || map->is_async() ||
+         result.is_older(this->id()), "Must be");
 
   return result;
 }
@@ -448,7 +453,7 @@ ALWAYSINLINE frame frame::sender_raw(RegisterMap* map) const {
   return frame(sender_sp(), link(), sender_pc());
 }
 
-// Check for a method with scalarized inline type arguments that needs
+// Check for a method with scalarized value type arguments that needs
 // a stack repair and return the repaired sender stack pointer.
 ALWAYSINLINE intptr_t* frame::repair_sender_sp(intptr_t* sender_sp, intptr_t** saved_fp_addr) const {
   nmethod* nm = _cb->as_nmethod_or_null();
@@ -510,8 +515,8 @@ ALWAYSINLINE frame frame::sender_for_compiled_frame(RegisterMap* map) const {
 #ifdef COMPILER1
     nmethod* nm = _cb->as_nmethod_or_null();
     if (nm != nullptr && nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
-        pc() < nm->verified_inline_entry_point()) {
-      // The VEP and VIEP(RO) of C1-compiled methods call buffer_inline_args_xxx
+        pc() < nm->verified_value_entry_point()) {
+      // The VEP and VIEP(RO) of C1-compiled methods call buffer_value_args_xxx
       // before doing any argument shuffling, so we need to scan the oops
       // as the caller passes them.
       c1_buffering = true;

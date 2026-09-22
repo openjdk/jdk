@@ -221,8 +221,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box, Register t1,
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
-    orr(t1_mark, t1_mark, markWord::unlocked_value);
-    eor(t3_t, t1_mark, markWord::unlocked_value);
+    orr(t1_mark, t1_mark, markWord::lock_neutral_value);
+    eor(t3_t, t1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_acquire);
     br(Assembler::NE, slow_path);
 
@@ -383,7 +383,7 @@ void C2_MacroAssembler::fast_unlock(Register obj, Register box, Register t1,
 
     // Try to unlock. Transition lock bits 0b00 => 0b01
     assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
-    orr(t3_t, t1_mark, markWord::unlocked_value);
+    orr(t3_t, t1_mark, markWord::lock_neutral_value);
     cmpxchg(/*addr*/ obj, /*expected*/ t1_mark, /*new*/ t3_t, Assembler::xword, memory_order_release);
     br(Assembler::EQ, unlocked);
 

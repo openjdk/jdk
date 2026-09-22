@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,27 +26,31 @@
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
- * @run testng/othervm/native -Xcheck:jni -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
+ * @run junit/othervm/native -Xcheck:jni -XX:+IgnoreUnrecognizedVMOptions -XX:-VerifyDependencies
  *   --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17
  *   TestDowncallStack
  */
 
-import org.testng.annotations.Test;
 
 import java.lang.foreign.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestDowncallStack extends TestDowncallBase {
 
     static {
         System.loadLibrary("TestDowncallStack");
     }
 
-    @Test(dataProvider="functions", dataProviderClass=CallGeneratorHelper.class)
+    @ParameterizedTest
+    @MethodSource("functions")
     public void testDowncallStack(int count, String fName, CallGeneratorHelper.Ret ret,
                                   List<CallGeneratorHelper.ParamType> paramTypes,
                                   List<CallGeneratorHelper.StructFieldType> fields) throws Throwable {
@@ -64,7 +68,7 @@ public class TestDowncallStack extends TestDowncallBase {
                 checks.forEach(c -> c.accept(res));
                 if (needsScope) {
                     // check that return struct has indeed been allocated in the native scope
-                    assertEquals(((MemorySegment)res).scope(), arena.scope());
+                    assertEquals(arena.scope(), ((MemorySegment)res).scope());
                 }
             }
         }

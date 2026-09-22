@@ -71,6 +71,14 @@ compiler/escapeAnalysis/TestBCEscapeAnalyzerOverflow.java 8387392 windows-aarch6
 
 compiler/vectorapi/VectorStoreMaskIdentityTest.java 8388281 generic-all
 
+compiler/vectorapi/AllBitsSetVectorMatchRuleTest.java 8391806 generic-aarch64
+
+compiler/vectorapi/VectorMaskCompareNotTest.java 8392087 windows-x64
+
+compiler/vectorapi/VectorExpressionFuzzer.java 8337281 linux-aarch64,macosx-aarch64
+
+compiler/igvn/TestIncorrectDeadPathTypeNode.java 8392354 generic-all
+
 #############################################################################
 
 # :hotspot_gc
@@ -87,11 +95,7 @@ gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#generational 83869
 gc/stress/jfr/TestStressAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#generational 8386964 generic-all
 gc/stress/jfr/TestStressBigAllocationGCEventsWithShenandoah.java#default 8386964 generic-all
-gc/TestGCALotAtAllSafepoints.java#Parallel 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Serial 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#G1 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Z 8390661 generic-all
-gc/TestGCALotAtAllSafepoints.java#Shenandoah 8390661 generic-all
+gc/metaspace/TestMetaspaceFirstGC.java 8392597 generic-all
 
 #############################################################################
 
@@ -105,9 +109,7 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
-runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
 runtime/NMT/VirtualAllocCommitMerge.java 8309698 linux-s390x
-runtime/Thread/TestAlwaysPreTouchStacks.java 8383372 macosx-aarch64
 
 applications/jcstress/copy.java 8229852 linux-all
 
@@ -120,7 +122,7 @@ containers/docker/ShareTmpDir.java 8390823 linux-all
 # :hotspot_serviceability
 
 # 8239062 and 8270326 only affects macosx-x64,macosx-aarch64
-serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 generic-all
+serviceability/sa/sadebugd/DebugdConnectTest.java 8239062,8270326 macosx-x64,macosx-aarch64
 serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/vthread/GetThreadStateMountedTest/GetThreadStateMountedTest.java 8318090,8318729 generic-all
@@ -142,6 +144,8 @@ serviceability/jvmti/stress/StackTrace/NotSuspended/GetStackTraceNotSuspendedStr
 
 serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-all
 
+serviceability/jvmti/RedefineClasses/RedefineRunningMethodsWithBacktrace.java 8390812 windows-x64
+
 #############################################################################
 
 # :hotspot_misc
@@ -158,11 +162,6 @@ serviceability/jvmti/GetModulesInfo/JvmtiGetAllModulesTest.java 8385679 generic-
 vmTestbase/gc/gctests/FinalizeTest04/FinalizeTest04.java 8284234 generic-all
 vmTestbase/gc/gctests/PhantomReference/phantom001/phantom001.java 8284234 generic-all
 
-vmTestbase/metaspace/gc/firstGC_10m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_50m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_99m/TestDescription.java 8208250 generic-all
-vmTestbase/metaspace/gc/firstGC_default/TestDescription.java 8208250 generic-all
-
 vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8073470 linux-all
 vmTestbase/nsk/jvmti/scenarios/events/EM02/em02t006/TestDescription.java 8372206 generic-all
 vmTestbase/nsk/jvmti/InterruptThread/intrpthrd003/TestDescription.java 8288911 macosx-all
@@ -176,6 +175,9 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 8308367 generic-all
+vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 generic-all
 vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8324756 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all

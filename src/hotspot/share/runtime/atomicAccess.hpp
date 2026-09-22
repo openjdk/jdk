@@ -532,7 +532,7 @@ struct AtomicAccess::LoadImpl<
   T operator()(T const volatile* dest) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
-    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    static_assert(sizeof(T) == sizeof(Decayed));
     Decayed result = PlatformOp()(reinterpret_cast<Decayed const volatile*>(dest));
     return Translator::recover(result);
   }
@@ -548,7 +548,7 @@ template<size_t byte_size>
 struct AtomicAccess::PlatformLoad {
   template<typename T>
   T operator()(T const volatile* dest) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
+    static_assert(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
     return *dest;
   }
 };
@@ -601,7 +601,7 @@ struct AtomicAccess::StoreImpl<
   void operator()(T volatile* dest, T new_value) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
-    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    static_assert(sizeof(T) == sizeof(Decayed));
     PlatformOp()(reinterpret_cast<Decayed volatile*>(dest),
                  Translator::decay(new_value));
   }
@@ -618,21 +618,21 @@ struct AtomicAccess::PlatformStore {
   template<typename T>
   void operator()(T volatile* dest,
                   T new_value) const {
-    STATIC_ASSERT(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
+    static_assert(sizeof(T) <= sizeof(void*)); // wide atomics need specialization
     (void)const_cast<T&>(*dest = new_value);
   }
 };
 
 template<typename D>
 inline void AtomicAccess::inc(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  static_assert(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   AtomicAccess::add(dest, I(1), order);
 }
 
 template<typename D>
 inline void AtomicAccess::dec(D volatile* dest, atomic_memory_order order) {
-  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
+  static_assert(std::is_pointer<D>::value || std::is_integral<D>::value);
   using I = std::conditional_t<std::is_pointer<D>::value, ptrdiff_t, D>;
   // Assumes two's complement integer representation.
   AtomicAccess::add(dest, I(-1), order);
@@ -640,15 +640,15 @@ inline void AtomicAccess::dec(D volatile* dest, atomic_memory_order order) {
 
 template<typename D, typename I>
 inline D AtomicAccess::sub(D volatile* dest, I sub_value, atomic_memory_order order) {
-  STATIC_ASSERT(std::is_pointer<D>::value || std::is_integral<D>::value);
-  STATIC_ASSERT(std::is_integral<I>::value);
+  static_assert(std::is_pointer<D>::value || std::is_integral<D>::value);
+  static_assert(std::is_integral<I>::value);
   // If D is a pointer type, use [u]intptr_t as the addend type,
   // matching signedness of I.  Otherwise, use D as the addend type.
   using PI = std::conditional_t<std::is_signed<I>::value, intptr_t, uintptr_t>;
   using AddendType = std::conditional_t<std::is_pointer<D>::value, PI, D>;
   // Only allow conversions that can't change the value.
-  STATIC_ASSERT(std::is_signed<I>::value == std::is_signed<AddendType>::value);
-  STATIC_ASSERT(sizeof(I) <= sizeof(AddendType));
+  static_assert(std::is_signed<I>::value == std::is_signed<AddendType>::value);
+  static_assert(sizeof(I) <= sizeof(AddendType));
   AddendType addend = sub_value;
   // Assumes two's complement integer representation.
   return AtomicAccess::add(dest, -addend, order);
@@ -709,8 +709,8 @@ public:
   static inline D fetch_then_add(D volatile* dest,
                           I add_value,
                           atomic_memory_order order) {
-    STATIC_ASSERT(byte_size == sizeof(I));
-    STATIC_ASSERT(byte_size == sizeof(D));
+    static_assert(byte_size == sizeof(I));
+    static_assert(byte_size == sizeof(D));
 
     D old_value;
     D new_value;
@@ -943,8 +943,8 @@ struct AtomicAccess::AddImpl<
   P*, I,
   typename EnableIf<std::is_integral<I>::value && (sizeof(I) <= sizeof(P*))>::type>
 {
-  STATIC_ASSERT(sizeof(intptr_t) == sizeof(P*));
-  STATIC_ASSERT(sizeof(uintptr_t) == sizeof(P*));
+  static_assert(sizeof(intptr_t) == sizeof(P*));
+  static_assert(sizeof(uintptr_t) == sizeof(P*));
 
   // Type of the scaled addend.  An integral type of the same size as a
   // pointer, and the same signedness as I.
@@ -1071,7 +1071,7 @@ struct AtomicAccess::CmpxchgImpl<
                atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
-    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    static_assert(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
       cmpxchg(reinterpret_cast<Decayed volatile*>(dest),
               Translator::decay(compare_value),
@@ -1085,7 +1085,7 @@ inline T AtomicAccess::cmpxchg_using_helper(Fn fn,
                                             T volatile* dest,
                                             T compare_value,
                                             T exchange_value) {
-  STATIC_ASSERT(sizeof(Type) == sizeof(T));
+  static_assert(sizeof(Type) == sizeof(T));
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
        reinterpret_cast<Type volatile*>(dest),
@@ -1111,7 +1111,7 @@ inline T AtomicAccess::CmpxchgByteUsingInt::operator()(T volatile* dest,
                                                        T compare_value,
                                                        T exchange_value,
                                                        atomic_memory_order order) const {
-  STATIC_ASSERT(sizeof(T) == sizeof(uint8_t));
+  static_assert(sizeof(T) == sizeof(uint8_t));
   uint8_t canon_exchange_value = exchange_value;
   uint8_t canon_compare_value = compare_value;
   volatile uint32_t* aligned_dest
@@ -1191,7 +1191,7 @@ struct AtomicAccess::XchgImpl<
   T operator()(T volatile* dest, T exchange_value, atomic_memory_order order) const {
     typedef PrimitiveConversions::Translate<T> Translator;
     typedef typename Translator::Decayed Decayed;
-    STATIC_ASSERT(sizeof(T) == sizeof(Decayed));
+    static_assert(sizeof(T) == sizeof(Decayed));
     return Translator::recover(
       xchg(reinterpret_cast<Decayed volatile*>(dest),
            Translator::decay(exchange_value),
@@ -1203,7 +1203,7 @@ template<typename Type, typename Fn, typename T>
 inline T AtomicAccess::xchg_using_helper(Fn fn,
                                          T volatile* dest,
                                          T exchange_value) {
-  STATIC_ASSERT(sizeof(Type) == sizeof(T));
+  static_assert(sizeof(Type) == sizeof(T));
   // Notice the swapped order of arguments. Change when/if stubs are rewritten.
   return PrimitiveConversions::cast<T>(
     fn(PrimitiveConversions::cast<Type>(exchange_value),
@@ -1220,7 +1220,7 @@ template<typename T>
 inline T AtomicAccess::XchgUsingCmpxchg<byte_size>::operator()(T volatile* dest,
                                                                T exchange_value,
                                                                atomic_memory_order order) const {
-  STATIC_ASSERT(byte_size == sizeof(T));
+  static_assert(byte_size == sizeof(T));
 
   T old_value;
   do {
