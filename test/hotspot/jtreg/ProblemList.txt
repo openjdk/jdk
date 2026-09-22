@@ -202,8 +202,6 @@ vmTestbase/nsk/monitoring/ThreadMXBean/findMonitorDeadlockedThreads/find006/Test
 
 #############################################################################
 
-# Value Objects failures start here:
-
 compiler/codegen/TestRedundantLea.java#Spill                            8361089 generic-all
 
 compiler/vectorapi/TestVectorReassociations.java 8388927 generic-all

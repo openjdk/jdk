@@ -3294,7 +3294,7 @@ bool PhiNode::can_be_replaced_by(PhaseGVN* phase, const PhiNode* other) const {
   const TypePtr* at = adr_type();
   return type() == Type::MEMORY && other->type() == Type::MEMORY && at != TypePtr::BOTTOM &&
          other->adr_type() == TypePtr::BOTTOM && has_same_inputs_as(other) &&
-         // Normally, the alias class corresponding to 'at' not being in '_exclude_idx' does not
+         // Normally, the alias class corresponding to 'at' not being in '_excluded_idx' does not
          // imply that it is contained in the bottom memory Phi 'other'. However, since 'this' and
          // 'other' have the same inputs, either both represent the memory state of 'at', or
          // neither does, both cases allow replacing 'this' with 'other'.

@@ -296,8 +296,8 @@ private:
 
 public:
   /* Give as many `Node*` as you want in the `nn` pack:
-   * TupleNode::make(tf, input1)
-   * TupleNode::make(tf, input1, input2, input3, input4)
+   * TupleNode::make(tf, adr_type, input1)
+   * TupleNode::make(tf, adr_type, input1, input2, input3, input4)
    */
   template <typename... NN>
   static TupleNode* make(const TypeTuple* tf, const TypePtr* adr_type, NN... nn) {
