@@ -130,12 +130,6 @@ void AOTCacheAccess::set_aot_code_region_size(size_t sz) {
 bool AOTCacheAccess::map_aot_code_region(ReservedSpace rs) {
   FileMapInfo* static_mapinfo = FileMapInfo::current_info();
   assert(UseSharedSpaces && static_mapinfo != nullptr, "must be");
-  uintptr_t base = SharedBaseAddress;
-  uintptr_t low_bound  = p2u(MetaspaceObj::aot_metaspace_base());
-  uintptr_t high_bound = p2u(MetaspaceObj::aot_metaspace_top());
-  if (base > low_bound || low_bound > high_bound) { // paranoid check
-    return false;
-  }
   verify_narrow_ptr = VerifyAOTCode;
   return static_mapinfo->map_aot_code_region(rs);
 }

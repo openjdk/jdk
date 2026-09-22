@@ -1590,6 +1590,8 @@ void AOTMetaspace::initialize_runtime_shared_and_meta_spaces() {
     // Register CDS memory region with LSan.
     LSAN_REGISTER_ROOT_REGION(cds_base, cds_end - cds_base);
     set_aot_metaspace_range(cds_base, static_mapinfo->mapped_end(), cds_end);
+    guarantee(SharedBaseAddress == p2u(MetaspaceObj::aot_metaspace_base()), "must be");
+    guarantee(p2u(MetaspaceObj::aot_metaspace_base()) <= p2u(MetaspaceObj::aot_metaspace_top()), "must be");
     _relocation_delta = static_mapinfo->relocation_delta();
     _requested_base_address = static_mapinfo->requested_base_address();
     if (dynamic_mapped) {
