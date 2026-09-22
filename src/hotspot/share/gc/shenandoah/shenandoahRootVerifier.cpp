@@ -39,6 +39,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/stackWatermarkSet.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "utilities/debug.hpp"
@@ -54,7 +55,7 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   if (_active_count.load_relaxed() > 0) {
     // Already active, nothing to do.
     assert(_heap->gc_state() == 0, "Must be");
-    int active = _active_count.fetch_then_add(1);
+    int active = _active_count.fetch_then_add(1, memory_order_relaxed);
     assert(active > 0, "Must have active");
     return;
   }
@@ -69,7 +70,7 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
   }
 
   // From this moment on, level-1 resetter is active.
-  bool succ = _active_count.compare_set(0, 1);
+  bool succ = _active_count.compare_set(0, 1, memory_order_relaxed);
   assert(succ, "Must succeed");
 
   // Clear state to deactivate barriers. Indicate that state has changed
@@ -80,7 +81,7 @@ ShenandoahGCStateResetter::ShenandoahGCStateResetter() :
 }
 
 ShenandoahGCStateResetter::~ShenandoahGCStateResetter() {
-  if (_active_count.add_then_fetch(-1) > 0) {
+  if (_active_count.add_then_fetch(-1, memory_order_relaxed) > 0) {
     // Nested, nothing to do.
     return;
   }
