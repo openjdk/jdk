@@ -26,6 +26,7 @@
 #ifndef OS_CPU_LINUX_RISCV_ATOMICACCESS_LINUX_RISCV_HPP
 #define OS_CPU_LINUX_RISCV_ATOMICACCESS_LINUX_RISCV_HPP
 
+#include "atomic_riscv.hpp"
 #include "runtime/vm_version.hpp"
 
 // Implementation of class AtomicAccess
@@ -39,10 +40,40 @@
 #define FULL_COMPILER_ATOMIC_SUPPORT
 #endif
 
+// Call one of the generated stubs from C++. This uses the C calling
+// convention, but explicitly lists the registers used by the stubs so the
+// compiler does not save all caller-saved registers around the call.
+//
+// This is intentionally not a template. See GCC bug 33661: explicit local
+// register variables can be ignored in template functions.
+inline uint64_t bare_riscv_atomic_fastcall(address stub, volatile void* ptr,
+                                            uint64_t compare_value,
+                                            uint64_t exchange_value) {
+  register uint64_t reg0 __asm__("a0") = (uint64_t)ptr;
+  register uint64_t reg1 __asm__("a1") = compare_value;
+  register uint64_t reg2 __asm__("a2") = exchange_value;
+  register uint64_t reg3 __asm__("a3") = (uint64_t)stub;
+  register uint64_t result __asm__("a0");
+  asm volatile("jalr ra, 0(%1)"
+               : "=r"(result), "+r"(reg3), "+r"(reg2), "+r"(reg1)
+               : "0"(reg0)
+               : "ra", "t0", "t1", "t2", "t3", "t4", "a4", "a5", "a6",
+                 "memory");
+  return result;
+}
+
+template <typename F, typename T>
+inline T riscv_atomic_fastcall(F stub, volatile T* dest, T compare_value,
+                               T exchange_value) {
+  return (T)bare_riscv_atomic_fastcall(CAST_FROM_FN_PTR(address, stub), dest,
+                                       (uint64_t)compare_value,
+                                       (uint64_t)exchange_value);
+}
+
 template<size_t byte_size>
 struct AtomicAccess::PlatformAdd {
   template<typename D, typename I>
-  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
 
 #ifndef FULL_COMPILER_ATOMIC_SUPPORT
     // If we add add and fetch for sub word and are using older compiler
@@ -50,107 +81,84 @@ struct AtomicAccess::PlatformAdd {
     STATIC_ASSERT(byte_size >= 4);
 #endif
 
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
+    switch (order) {
+      case memory_order_relaxed:
+        return __atomic_fetch_add(dest, add_value, __ATOMIC_RELAXED);
+      default:
+        // The release part of the RMW orders preceding accesses, so only the
+        // trailing full barrier required by memory_order_conservative remains.
+        D result = __atomic_fetch_add(dest, add_value, __ATOMIC_ACQ_REL);
+        FULL_MEM_BARRIER;
+        return result;
     }
-
-    D res = __atomic_add_fetch(dest, add_value, __ATOMIC_RELAXED);
-
-    if (order != memory_order_relaxed) {
-      FULL_MEM_BARRIER;
-    }
-    return res;
   }
 
   template<typename D, typename I>
-  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_then_fetch(dest, add_value, order) - add_value;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return fetch_then_add(dest, add_value, order) + add_value;
   }
 };
 
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
 template<>
 template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((unused)),
+inline T AtomicAccess::PlatformCmpxchg<1>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
   STATIC_ASSERT(1 == sizeof(T));
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-
-  uint32_t volatile* aligned_dst = (uint32_t volatile*)(((uintptr_t)dest) & (~((uintptr_t)0x3)));
-  int shift = 8 * (((uintptr_t)dest) - ((uintptr_t)aligned_dst)); // 0, 8, 16, 24
-
-  uint64_t mask = 0xfful << shift; // 0x00000000..FF..
-  uint64_t remask = ~mask;         // 0xFFFFFFFF..00..
-
-  uint64_t w_cv = ((uint64_t)(unsigned char)compare_value) << shift;  // widen to 64-bit 0x00000000..CC..
-  uint64_t w_ev = ((uint64_t)(unsigned char)exchange_value) << shift; // widen to 64-bit 0x00000000..EE..
-
-  uint64_t old_value;
-  uint64_t rc_temp;
-
-  __asm__ __volatile__ (
-    "1:  lr.w      %0, %2      \n\t"
-    "    and       %1, %0, %5  \n\t" // ignore unrelated bytes and widen to 64-bit 0x00000000..XX..
-    "    bne       %1, %3, 2f  \n\t" // compare 64-bit w_cv
-    "    and       %1, %0, %6  \n\t" // remove old byte
-    "    or        %1, %1, %4  \n\t" // add new byte
-    "    sc.w      %1, %1, %2  \n\t" // store new word
-    "    bnez      %1, 1b      \n\t"
-    "2:                        \n\t"
-    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*aligned_dst)
-    : /*%3*/"r" (w_cv), /*%4*/"r" (w_ev), /*%5*/"r" (mask), /*%6*/"r" (remask)
-    : "memory" );
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-
-  return (T)((old_value & mask) >> shift);
+  riscv_atomic_stub_t stub;
+  switch (order) {
+    case memory_order_relaxed:
+      stub = riscv_atomic_cmpxchg_1_relaxed_impl; break;
+    default:
+      stub = riscv_atomic_cmpxchg_1_impl; break;
+    }
+  return riscv_atomic_fastcall(stub, dest, compare_value, exchange_value);
 }
-#endif
 
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-// The implementation of `__atomic_compare_exchange` lacks sign extensions
-// in GCC 13.2 and lower when using with 32-bit unsigned integers on RV64,
-// so we should implement it manually.
-// GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114130.
-// See also JDK-8326936.
 template<>
 template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
+inline T AtomicAccess::PlatformCmpxchg<4>::operator()(T volatile* dest,
                                                       T compare_value,
                                                       T exchange_value,
                                                       atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
-
-  int32_t old_value;
-  uint64_t rc_temp;
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+  riscv_atomic_stub_t stub;
+  switch (order) {
+    case memory_order_relaxed:
+      stub = riscv_atomic_cmpxchg_4_relaxed_impl; break;
+    case memory_order_release:
+      stub = riscv_atomic_cmpxchg_4_release_impl; break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      stub = riscv_atomic_cmpxchg_4_seq_cst_impl; break;
+    default:
+      stub = riscv_atomic_cmpxchg_4_impl; break;
   }
-
-  __asm__ __volatile__ (
-    "1:  lr.w      %0, %2      \n\t"
-    "    bne       %0, %3, 2f  \n\t"
-    "    sc.w      %1, %4, %2  \n\t"
-    "    bnez      %1, 1b      \n\t"
-    "2:                        \n\t"
-    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*dest)
-    : /*%3*/"r" ((int64_t)(int32_t)compare_value), /*%4*/"r" (exchange_value)
-    : "memory" );
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return (T)old_value;
+  return riscv_atomic_fastcall(stub, dest, compare_value, exchange_value);
 }
-#endif
+
+template<>
+template<typename T>
+inline T AtomicAccess::PlatformCmpxchg<8>::operator()(T volatile* dest,
+                                                      T compare_value,
+                                                      T exchange_value,
+                                                      atomic_memory_order order) const {
+  STATIC_ASSERT(8 == sizeof(T));
+  riscv_atomic_stub_t stub;
+  switch (order) {
+    case memory_order_relaxed:
+      stub = riscv_atomic_cmpxchg_8_relaxed_impl; break;
+    case memory_order_release:
+      stub = riscv_atomic_cmpxchg_8_release_impl; break;
+    case memory_order_acq_rel:
+    case memory_order_seq_cst:
+      stub = riscv_atomic_cmpxchg_8_seq_cst_impl; break;
+    default:
+      stub = riscv_atomic_cmpxchg_8_impl; break;
+  }
+  return riscv_atomic_fastcall(stub, dest, compare_value, exchange_value);
+}
 
 template<>
 struct AtomicAccess::PlatformXchg<1> : AtomicAccess::XchgUsingCmpxchg<1> {};
@@ -169,42 +177,16 @@ inline T AtomicAccess::PlatformXchg<byte_size>::operator()(T volatile* dest,
   STATIC_ASSERT(byte_size == sizeof(T));
   STATIC_ASSERT(byte_size == 4 || byte_size == 8);
 
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
+  switch (order) {
+    case memory_order_relaxed:
+      return __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
+    default:
+      // The release part of the RMW orders preceding accesses, so only the
+      // trailing full barrier required by memory_order_conservative remains.
+      T result = __atomic_exchange_n(dest, exchange_value, __ATOMIC_ACQ_REL);
+      FULL_MEM_BARRIER;
+      return result;
   }
-
-  T res = __atomic_exchange_n(dest, exchange_value, __ATOMIC_RELAXED);
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return res;
-}
-
-// __attribute__((unused)) on dest is to get rid of spurious GCC warnings.
-template<size_t byte_size>
-template<typename T>
-inline T AtomicAccess::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attribute__((unused)),
-                                                              T compare_value,
-                                                              T exchange_value,
-                                                              atomic_memory_order order) const {
-
-#ifndef FULL_COMPILER_ATOMIC_SUPPORT
-  STATIC_ASSERT(byte_size > 4);
-#endif
-
-  STATIC_ASSERT(byte_size == sizeof(T));
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-
-  __atomic_compare_exchange(dest, &compare_value, &exchange_value, /* weak */ false,
-                            __ATOMIC_RELAXED, __ATOMIC_RELAXED);
-
-  if (order != memory_order_relaxed) {
-    FULL_MEM_BARRIER;
-  }
-  return compare_value;
 }
 
 template<size_t byte_size>
