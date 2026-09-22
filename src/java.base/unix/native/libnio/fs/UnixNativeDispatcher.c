@@ -1226,21 +1226,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwuid(JNIEnv* env, jclass this, jint uid
 
         errno = 0;
         res = getpwuid_r((uid_t)uid, &pwent, pwbuf, (size_t)buflen, &p);
-
+#ifdef _AIX
+        if (res < 0)
+            res = errno;
+#endif
         retry = 0;
         if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
             /* not found or error */
-            int err = (res > 0) ? res : (res < 0 ? errno : 0);
-            if (err == EINTR) {
+            if (res == EINTR) {
                 /* interrupted - repeat the call */
                 retry = 1;
-            } else if (err == ERANGE) {
+            } else if (res == ERANGE) {
                 /* insufficient buffer size so need larger buffer */
                 buflen += ENT_BUF_SIZE;
                 retry = 1;
             } else {
                 /* lookup by uid: not found is treated as an error */
-                throwUnixException(env, err != 0 ? err : ENOENT);
+                throwUnixException(env, res != 0 ? res : ENOENT);
             }
         } else {
             jsize len = strlen(p->pw_name);
@@ -1283,21 +1285,23 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrgid(JNIEnv* env, jclass this, jint gid
 
         errno = 0;
         res = getgrgid_r((gid_t)gid, &grent, grbuf, (size_t)buflen, &g);
-
+#ifdef _AIX
+        if (res < 0)
+            res = errno;
+#endif
         retry = 0;
         if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
             /* not found or error */
-            int err = (res > 0) ? res : (res < 0 ? errno : 0);
-            if (err == EINTR) {
+            if (res == EINTR) {
                 /* interrupted - repeat the call */
                 retry = 1;
-            } else if (err == ERANGE) {
+            } else if (res == ERANGE) {
                 /* insufficient buffer size so need larger buffer */
                 buflen += ENT_BUF_SIZE;
                 retry = 1;
             } else {
                 /* lookup by gid: not found is treated as an error */
-                throwUnixException(env, err != 0 ? err : ENOENT);
+                throwUnixException(env, res != 0 ? res : ENOENT);
             }
         } else {
             jsize len = strlen(g->gr_name);
@@ -1341,23 +1345,25 @@ Java_sun_nio_fs_UnixNativeDispatcher_getpwnam0(JNIEnv* env, jclass this,
 
         errno = 0;
         res = getpwnam_r(name, &pwent, pwbuf, (size_t)buflen, &p);
-
+#ifdef _AIX
+        if (res < 0)
+            res = errno;
+#endif
         retry = 0;
         if (res != 0 || p == NULL || p->pw_name == NULL || *(p->pw_name) == '\0') {
             /* not found or error */
-            int err = (res > 0) ? res : (res < 0 ? errno : 0);
-            if (err == EINTR) {
+            if (res == EINTR) {
                 /* interrupted - repeat the call */
                 retry = 1;
-            } else if (err == ERANGE) {
+            } else if (res == ERANGE) {
                 /* insufficient buffer size so need larger buffer */
                 buflen += ENT_BUF_SIZE;
                 retry = 1;
-            } else if (err != 0 && err != ENOENT && err != ESRCH &&
-                       err != EBADF && err != EPERM) {
-                throwUnixException(env, err);
+            } else if (res != 0 && res != ENOENT && res != ESRCH &&
+                       res != EBADF && res != EPERM) {
+                throwUnixException(env, res);
             }
-            /* err == 0 or a tolerated not-found code: leave uid == -1 */
+            /* res == 0 or a tolerated not-found code: leave uid == -1 */
         } else {
             uid = p->pw_uid;
         }
@@ -1396,23 +1402,25 @@ Java_sun_nio_fs_UnixNativeDispatcher_getgrnam0(JNIEnv* env, jclass this,
 
         errno = 0;
         res = getgrnam_r(name, &grent, grbuf, (size_t)buflen, &g);
-
+#ifdef _AIX
+        if (res < 0)
+            res = errno;
+#endif
         retry = 0;
         if (res != 0 || g == NULL || g->gr_name == NULL || *(g->gr_name) == '\0') {
             /* not found or error */
-            int err = (res > 0) ? res : (res < 0 ? errno : 0);
-            if (err == EINTR) {
+            if (res == EINTR) {
                 /* interrupted - repeat the call */
                 retry = 1;
-            } else if (err == ERANGE) {
+            } else if (res == ERANGE) {
                 /* insufficient buffer size so need larger buffer */
                 buflen += ENT_BUF_SIZE;
                 retry = 1;
-            } else if (err != 0 && err != ENOENT && err != ESRCH &&
-                       err != EBADF && err != EPERM) {
-                throwUnixException(env, err);
+            } else if (res != 0 && res != ENOENT && res != ESRCH &&
+                       res != EBADF && res != EPERM) {
+                throwUnixException(env, res);
             }
-            /* err == 0 or a tolerated not-found code: leave gid == -1 */
+            /* res == 0 or a tolerated not-found code: leave gid == -1 */
         } else {
             gid = g->gr_gid;
         }
