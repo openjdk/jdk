@@ -2184,9 +2184,13 @@ void ShenandoahHeap::propagate_gc_state_to_all_threads() {
   assert(ShenandoahSafepoint::is_at_shenandoah_safepoint(), "Must be at Shenandoah safepoint");
   if (_gc_state_changed) {
     // If we are only marking old, we do not need to process young pointers
-    ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
-      is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
-    );
+#ifdef ASSERT
+    bool actual = ShenandoahBarrierSet::satb_mark_queue_set().get_filter_out_young();
+    bool expected = is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress();
+    assert(actual == expected,
+           "SATB young filter consistency, actual=%s, expected=%s",
+           BOOL_TO_STR(actual), BOOL_TO_STR(expected));
+#endif
     ShenandoahGCStatePropagatorHandshakeClosure propagator(_gc_state.raw_value());
     Threads::threads_do(&propagator);
     _gc_state_changed = false;
@@ -2248,6 +2252,11 @@ bool ShenandoahHeap::is_prepare_for_old_mark_in_progress() const {
 }
 
 void ShenandoahHeap::manage_satb_barrier(bool active) {
+  // If we are only marking old, we do not need to process young pointers
+  ShenandoahBarrierSet::satb_mark_queue_set().set_filter_out_young(
+    is_concurrent_old_mark_in_progress() && !is_concurrent_young_mark_in_progress()
+  );
+
   if (is_concurrent_mark_in_progress()) {
     // Ignore request to deactivate barrier while concurrent mark is in progress.
     // Do not attempt to re-activate the barrier if it is already active.

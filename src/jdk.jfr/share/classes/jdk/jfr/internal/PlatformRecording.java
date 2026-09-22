@@ -249,7 +249,8 @@ public final class PlatformRecording implements AutoCloseable {
             this.startTime = startTime;
             setState(RecordingState.DELAYED);
             startTask = createStartTask();
-            recorder.getTimer().schedule(startTask, startTime.toEpochMilli());
+            long epochMilli = startTime.toEpochMilli();
+            recorder.getTimer().schedule(startTask, new Date(epochMilli));
         }
     }
 

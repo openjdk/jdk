@@ -22,6 +22,7 @@
  *
  */
 
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/javaStackTraceClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -747,18 +748,27 @@ void InterpreterRuntime::resolve_get_put(Bytecodes::Code bytecode, int field_ind
   Bytecodes::Code get_code = (Bytecodes::Code)0;
   Bytecodes::Code put_code = (Bytecodes::Code)0;
   if (uninitialized_static && (info.is_strict_static_unset() || strict_static_final)) {
-    // During <clinit>, closely track the state of strict statics.
-    // 1. if we are reading an uninitialized strict static, throw
-    // 2. if we are writing one, clear the "unset" flag
-    //
-    // Note: If we were handling an attempted write of a null to a
-    // null-restricted strict static, we would NOT clear the "unset"
-    // flag.
-    assert(klass->is_being_initialized(), "else should have thrown");
-    assert(klass->is_reentrant_initialization(THREAD),
-      "<clinit> must be running in current thread");
-    klass->notify_strict_static_access(info.index(), is_put, CHECK);
-    assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    if (init_mode == ClassInitMode::dont_init) {
+      // During an AOT assembly run, the VM resolves constant pool field references
+      // and may come across a strict static field whose holder is in the linked,
+      // not initialized, state. Strict static field access should not be notified
+      // in this case since this isn't a true access. Leave it uncached until
+      // an actual runtime access.
+      precond(CDSConfig::is_dumping_archive());
+    } else {
+      // During <clinit>, closely track the state of strict statics.
+      // 1. if we are reading an uninitialized strict static, throw
+      // 2. if we are writing one, clear the "unset" flag
+      //
+      // Note: If we were handling an attempted write of a null to a
+      // null-restricted strict static, we would NOT clear the "unset"
+      // flag.
+      assert(klass->is_being_initialized(), "else should have thrown");
+      assert(klass->is_reentrant_initialization(THREAD),
+        "<clinit> must be running in current thread");
+      klass->notify_strict_static_access(info.index(), is_put, CHECK);
+      assert(!info.is_strict_static_unset(), "after initialization, no unset flags");
+    }
   } else if (!uninitialized_static || VM_Version::supports_fast_class_init_checks()) {
     get_code = ((is_static) ? Bytecodes::_getstatic : Bytecodes::_getfield);
     if ((is_put && !has_initialized_final_update) || !info.access_flags().is_final()) {

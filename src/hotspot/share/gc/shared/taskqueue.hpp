@@ -554,7 +554,7 @@ uint GenericTaskQueueSet<T, MT>::tasks() const {
 }
 
 // When to terminate from the termination protocol.
-class TerminatorTerminator: public CHeapObj<mtInternal> {
+class TerminatorTerminator: public CHeapObj<mtGC> {
 public:
   virtual bool should_exit_termination(size_t tasks) = 0;
   virtual bool can_work() const {

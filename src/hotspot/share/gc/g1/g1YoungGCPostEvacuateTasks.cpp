@@ -358,7 +358,7 @@ public:
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
     const uint total_chunks = _num_chunks_per_region * _num_evac_failed_regions;
-    const uint start_chunk_idx = worker_id * total_chunks / total_workers;
+    const uint start_chunk_idx = (uint)((uint64_t)worker_id * total_chunks / total_workers);
 
     for (uint i = 0; i < total_chunks; i++) {
       const uint chunk_idx = (start_chunk_idx + i) % total_chunks;
