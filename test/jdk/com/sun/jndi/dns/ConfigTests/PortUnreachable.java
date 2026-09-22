@@ -47,7 +47,7 @@ public class PortUnreachable extends DNSTestBase {
     private static final int PORT = 25;
 
     // Threshold in ms for elapsed time of request failed. Normally, it should
-    // be very quick, but consider to different platform and test machine
+    // be very quick, but considering different platform and test machine
     // performance, here we define 2000 ms as threshold which acceptable for
     // this test. Capped at 9s to stay well below the full exponential backoff
     // retry cycle (1 + 2 + 4 + 8 = 15s), ensuring we verify that ICMP Port
