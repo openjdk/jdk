@@ -90,14 +90,14 @@ getValueInRegistry(HKEY hKey,
     int len;
 
     ret = RegGetValueW(hKey, NULL, (WCHAR*) keyNames[keyIndex],
-                       RRF_RT_REG_SZ | RRF_NOEXPAND, NULL, buf, bufLengthPtr);
+                       RRF_RT_REG_SZ, NULL, buf, bufLengthPtr);
     if (ret == ERROR_SUCCESS) {
         return ret;
     }
 
     valSize = sizeof(val);
     ret = RegGetValueA(hKey, NULL, (char*) keyNames[keyIndex+1],
-                       RRF_RT_REG_SZ | RRF_NOEXPAND, NULL, val, &valSize);
+                       RRF_RT_REG_SZ, NULL, val, &valSize);
     if (ret != ERROR_SUCCESS) {
         return ret;
     }
@@ -204,7 +204,7 @@ static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
 
         bufSize = MAX_ZONE_CHAR;
         ret = RegGetValueA(hKey, NULL, "TimeZoneKeyName",
-                           RRF_RT_REG_SZ | RRF_NOEXPAND, NULL, (LPBYTE) winZoneName, &bufSize);
+                           RRF_RT_REG_SZ, NULL, (LPBYTE) winZoneName, &bufSize);
         if (ret != ERROR_SUCCESS) {
             goto err;
         }

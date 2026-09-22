@@ -164,9 +164,7 @@ static int loadConfig(JNIEnv *env, char *sl, char *ns) {
     dwLen = sizeof(result);
     ret = RegGetValueA(HKEY_LOCAL_MACHINE,
                        "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters",
-                       "SearchList",
-                       RRF_RT_REG_SZ | RRF_NOEXPAND,
-                       NULL, result, &dwLen);
+                       "SearchList", RRF_RT_REG_SZ, NULL, result, &dwLen);
     if (ret == ERROR_SUCCESS) {
         if (strlen(result) > 0) {
             strappend(sl, result);

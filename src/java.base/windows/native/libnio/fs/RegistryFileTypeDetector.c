@@ -42,8 +42,7 @@ Java_sun_nio_fs_RegistryFileTypeDetector_queryStringValue(JNIEnv* env, jclass th
     DWORD size = sizeof(data);
 
     if (RegGetValueW(HKEY_CLASSES_ROOT, lpSubKey, lpValueName,
-                     RRF_RT_REG_SZ | RRF_NOEXPAND,
-                     NULL, data, &size) == ERROR_SUCCESS) {
+                     RRF_RT_REG_SZ, NULL, data, &size) == ERROR_SUCCESS) {
         jsize len = (jsize)wcslen(data);
         return (*env)->NewString(env, (const jchar*)data, len);
     }
