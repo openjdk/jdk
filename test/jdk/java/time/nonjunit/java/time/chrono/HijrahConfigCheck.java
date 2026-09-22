@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -31,6 +32,7 @@ import java.util.Locale;
 
 public class HijrahConfigCheck {
     private static final String CALTYPE = "islamic-test";
+    private static final String INVALID_CALTYPE = "islamic-invalid";
 
     public static void main(String... args) {
         // Availability test
@@ -56,6 +58,18 @@ public class HijrahConfigCheck {
         if (!iso.toInstant(ZoneOffset.UTC).equals(hijrah.toInstant(ZoneOffset.UTC))) {
             throw new RuntimeException("test Hijrah date is incorrect. LocalDate: " +
                     iso + ", test date: " + hijrah);
+        }
+
+        // Invalid configuration test
+        try {
+            Chronology.of(INVALID_CALTYPE).date(1448, 1, 1);
+            throw new RuntimeException("Invalid Hijrah configuration did not throw an exception");
+        } catch (DateTimeException ex) {
+            Throwable cause = ex.getCause();
+            if (!(cause instanceof IllegalArgumentException) ||
+                    !"Invalid month length in year: 1448".equals(cause.getMessage())) {
+                throw new RuntimeException("Unexpected exception for invalid Hijrah configuration", ex);
+            }
         }
     }
 }

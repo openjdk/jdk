@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -945,7 +945,7 @@ public final class HijrahChronology extends AbstractChronology implements Serial
                 epochMonths[epochMonth++] = epochDay;
 
                 if (length < 29 || length > 32) {
-                    throw new IllegalArgumentException("Invalid month length in year: " + minYear);
+                    throw new IllegalArgumentException("Invalid month length in year: " + year);
                 }
                 epochDay += length;
                 minMonthLength = Math.min(minMonthLength, length);
