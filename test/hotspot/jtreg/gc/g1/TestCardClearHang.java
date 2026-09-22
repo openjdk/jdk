@@ -24,10 +24,11 @@
 package gc.g1;
 
 /*
- * @test TestCardClearHang.java#256-128
+ * @test id=256-128
  * @bug 8392820
  * @requires vm.gc.G1
- * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:G1CardSizeInBytes
+ * @requires vm.bits != "32"
+ * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:GCCardSizeInBytes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -36,10 +37,11 @@ package gc.g1;
  */
 
 /*
- * @test TestCardClearHang.java#512-128
+ * @test id=512-128
  * @bug 8392820
  * @requires vm.gc.G1
- * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:G1CardSizeInBytes
+ * @requires vm.bits != "32"
+ * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:GCCardSizeInBytes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -48,10 +50,11 @@ package gc.g1;
  */
 
 /*
- * @test TestCardClearHang.java#512-256
+ * @test id=512-256
  * @bug 8392820
  * @requires vm.gc.G1
- * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:G1CardSizeInBytes
+ * @requires vm.bits != "32"
+ * @summary Make sure that G1 does not hang with some combinations of -XX:G1HeapRegionSize and -XX:GCCardSizeInBytes
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
