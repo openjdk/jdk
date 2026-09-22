@@ -4624,7 +4624,7 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
     // When Zalasr has elided a preceding volatile store's trailing StoreLoad
     // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
     // the required RCsc ordering on this failure path.
-    if (UseZalasr && ((acquire & Assembler::aq) != 0)) {
+    if (UseZalasr && (acquire == Assembler::aq)) {
       lw_aq(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
@@ -4708,7 +4708,7 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
     // When Zalasr has elided a preceding volatile store's trailing StoreLoad
     // fence, make the pre-check acquiring so s*.rl -> lw.aq still provides
     // the required RCsc ordering on this failure path.
-    if (UseZalasr && ((acquire & Assembler::aq) != 0)) {
+    if (UseZalasr && (acquire == Assembler::aq)) {
       lw_aq(result, aligned_addr);
     } else {
       lw(result, aligned_addr);
