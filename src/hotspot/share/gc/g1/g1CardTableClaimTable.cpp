@@ -65,7 +65,7 @@ void G1CardTableClaimTable::heap_region_iterate_from_worker_offset(G1HeapRegionC
   // Every worker will actually look at all regions, skipping over regions that
   // are completed.
   const size_t max_num_regions = _max_reserved_regions;
-  const uint start_index = (uint)(worker_id * max_num_regions / max_workers);
+  const uint start_index = (uint)((uint64_t)worker_id * max_num_regions / max_workers);
 
   for (uint count = 0; count < max_num_regions; count++) {
     const uint index = (start_index + count) % max_num_regions;

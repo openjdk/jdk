@@ -1085,7 +1085,7 @@ LIR_Opr LIRGenerator::rlock_result(Value x, BasicType type) {
   switch (type) {
   case T_BYTE:
   case T_BOOLEAN:
-    reg = rlock_byte(type);
+    reg = rlock_byte();
     break;
   default:
     reg = rlock(x);
@@ -1201,7 +1201,7 @@ void LIRGenerator::do_Return(Return* x) {
   if (x->type()->is_void()) {
     __ return_op(LIR_OprFact::illegalOpr);
   } else {
-    LIR_Opr reg = result_register_for(x->type(), /*callee=*/true);
+    LIR_Opr reg = result_register_for(x->type());
     LIRItem result(x->result(), this);
 
     result.load_item_force(reg);
@@ -4140,7 +4140,7 @@ void LIRGenerator::do_MemBar(MemBar* x) {
 }
 
 LIR_Opr LIRGenerator::mask_boolean(LIR_Opr array, LIR_Opr value, CodeEmitInfo*& null_check_info) {
-  LIR_Opr value_fixed = rlock_byte(T_BYTE);
+  LIR_Opr value_fixed = rlock_byte();
   if (two_operand_lir_form) {
     __ move(value, value_fixed);
     __ logical_and(value_fixed, LIR_OprFact::intConst(1), value_fixed);
