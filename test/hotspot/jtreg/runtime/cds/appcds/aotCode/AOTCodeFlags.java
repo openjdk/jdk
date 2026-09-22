@@ -34,7 +34,7 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags
@@ -51,7 +51,7 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Z
@@ -68,7 +68,7 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Shenandoah
@@ -85,7 +85,7 @@
  * @comment Both C1 and C2 JIT compilers are required because the test verifies
  *          compiler's runtime blobs generation.
  * @library /test/lib /test/setup_aot
- * @build AOTCodeFlags
+ * @build AOTCodeFlags AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
  *                 AOTCodeSimpleTestApp
  * @run driver/timeout=1500 AOTCodeFlags Parallel

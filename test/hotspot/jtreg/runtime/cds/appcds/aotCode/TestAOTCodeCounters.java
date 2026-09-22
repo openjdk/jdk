@@ -24,40 +24,48 @@
 
 /**
  * @test
- * @summary Sanity test AOTCodeCache AOT code counters
+ * @summary Test AOT code invocation counters in C2 compiled AOT code
  * @requires vm.cds.supports.aot.code.caching
- * @requires vm.compiler1.enabled & vm.compiler2.enabled
- * @comment Both C1 and C2 JIT compilers are required because the test verifies
+ * @requires vm.compiler2.enabled
+ * @comment C2 JIT compiler is required because the test verifies
  *          compiled code generation.
  * @library /test/lib /test/setup_aot
- * @build TestAOTCodeCounters JavacBenchApp
+ * @build ${test.main.class} AOTCodeSimpleTestApp
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar app.jar
- *                 JavacBenchApp
- *                 JavacBenchApp$ClassFile
- *                 JavacBenchApp$FileManager
- *                 JavacBenchApp$SourceFile
+ *                 AOTCodeSimpleTestApp
  * @run driver/timeout=480 ${test.main.class}
  */
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import jdk.test.lib.cds.CDSAppTester;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.Utils;
 
 public class TestAOTCodeCounters {
+    private static final Random RANDOM = Utils.getRandomInstance();
 
-    // Too long to test both, default and opposite, values.
-    // Only test opposite.
+    // Test default (Base=100. Scale=1.) and limit values.
+    static String randomBase  = String.valueOf(RANDOM.nextDouble(1.0, 10000.0));
+    static String randomScale = String.valueOf(RANDOM.nextDouble(0.001, 1000.0));
     static String[][] flags = {
         {"-XX:AOTCodeInvokeBase=1.0",     "-XX:AOTCodeInvokeScale=0.001"},
+        {"-XX:AOTCodeInvokeBase=1.0",     "-XX:AOTCodeInvokeScale=1.0"},
         {"-XX:AOTCodeInvokeBase=1.0",     "-XX:AOTCodeInvokeScale=1000.0"},
+        {"-XX:AOTCodeInvokeBase=100.0",   "-XX:AOTCodeInvokeScale=0.001"},
+        {"-XX:AOTCodeInvokeBase=100.0",   "-XX:AOTCodeInvokeScale=1.0"},
+        {"-XX:AOTCodeInvokeBase=100.0",   "-XX:AOTCodeInvokeScale=1000.0"},
         {"-XX:AOTCodeInvokeBase=10000.0", "-XX:AOTCodeInvokeScale=0.001"},
-        {"-XX:AOTCodeInvokeBase=10000.0", "-XX:AOTCodeInvokeScale=1000.0"}
+        {"-XX:AOTCodeInvokeBase=10000.0", "-XX:AOTCodeInvokeScale=1.0"},
+        {"-XX:AOTCodeInvokeBase=10000.0", "-XX:AOTCodeInvokeScale=1000.0"},
+        {"-XX:AOTCodeInvokeBase=" + randomBase, "-XX:AOTCodeInvokeScale=" + randomScale}
     };
 
     public static void main(String... args) throws Exception {
+        System.out.println("Random: -XX:AOTCodeInvokeBase=" + randomBase + " -XX:AOTCodeInvokeScale=" + randomScale);
         for (int i = 0; i < flags.length; i++) {
           Tester t = new Tester(flags[i]);
           t.run(new String[] {"AOT", "--two-step-training"});
@@ -80,8 +88,13 @@ public class TestAOTCodeCounters {
         @Override
         public String[] vmArgs(RunMode runMode) {
             List<String> args = new ArrayList<String>();
+
+            // Ensure compilations are finished before the JVM exits.
+            args.add("-Xbatch");
+
             // Add flags for logs
             args.addAll(List.of("-Xlog:aot+codecache+init=debug",
+                                "-Xlog:aot+codecache+nmethod=info",
                                 "-Xlog:aot+codecache+exit=debug"));
             // Add diagnostic flags
             args.addAll(List.of("-XX:+UnlockDiagnosticVMOptions",
@@ -94,15 +107,17 @@ public class TestAOTCodeCounters {
 
         @Override
         public String[] appCommandLine(RunMode runMode) {
-            return new String[] { "JavacBenchApp", "1" };
+            return new String[] { "AOTCodeSimpleTestApp" };
         }
 
         @Override
         public void checkExecution(OutputAnalyzer out, RunMode runMode) throws Exception {
             if (runMode == RunMode.ASSEMBLY) {
                 out.shouldMatch("aot,codecache,exit.*\\s+AOT code cache size: [1-9]\\d+ bytes");
+                out.shouldMatch("Nmethod:\\s+total=[1-9][0-9]+");
             } else if (runMode == RunMode.PRODUCTION) {
                 out.shouldMatch("aot,codecache,init.*\\s+Loaded [1-9]\\d+ AOT code entries from AOT Code Cache");
+                out.shouldMatch("Loaded nmethod .*");
             }
         }
     }
