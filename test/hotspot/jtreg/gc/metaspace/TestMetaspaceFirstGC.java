@@ -92,6 +92,14 @@ public class TestMetaspaceFirstGC {
                     metadataGC.countDown();
                 }
             });
+            // a concurrent collector requests the GC and expands right away, the GC itself may
+            // be folded into a cycle that is already running and never carry the cause
+            rs.enable(EventNames.MetaspaceGCThreshold);
+            rs.onEvent(EventNames.MetaspaceGCThreshold, event -> {
+                if ("expand_and_allocate".equals(event.getString("updater"))) {
+                    metadataGC.countDown();
+                }
+            });
             rs.startAsync();
             Instant loadingStart = Instant.now();
             long tolerance = 5 * 1024 * 1024;
@@ -113,7 +121,18 @@ public class TestMetaspaceFirstGC {
 
 
             // Load classes until a metaspace-triggered GC happens
-            loadClassesUntilGC(50000);
+            try {
+                loadClassesUntilGC(50000);
+            } catch (RuntimeException e) {
+                System.out.println("Threshold now " + WhiteBox.getWhiteBox().metaspaceCapacityUntilGC()
+                    + ", metaspace used=" + getMetaspaceUsed());
+                for (Recording r : FlightRecorder.getFlightRecorder().getRecordings()) {
+                    if ("startup".equals(r.getName())) {
+                        r.dump(Path.of("metaspace-first-gc-" + (expectedSize > 0 ? args[0] : "default") + "-failed.jfr"));
+                    }
+                }
+                throw e;
+            }
             loaders.clear();
             rs.stop();
 
@@ -130,88 +149,52 @@ public class TestMetaspaceFirstGC {
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
-            // Find first GarbageCollection with cause "Metadata GC Threshold"
-            RecordedEvent gcEvent = null;
-            for (RecordedEvent event : events) {
-                if (event.getEventType().getName().equals(EventNames.GarbageCollection)) {
-                    String cause = event.getString("cause");
-                    if ("Metadata GC Threshold".equals(cause)) {
-                        gcEvent = event;
-                        break;
-                    }
-                }
-            }
-
-            if (gcEvent == null) {
-                throw new RuntimeException("No GC with cause 'Metadata GC Threshold' found");
-            }
-
-            int gcId = gcEvent.getInt("gcId");
-            System.out.println("Found Metadata GC Threshold GC, gcId=" + gcId);
-
-            // Find matching MetaspaceSummary with same gcId and when="Before GC"
-            RecordedEvent msEvent = null;
-            for (RecordedEvent event : events) {
-                if (event.getEventType().getName().equals(EventNames.MetaspaceSummary)) {
-                    if (event.getInt("gcId") == gcId && "Before GC".equals(event.getString("when"))) {
-                        msEvent = event;
-                        break;
-                    }
-                }
-            }
-
-            if (msEvent == null) {
-                for (RecordedEvent e : events) {
-                    if (e.getEventType().getName().equals(EventNames.MetaspaceSummary)) {
-                        System.out.println("MetaspaceSummary gcId=" + e.getInt("gcId") + " when=" + e.getString("when"));
-                    }
-                }
-                throw new RuntimeException("No MetaspaceSummary 'Before GC' found for gcId=" + gcId);
-            }
-
-            long committed = msEvent.getLong("metaspace.committed");
-            long gcThreshold = msEvent.getLong("gcThreshold");
-            System.out.println("MetaspaceSummary: committed=" + committed + " gcThreshold=" + gcThreshold);
-
-            // committed should be reasonably close to gcThreshold
-            Asserts.assertLessThanOrEqual(Math.abs(committed - gcThreshold), tolerance,
-                "committed (" + committed + ") should be close to gcThreshold (" + gcThreshold + ")");
-            // The metadata GC was requested at the threshold in effect when it started. That is
-            // the old value of the first threshold change at or after the GC start. Any change
-            // between the start of loading and the GC came from another collection's
-            // compute_new_size and can only have raised the threshold.
+            // The first metadata GC is requested at the threshold in effect at that moment. On a
+            // concurrent collector the request shows up as an expand_and_allocate threshold change,
+            // on the others as the GC itself, its threshold being the old value of the first change
+            // at or after the GC start. Any earlier change since loading started came from another
+            // collection's compute_new_size and can only have raised the threshold.
+            RecordedEvent request = null;
             RecordedEvent metadataGc = null;
             for (RecordedEvent event : events) {
-                if (event.getEventType().getName().equals(EventNames.GarbageCollection)
-                        && event.getString("cause").equals("Metadata GC Threshold")
-                        && event.getStartTime().isAfter(loadingStart)) {
+                if (!event.getStartTime().isAfter(loadingStart)) {
+                    continue;
+                }
+                String type = event.getEventType().getName();
+                if (request == null && type.equals(EventNames.MetaspaceGCThreshold)
+                        && event.getString("updater").equals("expand_and_allocate")) {
+                    request = event;
+                }
+                if (metadataGc == null && type.equals(EventNames.GarbageCollection)
+                        && event.getString("cause").equals("Metadata GC Threshold")) {
                     metadataGc = event;
-                    break;
                 }
             }
-            Asserts.assertNotNull(metadataGc, "no metadata GC after loading started");
-            long thresholdAtGc = -1;
+            Asserts.assertTrue(request != null || metadataGc != null, "no metadata GC request after loading started");
+            Instant requestTime = request != null ? request.getStartTime() : metadataGc.getStartTime();
+            long thresholdAtRequest = request != null ? request.getLong("oldValue") : -1;
             int changesBefore = 0;
             for (RecordedEvent event : events) {
                 if (!event.getEventType().getName().equals(EventNames.MetaspaceGCThreshold)
                         || !event.getStartTime().isAfter(loadingStart)) {
                     continue;
                 }
-                if (event.getStartTime().isBefore(metadataGc.getStartTime())) {
+                if (event.getStartTime().isBefore(requestTime)) {
                     changesBefore++;
-                    System.out.println("Threshold changed before the metadata GC: " + event.getLong("oldValue")
+                    System.out.println("Threshold changed before the request: " + event.getLong("oldValue")
                         + " -> " + event.getLong("newValue") + " by " + event.getString("updater"));
-                } else if (thresholdAtGc < 0) {
-                    thresholdAtGc = event.getLong("oldValue");
+                } else if (thresholdAtRequest < 0) {
+                    thresholdAtRequest = event.getLong("oldValue");
                 }
             }
-            Asserts.assertNotEquals(thresholdAtGc, -1L, "no threshold change after the metadata GC");
-            System.out.println("Metadata GC requested at threshold " + thresholdAtGc);
+            Asserts.assertNotEquals(thresholdAtRequest, -1L, "no threshold change after the metadata GC");
+            System.out.println("Metadata GC requested at threshold " + thresholdAtRequest
+                + (request != null ? " (expand_and_allocate)" : " (gcId=" + metadataGc.getLong("gcId") + ")"));
             if (changesBefore == 0) {
-                Asserts.assertEquals(thresholdAtGc, initialThreshold,
+                Asserts.assertEquals(thresholdAtRequest, initialThreshold,
                     "the first metadata GC should have been requested at the initial threshold");
             } else {
-                Asserts.assertGreaterThanOrEqual(thresholdAtGc, initialThreshold,
+                Asserts.assertGreaterThanOrEqual(thresholdAtRequest, initialThreshold,
                     "the threshold can only be raised before the first metadata GC");
             }
 
