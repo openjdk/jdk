@@ -110,12 +110,16 @@ Developers are responsible for updating their custom runtime images.
     path to a module or a directory containing modules. Each module is either a
     modular JAR file, a JMOD file, or an exploded-module directory.
 
-    If the specified module path does not contain java.base, it is prepended to
+    If the specified module path does not contain `java.base`, it is prepended to
     the default module path. The default module path contains the standard and
-    JDK modules provided by the JDK running jlink.
+    JDK modules provided by the JDK running `jlink`. This allows `jlink` to find
+    `java.base` and other modules without specifying their locations to the
+    `--module-path` option. If the `--module-path` option is not specified, then
+    only the default module path is used.
 
-    For cross-platform linking, the specified module path must contain all
-    target-platform modules required to create the image, including java.base.
+    When creating a run-time image for a different target platform (cross-linking),
+    the specified module path must contain all modules required for the target
+    platform, including `java.base`.
 
 [`--no-header-files`]{#option--no-header-files}
 :   Excludes header files.
