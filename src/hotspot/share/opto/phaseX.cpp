@@ -388,11 +388,11 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist
   // Must be done before disconnecting nodes to preserve hash-table-invariant
   gvn->remove_useless_nodes(_useful.member_set());
 
-  // Remove all useless nodes from future worklist
-  worklist.remove_useless_nodes(_useful.member_set());
-
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->disconnect_useless_nodes(_useful, worklist);
+
+  // Remove all useless nodes from future worklist
+  worklist.remove_useless_nodes(_useful.member_set());
 }
 
 //=============================================================================
