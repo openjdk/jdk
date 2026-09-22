@@ -334,32 +334,38 @@ class DumpThreads {
             await(thread, Thread.State.WAITING);
             long tid = thread.threadId();
 
-            // thread dump in plain text should include thread
-            List<String> lines = dumpThreadsToPlainText();
-            ThreadFields fields = findThread(tid, lines);
-            assertNotNull(fields, "thread not found");
-            assertEquals("WAITING", fields.state());
-            assertFalse(contains(lines, "- locked <" + lockAsString));
+            // Must take the lock ourselves to ensure the wait() has actually
+            // released it.
+            List<String> lines;
+            ThreadDump.ThreadInfo ti;
+            synchronized(lock) {
+                // thread dump in plain text should include thread
+                lines = dumpThreadsToPlainText();
+                ThreadFields fields = findThread(tid, lines);
+                assertNotNull(fields, "thread not found");
+                assertEquals("WAITING", fields.state());
+                assertFalse(contains(dumpForThread(tid, lines), "- locked <" + lockAsString));
 
-            // thread dump in JSON format should include thread in root container
-            ThreadDump threadDump = dumpThreadsToJson();
-            ThreadDump.ThreadInfo ti = threadDump.rootThreadContainer()
-                    .findThread(thread.threadId())
-                    .orElse(null);
-            assertNotNull(ti, "thread not found");
-            assertEquals(ti.isVirtual(), thread.isVirtual());
-            assertEquals("WAITING", ti.state());
-            assertFalse(ti.ownedMonitors().values().stream()
-                          .flatMap(List::stream)
-                          .anyMatch(lockAsString::equals));
-            if (pinned) {
-                long carrierTid = ti.carrier().orElse(-1L);
-                assertNotEquals(-1L, carrierTid, "carrier not found");
-                assertForkJoinWorkerThread(carrierTid);
+                // thread dump in JSON format should include thread in root container
+                ThreadDump threadDump = dumpThreadsToJson();
+                ti = threadDump.rootThreadContainer()
+                               .findThread(thread.threadId())
+                               .orElse(null);
+                assertNotNull(ti, "thread not found");
+                assertEquals(ti.isVirtual(), thread.isVirtual());
+                assertEquals("WAITING", ti.state());
+                assertFalse(ti.ownedMonitors().values().stream()
+                              .flatMap(List::stream)
+                              .anyMatch(lockAsString::equals));
+                if (pinned) {
+                    long carrierTid = ti.carrier().orElse(-1L);
+                    assertNotEquals(-1L, carrierTid, "carrier not found");
+                    assertForkJoinWorkerThread(carrierTid);
+                }
             }
 
             // Compiled native frames have no locals. If Object.wait0 has been compiled
-            // then we don't have the object that the thread is waiting on
+            // then we may not have the object that the thread is waiting on.
             Method wait0 = Object.class.getDeclaredMethod("wait0", long.class);
             boolean expectWaitingOn = !WhiteBox.getWhiteBox().isMethodCompiled(wait0);
             if (expectWaitingOn) {
@@ -739,6 +745,21 @@ class DumpThreads {
                 .findAny()
                 .orElse(null);
     }
+
+    // Find the section of the text dump pertaining only to the target thread
+    private List<String> dumpForThread(long tid, List<String> lines) {
+      String header = "#" + tid + " ";
+      for (int i = 0; i < lines.size(); i++) {
+          if (lines.get(i).startsWith(header)) {
+              // Find the next thread section or end of the dump
+              int end;
+              for (end = i + 1; end < lines.size() && !lines.get(end).startsWith("#"); end++) {
+              }
+              return lines.subList(i, end);
+          }
+      }
+      return null;
+  }
 
     /**
      * Dump threads to a file in plain text format, return the lines in the file.

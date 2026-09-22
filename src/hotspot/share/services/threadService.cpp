@@ -1210,19 +1210,31 @@ private:
   void detect_locks(javaVFrame* jvf, int depth) {
     Thread* current = Thread::current();
 
+    ObjectMonitor* waiting_monitor = _java_thread == nullptr ?
+                                         java_lang_VirtualThread::current_waiting_monitor(_thread_h()) :
+                                         jvf->thread()->current_waiting_monitor();
+
+    // Note we may have a waiting_monitor for internal waits i.e. class initialization waiting, and we
+    // don't want to report that as-if Object::wait was called. So we check the frame information directly.
     if (depth == 0 && _blocker.is_empty()) {
       // If this is the first frame and it is java.lang.Object.wait(...)
       // then print out the receiver.
       if (jvf->method()->name() == vmSymbols::wait_name() &&
         jvf->method()->method_holder()->name() == vmSymbols::java_lang_Object()) {
         OopHandle lock_object;
-        StackValueCollection* locs = jvf->locals();
-        if (!locs->is_empty()) {
-          StackValue* sv = locs->at(0);
-          if (sv->type() == T_OBJECT) {
-            Handle o = locs->at(0)->get_obj();
-            lock_object = OopHandle(oop_storage(), o());
+        if (waiting_monitor == nullptr) {
+          // We have started the native part of wait0() but have not yet set the current
+          // waiting monitor, so we need to extract the receiver directly from the frame.
+          StackValueCollection* locs = jvf->locals();
+          if (!locs->is_empty()) {
+            StackValue* sv = locs->at(0);
+            if (sv->type() == T_OBJECT) {
+              Handle o = locs->at(0)->get_obj();
+              lock_object = OopHandle(oop_storage(), o());
+            }
           }
+        } else {
+          lock_object = OopHandle(oop_storage(), waiting_monitor->object());
         }
         _blocker = Blocker(Blocker::WAITING_ON, lock_object);
       }
@@ -1269,8 +1281,16 @@ private:
               }
             }
           }
-          // Don't report the monitor as owned by this thread if it is doing wait() and so has released it.
-          if (!(_blocker._type == Blocker::WAITING_ON) || !(_blocker._obj.resolve() == monitor->owner())) {
+          // Don't report the monitor as owned by this thread if it is doing wait() and has released it.
+          // Check the actual owning thread as we can dump the stack before the actual release happens.
+          // If waiting_monitor is null then we definitely haven't released it. If there is no java_thread
+          // then we have an unmounted vthread but it could still be the owner.
+          if (_blocker._type == Blocker::WAITING_ON && _blocker._obj.resolve() == monitor->owner() &&
+              waiting_monitor != nullptr &&
+              (_java_thread != nullptr ? !waiting_monitor->is_entered(_java_thread)
+                                       : waiting_monitor->owner() != ObjectMonitor::owner_id_from(_thread_h()))) {
+            // skip
+          } else {
             _locks->push(OwnedLock(depth, OwnedLock::LOCKED, OopHandle(oop_storage(), monitor->owner())));
           }
         }
