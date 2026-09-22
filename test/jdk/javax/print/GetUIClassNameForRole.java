@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8392783
- * @summary Win32PrintService.getUIClassNamesForRole 
+ * @summary Win32PrintService.getUIClassNamesForRole
  *          throws ArrayIndexOutOfBoundsException
  * @requires (os.family == "windows")
  * @run main GetUIClassNameForRole
@@ -47,10 +47,9 @@ public class GetUIClassNameForRole {
                 continue;
             }
 
-
             ServiceUIFactory factory = service.getServiceUIFactory();
             String[] names = factory.getUIClassNamesForRole(
-                    DOCUMENT_PROPERTIES_ROLE);
+                                    DOCUMENT_PROPERTIES_ROLE);
 
             if (names == null || names.length != 1) {
                 throw new RuntimeException(
@@ -62,6 +61,5 @@ public class GetUIClassNameForRole {
                         "Unable to create Document Properties UI");
             }
         }
-
     }
 }
