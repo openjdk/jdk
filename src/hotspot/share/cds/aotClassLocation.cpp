@@ -523,7 +523,7 @@ void AOTClassLocationConfig::dumptime_init_helper(TRAPS) {
 
 const char* AOTClassLocationConfig::get_runtime_path(int shared_path_index, const char* path) const {
   const char* real_path = path;
-  if (_runtime_path_info.use_lcp_match && !class_location_at(shared_path_index)->from_module_path()) {
+  if (_runtime_path_info.use_lcp_match && _dumptime_lcp_len > 0 && !class_location_at(shared_path_index)->from_module_path()) {
     // lcp match is not done for module paths
     real_path = AOTClassLocationConfig::substitute(path, _dumptime_lcp_len, _runtime_path_info.runtime_lcp, _runtime_path_info.runtime_lcp_len);
   }
