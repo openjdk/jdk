@@ -735,6 +735,18 @@ void CallNode::dump_spec(outputStream *st) const {
   if (jvms() != nullptr)  jvms()->dump_spec(st);
 }
 
+ciKlass* AllocateNode::allocation_klass() const {
+  const Node* const klass_node = in(KlassNode);
+  if (klass_node == nullptr) {
+    return nullptr;
+  }
+  const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
+  if (klass_ptr == nullptr || !klass_ptr->klass_is_exact()) {
+    return nullptr;
+  }
+  return klass_ptr->exact_klass();
+}
+
 void AllocateNode::dump_spec(outputStream* st) const {
   st->print(" ");
   if (tf() != nullptr) {
@@ -743,14 +755,10 @@ void AllocateNode::dump_spec(outputStream* st) const {
   if (_cnt != COUNT_UNKNOWN) {
     st->print(" C=%f", _cnt);
   }
-  const Node* const klass_node = in(KlassNode);
-  if (klass_node != nullptr) {
-    const TypeKlassPtr* const klass_ptr = klass_node->bottom_type()->isa_klassptr();
-
-    if (klass_ptr != nullptr && klass_ptr->klass_is_exact()) {
-      st->print(" allocationKlass:");
-      klass_ptr->exact_klass()->print_name_on(st);
-    }
+  ciKlass* alloc_klass = allocation_klass();
+  if (alloc_klass != nullptr) {
+    st->print(" allocationKlass:");
+    alloc_klass->print_name_on(st);
   }
   if (jvms() != nullptr) {
     jvms()->dump_spec(st);
