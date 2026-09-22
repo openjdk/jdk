@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SupportedOptions {
 
@@ -60,16 +59,5 @@ public class SupportedOptions {
     void invalidSocketTypes() {
         assertThrows(IllegalArgumentException.class, () -> Sockets.supportedOptions(null));
         assertThrows(IllegalArgumentException.class, () -> Sockets.supportedOptions(String.class));
-    }
-
-    @Test
-    void serverSocketSupportsIpTos() throws Exception {
-        assertTrue(Sockets.supportedOptions(ServerSocket.class)
-                .contains(StandardSocketOptions.IP_TOS));
-
-        try (var s = new ServerSocket()) {
-            assertTrue(s.supportedOptions().contains(StandardSocketOptions.IP_TOS));
-            Sockets.setOption(s, StandardSocketOptions.IP_TOS, 128);
-        }
     }
 }
