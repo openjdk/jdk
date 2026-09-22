@@ -1391,7 +1391,7 @@ AOTCodeEntry* AOTCodeCache::find_code_entry(const methodHandle& method, uint com
   return nullptr;
 }
 
-Method* AOTCodeEntry::method() {
+Method* AOTCodeEntry::method() const {
   assert(_kind == Nmethod, "invalid kind %d", _kind);
   assert(AOTCodeCache::is_on_for_use(), "must be");
   return AOTCacheAccess::narrow_ptr_to_method(cast_from_u4(_id));
@@ -1696,9 +1696,9 @@ public:
     }
   }
 
-  uint entry_count(uint kind) { check_kind(kind); return _kind_cnt[kind]; }
-  uint nmethod_count(uint lvl) { check_complevel(lvl); return _nmethod_cnt[lvl]; }
-  uint clinit_barriers_count() { return _clinit_barriers_cnt; }
+  uint entry_count(uint kind)  const { check_kind(kind); return _kind_cnt[kind]; }
+  uint nmethod_count(uint lvl) const { check_complevel(lvl); return _nmethod_cnt[lvl]; }
+  uint clinit_barriers_count() const { return _clinit_barriers_cnt; }
 };
 
 static int uint_cmp(const void *i, const void *j) {
@@ -5400,13 +5400,13 @@ public:
     }
   }
 
-  uint entry_loaded_count(uint kind)      { check_kind(kind); return _entry_kinds[kind]._loaded_cnt; }
-  uint entry_invalidated_count(uint kind) { check_kind(kind); return _entry_kinds[kind]._invalidated_cnt; }
-  uint entry_load_failed_count(uint kind) { check_kind(kind); return _entry_kinds[kind]._load_failed_cnt; }
+  uint entry_loaded_count(uint kind)      const { check_kind(kind); return _entry_kinds[kind]._loaded_cnt; }
+  uint entry_invalidated_count(uint kind) const { check_kind(kind); return _entry_kinds[kind]._invalidated_cnt; }
+  uint entry_load_failed_count(uint kind) const { check_kind(kind); return _entry_kinds[kind]._load_failed_cnt; }
 
-  uint nmethod_loaded_count(uint lvl)      { check_complevel(lvl); return _nmethods[lvl]._loaded_cnt; }
-  uint nmethod_invalidated_count(uint lvl) { check_complevel(lvl); return _nmethods[lvl]._invalidated_cnt; }
-  uint nmethod_load_failed_count(uint lvl) { check_complevel(lvl); return _nmethods[lvl]._load_failed_cnt; }
+  uint nmethod_loaded_count(uint lvl)      const { check_complevel(lvl); return _nmethods[lvl]._loaded_cnt; }
+  uint nmethod_invalidated_count(uint lvl) const { check_complevel(lvl); return _nmethods[lvl]._invalidated_cnt; }
+  uint nmethod_load_failed_count(uint lvl) const { check_complevel(lvl); return _nmethods[lvl]._load_failed_cnt; }
 };
 
 static void print_helper(outputStream* st, const char* name, int count) {

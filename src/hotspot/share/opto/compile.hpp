@@ -707,7 +707,7 @@ public:
   void          set_has_monitors(bool v)         { _has_monitors = v; }
   bool              has_scoped_access() const    { return _has_scoped_access; }
   void          set_has_scoped_access(bool v)    { _has_scoped_access = v; }
-  bool              has_clinit_barriers()        { return _has_clinit_barriers; }
+  bool              has_clinit_barriers()const   { return _has_clinit_barriers; }
   void          set_has_clinit_barriers(bool z)  { _has_clinit_barriers = z; }
 
   // check the CompilerOracle for special behaviours for this compile

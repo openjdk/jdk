@@ -565,7 +565,7 @@ public:
   void process_invokehandle(const constantPoolHandle &cp, int index, JavaThread* thread);
   void find_dynamic_call_sites();
 
-  bool is_aot_compile() NOT_CDS_RETURN_(false);
+  bool is_aot_compile() const NOT_CDS_RETURN_(false);
   InstanceKlass::ClassState compute_init_state_for_aot_compile(InstanceKlass* ik) NOT_CDS_RETURN_((InstanceKlass::ClassState)0);
 };
 

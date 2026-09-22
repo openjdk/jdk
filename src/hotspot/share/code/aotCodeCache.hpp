@@ -146,7 +146,7 @@ public:
   // Delete is a NOP
   void operator delete( void *ptr ) {}
 
-  Method* method();
+  Method* method() const;
 
   Kind kind()         const { return _kind; }
   uint id()           const { return _id; }

@@ -1904,7 +1904,7 @@ void ciEnv::dump_replay_data_version(outputStream* out) {
 
 #if INCLUDE_CDS
 
-bool ciEnv::is_aot_compile() {
+bool ciEnv::is_aot_compile() const {
   return (task() != nullptr) && task()->is_aot_compile();
 }
 

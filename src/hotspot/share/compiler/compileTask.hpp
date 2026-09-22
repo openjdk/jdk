@@ -143,7 +143,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_success() const                { return _is_success; }
   bool         is_aot_load() const               { return _aot_code_entry != nullptr; }
   bool         is_aot_preload() const            { return (_compile_reason == Reason_AOTPreload); }
-  AOTCodeEntry* aot_code_entry()                 { return _aot_code_entry; }
+  AOTCodeEntry* aot_code_entry() const           { return _aot_code_entry; }
   DirectiveSet* directive() const                { return _comp_directive_matcher.directive_set(); }
   void         transfer_directive(CompilerDirectiveMatcher& matcher) { _comp_directive_matcher.transfer_from(matcher); }
   CompileReason compile_reason() const           { return _compile_reason; }
@@ -165,7 +165,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
     }
   }
 
-  bool is_aot_compile() {
+  bool is_aot_compile() const {
     return reason_is_aot_compile(compile_reason());
   }
 

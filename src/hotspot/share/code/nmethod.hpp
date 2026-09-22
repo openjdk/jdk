@@ -630,7 +630,7 @@ public:
   bool is_java_method  () const { return _method != nullptr && !_method->is_native(); }
   bool is_osr_method   () const { return _entry_bci != InvocationEntryBci; }
 
-  int  orig_pc_offset() { return _orig_pc_offset; }
+  int  orig_pc_offset() const { return _orig_pc_offset; }
   bool is_relocatable();
 
   // Compiler task identification.  Note that all OSR methods
