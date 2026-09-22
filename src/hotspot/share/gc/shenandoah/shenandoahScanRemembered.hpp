@@ -134,48 +134,20 @@
 //           be responsible for processing the portion of the object
 //           in this cluster.
 //
-// Though an initial division of labor between marking threads may
-// assign equal numbers of clusters to be scanned by each thread, it
-// should be expected that some threads will finish their assigned
-// work before others.  Therefore, some amount of the full remembered
-// set scanning effort should be held back and assigned incrementally
-// to the threads that end up with excess capacity.  Consider the
-// following strategy for dividing labor:
-//
-//        1. Assume there are 8 marking threads and 1024 remembered
-//           set clusters to be scanned.
-//        2. Assign each thread to scan 64 clusters.  This leaves
-//           512 (1024 - (8*64)) clusters to still be scanned.
-//        3. As the 8 server threads complete previous cluster
-//           scanning assignments, issue each of the next 8 scanning
-//           assignments as units of 32 additional cluster each.
-//           In the case that there is high variance in effort
-//           associated with previous cluster scanning assignments,
-//           multiples of these next assignments may be serviced by
-//           the server threads that were previously assigned lighter
-//           workloads.
-//        4. Make subsequent scanning assignments as follows:
-//             a) 8 assignments of size 16 clusters
-//             b) 8 assignments of size 8 clusters
-//             c) 16 assignments of size 4 clusters
-//
-//    When there is no more remembered set processing work to be
-//    assigned to a newly idled worker thread, that thread can move
-//    on to work on other tasks associated with root scanning until such
-//    time as all clusters have been examined.
+// Each work assignment represents the same number of spanned bytes.
+// Because some spans are easier to scan than others, it is expected
+// that some workers will process more work assignments than others.
 //
 // Remembered set scanning is designed to run concurrently with
 // mutator threads, with multiple concurrent workers. Furthermore, the
 // current implementation of remembered set scanning never clears a
 // card once it has been marked.
-//
-// These limitations will be addressed in future enhancements to the
-// existing implementation.
 
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
+#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -864,11 +836,12 @@ public:
 
   template <typename ClosureType>
   void process_humongous_clusters(ShenandoahHeapRegion* r, size_t first_cluster, size_t count,
-                                  HeapWord* end_of_range, ClosureType* oops, bool use_write_table);
+                                  HeapWord* end_of_range, ClosureType* oops, bool use_write_table,
+                                  ShenandoahHeapRegion*& humongous_start_cache);
 
   template <typename ClosureType>
   void process_region_slice(ShenandoahHeapRegion* region, size_t offset, size_t clusters, HeapWord* end_of_range,
-                            ClosureType* cl, bool use_write_table, uint worker_id);
+                            ClosureType* cl, bool use_write_table, uint worker_id, ShenandoahHeapRegion*& humongous_start_cache);
 
   // To Do:
   //  Create subclasses of ShenandoahInitMarkRootsClosure and
@@ -915,6 +888,17 @@ struct ShenandoahRegionChunk {
   size_t _chunk_size;            // HeapWordSize qty
 };
 
+#ifdef ASSERT
+// Notes on definition of is_power_of_2():
+//   n & (n-1) equals zero if n is a power of 2
+//   !(n & (n - 1)) = true if n is a power of 2
+//   We logical-and with n because we want to exclude 0 from being a power of 2
+//   Suppose n is not a power of 2.  Then its binary representation has at least 2 non-zero bits.
+//     When we subtract 1, this will affect the lower bits but will not affect the most significant bit, so we
+//     know that n & (n - 1) yields a result that is non-zero.
+#define is_power_of_2(n)    ((n) && !((n) & ((n) - 1)))
+#endif
+
 // ShenandoahRegionChunkIterator divides the total remembered set scanning effort into ShenandoahRegionChunks
 // that are assigned one at a time to worker threads. (Here, we use the terms `assignments` and `chunks`
 // interchangeably.) Note that the effort required to scan a range of memory is not necessarily a linear
@@ -923,16 +907,18 @@ struct ShenandoahRegionChunk {
 class ShenandoahRegionChunkIterator : public StackObj {
 private:
   // The number of clusters in a chunk is chosen empirically: larger values would require less synchronization at the risk
-  // of less even distribution of work between cooperating worker threads.
+  // of less even distribution of work between cooperating worker threads. The value must be a power of two.
   static const size_t _clusters_in_chunk = 8;
   static size_t chunk_size_words() {
     size_t max_size = ShenandoahHeapRegion::region_size_words();
     // In default configuration, the standard work assignment is:
     //      8 (clusters) * 64 (words/card) * 64 (cards/Cluster) = 32K words = 256K bytes.
     size_t planned_size = _clusters_in_chunk * CardTable::card_size_in_words() * ShenandoahCardCluster::CardsPerCluster;
+    static_assert(is_power_of_2(_clusters_in_chunk), "Precondition");
     if (planned_size > max_size) {
       planned_size = max_size;
     }
+    assert(is_power_of_2(planned_size), "Invariant");
     return planned_size;
   }
 
@@ -956,7 +942,8 @@ public:
   ShenandoahRegionChunkIterator(ShenandoahHeap* heap);
 
   // Fills in assignment with next chunk of work and returns true iff there is more work.
-  // Otherwise, returns false.  This is multi-thread-safe.
+  // Otherwise, returns false.  This is multi-thread-safe. Chunk assignments pertain only to
+  // memory affiliated with the Old generation.
   inline bool next(struct ShenandoahRegionChunk* assignment);
 };
 
