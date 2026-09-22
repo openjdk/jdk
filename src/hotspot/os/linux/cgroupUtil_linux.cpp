@@ -183,7 +183,7 @@ void CgroupUtil::adjust_controller(CgroupCpuController* cpu, double upper_bound)
   if (cpus != upper_bound && cpus < lowest_limit) {
     lowest_limit = cpus;
     os::free(limit_cg_path); // handles nullptr
-    limit_cg_path = os::strdup(cg_path);
+    limit_cg_path = os::strdup("/");
   }
   assert(lowest_limit >= 0, "limit must be positive");
   if (lowest_limit != orig_limit) {
