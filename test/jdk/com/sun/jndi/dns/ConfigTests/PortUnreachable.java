@@ -25,6 +25,8 @@ import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.directory.InitialDirContext;
 
+import static jdk.test.lib.Utils.adjustTimeout;
+
 /*
  * @test
  * @bug 8200151
@@ -34,7 +36,7 @@ import javax.naming.directory.InitialDirContext;
  *          dead DNS server or a flakey router.
  *          On AIX, no ICMP Destination Unreachable is received, so skip test.
  * @requires os.family != "aix"
- * @library ../lib/
+ * @library ../lib/ /test/lib
  * @modules java.base/sun.security.util
  * @run main PortUnreachable
  */
@@ -46,9 +48,11 @@ public class PortUnreachable extends DNSTestBase {
 
     // Threshold in ms for elapsed time of request failed. Normally, it should
     // be very quick, but consider to different platform and test machine
-    // performance, here we define 3000 ms as threshold which acceptable for
-    // this test.
-    private static final int THRESHOLD = 3000;
+    // performance, here we define 2000 ms as threshold which acceptable for
+    // this test. Capped at 10s to stay well below the full exponential backoff
+    // retry cycle (1 + 2 + 4 + 8 = 15s), ensuring we verify that ICMP Port
+    // Unreachable causes a quick fail rather than waiting through all retries.
+    private static final long THRESHOLD = Math.min(adjustTimeout(2000), 9000);
 
     private long startTime;
 
