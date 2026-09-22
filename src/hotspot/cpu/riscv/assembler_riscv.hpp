@@ -1100,14 +1100,14 @@ protected:
 
  public:
 
-#define INSN(NAME, op, funct3, funct7)                      \
+#define INSN(NAME, op, funct3, funct12)                     \
   void NAME() {                                             \
     unsigned insn = 0;                                      \
     patch((address)&insn, 6, 0, op);                        \
     patch((address)&insn, 11, 7, 0b00000);                  \
     patch((address)&insn, 14, 12, funct3);                  \
     patch((address)&insn, 19, 15, 0b00000);                 \
-    patch((address)&insn, 31, 20, funct7);                  \
+    patch((address)&insn, 31, 20, funct12);                 \
     emit(insn);                                             \
   }
 
@@ -2791,22 +2791,22 @@ enum Nf {
 
 #undef INSN
 
-#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct6)   \
+#define patch_VArith_imm6(op, Reg, funct3, Reg_or_Imm5, I5, Vs2, vm, funct5)   \
     unsigned insn = 0;                                                         \
     patch((address)&insn, 6, 0, op);                                           \
     patch((address)&insn, 14, 12, funct3);                                     \
     patch((address)&insn, 19, 15, Reg_or_Imm5);                                \
     patch((address)&insn, 25, vm);                                             \
     patch((address)&insn, 26, I5);                                             \
-    patch((address)&insn, 31, 27, funct6);                                     \
+    patch((address)&insn, 31, 27, funct5);                                     \
     patch_reg((address)&insn, 7, Reg);                                         \
     patch_reg((address)&insn, 20, Vs2);                                        \
     emit(insn)
 
-#define INSN(NAME, op, funct3, funct6)                                                             \
+#define INSN(NAME, op, funct3, funct5)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
     guarantee(is_uimm6(imm), "uimm is invalid");                                                   \
-    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct6);  \
+    patch_VArith_imm6(op, Vd, funct3, (uint32_t)(imm & 0x1f), (uint32_t)((imm >> 5) & 0x1), Vs2, vm, funct5);  \
   }
 
   // Vector Bit-manipulation used in Cryptography (Zvbb) Extension
