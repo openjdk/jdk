@@ -155,7 +155,6 @@ public class AttachRevival {
     }
 
     static void testAttach(String coreFileName, String type, String command) throws Throwable {
-        System.out.println("TEST: core: " + coreFileName + " Test type: " + type + " Command: " + command);
         testVM(coreFileName, type, command, VirtualMachine.attach(coreFileName, Map.of()));
         testVM(coreFileName, type, command, VirtualMachine.attach(coreFileName));
     }

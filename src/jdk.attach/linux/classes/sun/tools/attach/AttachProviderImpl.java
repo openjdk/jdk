@@ -67,7 +67,6 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
         }
     }
 
-
     public VirtualMachine attachVirtualMachine(VirtualMachineDescriptor vmd)
         throws AttachNotSupportedException, IOException
     {
@@ -84,5 +83,4 @@ public class AttachProviderImpl extends HotSpotAttachProvider {
             return attachVirtualMachine(vmd.id());
         }
     }
-
 }
