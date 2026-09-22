@@ -979,7 +979,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
   if (path == nullptr)
     return false;
 
-  char* path2 = os::strdup(path);
+  char* path2 = os::strdup(path, mtInternal);
   // if exist, strip off trailing (shr_64.o) or similar
   char* substr;
   if (path2[strlen(path2) - 1] == ')' && (substr = strrchr(path2, '('))) {
@@ -1023,7 +1023,7 @@ static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
     Libpath.print("%s:%s", env, rtv_linkedin_libpath());
   }
 
-  char* libpath = os::strdup(Libpath.base());
+  char* libpath = os::strdup(Libpath.base(), mtInternal);
 
   char *saveptr, *token;
   for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
@@ -1062,7 +1062,7 @@ void* Aix_dlopen(const char* filename, int Flags, int *eno, const char** error_r
     char* member = nullptr;
     const char* substr;
     if (filename[strlen(filename) - 1] == ')' && (substr = strrchr(filename, '('))) {
-      member = os::strdup(substr);
+      member = os::strdup(substr, mtInternal);
     }
 
     unsigned i = 0;

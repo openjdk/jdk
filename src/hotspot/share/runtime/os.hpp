@@ -1001,7 +1001,7 @@ class os: AllStatic {
 
   // handles null pointers
   static void  free    (void *memblock);
-  static char* strdup(const char *, MemTag mem_tag = mtInternal);  // Like strdup
+  static char* strdup(const char *, MemTag mem_tag);  // Like strdup
   // Like strdup, but exit VM when strdup() returns null
   static char* strdup_check_oom(const char*, MemTag mem_tag);
 

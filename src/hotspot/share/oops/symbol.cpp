@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -152,7 +152,7 @@ void Symbol::print_symbol_on(outputStream* st) const {
     // stream it could resize, using the same resource arena.
     ResourceMark rm;
     s = as_quoted_ascii();
-    s = os::strdup(s);
+    s = os::strdup(s, mtInternal);
   }
   if (s == nullptr) {
     st->print("(null)");
