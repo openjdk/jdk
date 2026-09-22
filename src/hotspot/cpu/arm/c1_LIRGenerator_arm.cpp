@@ -93,7 +93,7 @@ LIR_Opr LIRGenerator::atomicLockOpr() {
   return LIR_OprFact::illegalOpr;
 }
 
-LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
+LIR_Opr LIRGenerator::result_register_for(ValueType* type) {
   LIR_Opr opr;
   switch (type->tag()) {
     case intTag:     opr = FrameMap::Int_result_opr;    break;
@@ -109,7 +109,7 @@ LIR_Opr LIRGenerator::result_register_for(ValueType* type, bool callee) {
 }
 
 
-LIR_Opr LIRGenerator::rlock_byte(BasicType type) {
+LIR_Opr LIRGenerator::rlock_byte() {
   return new_register(T_INT);
 }
 
