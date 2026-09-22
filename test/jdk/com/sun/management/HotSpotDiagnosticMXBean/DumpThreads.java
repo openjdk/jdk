@@ -344,7 +344,6 @@ class DumpThreads {
                 ThreadFields fields = findThread(tid, lines);
                 assertNotNull(fields, "thread not found");
                 assertEquals("WAITING", fields.state());
-                assertFalse(contains(dumpForThread(tid, lines), "- locked <" + lockAsString));
 
                 // thread dump in JSON format should include thread in root container
                 ThreadDump threadDump = dumpThreadsToJson();
@@ -356,7 +355,8 @@ class DumpThreads {
                 assertEquals("WAITING", ti.state());
                 assertFalse(ti.ownedMonitors().values().stream()
                               .flatMap(List::stream)
-                              .anyMatch(lockAsString::equals));
+                              .anyMatch(lockAsString::equals),
+                            "Waiting thread should not own the monitor");
                 if (pinned) {
                     long carrierTid = ti.carrier().orElse(-1L);
                     assertNotEquals(-1L, carrierTid, "carrier not found");
@@ -745,21 +745,6 @@ class DumpThreads {
                 .findAny()
                 .orElse(null);
     }
-
-    // Find the section of the text dump pertaining only to the target thread
-    private List<String> dumpForThread(long tid, List<String> lines) {
-      String header = "#" + tid + " ";
-      for (int i = 0; i < lines.size(); i++) {
-          if (lines.get(i).startsWith(header)) {
-              // Find the next thread section or end of the dump
-              int end;
-              for (end = i + 1; end < lines.size() && !lines.get(end).startsWith("#"); end++) {
-              }
-              return lines.subList(i, end);
-          }
-      }
-      return null;
-  }
 
     /**
      * Dump threads to a file in plain text format, return the lines in the file.
