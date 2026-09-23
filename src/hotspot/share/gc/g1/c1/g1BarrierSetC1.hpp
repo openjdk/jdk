@@ -30,7 +30,6 @@
 #include "gc/shared/c1/cardTableBarrierSetC1.hpp"
 
 class G1PreBarrierStubC1: public CodeStub {
-  friend class G1BarrierSetC1;
  private:
   bool _do_load;
   LIR_Opr _addr;

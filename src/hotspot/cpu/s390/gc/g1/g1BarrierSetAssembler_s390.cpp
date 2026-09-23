@@ -547,7 +547,7 @@ void G1BarrierSetAssembler::generate_c1_pre_barrier_runtime_stub(StubAssembler* 
   int satb_q_index_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_index_offset());
   int satb_q_buf_byte_offset = in_bytes(G1ThreadLocalData::satb_mark_queue_buffer_offset());
 
-  // Save tmp registers (see assertion in G1PreBarrierStubC1::emit_code()).
+  // Save tmp registers (see assertion in G1BarrierSetAssembler::gen_pre_barrier_stub).
   __ z_stg(tmp,  0*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
   __ z_stg(tmp2, 1*BytesPerWord + FrameMap::first_available_sp_in_frame, Z_SP);
 
