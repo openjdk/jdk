@@ -64,6 +64,10 @@ public class TestMetaspaceFirstGC {
 
     private static int classCounter = 0;
     private static final AtomicBoolean requestSeen = new AtomicBoolean();
+    // committed and threshold right before each class load, the last one before the
+    // allocation failure is the state the request was made in
+    private record Sample(Instant time, long committed, long threshold) {}
+    private static final List<Sample> samples = new ArrayList<>();
     // kept alive so no collection can unload them before the threshold is reached
     private static final List<ClassLoader> loaders = new ArrayList<>();
 
@@ -155,11 +159,11 @@ public class TestMetaspaceFirstGC {
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
             // The first failed metadata allocation after loading started is the request. The
-            // threshold it hit is the old value of the first threshold change at or after it, and
-            // committed at that point comes from the first summary at or after it. Committed has
-            // to be at the threshold, below it the request would be premature. Any threshold
-            // change between the start of loading and the request came from another collection's
-            // compute_new_size and can only have raised the threshold.
+            // threshold it hit is the old value of the first threshold change at or after it. The
+            // sample taken right before the class load that failed gives committed and the
+            // threshold at that moment, committed has to be at the threshold, below it the request
+            // would be premature. Any threshold change between the start of loading and the request
+            // came from another collection's compute_new_size and can only have raised the threshold.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
             for (RecordedEvent event : events) {
@@ -171,7 +175,7 @@ public class TestMetaspaceFirstGC {
             }
             Asserts.assertNotNull(request, "no metaspace allocation failure after loading started");
             long thresholdAtRequest = -1;
-            long committedAtRequest = -1;
+            boolean summaryLogged = false;
             int changesBefore = 0;
             for (RecordedEvent event : events) {
                 if (!event.getStartTime().isAfter(loadingStart)) {
@@ -187,19 +191,28 @@ public class TestMetaspaceFirstGC {
                     } else if (thresholdAtRequest < 0) {
                         thresholdAtRequest = event.getLong("oldValue");
                     }
-                } else if (type.equals(EventNames.MetaspaceSummary) && !beforeRequest && committedAtRequest < 0) {
-                    committedAtRequest = event.getLong("metaspace.committed");
+                } else if (type.equals(EventNames.MetaspaceSummary) && !beforeRequest && !summaryLogged) {
+                    summaryLogged = true;
                     System.out.println("Summary after the request: " + event.getString("when") + " gcId="
-                        + event.getLong("gcId") + " committed=" + committedAtRequest
+                        + event.getLong("gcId") + " committed=" + event.getLong("metaspace.committed")
                         + " gcThreshold=" + event.getLong("gcThreshold"));
                 }
             }
             Asserts.assertNotEquals(thresholdAtRequest, -1L, "no threshold change after the request");
-            Asserts.assertNotEquals(committedAtRequest, -1L, "no metaspace summary after the request");
+            Sample atRequest = null;
+            for (Sample sample : samples) {
+                if (sample.time().isAfter(request.getStartTime())) {
+                    break;
+                }
+                atRequest = sample;
+            }
+            Asserts.assertNotNull(atRequest, "no sample before the request");
             System.out.println("Metadata GC requested at threshold " + thresholdAtRequest
-                + " with committed " + committedAtRequest);
-            Asserts.assertLessThanOrEqual(Math.abs(committedAtRequest - thresholdAtRequest), tolerance,
-                "committed at the request (" + committedAtRequest + ") should be at the threshold (" + thresholdAtRequest + ")");
+                + ", before the failing load committed=" + atRequest.committed() + " threshold=" + atRequest.threshold());
+            Asserts.assertEquals(atRequest.threshold(), thresholdAtRequest,
+                "the threshold before the request should be the one the request hit");
+            Asserts.assertLessThanOrEqual(Math.abs(thresholdAtRequest - atRequest.committed()), tolerance,
+                "committed before the request (" + atRequest.committed() + ") should be at the threshold (" + thresholdAtRequest + ")");
             if (changesBefore == 0) {
                 Asserts.assertEquals(thresholdAtRequest, initialThreshold,
                     "the first metadata GC should have been requested at the initial threshold");
@@ -214,6 +227,7 @@ public class TestMetaspaceFirstGC {
 
     private static void loadClassesUntilGC(int maxIterations) throws InterruptedException {
         for (int i = 0; i < maxIterations; i++) {
+            samples.add(new Sample(Instant.now(), getMetaspaceCommitted(), WhiteBox.getWhiteBox().metaspaceCapacityUntilGC()));
             loadOneClass();
             if (metadataGC.getCount() == 0) {
                 System.out.println("Metadata GC seen after " + (i + 1) + " class loads, metaspace used=" + getMetaspaceUsed());
@@ -237,6 +251,14 @@ public class TestMetaspaceFirstGC {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static long getMetaspaceCommitted() {
+        return ManagementFactory.getMemoryPoolMXBeans().stream()
+            .filter(p -> p.getName().equals("Metaspace"))
+            .mapToLong(p -> p.getUsage().getCommitted())
+            .findFirst()
+            .orElseThrow(() -> new RuntimeException("Metaspace pool not found"));
     }
 
     private static long getMetaspaceUsed() {
