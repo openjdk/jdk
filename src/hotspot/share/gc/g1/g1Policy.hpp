@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ConcurrentCycleTracker.hpp"
+#include "gc/g1/g1EvacuationPrediction.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1HeapRegionAttr.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
@@ -36,7 +37,6 @@
 #include "gc/g1/g1YoungGenSizer.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/pair.hpp"
 #include "utilities/ticks.hpp"
 
 // A G1Policy makes policy decisions that determine the
@@ -44,18 +44,22 @@
 //   * choice of collection set.
 //   * when to collect.
 
-class G1HeapRegion;
+class G1Analytics;
 class G1CollectionSet;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
 class G1ConcurrentRefineStats;
+class G1HeapRegion;
 class G1IHOPControl;
-class G1Analytics;
+class G1NumYoungRegionsBounds;
 class G1SurvivorRegions;
+class G1YoungGenPredictor;
 class GCPolicyCounters;
 class STWGCTimer;
 
 class G1Policy: public CHeapObj<mtGC> {
+  friend class G1YoungGenPredictor;
+
   using Pause = G1CollectorState::Pause;
 
   static G1IHOPControl* create_ihop_control(const G1Predictions* predictor);
@@ -98,8 +102,11 @@ class G1Policy: public CHeapObj<mtGC> {
   Atomic<uint> _num_reserve_regions;
 
   G1YoungGenSizer _young_gen_sizer;
-
-  uint _free_regions_at_end_of_collection;
+  // Region budget for Eden allocation during the current mutator phase. It
+  // includes regions already allocated to Eden and free regions available for
+  // Eden allocation. Humongous allocations, Remark reclamation, and heap
+  // resizing modify this value.
+  Atomic<uint> _eden_allocation_budget_num_regions;
 
   // Tracks the number of cards marked as dirty (only) during garbage collection
   // (evacuation) on the card table.
@@ -117,6 +124,14 @@ class G1Policy: public CHeapObj<mtGC> {
   bool should_update_surv_rate_group_predictors();
 
   double pending_cards_processing_time() const;
+
+  uint eden_allocation_budget_num_regions() const {
+    return _eden_allocation_budget_num_regions.load_relaxed();
+  }
+
+  void reset_eden_allocation_budget();
+  void update_target_num_young_regions();
+
 public:
   const G1Predictions& predictor() const { return _predictor; }
   const G1Analytics* analytics()   const { return const_cast<const G1Analytics*>(_analytics); }
@@ -124,6 +139,8 @@ public:
   G1RemSetTrackingPolicy* remset_tracker() { return &_remset_tracker; }
 
   G1OldGenAllocationTracker* old_gen_alloc_tracker() { return &_old_gen_alloc_tracker; }
+
+  void adjust_eden_allocation_budget(uint num_free_regions_before, uint num_free_regions_after);
 
   void set_region_eden(G1HeapRegion* hr) {
     hr->install_surv_rate_group(_eden_surv_rate_group);
@@ -138,15 +155,17 @@ public:
     return _cur_pause_start_sec;
   }
 
-  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length) const;
-
   // Base time contains handling remembered sets and constant other time of the
   // whole young gen, refinement buffers, and copying survivors.
-  // Basically everything but copying eden regions.
-  double predict_base_time_ms(size_t pending_cards, size_t card_rs_length, size_t code_root_length) const;
+  // Basically everything but evacuating eden regions.
+  G1EvacuationPrediction predict_base_evacuation() const;
+  G1EvacuationPrediction predict_base_evacuation(size_t pending_cards,
+                                                 size_t card_rs_length,
+                                                 size_t code_root_rs_length) const;
 
   // Copy time for a region is copying live data.
   double predict_region_copy_time_ms(G1HeapRegion* hr, bool for_young_only_phase) const;
+  double predict_copy_time_ms(size_t bytes_to_copy, bool for_young_only_phase) const;
   // Code root scan time prediction for the given region.
   double predict_region_code_root_scan_time(G1HeapRegion* hr, bool for_young_only_phase) const;
 
@@ -154,9 +173,9 @@ public:
   // Predict other time for young regions.
   double predict_young_region_other_time_ms(uint num_regions) const;
   double predict_non_young_other_time_ms(uint num_regions) const;
-  // Predict copying live data time for eden regions. Return the predict bytes if
-  // bytes_to_copy is non-null.
-  double predict_eden_copy_time_ms(uint num_eden_regions, size_t* bytes_to_copy = nullptr) const;
+  // Predict evacuation time, including per-region overhead, and copied bytes
+  // for eden regions.
+  G1EvacuationPrediction predict_eden_evacuation(uint num_eden_regions) const;
 
   void cset_regions_freed();
 
@@ -197,44 +216,27 @@ private:
   // If no parameters are passed, predict pending cards, card set remset length and
   // code root remset length using the prediction model.
   void update_young_regions_bounds();
-  void update_young_regions_bounds(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
+  void update_young_regions_bounds(const G1NumYoungRegionsBounds& young_regions_bounds);
+  G1NumYoungRegionsBounds calculate_young_regions_bounds(const G1EvacuationPrediction& base_prediction,
+                                                         uint current_num_young_regions);
 
   // Calculate and return the minimum desired number of eden regions based on the MMU target.
   uint calculate_desired_num_eden_regions_by_mmu() const;
 
-  // Calculate the desired number of eden regions meeting the pause time goal.
-  // min_num_eden_regions and max_num_eden_regions are the bounds
-  // (inclusive) within which eden can grow.
-  uint calculate_desired_num_eden_regions_by_pause(double base_time_ms,
-                                                   uint min_num_eden_regions,
-                                                   uint max_num_eden_regions) const;
-
-  // Calculate the desired number of eden regions that can fit into the pause time
-  // goal before young only gcs.
-  uint calculate_desired_num_eden_regions_before_young_only(double base_time_ms,
-                                                            uint min_num_eden_regions,
-                                                            uint max_num_eden_regions) const;
-
-  // Calculates the desired number of eden regions before mixed gc so that after adding the
-  // minimum amount of old gen regions from the collection set, the eden fits into
-  // the pause time goal.
-  uint calculate_desired_num_eden_regions_before_mixed(double base_time_ms,
-                                                       uint min_num_eden_regions,
-                                                       uint max_num_eden_regions) const;
-
-  // Calculate desired number of young regions based on current situation without taking actually
-  // available free regions into account.
-  uint calculate_desired_num_young_regions(size_t pending_cards,
-                                           size_t card_rs_length,
-                                           size_t code_root_rs_length,
-                                           uint min_num_young_regions_by_sizer,
-                                           uint max_num_young_regions_by_sizer) const;
-  // Limit the given desired number of young regions to available free regions.
-  uint calculate_target_num_young_regions(uint desired_num_young_regions,
+  // Limit the given target number of young regions to the Eden allocation budget
+  // and the heap reserve.
+  uint calculate_target_num_young_regions(uint target_num_young_regions_by_evac_space,
+                                          uint eden_allocation_budget_num_regions,
+                                          uint current_num_young_regions,
                                           uint min_num_young_regions_by_sizer) const;
 
-  double predict_survivor_regions_evac_time() const;
-  double predict_retained_regions_evac_time() const;
+  G1EvacuationPrediction predict_survivor_regions_evacuation() const;
+  G1EvacuationPrediction predict_retained_regions_evacuation() const;
+
+  // Predict evacuation of the minimum marking candidates that must be included
+  // in the next mixed collection set. Card set groups are indivisible, so the
+  // prediction may include more regions than the minimum.
+  G1EvacuationPrediction predict_min_marking_candidates_evacuation() const;
 
 public:
   size_t predict_bytes_to_copy(G1HeapRegion* hr) const;
@@ -287,7 +289,9 @@ public:
   // Check the current value of the young generation RSet length and
   // compare it against the last prediction. If the current value is
   // higher, recalculate the target number of young regions prediction.
-  void revise_target_num_young_regions(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length);
+  void try_revise_target_num_young_regions(size_t pending_cards,
+                                           size_t card_rs_length,
+                                           size_t code_root_rs_length);
 
   // This should be called after the heap is resized.
   void record_new_heap_size(uint new_num_regions);
@@ -408,6 +412,9 @@ private:
   size_t desired_survivor_size(uint max_num_regions) const;
 
 public:
+  static size_t young_evacuation_reserve_bytes(size_t predicted_young_bytes_to_copy,
+                                               size_t max_young_bytes_to_copy);
+
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,
   // the rest is used to add old regions to the normal CSet.

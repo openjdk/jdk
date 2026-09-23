@@ -79,9 +79,9 @@ void G1ReviseNumYoungRegionsTask::adjust_target_num_young_regions() {
   RemSetSamplingClosure cl;
   g1h->collection_set()->iterate(&cl);
 
-  policy->revise_target_num_young_regions(pending_cards,
-                                          current_to_collection_set_cards,
-                                          cl.sampled_code_root_rs_length());
+  policy->try_revise_target_num_young_regions(pending_cards,
+                                              current_to_collection_set_cards,
+                                              cl.sampled_code_root_rs_length());
 }
 
 G1ReviseNumYoungRegionsTask::G1ReviseNumYoungRegionsTask(const char* name) :

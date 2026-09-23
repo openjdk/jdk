@@ -59,7 +59,7 @@ void G1CardSetGroup::calculate_efficiency() {
     G1HeapRegion* hr = region_at(i);
     _reclaimable_bytes += hr->reclaimable_bytes();
   }
-  _gc_efficiency = _reclaimable_bytes / predict_group_total_time_ms();
+  _gc_efficiency = _reclaimable_bytes / predict_group_evacuation()._time_ms;
 }
 
 double G1CardSetGroup::liveness_percent() const {
@@ -87,20 +87,21 @@ void G1CardSetGroup::clear_card_set() {
   _card_set.clear();
 }
 
-double G1CardSetGroup::predict_group_total_time_ms() const {
+G1EvacuationPrediction G1CardSetGroup::predict_group_evacuation() const {
   G1Policy* p = G1CollectedHeap::heap()->policy();
 
   double predicted_copy_time_ms = 0.0;
-  double predict_code_root_scan_time_ms = 0.0;
-  size_t predict_bytes_to_copy = 0.0;
+  double predicted_code_root_scan_time_ms = 0.0;
+  size_t predicted_bytes_to_copy = 0;
 
   for (G1CardSetGroupItem ci : _items) {
     G1HeapRegion* r = ci._r;
     assert(r->rem_set()->card_set_group() == this, "Must be!");
 
-    predict_bytes_to_copy += p->predict_bytes_to_copy(r);
-    predicted_copy_time_ms += p->predict_region_copy_time_ms(r, false /* for_young_only_phase */);
-    predict_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
+    size_t bytes_to_copy = p->predict_bytes_to_copy(r);
+    predicted_bytes_to_copy += bytes_to_copy;
+    predicted_copy_time_ms += p->predict_copy_time_ms(bytes_to_copy, false /* for_young_only_phase */);
+    predicted_code_root_scan_time_ms += p->predict_region_code_root_scan_time(r, false /* for_young_only_phase */);
   }
 
   size_t card_rs_length = _card_set.occupied();
@@ -109,7 +110,7 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
   double non_young_other_time_ms = p->predict_non_young_other_time_ms(num_regions());
 
   double total_time_ms = merge_scan_time_ms +
-                         predict_code_root_scan_time_ms +
+                         predicted_code_root_scan_time_ms +
                          predicted_copy_time_ms +
                          non_young_other_time_ms;
 
@@ -119,12 +120,12 @@ double G1CardSetGroup::predict_group_total_time_ms() const {
                              total_time_ms,
                              card_rs_length,
                              merge_scan_time_ms,
-                             predict_code_root_scan_time_ms,
+                             predicted_code_root_scan_time_ms,
                              predicted_copy_time_ms,
                              non_young_other_time_ms,
-                             predict_bytes_to_copy);
+                             predicted_bytes_to_copy);
 
-  return total_time_ms;
+  return G1EvacuationPrediction{total_time_ms, predicted_bytes_to_copy};
 }
 
 int G1CardSetGroup::compare_gc_efficiency(G1CardSetGroup** gr1, G1CardSetGroup** gr2) {
