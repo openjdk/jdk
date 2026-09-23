@@ -192,6 +192,37 @@ public class TestFileChannelEvents {
                 IOHelper.verifyEquals(Events.fromRecording(recording),
                         List.of(IOEvent.createFileReadEvent(size, file)));
             }
+
+            buffer.clear();
+            ch.position(0);
+
+            try (Recording recording = new Recording()) {
+                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+                recording.disable(IOEvent.EVENT_FILE_WRITE);
+                recording.start();
+
+                long size = ch.read(buffer);
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileReadEvent(size, file)));
+            }
+
+            buffer.clear();
+            other.clear();
+            ch.position(0);
+
+            try (Recording recording = new Recording()) {
+                recording.enable(IOEvent.EVENT_FILE_READ).withThreshold(Duration.ofMillis(0));
+                recording.disable(IOEvent.EVENT_FILE_WRITE);
+                recording.start();
+
+                long size = ch.read(new ByteBuffer[] { buffer, other });
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileReadEvent(size, file)));
+            }
         }
     }
 }
