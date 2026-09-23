@@ -243,16 +243,16 @@ void RiscvHwprobe::add_features_from_query_result() {
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICBOZ)) {
     VM_Version::ext_Zicboz.enable_feature();
   }
-  // Currently tests shows that cmove using Zicond instructions will bring
-  // performance regression, but to get a test coverage all the time, will
-  // still prefer to enabling it in debug version.
-  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
-    VM_Version::ext_Zicond.enable_feature();
-  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZTSO)) {
     VM_Version::ext_Ztso.enable_feature();
   }
 #endif
+  if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZICOND)) {
+    // Zicond (czero.eqz/nez) branchless selects win on unpredictable data
+    // (see benchmarks in the PR); on perfectly predictable branches they can
+    // be slightly slower, so UseZicond remains tunable with -XX:-UseZicond.
+    VM_Version::ext_Zicond.enable_feature();
+  }
   if (is_set(RISCV_HWPROBE_KEY_IMA_EXT_0, RISCV_HWPROBE_EXT_ZVBC)) {
     VM_Version::ext_Zvbc.enable_feature();
   }
