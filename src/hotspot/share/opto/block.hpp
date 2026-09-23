@@ -206,7 +206,7 @@ public:
   uint compute_loop_alignment();
 
   // BLOCK_FREQUENCY is a sentinel to mark uses of constant block frequencies.
-#define BLOCK_FREQUENCY(f) (f * (double) 1500)
+#define BLOCK_FREQUENCY(f) (f * 1500.0)
 
   // Register Pressure (estimate) for Splitting heuristic
   uint _reg_pressure;
