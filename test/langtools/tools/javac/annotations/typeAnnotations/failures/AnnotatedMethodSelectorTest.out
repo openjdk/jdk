@@ -1,2 +1,3 @@
-AnnotatedMethodSelectorTest.java:12:19: compiler.err.annotation.type.not.applicable.to.type: AnnotatedMethodSelectorTest.A
-1 error
+AnnotatedMethodSelectorTest.java:16:19: compiler.err.annotation.type.not.applicable.to.type: AnnotatedMethodSelectorTest.A
+AnnotatedMethodSelectorTest.java:17:19: compiler.err.type.annotation.inadmissible.not.type.context: (compiler.misc.type.annotation.1: @AnnotatedMethodSelectorTest.TA)
+2 errors
