@@ -764,7 +764,7 @@ void AllocateNode::dump_spec(outputStream* st) const {
     jvms()->dump_spec(st);
   }
 }
-#endif
+#endif // !PRODUCT
 
 const Type *CallNode::bottom_type() const { return tf()->range_cc(); }
 const Type* CallNode::Value(PhaseGVN* phase) const {
