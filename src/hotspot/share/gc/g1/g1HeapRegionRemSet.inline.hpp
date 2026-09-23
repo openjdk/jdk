@@ -30,34 +30,72 @@
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1FromCardCache.inline.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "runtime/safepoint.hpp"
 
-void G1HeapRegionRemSet::set_state_untracked() {
-  guarantee(SafepointSynchronize::is_at_safepoint() || !is_tracked(),
-            "Should only set to Untracked during safepoint but is %s.", get_state_str());
-  if (_state == Untracked) {
-    return;
-  }
-  _state = Untracked;
-}
-
-void G1HeapRegionRemSet::set_state_updating() {
-  guarantee(SafepointSynchronize::is_at_safepoint() && !is_tracked(),
-            "Should only set to Updating from Untracked during safepoint but is %s", get_state_str());
-  _state = Updating;
-}
-
-void G1HeapRegionRemSet::set_state_complete() {
-  _state = Complete;
+size_t G1HeapRegionRemSet::occupied() const {
+  return has_card_set_group() ? card_set()->occupied() : 0;
 }
 
 uintptr_t G1HeapRegionRemSet::to_card(OopOrNarrowOopStar from) const {
   return pointer_delta(from, _heap_base_address, 1) >> CardTable::card_shift();
 }
 
+G1CardSet* G1HeapRegionRemSet::card_set() {
+  assert(has_card_set_group(), "pre-condition");
+  return card_set_group()->card_set();
+}
+
+const G1CardSet* G1HeapRegionRemSet::card_set() const {
+  assert(has_card_set_group(), "pre-condition");
+  return card_set_group()->card_set();
+}
+
+bool G1HeapRegionRemSet::card_set_is_empty() const {
+  return !has_card_set_group() || card_set()->is_empty();
+}
+
+uint G1HeapRegionRemSet::card_set_group_id() const {
+  assert(has_card_set_group(), "pre-condition");
+  return card_set_group()->group_id();
+}
+
+bool G1HeapRegionRemSet::is_empty() const {
+  return (code_roots_length() == 0) && card_set_is_empty();
+}
+
+bool G1HeapRegionRemSet::occupancy_less_or_equal_than(size_t occ) const {
+  return (code_roots_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
+}
+
+bool G1HeapRegionRemSet::is_tracked() const {
+  return has_card_set_group();
+}
+
+bool G1HeapRegionRemSet::is_updating() const {
+  if (has_card_set_group()) {
+    return card_set_group()->is_updating();
+  } else {
+    return false;
+  }
+}
+
+bool G1HeapRegionRemSet::is_complete() const {
+  if (has_card_set_group()) {
+    return card_set_group()->is_complete();
+  } else {
+    return false;
+  }
+}
+
+const char* G1HeapRegionRemSet::get_short_state_str() const {
+  return has_card_set_group() ? card_set_group()->get_short_state_str() : "UNTRA";
+}
+
+const char* G1HeapRegionRemSet::get_state_str() const {
+  return has_card_set_group() ? card_set_group()->get_state_str() : "Untracked";
+}
+
 void G1HeapRegionRemSet::add_reference(OopOrNarrowOopStar from, G1FromCardCache& from_card_cache) {
-  precond(has_card_set_group());
-  precond(_state != Untracked);
+  precond(is_tracked());
 
   uintptr_t from_card = uintptr_t(from) >> CardTable::card_shift();
 

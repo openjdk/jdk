@@ -587,6 +587,7 @@ void G1Policy::record_full_collection_start() {
   // Release the future to-space so that it is available for compaction into.
   collector_state()->set_in_full_gc();
   candidates()->clear();
+  _g1h->humongous_card_set_groups()->clear();
 }
 
 void G1Policy::record_full_collection_end(size_t allocation_word_size) {

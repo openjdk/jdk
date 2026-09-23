@@ -104,11 +104,14 @@ public:
   uint num_marking_regions() const;
   uint num_retained_regions() const;
 
+  void after_rebuild();
+
 private:
   void verify_helper(G1CardSetGroupList* list, uint& from_marking, CandidateOrigin* verify_map) PRODUCT_RETURN;
 
 public:
-  void verify() PRODUCT_RETURN;
+  void verify_origins() PRODUCT_RETURN;
+  void verify();
 
   uint num_regions() const { return num_marking_regions() + num_retained_regions(); }
 
