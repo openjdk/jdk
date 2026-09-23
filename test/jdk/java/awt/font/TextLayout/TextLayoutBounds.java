@@ -27,7 +27,6 @@
  */
 
 import java.awt.Font;
-import java.awt.GraphicsEnvironment;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.font.TextLayout;
@@ -58,7 +57,7 @@ public class TextLayoutBounds {
             System.out.println("GV Visual Bounds="+gvvBounds);
             System.out.println("GV Outline Bounds="+gvoBounds);
             System.out.println("TL Bounds="+tlBounds);
-            System.out.println("TL Outline bounds="+tlBounds);
+            System.out.println("TL Outline bounds="+oBounds);
 
             // Fail the test only if the difference is significant.
 
