@@ -23,10 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584\
- *      8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401\
- *      8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865\
- *      8369489 8392939
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489 8392939
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -3249,8 +3246,6 @@ public class JavacParserTest extends TestCase {
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
 
-        List<String> codes = new LinkedList<>();
-
         assertTrue("no errors", coll.getDiagnostics().isEmpty());
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
         System.out.println("RESULT\n" + result);
@@ -3258,14 +3253,11 @@ public class JavacParserTest extends TestCase {
                      result,
                      """
                      package tests;
-                     \n\
-                     class ListUtilsTest {
-                         \n\
-                         void test(List<@AlphaChars (ERROR: (ERROR)<@StringLength(int) value, (ERROR)> = 5), (ERROR: )> <error>) {
-                             (ERROR: String > s);
-                             {
-                             }
-                         }
+                     
+                     class Test {
+                         Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1 []::new;
                      }""");
     }
 
