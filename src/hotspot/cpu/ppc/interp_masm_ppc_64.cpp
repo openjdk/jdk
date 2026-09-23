@@ -2449,12 +2449,12 @@ void InterpreterMacroAssembler::write_flat_field(Register entry, Register tmp1, 
   load_klass(tmp1, value);
   payload_address(value, value, tmp1, tmp2);
 
-  Register layout_info = field_offset;
+  Register vfi = field_offset;
   lhz(tmp1, in_bytes(ResolvedFieldEntry::field_index_offset()), entry);
   ld(tmp2, in_bytes(ResolvedFieldEntry::field_holder_offset()), entry);
-  value_field_layout_info(tmp2, tmp1, layout_info);
+  value_field_info(tmp2, tmp1, vfi);
 
-  flat_field_copy(IN_HEAP, value, obj, layout_info);
+  flat_field_copy(IN_HEAP, value, obj, vfi);
   b(done);
 
   bind(slow_path);

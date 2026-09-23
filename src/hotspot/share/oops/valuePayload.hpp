@@ -221,7 +221,7 @@ private:
 
   inline FlatFieldPayload(instanceOop container,
                           ptrdiff_t offset,
-                          ValueFieldLayoutInfo* layout_info);
+                          ValueFieldInfo* value_field_info);
 
   inline void assert_post_construction_invariants(instanceOop container,
                                                   ResolvedFieldEntry* resolved_field_entry) const NOT_DEBUG_RETURN;

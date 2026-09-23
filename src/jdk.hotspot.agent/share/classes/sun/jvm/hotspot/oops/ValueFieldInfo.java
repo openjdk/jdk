@@ -32,7 +32,7 @@ import sun.jvm.hotspot.types.TypeDataBase;
 import sun.jvm.hotspot.types.WrongTypeException;
 
 
-public class ValueFieldLayoutInfo extends VMObject {
+public class ValueFieldInfo extends VMObject {
 
     private static MetadataField klassField;
 
@@ -41,12 +41,12 @@ public class ValueFieldLayoutInfo extends VMObject {
     }
 
     private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
-        Type type = db.lookupType("ValueFieldLayoutInfo");
+        Type type = db.lookupType("ValueFieldInfo");
 
         klassField = new MetadataField(type.getAddressField("_klass"), 0);
     }
 
-    public ValueFieldLayoutInfo(Address addr) {
+    public ValueFieldInfo(Address addr) {
         super(addr);
     }
 
