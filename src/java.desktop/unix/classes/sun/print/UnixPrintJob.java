@@ -74,6 +74,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.RequestingUserName;
+import javax.print.attribute.standard.SheetCollate;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.Sides;
 import javax.print.attribute.standard.PrinterIsAcceptingJobs;
@@ -391,6 +392,13 @@ public final class UnixPrintJob implements CancelablePrintJob {
 
              if (sides != null) {
                  mOptions += " sides="+sides;
+             }
+
+             if (service.isAttributeCategorySupported(SheetCollate.class)) {
+                 SheetCollate collate = (SheetCollate)attributes.get(SheetCollate.class);
+                 if (collate != null && collate == SheetCollate.COLLATED) {
+                     mOptions += " collate=true";
+                 }
              }
 
         }
