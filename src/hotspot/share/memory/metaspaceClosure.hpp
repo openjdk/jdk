@@ -341,8 +341,6 @@ public:
 private:
   template <class REF_TYPE, typename T>
   void push_with_ref(T** mpp, Writability w) {
-    // We cannot make stack allocation because the Ref may need to be saved in
-    // _pending_refs to avoid overflowing the C call stack
     REF_TYPE ref(mpp, w);
     push_impl(&ref);
   }
