@@ -85,6 +85,12 @@ vmTestbase/nsk/jdi/VMOutOfMemoryException/VMOutOfMemoryException001/VMOutOfMemor
 # to make progress when all other threads are currently suspended.
 vmTestbase/nsk/jdi/ThreadReference/isSuspended/issuspended002/TestDescription.java 8338713 generic-all
 
+####
+## NSK JDWP tests failing with wrapper
+
+# JVMTI bug when popping to a frozen frame
+vmTestbase/nsk/jdwp/StackFrame/PopFrames/popframes001/TestDescription.java 8391440 generic-all 
+
 #############################################################################
 
 # Preview project specific failures go here at the end of the file.

@@ -809,6 +809,10 @@ void Canonicalizer::do_If(If* x) {
 
 
 void Canonicalizer::do_TableSwitch(TableSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();
@@ -821,6 +825,10 @@ void Canonicalizer::do_TableSwitch(TableSwitch* x) {
 
 
 void Canonicalizer::do_LookupSwitch(LookupSwitch* x) {
+  // Keep the switch if we are profiling it
+  if (compilation()->profile_switches()) {
+    return;
+  }
   if (x->tag()->type()->is_constant()) {
     int v = x->tag()->type()->as_IntConstant()->value();
     BlockBegin* sux = x->default_sux();

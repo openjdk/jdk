@@ -105,7 +105,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
       G1CardSetGroup* group = r->rem_set()->card_set_group();
 
       assert(group != nullptr, "humongous start must have a card set group");
-      assert(group->length() == 1, "humongous group must have only one region");
+      assert(group->num_regions() == 1, "humongous group must have only one region");
 
       group->clear_card_set();
       g1h->humongous_obj_regions_iterate(r,
@@ -120,7 +120,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(G1HeapRegion* r) {
     size_t occupied = 0;
     // Per-region card set group statistics are only valid if group contains a single region.
     if (r->rem_set()->has_card_set_group() &&
-        r->rem_set()->card_set_group()->length() == 1 ) {
+        r->rem_set()->card_set_group()->num_regions() == 1 ) {
         G1CardSet *card_set = r->rem_set()->card_set_group()->card_set();
         remset_bytes += card_set->mem_size();
         occupied = card_set->occupied();
