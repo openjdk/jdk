@@ -2233,7 +2233,15 @@ bool PhiNode::must_wait_for_region_in_irreducible_loop(PhaseGVN* phase) const {
   return false;
 }
 
-// Fix all cases when this bottom memory Phi has MergeMem inputs
+// Fix all cases when this bottom memory Phi has MergeMem inputs.
+// If none of the inputs of this Phi is a MergeMem, no processing is necessary and no progress is
+// made, return nullptr.
+// If for all inputs that are MergeMems, the non-top inputs of them correspond to alias classes
+// that have been excluded from this Phi, skip the MergeMems by rewiring the inputs of this Phi to
+// the base memory of those MergeMem, and return this to denote progress.
+// Otherwise, split the Phi, which allows the MergeMem inputs to be pushed down.
+// In all cases, the intention is to avoid having a bottom memory Phi with a MergeMem input, which
+// helps simplify the memory graph.
 Node* PhiNode::split_through_mergemem(PhaseIterGVN& igvn) {
   assert(type() == Type::MEMORY, "must be a memory Phi");
   assert(adr_type() == TypePtr::BOTTOM, "must be a bottom memory Phi");
@@ -2284,6 +2292,7 @@ Node* PhiNode::split_through_mergemem(PhaseIterGVN& igvn) {
   // Split this Phi through its MergeMem inputs
   // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
   //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
+  // The new bottom memory Phi Phi(...m0...) records alias classes that have been split (AT1, AT2)
   PhiNode* new_base = (PhiNode*) clone();
   // Must eagerly register phis, since they participate in loops.
   igvn.register_new_node_with_optimizer(new_base);

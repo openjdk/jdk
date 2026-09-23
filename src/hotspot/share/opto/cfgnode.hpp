@@ -167,12 +167,15 @@ class PhiNode : public TypeNode {
   // Array elements references have the same alias_idx but different offset.
   const int _inst_offset; // Offset of the instance memory slice.
 
-  // Bottom memory Phis are peculiar. Consider a bottom memory Phi bot_phi and an arbitrary alias
-  // class mem.
+  // Bottom memory Phis are peculiar. Their address type, TypePtr::BOTTOM, suggests that they
+  // represent the complete memory state, but that is not always true. Bottom memory Phis can
+  // represent a partial memory state that does not need to include all alias classes.
   //
-  // 1. Sometimes, bot_phi does not contain the memory state corresponding to mem, and there is
-  // another memory Phi mem_phi at the same region representing the memory state corresponding to
-  // mem.
+  // Consider a bottom memory Phi bot_phi and an arbitrary alias class mem:
+  //
+  // 1. Sometimes, bot_phi does not contain the memory state corresponding to mem (i.e. not every
+  // input to bot_phi captures the latest memory state for mem), and there is another memory Phi
+  // mem_phi at the same region representing the memory state corresponding to mem:
   //
   // if (b) {
   //   Call1();
@@ -186,17 +189,17 @@ class PhiNode : public TypeNode {
   // mem_phi = Phi(MemProj1, Store1);
   //
   // In this example, bot_phi cannot contain the memory state corresponding to mem, because
-  // MemProj2 does not capture the store into that memory.
+  // MemProj2 does not capture Store1 that writes into that memory.
   //
   // 2. Sometimes, bot_phi contains the memory state corresponding to mem, even if there is another
-  // memory Phi at the same region representing the memory state corresponding to mem.
+  // memory Phi at the same region representing the memory state corresponding to mem:
   //
   // Call1();
   // MemProj1(Call1);
   // Store1(_, MemProj1, p1, v): mem;
   // MergeMem1(MemProj1, Top, Store1);
   // Load1(_, Store1, p2): mem;
-  // Load2(_, MergeMem, p3): mem;
+  // Load2(_, MergeMem1, p3): mem;
   //
   // We somehow want to multiversion some statements:
   //
@@ -215,24 +218,26 @@ class PhiNode : public TypeNode {
   // Load2(_, bot_phi, p3): mem;
   //
   // In this example, bot_phi must contain the memory state corresponding to mem, because there is
-  // a load corresponding to mem from it. This pattern can be eventually simplified after IGVN, but
+  // a load corresponding to mem from it. This pattern can eventually be simplified by IGVN, but
   // until then, the existence of mem_phi does not mean that bot_phi does not contain the memory
   // state corresponding to mem.
   //
   // 3. Sometimes, bot_phi does not contain the memory state corresponding to mem, even if there is
-  // not any memory Phi at the same region representing the memory state corresponding to mem.
+  // not any memory Phi at the same region representing the memory state corresponding to mem:
   //
   // Call1();
   // MemProj1(Call1);
-  // Store1(_, MemProj1, p, v);
+  // Store1(_, MemProj1, p1, v): mem;
   // if (b) {
   //   MergeMem1(MemProj1, Top, Store1);
   // }
   // bot_phi = Phi(MergeMem1, MemProj1);
+  // Load1(_, Store1, p2): mem;
   //
   // In this case, bot_phi does not contain the memory state corresponding to mem, because in one
   // branch, its input is MemProj1, which does not capture the latest store Store1 of the alias
-  // class mem.
+  // class mem. A load from the alias class mem Load1 will have its memory input being Store1, not
+  // bot_phi.
   //
   // Those situations can be solved by pushing the MergeMems down through their bottom memory Phi
   // outputs. However, naively doing so can lead to infinite loop, because a Phi can be a
@@ -261,15 +266,16 @@ class PhiNode : public TypeNode {
   //                  ...
   //
   // While it is uncertain which memory states the original Phi contains, it is certain that Phi1
-  // (the new bottom memory Phi) does not contain the memory state corresponding to Phi2, because
-  // it misses the latest Store into that alias class.
+  // (the new bottom memory Phi) does not contain the memory state for the alias class represented
+  // by Phi2 after the split, because it misses the latest Store into that alias class.
   //
   // As a result, if we record which alias classes have been split from each bottom memory Phi, it
-  // is certain that the transformation will terminate, because if a MergeMem input of a bottom
-  // memory Phi has all its non-top inputs being known to be excluded from that Phi, then the Phi
-  // does not have to be split anymore (i.e. it can simply skip the MergeMem and is rewired to the
-  // MergeMem's base input instead of having the MergeMem pushed through it). Otherwise, the split
-  // is performed, more alias classes are split from the Phi, which means some progress is made.
+  // is certain that the transformation will terminate, because if every MergeMem input of a bottom
+  // memory Phi has all their non-top inputs being known to be excluded from that Phi, then the Phi
+  // does not have to be split anymore (i.e. it can simply skip the MergeMems and is rewired to the
+  // MergeMems' base inputs instead of having the MergeMems pushed through it). Otherwise, the
+  // split is performed, more alias classes are split from the Phi, which means some progress is
+  // made.
   //
   // This does not need to be exact, it is fine if it misses alias classes that a bottom memory Phi
   // does not include, but it must not contain alias classes that the Phi includes.
