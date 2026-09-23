@@ -1684,7 +1684,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   // just this path instead of the shared counts.
   if( block()->count() > 0 )
     sum = block()->count();
-  cnt = sum / FreqCountInvocations;
+  cnt = sum;
 
   // Pin probability to sane limits
   float prob;
