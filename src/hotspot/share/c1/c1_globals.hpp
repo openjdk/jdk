@@ -266,9 +266,6 @@
           "If GraphBuilder adds this many instructions, bails out")         \
           range(0, max_jint)                                                \
                                                                             \
-  develop(bool, ComputeExactFPURegisterUsage, true,                         \
-          "Compute additional live set for fpu registers to simplify fpu stack merge (Intel only)") \
-                                                                            \
   product(bool, C1ProfileCalls, true,                                       \
           "Profile calls when generating code for updating MDOs")           \
                                                                             \
