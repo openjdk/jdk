@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ static const char* replace_addr_expr(const char* str)
     std::basic_string<char> tmp5  = std::regex_replace(tmp4, std::regex("\\s+<addr>:\\s+hlt[ \\t]+(?!\\n\\s+;;)"), "");
     std::basic_string<char> red  = std::regex_replace(tmp5, std::regex("(\\s+<addr>:\\s+nop)[ \\t]*"), "$1");
 
-    return os::strdup(red.c_str());
+    return os::strdup(red.c_str(), mtTest);
 }
 
 static const char* delete_header_line(const char* str)
@@ -64,7 +64,7 @@ static const char* delete_header_line(const char* str)
 
     std::basic_string<char> red = std::regex_replace(str, std::regex("Decoding.+bytes\\n"), "");
 
-    return os::strdup(red.c_str());
+    return os::strdup(red.c_str(), mtTest);
 }
 
 static void asm_remarks_check(const AsmRemarks &rem1,
