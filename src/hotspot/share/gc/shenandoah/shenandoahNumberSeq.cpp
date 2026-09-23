@@ -26,6 +26,7 @@
 
 
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
+#include "runtime/atomicAccess.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 #include <cfloat>
@@ -128,15 +129,9 @@ double HdrSeq::percentile(double level) const {
         cnt += _hdr[mag][val];
         if (cnt >= target) {
           double value = std::ldexp(((double) val / ValBuckets) / 2.0 + 0.5, MagMinimum + mag);
-          // The writes to _minimum, _maximum, and _num can be reordered, so a thread
-          // may observe that _minimum == DBL_MAX, _maximum < _minimum, and _num > 0
-          // while another thread is executing HdrSeq::add. Checking low <= high
-          // keeps clamp() from asserting min <= max.
-          double low = minimum();
-          double high = maximum();
-          // value < low and value > high can be possible due to precision loss when
+          // value < _minimum and value > _maximum can be possible due to precision loss when
           // recomputing value. Clamping is done to fit value within the range.
-          return (low <= high) ? clamp(value, low, high) : value;
+          return clamp(value, minimum(), maximum());
         }
       }
     }
