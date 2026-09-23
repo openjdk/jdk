@@ -390,11 +390,6 @@ PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN* gvn, Unique_Node_List& worklist
 
   // Disconnect 'useless' nodes that are adjacent to useful nodes
   C->disconnect_useless_nodes(_useful, worklist);
-
-  // Useless nodes might be added to the worklist during parsing and in
-  // disconnect_useless_nodes. Let's remove them from the worklist now
-  // they are not in the graph anymore.
-  worklist.remove_useless_nodes(_useful.member_set());
 }
 
 //=============================================================================
