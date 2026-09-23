@@ -43,9 +43,8 @@ import tests.JImageGenerator;
  */
 public class HijrahConfigTest {
 
-    private static final String TEST_CONFIG = "hijrah-config-Hijrah-test_islamic-test.properties";
-    private static final String INVALID_TEST_CONFIG =
-            "hijrah-config-Hijrah-invalid_islamic-invalid.properties";
+    private static final String VALID_TEST_CONFIG = "hijrah-config-Hijrah-valid_islamic-valid.properties";
+    private static final String INVALID_TEST_CONFIG = "hijrah-config-Hijrah-invalid_islamic-invalid.properties";
 
     public static void main(String[] args) throws Exception {
         Helper helper = Helper.newHelper();
@@ -64,8 +63,8 @@ public class HijrahConfigTest {
         // Install the test hijrah configuration properties
         Path confPath = outputPath.resolve("conf").resolve("chronology");
         Files.createDirectory(confPath);
-        Files.copy(Path.of(System.getProperty("test.src"), TEST_CONFIG),
-                confPath.resolve(TEST_CONFIG));
+        Files.copy(Path.of(System.getProperty("test.src"), VALID_TEST_CONFIG),
+                confPath.resolve(VALID_TEST_CONFIG));
         Files.copy(Path.of(System.getProperty("test.src"), INVALID_TEST_CONFIG),
                 confPath.resolve(INVALID_TEST_CONFIG));
 
