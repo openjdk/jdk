@@ -78,7 +78,7 @@ class RegMask {
   friend class RegMaskIterator;
 
   // RM_SIZE_IN_INTS is aligned to 64-bit - assert that this holds
-  LP64_ONLY(STATIC_ASSERT(is_aligned(RM_SIZE_IN_INTS, 2)));
+  LP64_ONLY(static_assert(is_aligned(RM_SIZE_IN_INTS, 2)));
 
   static const unsigned int WORD_BIT_MASK = BitsPerWord - 1U;
 
@@ -105,11 +105,11 @@ class RegMask {
       LP64_ONLY(((RM_SIZE_IN_INTS_MAX + 1) & ~1) >> 1) NOT_LP64(RM_SIZE_IN_INTS_MAX);
 
   // Sanity check
-  STATIC_ASSERT(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
+  static_assert(RM_SIZE_IN_INTS <= RM_SIZE_IN_INTS_MAX);
 
   // Ensure that register masks cannot grow beyond the point at which
   // OptoRegPair can no longer index the whole mask
-  STATIC_ASSERT(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
+  static_assert(OptoRegPair::can_fit((RM_SIZE_IN_INTS_MAX << 5) - 1));
 
   union {
     // Array of Register Mask bits. The array should be

@@ -110,6 +110,7 @@ public class ApplicableIRRulesPrinter {
         "avx512_vbmi2",
         "avx10_2",
         "bmi2",
+        "fast_bmi2",
         // Intel APX
         "apx_f",
         // AArch64
@@ -441,16 +442,21 @@ public class ApplicableIRRulesPrinter {
         return returnValue;
     }
 
+    @SuppressWarnings("preview")
     private boolean check(String flag, String value) {
         if (flag.isEmpty()) {
             TestFormat.failNoThrow("Provided empty flag" + failAt());
             return false;
         }
+        Object actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
+        if (actualFlagValue != null) {
+            return value.equals(actualFlagValue);
+        }
         if (value.isEmpty()) {
             TestFormat.failNoThrow("Provided empty value for flag " + flag + failAt());
             return false;
         }
-        Object actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
+        actualFlagValue = WHITE_BOX.getBooleanVMFlag(flag);
         if (actualFlagValue != null) {
             return checkBooleanFlag(flag, value, (Boolean) actualFlagValue);
         }
@@ -461,10 +467,6 @@ public class ApplicableIRRulesPrinter {
         actualFlagValue = WHITE_BOX.getDoubleVMFlag(flag);
         if (actualFlagValue != null) {
             return checkFlag(Double::parseDouble, "floating point", flag, value, (Double) actualFlagValue);
-        }
-        actualFlagValue = WHITE_BOX.getStringVMFlag(flag);
-        if (actualFlagValue != null) {
-            return value.equals(actualFlagValue);
         }
         if (flag.equals("enable-valhalla")) {
             return checkBooleanFlag(flag, value, Integer.class.isValue());

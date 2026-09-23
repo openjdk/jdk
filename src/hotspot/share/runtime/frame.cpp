@@ -35,12 +35,12 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/inlineKlass.hpp"
 #include "oops/markWord.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
+#include "oops/valueKlass.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/continuation.hpp"
@@ -368,7 +368,7 @@ void frame::deoptimize(JavaThread* thread) {
 
 #ifdef COMPILER1
   if (nm->is_compiled_by_c1() && nm->method()->has_scalarized_args() &&
-      pc() < nm->verified_inline_entry_point()) {
+      pc() < nm->verified_value_entry_point()) {
     // The VEP and VIEP(RO) of C1-compiled methods call into the runtime to buffer scalarized value
     // type args. We can't deoptimize at that point because the buffers have not yet been initialized.
     // Also, if the method is synchronized, we first need to acquire the lock.
@@ -377,8 +377,8 @@ void frame::deoptimize(JavaThread* thread) {
 #if defined ASSERT && !defined AARCH64   // Stub call site does not look like NativeCall on AArch64
     NativeCall* call = nativeCall_before(this->pc());
     address dest = call->destination();
-    assert(dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_no_receiver_id) ||
-           dest == Runtime1::entry_for(StubId::c1_buffer_inline_args_id), "unexpected safepoint in entry point");
+    assert(dest == Runtime1::entry_for(StubId::c1_buffer_value_args_no_receiver_id) ||
+           dest == Runtime1::entry_for(StubId::c1_buffer_value_args_id), "unexpected safepoint in entry point");
 #endif
     return;
   }
