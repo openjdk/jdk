@@ -53,7 +53,7 @@ public class TestOnClose {
     private static void testOnCloseOnce() {
         AtomicLong counter = new AtomicLong(0);
         try (RecordingStream rs = new RecordingStream()) {
-            rs.onClose(() -> counter.incrementAndGet());
+            rs.onClose(counter::incrementAndGet);
             rs.close();
             // try-with-resources closes stream a second time
          }

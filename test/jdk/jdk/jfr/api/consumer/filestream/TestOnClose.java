@@ -52,7 +52,7 @@ public class TestOnClose {
         }
         AtomicLong counter = new AtomicLong(0);
         try (EventStream es = EventStream.openFile(file)) {
-            es.onClose(() -> counter.incrementAndGet());
+            es.onClose(counter::incrementAndGet);
             es.close();
             // try-with-resources closes stream a second time
         }
