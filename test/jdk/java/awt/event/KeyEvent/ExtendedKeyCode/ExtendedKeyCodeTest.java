@@ -25,24 +25,32 @@ import java.awt.Frame;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyAdapter;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /*
  * @test
  * @key headful
  * @bug 8007156 8025126
  * @summary Tests that ExtendedKeyCode is set for key events
- * @library /lib/client
- * @build ExtendedRobot
  * @run main ExtendedKeyCodeTest
  */
 public class ExtendedKeyCodeTest {
 
     private static volatile boolean setExtendedKeyCode = true;
     private static volatile int eventsCount = 0;
+    private static final CountDownLatch frameFocused = new CountDownLatch(1);
 
     public static void main(String[] args) throws Exception {
-        ExtendedRobot robot = new ExtendedRobot();
+        Robot robot = new Robot();
         robot.setAutoDelay(50);
+        robot.setAutoWaitForIdle(true);
+        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+            robot.keyPress(KeyEvent.VK_ESCAPE);
+            robot.keyRelease(KeyEvent.VK_ESCAPE);
+        }
 
         Frame frame = new Frame();
         frame.setSize(300, 300);
@@ -63,10 +71,17 @@ public class ExtendedKeyCodeTest {
                         == KeyEvent.getExtendedKeyCodeForChar(e.getKeyChar()));
             }
         });
+        frame.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                frameFocused.countDown();
+            }
+        });
 
         frame.setVisible(true);
-        robot.waitForIdle();
-        robot.delay(1000);
+        if (!frameFocused.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Frame was not opened");
+        }
 
         robot.keyPress(KeyEvent.VK_D);
         robot.keyRelease(KeyEvent.VK_D);
