@@ -23,7 +23,10 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865 8369489
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584\
+ *      8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401\
+ *      8304671 8310326 8312093 8312204 8315452 8337976 8324859 8344706 8351260 8370865\
+ *      8369489 8392939
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1668,6 +1671,51 @@ public class JavacParserTest extends TestCase {
                      """);
     }
 
+    @Test
+    void testAtRecovery2() throws IOException {
+        //verify the errors and AST form produced for member selects which are
+        //missing the selected member name and are followed by an annotation:
+        String code = """
+                      package t;
+                      class Test {
+                          int i1 = "".
+                          @Deprecated
+                          void t1() {
+                          }
+                          int i2 = String.
+                          @Deprecated
+                          String[] t2() {
+                          }
+                      }
+                      """;
+        StringWriter out = new StringWriter();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(out, fm, null, List.of("-XDrawDiagnostics"),
+                null, Arrays.asList(new MyFileObject(code)));
+        String ast = ct.parse().iterator().next().toString().replaceAll("\\R", "\n");
+        String expected = """
+                          package t;
+                          \n\
+                          class Test {
+                              int i1 = "".<error>;
+                              \n\
+                              @Deprecated
+                              void t1() {
+                              }
+                              int i2 = String.<error>;
+                              \n\
+                              @Deprecated
+                              String[] t2() {
+                              }
+                          } """;
+        assertEquals("Unexpected AST, got:\n" + ast, expected, ast);
+        assertEquals("Unexpected errors, got:\n" + out.toString(),
+                     out.toString().replaceAll("\\R", "\n"),
+                     """
+                     Test.java:3:17: compiler.err.expected: token.identifier
+                     Test.java:7:21: compiler.err.expected: token.identifier
+                     """);
+    }
+
     @Test //JDK-8256411
     void testBasedAnonymous() throws IOException {
         String code = """
@@ -3182,6 +3230,43 @@ public class JavacParserTest extends TestCase {
                 return null;
             }
         };
+    }
+
+    @Test //JDK-8392939
+    void testParseMethodReferenceWithAnnotations() throws IOException {
+        String code = """
+                      package tests;
+                      class Test {
+                          Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1[]::new;
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
+                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                null, Arrays.asList(new MyFileObject(code)));
+        CompilationUnitTree cut = ct.parse().iterator().next();
+
+        List<String> codes = new LinkedList<>();
+
+        assertTrue("no errors", coll.getDiagnostics().isEmpty());
+        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
+        System.out.println("RESULT\n" + result);
+        assertEquals("incorrect AST",
+                     result,
+                     """
+                     package tests;
+                     \n\
+                     class ListUtilsTest {
+                         \n\
+                         void test(List<@AlphaChars (ERROR: (ERROR)<@StringLength(int) value, (ERROR)> = 5), (ERROR: )> <error>) {
+                             (ERROR: String > s);
+                             {
+                             }
+                         }
+                     }""");
     }
 
     void run(String[] args) throws Exception {
