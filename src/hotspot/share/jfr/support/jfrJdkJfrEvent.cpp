@@ -62,9 +62,9 @@ static bool initialize(TRAPS) {
 
 /*
  * Abstract klasses are filtered out unconditionally.
- *
- * If a klass is initialized or is being initialized it
- * is returned.
+ * If a klass is not initialized and <clinit> is not running,
+ * it is also filtered out so we don't accidentally
+ * trigger initialization.
  */
 static bool is_allowed(const Klass* k) {
   assert(k != nullptr, "invariant");
