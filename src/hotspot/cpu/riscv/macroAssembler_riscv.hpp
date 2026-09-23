@@ -1762,6 +1762,7 @@ public:
   static bool is_movptr_sv39_at(address instr);
   static bool is_movptr1_sv48_at(address instr);
   static bool is_movptr2_sv48_at(address instr);
+  static bool is_movptr_at(address instr);
 
   static bool is_lwu_to_zr(address instr);
 

@@ -65,7 +65,7 @@ static int current_mode_movptr_size_at(address addr) {
 }
 
 bool NativeInstruction::is_movptr() const {
-  return current_mode_movptr_size_at(addr_at(0)) != 0;
+  return MacroAssembler::is_movptr_at(addr_at(0));
 }
 
 bool NativeInstruction::is_call_at(address addr) {
@@ -239,8 +239,9 @@ address NativeMovConstReg::next_instruction_address() const {
   int movptr_size = current_mode_movptr_size_at(instruction_address());
 
   if (movptr_size != 0) {
-    // The final immediate may be a standalone addi or folded into the
-    // following load/jalr. In the latter case, that instruction is next.
+    // The final address offset may be applied by a standalone addi or
+    // folded into the immediate field of the following load/jalr.
+    // In the latter case, the load/jalr itself is the next instruction.
     int last_instruction_offset = movptr_size - NativeInstruction::instruction_size;
     return MacroAssembler::is_addi_at(addr_at(last_instruction_offset))
            ? addr_at(movptr_size)

@@ -49,7 +49,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/timer.hpp"
-#include "runtime/vm_version.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"

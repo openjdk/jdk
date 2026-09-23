@@ -116,6 +116,18 @@ bool MacroAssembler::is_load_pc_relative_at(address instr) {
          check_load_pc_relative_data_dependency(instr);
 }
 
+bool MacroAssembler::is_movptr_at(address instr) {
+  switch (VM_Version::satp_mode.value()) {
+    case VM_Version::VM_SV39:
+      return is_movptr_sv39_at(instr);
+    case VM_Version::VM_SV48:
+      return is_movptr1_sv48_at(instr) || is_movptr2_sv48_at(instr);
+    default:
+      ShouldNotReachHere();
+      return false;
+  }
+}
+
 bool MacroAssembler::is_movptr_sv39_at(address instr) {
   return is_lui_at(instr) && // lui
          is_addi_at(instr + MacroAssembler::instruction_size) && // addi
@@ -3251,6 +3263,7 @@ struct Movptr2Sv48Parts {
     const int64_t upper18 = addr >> 30;
     const int64_t lower30 = (uintptr_t)addr & 0x3fffffff;
     const int64_t offset = Assembler::sextract((uint32_t)lower30, 11, 0);
+    // Avoid left-shifting a potentially negative signed value.
     const int64_t upper_lui_imm = upper18 * 0x1000;
     const int64_t middle_lui_imm = lower30 - offset;
     return Movptr2Sv48Parts{ upper_lui_imm, middle_lui_imm, (int32_t)offset };
@@ -3283,27 +3296,21 @@ struct Movptr2Sv48Parts {
   }
 };
 
-static bool patch_addr_in_movptr(address instruction_address, address target, int& patched_size) {
+static int patch_addr_in_movptr(address instruction_address, address target) {
+  assert(MacroAssembler::is_movptr_at(instruction_address), "must be a movptr");
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      if (MacroAssembler::is_movptr_sv39_at(instruction_address)) {
-        patched_size = MovptrSv39Parts::patch(instruction_address, target);
-        return true;
-      }
-      break;
+      return MovptrSv39Parts::patch(instruction_address, target);
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(instruction_address)) {
-        patched_size = Movptr1Sv48Parts::patch(instruction_address, target);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv48_at(instruction_address)) {
-        patched_size = Movptr2Sv48Parts::patch(instruction_address, target);
-        return true;
+        return Movptr1Sv48Parts::patch(instruction_address, target);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv48_at(instruction_address), "must be movptr2_sv48");
+      return Movptr2Sv48Parts::patch(instruction_address, target);
     default:
       ShouldNotReachHere();
+      return 0;
   }
-  return false;
 }
 
 static int patch_imm_in_li16u(address branch, uint16_t target) {
@@ -3356,27 +3363,21 @@ static long get_offset_of_pc_relative(address insn_addr) {
   return offset;
 }
 
-static bool get_target_of_movptr(address insn_addr, address& target) {
+static address get_target_of_movptr(address insn_addr) {
+  assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
   switch (VM_Version::satp_mode.value()) {
     case VM_Version::VM_SV39:
-      if (MacroAssembler::is_movptr_sv39_at(insn_addr)) {
-        target = MovptrSv39Parts::decode(insn_addr);
-        return true;
-      }
-      break;
+      return MovptrSv39Parts::decode(insn_addr);
     case VM_Version::VM_SV48:
       if (MacroAssembler::is_movptr1_sv48_at(insn_addr)) {
-        target = Movptr1Sv48Parts::decode(insn_addr);
-        return true;
-      } else if (MacroAssembler::is_movptr2_sv48_at(insn_addr)) {
-        target = Movptr2Sv48Parts::decode(insn_addr);
-        return true;
+        return Movptr1Sv48Parts::decode(insn_addr);
       }
-      break;
+      assert(MacroAssembler::is_movptr2_sv48_at(insn_addr), "must be movptr2_sv48");
+      return Movptr2Sv48Parts::decode(insn_addr);
     default:
       ShouldNotReachHere();
+      return nullptr;
   }
-  return false;
 }
 
 address MacroAssembler::get_target_of_li32(address insn_addr) {
@@ -3390,18 +3391,17 @@ address MacroAssembler::get_target_of_li32(address insn_addr) {
 // Return the total length (in bytes) of the instructions.
 int MacroAssembler::pd_patch_instruction_size(address instruction_address, address target) {
   assert_cond(instruction_address != nullptr);
-  int movptr_size = 0;
-  // Only branch and PC-relative forms consume this displacement. Compute it
-  // with unsigned pointer-width arithmetic to avoid overflow.
-  const int64_t offset = (intptr_t)((uintptr_t)target - (uintptr_t)instruction_address);
   if (MacroAssembler::is_jal_at(instruction_address)) {                         // jal
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_jal(instruction_address, offset);
   } else if (MacroAssembler::is_branch_at(instruction_address)) {               // beq/bge/bgeu/blt/bltu/bne
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_conditional_branch(instruction_address, offset);
-  } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {           // auipc, addi/jalr/load
+  } else if (MacroAssembler::is_pc_relative_at(instruction_address)) {          // auipc, addi/jalr/load
+    const int64_t offset = target - instruction_address;
     return patch_offset_in_pc_relative(instruction_address, offset);
-  } else if (patch_addr_in_movptr(instruction_address, target, movptr_size)) {
-    return movptr_size;
+  } else if (MacroAssembler::is_movptr_at(instruction_address)) {
+    return patch_addr_in_movptr(instruction_address, target);
   } else if (MacroAssembler::is_li32_at(instruction_address)) {                 // li32
     int64_t imm = (intptr_t)target;
     return patch_imm_in_li32(instruction_address, (int32_t)imm);
@@ -3421,7 +3421,6 @@ int MacroAssembler::pd_patch_instruction_size(address instruction_address, addre
 
 address MacroAssembler::target_addr_for_insn(address insn_addr) {
   long offset = 0;
-  address target = nullptr;
   assert_cond(insn_addr != nullptr);
   if (MacroAssembler::is_jal_at(insn_addr)) {                     // jal
     offset = get_offset_of_jal(insn_addr);
@@ -3429,8 +3428,8 @@ address MacroAssembler::target_addr_for_insn(address insn_addr) {
     offset = get_offset_of_conditional_branch(insn_addr);
   } else if (MacroAssembler::is_pc_relative_at(insn_addr)) {      // auipc, addi/jalr/load
     offset = get_offset_of_pc_relative(insn_addr);
-  } else if (get_target_of_movptr(insn_addr, target)) {
-    return target;
+  } else if (MacroAssembler::is_movptr_at(insn_addr)) {
+    return get_target_of_movptr(insn_addr);
   } else if (MacroAssembler::is_li32_at(insn_addr)) {             // li32
     return get_target_of_li32(insn_addr);
   } else {
@@ -3448,10 +3447,8 @@ int MacroAssembler::patch_oop(address insn_addr, address o) {
     uint32_t n = CompressedOops::narrow_oop_value(cast_to_oop(o));
     return patch_imm_in_li32(insn_addr, (int32_t)n);
   }
-  int movptr_size = 0;
-  bool result = patch_addr_in_movptr(insn_addr, o, movptr_size);
-  assert(result, "inv");
-  return movptr_size;
+  assert(MacroAssembler::is_movptr_at(insn_addr), "must be a movptr");
+  return patch_addr_in_movptr(insn_addr, o);
 }
 
 void MacroAssembler::reinit_heapbase() {
