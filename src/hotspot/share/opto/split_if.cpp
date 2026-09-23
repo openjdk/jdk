@@ -359,7 +359,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
               for (DUIterator_Last kmin, k = u->last_outs(kmin); k >= kmin; --k) {
                 Node* iff = u->last_out(k);
                 assert(iff->is_If() || iff->is_CMove(), "unexpected node type");
-                assert( iff->in(1) == u, "" );
+                assert(iff->in(1) == u, "");
                 // Get control block of either the CMove or the If input
                 Node* iff_ctrl = iff->is_If() ? iff->in(0) : get_ctrl(iff);
                 Node* x1 = bol->clone();
