@@ -3515,7 +3515,7 @@ void MacroAssembler::resolve_jobject(Register value, Register tmp1, Register tmp
   b(done);
 
   bind(tagged);
-  STATIC_ASSERT(JNIHandles::TypeTag::weak_global == 0b1);
+  static_assert(JNIHandles::TypeTag::weak_global == 0b1);
   tbnz(value, 0, weak_tagged);    // Test for weak tag.
 
   // Resolve global handle
@@ -3540,7 +3540,7 @@ void MacroAssembler::resolve_global_jobject(Register value, Register tmp1, Regis
 
 #ifdef ASSERT
   {
-    STATIC_ASSERT(JNIHandles::TypeTag::global == 0b10);
+    static_assert(JNIHandles::TypeTag::global == 0b10);
     Label valid_global_tag;
     tbnz(value, 1, valid_global_tag); // Test for global tag
     stop("non global jobject using resolve_global_jobject");
@@ -6116,6 +6116,7 @@ void MacroAssembler::remove_frame(int initial_framesize, bool needs_stack_repair
     ldr(rscratch1, Address(sp, sp_inc_offset));
     add(sp, sp, rscratch1);
     ldp(rfp, lr, Address(post(sp, 2 * wordSize)));
+    authenticate_return_address();
   } else {
     remove_frame(initial_framesize);
   }
@@ -7060,7 +7061,7 @@ void MacroAssembler::get_thread(Register dst) {
 #ifdef COMPILER2
 // C2 compiled method's prolog code
 // Moved here from aarch64.ad to support Valhalla code below
-void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
 
@@ -7077,8 +7078,9 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   }
 
   int bangsize = C->output()->bang_size_in_bytes();
-  if (C->output()->need_stack_bang(bangsize))
+  if (do_stack_bang && C->output()->need_stack_bang(bangsize)) {
     generate_stack_overflow_check(bangsize);
+  }
 
   // n.b. frame size includes space for return pc and rfp
   const long framesize = C->output()->frame_size_in_bytes();
@@ -7086,10 +7088,6 @@ void MacroAssembler::verified_entry(Compile* C, int sp_inc) {
 
   if (C->needs_stack_repair()) {
     save_stack_increment(sp_inc, framesize);
-  }
-
-  if (VerifyStackAtCalls) {
-    Unimplemented();
   }
 }
 #endif // COMPILER2
@@ -7257,8 +7255,17 @@ int MacroAssembler::extend_stack_for_value_args(int args_on_stack) {
   sp_inc = align_up(sp_inc, StackAlignmentInBytes);
   assert(sp_inc > 0, "sanity");
 
-  // Save a copy of the FP and LR here for deoptimization patching and frame walking
+  // Save a copy of the FP and LR here for deoptimization patching and frame
+  // walking. See remove_frame(). Sign LR #1 before spilling. Strip afterwards
+  // so build_frame() can use its normal path (it expects a raw LR and signs
+  // before spilling LR #2). Signing LR #2 is not strictly necessary. Reusing
+  // the signed LR #1 (PACIAZ, modifier zero) or storing a raw LR #2 (layout
+  // placeholder) would both work, but would need a special build_frame() path
+  // for stack repair, which adds code complexity. Current approach (strip +
+  // re-sign) keeps one generic build_frame().
+  protect_return_address();
   stp(rfp, lr, Address(pre(sp, -2 * wordSize)));
+  strip_return_address();
 
   // Adjust the stack pointer. This will be repaired on return by MacroAssembler::remove_frame
   if (sp_inc < (1 << 9)) {

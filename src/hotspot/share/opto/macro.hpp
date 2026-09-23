@@ -33,6 +33,7 @@
 class  AllocateNode;
 class  AllocateArrayNode;
 class  CallNode;
+class  Int128TBinaryNode;
 class  SubTypeCheckNode;
 class  Node;
 class  PhaseIterGVN;
@@ -119,7 +120,7 @@ private:
 
   bool eliminate_boxing_node(CallStaticJavaNode* call);
   bool eliminate_allocate_node(AllocateNode *alloc);
-  void undo_previous_scalarizations(Unique_Node_List& safepoints_done, AllocateNode* alloc);
+  void undo_previous_scalarizations(Node_List& safepoints_done, Node_List& scalar_objects_done, AllocateNode* alloc);
   bool scalar_replacement(AllocateNode* alloc, Unique_Node_List& safepoints);
   void process_users_of_allocation(CallNode *alloc, bool value_type_alloc = false);
 
@@ -219,6 +220,8 @@ private:
   void expand_subtypecheck_node(SubTypeCheckNode *check);
 
   void expand_flatarraycheck_node(FlatArrayCheckNode* check);
+
+  void expand_add_sub_i128t_node(Int128TBinaryNode* addsub);
 
   int replace_input(Node *use, Node *oldref, Node *newref);
   void migrate_outs(Node *old, Node *target);

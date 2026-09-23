@@ -3043,7 +3043,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         do_oop_store(_masm, field, r0, IN_HEAP);
         __ b(Done);
       } else {
-        Label null_free_reference, is_flat, rewrite_inline;
+        Label null_free_reference, is_flat, rewrite_value;
         __ test_field_is_flat(flags, noreg /* temp */, is_flat);
         __ test_field_is_null_free_value_type(flags, noreg /* temp */, null_free_reference);
         pop_and_check_object(obj);
@@ -3061,11 +3061,11 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         // Store into the field
         // Clobbers: r10, r11, r3
         do_oop_store(_masm, field, r0, IN_HEAP);
-        __ b(rewrite_inline);
+        __ b(rewrite_value);
         __ bind(is_flat);
         pop_and_check_object(r7);
         __ write_flat_field(cache, off, index, flags, r7);
-        __ bind(rewrite_inline);
+        __ bind(rewrite_value);
         if (rc == may_rewrite) {
           patch_bytecode(Bytecodes::_fast_vputfield, bc, r19, true, byte_no);
         }

@@ -321,7 +321,7 @@ public:
     WorkerThreads* workers = g1h->workers();
     uint const max_workers = workers->active_workers();
 
-    uint const start_pos = num_regions * worker_id / max_workers;
+    uint const start_pos = (uint)((uint64_t)num_regions * worker_id / max_workers);
     uint cur = start_pos;
 
     do {
@@ -1079,7 +1079,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
         // that were not reclaimed.
         G1CardSetGroup* group = r->rem_set()->card_set_group();
         assert(group != nullptr, "must have a card set group");
-        assert(group->length() == 1, "Card set groups containing humongous regions must have a single entry");
+        assert(group->num_regions() == 1, "Card set groups containing humongous regions must have a single region");
         group->clear_card_set();
       }
 

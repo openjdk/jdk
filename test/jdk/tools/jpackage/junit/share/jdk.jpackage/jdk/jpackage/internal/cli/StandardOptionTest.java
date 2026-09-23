@@ -62,7 +62,9 @@ import jdk.jpackage.internal.model.JPackageException;
 import jdk.jpackage.internal.model.ConfigException;
 import jdk.jpackage.internal.model.LauncherShortcut;
 import jdk.jpackage.internal.model.LauncherShortcutStartupDirectory;
-import jdk.jpackage.internal.util.RootedPath;
+import jdk.jpackage.internal.util.ExplodedPath;
+import jdk.jpackage.internal.util.PathUtils;
+import jdk.jpackage.internal.util.SetBuilder;
 import jdk.jpackage.internal.util.StringBundle;
 import jdk.jpackage.test.Comm;
 import jdk.jpackage.test.JUnitAdapter;
@@ -229,7 +231,7 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         "app-resources,PATH_SEPARATOR",
     })
     public void test_AppContent_valid(
-            @ConvertWith(OptionValueConverter.class) OptionValue<List<Collection<RootedPath>>> option,
+            @ConvertWith(OptionValueConverter.class) OptionValue<List<ExplodedPath>> option,
             Delimiter delimiter, @TempDir Path workDir) throws IOException {
 
         var spec = option.getSpec();
@@ -248,7 +250,12 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
         ).orElseThrow();
 
         var paths = option.getFrom(Options.of(Map.of(option, convertedValue)));
-        var sortedPathList = paths.stream().flatMap(Collection::stream).map(RootedPath::branch).sorted().toList();
+        var sortedPathList = paths.stream()
+                .map(ExplodedPath::children)
+                .flatMap(Collection::stream)
+                .map(ExplodedPath.Node::path)
+                .sorted()
+                .toList();
 
         var expectedPathList = Stream.of(
                 "a",
@@ -387,10 +394,10 @@ public class StandardOptionTest extends JUnitAdapter.TestSrcInitializer {
 
         var explodePath = StandardValueConverter.explodedPathConverter().withPathFileName().create();
 
-        ValueConverter<String, RootedPath[]> conv = ValueConverter.create(str -> {
+        ValueConverter<String, ExplodedPath> conv = ValueConverter.create(str -> {
             var path = StandardValueConverter.pathConv().convert(str);
             return explodePath.convert(path);
-        }, RootedPath[].class);
+        }, ExplodedPath.class);
 
         var test = new OptionMutatorTest<>(_ -> {}, conv)
                 .invalidValue(workDir.resolve("nonexistent").toString())
