@@ -724,6 +724,12 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
     else
       AC_MSG_RESULT([no])
     fi
+
+    if test "x$FLAGS_OS" = xlinux && test "x$FLAGS_CPU" = xriscv64; then
+      # SA uses .eh_frame to unwind native frames in mixed jstack. RISC-V
+      # does not generate these tables by default when exceptions are disabled.
+      $1_CFLAGS_CPU="${$1_CFLAGS_CPU} -fasynchronous-unwind-tables"
+    fi
   fi
 
   if test "x$TOOLCHAIN_TYPE" = xgcc; then

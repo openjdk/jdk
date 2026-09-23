@@ -143,7 +143,8 @@ bool DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
   _current_pc = begin;
   std::stack<struct DwarfState> remember_state;
 
-  while ((_buf < end) && (_current_pc < pc)) {
+  // Rules at pc apply to that address too. Stop only after advancing past it.
+  while ((_buf < end) && (_current_pc <= pc)) {
     unsigned char op = *_buf++;
     unsigned char opa = op & 0x3f;
     if (op & 0xc0) {

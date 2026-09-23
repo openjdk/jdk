@@ -41,7 +41,8 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp
  */
@@ -52,7 +53,8 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:+PreserveFramePointer
  */
@@ -63,7 +65,8 @@ import jtreg.SkippedException;
  * @requires vm.hasSA
  * @requires vm.gc != "Z"
  * @requires os.family == "linux"
- * @requires (os.arch == "amd64") | (os.arch == "aarch64")
+ * @requires (os.arch == "amd64") | (os.arch == "aarch64") | (os.arch == "riscv64")
+ * @requires (os.arch != "riscv64" | !(vm.cpu.features ~= ".*qemu.*"))
  * @library /test/lib
  * @run driver TestJhsdbJstackMixedWithXComp -XX:-TieredCompilation
  */

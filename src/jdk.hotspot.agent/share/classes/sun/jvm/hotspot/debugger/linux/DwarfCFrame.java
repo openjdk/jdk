@@ -89,7 +89,8 @@ public class DwarfCFrame extends BasicCFrame {
         this.linuxDbg = linuxDbg;
         this.dwarf = dwarf;
         this.use1ByteBeforeToLookup = use1ByteBeforeToLookup;
-        this.hasNativeLibrary = linuxDbg.findLibPtrByAddress(pc) != null;
+        Address lookupPC = use1ByteBeforeToLookup ? pc.addOffsetTo(-1) : pc;
+        this.hasNativeLibrary = linuxDbg.findLibPtrByAddress(lookupPC) != null;
     }
 
     public Address sp() {

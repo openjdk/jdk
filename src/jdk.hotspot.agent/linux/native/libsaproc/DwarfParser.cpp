@@ -225,7 +225,7 @@ extern "C"
 JNIEXPORT jint JNICALL Java_sun_jvm_hotspot_debugger_linux_DwarfParser_getReturnAddressOffsetFromCFA
   (JNIEnv *env, jobject this_obj) {
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
-  return parser->get_offset_from_cfa(RA);
+  return parser->get_offset_from_cfa(parser->get_ra_register());
 }
 
 /*

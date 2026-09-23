@@ -158,6 +158,12 @@ public class TestJhsdbJstackMixed {
 
             out.shouldContain(LingeredAppWithNativeMethod.THREAD_NAME);
             out.shouldNotContain("sun.jvm.hotspot.debugger.UnmappedAddressException:");
+            if (Platform.isRISCV64()) {
+                // Require unwinding through the native frames built without FP.
+                // Merely printing the thread name does not exercise DWARF unwinding.
+                out.shouldContain("Java_LingeredAppWithNativeMethod_callJNI");
+                out.shouldNotContain("sun.jvm.hotspot.debugger.DebuggerException:");
+            }
             if (Platform.isWindows()) {
                 // We need to check stdout/stderr only once on Windows.
                 break;
