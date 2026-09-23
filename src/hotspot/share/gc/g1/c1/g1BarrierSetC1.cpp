@@ -40,7 +40,7 @@
 #define __ gen->lir()->
 #endif
 
-void G1PreBarrierStub::emit_code(LIR_Assembler* ce) {
+void G1PreBarrierStubC1::emit_code(LIR_Assembler* ce) {
   G1BarrierSetAssembler* bs = (G1BarrierSetAssembler*)BarrierSet::barrier_set()->barrier_set_assembler();
   bs->gen_pre_barrier_stub(ce, this);
 }
@@ -98,14 +98,14 @@ void G1BarrierSetC1::pre_barrier(LIRAccess& access, LIR_Opr addr_opr,
       assert(addr_opr->is_register(), "must be");
       addr_opr = LIR_OprFact::address(new LIR_Address(addr_opr, T_OBJECT));
     }
-    slow = new G1PreBarrierStub(addr_opr, pre_val, pre_val_patch_code, info);
+    slow = new G1PreBarrierStubC1(addr_opr, pre_val, pre_val_patch_code, info);
   } else {
     assert(addr_opr == LIR_OprFact::illegalOpr, "sanity");
     assert(pre_val->is_register(), "must be");
     assert(pre_val->type() == T_OBJECT, "must be an object");
     assert(info == nullptr, "sanity");
 
-    slow = new G1PreBarrierStub(pre_val);
+    slow = new G1PreBarrierStubC1(pre_val);
   }
 
   __ branch(lir_cond_notEqual, slow);

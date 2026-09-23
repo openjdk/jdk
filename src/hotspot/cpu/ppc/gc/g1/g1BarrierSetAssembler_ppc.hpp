@@ -36,7 +36,7 @@
 
 class LIR_Assembler;
 class StubAssembler;
-class G1PreBarrierStub;
+class G1PreBarrierStubC1;
 class G1PreBarrierStubC2;
 
 class G1BarrierSetAssembler: public CardTableBarrierSetAssembler {
@@ -80,7 +80,7 @@ public:
                                 bool decode_new_val);
 #endif
 #ifdef COMPILER1
-  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStub* stub);
+  void gen_pre_barrier_stub(LIR_Assembler* ce, G1PreBarrierStubC1* stub);
 
   void generate_c1_pre_barrier_runtime_stub(StubAssembler* sasm);
 
