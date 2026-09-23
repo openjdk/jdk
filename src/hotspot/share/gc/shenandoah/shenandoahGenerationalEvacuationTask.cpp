@@ -76,6 +76,7 @@ ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(Shena
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
+  ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id);
   const auto heap = ShenandoahGenerationalHeap::cast(_heap);
   ShenandoahConcurrentEvacuator cl(heap);
   ShenandoahInPlacePromoter promoter(heap);
@@ -88,9 +89,7 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
     }
 
     if (r != nullptr) {
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
-                                           ShenandoahPhaseTimings::Work,
-                                           worker_id, true);
+      ShenandoahActualWorkTimingsTracker tracker(&timer);
       maybe_log_region(r);
       _heap->marked_object_iterate(r, &cl);
       if (ShenandoahCollectorPolicy::should_abandon_evacuations(r)) {
@@ -103,6 +102,7 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
     // are just running in place promotions
     r = _regions->next();
     if (r != nullptr) {
+      ShenandoahActualWorkTimingsTracker tracker(&timer);
       if (promoter.maybe_promote_region(r)) {
         maybe_log_region(r);
       }

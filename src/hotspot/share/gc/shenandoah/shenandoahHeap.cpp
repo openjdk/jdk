@@ -1137,6 +1137,9 @@ public:
 
   void work(uint worker_id) override {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
+                                             ShenandoahPhaseTimings::Work,
+                                             worker_id);
     ShenandoahConcurrentEvacuateRegionObjectClosure cl(_heap);
     elastic_loop<true>([&]{
 
@@ -1145,10 +1148,7 @@ public:
         return ShenandoahWorkResult::NoWork;
       }
 
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_evac,
-                                           ShenandoahPhaseTimings::Work,
-                                           worker_id, true);
-
+      ShenandoahActualWorkTimingsTracker tracker(&timer);
       assert(r->has_live(), "Region %zu should have been reclaimed early", r->index());
       _heap->marked_object_iterate(r, &cl);
 
@@ -2542,7 +2542,13 @@ public:
 private:
   template<class T>
   void do_work(uint worker_id) {
+    ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
+                                  ShenandoahPhaseTimings::Work,
+                                             worker_id);
+
     if (worker_id == 0) {
+      ShenandoahActualWorkTimingsTracker tracker(&timer);
+
       // We ask the first worker to replenish the Mutator free set by moving regions previously reserved to hold the
       // results of evacuation.  These reserves are no longer necessary because evacuation has completed.
       const size_t cset_regions = _heap->collection_set()->count();
@@ -2561,10 +2567,7 @@ private:
         return ShenandoahWorkResult::NoWork;
       }
 
-      ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_update_refs,
-                                ShenandoahPhaseTimings::Work,
-                                           worker_id, true);
-
+      ShenandoahActualWorkTimingsTracker tracker(&timer);
       HeapWord* update_watermark = r->get_update_watermark();
       assert (update_watermark >= r->bottom(), "sanity");
       if (r->is_update_required()) {

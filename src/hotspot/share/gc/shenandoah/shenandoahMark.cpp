@@ -128,12 +128,12 @@ void ShenandoahMark::mark_loop_work(T* cl, ShenandoahLiveData* live_data, uint w
   assert(_generation->type() == GENERATION, "Sanity: %d != %d", _generation->type(), GENERATION);
   _generation->ref_processor()->set_mark_closure(worker_id, cl);
 
+  ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id);
   ShenandoahSATBBufferClosure<GENERATION> drain_satb(q, old_q);
   SATBMarkQueueSet& satb_mq_set = ShenandoahBarrierSet::satb_mark_queue_set();
   shenandoah_elastic_loop<CANCELLABLE>(heap, terminator, [&]{
     uint work = 0;
-    ShenandoahWorkerTimingsTracker timer(ShenandoahPhaseTimings::conc_mark, ShenandoahPhaseTimings::Work, worker_id, true);
-
+    ShenandoahActualWorkTimingsTracker tracker(&timer);
     while (satb_mq_set.completed_buffers_num() > 0) {
       satb_mq_set.apply_closure_to_completed_buffer(&drain_satb);
     }
