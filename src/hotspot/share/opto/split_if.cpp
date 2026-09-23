@@ -325,7 +325,7 @@ bool PhaseIdealLoop::clone_cmp_down(Node* n, const Node* blk1, const Node* blk2)
        // Clone down any block-local BoolNode uses of this CmpNode
       for (DUIterator i = n->outs(); n->has_out(i); i++) {
         Node* bol = n->out(i);
-        assert( bol->is_Bool(), "" );
+        assert(bol->is_Bool(), "");
         if (bol->outcnt() == 1) {
           Node* use = bol->unique_out();
           if (use->is_OpaqueConstantBool() || use->is_OpaqueTemplateAssertionPredicate() ||
