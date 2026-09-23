@@ -145,7 +145,7 @@ Address LIR_Assembler::as_Address(LIR_Address* addr, Register tmp) {
       index = index_opr->as_register_lo();
     }
     if (scale != 0) {
-      __ shadd(tmp, index, base, tmp, scale);
+      __ shift_left_add(tmp, index, base, scale);
     } else {
       __ add(tmp, base, index);
     }
@@ -881,11 +881,6 @@ void LIR_Assembler::load_unordered(LIR_Address* from_addr, LIR_Opr dest, BasicTy
   }
 }
 
-void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
-  load_unordered(from_addr, dest, type, /* wide */ false, info);
-  membar_acquire();
-}
-
 void LIR_Assembler::move(LIR_Opr src, LIR_Opr dst) {
   assert(dst->is_cpu_register(), "must be");
   assert(dst->type() == src->type(), "must be");
@@ -1033,9 +1028,8 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
 
 void LIR_Assembler::emit_alloc_obj(LIR_OpAllocObj* op) {
   if (op->init_check()) {
-    __ lbu(t0, Address(op->klass()->as_register(),
-                       InstanceKlass::init_state_offset()));
-    __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
+    __ la(t0, Address(op->klass()->as_register(), InstanceKlass::init_state_offset()));
+    __ lbu_acquire(t0, t0);
     __ mv(t1, (u1)InstanceKlass::fully_initialized);
     add_debug_info_for_null_check_here(op->stub()->info());
     __ bne(t0, t1, *op->stub()->entry(), /* is_far */ true);
@@ -1980,6 +1974,89 @@ void LIR_Assembler::rt_call(LIR_Opr result, address dest, const LIR_OprList* arg
     add_call_info_here(info);
   }
   __ post_call_nop();
+}
+
+void LIR_Assembler::load_volatile(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+  if (UseZalasr) {
+    load_acquire(from_addr, dest, type, info);
+  } else {
+    load_unordered(from_addr, dest, type, /* wide */ false, info);
+    membar_acquire();
+  }
+}
+
+void LIR_Assembler::load_acquire(LIR_Address* from_addr, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {
+  assert(UseZalasr, "should only be called when UseZalasr is enabled");
+  // RCsc loads preserve StoreLoad ordering with C2's RCsc stores across compilation tiers.
+  // Zalasr accesses only support the 0(base) addressing mode, so materialize
+  // the effective address first. as_Address() may clobber t0, hence the
+  // address is computed into t1.
+  Address addr = as_Address(from_addr);
+  assert(addr.getMode() == Address::base_plus_offset, "unsupported addressing mode");
+  Register base = addr.base();
+  if (addr.offset() != 0) {
+    __ la(t1, addr);
+    base = t1;
+  }
+
+  // Zalasr cannot target a floating-point register; stage the value through
+  // t0, which is free again now that the address has been materialized.
+  Register dest_reg = t0;
+  if (!is_floating_point_type(type)) {
+    dest_reg = (dest->is_single_cpu() ? dest->as_register() : dest->as_register_lo());
+  }
+
+  // The load-acquire is the faulting instruction, so the implicit null check
+  // must be recorded immediately before it and not before the address
+  // computation above.
+  if (info != nullptr) {
+    add_debug_info_for_null_check_here(info);
+  }
+
+  switch (type) {
+    case T_BOOLEAN:
+      __ lb_aq(dest_reg, base);
+      __ zext(dest_reg, dest_reg, 8);
+      break;
+    case T_BYTE:
+      __ lb_aq(dest_reg, base);
+      break;
+    case T_CHAR:
+      __ lh_aq(dest_reg, base);
+      __ zext(dest_reg, dest_reg, 16);
+      break;
+    case T_SHORT:
+      __ lh_aq(dest_reg, base);
+      break;
+    case T_INT:     // fall through
+    case T_FLOAT:
+      __ lw_aq(dest_reg, base);
+      break;
+    case T_LONG:    // fall through
+    case T_ADDRESS: // fall through
+    case T_DOUBLE:
+      __ ld_aq(dest_reg, base);
+      break;
+    case T_ARRAY:   // fall through
+    case T_OBJECT:
+      // A volatile move is never wide, so compressed oops stay compressed.
+      if (UseCompressedOops) {
+        __ lw_aq(dest_reg, base);
+        __ zext(dest_reg, dest_reg, 32);
+      } else {
+        __ ld_aq(dest_reg, base);
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  // Move from the staging GPR to the floating-point destination.
+  if (type == T_FLOAT) {
+    __ fmv_w_x(dest->as_float_reg(), dest_reg);
+  } else if (type == T_DOUBLE) {
+    __ fmv_d_x(dest->as_double_reg(), dest_reg);
+  }
 }
 
 void LIR_Assembler::volatile_move_op(LIR_Opr src, LIR_Opr dest, BasicType type, CodeEmitInfo* info) {

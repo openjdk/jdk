@@ -579,7 +579,7 @@ jlong JvmtiTagMap::get_tag(jobject object) {
 // For each field it holds the field index (as defined by the JVMTI specification),
 // the field type, and the offset.
 
-class ClassFieldDescriptor: public CHeapObj<mtInternal> {
+class ClassFieldDescriptor: public CHeapObj<mtServiceability> {
  private:
   int _field_index;
   int _field_offset;
@@ -608,7 +608,7 @@ class ClassFieldDescriptor: public CHeapObj<mtInternal> {
   LayoutKind layout_kind() const { return _layout_kind; }
 };
 
-class ClassFieldMap: public CHeapObj<mtInternal> {
+class ClassFieldMap: public CHeapObj<mtServiceability> {
  private:
   enum {
     initial_field_count = 5
@@ -728,7 +728,7 @@ ClassFieldMap* ClassFieldMap::create_map_of_instance_fields(Klass* k) {
 // heap iteration and avoid creating a field map for each object in the heap
 // (only need to create the map when the first instance of a class is encountered).
 //
-class JvmtiCachedClassFieldMap : public CHeapObj<mtInternal> {
+class JvmtiCachedClassFieldMap : public CHeapObj<mtServiceability> {
  private:
   enum {
      initial_class_count = 200
@@ -921,7 +921,7 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
       value = s_value->char_at_addr(0);
     } else {
       // Inflate latin1 encoded string to UTF16
-      jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
+      jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtServiceability);
       for (int i = 0; i < s_len; i++) {
         buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
       }

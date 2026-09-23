@@ -172,11 +172,11 @@ public class ValueObjectPrinting {
         }
 
         // In fieldDescriptor::field_offset_in_obj(), vpc->klass() is not the same as this->field_holder()
-        // when printing CarPair::car1::make: this field is declared in Vehicle, but vpc->klass() is Car.
+        // when printing CarPair::car1::length: this field is declared in Vehicle, but vpc->klass() is Car.
         {
-            test(new CarPair("Morgan", 3, "Mini", 4), (s) -> {
-                    checkMatch(s, "car1.*\n.*Morgan.*\n.*numWheels.* 3 ");
-                    checkMatch(s, "car2.*\n.*Mini.*\n.*numWheels.* 4 ");
+            test(new CarPair(10, 3, 20, 4), (s) -> {
+                    checkMatch(s, "car1.*\n.*length.* 10.*\n.*numWheels.* 3 ");
+                    checkMatch(s, "car2.*\n.*length.* 20.*\n.*numWheels.* 4 ");
                 });
         }
     }
@@ -281,17 +281,17 @@ value class NullableRectanglePair {
 }
 
 abstract value class Vehicle {
-    String make;
-    Vehicle(String m) {
-        make = m;
+    int length;
+    Vehicle(int len) {
+        length = len;
     }
 }
 
 value class Car extends Vehicle {
     int numWheels;
-    Car(String m, int w) {
+    Car(int len, int w) {
         numWheels = w;
-        super(m);
+        super(len);
     }
 }
 
@@ -299,8 +299,8 @@ value class CarPair {
     @NullRestricted Car car1;
     @NullRestricted Car car2;
 
-    CarPair(String m1, int w1, String m2, int w2) {
-        car1 = new Car(m1, w1);
-        car2 = new Car(m2, w2);
+    CarPair(int len1, int w1, int len2, int w2) {
+        car1 = new Car(len1, w1);
+        car2 = new Car(len2, w2);
     }
 }
