@@ -3233,10 +3233,17 @@ public class JavacParserTest extends TestCase {
     void testParseMethodReferenceWithAnnotations() throws IOException {
         String code = """
                       package tests;
-                      class Test {
+                      class Test<T1> {
                           Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
                           Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
                           IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> s4 = Test<String>.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> s5 = Test<String>.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> s6 = Test<String>.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> s7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                          Supplier<MethodReference> s8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                          IntFunction<MethodReference[]> s9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1[]::new;
+                          static class MethodReference<T2> {}
                       }
                       """;
         DiagnosticCollector<JavaFileObject> coll =
@@ -3246,7 +3253,8 @@ public class JavacParserTest extends TestCase {
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
 
-        assertTrue("no errors", coll.getDiagnostics().isEmpty());
+        assertTrue("no errors: " + coll.getDiagnostics(),
+                   coll.getDiagnostics().isEmpty());
         String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
         System.out.println("RESULT\n" + result);
         assertEquals("incorrect AST",
@@ -3254,10 +3262,19 @@ public class JavacParserTest extends TestCase {
                      """
                      package tests;
                      
-                     class Test {
+                     class Test<T1> {
                          Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
                          Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
                          IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> s4 = Test<String>.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> s5 = Test<String>.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> s6 = Test<String>.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> s7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                         Supplier<MethodReference> s8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                         IntFunction<MethodReference[]> s9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1 []::new;
+                         \n\
+                         static class MethodReference<T2> {
+                         }
                      }""");
     }
 

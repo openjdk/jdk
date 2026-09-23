@@ -1766,7 +1766,14 @@ public class JavacParser implements Parser {
         while (token.kind == DOT) {
             nextToken();
             selectTypeMode();
+            List<JCAnnotation> tyannos = null;
+            if (token.kind == MONKEYS_AT) {
+                tyannos = typeAnnotationsOpt();
+            }
             t = toP(F.at(token.pos).Select(t, ident()));
+            if (tyannos != null && tyannos.nonEmpty()) {
+                t = toP(F.at(tyannos.head.pos).AnnotatedType(tyannos, t));
+            }
             t = typeApplyOpt(t);
         }
         t = bracketsOpt(t);
