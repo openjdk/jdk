@@ -2561,7 +2561,7 @@ public final class CompactNumberFormat extends NumberFormat {
         //      - 999_999 / 1000 -> 1000.0 -> promote K to M
         // Ensure that sign is taken into account, otherwise rounding under CEILING/FLOOR
         // would be incorrect when the dividend is negative.
-        BigDecimal signedDividend = isNegative ? BigDecimal.valueOf(number).negate() : BigDecimal.valueOf(number);
+        BigDecimal signedDividend = isNegative ? BigDecimal.valueOf(-number) : BigDecimal.valueOf(number);
         var signedQuotient = signedDividend.divide(BigDecimal.valueOf(divisor), getMaximumFractionDigits(), roundingMode);
         return signedQuotient.abs().doubleValue();
     }
