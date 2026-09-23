@@ -28,6 +28,7 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/workerThread.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"

@@ -45,13 +45,14 @@
 #include "oops/instanceRefKlass.inline.hpp"
 #include "oops/instanceStackChunkKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
-#include "oops/oopsHierarchy.hpp"
 #include "oops/refArrayKlass.inline.hpp"
 #include "oops/stackChunkOop.inline.hpp"
 #include "oops/valueKlass.inline.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+
+enum class narrowOop : uint32_t;
 
 void ShenandoahMark::start_mark() {
   if (!CodeCache::is_gc_marking_cycle_active()) {
