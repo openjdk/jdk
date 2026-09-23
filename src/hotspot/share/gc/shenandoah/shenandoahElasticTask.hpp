@@ -25,11 +25,13 @@
 #ifndef SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP
 #define SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP
 
-#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/workerThread.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
+#include "runtime/mutex.hpp"
+
+class ShenandoahHeap;
+class ShenandoahController;
 
 /*
  * The code here provides an abstraction over a coordinated termination
@@ -53,43 +55,8 @@ enum class ShenandoahWorkResult {
 };
 
 template<bool Cancellable, typename WorkFn>
-void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work) {
-  // The TerminatorTerminator is responsible for controlling when a thread
-  // should withdraw its termination offer and resume the loop here. This
-  // component is responsible for holding excess threads in reserve and holding
-  // down 'retired' threads.
-  ShenandoahTerminatorTerminator tt(heap, Cancellable);
-  SuspendibleThreadSetJoiner stsj(Cancellable);
-  while (true) {
-    if (Cancellable && heap->check_cancelled_gc_and_yield()) {
-      // The termination offer is withdrawn when a cycle cancellation is
-      // observed. The thread returns to the top of the loop here and exits.
-      return;
-    }
+void shenandoah_elastic_loop(ShenandoahHeap* heap, TaskTerminator* terminator, WorkFn work);
 
-    if (tt.can_work()) {
-      // A thread can work if it is a member of the eligible thread set, there
-      // are tasks remaining, and it has not been 'retired'.
-      const ShenandoahWorkResult result = work();
-      if (result == ShenandoahWorkResult::DidWork) {
-        // This thread claimed work and believes there is more remaining.
-        continue;
-      }
-
-      if (result == ShenandoahWorkResult::Retire) {
-        // This thread can no longer work, though there may be tasks remaining.
-        tt.retire();
-      }
-    }
-
-    // Thread must leave the suspendible thread set while it waits for termination,
-    // or it may prevent safepoints from synchronizing.
-    SuspendibleThreadSetLeaver stsl(Cancellable);
-    if (terminator->offer_termination(&tt)) {
-      break;
-    }
-  }
-}
 
 // A small helper class to set up the required components for the elastic loop.
 // The adapter should be an implementation of the TaskQueueSetSuper interface.
@@ -103,18 +70,59 @@ private:
   TaskTerminator _terminator;
 
 public:
-  ShenandoahElasticTask(ShenandoahHeap* heap, const Adapter& adapter, const char* name)
+  ShenandoahElasticTask(ShenandoahHeap* heap, const Adapter& adapter, const char* name);
+
+protected:
+  template<bool Cancellable, typename WorkFn>
+  void elastic_loop(WorkFn work);
+};
+
+
+// Holds fields to be shared by elastic tasks, needs to be
+// reachable by shController so that _admitted can be increased.
+class ShenandoahElasticTaskCoordinator {
+  uint _admitted; // allowed concurrent worker count
+  uint _capable;  // outstanding participants (must be less than or equal to _admitted).
+  Monitor _gate;  // serialize admitted/capable changes
+
+public:
+  ShenandoahElasticTaskCoordinator();
+
+  // Must read concurrent worker count under _gate to prevent losing updates
+  // to concurrent worker count that would be ignored before the reset is complete.
+  void reset(const ShenandoahController* controller);
+
+  // Called by mutators when they experience an allocation stall
+  void increase_workers(size_t concurrent_worker_limit);
+
+  // Called by workers when they have finished (or can no longer work)
+  void complete();
+
+  // Called by workers. Blocks if the worker is not allowed to work.
+  // Returns true when there is work available, false otherwise.
+  bool wait_for_work();
+
+private:
+  // True when there are no longer participants with remaining work. Must hold _gate lock
+  bool is_done() const;
+};
+
+class ShenandoahElasticMonotonicTask : public WorkerTask {
+  ShenandoahElasticTaskCoordinator* _coordinator;
+
+protected:
+  ShenandoahHeap* _heap;
+
+public:
+  ShenandoahElasticMonotonicTask(ShenandoahHeap* heap, ShenandoahElasticTaskCoordinator* coordinator, const char* name)
     : WorkerTask(name)
-    , _heap(heap)
-    , _adapter(adapter)
-    , _terminator(_heap->workers()->active_workers(), &_adapter) {
+    , _coordinator(coordinator)
+    , _heap(heap) {
   }
 
 protected:
   template<bool Cancellable, typename WorkFn>
-  void elastic_loop(WorkFn work) {
-    shenandoah_elastic_loop<Cancellable>(_heap, &_terminator, work);
-  }
+  void elastic_loop(WorkFn work);
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHELASTICTASK_HPP

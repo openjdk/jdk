@@ -28,6 +28,7 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "runtime/atomic.hpp"
 
@@ -57,6 +58,9 @@ private:
 
   // Written by control thread, read by mutators
   Atomic<ShenandoahCollectorPhase> _phase;
+
+  // Coordinate increasing active workers during a phase
+  ShenandoahElasticTaskCoordinator _coordinator;
 
 protected:
   const Mutex::Rank WAITERS_LOCK_RANK = Mutex::safepoint - 5;
@@ -136,6 +140,11 @@ public:
     assert(ShenandoahCollectorPhase::UNSET <= phase, "Phase out of bounds: %d", phase);
     assert(phase < ShenandoahCollectorPhase::PHASE_LIMIT, "Phase out of bounds %d", phase);
     _phase.store_relaxed(phase);
+  }
+
+  ShenandoahElasticTaskCoordinator* reset_task_coordinator() {
+    _coordinator.reset(this);
+    return &_coordinator;
   }
 
   static const char* collector_phase_to_string(ShenandoahCollectorPhase phase);

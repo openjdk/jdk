@@ -206,7 +206,7 @@ bool TaskTerminator::offer_termination(TerminatorTerminator* terminator) {
       return false;
     }
 
-    size_t tasks = tasks_in_queue_set();
+    size_t tasks = can_work(terminator) ? tasks_in_queue_set() : 0;
     if (exit_termination(tasks, terminator)) {
       prepare_for_return(the_thread, tasks);
       _offered_termination--;

@@ -57,11 +57,13 @@ void ShenandoahController::handle_alloc_failure(const ShenandoahAllocRequest &re
   log_info(gc)("Allocation Stall: " PROPERFMT ", Thread \"%s\"", PROPERFMTARGS(req_byte), current()->name());
   AllocTracer::send_allocation_requiring_gc_event(req_byte, checked_cast<uint>(get_gc_id()));
 
+  _alloc_stall_count.add_then_fetch(1UL);
+  ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
+  increase_concurrent_worker_count();
+  _coordinator.increase_workers(concurrent_worker_count());
+
   // This is the inner part of a larger retry loop, so just wait here
   MonitorLocker ml(&_alloc_waiters_lock);
-  _alloc_stall_count.add_then_fetch(1UL);
-  increase_concurrent_worker_count();
-  ShenandoahHeap::heap()->shenandoah_policy()->record_allocation_stall(get_phase());
   notify_alloc_stall(cause);
   if (!should_terminate()) {
     ml.wait();

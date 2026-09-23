@@ -25,6 +25,7 @@
 
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
@@ -61,25 +62,23 @@ static void maybe_log_region(const ShenandoahHeapRegion* r) {
 }
 
 ShenandoahGenerationalEvacuationTask::ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
-                                                                           ShenandoahGeneration* generation,
-                                                                           ShenandoahRegionIterator* iterator,
+                                                                           ShenandoahElasticTaskCoordinator* coordinator,
+                                                                           ShenandoahCollectionSet* collection_set,
                                                                            bool only_promote_regions) :
-  ShenandoahElasticTask(heap, ShenandoahCsetTaskAdapter(heap->collection_set()), "Shenandoah Evacuation"),
-  _generation(generation),
-  _regions(iterator),
-  _collection_set(_heap->collection_set()),
+  ShenandoahElasticMonotonicTask(heap, coordinator, "Shenandoah Evacuation"),
+  _heap(heap),
+  _collection_set(collection_set),
   _only_promote_regions(only_promote_regions)
 {
   shenandoah_assert_generational();
-  assert(_only_promote_regions == _heap->collection_set()->is_empty(), "Collection set must be empty iff only promoting regions");
+  assert(_only_promote_regions == collection_set->is_empty(), "Collection set must be empty iff only promoting regions");
 }
 
 void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
   ShenandoahConcurrentWorkerSession worker_session(worker_id);
   ShenandoahCumulativeTimingsTracker timer(ShenandoahPhaseTimings::conc_evac, ShenandoahPhaseTimings::Work, worker_id);
-  const auto heap = ShenandoahGenerationalHeap::cast(_heap);
-  ShenandoahConcurrentEvacuator cl(heap);
-  ShenandoahInPlacePromoter promoter(heap);
+  ShenandoahConcurrentEvacuator cl(_heap);
+  ShenandoahInPlacePromoter promoter(_heap);
   bool canEvacuate = true;
   elastic_loop<true>([&]{
     ShenandoahHeapRegion* r = nullptr;
@@ -100,7 +99,7 @@ void ShenandoahGenerationalEvacuationTask::work(uint worker_id) {
 
     // No evac work left, or this thread is out of LAB space for evacuations, or we
     // are just running in place promotions
-    r = _regions->next();
+    r = _regions.next();
     if (r != nullptr) {
       ShenandoahActualWorkTimingsTracker tracker(&timer);
       if (promoter.maybe_promote_region(r)) {

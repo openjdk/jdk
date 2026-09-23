@@ -26,7 +26,7 @@
 #include "gc/shenandoah/shenandoahAgeCensus.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/shenandoahElasticTask.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.inline.hpp"
 #include "gc/shenandoah/shenandoahForwarding.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
@@ -180,8 +180,8 @@ bool ShenandoahGenerationalHeap::requires_barriers(stackChunkOop obj) const {
 }
 
 void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
-  ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, false /* only promote regions */);
+  ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
+  ShenandoahGenerationalEvacuationTask task(this, coordinator, collection_set(), false /* only promote regions */);
   workers()->run_task(&task);
 
   if (has_self_forwarded_objects()) {
@@ -201,8 +201,8 @@ void ShenandoahGenerationalHeap::evacuate_collection_set(ShenandoahGeneration* g
 }
 
 void ShenandoahGenerationalHeap::promote_regions_in_place(ShenandoahGeneration* generation) {
-  ShenandoahRegionIterator regions;
-  ShenandoahGenerationalEvacuationTask task(this, generation, &regions, true /* only promote regions */);
+  ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
+  ShenandoahGenerationalEvacuationTask task(this, coordinator, collection_set(), true /* only promote regions */);
   workers()->run_task(&task);
 }
 
@@ -745,23 +745,21 @@ public:
 };
 
 
-class ShenandoahGenerationalUpdateHeapRefsTask : public ShenandoahElasticTask<ShenandoahUpdateRefsTaskAdapter> {
+class ShenandoahGenerationalUpdateHeapRefsTask : public ShenandoahElasticMonotonicTask {
 private:
   // For update refs, _generation will be young or global. Mixed collections use the young generation.
   ShenandoahGeneration* _generation;
-  ShenandoahRegionIterator* _regions;
+  ShenandoahRegionIterator _regions;
   ShenandoahRegionChunkIterator* _work_chunks;
 
 public:
-  ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahGeneration* generation,
-                                           ShenandoahRegionIterator* regions,
-                                           ShenandoahRegionChunkIterator* work_chunks) :
-          ShenandoahElasticTask(ShenandoahGenerationalHeap::heap(),
-                                ShenandoahUpdateRefsTaskAdapter(regions, work_chunks, generation->is_young()),
-                                "Shenandoah Update References"),
-          _generation(generation),
-          _regions(regions),
-          _work_chunks(work_chunks)
+  ShenandoahGenerationalUpdateHeapRefsTask(ShenandoahHeap* heap,
+                                           ShenandoahGeneration* generation,
+                                           ShenandoahElasticTaskCoordinator* coordinator,
+                                           ShenandoahRegionChunkIterator* work_chunks)
+    : ShenandoahElasticMonotonicTask(heap, coordinator, "Shenandoah Update References")
+    , _generation(generation)
+    , _work_chunks(work_chunks)
   {
     assert(_generation->is_mark_complete(), "Expected complete marking");
     const bool old_bitmap_stable = _heap->old_generation()->is_mark_complete();
@@ -819,7 +817,7 @@ private:
 
   template<typename T>
   bool do_next_region(T& cl, uint worker_id) {
-    ShenandoahHeapRegion* r = _regions->next();
+    ShenandoahHeapRegion* r = _regions.next();
     if (r == nullptr) {
       return false;
     }
@@ -973,8 +971,8 @@ void ShenandoahGenerationalHeap::update_heap_references(ShenandoahGeneration* ge
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
   const uint nworkers = workers()->active_workers();
   ShenandoahRegionChunkIterator work_list(nworkers);
-  ShenandoahRegionIterator update_refs_iterator(this);
-  ShenandoahGenerationalUpdateHeapRefsTask task(generation, &update_refs_iterator, &work_list);
+  ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
+  ShenandoahGenerationalUpdateHeapRefsTask task(this, generation, coordinator, &work_list);
   workers()->run_task(&task);
 
   if (ShenandoahEnableCardStats) {

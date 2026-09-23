@@ -52,7 +52,7 @@
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentMark.hpp"
 #include "gc/shenandoah/shenandoahControlThread.hpp"
-#include "gc/shenandoah/shenandoahElasticTask.hpp"
+#include "gc/shenandoah/shenandoahElasticTask.inline.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGenerationalEvacuationTask.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
@@ -1125,13 +1125,12 @@ public:
   }
 };
 
-class ShenandoahEvacuationTask : public ShenandoahElasticTask<ShenandoahCsetTaskAdapter> {
+class ShenandoahEvacuationTask : public ShenandoahElasticMonotonicTask {
   ShenandoahCollectionSet* const _cs;
 
 public:
-  ShenandoahEvacuationTask(ShenandoahHeap* sh,
-                           ShenandoahCollectionSet* cs) :
-    ShenandoahElasticTask(sh, ShenandoahCsetTaskAdapter(cs), "Shenandoah Evacuation"),
+  ShenandoahEvacuationTask(ShenandoahHeap* sh, ShenandoahElasticTaskCoordinator* coordinator, ShenandoahCollectionSet* cs)
+    : ShenandoahElasticMonotonicTask(sh, coordinator, "Shenandoah Evacuation"),
     _cs(cs) {
   }
 
@@ -1270,7 +1269,8 @@ void ShenandoahSelfForwardTask::work(uint worker_id) {
 
 void ShenandoahHeap::evacuate_collection_set(ShenandoahGeneration* generation) {
   assert(generation->is_global(), "Only global generation expected here");
-  ShenandoahEvacuationTask task(this, _collection_set);
+  ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
+  ShenandoahEvacuationTask task(this, coordinator, _collection_set);
   workers()->run_task(&task);
 
   if (has_self_forwarded_objects()) {
@@ -2523,15 +2523,12 @@ ShenandoahVerifier* ShenandoahHeap::verifier() {
   return _verifier;
 }
 
-class ShenandoahUpdateHeapRefsTask : public ShenandoahElasticTask<ShenandoahRegionIteratorTaskAdapter> {
-  ShenandoahRegionIterator* _regions;
-  ShenandoahRegionIteratorTaskAdapter _region_tasks;
+class ShenandoahUpdateHeapRefsTask : public ShenandoahElasticMonotonicTask {
+  ShenandoahRegionIterator _regions;
 
 public:
-  explicit ShenandoahUpdateHeapRefsTask(ShenandoahRegionIterator* regions) :
-    ShenandoahElasticTask(ShenandoahHeap::heap(), ShenandoahRegionIteratorTaskAdapter(regions), "Shenandoah Update References"),
-    _regions(regions),
-    _region_tasks(_regions) {
+  explicit ShenandoahUpdateHeapRefsTask(ShenandoahHeap* heap, ShenandoahElasticTaskCoordinator* coordinator)
+    : ShenandoahElasticMonotonicTask(heap, coordinator, "Shenandoah Update References") {
   }
 
   void work(uint worker_id) {
@@ -2562,7 +2559,7 @@ private:
 
     T cl;
     elastic_loop<true>([&] {
-      ShenandoahHeapRegion* r = _regions->next();
+      ShenandoahHeapRegion* r = _regions.next();
       if (r == nullptr) {
         return ShenandoahWorkResult::NoWork;
       }
@@ -2583,8 +2580,8 @@ private:
 void ShenandoahHeap::update_heap_references(ShenandoahGeneration* generation) {
   assert(generation->is_global(), "Should only get global generation here");
   assert(!is_full_gc_in_progress(), "Only for concurrent GC");
-  ShenandoahRegionIterator update_refs_iterator(this);
-  ShenandoahUpdateHeapRefsTask task(&update_refs_iterator);
+  ShenandoahElasticTaskCoordinator* coordinator = control_thread()->reset_task_coordinator();
+  ShenandoahUpdateHeapRefsTask task(this, coordinator);
   workers()->run_task(&task);
 }
 

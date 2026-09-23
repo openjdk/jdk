@@ -28,24 +28,22 @@
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahElasticTask.hpp"
 
-class ShenandoahGeneration;
+class ShenandoahCollectionSet;
 class ShenandoahGenerationalHeap;
 class ShenandoahHeapRegion;
-class ShenandoahRegionIterator;
-
 
 // Unlike ShenandoahEvacuationTask, this iterates over all regions rather than just the collection set.
 // This is needed in order to promote regions if age() >= tenure threshold.
-class ShenandoahGenerationalEvacuationTask : public ShenandoahElasticTask<ShenandoahCsetTaskAdapter> {
-  ShenandoahGeneration* const _generation;
-  ShenandoahRegionIterator* _regions;
+class ShenandoahGenerationalEvacuationTask : public ShenandoahElasticMonotonicTask {
+  ShenandoahGenerationalHeap* _heap;
   ShenandoahCollectionSet* _collection_set;
+  ShenandoahRegionIterator _regions;
   bool _only_promote_regions;
 
 public:
-  ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* sh,
-                                       ShenandoahGeneration* generation,
-                                       ShenandoahRegionIterator* iterator,
+  ShenandoahGenerationalEvacuationTask(ShenandoahGenerationalHeap* heap,
+                                       ShenandoahElasticTaskCoordinator* coordinator,
+                                       ShenandoahCollectionSet* collection_set,
                                        bool only_promote_regions);
   void work(uint worker_id) override;
 };
