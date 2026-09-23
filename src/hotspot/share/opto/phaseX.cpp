@@ -1879,8 +1879,6 @@ void PhaseIterGVN::verify_Ideal_for(Node* n, bool can_reshape, bool deep_revisit
     //
     // Probably we have two options: kill the hash, or
     // properly make the hash commutation friendly.
-    // Then we can change the condition to:
-    // if (n->is_Vector() && !C->post_vector_phase()) { return; }
     //
     // Found with:
     //   compiler/vectorapi/TestMaskedMacroLogicVector.java
@@ -2129,16 +2127,6 @@ void PhaseIterGVN::verify_Identity_for(Node* n) {
     // Found with:
     //   applications/ctw/modules/java_base_2.java
     //   -ea -esa -XX:CompileThreshold=100 -XX:+UnlockExperimentalVMOptions -server -XX:-TieredCompilation -Djava.awt.headless=true -XX:+IgnoreUnrecognizedVMOptions -XX:VerifyIterativeGVN=1110
-    return;
-  }
-
-  if (n->is_Vector() && !C->post_vector_phase()) {
-    // Since the generation of nodes in incremental inlining is unordered, and
-    // vector nodes are often wrapped in box nodes. Some Identity patterns may
-    // not match yet (e.g., VectorStoreMask (VectorMaskCast* (VectorLoadMask x))
-    // => x). So skip verification until PhaseVector has eliminated
-    // VectorBox/VectorUnbox. Note that identity optimization may still miss
-    // after PhaseVector, but this should be rare and we should fix it.
     return;
   }
 
@@ -2660,14 +2648,16 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     auto is_boundary = [](Node* n){ return !n->is_ValueType(); };
     use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
   }
-  // If changed Cast input, notify down for Phi, Sub, and Xor - all do "uncast"
+  // If changed Cast input, notify down for nodes that do "uncast".
   // Patterns:
   // ConstraintCast+ -> Sub
   // ConstraintCast+ -> Phi
   // ConstraintCast+ -> Xor
+  // ConstraintCast+ -> VectorUnbox
   if (use->is_ConstraintCast()) {
     auto push_the_uses_to_worklist = [&](Node* n){
-      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI || n->Opcode() == Op_XorL) {
+      if (n->is_Phi() || n->is_Sub() || n->Opcode() == Op_XorI ||
+          n->Opcode() == Op_XorL || n->Opcode() == Op_VectorUnbox) {
         worklist.push(n);
       }
     };
@@ -2882,17 +2872,40 @@ void PhaseIterGVN::add_users_of_use_to_worklist(Node* n, Node* use, Unique_Node_
     add_users_to_worklist_if(worklist, use, [](Node* u) { return u->Opcode() == Op_VectorMaskToLong; });
   }
 
+  // Walk through a VectorMaskCast chain so a change of the inner mask still
+  // notifies:
+  // (VectorMaskCast+ x) => x
   // (VectorStoreMask (VectorMaskCast* (VectorLoadMask x))) => (x)
   if (use_op == Op_VectorMaskCast) {
-    add_users_to_worklist_if(worklist, use, [](Node* u) {
-      return u->Opcode() == Op_VectorStoreMask;
+    auto push_the_uses_to_worklist = [&](Node* n) {
+      if (n->Opcode() == Op_VectorStoreMask || n->Opcode() == Op_VectorMaskCast) {
+        worklist.push(n);
+      }
+    };
+    auto is_boundary = [](Node* n) { return n->Opcode() != Op_VectorMaskCast; };
+    use->visit_uses(push_the_uses_to_worklist, is_boundary, true);
+  }
+
+  // Nested-operation optimizations in AndVNode::Identity and OrVNode::Identity,
+  // e.g. (a & b) & a => a & b.
+  if (use_op == Op_AndV || use_op == Op_OrV ||
+      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+    add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
+      return u->Opcode() == use_op;
     });
   }
 
-  // (AndV/OrV/AndVMask/OrVMask (AndV/OrV/AndVMask/OrVMask src1 src2) src1)
-  //   => (AndV/OrV/AndVMask/OrVMask src1 src2)
-  if (use_op == Op_AndV || use_op == Op_OrV ||
-      use_op == Op_AndVMask || use_op == Op_OrVMask) {
+  // All-zeros / all-ones optimizations in AndVNode::Identity and
+  // OrVNode::Identity, e.g. src & all-ones => src.
+  if (use_op == Op_Replicate || use_op == Op_MaskAll) {
+    add_users_to_worklist_if(worklist, use, [](Node* u) {
+      return u->Opcode() == Op_AndV || u->Opcode() == Op_OrV ||
+             u->Opcode() == Op_AndVMask || u->Opcode() == Op_OrVMask;
+    });
+  }
+
+  // f(f(x)) => x for f = Reverse / ReverseBytes
+  if (use_op == Op_ReverseV || use_op == Op_ReverseBytesV) {
     add_users_to_worklist_if(worklist, use, [use_op](Node* u) {
       return u->Opcode() == use_op;
     });

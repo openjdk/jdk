@@ -140,6 +140,7 @@ public class VectorStoreMaskIdentityStressTest {
                                "-esa",
                                "-XX:CompileThreshold=100",
                                "-XX:-TieredCompilation",
+                               "-XX:+IgnoreUnrecognizedVMOptions",
                                "-XX:VerifyIterativeGVN=1110")
                      .start();
     }
