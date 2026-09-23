@@ -5736,18 +5736,18 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             // and since this Class is an identity object, it must be non-zero. Let's do a little diamond since it's easy enough
             // and cmove experimentally failed to be as efficient.
             RegionNode* avoid_zero_hash_region = new RegionNode(3);
-            Node* actual_result_for_real = new PhiNode(avoid_zero_hash_region, TypeInt::INT);
+            Node* zero_avoided_result = new PhiNode(avoid_zero_hash_region, TypeInt::INT);
 
             Node* bol_hash_would_be_zero = BoolCmpI(masked_result, BoolTest::eq, zerocon(T_INT));
             IfNode* iff_hash_would_be_zero = create_and_map_if(control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
             avoid_zero_hash_region->init_req(1, IfTrue(iff_hash_would_be_zero));
-            actual_result_for_real->init_req(1, result_empty);
+            zero_avoided_result->init_req(1, result_empty);
 
             avoid_zero_hash_region->init_req(2, IfFalse(iff_hash_would_be_zero));
-            actual_result_for_real->init_req(2, masked_result);
+            zero_avoided_result->init_req(2, masked_result);
 
             result_reg->init_req(_value_fast_path, _gvn.transform(avoid_zero_hash_region));
-            result_val->init_req(_value_fast_path, _gvn.transform(actual_result_for_real));
+            result_val->init_req(_value_fast_path, _gvn.transform(zero_avoided_result));
           }
         }
       }

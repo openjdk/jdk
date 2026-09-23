@@ -1125,6 +1125,9 @@ Node* ValueTypeNode::emit_identity_hash_code(GraphKit* kit, Node* arg, intptr_t 
   Node* hash_mask_con = kit->intcon(markWord::hash_mask);
   result = kit->AndI(result, hash_mask_con);
 
+  // Now, we have computed the hash. But we don't want it to be 0. If it is, let's just take the hash of the Class,
+  // and since this Class is an identity object, it must be non-zero. Let's do a little diamond since it's easy enough
+  // and cmove experimentally failed to be as efficient.
   Node* bol_hash_would_be_zero = kit->BoolCmpI(result, BoolTest::eq, kit->zerocon(T_INT));
   IfNode* iff_hash_would_be_zero = kit->create_and_map_if(kit->control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
 
