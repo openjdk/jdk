@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.TreeSet;
+
+import jdk.test.lib.valueclass.AsValueClass;
 
 public class JksSetPrivateKey extends SecmodTest {
 
@@ -91,6 +93,7 @@ public class JksSetPrivateKey extends SecmodTest {
     }
 }
 
+@AsValueClass
 class DummyPrivateKey implements PrivateKey {
     @Override
     public String getAlgorithm() {
@@ -108,6 +111,7 @@ class DummyPrivateKey implements PrivateKey {
     }
 }
 
+@AsValueClass
 class DummyPrivateKey2 implements PrivateKey {
     @Override
     public String getAlgorithm() {
