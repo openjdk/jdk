@@ -49,6 +49,11 @@ import jdk.test.lib.jfr.Events;
 public class TestFileChannelEvents {
     public static void main(String[] args) throws Throwable {
         File tmp = Utils.createTempFile("TestFileChannelEvents", ".tmp").toFile();
+        testReadWriteAndForceEvents(tmp);
+        testNoInterference(tmp);
+    }
+
+    private static void testReadWriteAndForceEvents(File tmp) throws Throwable {
         try (Recording recording = new Recording()) {
             List<IOEvent> expectedEvents = new ArrayList<>();
             try (RandomAccessFile rf = new RandomAccessFile(tmp, "rw"); FileChannel ch = rf.getChannel();) {
@@ -118,9 +123,9 @@ public class TestFileChannelEvents {
                 IOHelper.verifyEqualsInOrder(events, expectedEvents);
             }
         }
-        testNoInterference(tmp);
     }
 
+    // Tests that FileRead and FileWrite events are recorded independently when the other event type is disabled.
     private static void testNoInterference(File file) throws Throwable {
         try (RandomAccessFile rf = new RandomAccessFile(file, "rw");
              FileChannel ch = rf.getChannel()) {
@@ -135,6 +140,38 @@ public class TestFileChannelEvents {
                 recording.start();
 
                 long size = ch.write(buffer, 0);
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileWriteEvent(size, file)));
+            }
+
+            buffer.rewind();
+
+            try (Recording recording = new Recording()) {
+                recording.disable(IOEvent.EVENT_FILE_READ);
+                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                long size = ch.write(buffer);
+
+                recording.stop();
+                IOHelper.verifyEquals(Events.fromRecording(recording),
+                        List.of(IOEvent.createFileWriteEvent(size, file)));
+            }
+
+            buffer.rewind();
+
+            ByteBuffer other = ByteBuffer.allocateDirect(10);
+            other.put("abcdefghij".getBytes());
+            other.flip();
+
+            try (Recording recording = new Recording()) {
+                recording.disable(IOEvent.EVENT_FILE_READ);
+                recording.enable(IOEvent.EVENT_FILE_WRITE).withThreshold(Duration.ofMillis(0));
+                recording.start();
+
+                long size = ch.write(new ByteBuffer[] { buffer, other });
 
                 recording.stop();
                 IOHelper.verifyEquals(Events.fromRecording(recording),
