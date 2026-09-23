@@ -76,13 +76,15 @@ public class TimeZoneNameConcurrencyTest {
         TimeZone tz = TimeZone.getTimeZone("Asia/Seoul");
         CyclicBarrier barrier = new CyclicBarrier(THREADS);
         var failures = new ConcurrentLinkedQueue<Throwable>();
+        String[] names = new String[THREADS];
         Thread[] ts = new Thread[THREADS];
         for (int i = 0; i < THREADS; i++) {
+            final int index = i;
             final Locale l = (i % 2 == 1) ? Locale.ENGLISH : Locale.US;
             ts[i] = new Thread(() -> {
                 try {
                     barrier.await();
-                    tz.getDisplayName(false, TimeZone.SHORT, l);
+                    names[index] = tz.getDisplayName(false, TimeZone.SHORT, l);
                 } catch (Throwable t) {
                     failures.add(t);
                 }
@@ -97,7 +99,17 @@ public class TimeZoneNameConcurrencyTest {
             failures.forEach(failure::addSuppressed);
             throw failure;
         }
-        printNames(tz);
+        String us = tz.getDisplayName(false, TimeZone.SHORT, Locale.US);
+        String en = tz.getDisplayName(false, TimeZone.SHORT, Locale.ENGLISH);
+        for (int i = 0; i < THREADS; i++) {
+            String name = (i % 2 == 1) ? en : us;
+            if (!name.equals(names[i])) {
+                throw new RuntimeException("Thread " + i + " got "
+                        + names[i] + ", main thread got " + name);
+            }
+        }
+        System.out.println(us);
+        System.out.println(en);
     }
 
     private static void printNames(TimeZone tz) {
