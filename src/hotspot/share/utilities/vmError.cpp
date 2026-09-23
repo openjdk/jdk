@@ -516,18 +516,20 @@ static void report_vm_version(outputStream* st, char* buf, int buflen) {
                 buf, jdk_debug_level, runtime_version);
 
    // This is the long version with some default settings added
+   const char* vm_info_str = VM_Version::vm_info_string();
    st->print_cr("# Java VM: %s%s%s (%s%s, %s%s%s%s, %s, %s)",
                  VM_Version::vm_name(),
                 (*vendor_version != '\0') ? " " : "", vendor_version,
                  jdk_debug_level,
                  VM_Version::vm_release(),
-                 VM_Version::vm_info_string(),
+                 vm_info_str,
                  TieredCompilation ? ", tiered" : "",
                  UseCompressedOops ? ", compressed oops" : "",
                  UseCompactObjectHeaders ? ", compact obj headers" : "",
                  GCConfig::hs_err_name(),
                  VM_Version::vm_platform_string()
                );
+   FREE_C_HEAP_ARRAY(vm_info_str);
 }
 
 // Returns true if at least one thread reported a fatal error and fatal error handling is in process.
@@ -2098,9 +2100,9 @@ bool VMError::check_timeout() {
     // exceptions to this (printing a callstack from debug information located on a slow file system, or
     // printing a memory map of an extremely fragmented process). To give those rare slow steps enough
     // breathing space while still allowing us to skip any hanging steps, we use a per-step timeout of
-    // <total timeout>/4, or 5 seconds, whichever is smaller.
+    // <total timeout>/4, or 15 seconds, whichever is smaller.
     const jlong step_timeout_nanos = ((jlong)ErrorLogTimeout * SECONDS_TO_NANOS_FACTOR) / 4;
-    const jlong max_step_timeout_nanos = 5LL * SECONDS_TO_NANOS_FACTOR;
+    const jlong max_step_timeout_nanos = 15LL * SECONDS_TO_NANOS_FACTOR;
     const jlong timeout_duration = MIN2(max_step_timeout_nanos, step_timeout_nanos);
     const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout.load_relaxed()) {

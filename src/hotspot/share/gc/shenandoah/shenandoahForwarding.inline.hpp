@@ -53,21 +53,6 @@ inline oop ShenandoahForwarding::get_forwardee_raw_unchecked(oop obj) {
   return obj;
 }
 
-inline oop ShenandoahForwarding::get_forwardee_mutator(oop obj) {
-  // Same as above, but mutator thread cannot ever see null forwardee.
-  shenandoah_assert_correct(nullptr, obj);
-  assert(Thread::current()->is_Java_thread(), "Must be a mutator thread");
-
-  markWord mark = obj->mark();
-  if (mark.is_marked()) {
-    HeapWord* fwdptr = (HeapWord*) mark.clear_lock_bits().to_pointer();
-    assert(fwdptr != nullptr, "Forwarding pointer is never null here");
-    return cast_to_oop(fwdptr);
-  }
-  // Self-forwarded or not forwarded: return the object itself.
-  return obj;
-}
-
 inline oop ShenandoahForwarding::get_forwardee(oop obj) {
   shenandoah_assert_correct(nullptr, obj);
   return get_forwardee_raw_unchecked(obj);

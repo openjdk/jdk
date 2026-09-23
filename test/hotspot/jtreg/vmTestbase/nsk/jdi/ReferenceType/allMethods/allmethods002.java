@@ -103,11 +103,7 @@ public class allmethods002 {
 
         Debugee debugee;
 
-        if (argsHandler.verbose()) {
-            debugee = binder.bindToDebugee(debugeeName + " -vbs");
-        } else {
-            debugee = binder.bindToDebugee(debugeeName);
-        }
+        debugee = binder.bindToDebugee(debugeeName);
 
         print_log_on_verbose("==> nsk/jdi/ReferenceType/allMethods/allmethods002 test LOG:");
         print_log_on_verbose("==> test checks allMethods() method of ReferenceType interface ");

@@ -209,9 +209,9 @@ class nmethod : public CodeBlob {
   address  _osr_entry_point;       // entry point for on stack replacement
   uint16_t _entry_offset;          // entry point with class check
   uint16_t _verified_entry_offset; // entry point without class check
-  uint16_t _inline_entry_offset;             // inline type entry point (unpack all inline type args) with class check
-  uint16_t _verified_inline_entry_offset;    // inline type entry point (unpack all inline type args) without class check
-  uint16_t _verified_inline_ro_entry_offset; // inline type entry point (unpack receiver only) without class check
+  uint16_t _value_entry_offset;             // value type entry point (unpack all value type args) with class check
+  uint16_t _verified_value_entry_offset;    // value type entry point (unpack all value type args) without class check
+  uint16_t _verified_value_ro_entry_offset; // value type entry point (unpack receiver only) without class check
   int      _entry_bci;             // != InvocationEntryBci if this nmethod is an on-stack replacement method
   int      _immutable_data_size;
 
@@ -683,9 +683,9 @@ public:
   // entry points
   address entry_point() const          { return code_begin() + _entry_offset;          } // normal entry point
   address verified_entry_point() const { return code_begin() + _verified_entry_offset; } // if klass is correct
-  address inline_entry_point() const              { return code_begin() + _inline_entry_offset; }             // inline type entry point (unpack all inline type args)
-  address verified_inline_entry_point() const     { return code_begin() + _verified_inline_entry_offset; }    // inline type entry point (unpack all inline type args) without class check
-  address verified_inline_ro_entry_point() const  { return code_begin() + _verified_inline_ro_entry_offset; } // inline type entry point (only unpack receiver) without class check
+  address value_entry_point() const              { return code_begin() + _value_entry_offset; }             // value type entry point (unpack all value type args)
+  address verified_value_entry_point() const     { return code_begin() + _verified_value_entry_offset; }    // value type entry point (unpack all value type args) without class check
+  address verified_value_ro_entry_point() const  { return code_begin() + _verified_value_ro_entry_offset; } // value type entry point (only unpack receiver) without class check
 
   enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
                                            // allowed to advance state
@@ -825,7 +825,7 @@ public:
   const char* state() const;
 
   bool inlinecache_check_contains(address addr) const {
-    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_inline_entry_point()));
+    return (addr >= code_begin() && (addr < verified_entry_point() || addr < verified_value_entry_point()));
   }
 
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f);

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
 
+#include "gc/shenandoah/shenandoahAffiliation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class ShenandoahHeapRegion;
@@ -46,6 +47,7 @@ public:
 
   // Return true if this region belongs to this space.
   virtual bool contains(ShenandoahHeapRegion* region) const = 0;
+  virtual bool contains(ShenandoahAffiliation affiliation) const = 0;
 };
 
 #endif //SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP

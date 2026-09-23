@@ -198,6 +198,13 @@ bool frame::safe_for_sender(JavaThread *thread) {
     return false;
   }
 
+  // sender_fp must be within the stack and above (but not equal) to
+  // current frame's fp.
+  address sender_fp = (address)this->link();
+  if (!thread->is_in_stack_range_excl(sender_fp, fp)) {
+    return false;
+  }
+
   if (sender_pc() == nullptr) {
     // Likely the return pc was not yet stored to stack. We rather discard this
     // sample also because we would hit an assertion in frame::setup(). We can

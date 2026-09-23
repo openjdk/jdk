@@ -38,7 +38,7 @@ static flatArrayOop fake_flat_array(int length) {
   return farr;
 }
 
-// What FlatArrayKlass::array_layout_helper does, but w/o InlineKlass
+// What FlatArrayKlass::array_layout_helper does, but w/o ValueKlass
 static int make_lh(int payload_size_bytes, bool null_free) {
   BasicType etype = T_FLAT_ELEMENT;
   int esize = log2i_exact(round_up_power_of_2(payload_size_bytes));
