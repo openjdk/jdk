@@ -34,7 +34,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -50,7 +49,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -70,7 +68,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -90,7 +87,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -110,7 +106,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -130,7 +125,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -150,7 +144,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -170,7 +163,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -190,7 +182,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -210,7 +201,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -231,7 +221,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -252,7 +241,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -273,7 +261,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
@@ -294,7 +281,6 @@ import jdk.test.lib.helpers.StrictInit;
  * @key randomness
  * @summary Test support for null markers in flat fields.
  * @library /test/lib /
- * @requires (os.simpleArch == "x64" | os.simpleArch == "aarch64" | os.simpleArch == "riscv64")
  * @requires (vm.opt.PreloadClasses == null | vm.opt.PreloadClasses == "true")
  * @enablePreview
  * @modules java.base/jdk.internal.value
