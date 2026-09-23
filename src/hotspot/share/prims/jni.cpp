@@ -52,7 +52,6 @@
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.inline.hpp"
 #include "oops/flatArrayOop.inline.hpp"
-#include "oops/inlineKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceOop.hpp"
 #include "oops/klass.inline.hpp"
@@ -65,6 +64,7 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayKlass.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "oops/valueKlass.inline.hpp"
 #include "oops/valuePayload.inline.hpp"
 #include "prims/jniCheck.hpp"
 #include "prims/jniExport.hpp"
@@ -1925,7 +1925,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
       InstanceKlass *ik = InstanceKlass::cast(k);
       fieldDescriptor fd;
       ik->find_field_from_offset(offset, false, &fd);
-      if (fd.is_null_free_inline_type()) {
+      if (fd.is_null_free_value_type()) {
         THROW_MSG(vmSymbols::java_lang_NullPointerException(), "Cannot store null in a null-restricted field");
       }
     }
@@ -1937,7 +1937,7 @@ JNI_ENTRY_NO_PRESERVE(void, jni_SetObjectField(JNIEnv *env, jobject obj, jfieldI
     bool found = ik->find_field_from_offset(offset, false, &fd);
     assert(found, "Field not found");
     FlatFieldPayload payload(instanceOop(o), &fd);
-    payload.write(inlineOop(JNIHandles::resolve(value)), CHECK);
+    payload.write(valueOop(JNIHandles::resolve(value)), CHECK);
   }
   log_debug_if_final_instance_field(thread, "SetObjectField", InstanceKlass::cast(k), offset);
   HOTSPOT_JNI_SETOBJECTFIELD_RETURN();
@@ -2969,7 +2969,7 @@ JNI_ENTRY(jweak, jni_NewWeakGlobalRef(JNIEnv *env, jobject ref))
   HOTSPOT_JNI_NEWWEAKGLOBALREF_ENTRY(env, ref);
   Handle ref_handle(thread, JNIHandles::resolve(ref));
 
-  if (!ref_handle.is_null() && ref_handle->klass()->is_inline_klass()) {
+  if (!ref_handle.is_null() && ref_handle->klass()->is_value_klass()) {
     ResourceMark rm(THREAD);
     stringStream ss;
     ss.print("%s is not an identity class", ref_handle->klass()->external_name());
@@ -3213,7 +3213,7 @@ JNI_END
 JNI_ENTRY(jboolean, jni_HasIdentity(JNIEnv* env, jobject obj))
   HOTSPOT_JNI_HASIDENTITY_ENTRY(env, obj);
   oop o = JNIHandles::resolve(obj);
-  if (o != nullptr && !o->klass()->is_inline_klass()) {
+  if (o != nullptr && !o->klass()->is_value_klass()) {
     HOTSPOT_JNI_HASIDENTITY_RETURN(JNI_TRUE);
     return JNI_TRUE;
   } else {

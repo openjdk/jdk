@@ -293,8 +293,8 @@ bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
 
   if (!ret && Arguments::is_valhalla_enabled()) {
     if (obj1 != nullptr && obj2 != nullptr &&
-        obj1->klass() == obj2->klass() && obj1->klass()->is_inline_klass()) {
-      // The two references are different, they are not null and they are both inline types,
+        obj1->klass() == obj2->klass() && obj1->klass()->is_value_klass()) {
+      // The two references are different, they are not null and they are both value types,
       // a full substitutability test is required, calling ValueObjectMethods.isSubstitutable()
       // (similarly to InterpreterRuntime::is_substitutable).
       // The jobjects must be re-resolved as the no-keepalive variants are not safe to use

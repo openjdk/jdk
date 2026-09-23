@@ -2022,8 +2022,8 @@ void TemplateTable::if_acmp(Condition cc) {
 
   __ profile_acmp(r2, r1, r0, r4);
 
-  Register is_inline_type_mask = rscratch1;
-  __ mov(is_inline_type_mask, markWord::inline_type_pattern);
+  Register is_value_type_mask = rscratch1;
+  __ mov(is_value_type_mask, markWord::value_type_pattern);
 
   if (Arguments::is_valhalla_enabled()) {
     // The substitutability test is only necessary if r1 and r0 are not the same...
@@ -2036,11 +2036,11 @@ void TemplateTable::if_acmp(Condition cc) {
 
     // ...and both are values...
     __ ldr(r2, Address(r1, oopDesc::mark_offset_in_bytes()));
-    __ andr(r2, r2, is_inline_type_mask);
+    __ andr(r2, r2, is_value_type_mask);
     __ ldr(r4, Address(r0, oopDesc::mark_offset_in_bytes()));
-    __ andr(r4, r4, is_inline_type_mask);
+    __ andr(r4, r4, is_value_type_mask);
     __ andr(r2, r2, r4);
-    __ cmp(r2,  is_inline_type_mask);
+    __ cmp(r2,  is_value_type_mask);
     __ br(Assembler::NE, (cc == equal) ? not_taken : taken);
 
     // ...with the same value klass
@@ -3037,7 +3037,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ test_field_is_not_null_free_inline_type(flags, noreg /* temp */, is_nullable);
+        __ test_field_is_not_null_free_value_type(flags, noreg /* temp */, is_nullable);
         __ null_check(r0);  // FIXME JDK-8341120
         __ bind(is_nullable);
         do_oop_store(_masm, field, r0, IN_HEAP);
@@ -3045,7 +3045,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       } else {
         Label null_free_reference, is_flat, rewrite_inline;
         __ test_field_is_flat(flags, noreg /* temp */, is_flat);
-        __ test_field_is_null_free_inline_type(flags, noreg /* temp */, null_free_reference);
+        __ test_field_is_null_free_value_type(flags, noreg /* temp */, null_free_reference);
         pop_and_check_object(obj);
         // Store into the field
         // Clobbers: r10, r11, r3
@@ -3054,7 +3054,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           patch_bytecode(Bytecodes::_fast_aputfield, bc, r19, true, byte_no);
         }
         __ b(Done);
-        // Implementation of the inline type semantic
+        // Implementation of the value type semantic
         __ bind(null_free_reference);
         __ null_check(r0);  // FIXME JDK-8341120
         pop_and_check_object(obj);
@@ -4104,9 +4104,9 @@ void TemplateTable::monitorenter()
   // check for null object
   __ null_check(r0);
 
-  Label is_inline_type;
+  Label is_value_type;
   __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(rscratch1, is_inline_type);
+  __ test_markword_is_value_type(rscratch1, is_value_type);
 
   const Address monitor_block_top(
         rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
@@ -4210,7 +4210,7 @@ void TemplateTable::monitorenter()
   // next instruction.
   __ dispatch_next(vtos);
 
-  __ bind(is_inline_type);
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                     InterpreterRuntime::throw_identity_exception), r0);
   __ should_not_reach_here();
@@ -4224,10 +4224,10 @@ void TemplateTable::monitorexit()
   // check for null object
   __ null_check(r0);
 
-  const int is_inline_type_mask = markWord::inline_type_pattern;
+  const int is_value_type_mask = markWord::value_type_pattern;
   Label has_identity;
   __ ldr(rscratch1, Address(r0, oopDesc::mark_offset_in_bytes()));
-  __ mov(rscratch2, is_inline_type_mask);
+  __ mov(rscratch2, is_value_type_mask);
   __ andr(rscratch1, rscratch1, rscratch2);
   __ cmp(rscratch1, rscratch2);
   __ br(Assembler::NE, has_identity);

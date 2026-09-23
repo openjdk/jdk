@@ -38,53 +38,53 @@ class G1HeapRegionRemSet : public CHeapObj<mtGC> {
   // the region that owns this RSet.
   G1CodeRootSet _code_roots;
 
-  G1CSetCandidateGroup* _cset_group;
+  G1CardSetGroup* _card_set_group;
 
   // Cached value of heap base address.
   static HeapWord* _heap_base_address;
 
   G1CardSet* card_set() {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->card_set();
+    assert(has_card_set_group(), "pre-condition");
+    return card_set_group()->card_set();
   }
 
   const G1CardSet* card_set() const {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->card_set();
+    assert(has_card_set_group(), "pre-condition");
+    return card_set_group()->card_set();
   }
 
   bool card_set_is_empty() const {
-    return !has_cset_group() || card_set()->is_empty();
+    return !has_card_set_group() || card_set()->is_empty();
   }
 
 public:
   G1HeapRegionRemSet();
   ~G1HeapRegionRemSet();
 
-  void install_cset_group(G1CSetCandidateGroup* cset_group) {
-    assert(cset_group != nullptr, "pre-condition");
-    assert(_cset_group == nullptr, "pre-condition");
+  void install_card_set_group(G1CardSetGroup* card_set_group) {
+    assert(card_set_group != nullptr, "pre-condition");
+    assert(_card_set_group == nullptr, "pre-condition");
 
-    _cset_group = cset_group;
+    _card_set_group = card_set_group;
   }
 
-  void uninstall_cset_group();
+  void uninstall_card_set_group();
 
-  bool has_cset_group() const {
-    return _cset_group != nullptr;
+  bool has_card_set_group() const {
+    return _card_set_group != nullptr;
   }
 
-  G1CSetCandidateGroup* cset_group() {
-    return _cset_group;
+  G1CardSetGroup* card_set_group() {
+    return _card_set_group;
   }
 
-  const G1CSetCandidateGroup* cset_group() const {
-    return _cset_group;
+  const G1CardSetGroup* card_set_group() const {
+    return _card_set_group;
   }
 
-  uint cset_group_id() const {
-    assert(has_cset_group(), "pre-condition");
-    return cset_group()->group_id();
+  uint card_set_group_id() const {
+    assert(has_card_set_group(), "pre-condition");
+    return card_set_group()->group_id();
   }
 
   bool is_empty() const {
@@ -105,7 +105,7 @@ public:
   inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
 
   size_t occupied() {
-    assert(has_cset_group(), "pre-condition");
+    assert(has_card_set_group(), "pre-condition");
     return card_set()->occupied();
   }
 

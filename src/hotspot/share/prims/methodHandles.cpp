@@ -375,7 +375,7 @@ oop MethodHandles::init_field_MemberName(Handle mname, fieldDescriptor& fd, bool
     assert((layout_kind & LAYOUT_MASK) == layout_kind, "Layout information loss");
     flags |= layout_kind << LAYOUT_SHIFT;
   }
-  if (fd.is_null_free_inline_type()) flags |= NULL_RESTRICTED;
+  if (fd.is_null_free_value_type()) flags |= NULL_RESTRICTED;
   if (is_setter)  flags += ((JVM_REF_putField - JVM_REF_getField) << REFERENCE_KIND_SHIFT);
   int vmindex        = fd.offset();  // determines the field uniquely when combined with static bit
 

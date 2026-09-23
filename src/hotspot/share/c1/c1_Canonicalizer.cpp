@@ -646,7 +646,7 @@ void Canonicalizer::do_CheckCast      (CheckCast*       x) {
       // Interface casts can't be statically optimized away since verifier doesn't
       // enforce interface types in bytecode.
       if (!is_interface && klass->is_subtype_of(x->klass())) {
-        assert(!x->klass()->is_inlinetype() || x->klass() == klass, "Inline klasses can't have subtypes");
+        assert(!x->klass()->is_value_klass() || x->klass() == klass, "Value klasses can't have subtypes");
         set_canonical(obj);
         return;
       }
@@ -728,9 +728,9 @@ void Canonicalizer::do_If(If* x) {
   if (lt->is_constant() && rt->is_constant()) {
     const ciType* l_exact_type = l->exact_type();
     const ciType* r_exact_type = r->exact_type();
-    if (l_exact_type != nullptr && l_exact_type->is_inlinetype() &&
-        r_exact_type != nullptr && r_exact_type->is_inlinetype() && x->substitutability_check()) {
-      // If we have a substitutability check and both sides are known inline types we must
+    if (l_exact_type != nullptr && l_exact_type->is_value_klass() &&
+        r_exact_type != nullptr && r_exact_type->is_value_klass() && x->substitutability_check()) {
+      // If we have a substitutability check and both sides are known value types we must
       // preserve it instead of performing a pointer comparison during compile time.
       return;
     }

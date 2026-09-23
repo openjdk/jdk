@@ -200,6 +200,17 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
         }
         break;
       }
+      case 0x05: { // DW_CFA_offset_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        uintptr_t operand2 = read_leb(false);
+        _state.offset_from_cfa[reg] = operand2 * _data_factor;
+        break;
+      }
+      case 0x06: { // DW_CFA_restore_extended
+        enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
+        _state.offset_from_cfa[reg] = _initial_state.offset_from_cfa[reg];
+        break;
+      }
       case 0x07: { // DW_CFA_undefined
         enum DWARF_Register reg = static_cast<enum DWARF_Register>(read_leb(false));
         _state.offset_from_cfa[reg] = INT_MAX;
@@ -228,7 +239,7 @@ void DwarfParser::parse_dwarf_instructions(uintptr_t begin, uintptr_t pc, const 
       }
       default:
         if (!process_arch_specific_dwarf_instructions(op)) {
-          print_debug("DWARF: Unknown opcode: 0x%x\n", op);
+          print_error("DWARF: Unknown opcode: 0x%x\n", op);
           return;
         }
     }

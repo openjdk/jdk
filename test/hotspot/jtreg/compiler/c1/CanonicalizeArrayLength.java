@@ -28,21 +28,21 @@
  *
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation -XX:-VerifyOops
+ *                   -XX:-BackgroundCompilation
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=3
- *                   -XX:-BackgroundCompilation -XX:-VerifyOops
+ *                   -XX:-BackgroundCompilation
  *                   -XX:+PatchALot
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation -XX:-VerifyOops
+ *                   -XX:-BackgroundCompilation
  *                   -XX:ScavengeRootsInCode=0
  *                   compiler.c1.CanonicalizeArrayLength
  * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions
  *                   -XX:CompileThreshold=100 -XX:+TieredCompilation -XX:TieredStopAtLevel=1
- *                   -XX:-BackgroundCompilation -XX:ScavengeRootsInCode=1 -XX:-VerifyOops
+ *                   -XX:-BackgroundCompilation -XX:ScavengeRootsInCode=1
  *                   compiler.c1.CanonicalizeArrayLength
  */
 

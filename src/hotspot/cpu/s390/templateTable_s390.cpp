@@ -868,7 +868,22 @@ void TemplateTable::aaload() {
   __ profile_array_type<ArrayLoadData>(/*array=*/Z_tmp_1, Z_tmp_2, Z_ARG2);
 
   if (UseArrayFlattening) {
-    __ stop("implement function TemplateTable::aaload");
+    NearLabel is_flat_array, done;
+
+    __ test_flat_array_oop(Z_tmp_1, Z_tmp_2, is_flat_array);
+    // Non-flat path: normal oop load.
+    do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
+                Z_tmp_2, Z_tmp_3, IS_ARRAY);
+    __ verify_oop(Z_tos);
+    __ z_bru(done);
+
+    __ bind(is_flat_array);
+    // Flat path: delegate to runtime; result returned in Z_tos (= Z_RET).
+    // Note: index is already shifted, need to pass unshifted index to runtime
+    __ z_srag(Z_ARG3, index, shift);  // Unshift index back to original value
+    __ call_VM(Z_tos, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_load),
+               Z_tmp_1, Z_ARG3);
+    __ bind(done);
   } else {
     // Now load array element.
     do_oop_load(_masm, Address(Z_tmp_1, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT)), Z_tos,
@@ -1169,30 +1184,45 @@ void TemplateTable::dastore() {
 }
 
 void TemplateTable::aastore() {
+  // stack: ..., array, index, value
+  //
+  // -- Register allocation --------------------------------------------------
+  //
+  //   Rvalue       Z_tos   Z_R2   value oop (stack slot 0)
+  //   Rarray       Z_ARG2  Z_R3   array oop (stack slot 2)
+  //   Rindex       Z_ARG3  Z_R4   byte-scaled index (live until the LEA below)
+  //   Rstore_addr  Z_ARG3  Z_R4   element address   (same physical reg; live after LEA)
+  //   Rarray_klass Z_ARG4  Z_R5   array/element klass (written by profiling; always reloaded)
+  //   Rsub_klass   Z_ARG5  Z_R6   value klass; free scratch on the null path
+  //   Rscratch     Z_tmp_1 Z_R10  shared scratch / tmp1 for barriers
+  //   Rscratch2    Z_tmp_2 Z_R11  shared scratch / tmp2 for barriers
+
+  const Register Rvalue       = Z_tos;   // Z_R2
+  const Register Rarray       = Z_ARG2;  // Z_R3
+  const Register Rindex       = Z_ARG3;  // Z_R4  (live until LEA)
+  const Register Rstore_addr  = Z_ARG3;  // Z_R4  (live after LEA, same register)
+  const Register Rarray_klass = Z_ARG4;  // Z_R5
+  const Register Rsub_klass   = Z_ARG5;  // Z_R6
+  const Register Rscratch     = Z_tmp_1; // Z_R10
+  const Register Rscratch2    = Z_tmp_2; // Z_R11
+
   NearLabel is_null, is_flat_array, ok_is_subtype, done;
   transition(vtos, vtos);
 
-  // stack: ..., array, index, value
-  Register Rvalue = Z_tos;
-  Register Rarray = Z_ARG2;
-  Register Rindex = Z_ARG3; // Convention for index_check().
-
   __ load_ptr(0, Rvalue);
-  __ z_l(Rindex, Address(Z_esp, Interpreter::expr_offset_in_bytes(1)));
+  __ z_lgf(Rindex, Address(Z_esp, Interpreter::expr_offset_in_bytes(1)));
   __ load_ptr(2, Rarray);
 
-  unsigned const int shift = LogBytesPerHeapOop;
-  index_check(Rarray, Rindex, shift); // side effect: Rindex = Rindex << shift
-  Register Rstore_addr  = Rindex;
-  // Address where the store goes to, i.e. &(Rarray[index])
+  index_check(Rarray, Rindex, LogBytesPerHeapOop);
+
+  // (*) LEA: compute element address in-place.  Rindex is dead after this.
   __ load_address(Rstore_addr, Address(Rarray, Rindex, arrayOopDesc::base_offset_in_bytes(T_OBJECT)));
 
-  Register Rscratch = Z_tmp_1;
-  Register Rscratch2 = Z_tmp_2;
-  Register Rarray_klass = Z_ARG4;
-
+  // profile_multiple_element_types uses Rarray_klass as tmp3 scratch - it clobbers it.
   __ profile_array_type<ArrayStoreData>(Rarray, Rscratch, Rscratch2);
-  __ profile_multiple_element_types(Z_tos, Rscratch, Rscratch2, Rarray_klass);
+  __ profile_multiple_element_types(Rvalue, Rscratch, Rscratch2, Rarray_klass);
+
+  __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
 
   if (UseArrayFlattening) {
     __ load_klass(Rarray_klass, Rarray);
@@ -1200,75 +1230,65 @@ void TemplateTable::aastore() {
     __ test_flat_array_layout(Rscratch, is_flat_array);
   }
 
-  // do array store check - check for null value first.
-  __ compareU64_and_branch(Rvalue, (intptr_t)0, Assembler::bcondEqual, is_null);
-
-  // Rindex is dead after this point
-  Register Rscratch3 = Rindex;
-
-  if (!UseArrayFlattening) {
-    __ load_klass(Rarray_klass, Rarray); // haven't done this above
-  }
-
-  Register Rsub_klass   = Z_ARG5;
-  Register Rsuper_klass = Rarray_klass; // Reuse Rarray_klass for superklass
-
+  // Rarray_klass was clobbered by profiling; reload it unconditionally
+  // (also handles the !UseArrayFlattening path where it was never loaded).
+  __ load_klass(Rarray_klass, Rarray);
   __ load_klass(Rsub_klass, Rvalue);
-  // Load array element superklass into Rsuper_klass (which is Rarray_klass)
-  __ z_lg(Rsuper_klass, Address(Rsuper_klass, ObjArrayKlass::element_klass_offset()));
+  __ z_lg(Rarray_klass, Address(Rarray_klass, ObjArrayKlass::element_klass_offset()));
+  __ gen_subtype_check(Rsub_klass, Rarray_klass, Rscratch, Rscratch2, ok_is_subtype, false);
 
-  // Generate a fast subtype check.  Branch to ok_is_subtype if no failure.
-  // Throw if failure.
-  Register tmp1 = Z_tmp_1;
-  Register tmp2 = Z_tmp_2;
-  __ gen_subtype_check(Rsub_klass, Rsuper_klass, tmp1, tmp2, ok_is_subtype, false);
+  // Fall through on subtype-check failure.
+  assert(Rvalue == Z_tos, "must be");
+  __ load_absolute_address(Rscratch, Interpreter::_throw_ArrayStoreException_entry);
+  __ z_br(Rscratch);
 
-  // Fall through on failure.
-  // Object is in Rvalue == Z_tos.
-  assert(Rvalue == Z_tos, "that's the expected location");
-  __ load_absolute_address(tmp1, Interpreter::_throw_ArrayStoreException_entry);
-  __ z_br(tmp1);
-
-  if (UseArrayFlattening) {
-    __ bind(is_flat_array); // Store non-null value to flat
-    __ load_ptr(0, Rvalue);    // value
-    __ z_l(Rindex, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // index
-    __ load_ptr(2, Rarray);    // array
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store), Rvalue, Rarray, Rindex);
-    __ z_bru(done);
-  }
-
+  // Null path
   __ bind(is_null);
-  NearLabel is_null_into_value_array_npe;
   if (Arguments::is_valhalla_enabled()) {
-    // No way to store null in a null-free array
-    __ test_null_free_array_oop(Rarray, Rscratch, is_null_into_value_array_npe);
+    // A nullable flat array (NULLABLE_ATOMIC_FLAT) is flat but not null-free:
+    // storing null must go through flat_array_store to write the null marker
+    // into the payload.  Route all flat arrays there first, before the
+    // null-free check below.
+    if (UseArrayFlattening) {
+      __ load_klass(Rarray_klass, Rarray);
+      __ z_l(Rscratch, Address(Rarray_klass, Klass::layout_helper_offset()));
+      __ test_flat_array_layout(Rscratch, is_flat_array);
+    }
+    // Non-flat null-free array: throw NullPointerException.
+    // test_non_null_free_array_oop branches to store_null when NOT null-free;
+    // falls through when null-free -> NPE.
+    NearLabel store_null;
+    __ test_non_null_free_array_oop(Rarray, Rscratch, store_null);
+    __ load_absolute_address(Rscratch, Interpreter::_throw_NullPointerException_entry);
+    __ z_br(Rscratch);
+    __ bind(store_null);
   }
-
-  // Store a null
-  Register tmp3 = Rsub_klass;
+  // Rsub_klass (Z_R6) is free scratch - value is null so its klass was never loaded.
   do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), noreg,
-               tmp3, tmp2, tmp1, IS_ARRAY);
+               Rsub_klass, Rscratch2, Rscratch, IS_ARRAY);
   __ z_bru(done);
 
-  if (Arguments::is_valhalla_enabled()) {
-    __ bind(is_null_into_value_array_npe);
-    __ load_absolute_address(tmp1, Interpreter::_throw_NullPointerException_entry);
-    __ z_br(tmp1);
+  // Subtype-check success path
+  __ bind(ok_is_subtype);
+  // Rvalue (Z_R2) and Rstore_addr (Z_R4) survived gen_subtype_check intact.
+  do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), Rvalue,
+               Rsub_klass, Rscratch2, Rscratch, IS_ARRAY | IS_NOT_NULL);
+  __ z_bru(done);
+
+  // Flat-array path (non-null and null into nullable flat)
+  if (UseArrayFlattening) {
+    __ bind(is_flat_array);
+    __ load_ptr(0, Rvalue);
+    __ load_ptr(2, Rscratch); // array
+    __ z_lgf(Rscratch2, Address(Z_esp, Interpreter::expr_offset_in_bytes(1))); // raw index (int)
+    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::flat_array_store),
+               Rvalue, Rscratch, Rscratch2);
+    // fall through to done
   }
 
-  // Come here on success.
-  __ bind(ok_is_subtype);
-
-  // Now store using the appropriate barrier.
-  do_oop_store(_masm, Address(Rstore_addr, (intptr_t)0), Rvalue,
-               tmp3, tmp2, tmp1, IS_ARRAY | IS_NOT_NULL);
-
-  // Pop stack arguments.
   __ bind(done);
   __ add2reg(Z_esp, 3 * Interpreter::stackElementSize);
 }
-
 
 void TemplateTable::bastore() {
   transition(itos, vtos);
@@ -2107,10 +2127,10 @@ void TemplateTable::if_acmp(Condition cc) {
     __ z_ltgr(Z_ARG5, Z_ARG5);
     __ z_brc(Assembler::bcondEqual, (cc == equal) ? not_taken : taken);
 
-    __ z_llill(Z_ARG3, markWord::inline_type_pattern);
+    __ z_llill(Z_ARG3, markWord::value_type_pattern);
     __ z_ng(Z_ARG3, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
     __ z_ng(Z_ARG3, Address(Z_ARG5, oopDesc::mark_offset_in_bytes()));
-    __ z_chi(Z_ARG3, markWord::inline_type_pattern);
+    __ z_chi(Z_ARG3, markWord::value_type_pattern);
     __ branch_optimized(Assembler::bcondNotEqual, (cc == equal) ? not_taken : taken);
 
     __ load_metadata(Z_ARG3, Z_tos);
@@ -3322,7 +3342,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
       __ pop(atos);
       if (is_static) {
         Label is_nullable;
-        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
         __ branch_optimized(Assembler::bcondAllZero, is_nullable);
         __ null_check(Z_tos);  // FIXME JDK-8341120
         __ bind(is_nullable);
@@ -3333,7 +3353,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         Label null_free_reference, is_flat, rewrite_inline, done_valhalla;
         __ z_tmll(flags, 1 << ResolvedFieldEntry::is_flat_shift);
         __ branch_optimized(Assembler::bcondAllOne, is_flat);
-        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_inline_type_shift);
+        __ z_tmll(flags, 1 << ResolvedFieldEntry::is_null_free_value_type_shift);
         __ branch_optimized(Assembler::bcondAllOne, null_free_reference);
         pop_and_check_object(obj);
         __ z_agr(fieldAddr, obj);
@@ -3344,7 +3364,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
           patch_bytecode(Bytecodes::_fast_aputfield, bc_reg, patch_tmp, true, byte_no);
         }
         __ z_bru(done_valhalla);
-        // Implementation of the inline type semantic
+        // Implementation of the value type semantic
         __ bind(null_free_reference);
         __ null_check(Z_tos);  // FIXME JDK-8341120
         pop_and_check_object(obj);
@@ -4489,10 +4509,10 @@ void TemplateTable::monitorenter() {
   // Check for null object.
   __ null_check(Z_tos);
 
-  // Check for inline type (Valhalla feature)
-  NearLabel is_inline_type;
+  // Check for value type (Valhalla feature)
+  NearLabel is_value_type;
   __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
+  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
   const int entry_size = frame::interpreter_frame_monitor_size_in_bytes();
   NearLabel allocated;
   // Initialize entry pointer.
@@ -4571,8 +4591,8 @@ void TemplateTable::monitorenter() {
   // next instruction.
   __ dispatch_next(vtos);
 
-  // Handle inline type exception (Valhalla feature)
-  __ bind(is_inline_type);
+  // Handle value type exception (Valhalla feature)
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                     InterpreterRuntime::throw_identity_exception), Z_tos);
   __ should_not_reach_here();
@@ -4589,12 +4609,12 @@ void TemplateTable::monitorexit() {
   // Check for null object.
   __ null_check(Z_tos);
 
-  // Check for inline type (Valhalla feature)
-  NearLabel is_inline_type, has_identity;
+  // Check for value type (Valhalla feature)
+  NearLabel is_value_type, has_identity;
   __ z_lg(Z_R1_scratch, Address(Z_tos, oopDesc::mark_offset_in_bytes()));
-  __ test_markword_is_inline_type(Z_R1_scratch, is_inline_type);
+  __ test_markword_is_value_type(Z_R1_scratch, is_value_type);
   __ z_bru(has_identity);
-  __ bind(is_inline_type);
+  __ bind(is_value_type);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                      InterpreterRuntime::throw_illegal_monitor_state_exception));
   __ should_not_reach_here();
