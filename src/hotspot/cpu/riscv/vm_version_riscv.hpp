@@ -253,6 +253,8 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zacas       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZacas))                                  \
   /* Byte and Halfword Atomic Memory instructions */                                                      \
   decl(Zabha       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZabha))                                  \
+  /* Wait-on-Reservation-Set instructions */                                                              \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZawrs, &ext_a, nullptr))             \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
@@ -289,8 +291,6 @@ class VM_Version : public Abstract_VM_Version {
   decl(Zifencei    ,  RV_NO_FLAG_BIT,  true ,  NO_UPDATE_DEFAULT)                                         \
   /* Zihintpause Pause instruction HINT */                                                                \
   decl(Zihintpause ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZihintpause))                            \
-  /* Wait-on-Reservation-Set instructions */                                                              \
-  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZawrs, &ext_a, nullptr))             \
   /* Total Store Ordering */                                                                              \
   decl(Ztso        ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZtso))                                   \
   /* Vector Basic Bit-manipulation */                                                                     \
@@ -453,6 +453,7 @@ private:
   #define RV_USE_RVA23U64                           \
     RV_ENABLE_EXTENSION(UseRVC)                     \
     RV_ENABLE_EXTENSION(UseRVV)                     \
+    RV_ENABLE_EXTENSION(UseZawrs)                   \
     RV_ENABLE_EXTENSION(UseZba)                     \
     RV_ENABLE_EXTENSION(UseZbb)                     \
     RV_ENABLE_EXTENSION(UseZbs)                     \
@@ -465,7 +466,6 @@ private:
     RV_ENABLE_EXTENSION(UseZicboz)                  \
     RV_ENABLE_EXTENSION(UseZicond)                  \
     RV_ENABLE_EXTENSION(UseZihintpause)             \
-    RV_ENABLE_EXTENSION(UseZawrs)                   \
     RV_ENABLE_EXTENSION(UseZvfhmin)                 \
     RV_ENABLE_EXTENSION(UseZvbb)                    \
 
