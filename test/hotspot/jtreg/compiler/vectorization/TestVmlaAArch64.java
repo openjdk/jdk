@@ -40,6 +40,7 @@ import jdk.incubator.vector.VectorMask;
 import jdk.incubator.vector.VectorOperators;
 import jdk.incubator.vector.VectorSpecies;
 
+import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
 
 public class TestVmlaAArch64 {
@@ -51,12 +52,6 @@ public class TestVmlaAArch64 {
   private static long[] b;
   private static long[] c;
   private static VectorMask<Long> mask;
-
-  private static void assertResult(String test, long expected, long actual) {
-      if (actual != expected) {
-          throw new RuntimeException(test + ": expected " + expected + ", but got " + actual);
-      }
-  }
 
   public static void main(String args[]) {
       if (Platform.isAArch64()) {
@@ -98,7 +93,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_add_dot_product();
       }
-      assertResult("vector_add_dot_product", expected, result);
+      Asserts.assertEQ(expected, result, "vector_add_dot_product");
   }
 
   @Test
@@ -133,7 +128,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_sub_dot_product();
       }
-      assertResult("vector_sub_dot_product", expected, result);
+      Asserts.assertEQ(expected, result, "vector_sub_dot_product");
   }
 
   @Test
@@ -168,7 +163,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_api_add_dot_product();
       }
-      assertResult("vector_api_add_dot_product", expected, result);
+      Asserts.assertEQ(expected, result, "vector_api_add_dot_product");
   }
 
   @Test
@@ -203,7 +198,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_api_sub_dot_product();
       }
-      assertResult("vector_api_sub_dot_product", expected, result);
+      Asserts.assertEQ(expected, result, "vector_api_sub_dot_product");
   }
 
   @Test
@@ -241,7 +236,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_api_add_dot_product_masked();
       }
-      assertResult("vector_api_add_dot_product_masked", expected, result);
+      Asserts.assertEQ(expected, result, "vector_api_add_dot_product_masked");
   }
 
   @Test
@@ -279,7 +274,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_api_sub_dot_product_masked();
       }
-      assertResult("vector_api_sub_dot_product_masked", expected, result);
+      Asserts.assertEQ(expected, result, "vector_api_sub_dot_product_masked");
   }
 
   @Test
@@ -311,7 +306,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_mul_add_shared();
       }
-      assertResult("vector_mul_add_shared", expected, result);
+      Asserts.assertEQ(expected, result, "vector_mul_add_shared");
   }
 
   @Test
@@ -343,7 +338,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = vector_mul_sub_shared();
       }
-      assertResult("vector_mul_sub_shared", expected, result);
+      Asserts.assertEQ(expected, result, "vector_mul_sub_shared");
   }
 
   @Test
@@ -393,7 +388,7 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = if_else_phi_add();
       }
-      assertResult("if_else_phi_add", expected, result);
+      Asserts.assertEQ(expected, result, "if_else_phi_add");
   }
 
   @Test
@@ -443,6 +438,6 @@ public class TestVmlaAArch64 {
       for (int i = 0; i < ITERS; i++) {
           result = if_else_phi_sub();
       }
-      assertResult("if_else_phi_sub", expected, result);
+      Asserts.assertEQ(expected, result, "if_else_phi_sub");
   }
 }
