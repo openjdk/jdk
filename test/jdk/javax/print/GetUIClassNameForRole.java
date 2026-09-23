@@ -41,11 +41,6 @@ public class GetUIClassNameForRole {
 
         for (PrintService service :
                 PrintServiceLookup.lookupPrintServices(null, null)) {
-            if (!service.getClass().getName()
-                    .equals("sun.print.Win32PrintService")) {
-                continue;
-            }
-
             ServiceUIFactory factory = service.getServiceUIFactory();
             factory.getUIClassNamesForRole(DOCUMENT_PROPERTIES_ROLE);
         }
