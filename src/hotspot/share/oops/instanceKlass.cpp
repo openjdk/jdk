@@ -2237,7 +2237,9 @@ Klass* InstanceKlass::find_field(Symbol* name, Symbol* sig, bool is_static, fiel
 bool InstanceKlass::contains_field_offset(int offset) {
   if (this->is_value_klass()) {
     ValueKlass* vk = ValueKlass::cast(this);
-    return offset >= vk->payload_offset() && offset < (vk->payload_offset() + vk->payload_size_in_bytes());
+    const int low = vk->layouts().payload_offset();
+    const int high = low + vk->layouts().size_in_bytes_of(LayoutKind::BUFFERED);
+    return offset >= low && offset < high;
   } else {
     fieldDescriptor fd;
     return find_field_from_offset(offset, false, &fd);
@@ -2278,7 +2280,7 @@ bool InstanceKlass::find_local_flat_field_containing_offset(int offset, fieldDes
 
     const int offset_in_flat_field = offset - fs.offset();
     const ValueFieldLayoutInfo layout_info = value_field_layout_info(fs.index());
-    const int field_size = layout_info.klass()->layout_size_in_bytes(layout_info.kind());
+    const int field_size = layout_info.klass()->layouts().size_in_bytes_of(layout_info.kind());
 
     assert(LayoutKindHelper::is_flat(layout_info.kind()), "Must be flat");
 

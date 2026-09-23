@@ -72,7 +72,8 @@ public:
   int oop_count() const;
   address pack_handler() const;
   address unpack_handler() const;
-  ValueKlass* get_ValueKlass() const;
+  const ValueKlass* get_ValueKlass() const;
+  ValueKlass* get_ValueKlass();
   bool has_null_free_non_atomic_layout() const;
   bool has_null_free_atomic_layout() const;
   bool has_nullable_atomic_layout() const;

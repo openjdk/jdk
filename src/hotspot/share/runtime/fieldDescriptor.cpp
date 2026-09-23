@@ -136,7 +136,7 @@ int fieldDescriptor::field_offset_in_obj(const ValuePayloadContext* vpc) const {
     //     vpc->klass()->payload_offset() : 8 (the first 8 bytes of a regular Integer heap oop are excluded from the flattened copy)
     //   =>
     //     field_offset_in_obj() : 12 + (8 - 8) == 12 (offset inside a Point object)
-    int offset_in_value_payload = this->offset() - vpc->klass()->payload_offset();
+    int offset_in_value_payload = this->offset() - vpc->klass()->layouts().payload_offset();
     return vpc->offset_in_obj() + offset_in_value_payload;
   }
 }
@@ -262,7 +262,7 @@ void fieldDescriptor::print_on_for(outputStream* st, oop obj, int indent, const 
         if (field_flags().has_null_marker()) {
           for (int i = 0; i < indent + 1; i++) st->print("  ");
           st->print_cr(" - [null_marker] @%d %s",
-                    field_offset_in_obj + vk->null_marker_offset_in_payload(),
+                    field_offset_in_obj + vk->layouts().null_marker_offset_in_payload(),
                     is_null ? "Field marked as null" : "Field marked as non-null");
         }
         return; // No need to print underlying representation again (already printed by FieldPrinter above)
