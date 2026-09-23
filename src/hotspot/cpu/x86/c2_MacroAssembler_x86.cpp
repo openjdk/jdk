@@ -54,7 +54,7 @@
 // Beware! This sp_inc is NOT the same as the one mentioned in MacroAssembler::remove_frame but only the size
 // of the extension space + the additional copy of the return address. That means, it doesn't contain the
 // frame size (where the local and sp_inc are) and the saved RBP.
-void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
+void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc, bool do_stack_bang) {
   if (C->clinit_barrier_on_entry()) {
     assert(VM_Version::supports_fast_class_init_checks(), "sanity");
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
@@ -87,7 +87,7 @@ void C2_MacroAssembler::verified_entry(Compile* C, int sp_inc) {
   // some VM calls (such as call site linkage) can use several kilobytes of
   // stack.  But the stack safety zone should account for that.
   // See bugs 4446381, 4468289, 4497237.
-  if (stack_bang_size > 0) {
+  if (do_stack_bang && stack_bang_size > 0) {
     generate_stack_overflow_check(stack_bang_size);
 
     // We always push rbp, so that on return to interpreter rbp, will be
@@ -7088,6 +7088,138 @@ void C2_MacroAssembler::vector_saturating_op(int ideal_opc, BasicType elem_bt, X
     vector_saturating_op(ideal_opc, elem_bt, dst, src1, src2, vlen_enc);
   }
 }
+
+void C2_MacroAssembler::vector_slice_avx(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                         int origin, int vlen_enc) {
+   assert(vlen_enc == Assembler::AVX_256bit, "");
+   if (origin < 16) {
+     // ALIGNR instruction concatenates the corresponding 128 bit
+     // lanes of two source vectors and then performs the right
+     // shift operation over intermediate value. Thus source vectors
+     // lanes needs to shuffled to a format consumable by ALIGNR.
+     // i.e.
+     // Initial source vectors
+     //         0...256            0...256
+     // src1 = [v1 v2]   and src2= [v3  v4]
+     // Formatted source vectors when SHIFT < 16 bytes
+     //         0...256            0...256
+     // src1 = [v1  v2] and src2 = [v2  v3]
+     // Higher 128bit lane of src2 will not impact result, which will be
+     // sliced from lower and higher 128 bit lane of src1 and lower 128 bit
+     // lane of src2.
+     // i.e.
+     // Result lanes
+     // res[127:0]   = {src1[255:128] , src1[127:0]}    >> SHIFT
+     // res[255:128] = {src2[127:0]   , src1[255:128]}  >> SHIFT
+     vperm2f128(dst, src1, src2, 0x21);
+     // origin == 8 is a 64-bit rotate of each 128-bit lane after the
+     // VPERM2F128. VSHUFPS imm8=0x4E (selectors 2,3,0,1) produces that
+     // rotate in the FP domain and avoids a VPALIGNR domain-crossing.
+     if (origin == 8) {
+       vshufps(dst, src1, dst, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, dst, src1, origin, Assembler::AVX_256bit);
+     }
+   } else {
+     assert(origin > 16 && origin < 32, "");
+     // Similarly, when SHIFT >= 16 bytes, lower 128bit lane of
+     // src1 will not impact result, which will be sliced from
+     // higher 128 bit lane of src1 and lower and upper 128 bit
+     // lanes of src2.
+     // Thus, two source vector should have following format
+     //         0...256            0...256
+     // src1 = [v2  v3] and src2 = [v3  v4]
+     // Result lanes
+     // res[127:0]   = {src2[127:0]   , src1[255:127]}  >> (SHIFT - 16)
+     // res[255:128] = {src2[255:128] , src2[127:0]}    >> (SHIFT - 16)
+     vperm2f128(dst, src1, src2, 0x21);
+     // origin == 24 is the same 8-byte-per-lane rotate on the
+     // origin > 16 shuffle inputs; reuse VSHUFPS as for origin == 8.
+     if (origin == 24) {
+       vshufps(dst, dst, src2, 0x4E, vlen_enc);
+     } else {
+       vpalignr(dst, src2, dst, origin - 16, Assembler::AVX_256bit);
+     }
+   }
+}
+
+
+void C2_MacroAssembler::vector_slice_evex(XMMRegister dst, XMMRegister src1, XMMRegister src2,
+                                          XMMRegister xtmp, int origin, int vlen_enc) {
+  assert(VM_Version::supports_avx512vlbw(), "");
+  if (origin < 16) {
+    // Initial source vectors
+    //        0.........512            0.........512
+    // src1 = [v1 v2 v3 v4] and src2 = [v5 v6 v7 v8]
+    // where v* represents 128 bit wide vector lanes.
+    // When SHIFT < 16 result will be sliced out from src1 and
+    // lowest 128 bit vector lane
+    // of src2.
+    // ALIGNR will consider following source vector lanes pairs
+    // spread across two source vectors in order to compute 128 bit
+    // lanes of result vector.
+    // res[127:0]   = {src1[255:128], src1[127:0]}
+    // res[255:128] = {src1[383:256], src1[255:128]}
+    // res[383:256] = {src1[511:384], src1[383:256]}
+    // res[511:384] = {src2[127:0],   src1[511:384]}
+    //
+    // ALIGNR concatenates corresponding lanes across source vectors
+    // before right shifting the intermediate result. Therefore, source
+    // vector lanes should be shuffled to have following format
+    // src1 = {v1, v2, v3, v4} and src2 = {v2, v3, v4, v5}
+    //
+    //                       |-------------|
+    //                 |-----|--------|    |
+    // alignr ->  [v1 v2 v3 v4] [v2 v3 v4 v5]
+    //            |_____|________|    |
+    //                  |_____________|
+     evalignd(dst, src2, src1, 4, vlen_enc);
+     vpalignr(dst, dst, src1, origin, vlen_enc);
+   } else if (origin > 16 && origin < 32) {
+    // Similarly, for SHIFT between 16 and 32 bytes
+    // result will be sliced out of src1 and lower
+    // two 128 bit lanes of src2.
+    // i.e.
+    // res[127:0]   = {src1[383:256], src1[255:128]}
+    // res[255:128] = {src1[511:384], src1[383:256]}
+    // res[383:256] = {src2[127:0],   src1[511:384]}
+    // res[511:384] = {src2[255:128], src2[127:0]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v2, v3, v4, v5} and src2 = {v3, v4, v5, v6}
+     evalignd(xtmp, src2, src1, 4, vlen_enc);
+     evalignd(dst, src2, src1, 8, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 16, vlen_enc);
+   } else if (origin > 32 && origin < 48) {
+    // For SHIFT between 32 and 48 bytes
+    // result will be sliced out of src1 and lower
+    // four 128 bit lanes of src2.
+    // i.e.
+    // res[127:0]   = {src1[511:384], src1[383:255]}
+    // res[255:128] = {src2[127:0],   src1[511:384]}
+    // res[383:256] = {src2[255:128], src2[127:0]}
+    // res[511:384] = {src2[383:256], src2[255:128]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v3, v4, v5, v6} and src2 = {v4, v5, v6, v7}
+     evalignd(xtmp, src2, src1, 8, vlen_enc);
+     evalignd(dst, src2, src1, 12, vlen_enc);
+     vpalignr(dst, dst, xtmp, origin - 32, vlen_enc);
+   } else {
+    // Finally, for SHIFT greater than 48 bytes
+    // result will be sliced out of upper 128 bit lane of src1 and
+    // src2.
+    // i.e.
+    // res[127:0]   = {src2[127:0],   src1[511:383]}
+    // res[255:128] = {src2[255:127], src2[127:0]}
+    // res[383:256] = {src2[383:256], src2[255:128]}
+    // res[511:384] = {src2[511:384], src2[383:256]}
+    // Thus, source vector lanes should have following format.
+    // src1 = {v4, v5, v6, v7} and src2 = {v5, v6, v7, v8}
+     assert(origin > 48 && origin < 64, "");
+     evalignd(dst, src2, src1, 12, vlen_enc);
+     vpalignr(dst, src2, dst, origin - 48, vlen_enc);
+   }
+}
+
 
 void C2_MacroAssembler::evfp16ph(int opcode, XMMRegister dst, XMMRegister src1, XMMRegister src2, int vlen_enc) {
   switch(opcode) {

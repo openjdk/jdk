@@ -38,7 +38,8 @@
 # typically use this file for backward compatibility.
 
 # This file is divided into sections, one for each major reason for a
-# backward compatibility link.  Each section is sorted by link name.
+# backward compatibility link or zone.  Each section of links is
+# sorted by name.
 
 # A "#= TARGET1" comment labels each link inserted only because some
 # .zi parsers (including tzcode through 2022e) mishandle links to links.
@@ -69,7 +70,6 @@ Link	America/Noronha		Brazil/DeNoronha
 Link	America/Sao_Paulo	Brazil/East
 Link	America/Manaus		Brazil/West
 Link	Europe/Brussels		CET
-Link	America/Chicago		CST6CDT
 Link	America/Halifax		Canada/Atlantic
 Link	America/Winnipeg	Canada/Central
 # This line is commented out, as the name exceeded the 14-character limit
@@ -86,7 +86,6 @@ Link	Pacific/Easter		Chile/EasterIsland
 Link	America/Havana		Cuba
 Link	Europe/Athens		EET
 Link	America/Panama		EST
-Link	America/New_York	EST5EDT
 Link	Africa/Cairo		Egypt
 Link	Europe/Dublin		Eire
 # Vanguard section, for most .zi parsers.
@@ -127,7 +126,6 @@ Link	Pacific/Kwajalein	Kwajalein
 Link	Africa/Tripoli		Libya
 Link	Europe/Brussels		MET
 Link	America/Phoenix		MST
-Link	America/Denver		MST7MDT
 Link	America/Tijuana		Mexico/BajaNorte
 Link	America/Mazatlan	Mexico/BajaSur
 Link	America/Mexico_City	Mexico/General
@@ -349,6 +347,52 @@ Link	Europe/Kyiv		Europe/Kiev
 # However, for various reasons many users expect to find it under Europe.
 Link	Asia/Nicosia		Europe/Nicosia
 Link	Pacific/Honolulu	HST
-Link	America/Los_Angeles	PST8PDT
 Link	Pacific/Guadalcanal	Pacific/Ponape	#= Pacific/Pohnpei
 Link	Pacific/Port_Moresby	Pacific/Truk	#= Pacific/Chuuk
+
+
+# The backward-compatibility zones PST8PDT, MST7MDT, CST6CDT, and EST5EDT
+
+# Near-copy of US rules in the northamerica file,
+# so that this file can be compiled separately.
+# To conform to POSIX, this copy uses D instead of W for War and P for Peace.
+# Rule	NAME	FROM	TO	-	IN	ON	AT	SAVE	LETTER/S
+Rule	USback	1918	1919	-	Mar	lastSun	2:00	1:00	D
+Rule	USback	1918	1919	-	Oct	lastSun	2:00	0	S
+Rule	USback	1942	only	-	Feb	9	2:00	1:00	D # War
+Rule	USback	1945	only	-	Aug	14	23:00u	1:00	D # Peace
+Rule	USback	1945	only	-	Sep	30	2:00	0	S
+Rule	USback	1967	2006	-	Oct	lastSun	2:00	0	S
+Rule	USback	1967	1973	-	Apr	lastSun	2:00	1:00	D
+Rule	USback	1974	only	-	Jan	6	2:00	1:00	D
+Rule	USback	1975	only	-	Feb	lastSun	2:00	1:00	D
+Rule	USback	1976	1986	-	Apr	lastSun	2:00	1:00	D
+Rule	USback	1987	2006	-	Apr	Sun>=1	2:00	1:00	D
+Rule	USback	2007	max	-	Mar	Sun>=8	2:00	1:00	D
+Rule	USback	2007	max	-	Nov	Sun>=1	2:00	0	S
+
+# From Arthur David Olson (2005-12-19):
+# We generate the files specified below to guard against old files with
+# obsolete information being left in the time zone binary directory.
+# We limit the list to names that have appeared in previous versions of
+# this time zone package.
+# We do these as separate Zones rather than as Links to avoid problems if
+# a particular place changes whether it observes DST.
+#
+# From Paul Eggert (2026-07-24):
+# These zones are for backward compatibility with Unix System V (1983).
+# They are ahistorical, in that they pretend standard time extends
+# backward indefinitely into the past.
+# They use USback (not US) rules so that they conform to POSIX instead
+# of using abbreviations like EWT for Eastern War Time during World War II.
+# The zones are here, not in the northamerica file, to lessen
+# confusion downstream by making it clear that the zones are present
+# only for backward compatibility.
+# New software should use settings like TZ='America/New_York' instead
+# of these backwards-compatibility zones.
+#
+# Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
+Zone	PST8PDT		 -8:00	USback	P%sT
+Zone	MST7MDT		 -7:00	USback	M%sT
+Zone	CST6CDT		 -6:00	USback	C%sT
+Zone	EST5EDT		 -5:00	USback	E%sT
