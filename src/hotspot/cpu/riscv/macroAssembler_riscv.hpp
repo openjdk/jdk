@@ -32,6 +32,7 @@
 #include "code/vmreg.hpp"
 #include "metaprogramming/enableIf.hpp"
 #include "oops/compressedOops.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "runtime/signature.hpp"
 
@@ -1706,6 +1707,8 @@ INSN(sd_release, sd, sd_rl);
   // Zero/Sign-extend
   void zext(Register dst, Register src, int bits);
   void sext(Register dst, Register src, int bits);
+
+  void narrow_subword_type(Register dst, Register src, BasicType bt);
 
 private:
   void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
