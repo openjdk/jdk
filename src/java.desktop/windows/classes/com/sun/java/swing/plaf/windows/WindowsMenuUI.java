@@ -255,7 +255,7 @@ public class WindowsMenuUI extends BasicMenuUI {
             }
         }
 
-        if ((model.isSelected() && (!menu.isTopLevelMenu())) ||
+        if ((model.isSelected() && !menu.isTopLevelMenu()) ||
             (XPStyle.getXP() != null && (paintRollover ||
                                          model.isArmed() ||
                                          model.isSelected()))) {
