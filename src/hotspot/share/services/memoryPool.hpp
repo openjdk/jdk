@@ -43,7 +43,7 @@ class MemoryManager;
 class SensorInfo;
 class ThresholdSupport;
 
-class MemoryPool : public CHeapObj<mtInternal> {
+class MemoryPool : public CHeapObj<mtServiceability> {
   friend class MemoryManager;
  public:
   enum PoolType {
