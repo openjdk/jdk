@@ -47,10 +47,6 @@ public class ExtendedKeyCodeTest {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         robot.setAutoWaitForIdle(true);
-        if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-            robot.keyPress(KeyEvent.VK_ESCAPE);
-            robot.keyRelease(KeyEvent.VK_ESCAPE);
-        }
 
         Frame frame = new Frame();
         frame.setSize(300, 300);
