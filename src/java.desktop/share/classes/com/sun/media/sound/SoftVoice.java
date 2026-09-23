@@ -590,6 +590,8 @@ public final class SoftVoice extends VoiceStatus {
                     osc_stream.close();
                 } catch (IOException e) {
                     //e.printStackTrace();
+                } finally {
+                    osc_stream = null;
                 }
 
             if (stealer_channel != null) {
@@ -619,6 +621,7 @@ public final class SoftVoice extends VoiceStatus {
                             synthesizer.getFormat().getSampleRate());
                     osc_stream = resampler;
                 } catch (IOException e) {
+                    osc_stream = null;
                     //e.printStackTrace();
                 }
             } else {
