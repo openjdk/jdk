@@ -97,7 +97,7 @@ void ShenandoahControlThread::run_service() {
       }
     } else if (is_gc_requested) {
       cause = requested_gc_cause;
-      heuristics->log_trigger("GC request (%s)", GCCause::to_string(cause));
+      heuristics->log_trigger("GC Request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
       if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
@@ -242,6 +242,9 @@ void ShenandoahControlThread::run_service() {
       }
     }
   }
+
+  // We're done writing GC stats, so print them here.
+  heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -282,7 +285,8 @@ void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cau
   //
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-    log_info(gc)("Cancelled");
+    // Need to report at "gc" level to report GC ID proper.
+    log_info(gc)("Cancelled before cycle started");
     return;
   }
   heap->increment_total_collections(false);
@@ -371,7 +375,7 @@ void ShenandoahControlThread::notify_control_thread(GCCause::Cause cause) {
 
 void ShenandoahControlThread::handle_requested_gc(GCCause::Cause cause) {
   if (should_terminate()) {
-    log_info(gc)("Control thread is terminating, no more GCs");
+    log_info(gc, phases)("Control thread is terminating, no more GCs");
     return;
   }
 

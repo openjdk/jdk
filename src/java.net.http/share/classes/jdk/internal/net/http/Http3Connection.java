@@ -52,6 +52,7 @@ import jdk.internal.net.http.Http3PushManager.CancelPushReason;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.http3.ConnectionSettings;
 import jdk.internal.net.http.http3.Http3Error;
@@ -725,10 +726,15 @@ public final class Http3Connection implements AutoCloseable {
     private boolean finalStreamClosed() {
         lock();
         try {
-            return this.finalStream && this.exchangeStreams.isEmpty() && this.reservedStreamCount.get() == 0;
+            return this.finalStream && isIdle();
         } finally {
             unlock();
         }
+    }
+
+    private boolean isIdle() {
+        assert lock.isHeldByCurrentThread();
+        return exchangeStreams.isEmpty() && reservedStreamCount.get() == 0;
     }
 
     /**
@@ -894,6 +900,18 @@ public final class Http3Connection implements AutoCloseable {
         // must be done with "stateLock" held to co-ordinate idle connection management
         lock();
         try {
+
+            // Idle connection timeout processing might be delayed when this
+            // connection checkout request has arrived. Hence, first check for
+            // the timeout.
+            var idleConnectionTimeoutEventCopy = idleConnectionTimeoutEvent;
+            var timedOut = idleConnectionTimeoutEventCopy != null &&
+                    !idleConnectionTimeoutEventCopy.deadline().isAfter(TimeSource.now());
+            if (timedOut && isIdle()) {
+                setFinalStream();
+                return false;
+            }
+
             cancelIdleShutdownEvent();
             // co-ordinate with the QUIC connection to prevent it from silently terminating
             // a potentially idle transport
@@ -981,9 +999,40 @@ public final class Http3Connection implements AutoCloseable {
             boolean okToIdleTimeout;
             lock();
             try {
-                if (cancelled || idleShutDownInitiated) {
+
+                // Are we still the effective idle timeout handler? If not, we're done.
+                if (idleConnectionTimeoutEvent != this) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event is found obsolete, skipping it");
+                    }
                     return;
                 }
+
+                if (cancelled) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event is found cancelled, skipping it");
+                    }
+                    return;
+                }
+
+                if (idleShutDownInitiated) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event found the shutdown initiated, skipping the event");
+                    }
+                    return;
+                }
+
+                if (!isIdle()) {
+                    if (debug.on()) {
+                        debug.log("Idle timeout event found the connection in-use, skipping the event");
+                    }
+                    // When the active/reserved stream later closes, it won't
+                    // arm a new idle timer upon seeing this one, which is
+                    // already fired. Hence, detach this event.
+                    idleConnectionTimeoutEvent = null;
+                    return;
+                }
+
                 idleShutDownInitiated = true;
                 if (debug.on()) {
                     debug.log("H3 idle shutdown initiated");

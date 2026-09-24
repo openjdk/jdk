@@ -272,7 +272,7 @@ class LoadFlattenedArrayStub: public CodeStub {
   LIR_Opr          _array;
   LIR_Opr          _index;
   LIR_Opr          _result;
-  LIR_Opr          _scratch_reg;
+  LIR_Opr          _stub_result_reg;
   CodeEmitInfo*    _info;
 
  public:
@@ -284,8 +284,8 @@ class LoadFlattenedArrayStub: public CodeStub {
     visitor->do_input(_array);
     visitor->do_input(_index);
     visitor->do_output(_result);
-    if (_scratch_reg != LIR_OprFact::illegalOpr) {
-      visitor->do_temp(_scratch_reg);
+    if (_stub_result_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_stub_result_reg);
     }
   }
 
@@ -300,7 +300,6 @@ class StoreFlattenedArrayStub: public CodeStub {
   LIR_Opr          _array;
   LIR_Opr          _index;
   LIR_Opr          _value;
-  LIR_Opr          _scratch_reg;
   CodeEmitInfo*    _info;
 
  public:
@@ -312,9 +311,6 @@ class StoreFlattenedArrayStub: public CodeStub {
     visitor->do_input(_array);
     visitor->do_input(_index);
     visitor->do_input(_value);
-    if (_scratch_reg != LIR_OprFact::illegalOpr) {
-      visitor->do_temp(_scratch_reg);
-    }
   }
 #ifndef PRODUCT
   virtual void print_name(outputStream* out) const { out->print("StoreFlattenedArrayStub"); }
@@ -325,7 +321,7 @@ class SubstitutabilityCheckStub: public CodeStub {
  private:
   LIR_Opr          _left;
   LIR_Opr          _right;
-  LIR_Opr          _scratch_reg;
+  LIR_Opr          _stub_result_reg;
   CodeEmitInfo*    _info;
  public:
   SubstitutabilityCheckStub(LIR_Opr left, LIR_Opr right, CodeEmitInfo* info);
@@ -335,8 +331,8 @@ class SubstitutabilityCheckStub: public CodeStub {
     visitor->do_slow_case(_info);
     visitor->do_input(_left);
     visitor->do_input(_right);
-    if (_scratch_reg != LIR_OprFact::illegalOpr) {
-      visitor->do_temp(_scratch_reg);
+    if (_stub_result_reg != LIR_OprFact::illegalOpr) {
+      visitor->do_temp(_stub_result_reg);
     }
   }
 #ifndef PRODUCT

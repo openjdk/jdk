@@ -79,6 +79,9 @@
 #include "utilities/population_count.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if defined(_M_ARM64)
+#include CPU_HEADER(pauth)
+#endif
 #if INCLUDE_JFR
 #include "jfr/jfrEvents.hpp"
 #include "jfr/support/jfrNativeLibraryLoadEvent.hpp"
@@ -124,6 +127,7 @@ static FILETIME process_creation_time;
 static FILETIME process_exit_time;
 static FILETIME process_user_time;
 static FILETIME process_kernel_time;
+static HANDLE heap_file_handle = INVALID_HANDLE_VALUE;
 
 #if defined(_M_ARM64)
   #define __CPU__ aarch64
@@ -1252,24 +1256,24 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-double os::elapsed_process_cpu_time() {
+bool os::elapsed_process_cpu_time(double& value) {
   FILETIME create;
   FILETIME exit;
   FILETIME kernel;
   FILETIME user;
 
   if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME user_total;
   if (FileTimeToSystemTime(&user, &user_total) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME kernel_total;
   if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
-    return -1;
+    return false;
   }
 
   double user_seconds =
@@ -1281,7 +1285,8 @@ double os::elapsed_process_cpu_time() {
                           double(kernel_total.wSecond) +
                           double(kernel_total.wMilliseconds) / 1000.0;
 
-  return user_seconds + kernel_seconds;
+  value = user_seconds + kernel_seconds;
+  return true;
 }
 
 jlong os::javaTimeMillis() {
@@ -2006,6 +2011,21 @@ void os::print_os_info(outputStream* st) {
   VM_Version::print_platform_virtualization_info(st);
 }
 
+static bool getWindowsInstallationType(char* buffer, int bufferSize) {
+  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+  const char* valueName = "InstallationType";
+  DWORD valueLength = bufferSize;
+  // Initialize buffer with empty string
+  buffer[0] = '\0';
+
+  if (RegGetValueA(HKEY_LOCAL_MACHINE, subKey, valueName,
+                   RRF_RT_REG_SZ, nullptr, buffer, &valueLength) != ERROR_SUCCESS) {
+    buffer[0] = '\0';
+    return false;
+  }
+  return true;
+}
+
 void os::win32::print_windows_version(outputStream* st) {
   bool is_workstation = !IsWindowsServer();
 
@@ -2093,6 +2113,12 @@ void os::win32::print_windows_version(outputStream* st) {
 
   st->print(" Build %d", build_number);
   st->print(" (%d.%d.%d.%d)", major_version, minor_version, build_number, build_minor);
+  // InstallationType (e.g. Server Core, Nano server)
+  const int BUFFER_SIZE = 256;
+  char installationType[BUFFER_SIZE];
+  if (getWindowsInstallationType(installationType, BUFFER_SIZE)) {
+    st->print(" InstallationType: \"%s\"", installationType);
+  }
   st->cr();
 }
 
@@ -2164,22 +2190,11 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 }
 
 void os::get_summary_cpu_info(char* buf, size_t buflen) {
-  HKEY key;
-  DWORD status = RegOpenKey(HKEY_LOCAL_MACHINE,
-               "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-  if (status == ERROR_SUCCESS) {
-    DWORD size = (DWORD)buflen;
-    status = RegQueryValueEx(key, "ProcessorNameString", nullptr, nullptr, (byte*)buf, &size);
-    if (status != ERROR_SUCCESS) {
-        strncpy(buf, "## __CPU__", buflen);
-    } else {
-      if (size < buflen) {
-        buf[size] = '\0';
-      }
-    }
-    RegCloseKey(key);
-  } else {
-    // Put generic cpu info to return
+  DWORD size = (DWORD)buflen;
+  DWORD status = RegGetValueA(HKEY_LOCAL_MACHINE,
+                              "HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
+                              "ProcessorNameString", RRF_RT_REG_SZ, nullptr, buf, &size);
+  if (status != ERROR_SUCCESS) {
     strncpy(buf, "## __CPU__", buflen);
   }
 }
@@ -3241,6 +3256,20 @@ int os::create_file_for_heap(const char* dir) {
     warning("Problem opening file for heap (%s)", os::strerror(errno));
     return -1;
   }
+
+  guarantee(heap_file_handle == INVALID_HANDLE_VALUE,
+            "Heap backing file already exists");
+
+  HANDLE process = GetCurrentProcess();
+  HANDLE file_handle = (HANDLE)_get_osfhandle(fd);
+
+  if (!DuplicateHandle(process, file_handle, process, &heap_file_handle,
+                       0, FALSE, DUPLICATE_SAME_ACCESS)) {
+    warning("Could not retain handle to heap backing file (error %lu)", GetLastError());
+    ::close(fd);
+    return -1;
+  }
+
   return fd;
 }
 
@@ -4257,33 +4286,7 @@ int                       os::win32::_build_minor               = 0;
 bool                      os::win32::_processor_group_warning_displayed = false;
 bool                      os::win32::_job_object_processor_group_warning_displayed = false;
 
-void getWindowsInstallationType(char* buffer, int bufferSize) {
-  HKEY hKey;
-  const char* subKey = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
-  const char* valueName = "InstallationType";
-
-  DWORD valueLength = bufferSize;
-
-  // Initialize buffer with empty string
-  buffer[0] = '\0';
-
-  // Open the registry key
-  if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, subKey, 0, KEY_READ, &hKey) != ERROR_SUCCESS) {
-    // Return empty buffer if key cannot be opened
-    return;
-  }
-
-  // Query the value
-  if (RegQueryValueExA(hKey, valueName, nullptr, nullptr, (LPBYTE)buffer, &valueLength) != ERROR_SUCCESS) {
-    RegCloseKey(hKey);
-    buffer[0] = '\0';
-    return;
-  }
-
-  RegCloseKey(hKey);
-}
-
-bool isNanoServer() {
+static bool isNanoServer() {
   const int BUFFER_SIZE = 256;
   char installationType[BUFFER_SIZE];
   getWindowsInstallationType(installationType, BUFFER_SIZE);
@@ -5155,9 +5158,9 @@ bool os::same_files(const char* file1, const char* file2) {
     return true;
   }
 
-  char* native_file1 = os::strdup_check_oom(file1);
+  char* native_file1 = os::strdup_check_oom(file1, mtInternal);
   native_file1 = os::native_path(native_file1);
-  char* native_file2 = os::strdup_check_oom(file2);
+  char* native_file2 = os::strdup_check_oom(file2, mtInternal);
   native_file2 = os::native_path(native_file2);
   if (strcmp(native_file1, native_file2) == 0) {
     os::free(native_file1);
@@ -6637,6 +6640,19 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   int count = 0;
   address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
+#if defined(_M_ARM64)
+    // On Windows/ARM64, when the CPU is using authenticated pointers, return
+    // addresses are signed.  Unfortunately, `StackWalk64()` does not strip the
+    // pointer signature, so we need to do this ourself.  Since stripping the
+    // signature is an idempotent operation, we don't need to guard this call
+    // based on whether pointer authentication is enabled.
+    address original = (address)stk.AddrPC.Offset;
+    address stripped = pauth_strip_pointer(original);
+    stk.AddrPC.Offset = (DWORD64)(uintptr_t)stripped;
+
+    // We updated the stack frame's PC, so keep the context's PC in sync.
+    ctx.Pc = stk.AddrPC.Offset;
+#endif
     intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;

@@ -111,6 +111,8 @@ public class PreviewJRTImage {
                         "Test.java:1:16: compiler.warn.sun.proprietary: sun.misc.Unsafe",
                         "Test.java:5:9: compiler.err.type.found.req: java.lang.Boolean, (compiler.misc.type.req.identity)",
                         "Test.java:7:9: compiler.warn.sun.proprietary: sun.misc.Unsafe",
+                        "- compiler.note.preview.filename: Test.java, DEFAULT",
+                        "- compiler.note.preview.recompile",
                         "1 error",
                         "2 warnings"
                 );

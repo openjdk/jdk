@@ -532,7 +532,7 @@ public class BasicComboBoxUI extends ComboBoxUI {
     }
 
     /**
-     * Creates the default renderer that will be used in a non-editiable combo
+     * Creates the default renderer that will be used in a non-editable combo
      * box. A default renderer will used only if a renderer has not been
      * explicitly set with <code>setRenderer</code>.
      *

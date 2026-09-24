@@ -59,7 +59,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       Reason_Tiered,           // Tiered-policy
       Reason_Replay,           // ciReplay
       Reason_Whitebox,         // Whitebox API
-      Reason_MustBeCompiled,   // Used for -Xcomp or AlwaysCompileLoopMethods (see CompilationPolicy::must_be_compiled())
+      Reason_MustBeCompiled,   // Used for -Xcomp (see CompilationPolicy::must_be_compiled())
       Reason_Count
   };
 
@@ -73,7 +73,7 @@ class CompileTask : public CHeapObj<mtCompiler> {
       "whitebox",
       "must_be_compiled"
     };
-    STATIC_ASSERT(ARRAY_SIZE(reason_names) == Reason_Count);
+    static_assert(ARRAY_SIZE(reason_names) == Reason_Count);
     return reason_names[compile_reason];
   }
 
