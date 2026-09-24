@@ -93,8 +93,8 @@ public class TestMetaspaceFirstGC {
     // kept alive so no collection can unload them before the threshold is reached
     private static final List<ClassLoader> loaders = new ArrayList<>();
 
-    // Counted down from the JFR stream when a collection with cause "Metadata GC Threshold"
-    // arrives, so the event is already in hand when loading stops.
+    // Counted down from the JFR stream when the metadata allocation failure inside loadOneClass
+    // arrives, that is the request for the first metadata GC.
     private static final CountDownLatch metadataGC = new CountDownLatch(1);
 
     public interface Dummy {}
@@ -137,6 +137,10 @@ public class TestMetaspaceFirstGC {
             long metaspaceSize = WhiteBox.getWhiteBox().getSizeTVMFlag("MetaspaceSize");
             if (expectedSize > 0) {
                 Asserts.assertEquals(metaspaceSize, expectedSize, "MetaspaceSize as set on the command line");
+            } else {
+                // the ergonomic default, about 12MB to 20MB depending on the platform
+                Asserts.assertGreaterThan(metaspaceSize, 11_500_000L, "default MetaspaceSize (" + metaspaceSize + ") too small");
+                Asserts.assertLessThan(metaspaceSize, 22_500_000L, "default MetaspaceSize (" + metaspaceSize + ") too large");
             }
             if (initialThreshold != metaspaceSize) {
                 // startup already moved the threshold, the first metadata GC can't be observed
@@ -160,9 +164,8 @@ public class TestMetaspaceFirstGC {
             loaders.clear();
             rs.stop();
 
-            // The startup recording has run since VM start, so it holds the GC's "Before GC"
-            // summary and the first threshold change even when the first metadata GC happens
-            // during JFR initialization, before this stream existed.
+            // The startup recording has run since VM start, so it holds everything from before
+            // this stream existed as well, including any threshold change during initialization.
             Recording startup = FlightRecorder.getFlightRecorder().getRecordings().stream()
                 .filter(r -> "startup".equals(r.getName()))
                 .findFirst()
@@ -177,9 +180,10 @@ public class TestMetaspaceFirstGC {
             // written right before that class load gives committed and the threshold just before
             // it, committed has to be at the threshold, below it the request would be premature. A
             // threshold change at or after the request is not guaranteed, the GC may have freed
-            // enough for the retry, but when there is one its old value has to be the sampled
-            // threshold. Any change between the start of loading and the request came from another
-            // collection's compute_new_size and can only have raised the threshold.
+            // enough for the retry, but when there is one it has to start at or above the sampled
+            // threshold, another thread failing an allocation in between could have moved it up.
+            // Changes between the start of loading and the request are logged and the request
+            // then has to be at or above the initial threshold.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
             for (RecordedEvent event : events) {
@@ -232,8 +236,8 @@ public class TestMetaspaceFirstGC {
                 + " threshold=" + thresholdAtRequest
                 + (thresholdAfterRequest < 0 ? ", no threshold change after the request" : ", next change from " + thresholdAfterRequest));
             if (thresholdAfterRequest >= 0) {
-                Asserts.assertEquals(thresholdAfterRequest, thresholdAtRequest,
-                    "the threshold change after the request should start from the sampled threshold");
+                Asserts.assertGreaterThanOrEqual(thresholdAfterRequest, thresholdAtRequest,
+                    "the threshold change after the request should start at or above the sampled threshold");
             }
             Asserts.assertLessThanOrEqual(Math.abs(thresholdAtRequest - committedAtRequest), tolerance,
                 "committed before the request (" + committedAtRequest + ") should be at the threshold (" + thresholdAtRequest + ")");
@@ -257,13 +261,13 @@ public class TestMetaspaceFirstGC {
             sample.commit();
             loadOneClass();
             if (metadataGC.getCount() == 0) {
-                System.out.println("Metadata GC seen after " + (i + 1) + " class loads, metaspace used=" + getMetaspaceUsed());
+                System.out.println("Metadata GC requested after " + (i + 1) + " class loads, metaspace used=" + getMetaspaceUsed());
                 return;
             }
         }
         // a concurrent collector may still be running the collection
         if (metadataGC.await(60, TimeUnit.SECONDS)) {
-            System.out.println("Metadata GC seen after " + maxIterations + " class loads, metaspace used=" + getMetaspaceUsed());
+            System.out.println("Metadata GC requested after " + maxIterations + " class loads, metaspace used=" + getMetaspaceUsed());
             return;
         }
         throw new RuntimeException("No metaspace GC after " + maxIterations + " class loads");
