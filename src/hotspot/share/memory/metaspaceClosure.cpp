@@ -46,7 +46,7 @@ void MetaspaceClosure::push_impl(MetaspaceClosure::Ref* ref) {
   if (_nest_level < MAX_NEST_LEVEL) {
     do_push(ref);
   } else {
-    Ref* cloned_ref = ref->clone();
+    Ref* cloned_ref = ref->clone_on_cheap();
     cloned_ref->set_next(_pending_refs);
     _pending_refs = cloned_ref;
   }
