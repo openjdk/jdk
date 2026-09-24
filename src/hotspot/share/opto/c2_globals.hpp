@@ -762,10 +762,6 @@
           "Clone compares and control flow through merge points to fold "   \
           "some branches")                                                  \
                                                                             \
-  develop(intx, FreqCountInvocations,  1,                                   \
-          "Scaling factor for branch frequencies (deprecated)")             \
-          range(1, max_intx)                                                \
-                                                                            \
   develop(bool, VerifyAliases, false,                                       \
           "perform extra checks on the results of alias analysis")          \
                                                                             \
@@ -995,7 +991,7 @@
                                                                             \
   product(uint, HotCodeMaxSamplingMs, 15, EXPERIMENTAL,                     \
           "Maximum sampling interval in milliseconds")                      \
-          range(0, max_juint)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(uint, HotCodeCallLevel, 1, EXPERIMENTAL,                          \
           "Number of levels of callees to relocate per candidate")          \
