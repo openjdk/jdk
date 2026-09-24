@@ -2785,7 +2785,6 @@ bool LibraryCallKit::inline_unsafe_flat_access(bool is_store, AccessKind kind) {
         bool is_null_free = !LayoutKindHelper::is_nullable_flat(layout);
         bool is_atomic = LayoutKindHelper::is_atomic_flat(layout);
         Node* new_base = cast_to_flat_array_exact(base, value_klass, is_null_free, is_atomic);
-        if (stopped()) { return true; }
         replace_in_map(base, new_base);
         base = new_base;
         ptr = basic_plus_adr(base, ConvL2X(offset));

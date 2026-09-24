@@ -125,7 +125,6 @@ void Parse::array_load(BasicType bt) {
         if (element_ptr->is_valueklassptr()) {
           ciValueKlass* vk = element_ptr->value_klass();
           Node* flat_array = cast_to_flat_array(array, vk);
-          if (stopped()) { return; }
 
           // It may be the case that array is only known to be not flat when we try to cast it to a
           // flat array. For example, array is a not-null-free array and vk does not have a
@@ -298,7 +297,6 @@ void Parse::array_store(BasicType bt) {
           if (vk != nullptr) {
             // Element type is known, cast and store to flat array layout.
             Node* flat_array = cast_to_flat_array(array, vk);
-            if (stopped()) { return; }
 
             // It may be the case that array is only known to be not flat when we try to cast it to
             // a flat array. For example, array is a not-null-free array and vk does not have a
