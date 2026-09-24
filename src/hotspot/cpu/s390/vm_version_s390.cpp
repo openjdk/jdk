@@ -426,7 +426,7 @@ void VM_Version::set_cpu_info_string() {
     _model_string = "unknown model";
     strcpy(buf, "z/Architecture (ambiguous detection)");
   }
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   if (has_Crypto_AES()) {
     assert(strlen(_cpu_info_string) + 3*8 < sizeof(buf), "increase buffer size");
@@ -436,7 +436,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_AES192() ? ", aes192" : "",
                  has_Crypto_AES256() ? ", aes256" : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 
   if (has_Crypto_SHA()) {
@@ -448,7 +448,7 @@ void VM_Version::set_cpu_info_string() {
                  has_Crypto_SHA512() ? ", sha512" : "",
                  has_Crypto_GHASH()  ? ", ghash"  : "");
     os::free((void *)_cpu_info_string);
-    _cpu_info_string = os::strdup(buf);
+    _cpu_info_string = os::strdup(buf, mtInternal);
   }
 }
 

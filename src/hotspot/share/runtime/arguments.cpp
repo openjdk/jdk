@@ -2692,7 +2692,7 @@ class ScopedVMInitArgs : public StackObj {
 
     for (int i = 0; i < options->length(); i++) {
       options_arr[i] = options->at(i);
-      options_arr[i].optionString = os::strdup(options_arr[i].optionString);
+      options_arr[i].optionString = os::strdup(options_arr[i].optionString, mtArguments);
       if (options_arr[i].optionString == nullptr) {
         // Rely on the destructor to do cleanup.
         _args.nOptions = i;
@@ -2819,7 +2819,7 @@ jint Arguments::parse_options_environment_variable(const char* name,
     return JNI_OK;
   }
 
-  if ((buffer = os::strdup(buffer)) == nullptr) {
+  if ((buffer = os::strdup(buffer, mtArguments)) == nullptr) {
     return JNI_ENOMEM;
   }
 

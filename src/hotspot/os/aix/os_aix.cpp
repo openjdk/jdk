@@ -1090,7 +1090,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     const char* pointer_to_dot = strrchr(filename, '.');
     if (pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
       static_assert(sizeof(old_extension) >= sizeof(new_extension));
-      char* tmp_path = os::strdup(filename);
+      char* tmp_path = os::strdup(filename, mtInternal);
       size_t prefix_size = pointer_delta(pointer_to_dot, filename, 1);
       os::snprintf_checked(tmp_path + prefix_size, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(tmp_path, &eno, ebuf, ebuflen);

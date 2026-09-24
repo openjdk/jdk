@@ -206,7 +206,7 @@ void VM_Version::setup_cpu_available_features() {
     }
   }
 
-  _cpu_info_string = os::strdup(buf);
+  _cpu_info_string = os::strdup(buf, mtInternal);
 
   _features_string = _cpu_info_string + features_offset;
 }
@@ -265,7 +265,7 @@ char* VM_Version::os_uarch_additional_features() {
       }
       if (ret == nullptr) {
         if (strncmp(buf, "uarch", sizeof "uarch" - 1) == 0) {
-          ret = os::strdup(p + 2);
+          ret = os::strdup(p + 2, mtInternal);
           ret[strcspn(ret, "\n")] = '\0';
         }
       }
