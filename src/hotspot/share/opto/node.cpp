@@ -3007,9 +3007,13 @@ bool Node::is_dead_loop_safe() const {
     if (in(0)->is_Allocate()) {
       return false;
     }
-    // MemNode::can_see_stored_value() peeks through the boxing call
-    if (in(0)->is_CallStaticJava() && in(0)->as_CallStaticJava()->is_boxing_method()) {
-      return false;
+    // MemNode::can_see_stored_value() peeks through boxing calls and
+    // ProjNode::Identity() peeks through boxing and unboxing calls.
+    if (in(0)->is_CallStaticJava()) {
+      CallStaticJavaNode* call = in(0)->as_CallStaticJava();
+      if (call->is_boxing_method() || call->is_unboxing_method()) {
+        return false;
+      }
     }
     return true;
   }

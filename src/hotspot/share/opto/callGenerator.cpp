@@ -213,7 +213,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms) {
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call, false, _separate_io_proj);
   Node* ret = kit.set_results_for_java_call(call, _separate_io_proj);
-  if (!call->is_boxing_method()) {
+  if (!call->is_boxing_method() && !call->is_unboxing_method()) {
     mark_projs_not_dead_loop_safe(ret);
   }
   kit.push_node(method()->return_type()->basic_type(), ret);
