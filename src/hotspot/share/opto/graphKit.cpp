@@ -1977,7 +1977,7 @@ Node* GraphKit::cast_to_flat_array(Node* array, ciValueKlass* elem_vk) {
   if (!array_klass->is_loaded()) {
     C->record_failure("cannot get flat array klass meta-data (OOME?)");
     stop();
-    return C->top();;
+    return top();
   }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   arytype = arytype->cast_to_flat(true)->cast_to_null_free(is_null_free);
@@ -1990,7 +1990,7 @@ Node* GraphKit::cast_to_flat_array_exact(Node* array, ciValueKlass* elem_vk, boo
   if (!array_klass->is_loaded()) {
     C->record_failure("cannot get flat array klass meta-data (OOME?)");
     stop();
-    return C->top();
+    return top();
   }
   const TypeAryPtr* arytype = TypeOopPtr::make_from_klass(array_klass)->isa_aryptr();
   assert(arytype->klass_is_exact(), "inconsistency");

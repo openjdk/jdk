@@ -319,7 +319,9 @@ void Parse::array_store(BasicType bt) {
             store_to_unknown_flat_array(array, array_index, stored_value_casted);
           }
         }
-        if (stopped()) { return; }
+        if (stopped()) {
+          return;
+        }
         ideal.sync_kit(this);
       }
       ideal.end_if();
