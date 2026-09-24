@@ -42,7 +42,9 @@ public class GetUIClassNameForRole {
         for (PrintService service :
                 PrintServiceLookup.lookupPrintServices(null, null)) {
             ServiceUIFactory factory = service.getServiceUIFactory();
-            factory.getUIClassNamesForRole(DOCUMENT_PROPERTIES_ROLE);
+            if (factory != null) {
+                factory.getUIClassNamesForRole(DOCUMENT_PROPERTIES_ROLE);
+            }
         }
     }
 }
