@@ -104,7 +104,7 @@ void print_debug(const char* format,...) {
 void print_warning(const char* format,...) {
   va_list alist;
   va_start(alist, format);
-  fputs("WARNING: ", stdout);
+  fputs("libsaproc WARNING: ", stdout);
   vfprintf(stdout, format, alist);
   va_end(alist);
 }
@@ -112,7 +112,7 @@ void print_warning(const char* format,...) {
 void print_error(const char* format,...) {
   va_list alist;
   va_start(alist, format);
-  fputs("ERROR: ", stderr);
+  fputs("libsaproc ERROR: ", stderr);
   vfprintf(stderr, format, alist);
   va_end(alist);
 }
