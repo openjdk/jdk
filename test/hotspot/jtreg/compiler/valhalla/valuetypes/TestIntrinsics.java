@@ -627,9 +627,9 @@ public class TestIntrinsics {
             }
         } else {
             if (X_OFFSET < Y_OFFSET) {
-                Asserts.assertEQ(((int)res) >>> 8, (v.x << 8) >>> 8);
+                Asserts.assertEQ(((int)res) >> 8, (v.x << 8) >> 8);
             } else {
-                Asserts.assertEQ(res >>> 8, (v.y << 8) >>> 8);
+                Asserts.assertEQ(res >> 8, (v.y << 8) >> 8);
             }
         }
     }
