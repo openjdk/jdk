@@ -248,8 +248,7 @@ MetaBlock MetaspaceArena::allocate(size_t requested_word_size, MetaBlock& wastag
 
   // Logging
   if (result.is_nonempty()) {
-    LogTarget(Trace, metaspace) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Trace, metaspace) lt; lt.is_enabled()) {
       LogStream ls(lt);
       ls.print(LOGFMT ": returning " METABLOCKFORMAT " taken from %s, ", LOGFMT_ARGS,
                METABLOCKFORMATARGS(result), (taken_from_fbl ? "fbl" : "arena"));

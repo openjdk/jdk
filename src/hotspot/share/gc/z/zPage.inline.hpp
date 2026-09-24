@@ -523,8 +523,7 @@ inline bool ZPage::undo_alloc_object_atomic(zaddress addr, size_t size) {
 }
 
 inline void ZPage::log_msg(const char* msg_format, ...) const {
-  LogTarget(Trace, gc, page) target;
-  if (target.is_enabled()) {
+  if (const LogTarget(Trace, gc, page) target; target.is_enabled()) {
     va_list argp;
     va_start(argp, msg_format);
     LogStream stream(target);

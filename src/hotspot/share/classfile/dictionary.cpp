@@ -152,8 +152,7 @@ void Dictionary::add_klass(JavaThread* current, Symbol* class_name,
     _table->grow(current);
 
     // It would be nice to have a JFR event here, add some logging.
-    LogTarget(Info, class, loader, data) lt;
-    if (lt.is_enabled()) {
+    if (const LogTarget(Info, class, loader, data) lt; lt.is_enabled()) {
       ResourceMark rm;
       LogStream ls(&lt);
       ls.print("Dictionary resized to %d entries %d for ", table_size(), _number_of_entries);

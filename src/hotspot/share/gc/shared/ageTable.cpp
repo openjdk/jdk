@@ -114,8 +114,8 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
 }
 
 void AgeTable::print_age_table() {
-  LogTarget(Trace, gc, age) lt;
-  if (lt.is_enabled() || _use_perf_data || AgeTableTracer::is_tenuring_distribution_event_enabled()) {
+  if (const LogTarget(Trace, gc, age) lt;
+      lt.is_enabled() || _use_perf_data || AgeTableTracer::is_tenuring_distribution_event_enabled()) {
     LogStream st(lt);
     print_on(&st);
   }

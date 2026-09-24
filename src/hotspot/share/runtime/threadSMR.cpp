@@ -1170,8 +1170,7 @@ void SafeThreadsListPtr::print_on(outputStream* st) {
 
 // Log Threads class SMR info.
 void ThreadsSMRSupport::log_statistics() {
-  LogTarget(Info, thread, smr) log;
-  if (log.is_enabled()) {
+  if (const LogTarget(Info, thread, smr) log; log.is_enabled()) {
     LogStream out(log);
     print_info_on(&out);
   }
