@@ -1972,7 +1972,7 @@ public:
   }
 
   // Used after parsing to remove useless nodes before Iterative GVN
-  void remove_useless_nodes(VectorSet& useful);
+  void remove_useless_nodes(const VectorSet& useful);
 
   // If the idx of the Nodes change, we must recompute the VectorSet
   void recompute_idx_set() {

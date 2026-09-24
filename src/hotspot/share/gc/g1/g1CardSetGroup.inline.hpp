@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,19 @@
  *
  */
 
-#ifdef COMPILER2
-#ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
+#ifndef SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP
+#define SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP
 
-#include "code/nmethod.hpp"
-#include "runtime/javaThread.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 
-class Candidates;
+template<typename Func>
+void G1CardSetGroupList::iterate(Func&& f) const {
+  for (G1CardSetGroup* group : _groups) {
+    for (G1CardSetGroupItem ci : *group) {
+      G1HeapRegion* r = ci._r;
+      f(r);
+    }
+  }
+}
 
-class HotCodeCollector : public JavaThread {
- private:
-  static bool _is_initialized;
-
-  static int _new_c2_nmethods_count;
-  static int _total_c2_nmethods_count;
-
-  HotCodeCollector();
-
-  static void do_grouping(Candidates& candidates);
-
-  static nmethod::RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
-
- public:
-  static void initialize();
-  static void thread_entry(JavaThread* thread, TRAPS);
-  static void unregister_nmethod(nmethod* nm);
-  static void register_nmethod(nmethod* nm);
-
-  static bool is_nmethod_count_stable();
-};
-
-#endif // SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#endif // COMPILER2
+#endif /* SHARE_GC_G1_G1CARDSETGROUP_INLINE_HPP */

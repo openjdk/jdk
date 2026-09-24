@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +19,34 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifdef COMPILER2
-#ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
 
-#include "code/nmethod.hpp"
-#include "runtime/javaThread.hpp"
+package runtime.valhalla.inlinetypes;
 
-class Candidates;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
-class HotCodeCollector : public JavaThread {
- private:
-  static bool _is_initialized;
+/*
+ * @test VarHandleCASOfEmptyClass
+ * @summary VarHandle compareAndSet can handle empty value classes
+ * @bug 8391651
+ * @enablePreview
+ * @compile VarHandleCASOfEmptyClass.java
+ * @run main runtime.valhalla.inlinetypes.VarHandleCASOfEmptyClass
+ */
 
-  static int _new_c2_nmethods_count;
-  static int _total_c2_nmethods_count;
+public class VarHandleCASOfEmptyClass {
+    static value class Empty { }
 
-  HotCodeCollector();
+    static class Holder {
+        Empty value;
+    }
 
-  static void do_grouping(Candidates& candidates);
-
-  static nmethod::RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
-
- public:
-  static void initialize();
-  static void thread_entry(JavaThread* thread, TRAPS);
-  static void unregister_nmethod(nmethod* nm);
-  static void register_nmethod(nmethod* nm);
-
-  static bool is_nmethod_count_stable();
-};
-
-#endif // SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#endif // COMPILER2
+    public static void main(String[] args) throws ReflectiveOperationException {
+        VarHandle handle = MethodHandles.lookup().findVarHandle(Holder.class, "value", Empty.class);
+        if (!handle.compareAndSet(new Holder(), null, new Empty())) {
+            throw new RuntimeException("compareAndSet failed");
+        }
+    }
+}

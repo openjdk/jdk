@@ -1,5 +1,5 @@
 /*
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,39 +19,43 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifdef COMPILER2
-#ifndef SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#define SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
+/*
+ * @test
+ * @bug 8392796
+ * @summary Compile::disconnect_useless_nodes can enqueue useless nodes for IGVN;
+ *          we need to clean them up.
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -Xbatch
+ *                   -XX:CompileCommand=compileonly,${test.main.class}::test
+ *                   ${test.main.class}
+ * @run main ${test.main.class}
+ */
 
-#include "code/nmethod.hpp"
-#include "runtime/javaThread.hpp"
+package compiler.igvn;
 
-class Candidates;
+public class TestTransitiveUselessNodeEnqueuing {
+    static int iFld;
+    static char cFld;
 
-class HotCodeCollector : public JavaThread {
- private:
-  static bool _is_initialized;
+    public static void main(String[] args) {
+        for (int i = 0; i < 1000; i++) {
+            test();
+        }
+    }
 
-  static int _new_c2_nmethods_count;
-  static int _total_c2_nmethods_count;
+    static void test() {
+        for (int i = 0; i < 156; i++) {
+            iFld <<= cFld;
+        }
+        Foo foo = new Foo();
+        iFld++;
+        iFld >>>= 0L;
+        synchronized (foo) {
+        }
+    }
 
-  HotCodeCollector();
-
-  static void do_grouping(Candidates& candidates);
-
-  static nmethod::RelocationResult do_relocation(void* candidate, uint call_level, int* num_relocated);
-
- public:
-  static void initialize();
-  static void thread_entry(JavaThread* thread, TRAPS);
-  static void unregister_nmethod(nmethod* nm);
-  static void register_nmethod(nmethod* nm);
-
-  static bool is_nmethod_count_stable();
-};
-
-#endif // SHARE_RUNTIME_HOTCODECOLLECTOR_HPP
-#endif // COMPILER2
+    static class Foo {
+    }
+}

@@ -1790,7 +1790,7 @@ public:
     assert_cond(instr != nullptr);
     return extract_opcode(instr) == 0b0010011 &&
            extract_funct3(instr) == 0b101 &&
-           Assembler::extract(((unsigned*)instr)[0], 31, 26) == 0b000000;
+           Assembler::extract(Assembler::ld_instr(instr), 31, 26) == 0b000000;
   }
 
   static bool is_slli_shift_at(address instr, uint32_t shift) {
