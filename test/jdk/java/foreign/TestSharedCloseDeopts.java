@@ -45,6 +45,7 @@
  */
 
 import jdk.test.whitebox.WhiteBox;
+import jdk.test.whitebox.code.NMethod;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -119,14 +120,16 @@ public class TestSharedCloseDeopts {
 
                 // await compilation while polluting the profile to avoid
                 // uncommon trap deopt as result of loop backedge test
+                NMethod code;
                 do {
                     assertTrue(WB.isMethodCompilable(testCase.method(), C2_COMPILED_LEVEL, false));
                     for (int i = 0; i < 100_000; i++) {
                         hold.setRelease(true);
                         hold.setRelease(false);
                     }
-                } while (WB.getMethodCompilationLevel(testCase.method(), false) != C2_COMPILED_LEVEL);
-                assertEquals(testCase.hasAccess(), WB.hasScopedAccess(testCase.method()));
+                    code = NMethod.get(testCase.method(), false);
+                } while (code == null || code.comp_level != C2_COMPILED_LEVEL);
+                assertEquals(testCase.hasAccess(), code.has_scoped_access);
 
                 // Note: stop calling payload before closing the scope
                 // to avoid uncommon trap/deopt in liveness state check
@@ -158,8 +161,10 @@ public class TestSharedCloseDeopts {
                 .start(() ->  testCase.payload.run(segment.scope(), segment, hold));
             waitUntilThreadIsAtSafepoint(workerThread, testCase.method().getName(), testCase.callLineNumber());
             // double check that we're still good to go
-            assertEquals(C2_COMPILED_LEVEL, WB.getMethodCompilationLevel(testCase.method(), false));
-            assertEquals(testCase.hasAccess(), WB.hasScopedAccess(testCase.method()));
+            NMethod code = NMethod.get(testCase.method(), false);
+            assertNotNull(code);
+            assertEquals(C2_COMPILED_LEVEL, code.comp_level);
+            assertEquals(testCase.hasAccess(), code.has_scoped_access);
             deoptCountBeforeClose = WB.getDeoptCount(SHARED_SCOPE_CLOSED_DEOPT_REASON, null);
         }
         // We closed 2 shared arenas here. One of them was unrelated. Expect at most 1 deopt
