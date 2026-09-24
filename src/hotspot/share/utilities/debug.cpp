@@ -779,34 +779,6 @@ extern "C" bool dbg_is_good_oop(oopDesc* o) {
   return dbg_is_safe(o, -1) && dbg_is_safe(o->klass(), -1) && oopDesc::is_oop(o) && o->klass()->is_klass();
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// Test multiple STATIC_ASSERT forms in various scopes.
-
-#ifndef PRODUCT
-
-// namespace scope
-STATIC_ASSERT(true);
-STATIC_ASSERT(true);
-STATIC_ASSERT(1 == 1);
-STATIC_ASSERT(0 == 0);
-
-void test_multiple_static_assert_forms_in_function_scope() {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
-}
-
-// class scope
-struct TestMultipleStaticAssertFormsInClassScope {
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(true);
-  STATIC_ASSERT(0 == 0);
-  STATIC_ASSERT(1 == 1);
-};
-
-#endif // !PRODUCT
-
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 void initialize_assert_poison() {
