@@ -101,6 +101,14 @@ void print_debug(const char* format,...) {
    }
 }
 
+void print_warning(const char* format,...) {
+  va_list alist;
+  va_start(alist, format);
+  fputs("WARNING: ", stdout);
+  vfprintf(stdout, format, alist);
+  va_end(alist);
+}
+
 void print_error(const char* format,...) {
   va_list alist;
   va_start(alist, format);
