@@ -4711,6 +4711,72 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
 }
 
+//---------------------------eliminate_redundant_iv_check---------------------
+// A check in the loop body that repeats the loop condition is always true:
+//    for (int iv = init; iv < limit; iv += stride) { if (iv >= limit) trap(); use(iv); }
+void PhaseIdealLoop::eliminate_redundant_iv_check(IdealLoopTree* loop) {
+  CountedLoopNode* cl = loop->_head->as_CountedLoop();
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    return;
+  }
+  Node* phi = cl->phi();
+  Node* init = cl->init_trip();
+  Node* limit = cl->limit();
+  // Counting up the loop condition is "iv < limit", counting down it is "iv > limit"
+  BoolTest::mask holds = cl->stride_con() > 0 ? BoolTest::lt : BoolTest::gt;
+
+  // Only fold when a test above the loop proves "init < limit" for the first iteration
+  bool guarded = false;
+  Node* ctrl = cl->skip_strip_mined()->in(LoopNode::EntryControl);
+  while (!guarded && ctrl != nullptr && (ctrl->is_IfProj() || ctrl->is_If())) {
+    Node* bol = ctrl->is_IfProj() ? ctrl->in(0)->in(1) : nullptr;
+    if (bol != nullptr && bol->is_Bool() && bol->in(1)->Opcode() == Op_CmpI) {
+      Node* cmp = bol->in(1);
+      BoolTest test = ctrl->is_IfFalse() ? BoolTest(bol->as_Bool()->_test.negate()) : bol->as_Bool()->_test;
+      guarded = (cmp->in(1) == init && cmp->in(2) == limit && test._test == holds) ||
+                (cmp->in(1) == limit && cmp->in(2) == init && test.commute() == holds);
+    }
+    ctrl = idom(ctrl);
+  }
+  if (!guarded) {
+    return;
+  }
+
+  // Collect trivial "iv < limit" and "iv >= limit" checks; rewriting them here would break the walk.
+  Node_List redundant;
+  for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
+    Node* cmp = phi->fast_out(i);
+    if (cmp->Opcode() != Op_CmpI || cmp->in(2) != limit) {
+      continue;
+    }
+    for (DUIterator_Fast jmax, j = cmp->fast_outs(jmax); j < jmax; j++) {
+      BoolNode* bol = cmp->fast_out(j)->isa_Bool();
+      if (bol == nullptr || (bol->_test._test != holds && bol->_test._test != BoolTest::negate_mask(holds))) {
+        continue;
+      }
+      for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+        Node* iff = bol->fast_out(k);
+        if (iff->is_If() && loop->is_member(get_loop(iff))) {
+          redundant.push(iff);
+        }
+      }
+    }
+  }
+
+  while (redundant.size() > 0) {
+    IfNode* iff = redundant.pop()->as_If();
+#ifndef PRODUCT
+    if (TraceLoopOpts) {
+      tty->print("Redundant iv check: %d ", iff->_idx);
+      loop->dump_head();
+    }
+#endif
+    bool always_taken = iff->in(1)->as_Bool()->_test._test == holds;
+    _igvn.replace_input_of(iff, 1, _igvn.intcon(always_taken ? 1 : 0));
+    C->set_major_progress();
+  }
+}
+
 Node* PhaseIdealLoop::insert_convert_node_if_needed(BasicType target, Node* input) {
   BasicType source = _igvn.type(input)->basic_type();
   if (source == target) {
@@ -4777,6 +4843,9 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
 
     // Look for induction variables
     phase->replace_parallel_iv(this);
+
+    // Look for checks repeating the loop condition
+    phase->eliminate_redundant_iv_check(this);
   } else if (_head->is_LongCountedLoop() || phase->try_convert_to_counted_loop(_head, loop, T_LONG)) {
     remove_safepoints(phase, true);
   } else {
