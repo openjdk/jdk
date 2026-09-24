@@ -27,6 +27,7 @@
 
 #include "oops/klass.hpp"
 #include "oops/objArrayOop.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class FlatArrayKlass;
@@ -43,6 +44,12 @@ class flatArrayOopDesc : public objArrayOopDesc {
   void* value_at_addr(int index, jint lh) const;
   size_t value_offset(int index, jint lh) const;
   size_t value_offset_from_base(int index, jint lh) const;
+
+  int value_offset_as_int(int index, jint lh) const {
+    size_t offset = value_offset(index, lh);
+    assert(offset <= max_jint, "checked by FlatArrayKlass::max_elements()");
+    return checked_cast<int>(offset);
+  }
 
   // oop obj_at(...) must always allocate when reading a non-null flat element,
   // as such only obj_at(int, TRAPS) is provided. To null-check element without

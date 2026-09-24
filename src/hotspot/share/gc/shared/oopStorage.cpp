@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -827,7 +827,7 @@ static Mutex* make_oopstorage_mutex(const char* storage_name,
 }
 
 OopStorage::OopStorage(const char* name, MemTag mem_tag) :
-  _name(os::strdup(name)),
+  _name(os::strdup(name, mem_tag)),
   _active_array(ActiveArray::create(initial_active_array_size, mem_tag)),
   _allocation_list(),
   _deferred_updates(nullptr),

@@ -1325,9 +1325,9 @@ public:
 
     // Pick minimum length that will cover most cases
     int init_length = 64;
-    _methods = new (mtInternal) GrowableArray<Method*>(init_length, mtInternal);
-    _bcis = new (mtInternal) GrowableArray<int>(init_length, mtInternal);
-    _locks = new (mtInternal) GrowableArray<OwnedLock>(init_length, mtInternal);
+    _methods = new (mtServiceability) GrowableArray<Method*>(init_length, mtServiceability);
+    _bcis = new (mtServiceability) GrowableArray<int>(init_length, mtServiceability);
+    _locks = new (mtServiceability) GrowableArray<OwnedLock>(init_length, mtServiceability);
     int total_count = 0;
 
     vframeStream vfst(_java_thread != nullptr

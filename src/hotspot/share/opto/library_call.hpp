@@ -440,6 +440,7 @@ private:
   bool inline_vector_convert();
   bool inline_vector_extract();
   bool inline_vector_insert();
+  bool inline_vector_slice();
   bool inline_vector_compress_expand();
   bool inline_index_vector();
   bool inline_index_partially_in_upper_range();

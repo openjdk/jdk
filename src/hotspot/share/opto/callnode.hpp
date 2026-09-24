@@ -1224,7 +1224,10 @@ public:
 
   Node* make_ideal_mark(PhaseGVN* phase, Node* control, Node* mem);
 
-  NOT_PRODUCT(virtual void dump_spec(outputStream* st) const;)
+#ifndef PRODUCT
+  ciKlass* allocation_klass() const;
+  virtual void dump_spec(outputStream *st) const;
+#endif // !PRODUCT
 };
 
 //------------------------------AllocateArray---------------------------------

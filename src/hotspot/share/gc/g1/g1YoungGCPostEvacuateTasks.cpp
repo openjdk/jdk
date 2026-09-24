@@ -25,10 +25,11 @@
 
 #include "compiler/oopMap.hpp"
 #include "cppstdlib/new.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectionSetCandidates.inline.hpp"
+#include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "gc/g1/g1CollectorState.inline.hpp"
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
@@ -358,7 +359,7 @@ public:
   void do_work(uint worker_id) override {
     const uint total_workers = G1CollectedHeap::heap()->workers()->active_workers();
     const uint total_chunks = _num_chunks_per_region * _num_evac_failed_regions;
-    const uint start_chunk_idx = worker_id * total_chunks / total_workers;
+    const uint start_chunk_idx = (uint)((uint64_t)worker_id * total_chunks / total_workers);
 
     for (uint i = 0; i < total_chunks; i++) {
       const uint chunk_idx = (start_chunk_idx + i) % total_chunks;

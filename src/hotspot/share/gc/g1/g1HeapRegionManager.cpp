@@ -724,7 +724,7 @@ G1HeapRegionClaimer::~G1HeapRegionClaimer() {
 uint G1HeapRegionClaimer::offset_for_worker(uint worker_id) const {
   assert(_num_workers > 0, "must be set");
   assert(worker_id < _num_workers, "Invalid worker_id.");
-  return _num_regions * worker_id / _num_workers;
+  return (uint)((uint64_t)_num_regions * worker_id / _num_workers);
 }
 
 bool G1HeapRegionClaimer::is_region_claimed(uint region_index) const {
