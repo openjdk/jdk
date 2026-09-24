@@ -59,7 +59,7 @@ public class DetailBaselineAllocationFailure {
         for (int i = 0; i < 2; i++) {
             NMTTestUtils.startJcmdVMNativeMemory("baseline")
                     .shouldHaveExitValue(0)
-                    .shouldContain("Detail baseline collection failed. Summary baseline taken");
+                    .shouldContain("Detailed collection failed. Summary baseline taken");
             NMTTestUtils.startJcmdVMNativeMemory("summary.diff")
                     .shouldHaveExitValue(0)
                     .shouldContain("Total: reserved=")
