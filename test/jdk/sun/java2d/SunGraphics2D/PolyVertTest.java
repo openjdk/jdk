@@ -643,7 +643,6 @@ public class PolyVertTest {
 
     public static void createUI() {
         frame = new Frame("PolyVertTest");
-        frame = new Frame("SimplePrimQuality");
         frame.setLayout(new GridBagLayout());
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(50, 50, 50, 50);
