@@ -113,7 +113,9 @@ final class UnsafeConstants {
     static final int DATA_CACHE_LINE_FLUSH_SIZE;
 
     /**
-     * The mask used to cut hashes to the hash field in the mark word.
+     * Mask used to remove the highest bits of a computed raw hash code
+     * that would not fit in the space dedicated to hash code storage in
+     * objects headers.
      *
      * @implNote
      * The actual value for this field is injected by the JVM.
