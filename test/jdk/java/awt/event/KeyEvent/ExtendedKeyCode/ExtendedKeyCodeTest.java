@@ -102,10 +102,18 @@ public class ExtendedKeyCodeTest {
                 setExtendedKeyCode = e.getExtendedKeyCode() == KeyEvent.VK_LEFT;
             }
         });
+        CountDownLatch secondFrameFocused = new CountDownLatch(1);
+        frame.addWindowFocusListener(new WindowAdapter() {
+            @Override
+            public void windowGainedFocus(WindowEvent e) {
+                secondFrameFocused.countDown();
+            }
+        });
 
         frame.setVisible(true);
-        robot.waitForIdle();
-        robot.delay(1000);
+        if (!secondFrameFocused.await(5, TimeUnit.SECONDS)) {
+            throw new RuntimeException("Second frame was not opened");
+        }
 
         robot.keyPress(KeyEvent.VK_LEFT);
         robot.keyRelease(KeyEvent.VK_LEFT);
