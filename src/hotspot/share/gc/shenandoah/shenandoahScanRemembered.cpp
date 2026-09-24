@@ -630,7 +630,6 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   bool old_bitmap_stable = heap->old_generation()->is_mark_complete();
   log_debug(gc, remset)("Scan remembered set using bitmap: %s", BOOL_TO_STR(old_bitmap_stable));
-  ShenandoahHeapRegion* humongous_start_cache = nullptr;
   for (size_t i = 0, n = heap->num_regions(); i < n; ++i) {
     if (!heap->is_region_old(i)) {
       continue;
@@ -647,6 +646,9 @@ void ShenandoahScanRemembered::roots_do(OopIterateClosure* cl) {
 
       // Remembered set scanner
       if (region->is_humongous()) {
+        // Invalidate the humongous_start_cache variable on each invocation of process_humongous_clusters() so as to
+        // avoid potential bugs in the caching mechanism.
+        ShenandoahHeapRegion* humongous_start_cache = nullptr;
         process_humongous_clusters(region->humongous_start_region(), start_cluster_no, num_clusters, end_of_range, cl,
                                    false /* use_write_table */, humongous_start_cache);
       } else {

@@ -55,7 +55,8 @@ template <typename ClosureType>
 void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t count, HeapWord* end_of_range,
                                                 ClosureType* cl, bool use_write_table, uint worker_id) {
 
-  assert(ShenandoahHeap::heap()->old_generation()->is_parsable(), "Old generation regions must be parsable for remembered set scan");
+  assert(ShenandoahHeap::heap()->old_generation()->is_parsable(),
+         "Old generation regions must be parsable for remembered set scan");
   // If old-gen evacuation is active, then MarkingContext for old-gen heap regions is valid.  We use the MarkingContext
   // bits to determine which objects within a DIRTY card need to be scanned.  This is necessary because old-gen heap
   // regions that are in the candidate collection set have not been coalesced and filled.  Thus, these heap regions
@@ -223,8 +224,11 @@ void ShenandoahScanRemembered::process_clusters(size_t first_cluster, size_t cou
           if (p < start_addr) {
             assert(obj == cast_to_oop(p), "Inconsistency detected");
             if (use_write_table) {
-              // The head card may have become dirty after the worker
-              // responsible for the preceding slice passed it.
+              // The head card may have become dirty after the worker responsible for the preceding slice passed it.
+              // This may result in redundant scanning of object p. However, the redundant scanning is necessary because
+              // we cannot distinguish when the card became dirty compared to when preceding card was processed.  See
+              // https://bugs.openjdk.org/browse/JDK-8389846. The redundant scanning is necessary. It fixes a subtle bug that had
+              // plagued GenShen for over two years.
               p += obj->oop_iterate_size(cl);
             } else {
               // The stable read table guarantees that the worker processing
@@ -424,7 +428,6 @@ inline bool ShenandoahRegionChunkIterator::next(struct ShenandoahRegionChunk *as
       // Misfit. Try to advance cursor to next OLD region.
       while (region_index < _heap->num_regions() &&
              _heap->region_affiliation(region_index) != OLD_GENERATION) {
-        assert(_heap->region_affiliation(region_index) != OLD_GENERATION, "affiliations do not change during chunk iteration");
         region_index++;
       }
       size_t skip_index = (region_index << ShenandoahHeapRegion::region_size_words_shift()) >> _chunk_shift;

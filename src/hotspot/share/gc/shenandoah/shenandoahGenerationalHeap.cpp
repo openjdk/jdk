@@ -802,7 +802,7 @@ private:
 
     struct ShenandoahRegionChunk assignment;
     ShenandoahScanRemembered* scanner = _heap->old_generation()->card_scan();
-    ShenandoahHeapRegion* humongous_start_cache = nullptr;;
+    ShenandoahHeapRegion* humongous_start_cache = nullptr;
 
     // Cancellation of update is low priority because we will soon eliminate degeneration behaviors.
     while (!_heap->check_cancelled_gc_and_yield(CONCURRENT) && _work_chunks->next(&assignment)) {

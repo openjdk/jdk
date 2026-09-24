@@ -519,17 +519,11 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_dirty(OopIterateClosure* 
                                                              bool write_table, ShenandoahHeapRegion*& humongous_start_cache) const {
   assert(is_humongous(), "only humongous region here");
   oop obj;
-  switch (humongous_start_cache != nullptr) {
-    default:
-      obj = cast_to_oop(humongous_start_cache->bottom());
-      if (humongous_start_cache->bottom() + obj->size() >= this->bottom()) {
-        break;
-      }
-      // else, fall through
-    case 0:
-      humongous_start_cache = humongous_start_region();
-      obj = cast_to_oop(humongous_start_cache->bottom());
+  if ((humongous_start_cache == nullptr) || (humongous_start_cache->bottom() > this->bottom()) ||
+      (humongous_start_cache->bottom() + obj->size() <= this->bottom())) {
+    humongous_start_cache = humongous_start_region();
   }
+  obj = cast_to_oop(humongous_start_cache->bottom());
 
   size_t num_cards = get_card_count(words);
   ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
@@ -556,18 +550,11 @@ void ShenandoahHeapRegion::oop_iterate_humongous_slice_all(OopIterateClosure* cl
                                                            ShenandoahHeapRegion*& humongous_start_cache) const {
   assert(is_humongous(), "only humongous region here");
   oop obj;
-  switch (humongous_start_cache != nullptr) {
-    default:
-      obj = cast_to_oop(humongous_start_cache->bottom());
-      if (humongous_start_cache->bottom() + obj->size() >= this->bottom()) {
-        break;
-      }
-      // else, fall through
-    case 0:
-      humongous_start_cache = humongous_start_region();
-      obj = cast_to_oop(humongous_start_cache->bottom());
+  if ((humongous_start_cache == nullptr) || (humongous_start_cache->bottom() > this->bottom()) ||
+      (humongous_start_cache->bottom() + obj->size() <= this->bottom())) {
+    humongous_start_cache = humongous_start_region();
   }
-
+  obj = cast_to_oop(humongous_start_cache->bottom());
   // Scan all data, regardless of whether cards are dirty
   obj->oop_iterate(cl, MemRegion(start, start + words));
 }

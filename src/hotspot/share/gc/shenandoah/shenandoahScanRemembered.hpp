@@ -152,6 +152,7 @@
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
 
 class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
@@ -887,17 +888,6 @@ struct ShenandoahRegionChunk {
   size_t _chunk_offset;          // HeapWordSize offset
   size_t _chunk_size;            // HeapWordSize qty
 };
-
-#ifdef ASSERT
-// Notes on definition of is_power_of_2():
-//   n & (n-1) equals zero if n is a power of 2
-//   !(n & (n - 1)) = true if n is a power of 2
-//   We logical-and with n because we want to exclude 0 from being a power of 2
-//   Suppose n is not a power of 2.  Then its binary representation has at least 2 non-zero bits.
-//     When we subtract 1, this will affect the lower bits but will not affect the most significant bit, so we
-//     know that n & (n - 1) yields a result that is non-zero.
-#define is_power_of_2(n)    ((n) && !((n) & ((n) - 1)))
-#endif
 
 // ShenandoahRegionChunkIterator divides the total remembered set scanning effort into ShenandoahRegionChunks
 // that are assigned one at a time to worker threads. (Here, we use the terms `assignments` and `chunks`
