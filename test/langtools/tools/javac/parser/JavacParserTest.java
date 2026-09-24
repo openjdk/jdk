@@ -3233,47 +3233,116 @@ public class JavacParserTest extends TestCase {
     void testParseMethodReferenceWithAnnotations() throws IOException {
         String code = """
                       package tests;
+
+                      import java.lang.annotation.*;
+                      import java.util.function.*;
+
                       class Test<T1> {
-                          Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
-                          Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
-                          IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1[]::new;
-                          Supplier<String> s4 = Test<String>.@Ann1 MethodReference::getString;
-                          Supplier<MethodReference> s5 = Test<String>.@Ann1 MethodReference::new;
-                          IntFunction<MethodReference[]> s6 = Test<String>.@Ann1 MethodReference @Ann1[]::new;
-                          Supplier<String> s7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
-                          Supplier<MethodReference> s8 = Test<String>.@Ann1 MethodReference<Integer>::new;
-                          IntFunction<MethodReference[]> s9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1[]::new;
-                          static class MethodReference<T2> {}
+                          Supplier<String> m1 = Test.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> m2 = Test.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> m3 = Test.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> m4 = Test<String>.@Ann1 MethodReference::getString;
+                          Supplier<MethodReference> m5 = Test<String>.@Ann1 MethodReference::new;
+                          IntFunction<MethodReference[]> m6 = Test<String>.@Ann1 MethodReference @Ann1[]::new;
+                          Supplier<String> m7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                          Supplier<MethodReference> m8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                          IntFunction<MethodReference[]> m9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1[]::new;
+
+                          Supplier<String> p1 = Test.@Ann2("") MethodReference::getString;
+                          Supplier<MethodReference> p2 = Test.@Ann2("") MethodReference::new;
+                          IntFunction<MethodReference[]> p3 = Test.@Ann2("") MethodReference @Ann2("")[]::new;
+                          Supplier<String> p4 = Test<String>.@Ann2("") MethodReference::getString;
+                          Supplier<MethodReference> p5 = Test<String>.@Ann2("") MethodReference::new;
+                          IntFunction<MethodReference[]> p6 = Test<String>.@Ann2("") MethodReference @Ann2("")[]::new;
+                          Supplier<String> p7 = Test<String>.@Ann2("") MethodReference<Integer>::getString;
+                          Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
+                          IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "")[]::new;
+
+                          static class MethodReference<T2> {
+                              static String getString() { return ""; }
+                          }
+                          @Target(ElementType.TYPE_USE)
+                          @interface Ann1 {}
+                          @Target(ElementType.TYPE_USE)
+                          @interface Ann2 {
+                              public String value();
+                          }
                       }
                       """;
         DiagnosticCollector<JavaFileObject> coll =
                 new DiagnosticCollector<>();
         JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll,
-                List.of("--enable-preview", "--source", SOURCE_VERSION),
+                List.of("-XDrawDiagnostics"),
                 null, Arrays.asList(new MyFileObject(code)));
         CompilationUnitTree cut = ct.parse().iterator().next();
 
-        assertTrue("no errors: " + coll.getDiagnostics(),
-                   coll.getDiagnostics().isEmpty());
-        String result = toStringWithErrors(cut).replaceAll("\\R", "\n");
-        System.out.println("RESULT\n" + result);
+        String astAsText = toStringWithErrors(cut).replaceAll("\\R", "\n");
+
+        ct.analyze();
+
+        List<String> codes = new LinkedList<>();
+
+        for (Diagnostic<? extends JavaFileObject> d : coll.getDiagnostics()) {
+            codes.add(d.getLineNumber() + ":" + d.getColumnNumber() + ":" + d.getCode());
+        }
+
+        assertEquals("testParseMethodReferenceWithAnnotations: " + codes,
+                     List.of("10:46:compiler.err.cant.select.static.class.from.param.type",
+                             "11:55:compiler.err.cant.select.static.class.from.param.type",
+                             "12:60:compiler.err.cant.select.static.class.from.param.type",
+                             "13:61:compiler.err.invalid.mref",
+                             "15:90:compiler.err.generic.array.creation",
+                             "20:50:compiler.err.cant.select.static.class.from.param.type",
+                             "21:59:compiler.err.cant.select.static.class.from.param.type",
+                             "22:64:compiler.err.cant.select.static.class.from.param.type",
+                             "23:65:compiler.err.invalid.mref",
+                             "25:114:compiler.err.generic.array.creation"),
+                     codes);
+
+        System.out.println("RESULT\n" + astAsText);
         assertEquals("incorrect AST",
-                     result,
+                     astAsText,
                      """
                      package tests;
-                     
+                     \n\
+                     import java.lang.annotation.*;
+                     import java.util.function.*;
+                     \n\
                      class Test<T1> {
-                         Supplier<String> s1 = Test.@Ann1 MethodReference::getString;
-                         Supplier<MethodReference> s2 = Test.@Ann1 MethodReference::new;
-                         IntFunction<MethodReference[]> s3 = Test.@Ann1 MethodReference @Ann1 []::new;
-                         Supplier<String> s4 = Test<String>.@Ann1 MethodReference::getString;
-                         Supplier<MethodReference> s5 = Test<String>.@Ann1 MethodReference::new;
-                         IntFunction<MethodReference[]> s6 = Test<String>.@Ann1 MethodReference @Ann1 []::new;
-                         Supplier<String> s7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
-                         Supplier<MethodReference> s8 = Test<String>.@Ann1 MethodReference<Integer>::new;
-                         IntFunction<MethodReference[]> s9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1 []::new;
+                         Supplier<String> m1 = Test.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> m2 = Test.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> m3 = Test.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> m4 = Test<String>.@Ann1 MethodReference::getString;
+                         Supplier<MethodReference> m5 = Test<String>.@Ann1 MethodReference::new;
+                         IntFunction<MethodReference[]> m6 = Test<String>.@Ann1 MethodReference @Ann1 []::new;
+                         Supplier<String> m7 = Test<String>.@Ann1 MethodReference<Integer>::getString;
+                         Supplier<MethodReference> m8 = Test<String>.@Ann1 MethodReference<Integer>::new;
+                         IntFunction<MethodReference[]> m9 = Test<String>.@Ann1 MethodReference<Integer> @Ann1 []::new;
+                         Supplier<String> p1 = Test.@Ann2("") MethodReference::getString;
+                         Supplier<MethodReference> p2 = Test.@Ann2("") MethodReference::new;
+                         IntFunction<MethodReference[]> p3 = Test.@Ann2("") MethodReference @Ann2("") []::new;
+                         Supplier<String> p4 = Test<String>.@Ann2("") MethodReference::getString;
+                         Supplier<MethodReference> p5 = Test<String>.@Ann2("") MethodReference::new;
+                         IntFunction<MethodReference[]> p6 = Test<String>.@Ann2("") MethodReference @Ann2("") []::new;
+                         Supplier<String> p7 = Test<String>.@Ann2("") MethodReference<Integer>::getString;
+                         Supplier<MethodReference> p8 = Test<String>.@Ann2("") MethodReference<Integer>::new;
+                         IntFunction<MethodReference[]> p9 = Test<String>.@Ann2(value = "") MethodReference<Integer> @Ann2(value = "") []::new;
                          \n\
                          static class MethodReference<T2> {
+                             \n\
+                             static String getString() {
+                                 return "";
+                             }
+                         }
+                         \n\
+                         @Target(ElementType.TYPE_USE)
+                         @interface Ann1 {
+                         }
+                         \n\
+                         @Target(ElementType.TYPE_USE)
+                         @interface Ann2 {
+                             \n\
+                             public String value();
                          }
                      }""");
     }
