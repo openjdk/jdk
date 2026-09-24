@@ -35,12 +35,13 @@ import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
 import test.java.lang.invoke.lib.InstructionHelper;
 
-/**
+/*
  * @test id=Xbatch
  * @summary Test construction of value objects.
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
@@ -53,6 +54,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch -XX:+IgnoreUnrecognizedVMOptions -XX:+DeoptimizeALot
@@ -65,6 +67,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -73,12 +76,13 @@ import test.java.lang.invoke.lib.InstructionHelper;
  *                   compiler.valhalla.valuetypes.TestValueConstruction
  */
 
-/**
+/*
  * @test id=DontInlineHelper
  * @summary Test construction of value objects.
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
@@ -92,6 +96,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -105,6 +110,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -118,6 +124,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+IgnoreUnrecognizedVMOptions
@@ -131,6 +138,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires (vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000) | vm.opt.final.StressIncrementalInlining == false
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -144,6 +152,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbatch
@@ -158,6 +167,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -171,6 +181,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -185,6 +196,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -199,6 +211,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
@@ -214,6 +227,7 @@ import test.java.lang.invoke.lib.InstructionHelper;
  * @key randomness
  * @library /testlibrary /test/lib /compiler/whitebox /test/jdk/java/lang/invoke/common /
  * @enablePreview
+ * @requires vm.opt.final.PerMethodTrapLimit >= 100 & vm.opt.final.PerMethodSpecTrapLimit >= 5000
  * @build jdk.test.whitebox.WhiteBox test.java.lang.invoke.lib.InstructionHelper
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm/timeout=400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
