@@ -26,6 +26,7 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
 #include "gc/g1/g1CardSet.inline.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CardTableClaimTable.inline.hpp"
 #include "gc/g1/g1CardTableEntryClosure.hpp"
@@ -108,16 +109,16 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
   class G1DirtyRegions : public CHeapObj<mtGC> {
     uint* _buffer;
     Atomic<uint> _cur_idx;
-    size_t _max_reserved_regions;
+    size_t _max_num_regions;
 
     Atomic<bool>* _contains;
 
   public:
-    G1DirtyRegions(size_t max_reserved_regions) :
-      _buffer(NEW_C_HEAP_ARRAY(uint, max_reserved_regions, mtGC)),
+    G1DirtyRegions(size_t max_num_regions) :
+      _buffer(NEW_C_HEAP_ARRAY(uint, max_num_regions, mtGC)),
       _cur_idx(0),
-      _max_reserved_regions(max_reserved_regions),
-      _contains(NEW_C_HEAP_ARRAY(Atomic<bool>, max_reserved_regions, mtGC)) {
+      _max_num_regions(max_num_regions),
+      _contains(NEW_C_HEAP_ARRAY(Atomic<bool>, max_num_regions, mtGC)) {
 
       reset();
     }
@@ -129,15 +130,15 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
     void reset() {
       _cur_idx.store_relaxed(0);
-      for (uint i = 0; i < _max_reserved_regions; i++) {
+      for (uint i = 0; i < _max_num_regions; i++) {
         _contains[i].store_relaxed(false);
       }
     }
 
-    uint size() const { return _cur_idx.load_relaxed(); }
+    uint num_regions() const { return _cur_idx.load_relaxed(); }
 
     uint at(uint idx) const {
-      assert(idx < size(), "Index %u beyond valid regions", idx);
+      assert(idx < num_regions(), "Index %u beyond valid regions", idx);
       return _buffer[idx];
     }
 
@@ -155,7 +156,7 @@ class G1RemSetScanState : public CHeapObj<mtGC> {
 
     // Creates the union of this and the other G1DirtyRegions.
     void merge(const G1DirtyRegions* other) {
-      for (uint i = 0; i < other->size(); i++) {
+      for (uint i = 0; i < other->num_regions(); i++) {
         uint region = other->at(i);
         if (!_contains[region].load_relaxed()) {
           uint cur = _cur_idx.load_relaxed();
@@ -193,7 +194,7 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
       _scan_state(scan_state) {}
 
     double worker_cost() const override {
-      uint num_regions = _regions->size();
+      uint num_regions = _regions->num_regions();
 
       if (num_regions == 0) {
         // There is no card table clean work, only some cleanup of memory.
@@ -215,9 +216,9 @@ class G1ClearCardTableTask : public G1AbstractSubTask {
       const uint num_regions_per_worker = num_cards_per_worker / (uint)G1HeapRegion::CardsPerRegion;
 
       uint cur = _cur_dirty_regions.load_relaxed();
-      while (cur < _regions->size()) {
+      while (cur < _regions->num_regions()) {
         uint next = _cur_dirty_regions.fetch_then_add(num_regions_per_worker);
-        uint max = MIN2(next + num_regions_per_worker, _regions->size());
+        uint max = MIN2(next + num_regions_per_worker, _regions->num_regions());
 
         for (uint i = next; i < max; i++) {
           G1HeapRegion* r = _g1h->region_at(_regions->at(i));
@@ -247,9 +248,9 @@ public:
     FREE_C_HEAP_ARRAY(_scan_top);
   }
 
-  void initialize(uint max_reserved_regions) {
-    _card_claim_table.initialize(max_reserved_regions);
-    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_reserved_regions, mtGC);
+  void initialize(uint max_num_regions) {
+    _card_claim_table.initialize(max_num_regions);
+    _scan_top = NEW_C_HEAP_ARRAY(HeapWord*, max_num_regions, mtGC);
   }
 
   // Reset the claim and clear scan top for all regions, including
@@ -257,14 +258,14 @@ public:
   // become used during the collection these values must be valid
   // for those regions as well.
   void prepare() {
-    size_t max_reserved_regions = _card_claim_table.max_reserved_regions();
+    size_t max_num_regions = _card_claim_table.max_num_regions();
 
-    for (size_t i = 0; i < max_reserved_regions; i++) {
+    for (size_t i = 0; i < max_num_regions; i++) {
       clear_scan_top((uint)i);
     }
 
-    _all_dirty_regions = new G1DirtyRegions(max_reserved_regions);
-    _next_dirty_regions = new G1DirtyRegions(max_reserved_regions);
+    _all_dirty_regions = new G1DirtyRegions(max_num_regions);
+    _next_dirty_regions = new G1DirtyRegions(max_num_regions);
   }
 
   void prepare_for_merge_heap_roots() {
@@ -294,7 +295,7 @@ public:
   }
 
   size_t num_cards_in_dirty_regions() const {
-    return _next_dirty_regions->size() * G1HeapRegion::CardsPerRegion;
+    return _next_dirty_regions->num_regions() * G1HeapRegion::CardsPerRegion;
   }
 
   G1AbstractSubTask* create_cleanup_after_scan_heap_roots_task() {
@@ -310,7 +311,7 @@ public:
   }
 
   void iterate_dirty_regions_from(G1HeapRegionClosure* cl, uint worker_id) {
-    uint num_regions = _next_dirty_regions->size();
+    uint num_regions = _next_dirty_regions->num_regions();
 
     if (num_regions == 0) {
       return;
@@ -328,7 +329,7 @@ public:
       bool result = cl->do_heap_region(g1h->region_at(_next_dirty_regions->at(cur)));
       guarantee(!result, "Not allowed to ask for early termination.");
       cur++;
-      if (cur == _next_dirty_regions->size()) {
+      if (cur == _next_dirty_regions->num_regions()) {
         cur = 0;
       }
     } while (cur != start_pos);
@@ -386,8 +387,8 @@ G1RemSet::~G1RemSet() {
   delete _scan_state;
 }
 
-void G1RemSet::initialize(uint max_reserved_regions) {
-  _scan_state->initialize(max_reserved_regions);
+void G1RemSet::initialize(uint max_num_regions) {
+  _scan_state->initialize(max_num_regions);
 }
 
 // Scans a heap region for dirty cards.

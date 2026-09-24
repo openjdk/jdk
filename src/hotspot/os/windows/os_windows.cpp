@@ -1256,24 +1256,24 @@ FILETIME java_to_windows_time(jlong l) {
   return result;
 }
 
-double os::elapsed_process_cpu_time() {
+bool os::elapsed_process_cpu_time(double& value) {
   FILETIME create;
   FILETIME exit;
   FILETIME kernel;
   FILETIME user;
 
   if (GetProcessTimes(GetCurrentProcess(), &create, &exit, &kernel, &user) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME user_total;
   if (FileTimeToSystemTime(&user, &user_total) == 0) {
-    return -1;
+    return false;
   }
 
   SYSTEMTIME kernel_total;
   if (FileTimeToSystemTime(&kernel, &kernel_total) == 0) {
-    return -1;
+    return false;
   }
 
   double user_seconds =
@@ -1285,7 +1285,8 @@ double os::elapsed_process_cpu_time() {
                           double(kernel_total.wSecond) +
                           double(kernel_total.wMilliseconds) / 1000.0;
 
-  return user_seconds + kernel_seconds;
+  value = user_seconds + kernel_seconds;
+  return true;
 }
 
 jlong os::javaTimeMillis() {

@@ -25,6 +25,7 @@
 #ifndef SHARE_GC_G1_G1COLLECTIONSET_HPP
 #define SHARE_GC_G1_G1COLLECTIONSET_HPP
 
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CollectionSetCandidates.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"

@@ -23,6 +23,7 @@
  */
 
 #include "gc/g1/g1BarrierSet.hpp"
+#include "gc/g1/g1CardSetGroup.hpp"
 #include "gc/g1/g1CardSetMemory.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentRefine.hpp"
