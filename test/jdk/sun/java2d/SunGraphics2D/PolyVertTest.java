@@ -83,9 +83,7 @@ import java.awt.event.WindowListener;
 import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
-import java.awt.image.VolatileImage;
 import java.io.File;
-import java.io.IOException;
 import javax.imageio.ImageIO;
 
 public class PolyVertTest {
@@ -287,11 +285,9 @@ public class PolyVertTest {
         g2d.setPaintMode();
     }
 
-/*
     public Dimension getPreferredSize() {
         return new Dimension(500, 500);
     }
-*/
 
     public static void usage(int exitcode) {
         System.err.println("usage: java PolyVertTest [<option>]*");
@@ -642,10 +638,6 @@ public class PolyVertTest {
             verify(bimg, "Screen");
         } catch (AWTException e) {
             throw new RuntimeException(e);
-        } finally {
-           if (frame != null) {
-               //EventQueue.invokeAndWait(frame::dispose);
-           }
         }
     }
 
