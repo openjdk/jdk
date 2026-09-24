@@ -223,6 +223,8 @@ void C2_MacroAssembler::fast_lock(Register obj, Register box,
       bltu(tmp3_owner, t0, slow_path);
 
       Label retry;
+      // Reload the owner to establish a reservation, so WRS.STO can
+      // observe an update to it.
       lr_d(tmp3_owner, tmp2_owner_addr, Assembler::relaxed);
       beqz(tmp3_owner, retry);
       bltu(tmp3_owner, t0, slow_path);

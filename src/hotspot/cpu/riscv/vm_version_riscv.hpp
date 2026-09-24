@@ -256,7 +256,7 @@ class VM_Version : public Abstract_VM_Version {
   /* Load-acquire and store-release instructions */                                                       \
   decl(Zalasr      ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZalasr))                                 \
   /* Wait-on-Reservation-Set instructions */                                                              \
-  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT_DEP(UseZawrs, &ext_a, nullptr))             \
+  decl(Zawrs       ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZawrs))                                  \
   /* Zba Address generation instructions */                                                               \
   decl(Zba         ,  RV_NO_FLAG_BIT,  true ,  UPDATE_DEFAULT(UseZba))                                    \
   /* Zbb Basic bit-manipulation */                                                                        \
