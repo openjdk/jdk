@@ -1299,9 +1299,9 @@ const TypePtr* PhaseMacroExpand::adjust_for_flat_array(const TypeAryPtr* top_des
                                                        Node*& dest_offset, Node*& length, BasicType& dest_elem,
                                                        Node*& dest_length) {
 #ifdef ASSERT
-  assert(top_dest->elem()->make_ptr()->is_instptr()->is_inlinetypeptr(), "must be concrete value klass");
+  assert(top_dest->elem()->make_ptr()->is_instptr()->is_valueklassptr(), "must be concrete value klass");
   BarrierSetC2* bs = BarrierSet::barrier_set()->barrier_set_c2();
-  bool needs_barriers = top_dest->elem()->inline_klass()->contains_oops() &&
+  bool needs_barriers = top_dest->elem()->value_klass()->contains_oops() &&
     bs->array_copy_requires_gc_barriers(dest_length != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization);
   assert(!needs_barriers || StressReflectiveCode, "Flat arraycopy would require GC barriers");
 #endif
@@ -1493,15 +1493,15 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
   if (src_elem != dest_elem || top_src->is_flat() != top_dest->is_flat() || dest_elem == T_VOID) {
     // 1) and 2)
     go_to_slow_path = true;
-  } else if ((top_src->is_flat() && !top_src->elem()->is_inlinetypeptr()) ||
-             (top_dest->is_flat() && !top_dest->elem()->is_inlinetypeptr())) {
+  } else if ((top_src->is_flat() && !top_src->elem()->is_valueklassptr()) ||
+             (top_dest->is_flat() && !top_dest->elem()->is_valueklassptr())) {
     // 3)
     go_to_slow_path = true;
   } else if (top_dest->is_flat() &&
              bs->array_copy_requires_gc_barriers(alloc != nullptr, T_OBJECT, false, false, BarrierSetC2::Optimization) &&
-             top_dest->elem()->inline_klass()->contains_oops()) {
+             top_dest->elem()->value_klass()->contains_oops()) {
     // 4)
-    assert(top_src->is_flat() && top_src->elem()->inline_klass()->contains_oops(), "must match");
+    assert(top_src->is_flat() && top_src->elem()->value_klass()->contains_oops(), "must match");
     go_to_slow_path = true;
   }
 

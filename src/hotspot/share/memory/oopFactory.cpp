@@ -135,7 +135,7 @@ refArrayOop oopFactory::new_refArray(Klass* klass, int length, TRAPS) {
   return new_refArray(klass, length, ArrayProperties::Default(), THREAD);
 }
 
-flatArrayOop oopFactory::new_flatArray(InlineKlass* ik, int length, ArrayProperties props, TRAPS) {
+flatArrayOop oopFactory::new_flatArray(ValueKlass* ik, int length, ArrayProperties props, TRAPS) {
   ArrayKlass* ak = ik->array_klass(CHECK_NULL);
   ObjArrayKlass* oak = ObjArrayKlass::cast(ak)->klass_with_properties(props, CHECK_NULL);
   FlatArrayKlass* fak = FlatArrayKlass::cast(oak);

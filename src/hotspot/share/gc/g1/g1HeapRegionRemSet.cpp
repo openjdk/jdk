@@ -35,17 +35,17 @@ void G1HeapRegionRemSet::initialize(MemRegion reserved) {
   _heap_base_address = reserved.start();
 }
 
-void G1HeapRegionRemSet::uninstall_cset_group() {
-  _cset_group = nullptr;
+void G1HeapRegionRemSet::uninstall_card_set_group() {
+  _card_set_group = nullptr;
 }
 
 G1HeapRegionRemSet::G1HeapRegionRemSet() :
   _code_roots(),
-  _cset_group(nullptr),
+  _card_set_group(nullptr),
   _state(Untracked) { }
 
 G1HeapRegionRemSet::~G1HeapRegionRemSet() {
-  assert(!has_cset_group(), "Still assigned to a CSet group");
+  assert(!has_card_set_group(), "Still assigned to a card set group");
 }
 
 void G1HeapRegionRemSet::clear() {
@@ -60,14 +60,14 @@ void G1HeapRegionRemSet::reset_code_root_table_scanner() {
 
 void G1HeapRegionRemSet::reset_table_scanner() {
   reset_code_root_table_scanner();
-  if (has_cset_group()) {
+  if (has_card_set_group()) {
     card_set()->reset_table_scanner();
   }
 }
 
 G1MonotonicArenaMemoryStats G1HeapRegionRemSet::card_set_memory_stats() const {
-  assert(has_cset_group(), "pre-condition");
-  return cset_group()->card_set_memory_stats();
+  assert(has_card_set_group(), "pre-condition");
+  return card_set_group()->card_set_memory_stats();
 }
 
 void G1HeapRegionRemSet::print_static_mem_size(outputStream* out) {

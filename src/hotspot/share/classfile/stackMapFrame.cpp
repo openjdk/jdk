@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2025, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,36 +54,29 @@ void StackMapFrame::unsatisfied_strict_fields_error(InstanceKlass* klass, int bc
   // obvious fallback value.
   Symbol* name = vmSymbols::unknown_class_name();
   Symbol* sig = vmSymbols::unknown_class_name();
-  int num_uninit_fields = 0;
-
-  auto find_unset = [&] (const NameAndSig& key, const bool& value) {
-    if (!value) {
-      name = key._name;
-      sig = key._signature;
-      num_uninit_fields++;
-    }
-  };
-  assert_unset_fields()->iterate_all(find_unset);
+  int num_uninit_fields = assert_unset_fields()->number_of_entries();
 
   verifier()->verify_error(
     ErrorContext::bad_strict_fields(bci, this),
-    "All strict final fields must be initialized before super(): %d field(s), %s:%s in %s",
+    "All strict fields must be initialized before super(): %d field(s) in %s",
     num_uninit_fields,
-    name->as_C_string(),
-    sig->as_C_string(),
     klass->name()->as_C_string()
   );
+  print_strict_fields(assert_unset_fields());
 }
 
 void StackMapFrame::print_strict_fields(AssertUnsetFieldTable* table) {
   ResourceMark rm;
-  auto printfields = [&] (const NameAndSig& key, const bool& value) {
-    log_info(verification)("Strict field: %s%s (Satisfied: %s)",
-                           key._name->as_C_string(),
-                           key._signature->as_C_string(),
-                           value ? "true" : "false");
-  };
-  table->iterate_all(printfields);
+  if (table != nullptr) {
+    auto printfields = [&] (const NameAndSig& key, const bool& value) {
+      log_info(verification)("Strict field: %s%s",
+                            key._name->as_C_string(),
+                            key._signature->as_C_string());
+    };
+    table->iterate_all(printfields);
+  } else {
+    log_info(verification)("No strict fields");
+  }
 }
 
 StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
@@ -229,6 +222,12 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
+  if ((_flags | target->flags()) != target->flags()) {
+    *ctx = ErrorContext::bad_flags(target->offset(),
+        (StackMapFrame*)this, (StackMapFrame*)target);
+    return false;
+  }
+
   // Check that assert unset fields are compatible
   bool compatible = verify_unset_fields_compatibility(target->assert_unset_fields());
   if (!compatible) {
@@ -239,13 +238,7 @@ bool StackMapFrame::is_assignable_to(
     return false;
   }
 
-  if ((_flags | target->flags()) == target->flags()) {
-    return true;
-  } else {
-    *ctx = ErrorContext::bad_flags(target->offset(),
-        (StackMapFrame*)this, (StackMapFrame*)target);
-    return false;
-  }
+  return true;
 }
 
 VerificationType StackMapFrame::pop_stack_ex(VerificationType type, TRAPS) {
