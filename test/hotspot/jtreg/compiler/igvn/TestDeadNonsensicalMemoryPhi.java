@@ -27,11 +27,12 @@ package compiler.igvn;
 /*
  * @test
  * @bug 8375645
- * @summary A dead memory Phi has nonsensical inputs, it is a Phi in a loop but both of its inputs
- *          are not in that loop.
+ * @summary A dead memory Phi has nonsensical inputs, it is a memory Phi in a loop but both of its
+ *          inputs are not in that loop.
+ * @run main ${test.main.class}
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+IgnoreUnrecognizedVMOptions
  *                   -XX:CompileOnly=${test.main.class}::test -XX:-TieredCompilation -Xcomp
- *                   -XX:+StressIGVN -XX:+StressCCP -XX:+StressLoopPeeling -XX:RepeatCompilation=500
+ *                   -XX:+StressIGVN -XX:+StressCCP -XX:+StressLoopPeeling
  *                   ${test.main.class}
  */
 public class TestDeadNonsensicalMemoryPhi {
