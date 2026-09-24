@@ -29,87 +29,10 @@
 #include "jvm.h"
 #include "TimeZone_md.h"
 
-#define VALUE_UNKNOWN           0
-#define VALUE_KEY               1
-#define VALUE_MAPID             2
-#define VALUE_GMTOFFSET         3
-
 #define MAX_ZONE_CHAR           256
-#define MAX_MAPID_LENGTH        32
 #define MAX_REGION_LENGTH       4
 
-#define NT_TZ_KEY               "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Time Zones"
-#define WIN_TZ_KEY              "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Time Zones"
 #define WIN_CURRENT_TZ_KEY      "System\\CurrentControlSet\\Control\\TimeZoneInformation"
-
-typedef struct _TziValue {
-    LONG        bias;
-    LONG        stdBias;
-    LONG        dstBias;
-    SYSTEMTIME  stdDate;
-    SYSTEMTIME  dstDate;
-} TziValue;
-
-/*
- * Registry key names
- */
-static void *keyNames[] = {
-    (void *) L"StandardName",
-    (void *) "StandardName",
-    (void *) L"Std",
-    (void *) "Std"
-};
-
-/*
- * Indices to keyNames[]
- */
-#define STANDARD_NAME           0
-#define STD_NAME                2
-
-/*
- * Calls RegGetValue to get the value for the specified key.
- * First tries the Unicode version, if that fails,
- * falls back to the ANSI version and converts to Unicode.
- *
- * `keyIndex' is an index value to the keyNames in Unicode
- * (WCHAR). `keyIndex' + 1 points to its ANSI value.
- *
- * Returns the status value. ERROR_SUCCESS if succeeded, a
- * non-ERROR_SUCCESS value otherwise.
- */
-static LONG
-getValueInRegistry(HKEY hKey,
-                   int keyIndex,
-                   LPBYTE buf,
-                   LPDWORD bufLengthPtr)
-{
-    LONG ret;
-    DWORD bufLength = *bufLengthPtr;
-    char val[MAX_ZONE_CHAR];
-    DWORD valSize;
-    int len;
-
-    ret = RegGetValueW(hKey, NULL, (WCHAR*) keyNames[keyIndex],
-                       RRF_RT_REG_SZ, NULL, buf, bufLengthPtr);
-    if (ret == ERROR_SUCCESS) {
-        return ret;
-    }
-
-    valSize = sizeof(val);
-    ret = RegGetValueA(hKey, NULL, (char*) keyNames[keyIndex+1],
-                       RRF_RT_REG_SZ, NULL, val, &valSize);
-    if (ret != ERROR_SUCCESS) {
-        return ret;
-    }
-
-    len = MultiByteToWideChar(CP_ACP, MB_ERR_INVALID_CHARS,
-                              (LPCSTR) val, -1,
-                              (LPWSTR) buf, bufLength/sizeof(WCHAR));
-    if (len <= 0) {
-        return ERROR_BADKEY;
-    }
-    return ERROR_SUCCESS;
-}
 
 /*
  * Produces custom name "GMT+hh:mm" from the given bias in buffer.
@@ -133,233 +56,6 @@ static void customZoneName(LONG bias, char *buffer, size_t bufSize) {
     } else {
         strcpy(buffer, "GMT");
     }
-}
-
-/*
- * Gets the current time zone entry in the "Time Zones" registry.
- */
-static int getWinTimeZone(char *winZoneName, size_t winZoneNameBufSize)
-{
-    DYNAMIC_TIME_ZONE_INFORMATION dtzi;
-    DWORD timeType;
-    DWORD bufSize;
-    DWORD val;
-    HANDLE hKey = NULL;
-    LONG ret;
-
-    /*
-     * Get the dynamic time zone information so that time zone redirection
-     * can be supported. (see JDK-7044727)
-     */
-    timeType = GetDynamicTimeZoneInformation(&dtzi);
-    if (timeType == TIME_ZONE_ID_INVALID) {
-        goto err;
-    }
-
-    /*
-     * Make sure TimeZoneKeyName is available from the API call. If
-     * DynamicDaylightTime is disabled, return a custom time zone name
-     * based on the GMT offset. Otherwise, return the TimeZoneKeyName
-     * value.
-     */
-    if (dtzi.TimeZoneKeyName[0] != 0) {
-        if (dtzi.DynamicDaylightTimeDisabled) {
-            customZoneName(dtzi.Bias, winZoneName, winZoneNameBufSize);
-            return VALUE_GMTOFFSET;
-        }
-        wcstombs(winZoneName, dtzi.TimeZoneKeyName, MAX_ZONE_CHAR);
-        return VALUE_KEY;
-    }
-
-    /*
-     * If TimeZoneKeyName is not available, check whether StandardName
-     * is available to fall back to the older API GetTimeZoneInformation.
-     * If not, directly read the value from registry keys.
-     */
-    if (dtzi.StandardName[0] == 0) {
-        ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, WIN_CURRENT_TZ_KEY, 0,
-                           KEY_READ, (PHKEY)&hKey);
-        if (ret != ERROR_SUCCESS) {
-            goto err;
-        }
-
-        /*
-         * Determine if auto-daylight time adjustment is turned off.
-         */
-        bufSize = sizeof(val);
-        ret = RegGetValueA(hKey, NULL, "DynamicDaylightTimeDisabled",
-                           RRF_RT_REG_DWORD, NULL, (LPBYTE) &val, &bufSize);
-        if (ret != ERROR_SUCCESS) {
-            goto err;
-        }
-        /*
-         * Return a custom time zone name if auto-daylight time adjustment
-         * is disabled.
-         */
-        if (val == 1) {
-            customZoneName(dtzi.Bias, winZoneName, winZoneNameBufSize);
-            (void) RegCloseKey(hKey);
-            return VALUE_GMTOFFSET;
-        }
-
-        bufSize = MAX_ZONE_CHAR;
-        ret = RegGetValueA(hKey, NULL, "TimeZoneKeyName",
-                           RRF_RT_REG_SZ, NULL, (LPBYTE) winZoneName, &bufSize);
-        if (ret != ERROR_SUCCESS) {
-            goto err;
-        }
-        (void) RegCloseKey(hKey);
-        return VALUE_KEY;
-    } else {
-        /*
-         * Fall back to GetTimeZoneInformation
-         */
-        TIME_ZONE_INFORMATION tzi;
-        HANDLE hSubKey = NULL;
-        DWORD nSubKeys, i;
-        TCHAR subKeyName[MAX_ZONE_CHAR];
-        TCHAR szValue[MAX_ZONE_CHAR];
-        WCHAR stdNameInReg[MAX_ZONE_CHAR];
-        TziValue tempTzi;
-        WCHAR *stdNamePtr = tzi.StandardName;
-
-        timeType = GetTimeZoneInformation(&tzi);
-        if (timeType == TIME_ZONE_ID_INVALID) {
-            goto err;
-        }
-
-        ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, WIN_CURRENT_TZ_KEY, 0,
-                           KEY_READ, (PHKEY)&hKey);
-        if (ret == ERROR_SUCCESS) {
-            /*
-             * Determine if auto-daylight time adjustment is turned off.
-             */
-            bufSize = sizeof(val);
-            ret = RegGetValueA(hKey, NULL, "DynamicDaylightTimeDisabled",
-                               RRF_RT_REG_DWORD, NULL, (LPBYTE) &val, &bufSize);
-            if (ret == ERROR_SUCCESS) {
-                if (val == 1 && tzi.DaylightDate.wMonth != 0) {
-                    (void) RegCloseKey(hKey);
-                    customZoneName(tzi.Bias, winZoneName, winZoneNameBufSize);
-                    return VALUE_GMTOFFSET;
-                }
-            }
-
-            /*
-             * Win32 problem: If the length of the standard time name is equal
-             * to (or probably longer than) 32 in the registry,
-             * GetTimeZoneInformation() on NT returns a null string as its
-             * standard time name. We need to work around this problem by
-             * getting the same information from the TimeZoneInformation
-             * registry.
-             */
-            if (tzi.StandardName[0] == 0) {
-                bufSize = sizeof(stdNameInReg);
-                ret = getValueInRegistry(hKey, STANDARD_NAME, (LPBYTE) stdNameInReg, &bufSize);
-                if (ret != ERROR_SUCCESS) {
-                    goto err;
-                }
-                stdNamePtr = stdNameInReg;
-            }
-            (void) RegCloseKey(hKey);
-        }
-
-        /*
-         * Open the "Time Zones" registry.
-         */
-        ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, NT_TZ_KEY, 0, KEY_READ, (PHKEY)&hKey);
-        if (ret != ERROR_SUCCESS) {
-            ret = RegOpenKeyEx(HKEY_LOCAL_MACHINE, WIN_TZ_KEY, 0, KEY_READ, (PHKEY)&hKey);
-            /*
-             * If both failed, then give up.
-             */
-            if (ret != ERROR_SUCCESS) {
-                return VALUE_UNKNOWN;
-            }
-        }
-
-        /*
-         * Get the number of subkeys of the "Time Zones" registry for
-         * enumeration.
-         */
-        ret = RegQueryInfoKey(hKey, NULL, NULL, NULL, &nSubKeys,
-                              NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-        if (ret != ERROR_SUCCESS) {
-            goto err;
-        }
-
-        /*
-         * Compare to the "Std" value of each subkey and find the entry that
-         * matches the current control panel setting.
-         */
-        for (i = 0; i < nSubKeys; ++i) {
-            DWORD size = sizeof(subKeyName);
-            ret = RegEnumKeyEx(hKey, i, subKeyName, &size, NULL, NULL, NULL, NULL);
-            if (ret != ERROR_SUCCESS) {
-                goto err;
-            }
-            ret = RegOpenKeyEx(hKey, subKeyName, 0, KEY_READ, (PHKEY)&hSubKey);
-            if (ret != ERROR_SUCCESS) {
-                goto err;
-            }
-
-            size = sizeof(szValue);
-            ret = getValueInRegistry(hSubKey, STD_NAME, szValue, &size);
-            if (ret != ERROR_SUCCESS) {
-                RegCloseKey(hSubKey);
-                break;
-            }
-
-            if (wcscmp((WCHAR *)szValue, stdNamePtr) == 0) {
-                /*
-                 * Some localized Win32 platforms use a same name to
-                 * different time zones. So, we can't rely only on the name
-                 * here. We need to check GMT offsets and transition dates
-                 * to make sure it's the registry of the current time
-                 * zone.
-                 */
-                DWORD tziValueSize = sizeof(tempTzi);
-                ret = RegGetValueA(hSubKey, NULL, "TZI", RRF_RT_REG_BINARY, NULL,
-                                   (unsigned char*) &tempTzi, &tziValueSize);
-                if (ret == ERROR_SUCCESS) {
-                    if ((tzi.Bias != tempTzi.bias) ||
-                        (memcmp((const void *) &tzi.StandardDate,
-                                (const void *) &tempTzi.stdDate,
-                                sizeof(SYSTEMTIME)) != 0)) {
-                        goto out;
-                    }
-
-                    if (tzi.DaylightBias != 0) {
-                        if ((tzi.DaylightBias != tempTzi.dstBias) ||
-                            (memcmp((const void *) &tzi.DaylightDate,
-                                    (const void *) &tempTzi.dstDate,
-                                    sizeof(SYSTEMTIME)) != 0)) {
-                            goto out;
-                        }
-                    }
-                }
-
-                /*
-                 * found matched record, terminate search
-                 */
-                strcpy(winZoneName, subKeyName);
-                RegCloseKey(hSubKey);
-                break;
-            }
-        out:
-            (void) RegCloseKey(hSubKey);
-        }
-
-        (void) RegCloseKey(hKey);
-    }
-
-    return VALUE_KEY;
-
- err:
-    if (hKey != NULL) {
-        (void) RegCloseKey(hKey);
-    }
-    return VALUE_UNKNOWN;
 }
 
 /*
@@ -494,21 +190,37 @@ char *findJavaTZ_md(const char *java_home_dir)
 {
     char winZoneName[MAX_ZONE_CHAR];
     char *std_timezone = NULL;
-    int  result;
 
-    result = getWinTimeZone(winZoneName, sizeof(winZoneName));
+    DYNAMIC_TIME_ZONE_INFORMATION dtzi;
+    DWORD timeType;
 
-    if (result != VALUE_UNKNOWN) {
-        if (result == VALUE_GMTOFFSET) {
-            std_timezone = _strdup(winZoneName);
-        } else {
-            std_timezone = matchJavaTZ(java_home_dir, winZoneName);
-            if (std_timezone == NULL) {
-                std_timezone = getGMTOffsetID();
-            }
+    /*
+     * Get the dynamic time zone information so that time zone redirection
+     * can be supported. (see JDK-7044727)
+     */
+    timeType = GetDynamicTimeZoneInformation(&dtzi);
+    if (timeType == TIME_ZONE_ID_INVALID) {
+        return NULL;
+    }
+
+    /*
+     * If DynamicDaylightTime is enabled, map TimeZoneKeyName to a Java TZ.
+     * If that succeeds, return the Java TZ name.
+     */
+    if (dtzi.DynamicDaylightTimeDisabled == 0 && dtzi.TimeZoneKeyName[0] != 0) {
+        wcstombs(winZoneName, dtzi.TimeZoneKeyName, MAX_ZONE_CHAR);
+        std_timezone = matchJavaTZ(java_home_dir, winZoneName);
+        if (std_timezone != NULL) {
+            return std_timezone;
         }
     }
-    return std_timezone;
+
+    /*
+     * If DynamicDaylightTime is disabled or TimeZoneKeyName is unknown,
+     * return a custom time zone name based on the GMT offset.
+     */
+    customZoneName(dtzi.Bias, winZoneName, MAX_ZONE_CHAR);
+    return _strdup(winZoneName);
 }
 
 /**
