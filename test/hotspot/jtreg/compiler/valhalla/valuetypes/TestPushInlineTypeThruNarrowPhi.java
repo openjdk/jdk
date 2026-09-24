@@ -27,13 +27,13 @@
  * @enablePreview
  * @modules java.base/jdk.internal.vm.annotation
  * @run main/othervm -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline ${test.main.class}
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined1
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined2
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined3 ${test.main.class}
  * @run main/othervm -XX:-BackgroundCompilation
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined1,DelayInline
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined2,DelayInline
- *                   -XX:CompileCommand=option,${test.main.class}::lateInlined3,DelayInline
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined1
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined2
+ *                   -XX:CompileCommand=delayinline,${test.main.class}::lateInlined3
  *                   -XX:+UnlockDiagnosticVMOptions -XX:-UseFieldFlattening ${test.main.class}
  */
 
