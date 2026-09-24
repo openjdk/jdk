@@ -110,7 +110,7 @@ public class SSLLoggerTest {
         ResourceBundle bundle = new ListResourceBundle() {
             @Override
             protected Object[][] getContents() {
-                return new Object[][] { { "bundle key", "translated message" } };
+                return new Object[][] { { "bundle", "translated message" } };
             }
         };
 
