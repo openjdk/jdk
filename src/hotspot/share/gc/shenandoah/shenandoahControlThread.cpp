@@ -208,6 +208,9 @@ void ShenandoahControlThread::run_service() {
   // In case any threads are waiting for a cycle to happen, notify them so they observe the shutdown.
   notify_gc_waiters();
   notify_alloc_waiters();
+
+  // We're done writing GC stats, so print them here.
+  heap->print_gc_stats_at_exit();
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
