@@ -95,15 +95,6 @@ public:
     return (code_roots_length() == 0) && card_set()->occupancy_less_or_equal_to(occ);
   }
 
-  // Iterate the cards in this remembered set for merging them into the card table.
-  // The passed closure must be a CardOrRangeVisitor; we use a template parameter
-  // to pass it in to facilitate inlining as much as possible.
-  template <class CardOrRangeVisitor>
-  inline void iterate_for_merge(CardOrRangeVisitor& cl);
-
-  template <class CardOrRangeVisitor>
-  inline static void iterate_for_merge(G1CardSet* card_set, CardOrRangeVisitor& cl);
-
   size_t occupied() {
     assert(has_card_set_group(), "pre-condition");
     return card_set()->occupied();
