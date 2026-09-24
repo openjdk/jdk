@@ -116,14 +116,17 @@ gboolean rebuildScreenData(GVariantIter *iterStreams, gboolean isTheOnlyMon) {
         DEBUG_SCREENCAST("\n==== screenId#%i\n", nodeID);
 
         if (screenIndex >= screenSpace.allocated) {
-            screenSpace.screens = realloc(
+            struct ScreenProps *newScreens = realloc(
                     screenSpace.screens,
                     ++screenSpace.allocated * sizeof(struct ScreenProps)
             );
-            if (!screenSpace.screens) {
+
+            if (!newScreens) {
                 ERR("failed to allocate memory\n");
                 return FALSE;
             }
+
+            screenSpace.screens = newScreens;
         }
 
         struct ScreenProps * screen = &screenSpace.screens[screenIndex];
@@ -871,7 +874,7 @@ int portalScreenCastOpenPipewireRemote() {
 
     if (err || !response) {
         DEBUG_SCREENCAST("Failed to call OpenPipeWireRemote on session: %s\n",
-                         err->message);
+                         err ? err->message : "no response");
         ERR_HANDLE(err);
         return RESULT_ERROR;
     }
