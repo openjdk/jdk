@@ -133,7 +133,7 @@ void ShenandoahControlThread::run_service() {
 
       // Notify waiters that a cycle is completed. They'll decide for themselves to continue waiting or not.
       notify_gc_waiters();
-      notify_alloc_waiters();
+      clear_allocation_failure_and_notify_waiters();
 
       // Report current free set state at the end of cycle, whether
       // it is a normal completion, or the abort.
@@ -257,6 +257,22 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 
   ShenandoahFullGC gc;
   gc.collect(cause);
+}
+
+void ShenandoahControlThread::clear_allocation_failure_and_notify_waiters() {
+  MonitorLocker waiters(&_alloc_waiters_lock, Mutex::_no_safepoint_check_flag);
+  {
+    MonitorLocker ml(&_control_lock, Mutex::_no_safepoint_check_flag);
+    if (ShenandoahCollectorPolicy::is_allocation_failure(_requested_gc_cause)) {
+      // If an allocation failure occurred during this cycle, we'll have threads waiting
+      // for reclaimed memory. We'll wake them up, and they'll retry their allocation.
+      // If our waiters cannot allocate, they will signal the control thread again
+      // to start another cycle. If we didn't clear the request here, the control thread would
+      // immediately begin another allocation failure cycle.
+      _requested_gc_cause = GCCause::_no_gc;
+    }
+  }
+  waiters.notify_all();
 }
 
 bool ShenandoahControlThread::notify_control_thread(GCCause::Cause cause, ShenandoahGeneration* ignored) {

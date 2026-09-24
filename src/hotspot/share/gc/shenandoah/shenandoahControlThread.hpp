@@ -58,7 +58,7 @@ protected:
 private:
   void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
-
+  void clear_allocation_failure_and_notify_waiters();
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP
