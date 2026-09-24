@@ -155,6 +155,11 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     tty->print_cr("  Splitting up: %d %s", n->_idx, n->Name());
   }
 #endif
+  Node* mem_proj = n->find_out_with(Op_SCMemProj);
+  Node* phi_mem_proj = nullptr;
+  if (mem_proj != nullptr) {
+    phi_mem_proj = PhiNode::make_blank(blk1, mem_proj);
+  }
   Node *phi = PhiNode::make_blank(blk1, n);
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
@@ -177,6 +182,21 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
 
   // Remove cloned-up value from optimizer; use phi instead
   _igvn.replace_node( n, phi );
+
+  if (mem_proj != nullptr) {
+    for (uint j = 1; j < blk1->req(); j++) {
+      Node* x = mem_proj->clone();
+      x->set_req(0, phi->in(j));
+      register_new_node(x, blk1->in(j));
+      phi_mem_proj->init_req(j, x);
+    }
+    // Announce phi to optimizer
+    register_new_node(phi_mem_proj, blk1);
+
+    // Remove cloned-up value from optimizer; use phi instead
+    _igvn.replace_node(mem_proj, phi_mem_proj);
+  }
+  assert(!phi->has_out_with(Op_SCMemProj), "only works with a single SCMemProj use");
 
   // (There used to be a self-recursive call to split_up() here,
   // but it is not needed.  All necessary forward walking is done
