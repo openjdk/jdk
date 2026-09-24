@@ -134,7 +134,7 @@ void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {
   MemBaseline baseline;
   bool success = baseline.baseline(summary_only);
   if (!success) {
-    output->print_cr("Detailed collection failed. Falling back to summary output");
+    MemReporterBase::report_detail_failure(output);
   }
   if (summary_only || !success) {
     MemSummaryReporter rpt(baseline, output, scale);

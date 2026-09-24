@@ -120,7 +120,7 @@ void NMTDCmd::execute(DCmdSource source, TRAPS) {
     if (success) {
       output()->print_cr("Baseline taken");
     } else {
-      output()->print_cr("Detail baseline collection failed. Summary baseline taken");
+      MemReporterBase::report_detail_failure(output(), "Summary baseline taken");
     }
   } else if (_summary_diff.value()) {
     MemBaseline& baseline = MemTracker::get_baseline();
@@ -155,7 +155,7 @@ void NMTDCmd::report(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
   bool success = baseline.baseline(summaryOnly);
   if (!success) {
-    output()->print_cr("Detailed collection failed. Falling back to summary output");
+    MemReporterBase::report_detail_failure(output());
   }
   if (summaryOnly || !success) {
     MemSummaryReporter rpt(baseline, output(), scale_unit);
@@ -176,7 +176,7 @@ void NMTDCmd::report_diff(bool summaryOnly, size_t scale_unit) {
   MemBaseline baseline;
   bool success = baseline.baseline(summaryOnly);
   if (!success) {
-    output()->print_cr("Detailed collection failed. Falling back to summary output");
+    MemReporterBase::report_detail_failure(output());
   }
   if (summaryOnly || !success) {
     MemSummaryDiffReporter rpt(early_baseline, baseline, output(), scale_unit);
