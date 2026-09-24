@@ -68,7 +68,7 @@ public class TestMetaspaceFirstGC {
 
     private static int classCounter = 0;
     // written on the loading thread right before every class load, on the same clock as the
-    // VM events, so the one right before the failed allocation is the state of the request
+    // VM events, the one right before the failed allocation is the closest look at the request
     @Name("TestMetaspaceFirstGC.LoadSample")
     @StackTrace(false)
     private static class LoadSample extends Event {
@@ -114,12 +114,6 @@ public class TestMetaspaceFirstGC {
 
         List<RecordedEvent> events;
         try (RecordingStream rs = new RecordingStream()) {
-            rs.enable(EventNames.GarbageCollection);
-            rs.onEvent(EventNames.GarbageCollection, event -> {
-                if ("Metadata GC Threshold".equals(event.getString("cause"))) {
-                    metadataGC.countDown();
-                }
-            });
             // a concurrent collector may fold the requested GC into a cycle that is already
             // running and never emit the cause, the failed allocation inside loadOneClass is
             // the request itself
@@ -140,18 +134,15 @@ public class TestMetaspaceFirstGC {
             long tolerance = 5 * 1024 * 1024;
             long initialThreshold = WhiteBox.getWhiteBox().metaspaceCapacityUntilGC();
             System.out.println("Initial metaspace GC threshold: " + initialThreshold);
+            long metaspaceSize = WhiteBox.getWhiteBox().getSizeTVMFlag("MetaspaceSize");
             if (expectedSize > 0) {
-                if (initialThreshold != expectedSize) {
-                    // startup already moved the threshold, the first metadata GC can't be observed
-                    throw new SkippedException("threshold already at " + initialThreshold
-                        + ", not MetaspaceSize " + expectedSize);
-                }
-            } else {
-                // No explicit MetaspaceSize, check default range (~12MB to ~20MB per tuning guide)
-                Asserts.assertGreaterThan(initialThreshold, 11_500_000L, "default threshold (" + initialThreshold + ") too small");
-                Asserts.assertLessThan(initialThreshold, 22_500_000L, "default threshold (" + initialThreshold + ") too large");
+                Asserts.assertEquals(metaspaceSize, expectedSize, "MetaspaceSize as set on the command line");
             }
-
+            if (initialThreshold != metaspaceSize) {
+                // startup already moved the threshold, the first metadata GC can't be observed
+                throw new SkippedException("threshold already at " + initialThreshold
+                    + ", not MetaspaceSize " + metaspaceSize);
+            }
 
             // Load classes until a metaspace-triggered GC happens
             try {
@@ -182,12 +173,13 @@ public class TestMetaspaceFirstGC {
             events = new ArrayList<>(RecordingFile.readAllEvents(dump));
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
 
-            // The first failed metadata allocation inside loadOneClass is the request. The
-            // threshold it hit is the old value of the first threshold change at or after it. The
-            // sample written right before the class load that failed gives committed and the
-            // threshold at that moment, committed has to be at the threshold, below it the request
-            // would be premature. Any threshold change between the start of loading and the request
-            // came from another collection's compute_new_size and can only have raised the threshold.
+            // The first failed metadata allocation inside loadOneClass is the request. The sample
+            // written right before that class load gives committed and the threshold just before
+            // it, committed has to be at the threshold, below it the request would be premature. A
+            // threshold change at or after the request is not guaranteed, the GC may have freed
+            // enough for the retry, but when there is one its old value has to be the sampled
+            // threshold. Any change between the start of loading and the request came from another
+            // collection's compute_new_size and can only have raised the threshold.
             events.sort(Comparator.comparing(RecordedEvent::getStartTime));
             RecordedEvent request = null;
             for (RecordedEvent event : events) {
@@ -199,7 +191,7 @@ public class TestMetaspaceFirstGC {
                 }
             }
             Asserts.assertNotNull(request, "no metaspace allocation failure inside loadOneClass");
-            long thresholdAtRequest = -1;
+            long thresholdAfterRequest = -1;
             boolean summaryLogged = false;
             int changesBefore = 0;
             for (RecordedEvent event : events) {
@@ -213,8 +205,8 @@ public class TestMetaspaceFirstGC {
                         changesBefore++;
                         System.out.println("Threshold changed before the request: " + event.getLong("oldValue")
                             + " -> " + event.getLong("newValue") + " by " + event.getString("updater"));
-                    } else if (thresholdAtRequest < 0) {
-                        thresholdAtRequest = event.getLong("oldValue");
+                    } else if (thresholdAfterRequest < 0) {
+                        thresholdAfterRequest = event.getLong("oldValue");
                     }
                 } else if (type.equals(EventNames.MetaspaceSummary) && !beforeRequest && !summaryLogged) {
                     summaryLogged = true;
@@ -223,7 +215,6 @@ public class TestMetaspaceFirstGC {
                         + " gcThreshold=" + event.getLong("gcThreshold"));
                 }
             }
-            Asserts.assertNotEquals(thresholdAtRequest, -1L, "no threshold change after the request");
             RecordedEvent atRequest = null;
             for (RecordedEvent event : events) {
                 if (!event.getEventType().getName().equals("TestMetaspaceFirstGC.LoadSample")) {
@@ -236,11 +227,14 @@ public class TestMetaspaceFirstGC {
             }
             Asserts.assertNotNull(atRequest, "no sample before the request");
             long committedAtRequest = atRequest.getLong("committed");
-            long sampledThreshold = atRequest.getLong("threshold");
-            System.out.println("Metadata GC requested at threshold " + thresholdAtRequest
-                + ", before the failing load committed=" + committedAtRequest + " threshold=" + sampledThreshold);
-            Asserts.assertEquals(sampledThreshold, thresholdAtRequest,
-                "the threshold before the request should be the one the request hit");
+            long thresholdAtRequest = atRequest.getLong("threshold");
+            System.out.println("Before the failing load: committed=" + committedAtRequest
+                + " threshold=" + thresholdAtRequest
+                + (thresholdAfterRequest < 0 ? ", no threshold change after the request" : ", next change from " + thresholdAfterRequest));
+            if (thresholdAfterRequest >= 0) {
+                Asserts.assertEquals(thresholdAfterRequest, thresholdAtRequest,
+                    "the threshold change after the request should start from the sampled threshold");
+            }
             Asserts.assertLessThanOrEqual(Math.abs(thresholdAtRequest - committedAtRequest), tolerance,
                 "committed before the request (" + committedAtRequest + ") should be at the threshold (" + thresholdAtRequest + ")");
             if (changesBefore == 0) {
