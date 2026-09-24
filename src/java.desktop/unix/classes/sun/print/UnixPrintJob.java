@@ -395,8 +395,8 @@ public final class UnixPrintJob implements CancelablePrintJob {
              }
 
              if (service.isAttributeCategorySupported(SheetCollate.class)) {
-                 SheetCollate collate = (SheetCollate)attributes.get(SheetCollate.class);
-                 if (collate != null && collate == SheetCollate.COLLATED) {
+                 Attribute collate = attributes.get(SheetCollate.class);
+                 if (SheetCollate.COLLATED.equals(collate)) {
                      mOptions += " collate=true";
                  }
              }
