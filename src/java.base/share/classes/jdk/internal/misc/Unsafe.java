@@ -1624,6 +1624,11 @@ public final class Unsafe {
      */
     public int hashCodeMask() { return HASH_CODE_MASK; }
 
+    /**
+     * Reports the value used to mark that no hash code has been cached yet.
+     */
+    public int hashCodeNoHash() { return HASH_CODE_NO_HASH; }
+
     //--- random trusted operations from JNI:
 
     /**

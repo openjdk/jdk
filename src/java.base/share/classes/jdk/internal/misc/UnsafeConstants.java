@@ -121,6 +121,16 @@ final class UnsafeConstants {
 
     static final int HASH_CODE_MASK;
 
+    /**
+     * The value stored in the hash field of the mark word when no hash
+     * was cached yet.
+     *
+     * @implNote
+     * The actual value for this field is injected by the JVM.
+     */
+
+    static final int HASH_CODE_NO_HASH;
+
     static {
         ADDRESS_SIZE0 = 0;
         PAGE_SIZE = 0;
@@ -128,5 +138,6 @@ final class UnsafeConstants {
         UNALIGNED_ACCESS = false;
         DATA_CACHE_LINE_FLUSH_SIZE = 0;
         HASH_CODE_MASK = 0;
+        HASH_CODE_NO_HASH = 0;
     }
 }

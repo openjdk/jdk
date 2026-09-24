@@ -3780,6 +3780,7 @@ private:
   bool _use_unaligned_access;
   int _data_cache_line_flush_size;
   int _hash_code_mask;
+  int _hash_code_no_hash;
 public:
   UnsafeConstantsFixup() {
     // round up values for all static final fields
@@ -3789,6 +3790,7 @@ public:
     _use_unaligned_access = UseUnalignedAccesses;
     _data_cache_line_flush_size = (int)VM_Version::data_cache_line_flush_size();
     _hash_code_mask = checked_cast<int>(markWord::hash_mask);
+    _hash_code_no_hash = checked_cast<int>(markWord::no_hash);
   }
 
   void do_field(fieldDescriptor* fd) {
@@ -3809,6 +3811,8 @@ public:
       mirror->int_field_put(fd->offset(), _data_cache_line_flush_size);
     } else if (fd->name() == vmSymbols::hash_code_mask_name()) {
       mirror->int_field_put(fd->offset(), _hash_code_mask);
+    } else if (fd->name() == vmSymbols::hash_code_no_hash_name()) {
+      mirror->int_field_put(fd->offset(), _hash_code_no_hash);
     } else {
       assert(false, "unexpected UnsafeConstants field");
     }

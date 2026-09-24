@@ -5732,22 +5732,24 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
             Node* hash_mask_con = intcon(markWord::hash_mask);
             Node* masked_result = AndI(_gvn.transform(unmasked_result), hash_mask_con);
 
-            // Now, we have computed the hash. But we don't want it to be 0. If it is, let's just take the hash of the Class,
-            // and since this Class is an identity object, it must be non-zero. Let's do a little diamond since it's easy enough
+            // Now, we have computed the hash. But we don't want it to be markWord::no_hash.
+            // If it is, let's just take the hash of the Class, and since this Class is an identity object,
+            // it must be different from markWord::no_hash. Let's do a little diamond since it's easy enough
             // and cmove experimentally failed to be as efficient.
-            RegionNode* avoid_zero_hash_region = new RegionNode(3);
-            Node* zero_avoided_result = new PhiNode(avoid_zero_hash_region, TypeInt::INT);
+            RegionNode* avoid_no_hash_region = new RegionNode(3);
+            Node* no_hash_avoided_result = new PhiNode(avoid_no_hash_region, TypeInt::INT);
 
-            Node* bol_hash_would_be_zero = BoolCmpI(masked_result, BoolTest::eq, zerocon(T_INT));
-            IfNode* iff_hash_would_be_zero = create_and_map_if(control(), bol_hash_would_be_zero, PROB_FAIR, COUNT_UNKNOWN);
-            avoid_zero_hash_region->init_req(1, IfTrue(iff_hash_would_be_zero));
-            zero_avoided_result->init_req(1, result_empty);
+            Node* no_hash_con = intcon(checked_cast<int>(markWord::no_hash));
+            Node* bol_hash_would_be_no_hash = BoolCmpI(masked_result, BoolTest::eq, no_hash_con);
+            IfNode* iff_hash_would_be_no_hash = create_and_map_if(control(), bol_hash_would_be_no_hash, PROB_FAIR, COUNT_UNKNOWN);
+            avoid_no_hash_region->init_req(1, IfTrue(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(1, result_empty);
 
-            avoid_zero_hash_region->init_req(2, IfFalse(iff_hash_would_be_zero));
-            zero_avoided_result->init_req(2, masked_result);
+            avoid_no_hash_region->init_req(2, IfFalse(iff_hash_would_be_no_hash));
+            no_hash_avoided_result->init_req(2, masked_result);
 
-            result_reg->init_req(_value_fast_path, _gvn.transform(avoid_zero_hash_region));
-            result_val->init_req(_value_fast_path, _gvn.transform(zero_avoided_result));
+            result_reg->init_req(_value_fast_path, _gvn.transform(avoid_no_hash_region));
+            result_val->init_req(_value_fast_path, _gvn.transform(no_hash_avoided_result));
           }
         }
       }
