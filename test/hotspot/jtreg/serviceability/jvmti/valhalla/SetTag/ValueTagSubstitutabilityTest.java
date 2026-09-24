@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Regression test for JVMTIs tag map value class instance substitutability test
- * @bug 8386824 8389237
+ * @bug 8386824 8392964
  * @requires vm.jvmti
  * @enablePreview
  * @run main/othervm/native -agentlib:ValueTagSubstitutabilityTest ValueTagSubstitutabilityTest
